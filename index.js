@@ -1,26 +1,23 @@
-// index.js for SillyTavern extension
+import { getContext } from "../../../extensions.js";
+import { eventSource, event_types } from "../../../../script.js";
 
-function setup() {
-  // Hook into rendering messages
-  window.addEventListener('st_render_message', (e) => {
-    const message = e.detail.message;
-    const messageElem = e.detail.element;
+// Register an event listener for incoming messages.
+eventSource.on(event_types.MESSAGE_RECEIVED, handleIncomingMessage);
 
-    // Only add editable box for AI responses (adjust condition as needed)
-    if (message.author === 'ai') {
-      // Create editable textarea
-      const textarea = document.createElement('textarea');
-      textarea.style.width = '100%';
-      textarea.style.marginTop = '8px';
-      textarea.style.minHeight = '80px';
-      textarea.placeholder = 'Edit the response here...';
-      textarea.value = message.content;
+// Retrieve application context, including chat logs and participant info.
+const context = getContext();
 
-      // Append textarea below the message element
-      messageElem.appendChild(textarea);
+function handleIncomingMessage(data) {
+    // Access the most recent message from the chat log.
+    let mostRecentMessage = context.chat[context.chat.length - 1];
+
+    // Check browser support for speech synthesis.
+    if ('speechSynthesis' in window) {
+        // Render the announcement of the character's message to audio.
+        let utterance = new SpeechSynthesisUtterance(mostRecentMessage.name + " said something");
+        window.speechSynthesis.speak(utterance);
+    } else {
+        // Log an error if speech synthesis isn't supported.
+        console.error("Speech synthesis is not supported in this browser.");
     }
-  });
 }
-
-// Run setup once the extension loads
-setup();
