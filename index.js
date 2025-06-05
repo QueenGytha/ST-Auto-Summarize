@@ -1,10 +1,11 @@
 function setup() {
-  window.addEventListener('st_render_message', (e) => {
+  window.addEventListener('character_message_rendered', (e) => {
     const message = e.detail.message;
     const messageElem = e.detail.element;
 
-    console.log('st_render_message fired', message, messageElem);
+    console.log('character_message_rendered fired', message, messageElem);
 
+    // Adjust author check depending on actual author name (check your logs)
     if (message && message.author && message.author.toLowerCase() === 'ai') {
       const textarea = document.createElement('textarea');
       textarea.style.width = '100%';
