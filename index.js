@@ -1,23 +1,23 @@
-import { getContext } from "../../../extensions.js";
-import { eventSource, event_types } from "../../../../script.js";
+function setup() {
+  window.addEventListener('st_render_message', (e) => {
+    const message = e.detail.message;
+    const messageElem = e.detail.element;
 
-// Register an event listener for incoming messages.
-eventSource.on(event_types.MESSAGE_RECEIVED, handleIncomingMessage);
+    console.log('st_render_message fired', message, messageElem);
 
-// Retrieve application context, including chat logs and participant info.
-const context = getContext();
+    if (message && message.author && message.author.toLowerCase() === 'ai') {
+      const textarea = document.createElement('textarea');
+      textarea.style.width = '100%';
+      textarea.style.marginTop = '8px';
+      textarea.style.minHeight = '80px';
+      textarea.style.border = '1px solid #888';
+      textarea.style.background = '#f9f9f9';
+      textarea.placeholder = 'Edit the response here...';
+      textarea.value = message.content || '';
 
-function handleIncomingMessage(data) {
-    // Access the most recent message from the chat log.
-    let mostRecentMessage = context.chat[context.chat.length - 1];
-
-    // Check browser support for speech synthesis.
-    if ('speechSynthesis' in window) {
-        // Render the announcement of the character's message to audio.
-        let utterance = new SpeechSynthesisUtterance(mostRecentMessage.name + " said something");
-        window.speechSynthesis.speak(utterance);
-    } else {
-        // Log an error if speech synthesis isn't supported.
-        console.error("Speech synthesis is not supported in this browser.");
+      messageElem.appendChild(textarea);
     }
+  });
 }
+
+window.addEventListener('DOMContentLoaded', setup);
