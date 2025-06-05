@@ -1,4 +1,4 @@
-[
+{
     "display_name": "Auto-Summarize",
     "loading_order": 1,
     "requires": [],
@@ -9,4 +9,4 @@
     "version": "1.0.0",
     "homePage": "https://github.com/QueenGytha/ST-Auto-Summarize",
     "auto_update": true
-]
+}
