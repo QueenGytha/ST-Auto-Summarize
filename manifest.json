@@ -1,0 +1,12 @@
+{
+    "display_name": "Auto-Summarize",
+    "loading_order": 1,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "Queen Gytha",
+    "version": "1.0.0",
+    "homePage": "https://github.com/QueenGytha/ST-Auto-Summarize",
+    "auto_update": true
+}
