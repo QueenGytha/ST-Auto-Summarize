@@ -155,6 +155,8 @@ const default_settings = {
 
     // Combined Summary Feature
     combined_summary_enabled: false,
+    show_combined_summary_toast: true,
+    combined_summary_run_interval: 5,
     combined_summary_prompt: default_combined_summary_prompt,
     combined_summary_prefill: "",
     combined_summary_template: default_combined_template,
@@ -175,7 +177,9 @@ const default_settings = {
 };
 
 Object.assign(default_settings, {
+    combined_summary_new_count: 0,
     combined_summary_enabled: false,
+    show_combined_summary_toast: true,
     combined_summary_prompt: default_combined_summary_prompt,
     combined_summary_prefill: "",
     combined_summary_template: default_combined_template,
@@ -189,6 +193,23 @@ Object.assign(default_settings, {
     combined_summary_completion_preset: "",
 });
 
+// --- Combined Summary Persistent Storage ---
+function get_combined_summary_key() {
+    let ctx = getContext();
+    let chatId = ctx.chatId;
+    let charId = ctx.characterId || 'group';
+    return `combined_summary_saved_${chatId}_${charId}`;
+}
+
+function save_combined_summary(summary) {
+    set_settings(get_combined_summary_key(), summary);
+}
+
+function load_combined_summary() {
+    return get_settings(get_combined_summary_key()) || "";
+}
+// --- End of Combined Summary Persistent Storage ---
+
 async function get_combined_summary_preset_max_tokens() {
     let preset_name = get_settings('combined_summary_completion_preset');
     if (!preset_name || !(await verify_preset(preset_name))) {
@@ -200,14 +221,19 @@ async function get_combined_summary_preset_max_tokens() {
 
 function get_combined_memory() {
     if (!get_settings('combined_summary_enabled')) return "";
-    // Use all short+long summaries for combining
+    let ctx = getContext();
+    let chat = ctx.chat;
     let indexes = [];
-    indexes = indexes.concat(collect_chat_messages('long'));
-    indexes = indexes.concat(collect_chat_messages('short'));
+    // Only include summaries not yet flagged as combined
+    for (let i = 0; i < chat.length; i++) {
+        let message = chat[i];
+        if (get_data(message, 'memory') && !get_data(message, 'combined_summary_included')) {
+            indexes.push(i);
+        }
+    }
     if (indexes.length === 0) return "";
     let text = concatenate_summaries(indexes);
     let template = get_settings('combined_summary_template');
-    let ctx = getContext();
     return ctx.substituteParamsExtended(template, {[generic_memories_macro]: text});
 }
 
@@ -216,16 +242,24 @@ async function create_combined_summary_prompt() {
     let summaries = get_combined_memory();
     let prompt = get_settings('combined_summary_prompt');
     let words = await get_combined_summary_preset_max_tokens();
+    let previous_summary = load_combined_summary();
+
+    // Add previous summary as "base" if it exists
+    let base_summary_section = "";
+    if (previous_summary) {
+        base_summary_section = `\nPrevious combined summary (use as a base, expand or modify as necessary):\n${previous_summary}\n`;
+    }
+
     prompt = ctx.substituteParamsExtended(prompt, {"words": words});
     prompt = substitute_conditionals(prompt, {"message": summaries, "history": ""});
     prompt = substitute_params(prompt, {"message": summaries, "history": ""});
-    prompt = formatInstructModeChat("", prompt, false, true, "", "", "", null);
+    prompt = formatInstructModeChat("", prompt + base_summary_section, false, true, "", "", "", null);
     prompt = `${prompt}\n${get_settings('combined_summary_prefill')}`;
     return prompt;
 }
 
 async function generate_combined_summary() {
-    if (!get_settings('combined_summary_enabled')) return "";
+    if (!get_settings('combined_summary_enabled')) return "Combined Summary is Disabled";
     let ctx = getContext();
     let prompt = await create_combined_summary_prompt();
     let profile = get_settings('combined_summary_connection_profile');
@@ -243,6 +277,18 @@ async function generate_combined_summary() {
         summary = await summarize_text(prompt);
         debug("=== [COMBINED SUMMARY] Model response ===");
         debug(summary);
+        save_combined_summary(summary); // <-- Save persistently
+
+        let ctx2 = getContext();
+        let chat2 = ctx2.chat;
+        let indexes2 = [];
+        for (let i = 0; i < chat2.length; i++) {
+            let message = chat2[i];
+            if (get_data(message, 'memory') && !get_data(message, 'combined_summary_included')) {
+                indexes2.push(i);
+            }
+        }
+        flag_summaries_as_combined(indexes2, chat2);
     } catch (e) {
         error("Combined summary generation failed: " + e);
     }
@@ -253,6 +299,13 @@ async function generate_combined_summary() {
     return summary;
 }
 // --- End Combined Summary Feature additions ---
+
+function flag_summaries_as_combined(indexes, chat) {
+    for (let i of indexes) {
+        let message = chat[i];
+        set_data(message, 'combined_summary_included', true);
+    }
+}
 
 // global flags and whatnot
 var STOP_SUMMARIZATION = false  // flag toggled when stopping summarization
@@ -2807,9 +2860,6 @@ async function summarize_message(index) {
     let message = context.chat[index]
     let message_hash = getStringHash(message.mes);
 
-    // clear the reasoning early to avoid showing it when summarizing
-    set_data(message, 'reasoning', "")
-
     // Temporarily update the message summary text to indicate that it's being summarized (no styling based on inclusion criteria)
     // A full visual update with style should be done on the whole chat after inclusion criteria have been recalculated
     update_message_visuals(index, false, "Summarizing...")
@@ -2866,6 +2916,7 @@ async function summarize_message(index) {
         set_data(message, 'edited', false);  // clear the error message
         set_data(message, 'prefill', reasoning ? "" : get_settings('prefill'))  // store prefill if there was no reasoning.
         set_data(message, 'reasoning', reasoning)
+        set_settings('combined_summary_new_count', (get_settings('combined_summary_new_count') || 0) + 1);
     } else {  // generation failed
         error(`Failed to summarize message ${index} - generation failed.`);
         set_data(message, 'error', err || "Summarization failed");  // store the error message
@@ -3197,9 +3248,12 @@ async function refresh_memory() {
     let short_injection = get_short_memory();
 
     // --- Combined Summary Injection ---
+    let run_interval = get_settings('combined_summary_run_interval') || 1;
+    let new_count = get_settings('combined_summary_new_count') || 0;
     let combined_injection = "";
-    if (get_settings('combined_summary_enabled')) {
+    if (get_settings('combined_summary_enabled') && new_count >= run_interval) {
         combined_injection = await generate_combined_summary();
+        set_settings('combined_summary_new_count', 0); // reset counter
     }
     // --- END Combined Summary Injection ---
 
@@ -3412,6 +3466,7 @@ async function on_chat_event(event=null, data=null) {
 function initialize_settings_listeners() {
     log("Initializing settings listeners")
 
+    bind_setting('#combined_summary_run_interval', 'combined_summary_run_interval', 'number');
     bind_setting('#auto_hide_message_age', 'auto_hide_message_age', 'number', () => refresh_memory());
 
     // Trigger profile changes
@@ -3568,10 +3623,15 @@ Available Macros:
 `;
         get_user_setting_text_input('combined_summary_prompt', 'Edit Combined Summary Prompt', description);
     });
+    bind_function('#view_combined_summary', () => {
+        const summary = load_combined_summary();
+        display_text_modal("Current Combined Summary", summary || "No combined summary generated yet.");
+    });
     // --- END Combined Summary Settings ---
 
     refresh_settings()
 }
+
 function initialize_message_buttons() {
     // Add the message buttons to the chat messages
     debug("Initializing message buttons")

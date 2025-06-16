@@ -18,6 +18,7 @@
                 <div class="flex-container justifyspacebetween alignitemscenter">
                     <button id="toggle_chat_memory" class="menu_button flex2" title="Toggle whether memory is enabled for this chat specifically (overrides all settings)."><span>Toggle Memory</span></button>
                     <button id="edit_memory_state" class="menu_button flex2" title="Edit the memories in chat."><span>Edit Memory</span></button>
+                    <button id="view_combined_summary" class="menu_button flex2" title="View the current combined summary"><span>View Combined Summary</span></button>
                     <button id="refresh_memory" class="menu_button fa-solid fa-sync margin0" title="Just refreshes which memories are included and re-renders the memories under each message, doesn't change summaries. This is done automatically all the time, the button is here just in case."></button>
                 </div>
 
@@ -334,6 +335,10 @@
                 <label class="checkbox_label" title="Enable combined summary injection.">
                     <input id="combined_summary_enabled" type="checkbox" />
                     <span>Enable Combined Summary</span>
+                </label>
+                <label class="checkbox_label" title="Only run combined summary after this many new summaries.">
+                    <input id="combined_summary_run_interval" class="text_pole widthUnset inline_setting" type="number" min="1" max="999" />
+                    <span>Combined Summary Interval</span>
                 </label>
                 <div class="flex-container justifyspacebetween alignitemscenter">
                     <button id="edit_combined_summary_prompt" class="menu_button flex1" title="Edit the combined summary prompt"><span>Edit Combined Prompt</span></button>
