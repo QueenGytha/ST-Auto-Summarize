@@ -260,6 +260,9 @@ async function create_combined_summary_prompt() {
 
 async function generate_combined_summary() {
     if (!get_settings('combined_summary_enabled')) return "Combined Summary is Disabled";
+    if (get_settings('show_combined_summary_toast')) {
+        toast("Generating combined summary...", "info");
+    }
     let ctx = getContext();
     let prompt = await create_combined_summary_prompt();
     let profile = get_settings('combined_summary_connection_profile');
@@ -277,7 +280,7 @@ async function generate_combined_summary() {
         summary = await summarize_text(prompt);
         debug("=== [COMBINED SUMMARY] Model response ===");
         debug(summary);
-        save_combined_summary(summary); // <-- Save persistently
+        save_combined_summary(summary);
 
         let ctx2 = getContext();
         let chat2 = ctx2.chat;
@@ -491,7 +494,7 @@ async function set_preset(name) {
     // Set the completion preset
     debug(`Setting completion preset to ${name}`)
     if (get_settings('debug_mode')) {
-        toastr.info(`Setting completion preset to ${name}`);
+        // commented out toast // toastr.info(`Setting completion preset to ${name}`);
     }
     let ctx = getContext();
     await ctx.executeSlashCommandsWithOptions(`/preset ${name}`)
@@ -3468,6 +3471,7 @@ function initialize_settings_listeners() {
 
     bind_setting('#combined_summary_run_interval', 'combined_summary_run_interval', 'number');
     bind_setting('#auto_hide_message_age', 'auto_hide_message_age', 'number', () => refresh_memory());
+    bind_setting('#show_combined_summary_toast', 'show_combined_summary_toast', 'boolean');
 
     // Trigger profile changes
     bind_setting('#profile', 'profile', 'text', () => load_profile(), false);
