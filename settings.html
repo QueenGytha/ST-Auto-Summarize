@@ -54,7 +54,7 @@
                 <hr>
                 <h4 class="textAlignCenter">Summarization <i class="fa-solid fa-info-circle" title="Customize the prompt used to summarize a given message"></i></h4>
                 <div class="flex-container justifyspacebetween alignitemscenter">
-                    <button id="edit_summary_prompt" class="menu_button flex1" title="Edit the summary prompt" >Edit</button>
+                    <button id="edit_summary_prompt" class="menu_button flex1" title="Edit the summary prompt" >Edit Summary Prompt</button>
                     <button id="preview_summary_prompt" class="menu_button fa-solid fa-eye" title="Preview the filled-in summary prompt, using the last message as an example." ></button>
                     <button id="stop_summarization" class="menu_button fa-solid fa-stop" title="Stop all summarization immediately."></button>
                 </div>
@@ -200,7 +200,7 @@
                 <h4 class="textAlignCenter">Short-term Memory Injection <i class="fa-solid fa-info-circle" title="Determines which messages are included in the short-term memory injection and where. If you change this and include messages that weren't summarized previously, you can either manually trigger a re-summarization or just wait until automatic summarization triggers."></i></h4>
 
                 <div class="flex-container justifyspacebetween alignitemscenter">
-                    <button id="edit_short_term_memory_prompt" class="menu_button flex1" title="Edit the short-term memory prompt"><span>Edit</span></button>
+                    <button id="edit_short_term_memory_prompt" class="menu_button flex1" title="Edit the short-term memory prompt"><span>Edit Short-term Prompt</span></button>
                     <!--<button id="preview_short_term_memory" class="menu_button fa-solid fa-eye interactable" title="Preview the short-term memory injection" tabindex="0"></button>-->
                 </div>
 
@@ -277,7 +277,7 @@
                 <hr>
                 <h4 class="textAlignCenter">Long-Term Memory Injection <i class="fa-solid fa-info-circle" title="Determines where long-term messages are injected."></i></h4>
                 <div class="flex-container justifyspacebetween alignitemscenter">
-                    <button id="edit_long_term_memory_prompt" class="menu_button flex1" title="Edit the long-term memory prompt"><span>Edit</span></button>
+                    <button id="edit_long_term_memory_prompt" class="menu_button flex1" title="Edit the long-term memory prompt"><span>Edit Long-term Prompt</span></button>
                     <!--<button id="preview_long_term_memory" class="menu_button fa-solid fa-eye interactable" title="Preview the long-term memory injection" tabindex="0"></button>-->
                 </div>
 
@@ -328,6 +328,63 @@
                     </label>
                 </div>
 
+                <!-- Combined Summary -->
+                <hr>
+                <h4 class="textAlignCenter">Combined Summary <i class="fa-solid fa-info-circle" title="Combine all summaries into a single summary, removing repetition."></i></h4>
+                <label class="checkbox_label" title="Enable combined summary injection.">
+                    <input id="combined_summary_enabled" type="checkbox" />
+                    <span>Enable Combined Summary</span>
+                </label>
+                <div class="flex-container justifyspacebetween alignitemscenter">
+                    <button id="edit_combined_summary_prompt" class="menu_button flex1" title="Edit the combined summary prompt"><span>Edit Combined Prompt</span></button>
+                </div>
+                <input id="combined_summary_prompt" type="hidden" />
+                <input id="combined_summary_template" type="hidden" />
+                <table>
+                    <tr>
+                        <td><span>Combined Completion Preset</span></td>
+                        <td><select id="combined_summary_completion_preset" class="text_pole"></select></td>
+                    </tr>
+                    <tr>
+                        <td><span>Combined Summary Prefill</span></td>
+                        <td><input id="combined_summary_prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
+                    </tr>
+                </table>
+                <label title="Where to inject the combined summary.">
+                    <select id="combined_summary_position" class="text_pole">
+                        <option value="-1">Do not inject</option>
+                        <option value="2">Before main prompt</option>
+                        <option value="0">After main prompt</option>
+                        <option value="1">In chat at depth</option>
+                    </select>
+                </label>
+                <label title="Depth for in-chat injection.">
+                    <input id="combined_summary_depth" class="text_pole inline_setting" type="number" min="0" max="99" />
+                    <span>Depth</span>
+                </label>
+                <label title="Role for in-chat injection.">
+                    <select id="combined_summary_role" class="text_pole inline_setting">
+                        <option value="0">System</option>
+                        <option value="1">User</option>
+                        <option value="2">Assistant</option>
+                    </select>
+                </label>
+                <label class="checkbox_label" title="Include in World Info Scanning">
+                    <input id="combined_summary_scan" type="checkbox" />
+                    <span>Include in World Info Scanning</span>
+                </label>
+                <label title="Context limit for combined summary.">
+                    <input id="combined_summary_context_limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
+                    <span>Context Limit</span>
+                </label>
+                <label>
+                    <input type="radio" name="combined_summary_context_type" value="percent" />
+                    <span>%</span>
+                </label>
+                <label>
+                    <input type="radio" name="combined_summary_context_type" value="tokens" />
+                    <span>tk</span>
+                </label>
 
                 <!-- Misc. -->
                 <hr>

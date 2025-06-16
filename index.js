@@ -62,12 +62,20 @@ const edit_button_class = `${MODULE_NAME}_edit_button`
 const forget_button_class = `${MODULE_NAME}_forget_button`
 const delete_button_class = `${MODULE_NAME}_delete_button`
 
-// global flags and whatnot
-var STOP_SUMMARIZATION = false  // flag toggled when stopping summarization
-var SUMMARIZATION_DELAY_TIMEOUT = null  // the set_timeout object for the summarization delay
-var SUMMARIZATION_DELAY_RESOLVE = null
+// Combined Summary Feature additions at the top
+const combined_memory_macro = `combined_memory`;
+const default_combined_template = `[Following is a combined summary of recent events]:\n{{${generic_memories_macro}}}\n`;
+const default_combined_summary_prompt = `You are a summarization assistant. Combine the following JSON array of summaries into a single, concise summary, removing repetition and redundant information. Use no more than {{words}} words. Past tense only. Names included when possible.
 
-// Settings
+{{#if history}}
+Following is a history of summaries for context:
+{{history}}
+{{/if}}
+
+Following is a JSON array of summaries to combine:
+{{message}}
+`;
+
 const default_prompt = `You are a summarization assistant. Summarize the given fictional narrative in a single, very short and concise statement of fact.
 Responses should be no more than {{words}} words.
 Include names when possible.
@@ -82,8 +90,10 @@ Following is a history of messages for context:
 Following is the message to summarize:
 {{message}}
 `
+
 const default_long_template = `[Following is a list of events that occurred in the past]:\n{{${generic_memories_macro}}}\n`
 const default_short_template = `[Following is a list of recent events]:\n{{${generic_memories_macro}}}\n`
+
 const default_settings = {
     // automating the auto-hide feature
     auto_hide_message_age: -1, // -1 disables, otherwise auto-hide messages older than this many messages
@@ -143,12 +153,113 @@ const default_settings = {
     short_term_role: extension_prompt_roles.SYSTEM,
     short_term_scan: false,
 
+    // Combined Summary Feature
+    combined_summary_enabled: false,
+    combined_summary_prompt: default_combined_summary_prompt,
+    combined_summary_prefill: "",
+    combined_summary_template: default_combined_template,
+    combined_summary_position: extension_prompt_types.IN_PROMPT,
+    combined_summary_depth: 2,
+    combined_summary_role: extension_prompt_roles.SYSTEM,
+    combined_summary_scan: false,
+    combined_summary_context_limit: 10,
+    combined_summary_context_type: 'percent',
+    combined_summary_connection_profile: "",
+    combined_summary_completion_preset: "",
+
     // misc
     debug_mode: false,  // enable debug mode
     display_memories: true,  // display memories in the chat below each message
     default_chat_enabled: true,  // whether memory is enabled by default for new chats
     use_global_toggle_state: false,  // whether the on/off state for this profile uses the global state
 };
+
+Object.assign(default_settings, {
+    combined_summary_enabled: false,
+    combined_summary_prompt: default_combined_summary_prompt,
+    combined_summary_prefill: "",
+    combined_summary_template: default_combined_template,
+    combined_summary_position: extension_prompt_types.IN_PROMPT,
+    combined_summary_depth: 2,
+    combined_summary_role: extension_prompt_roles.SYSTEM,
+    combined_summary_scan: false,
+    combined_summary_context_limit: 10,
+    combined_summary_context_type: 'percent',
+    combined_summary_connection_profile: "",
+    combined_summary_completion_preset: "",
+});
+
+async function get_combined_summary_preset_max_tokens() {
+    let preset_name = get_settings('combined_summary_completion_preset');
+    if (!preset_name || !(await verify_preset(preset_name))) {
+        preset_name = await get_summary_preset();
+    }
+    let preset = getPresetManager().getCompletionPresetByName(preset_name);
+    return preset?.genamt || preset?.openai_max_tokens || amount_gen;
+}
+
+function get_combined_memory() {
+    if (!get_settings('combined_summary_enabled')) return "";
+    // Use all short+long summaries for combining
+    let indexes = [];
+    indexes = indexes.concat(collect_chat_messages('long'));
+    indexes = indexes.concat(collect_chat_messages('short'));
+    if (indexes.length === 0) return "";
+    let text = concatenate_summaries(indexes);
+    let template = get_settings('combined_summary_template');
+    let ctx = getContext();
+    return ctx.substituteParamsExtended(template, {[generic_memories_macro]: text});
+}
+
+async function create_combined_summary_prompt() {
+    let ctx = getContext();
+    let summaries = get_combined_memory();
+    let prompt = get_settings('combined_summary_prompt');
+    let words = await get_combined_summary_preset_max_tokens();
+    prompt = ctx.substituteParamsExtended(prompt, {"words": words});
+    prompt = substitute_conditionals(prompt, {"message": summaries, "history": ""});
+    prompt = substitute_params(prompt, {"message": summaries, "history": ""});
+    prompt = formatInstructModeChat("", prompt, false, true, "", "", "", null);
+    prompt = `${prompt}\n${get_settings('combined_summary_prefill')}`;
+    return prompt;
+}
+
+async function generate_combined_summary() {
+    if (!get_settings('combined_summary_enabled')) return "";
+    let ctx = getContext();
+    let prompt = await create_combined_summary_prompt();
+    let profile = get_settings('combined_summary_connection_profile');
+    let preset = get_settings('combined_summary_completion_preset');
+    let current_profile = await get_current_connection_profile();
+    let current_preset = await get_current_preset();
+
+    await set_connection_profile(profile);
+    await set_preset(preset);
+
+    let summary = "";
+    try {
+        debug("=== [COMBINED SUMMARY] Prompt sent to model ===");
+        debug(prompt);
+        summary = await summarize_text(prompt);
+        debug("=== [COMBINED SUMMARY] Model response ===");
+        debug(summary);
+    } catch (e) {
+        error("Combined summary generation failed: " + e);
+    }
+
+    await set_connection_profile(current_profile);
+    await set_preset(current_preset);
+
+    return summary;
+}
+// --- End Combined Summary Feature additions ---
+
+// global flags and whatnot
+var STOP_SUMMARIZATION = false  // flag toggled when stopping summarization
+var SUMMARIZATION_DELAY_TIMEOUT = null  // the set_timeout object for the summarization delay
+var SUMMARIZATION_DELAY_RESOLVE = null
+
+// Settings
 const global_settings = {
     profiles: {},  // dict of profiles by name
     character_profiles: {},  // dict of character identifiers to profile names
@@ -862,6 +973,20 @@ async function update_preset_dropdown() {
     $preset_select.off('click').on('click', () => update_preset_dropdown());
 
 }
+async function update_combined_summary_preset_dropdown() {
+    let $preset_select = $(`.${settings_content_class} #combined_summary_completion_preset`);
+    let summary_preset = get_settings('combined_summary_completion_preset');
+    let preset_options = await get_presets();
+    $preset_select.empty();
+    $preset_select.append(`<option value="">Same as Current</option>`);
+    for (let option of preset_options) {
+        $preset_select.append(`<option value="${option}">${option}</option>`);
+    }
+    $preset_select.val(summary_preset);
+
+    // Refresh on click
+    $preset_select.off('click').on('click', () => update_combined_summary_preset_dropdown());
+}
 async function update_connection_profile_dropdown() {
     // set the completion preset dropdown
     let $connection_select = $(`.${settings_content_class} #connection_profile`);
@@ -892,6 +1017,7 @@ function refresh_settings() {
 
     // completion presets
     update_preset_dropdown()
+    update_combined_summary_preset_dropdown();
     check_preset_valid()
 
     // if prompt doesn't have {{message}}, insert it
@@ -2499,20 +2625,19 @@ function concatenate_summary(existing_text, message) {
     return existing_text + separator + memory
 }
 function concatenate_summaries(indexes) {
-    // concatenate the summaries of the messages with the given indexes
-    // Excludes messages that don't meet the inclusion criteria
-
     let context = getContext();
     let chat = context.chat;
-
-    let summary = ""
-    // iterate through given indexes
+    let summaries = [];
+    let count = 1;
     for (let i of indexes) {
         let message = chat[i];
-        summary = concatenate_summary(summary, message)
+        let memory = get_memory(message);
+        if (memory) {
+            summaries.push({ id: count, summary: memory });
+            count++;
+        }
     }
-
-    return summary
+    return JSON.stringify(summaries, null, 2);
 }
 
 function collect_chat_messages(include) {
@@ -3058,6 +3183,7 @@ async function refresh_memory() {
     if (!chat_enabled()) { // if chat not enabled, remove the injections
         ctx.setExtensionPrompt(`${MODULE_NAME}_long`, "");
         ctx.setExtensionPrompt(`${MODULE_NAME}_short`, "");
+        ctx.setExtensionPrompt(`${MODULE_NAME}_combined`, "");
         return;
     }
 
@@ -3070,20 +3196,30 @@ async function refresh_memory() {
     let long_injection = get_long_memory();
     let short_injection = get_short_memory();
 
+    // --- Combined Summary Injection ---
+    let combined_injection = "";
+    if (get_settings('combined_summary_enabled')) {
+        combined_injection = await generate_combined_summary();
+    }
+    // --- END Combined Summary Injection ---
+
     let long_term_position = get_settings('long_term_position')
     let short_term_position = get_settings('short_term_position')
+    let combined_summary_position = get_settings('combined_summary_position');
 
     // if using text completion, we need to wrap it in a system prompt
     if (main_api !== 'openai') {
         if (long_term_position !== extension_prompt_types.IN_CHAT && long_injection.length) long_injection = formatInstructModeChat("", long_injection, false, true)
         if (short_term_position !== extension_prompt_types.IN_CHAT && short_injection.length) short_injection = formatInstructModeChat("", short_injection, false, true)
+        if (combined_summary_position !== extension_prompt_types.IN_CHAT && combined_injection.length) combined_injection = formatInstructModeChat("", combined_injection, false, true)
     }
 
     // inject the memories into the templates, if they exist
     ctx.setExtensionPrompt(`${MODULE_NAME}_long`,  long_injection,  long_term_position, get_settings('long_term_depth'), get_settings('long_term_scan'), get_settings('long_term_role'));
     ctx.setExtensionPrompt(`${MODULE_NAME}_short`, short_injection, short_term_position, get_settings('short_term_depth'), get_settings('short_term_scan'), get_settings('short_term_role'));
+    ctx.setExtensionPrompt(`${MODULE_NAME}_combined`, combined_injection, combined_summary_position, get_settings('combined_summary_depth'), get_settings('combined_summary_scan'), get_settings('combined_summary_role'));
 
-    return `${long_injection}\n\n...\n\n${short_injection}`  // return the concatenated memory text
+    return `${long_injection}\n\n...\n\n${short_injection}\n\n...\n\n${combined_injection}`  // return the concatenated memory text
 }
 const refresh_memory_debounced = debounce(refresh_memory, debounce_timeout.relaxed);
 
@@ -3407,6 +3543,32 @@ Available Macros:
     // trigger the change event once to update the display at start
     $('#long_term_context_limit').trigger('change');
     $('#short_term_context_limit').trigger('change');
+
+    // --- Combined Summary Settings ---
+    bind_setting('#combined_summary_enabled', 'combined_summary_enabled', 'boolean');
+    bind_setting('#combined_summary_prompt', 'combined_summary_prompt', 'text');
+    bind_setting('#combined_summary_prefill', 'combined_summary_prefill', 'text');
+    bind_setting('#combined_summary_template', 'combined_summary_template', 'text');
+    bind_setting('#combined_summary_position', 'combined_summary_position', 'number');
+    bind_setting('#combined_summary_depth', 'combined_summary_depth', 'number');
+    bind_setting('#combined_summary_role', 'combined_summary_role');
+    bind_setting('#combined_summary_scan', 'combined_summary_scan', 'boolean');
+    bind_setting('#combined_summary_context_limit', 'combined_summary_context_limit', 'number');
+    bind_setting('input[name="combined_summary_context_type"]', 'combined_summary_context_type', 'text');
+    bind_setting('#combined_summary_completion_preset', 'combined_summary_completion_preset', 'text');
+    bind_function('#edit_combined_summary_prompt', async () => {
+        let max_tokens = await get_combined_summary_preset_max_tokens();
+        let description = `
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{message}}:</b> The concatenated summaries.</li>
+    <li><b>{{history}}:</b> The message history as configured.</li>
+    <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset (Currently: ${max_tokens}).</li>
+</ul>
+`;
+        get_user_setting_text_input('combined_summary_prompt', 'Edit Combined Summary Prompt', description);
+    });
+    // --- END Combined Summary Settings ---
 
     refresh_settings()
 }
@@ -3828,8 +3990,10 @@ jQuery(async function () {
     // Global Macros
     MacrosParser.registerMacro(short_memory_macro, () => get_short_memory());
     MacrosParser.registerMacro(long_memory_macro, () => get_long_memory());
+    MacrosParser.registerMacro(combined_memory_macro, () => get_combined_memory());
 
     // Export to the Global namespace so can be used in the console for debugging
     window.getContext = getContext;
     window.refresh_memory = refresh_memory;
+    window.generate_combined_summary = generate_combined_summary;
 });
