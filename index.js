@@ -4034,62 +4034,111 @@ Available Macros:
 `;
         get_user_setting_text_input('combined_summary_prompt', 'Edit Combined Summary Prompt', description);
     });
+    // ...existing code...
     bind_function('#view_combined_summary', async () => {
-        const summary = load_combined_summary();
-        
-        // Create a popup with editable textarea
-        let ctx = getContext();
-        let title = "Current Combined Summary";
-        let description = "You can edit the combined summary below:";
-        
-        // Create HTML with a proper ID for the textarea
-        let html = `
+    const summary = load_combined_summary();
+    
+    // Create a popup with editable textarea
+    let ctx = getContext();
+    let title = "Current Combined Summary";
+    let description = "You can edit the combined summary below:";
+    
+    // Create HTML with a textarea but NO custom buttons - we'll handle them using callPopup's default buttons
+    let html = `
+        <div>
             <h3>${title}</h3>
             <p>${description}</p>
-            <div class="flex-container flexFlowColumn">
-                <textarea id="combined_summary_textarea" rows="20" style="width: 100%; height: 300px;">${summary || ""}</textarea>
-            </div>
-        `;
+            <textarea id="combined_summary_textarea" rows="20" style="width: 100%; height: 300px;">${summary || ""}</textarea>
+        </div>
+    `;
+    
+    try {
+        // Store original summary for potential restoration
+        const originalSummary = summary;
         
-        // Define the regenerate button properly - using callPopup style
-        let popup_options = {
+        // Create a popup with standard buttons that we rename
+        const result = await ctx.callPopup(html, 'text', undefined, {
             okButton: "Save",
             cancelButton: "Cancel",
             wide: true,
-        };
+            large: true
+        });
         
-        try {
-            // Try the older callPopup method which might be more compatible
-            const popupResult = await ctx.callPopup(html, 'text', undefined, popup_options);
+        // If the user clicked Save (OK button), save the summary
+        if (result) {
+            const newText = $('#combined_summary_textarea').val();
+            save_combined_summary(newText);
+            toast("Combined summary updated successfully", "success");
+            refresh_memory();
+        }
+        // If Cancel is clicked, do nothing (popup closes automatically)
+        
+        // Add a regenerate button AFTER the popup is shown
+        setTimeout(() => {
+            const $popup = $('.popup:visible');
             
-            if (popupResult) {
-                // If user clicked Save, get the text from textarea
-                let newText = $('#combined_summary_textarea').val();
+            // Create and style the regenerate button
+            const $regenerateBtn = $('<button class="menu_button"><i class="fa-solid fa-rotate"></i> Regenerate</button>');
+            $regenerateBtn.css({
+                'position': 'absolute',
+                'bottom': '28px',
+                'left': '20px',
+                'z-index': '10'
+            });
+            
+            // Handle regenerate functionality
+            $regenerateBtn.on('click', async function() {
+                $(this).prop('disabled', true);
+                $(this).html('<i class="fa-solid fa-spinner fa-spin"></i> Generating...');
+                
+                try {
+                    toast("Generating new combined summary...", "info");
+                    let newSummary = await generate_combined_summary();
+                    $('#combined_summary_textarea').val(newSummary || "");
+                } catch (err) {
+                    toast("Error generating combined summary: " + err, "error");
+                } finally {
+                    $(this).prop('disabled', false);
+                    $(this).html('<i class="fa-solid fa-rotate"></i> Regenerate');
+                }
+            });
+            
+            // Add the button to the visible popup
+            $popup.append($regenerateBtn);
+
+            // --- Add Cancel button ---
+            // Only add if not already present
+            if ($popup.find('.menu_button.cancel-combined-summary').length === 0) {
+                const $cancelBtn = $('<button class="menu_button cancel-combined-summary"><i class="fa-solid fa-xmark"></i> Cancel</button>');
+                $cancelBtn.css({
+                    'position': 'absolute',
+                    'bottom': '28px',
+                    'left': '150px',
+                    'z-index': '10'
+                });
+                $cancelBtn.on('click', function() {
+                    // Close the popup without saving changes
+                    $popup.find('.popup-close, .close, .fa-circle-xmark').trigger('click');
+                });
+                $popup.append($cancelBtn);
+            }
+            // --- End Cancel button ---
+        }, 10); // Short delay to ensure popup is rendered
+        
+    } catch (error) {
+        console.error("Error with popup:", error);
+        // Fallback to basic prompt if the popup fails
+        const confirmEdit = confirm("Would you like to manually edit the combined summary?");
+        if (confirmEdit) {
+            const newText = prompt("Enter new combined summary:", summary || "");
+            if (newText !== null) {
                 save_combined_summary(newText);
                 toast("Combined summary updated successfully", "success");
                 refresh_memory();
             }
-            
-            // Add the regenerate functionality separately since callPopup doesn't support custom buttons
-            $('#regenerate_combined_summary').off('click').on('click', async () => {
-                toast("Generating new combined summary...", "info");
-                let newSummary = await generate_combined_summary();
-                $('#combined_summary_textarea').val(newSummary || "");
-            });
-        } catch (error) {
-            console.error("Error with popup:", error);
-            // Fallback to basic confirm dialog
-            const confirmEdit = confirm("Would you like to manually edit the combined summary?");
-            if (confirmEdit) {
-                const newText = prompt("Enter new combined summary:", summary || "");
-                if (newText !== null) {
-                    save_combined_summary(newText);
-                    toast("Combined summary updated successfully", "success");
-                    refresh_memory();
-                }
-            }
         }
-    });
+    }
+});
     // --- END Combined Summary Settings ---
 
     refresh_settings()
