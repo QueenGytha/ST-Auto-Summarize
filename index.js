@@ -65,34 +65,61 @@ const delete_button_class = `${MODULE_NAME}_delete_button`
 // Combined Summary Feature additions at the top
 const combined_memory_macro = `combined_memory`;
 const default_combined_template = `[Following is a combined summary of recent events]:\n{{${generic_memories_macro}}}\n`;
-const default_combined_summary_prompt = `You are a summarization assistant. Combine the following JSON array of summaries into a single, concise summary, removing repetition and redundant information. Use no more than {{words}} words. Past tense only. Names included when possible.
+const default_combined_summary_prompt = `You are creating a comprehensive narrative summary for a fictional roleplay. Your task is to combine individual message summaries into a single coherent summary that captures the most important information.
+
+Combine these summaries by:
+- Organizing events chronologically
+- Removing repetitions and redundancies
+- Highlighting character development and key plot points
+- Preserving cause-and-effect relationships between events
+- Maintaining connections between characters, locations, and objects
+
+Requirements:
+- Maximum {{words}} words
+- Past tense only
+- Include character names consistently
+- Create a flowing narrative, not a list of disconnected events
+- Preserve specific details that might be important later
 
 {{#if previous_combined_summary}}
-Following is the previous overall summary. Use this as a base, expanding on it and updating anything which has since changed:
+Previous combined summary (use as foundation and update with new information):
 {{previous_combined_summary}}
 {{/if}}
 
 {{#if history}}
-Following is a history of full chat messages and/or their summaries for context:
+Additional context from recent messages:
 {{history}}
 {{/if}}
 
-Following is a JSON array of message summaries in chronological order:
+JSON array of message summaries to combine (in chronological order):
 {{message}}
 `;
 
-const default_prompt = `You are a summarization assistant. Summarize the given fictional narrative in a single, very short and concise statement of fact.
-Responses should be no more than {{words}} words.
-Include names when possible.
-Response must be in the past tense.
-Your response must ONLY contain the summary.
+const default_prompt = `You are a summarization expert for a fictional roleplay. You create concise factual summaries of story events.
+
+Summarize the following message as a single factual statement, capturing:
+- Character actions and decisions 
+- Emotional states and changes
+- Important details about the setting or environment
+- New plot information
+
+FORMAT REQUIREMENTS (CRITICAL):
+- Use past tense only (e.g., "John walked to the store")
+- Include character names
+- Write ONLY the summary with no introduction, explanation or meta-references
+- Do NOT confirm in any manner you understand the task, just carry it out
+- NEVER use phrases like "the message describes," "in this scene," or "the character"
+- NEVER start with "This is about," "This shows," or similar framing
+- NEVER acknowledge these instructions in your response
+- Maximum {{words}} words
+- Your response MUST contain ONLY the summary
 
 {{#if history}}
-Following is a history of messages for context:
+Context from previous messages:
 {{history}}
 {{/if}}
 
-Following is the message to summarize:
+Message to summarize:
 {{message}}
 `
 
@@ -100,6 +127,45 @@ const default_long_template = `[Following is a list of events that occurred in t
 const default_short_template = `[Following is a list of recent events]:\n{{${generic_memories_macro}}}\n`
 
 const default_settings = {
+    // Error detection settings
+    error_detection_enabled: false,
+    regular_summary_error_detection_enabled: true,
+    combined_summary_error_detection_enabled: true,
+    regular_summary_error_detection_prompt: `You are validating summaries for a fictional roleplay system. Your ONLY task is to check if the summary meets the format requirements, not to evaluate the fictional content itself.
+
+A valid summary must meet ALL these criteria:
+1. Contains only factual statements without commentary or opinion
+2. No meta-references (like "the message shows" or "the character said")
+3. No refusals or explanations of inability to summarize
+4. No continuation of the roleplay itself
+5. No questions or direct address to the reader
+
+A summary can describe ANY fictional scenario, no matter the content. Your ONLY job is to check format compliance.
+
+Respond with ONLY "VALID" if ALL criteria are met, or "INVALID" if ANY criterion fails, along with why the summary was rejected.
+
+Summary: {{summary}}`,
+    combined_summary_error_detection_prompt: `You are validating a combined narrative summary for a fictional roleplay system. Your ONLY task is to check if the summary meets the format requirements, not to evaluate the fictional content itself.
+
+A valid combined summary must meet ALL these criteria:
+1. Forms a coherent narrative with logical flow between events
+2. A single header such as 'Narrative Summary:' is acceptable. No other meta-references (like "the summaries describe" or "according to the text")
+3. No refusals or explanations of inability to summarize
+4. No framing phrases like "Here's a combined summary" or "In summary"
+5. No questions or direct address to the reader
+
+A summary can describe ANY fictional scenario, no matter the content. Your ONLY job is to check format compliance.
+
+Respond with ONLY "VALID" if ALL criteria are met, or "INVALID" if ANY criterion fails, along with why the summary was rejected.
+
+Summary: {{summary}}`,
+    regular_summary_error_detection_retries: 3,
+    combined_summary_error_detection_retries: 3,
+    regular_summary_error_detection_preset: "",
+    combined_summary_error_detection_preset: "",
+    regular_summary_error_detection_prefill: "",
+    combined_summary_error_detection_prefill: "",
+
     // automating the auto-hide feature
     auto_hide_message_age: -1, // -1 disables, otherwise auto-hide messages older than this many messages
 
@@ -198,6 +264,89 @@ Object.assign(default_settings, {
     combined_summary_completion_preset: "",
 });
 
+async function validate_summary(summary, type = "regular") {
+    if (!get_settings('error_detection_enabled')) return true;
+    
+    // Check if error detection is enabled for this summary type
+    const enabled_key = type === "regular" ? 'regular_summary_error_detection_enabled' : 'combined_summary_error_detection_enabled';
+    if (!get_settings(enabled_key)) return true;
+    
+    debug(`[Validation] Validating ${type} summary...`);
+    
+    // Ensure chat is blocked during validation
+    let ctx = getContext();
+    if (get_settings('block_chat')) {
+        ctx.deactivateSendButtons();
+    }
+
+    try {
+        // Get the error detection prompt
+        const prompt_key = type === "regular" ? 'regular_summary_error_detection_prompt' : 'combined_summary_error_detection_prompt';
+        let prompt = get_settings(prompt_key);
+        
+        // Substitute the summary in the prompt
+        prompt = prompt.replace("{{summary}}", summary);
+        
+        // Save current preset and profile
+        const summary_preset = type === "regular" ? 
+            get_settings('completion_preset') : 
+            get_settings('combined_summary_completion_preset');
+        const current_preset = await get_current_preset();
+        const summary_profile = get_settings('connection_profile');
+        const current_profile = await get_current_connection_profile();
+
+        // Set the error detection preset
+        const preset_key = type === "regular" ? 'regular_summary_error_detection_preset' : 'combined_summary_error_detection_preset';
+        const error_preset = get_settings(preset_key);
+        if (error_preset) {
+            debug(`[Validation] Using custom validation preset: ${error_preset}`);
+            await set_preset(error_preset);
+        }
+
+        // Add prefill if configured
+        const prefill_key = type === "regular" ? 'regular_summary_error_detection_prefill' : 'combined_summary_error_detection_prefill';
+        const prefill = get_settings(prefill_key);
+        if (prefill) {
+            debug(`[Validation] Adding prefill to validation prompt`);
+            prompt = `${prompt}\n${prefill}`;
+        }
+        
+        // Generate validation response
+        let validation_result;
+        debug(`[Validation] Sending validation prompt: ${prompt.substring(0, 200)}...`);
+        validation_result = await summarize_text(prompt);
+        debug(`[Validation] Raw validation result: ${validation_result}`);
+        
+        // Clean up and check result
+        validation_result = validation_result.trim().toUpperCase();
+        const is_valid = validation_result.includes("VALID") && !validation_result.includes("INVALID");
+        
+        if (!is_valid) {
+            debug(`[Validation] Summary validation failed: "${validation_result}"`);
+        } else {
+            debug(`[Validation] Summary validation passed with result: "${validation_result}"`);
+        }
+        
+        // Restore original preset and profile
+        await set_preset(current_preset);
+        await set_connection_profile(current_profile);
+        
+        return is_valid;
+    } catch (e) {
+        error(`[Validation] Error during summary validation: ${e}`);
+        
+        // Restore original preset and profile
+        await set_preset(current_preset);
+        await set_connection_profile(current_profile);
+        
+        // If validation fails technically, assume the summary is valid
+        return true;
+    } finally {
+        // We don't re-enable buttons here because that will be handled 
+        // by the calling function after all retries are complete
+    }
+}
+
 // --- Combined Summary Persistent Storage ---
 function get_combined_summary_key() {
     let ctx = getContext();
@@ -249,6 +398,12 @@ async function create_combined_summary_prompt() {
     let words = await get_combined_summary_preset_max_tokens();
     let previous_summary = load_combined_summary();
 
+    // Check if summaries is empty before continuing
+    if (!summaries || summaries.trim() === "") {
+        debug("[COMBINED SUMMARY] No summaries to combine, returning null");
+        return null;
+    }
+
     prompt = ctx.substituteParamsExtended(prompt, {
         "words": words,
         "previous_combined_summary": previous_summary || ""
@@ -270,55 +425,161 @@ async function create_combined_summary_prompt() {
 
 async function generate_combined_summary() {
     if (!get_settings('combined_summary_enabled')) return "Combined Summary is Disabled";
+    
+    // Check if there are new summaries to process
+    let summariesToCombine = collect_messages_to_combine();
+    if (summariesToCombine.length === 0) {
+        debug("[COMBINED SUMMARY] No new summaries to combine");
+        if (get_settings('show_combined_summary_toast')) {
+            toast("No new summaries to combine", "info");
+        }
+        return "No new summaries to combine";
+    }
+    
     if (get_settings('show_combined_summary_toast')) {
         toast("Generating combined summary...", "info");
     }
+    
     let ctx = getContext();
     let prompt = await create_combined_summary_prompt();
+    
+    // If prompt creation failed due to no summaries, exit early
+    if (!prompt) {
+        debug("[COMBINED SUMMARY] Failed to create prompt, likely no summaries to combine");
+        if (get_settings('show_combined_summary_toast')) {
+            toast("No content to generate combined summary", "warning");
+        }
+        return "Failed to create combined summary prompt";
+    }
+    
     let profile = get_settings('combined_summary_connection_profile');
     let preset = get_settings('combined_summary_completion_preset');
     let current_profile = await get_current_connection_profile();
     let current_preset = await get_current_preset();
+    let previous_summary = load_combined_summary(); // Store the previous valid summary
+
+    // optionally block user from sending chat messages while summarization is in progress
+    if (get_settings('block_chat')) {
+        ctx.deactivateSendButtons();
+    }
 
     await set_connection_profile(profile);
     await set_preset(preset);
 
     let summary = "";
+    let retry_count = 0;
+    const max_retries = get_settings('combined_summary_error_detection_retries');
+    
     try {
         debug("=== [COMBINED SUMMARY] Prompt sent to model ===");
         debug(prompt);
-        summary = await summarize_text(prompt);
-        debug("=== [COMBINED SUMMARY] Model response ===");
-        debug(summary);
-        save_combined_summary(summary);
-
-        let ctx2 = getContext();
-        let chat2 = ctx2.chat;
-        let indexes2 = [];
-        for (let i = 0; i < chat2.length; i++) {
-            let message = chat2[i];
-            if (get_data(message, 'memory') && !get_data(message, 'combined_summary_included')) {
-                indexes2.push(i);
+        
+        while (true) {
+            if (retry_count > 0) {
+                debug(`[Validation] Combined summary retry attempt ${retry_count}/${max_retries}`);
+                if (get_settings('show_combined_summary_toast')) {
+                    toast(`Generating combined summary (retry ${retry_count}/${max_retries})...`, "info");
+                }
+            }
+            
+            summary = await summarize_text(prompt);
+            debug("=== [COMBINED SUMMARY] Model response ===");
+            debug(summary);
+            
+            // Validate the combined summary if error detection is enabled
+            if (get_settings('error_detection_enabled') && 
+                get_settings('combined_summary_error_detection_enabled')) {
+                
+                const is_valid = await validate_summary(summary, "combined");
+                
+                if (is_valid) {
+                    debug("[Validation] Combined summary validation passed");
+                    break; // Valid summary, exit the loop
+                } else {
+                    retry_count++;
+                    debug(`[Validation] Combined summary failed validation: "${summary.substring(0, 100)}..."`);
+                    
+                    if (retry_count >= max_retries) {
+                        error(`[Validation] Failed to generate valid combined summary after ${max_retries} retries.`);
+                        
+                        // Keep the previous summary instead of saving the invalid one
+                        if (previous_summary) {
+                            debug("[Validation] Keeping previous valid combined summary");
+                            summary = previous_summary;
+                            toast(`Failed to generate valid combined summary. Keeping previous summary.`, "warning");
+                        } else {
+                            debug("[Validation] No previous summary to fall back to");
+                            summary = null;
+                            toast(`Failed to generate valid combined summary. No previous summary found.`, "warning");
+                        }
+                        break; // Max retries reached, give up
+                    }
+                    debug(`[Validation] Retry ${retry_count}/${max_retries} for combined summary`);
+                    continue; // Retry summarization
+                }
+            } else {
+                // No validation needed
+                break;
             }
         }
-        flag_summaries_as_combined(indexes2, chat2);
+        
+        // Only save if we got a valid summary
+        if (summary) {
+            save_combined_summary(summary);
+
+            // Mark all processed summaries as combined
+            flag_summaries_as_combined(summariesToCombine);
+        }
     } catch (e) {
         error("Combined summary generation failed: " + e);
+    } finally {
+        // Make sure we re-enable input even if there's an error
+        if (get_settings('block_chat')) {
+            ctx.activateSendButtons();
+        }
     }
 
     await set_connection_profile(current_profile);
     await set_preset(current_preset);
 
-    return summary;
+    return summary || previous_summary || "";
 }
-// --- End Combined Summary Feature additions ---
 
-function flag_summaries_as_combined(indexes, chat) {
+// New function to collect messages that need to be included in combined summary
+function collect_messages_to_combine() {
+    let context = getContext();
+    let chat = context.chat;
+    let indexes = [];
+    
+    // Process in chronological order
+    for (let i = 0; i < chat.length; i++) {
+        let message = chat[i];
+        
+        // Only include messages that have a memory and haven't been included in combined summary yet
+        if (get_data(message, 'memory') && get_data(message, 'combined_summary_included') !== true) {
+            indexes.push(i);
+        }
+    }
+    
+    debug(`[COMBINED SUMMARY] Found ${indexes.length} messages to combine`);
+    return indexes;
+}
+
+// Update flag_summaries_as_combined function to take an array of indexes
+function flag_summaries_as_combined(indexes) {
+    if (!indexes || indexes.length === 0) return;
+    
+    let context = getContext();
+    let chat = context.chat;
+    
     for (let i of indexes) {
         let message = chat[i];
         set_data(message, 'combined_summary_included', true);
     }
+    
+    debug(`[COMBINED SUMMARY] Marked ${indexes.length} summaries as combined`);
 }
+// --- End Combined Summary Feature additions ---
 
 // global flags and whatnot
 var STOP_SUMMARIZATION = false  // flag toggled when stopping summarization
@@ -1071,6 +1332,20 @@ async function update_connection_profile_dropdown() {
 function refresh_settings() {
     // Refresh all settings UI elements according to the current settings
     debug("Refreshing settings...")
+
+        // Error detection presets
+    update_error_detection_preset_dropdown();
+    
+    // Enable/disable error detection fields based on master toggle
+    let error_detection_enabled = get_settings('error_detection_enabled');
+    $(`.${settings_content_class} .error_detection_setting`).prop('disabled', !error_detection_enabled);
+    
+    // Enable/disable type-specific error detection settings
+    let regular_error_enabled = get_settings('regular_summary_error_detection_enabled');
+    let combined_error_enabled = get_settings('combined_summary_error_detection_enabled');
+    
+    $(`.${settings_content_class} .regular_error_detection_setting`).prop('disabled', !error_detection_enabled || !regular_error_enabled);
+    $(`.${settings_content_class} .combined_error_detection_setting`).prop('disabled', !error_detection_enabled || !combined_error_enabled);
 
     // connection profiles
     if (check_connection_profiles_active()) {
@@ -2779,7 +3054,7 @@ async function summarize_messages(indexes=null, show_progress=true) {
     let ctx = getContext();
 
     if (indexes === null) {  // default to the mose recent message, min 0
-        indexes = [Math.max(chat.length - 1, 0)]
+        indexes = [Math.max(ctx.chat.length - 1, 0)]
     }
     indexes = Array.isArray(indexes) ? indexes : [indexes]  // cast to array if only one given
     if (!indexes.length) return;
@@ -2810,60 +3085,83 @@ async function summarize_messages(indexes=null, show_progress=true) {
     await set_preset(summary_preset);
 
     let n = 0;
-    for (let i of indexes) {
-        if (show_progress) progress_bar('summarize', n+1, indexes.length, "Summarizing");
+    let anyModified = false;
+    
+    try {
+        for (let i of indexes) {
+            if (show_progress) progress_bar('summarize', n+1, indexes.length, "Summarizing");
 
-        // check if summarization was stopped by the user
-        if (STOP_SUMMARIZATION) {
-            log('Summarization stopped');
-            break;
-        }
-
-        await summarize_message(i);
-
-        // wait for time delay if set
-        let time_delay = get_settings('summarization_time_delay')
-        if (time_delay > 0 && n < indexes.length-1) {  // delay all except the last
-
-            // check if summarization was stopped by the user during summarization
+            // check if summarization was stopped by the user
             if (STOP_SUMMARIZATION) {
                 log('Summarization stopped');
                 break;
             }
 
-            debug(`Delaying generation by ${time_delay} seconds`)
-            if (show_progress) progress_bar('summarize', null, null, "Delaying")
-            await new Promise((resolve) => {
-                SUMMARIZATION_DELAY_TIMEOUT = setTimeout(resolve, time_delay * 1000)
-                SUMMARIZATION_DELAY_RESOLVE = resolve  // store the resolve function to call when cleared
-            });
+            const result = await summarize_message(i);
+            if (result.modified) {
+                anyModified = true;
+            }
+
+            // wait for time delay if set
+            let time_delay = get_settings('summarization_time_delay')
+            if (time_delay > 0 && n < indexes.length-1) {  // delay all except the last
+
+                // check if summarization was stopped by the user during summarization
+                if (STOP_SUMMARIZATION) {
+                    log('Summarization stopped');
+                    break;
+                }
+
+                debug(`Delaying generation by ${time_delay} seconds`)
+                if (show_progress) progress_bar('summarize', null, null, "Delaying")
+                await new Promise((resolve) => {
+                    SUMMARIZATION_DELAY_TIMEOUT = setTimeout(resolve, time_delay * 1000)
+                    SUMMARIZATION_DELAY_RESOLVE = resolve  // store the resolve function to call when cleared
+                });
+            }
+
+            n += 1;
         }
 
-        n += 1;
+        // If any summaries were modified and combined summary settings are enabled, and we meet the threshold
+        // run the combined summary AFTER all individual summaries are complete
+        if (anyModified && get_settings('combined_summary_enabled')) {
+            let run_interval = get_settings('combined_summary_run_interval') || 1;
+            let new_count = get_settings('combined_summary_new_count') || 0;
+            
+            if (new_count >= run_interval) {
+                if (get_settings('show_combined_summary_toast')) {
+                    toast("Generating combined summary after individual summaries...", "info");
+                }
+                
+                // Generate combined summary after individual summaries are done
+                await generate_combined_summary();
+                set_settings('combined_summary_new_count', 0); // reset counter
+            }
+        }
+    } finally {
+        // restore the completion preset and connection profile
+        await set_connection_profile(current_profile);
+        await set_preset(current_preset);
+
+        // remove the progress bar
+        if (show_progress) remove_progress_bar('summarize');
+
+        if (STOP_SUMMARIZATION) {  // check if summarization was stopped
+            STOP_SUMMARIZATION = false;  // reset the flag
+        } else {
+            debug(`Messages summarized: ${indexes.length}`);
+        }
+
+        if (get_settings('block_chat')) {
+            ctx.activateSendButtons();
+        }
+
+        refresh_memory();
+
+        // Update the memory state interface if it's open
+        memoryEditInterface.update_table();
     }
-
-
-    // restore the completion preset and connection profile
-    await set_connection_profile(current_profile);
-    await set_preset(current_preset);
-
-    // remove the progress bar
-    if (show_progress) remove_progress_bar('summarize')
-
-    if (STOP_SUMMARIZATION) {  // check if summarization was stopped
-        STOP_SUMMARIZATION = false  // reset the flag
-    } else {
-        debug(`Messages summarized: ${indexes.length}`)
-    }
-
-    if (get_settings('block_chat')) {
-        ctx.activateSendButtons();
-    }
-
-    refresh_memory()
-
-    // Update the memory state interface if it's open
-    memoryEditInterface.update_table()
 }
 async function summarize_message(index) {
     // Summarize a message given the chat index, replacing any existing memories
@@ -2879,7 +3177,7 @@ async function summarize_message(index) {
     memoryEditInterface.update_message_visuals(index, null, false, "Summarizing...")
 
     // If the most recent message, scroll to the bottom to get the summary in view.
-    if (index === chat.length - 1) {
+    if (index === context.chat.length - 1) {
         scrollChatToBottom();
     }
 
@@ -2889,17 +3187,66 @@ async function summarize_message(index) {
     // summarize it
     let summary;
     let err = null;
-    try {
-        debug(`Summarizing message ${index}...`)
-        summary = await summarize_text(prompt)
-    } catch (e) {
-        if (e === "Clicked stop button") {  // summarization was aborted
-            err = "Summarization aborted"
-        } else {
-            error(`Unrecognized error when summarizing message ${index}: ${e}`)
+    let retry_count = 0;
+    const max_retries = get_settings('regular_summary_error_detection_retries');
+    
+    while (true) {
+        try {
+            if (retry_count > 0) {
+                debug(`[Validation] Retry attempt ${retry_count}/${max_retries} for message ${index}`);
+                update_message_visuals(index, false, `Summarizing (retry ${retry_count}/${max_retries})...`);
+                memoryEditInterface.update_message_visuals(index, null, false, `Summarizing (retry ${retry_count}/${max_retries})...`);
+            }
+            
+            debug(`Summarizing message ${index}...`)
+            summary = await summarize_text(prompt);
+            
+            // Validate the summary if error detection is enabled
+            if (get_settings('error_detection_enabled') && 
+                get_settings('regular_summary_error_detection_enabled')) {
+                
+                const is_valid = await validate_summary(summary, "regular");
+                
+                if (is_valid) {
+                    debug("[Validation] Summary validation passed");
+                    break; // Valid summary, exit the loop
+                } else {
+                    retry_count++;
+                    debug(`[Validation] Summary failed validation: "${summary.substring(0, 100)}..."`);
+                    
+                    if (retry_count >= max_retries) {
+                        err = "Failed to generate valid summary after max retries";
+                        summary = null;
+                        
+                        // Mark the message as force-excluded
+                        set_data(message, 'exclude', true);
+                        
+                        // Show toast notification about failure
+                        toast(`Message ${index}: Failed to generate valid summary after ${max_retries} attempts. Message has been excluded from memory.`, "warning");
+                        
+                        debug(`[Validation] Max retries (${max_retries}) reached for message ${index}. Marking as excluded.`);
+                        break; // Max retries reached, give up
+                    }
+                    debug(`[Validation] Retry ${retry_count}/${max_retries} for message ${index}`);
+                    continue; // Retry summarization
+                }
+            } else {
+                // No validation needed
+                break;
+            }
+        } catch (e) {
+            if (e === "Clicked stop button") {  // summarization was aborted
+                err = "Summarization aborted"
+            } else {
+                error(`Unrecognized error when summarizing message ${index}: ${e}`)
+            }
+            summary = null;
+            break;
         }
-        summary = null
     }
+
+    const previouslyHadSummary = Boolean(get_data(message, 'memory'));
+    let wasSummaryModified = false;
 
     if (summary) {
         debug("Message summarized: " + summary)
@@ -2920,6 +3267,10 @@ async function summarize_message(index) {
             summary = parsed_reasoning_object.content  // summary (no prefill)
         }
 
+        // Check if the summary is different from the previous one
+        const currentSummary = get_data(message, 'memory');
+        wasSummaryModified = currentSummary !== summary;
+
         // The summary that is stored is WITHOUT the prefill, regardless of whether there was reasoning.
         // If there is reasoning, it will be stored with the prefill and the prefill will be empty
 
@@ -2929,7 +3280,14 @@ async function summarize_message(index) {
         set_data(message, 'edited', false);  // clear the error message
         set_data(message, 'prefill', reasoning ? "" : get_settings('prefill'))  // store prefill if there was no reasoning.
         set_data(message, 'reasoning', reasoning)
-        set_settings('combined_summary_new_count', (get_settings('combined_summary_new_count') || 0) + 1);
+        
+        // When regenerating a summary, make sure it's eligible for combining again
+        set_data(message, 'combined_summary_included', false);
+        
+        // Only increment combined summary count if this is a new summary or an updated one
+        if (!previouslyHadSummary || wasSummaryModified) {
+            set_settings('combined_summary_new_count', (get_settings('combined_summary_new_count') || 0) + 1);
+        }
     } else {  // generation failed
         error(`Failed to summarize message ${index} - generation failed.`);
         set_data(message, 'error', err || "Summarization failed");  // store the error message
@@ -2944,9 +3302,11 @@ async function summarize_message(index) {
     memoryEditInterface.update_message_visuals(index, null, false)
 
     // If the most recent message, scroll to the bottom
-    if (index === chat.length - 1) {
+    if (index === context.chat.length - 1) {
         scrollChatToBottom()
     }
+    
+    return { success: !!summary, modified: wasSummaryModified };
 }
 async function summarize_text(prompt) {
     // get size of text
@@ -3261,12 +3621,13 @@ async function refresh_memory() {
     let short_injection = get_short_memory();
 
     // --- Combined Summary Injection ---
-    let run_interval = get_settings('combined_summary_run_interval') || 1;
-    let new_count = get_settings('combined_summary_new_count') || 0;
+    // Don't generate combined summary here, just load the existing one
+    const combined_summary = load_combined_summary();
     let combined_injection = "";
-    if (get_settings('combined_summary_enabled') && new_count >= run_interval) {
-        combined_injection = await generate_combined_summary();
-        set_settings('combined_summary_new_count', 0); // reset counter
+    
+    if (get_settings('combined_summary_enabled') && combined_summary) {
+        let template = get_settings('combined_summary_template');
+        combined_injection = ctx.substituteParamsExtended(template, {[generic_memories_macro]: combined_summary});
     }
     // --- END Combined Summary Injection ---
 
@@ -3479,6 +3840,41 @@ async function on_chat_event(event=null, data=null) {
 function initialize_settings_listeners() {
     log("Initializing settings listeners")
 
+        // Error detection section
+    bind_setting('#error_detection_enabled', 'error_detection_enabled', 'boolean');
+    bind_setting('#regular_summary_error_detection_enabled', 'regular_summary_error_detection_enabled', 'boolean');
+    bind_setting('#combined_summary_error_detection_enabled', 'combined_summary_error_detection_enabled', 'boolean');
+    bind_setting('#regular_summary_error_detection_retries', 'regular_summary_error_detection_retries', 'number');
+    bind_setting('#combined_summary_error_detection_retries', 'combined_summary_error_detection_retries', 'number');
+    bind_setting('#regular_summary_error_detection_preset', 'regular_summary_error_detection_preset', 'text');
+    bind_setting('#combined_summary_error_detection_preset', 'combined_summary_error_detection_preset', 'text');
+    bind_setting('#regular_summary_error_detection_prefill', 'regular_summary_error_detection_prefill', 'text');
+    bind_setting('#combined_summary_error_detection_prefill', 'combined_summary_error_detection_prefill', 'text');
+    
+    bind_function('#edit_regular_summary_error_detection_prompt', async () => {
+        let description = `
+Configure the prompt used to verify that regular summaries meet your criteria.
+The prompt should return "VALID" for acceptable summaries and "INVALID" for unacceptable ones.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{summary}}:</b> The generated summary to validate.</li>
+</ul>`;
+        get_user_setting_text_input('regular_summary_error_detection_prompt', 'Edit Regular Summary Error Detection Prompt', description);
+    });
+    
+    bind_function('#edit_combined_summary_error_detection_prompt', async () => {
+        let description = `
+Configure the prompt used to verify that combined summaries meet your criteria.
+The prompt should return "VALID" for acceptable summaries and "INVALID" for unacceptable ones.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{summary}}:</b> The generated combined summary to validate.</li>
+</ul>`;
+        get_user_setting_text_input('combined_summary_error_detection_prompt', 'Edit Combined Summary Error Detection Prompt', description);
+    });
+
     bind_setting('#combined_summary_run_interval', 'combined_summary_run_interval', 'number');
     bind_setting('#auto_hide_message_age', 'auto_hide_message_age', 'number', () => refresh_memory());
     bind_setting('#show_combined_summary_toast', 'show_combined_summary_toast', 'boolean');
@@ -3645,6 +4041,33 @@ Available Macros:
     // --- END Combined Summary Settings ---
 
     refresh_settings()
+}
+
+async function update_error_detection_preset_dropdown() {
+    // Set the completion preset dropdown for error detection
+    let $regular_preset_select = $(`.${settings_content_class} #regular_summary_error_detection_preset`);
+    let $combined_preset_select = $(`.${settings_content_class} #combined_summary_error_detection_preset`);
+    let regular_preset = get_settings('regular_summary_error_detection_preset');
+    let combined_preset = get_settings('combined_summary_error_detection_preset');
+    let preset_options = await get_presets();
+    
+    // Update regular summary error detection preset dropdown
+    $regular_preset_select.empty();
+    $regular_preset_select.append(`<option value="">Same as Summary</option>`);
+    for (let option of preset_options) {
+        $regular_preset_select.append(`<option value="${option}">${option}</option>`);
+    }
+    $regular_preset_select.val(regular_preset);
+    $regular_preset_select.off('click').on('click', () => update_error_detection_preset_dropdown());
+    
+    // Update combined summary error detection preset dropdown
+    $combined_preset_select.empty();
+    $combined_preset_select.append(`<option value="">Same as Combined Summary</option>`);
+    for (let option of preset_options) {
+        $combined_preset_select.append(`<option value="${option}">${option}</option>`);
+    }
+    $combined_preset_select.val(combined_preset);
+    $combined_preset_select.off('click').on('click', () => update_error_detection_preset_dropdown());
 }
 
 function initialize_message_buttons() {
