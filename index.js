@@ -67,12 +67,17 @@ const combined_memory_macro = `combined_memory`;
 const default_combined_template = `[Following is a combined summary of recent events]:\n{{${generic_memories_macro}}}\n`;
 const default_combined_summary_prompt = `You are a summarization assistant. Combine the following JSON array of summaries into a single, concise summary, removing repetition and redundant information. Use no more than {{words}} words. Past tense only. Names included when possible.
 
+{{#if previous_combined_summary}}
+Following is the previous overall summary. Use this as a base, expanding on it and updating anything which has since changed:
+{{previous_combined_summary}}
+{{/if}}
+
 {{#if history}}
-Following is a history of summaries for context:
+Following is a history of full chat messages and/or their summaries for context:
 {{history}}
 {{/if}}
 
-Following is a JSON array of summaries to combine:
+Following is a JSON array of message summaries in chronological order:
 {{message}}
 `;
 
@@ -244,16 +249,21 @@ async function create_combined_summary_prompt() {
     let words = await get_combined_summary_preset_max_tokens();
     let previous_summary = load_combined_summary();
 
-    // Add previous summary as "base" if it exists
-    let base_summary_section = "";
-    if (previous_summary) {
-        base_summary_section = `\nPrevious combined summary (use as a base, expand or modify as necessary):\n${previous_summary}\n`;
-    }
-
-    prompt = ctx.substituteParamsExtended(prompt, {"words": words});
-    prompt = substitute_conditionals(prompt, {"message": summaries, "history": ""});
-    prompt = substitute_params(prompt, {"message": summaries, "history": ""});
-    prompt = formatInstructModeChat("", prompt + base_summary_section, false, true, "", "", "", null);
+    prompt = ctx.substituteParamsExtended(prompt, {
+        "words": words,
+        "previous_combined_summary": previous_summary || ""
+    });
+    prompt = substitute_conditionals(prompt, {
+        "message": summaries,
+        "history": "",
+        "previous_combined_summary": previous_summary || ""
+    });
+    prompt = substitute_params(prompt, {
+        "message": summaries,
+        "history": "",
+        "previous_combined_summary": previous_summary || ""
+    });
+    prompt = formatInstructModeChat("", prompt, false, true, "", "", "", null);
     prompt = `${prompt}\n${get_settings('combined_summary_prefill')}`;
     return prompt;
 }
@@ -3621,8 +3631,9 @@ Available Macros:
 Available Macros:
 <ul style="text-align: left; font-size: smaller;">
     <li><b>{{message}}:</b> The concatenated summaries.</li>
-    <li><b>{{history}}:</b> The message history as configured.</li>
+    <li><b>{{history}}:</b> The message history (chat messages and/or summaries) as configured in 'Message History'.</li>
     <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset (Currently: ${max_tokens}).</li>
+    <li><b>{{previous_combined_summary}}:</b> The previously generated combined summary, if one exists..</li>
 </ul>
 `;
         get_user_setting_text_input('combined_summary_prompt', 'Edit Combined Summary Prompt', description);
