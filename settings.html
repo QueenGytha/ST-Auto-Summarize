@@ -455,6 +455,15 @@
                 <input id="regular_summary_error_detection_prompt" type="hidden" />
                 <input id="combined_summary_error_detection_prompt" type="hidden" />
 
+                <!-- Auto-Hide -->
+                <hr>
+                <h4 class="textAlignCenter">Auto-Hide</h4>
+                <label title="Automatically hide (exclude from prompts) messages older than this many messages (set -1 to disable)" class="checkbox_label">
+                    <span>Auto Hide Messages Older Than The Last</span>
+                    <input id="auto_hide_message_age" class="text_pole widthUnset inline_setting" type="number" min="-1" max="9999" />
+                    <span>(-1 to disable)</span>
+                </label>
+
                 <!-- Misc. -->
                 <hr>
                 <h4 class="textAlignCenter">Misc.</h4>
@@ -476,11 +485,6 @@
                 <label title="Uses a global on/off state shared between all chats with this enabled. When unchecked, turning the extension on/off only applies to active chat." class="checkbox_label">
                     <input id="use_global_toggle_state" type="checkbox" />
                     <span>Use Global Toggle State</span>
-                </label>
-
-                <label title="Automatically hide (exclude from prompts) messages older than this many messages (set -1 to disable)" class="checkbox_label">
-                    <input id="auto_hide_message_age" class="text_pole widthUnset inline_setting" type="number" min="-1" max="9999" />
-                    <span>Auto Hide Messages Older Than</span>
                 </label>
 
                 <div class="flex-container justifyspacebetween alignitemscenter">

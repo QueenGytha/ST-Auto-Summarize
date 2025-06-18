@@ -26,6 +26,19 @@
     width: 100%;
 }
 
+.auto_summarize_memory_settings_content h4.textAlignCenter {
+    color: #2e8bcb; /* Choose your preferred color */
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    letter-spacing: 0.03em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-bottom: 2px solid #2e8bcb;
+    padding-bottom: 0.2em;
+}
+
 /* add a scrollbar to the popout */
 #qmExtensionPopout {
     overflow: auto;
