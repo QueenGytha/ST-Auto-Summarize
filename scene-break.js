@@ -126,11 +126,33 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     // --- Hyperlink handler ---
     $sceneBreak.find('.scene-start-link').on('click', function () {
         const mesid = $(this).data('mesid');
-        const $target = $(`div[mesid="${mesid}"]`);
+        let $target = $(`div[mesid="${mesid}"]`);
         if ($target.length) {
-            $('html, body').animate({ scrollTop: $target.offset().top - 50 }, 300);
+            // Scroll the #chat container so the target is near the top
+            const $chat = $('#chat');
+            const chatOffset = $chat.offset()?.top ?? 0;
+            const targetOffset = $target.offset()?.top ?? 0;
+            const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - 20; // 20px padding
+            $chat.animate({ scrollTop }, 300);
+
             $target.addClass('scene-highlight');
             setTimeout(() => $target.removeClass('scene-highlight'), 1200);
+        } else {
+            // fallback: scroll to top to try to load more messages
+            const $chat = $('#chat');
+            $chat.scrollTop(0);
+            setTimeout(() => {
+                $target = $(`div[mesid="${mesid}"]`);
+                if ($target.length) {
+                    const chatOffset = $chat.offset()?.top ?? 0;
+                    const targetOffset = $target.offset()?.top ?? 0;
+                    const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - 20;
+                    $chat.animate({ scrollTop }, 300);
+
+                    $target.addClass('scene-highlight');
+                    setTimeout(() => $target.removeClass('scene-highlight'), 1200);
+                }
+            }, 500);
         }
     });
 
