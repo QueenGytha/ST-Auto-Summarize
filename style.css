@@ -332,9 +332,9 @@ dialog:has(#auto_summarize_memory_state_interface) {
 /* Scene break visually selected (clicked/focused) */
 .auto_summarize_scene_break_div.scene-break-selected,
 .auto_summarize_scene_break_div.scene-break-selected * {
-    background: var(--white30a, #e6f2ff) !important;
+    background: rgba(0,0,0,0.12) !important; /* Matches typical SillyTavern selection highlight */
     border-color: #ffd700 !important;
-    color: #222 !important;
+    color: var(--auto_summarize_long, #4682B4) !important;
     box-shadow: 0 0 0 2px #ffd700;
     outline: none;
     font-style: normal;

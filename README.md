@@ -224,3 +224,4 @@ Try them out if you want.
 - 'Auto' option for injection placement, adjusting based on summary size (tips from https://rentry.org/how2claude#summarization)
 - Version the individual/combined summaries, with the option to choose between them. Including some screen for ease of viewing
 - The validation prompts have a very large false positive rate, due to meta-commentary eg 'here is the summary:'. Possible solution: convert summaries to JSON objects for ease of validation. This will also be useful later, in portioning out what goes into a summary, vs into a lorebook
+- A navigator bar to easily find the various marked scenes
