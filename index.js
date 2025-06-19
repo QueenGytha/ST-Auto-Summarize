@@ -27,6 +27,12 @@ import { commonEnumProviders } from '../../../slash-commands/SlashCommandCommonE
 import { getRegexScripts } from '../../../../scripts/extensions/regex/index.js'
 import { runRegexScript } from '../../../../scripts/extensions/regex/engine.js'
 
+import {
+    addSceneBreakButton,
+    bindSceneBreakButton,
+    renderAllSceneBreaks
+} from './scene-break.js';
+
 export { MODULE_NAME };
 
 // THe module name modifies where settings are stored, where information is stored on message objects, macros, etc.
@@ -4571,6 +4577,9 @@ jQuery(async function () {
     initialize_slash_commands();
     initialize_menu_buttons();
 
+    addSceneBreakButton();
+    bindSceneBreakButton(get_message_div, getContext, set_data, get_data, saveChatDebounced);
+
     // ST event listeners
     let ctx = getContext();
     let eventSource = ctx.eventSource;
@@ -4583,6 +4592,13 @@ jQuery(async function () {
     eventSource.on(event_types.MESSAGE_SWIPED, (id) => on_chat_event('message_swiped', id));
     eventSource.on(event_types.CHAT_CHANGED, () => on_chat_event('chat_changed'));
     eventSource.on(event_types.MORE_MESSAGES_LOADED, refresh_memory)
+    eventSource.on(event_types.MORE_MESSAGES_LOADED, () => {
+    refresh_memory();
+    renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
+    });
+    eventSource.on(event_types.CHAT_CHANGED, () => {
+        renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
+    });
     eventSource.on('groupSelected', set_character_enabled_button_states)
     eventSource.on(event_types.GROUP_UPDATED, set_character_enabled_button_states)
 

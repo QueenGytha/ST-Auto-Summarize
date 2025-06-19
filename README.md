@@ -1,5 +1,5 @@
 Forked from SillyTavern-MessageSummarize for the original per-message summarization code.  
-https://raw.githubusercontent.com/qvink/SillyTavern-MessageSummarize/
+https://github.com/qvink/SillyTavern-MessageSummarize/
 
 ---
 
@@ -55,11 +55,6 @@ https://raw.githubusercontent.com/qvink/SillyTavern-MessageSummarize/
 - To edit a summary, click on the summary text directly or click the "pen" icon in the message button menu.
 - To perform actions on multiple summaries at once, go to the config and click "Edit Memory". Here you can filter for specific memories or manually select memories to modify.
 - To only summarize certain characters in a group chat, open the group chat edit menu and scroll down to the member list. Click the glowing "brain" icon to toggle whether that character will be automatically summarized (if you have auto-summarization enabled).
-
----
-
-### How to use the Dev branch
-_See the main repo for up-to-date instructions on using the dev branch if needed._
 
 ---
 
@@ -210,9 +205,7 @@ Try them out if you want.
 - **The summaries are too long:** You can select a custom completion preset in the settings to use for summarizations, and that can be used to set a maximum token length after which generation will be cut off. You can also use the {{words}} macro in the summarization prompt to try and guide the LLM according to that token length, though LLMs cannot actually count words so it's really just a suggestion.
 - **Incomplete sentences aren't getting trimmed even though the option is checked in the advanced formatting settings:** If you are using a different connection profile for summaries, note that instruction templates are part of that so the option needs to be checked in the template used for that connection profile.
 - **When I use a different completion preset for summaries, my regular completion preset gets changed after summarizing:** When a summary is generated, we actually have to switch completion presets temporarily which discards any unsaved changes you might have made to your current completion preset. This is just how ST does things. The same applies to connection profiles (which in turn affects instruction templates.)
-- **Just updated and things are broken:** try reloading the page first, and make sure you are on the most recent version of ST. If you are on the dev branch of this extension, you must also be on the staging branch of ST.
-
-If it's something else, please turn on "Debug Mode" in the settings and send me the output logs from your browser console and raise an issue or message on discord.
+- **Just updated and things are broken:** try reloading the page first, and make sure you are on the most recent version of ST.
 
 ---
 
@@ -223,8 +216,11 @@ If it's something else, please turn on "Debug Mode" in the settings and send me 
 ---
 
 ### Todo
-
-- Detecting when there is a scene change
+- Manually designating a scene change
 - Examining per scene, with the option of creating a summary per scene
+- Auto-hide older than the last X scenes (with error detection if hidden before summarization)
+- Automatically detecting when there is a scene change
 - Automatically creating and updating lorebooks
+- 'Auto' option for injection placement, adjusting based on summary size (tips from https://rentry.org/how2claude#summarization)
+- Version the individual/combined summaries, with the option to choose between them. Including some screen for ease of viewing
 - The validation prompts have a very large false positive rate, due to meta-commentary eg 'here is the summary:'. Possible solution: convert summaries to JSON objects for ease of validation. This will also be useful later, in portioning out what goes into a summary, vs into a lorebook

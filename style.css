@@ -21,9 +21,16 @@
     pointer-events: none;
 }
 
+.auto_summarize_scene_break_hidden { display: none !important; }
+
 /* tables for formatting settings */
 .auto_summarize_memory_settings_content table {
     width: 100%;
+}
+
+.scene-highlight {
+    box-shadow: 0 0 0 3px #ffd700, 0 0 10px #ffd700;
+    transition: box-shadow 0.3s;
 }
 
 .auto_summarize_memory_settings_content h4.textAlignCenter {
@@ -73,11 +80,26 @@ input.inline_setting     {
 Div displaying the memory on a message.
 By default, text is greyed to indicate that is it not injected.
 */
-.auto_summarize_memory_display {
-    margin: 0 0 5px 0;
+.auto_summarize_memory_display,
+.auto_summarize_scene_break_div {
+    background: transparent !important;
+    color: grey;
     font-size: small;
     font-style: italic;
-    color: grey;
+    border: none;
+    box-shadow: none;
+    padding-right: 2.5em;
+    box-sizing: border-box;
+    background-clip: padding-box;
+    letter-spacing: 0.03em;
+    margin: 0 0 5px 0;
+}
+
+/* If you want to keep the border lines, but not white, adjust here: */
+.auto_summarize_scene_break_border {
+    border-top: 1px solid var(--auto_summarize_long) !important;
+    border-bottom: 1px solid var(--auto_summarize_long) !important;
+    background: transparent !important;
 }
 
 /* to style short-term memories. */
@@ -98,7 +120,7 @@ By default, text is greyed to indicate that is it not injected.
 }
 /* to style memories marked for long-term, but are past the context limit */
 .auto_summarize_old_memory {
-    color: var(--auto_summarize_old)
+    color: var(--auto_summarize_old);
 }
 .auto_summarize_old_memory.auto_summarize_lagging_memory {
     color: rgba(from var(--auto_summarize_old) r g b / var(--auto_summarize_redundant_opacity));
@@ -106,7 +128,7 @@ By default, text is greyed to indicate that is it not injected.
 }
 /* to style memories that are force-excluded */
 .auto_summarize_exclude_memory {
-    color: var(--auto_summarize_excluded)
+    color: var(--auto_summarize_excluded);
 }
 
 /* Style the message buttons, separating them from the rest */
@@ -254,4 +276,110 @@ dialog:has(#auto_summarize_memory_state_interface) {
 
 #auto_summarize_memory_state_interface #selected_count {
     font-weight: bold;
+}
+
+/* Scene break formatting now matches long-term memory formatting */
+.auto_summarize_scene_break_div,
+.auto_summarize_scene_break_div * {
+    background: transparent !important;
+    color: grey;
+    font-size: small;
+    font-style: italic;
+    border: none;
+    box-shadow: none;
+    padding-right: 2.5em;
+    box-sizing: border-box;
+    background-clip: padding-box;
+    letter-spacing: 0.03em;
+    margin: 0 0 5px 0;
+}
+
+/* Scene break: visible (active) state - matches long-term memory */
+.auto_summarize_scene_break_div.scene-break-visible,
+.auto_summarize_scene_break_div.scene-break-visible * {
+    color: var(--auto_summarize_long) !important;
+    font-style: normal;
+    border: none;
+    background: transparent !important;
+}
+
+/* Scene break: hidden (inactive) state - matches excluded/greyed */
+.auto_summarize_scene_break_div.scene-break-hidden,
+.auto_summarize_scene_break_div.scene-break-hidden * {
+    color: grey !important;
+    font-style: italic;
+    border: none;
+    background: transparent !important;
+    opacity: 0.6;
+}
+
+/* Hide the summary content when hidden */
+.auto_summarize_scene_break_div.scene-break-hidden .scene-break-content {
+    display: none !important;
+}
+
+/* Scene break border only when visible */
+.auto_summarize_scene_break_div.scene-break-visible.auto_summarize_scene_break_border {
+    border-top: 1px solid var(--auto_summarize_long) !important;
+    border-bottom: 1px solid var(--auto_summarize_long) !important;
+}
+
+.auto_summarize_scene_break_div.scene-break-hidden.auto_summarize_scene_break_border {
+    border-top: none !important;
+    border-bottom: none !important;
+}
+
+/* Scene break visually selected (clicked/focused) */
+.auto_summarize_scene_break_div.scene-break-selected,
+.auto_summarize_scene_break_div.scene-break-selected * {
+    background: var(--white30a, #e6f2ff) !important;
+    border-color: #ffd700 !important;
+    color: #222 !important;
+    box-shadow: 0 0 0 2px #ffd700;
+    outline: none;
+    font-style: normal;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+/* Scene break name input and summary box styling */
+.auto_summarize_scene_break_div input.scene-break-name {
+    font-size: 1em;
+    font-weight: bold;
+    color: inherit;
+    margin-bottom: 0.5em;
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    transition: color 0.2s;
+}
+
+.auto_summarize_scene_break_div textarea.scene-summary-box {
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    padding: 0.5em;
+    min-height: 2em;
+    width: 100%;
+    resize: vertical;
+    color: inherit;
+    font-size: 1em;
+    font-style: inherit;
+    transition: color 0.2s;
+}
+
+/* Scene break link styling */
+.auto_summarize_scene_break_div .scene-start-link {
+    color: var(--auto_summarize_long);
+    text-decoration: underline dotted;
+    cursor: pointer;
+}
+
+.auto_summarize_scene_break_div .scene-start-link:hover {
+    color: #ffd700;
+    text-decoration: underline solid;
+}
+
+/* Hide scene break when not visible */
+.auto_summarize_scene_break_hidden {
+    display: none !important;
 }
