@@ -369,7 +369,9 @@ class MemoryEditInterface {
     update_selected() {
         let $checkboxes = this.$table_body.find(`input.interface_message_select`)
         for (let checkbox of $checkboxes) {
-            $(checkbox).prop('checked', this.selected.has(Number(checkbox.value)))
+            if ('value' in checkbox) {
+                $(checkbox).prop('checked', this.selected.has(Number(checkbox.value)));
+            }
         }
         this.$counter.text(this.selected.size)
         if (this.selected.size > 0) {
@@ -379,7 +381,7 @@ class MemoryEditInterface {
         } else {
             this.$counter.css('color', 'unset')
             this.$mass_select_checkbox.prop('checked', false)
-            this.$bulk_actions.attr('disabled', true);
+            this.$bulk_actions.prop('disabled', false);
         }
     }
     update_filter_counts() {
@@ -450,16 +452,14 @@ class MemoryEditInterface {
     }
     toggle_selected(indexes, value=null) {
         if (value === null) {
-            let all_selected = true
-            for (let i of indexes) {
-                if (all_selected && !this.selected.has(i)) {
-                    all_selected = false
-                }
-                this.selected.add(i)
-            }
+            let all_selected = indexes.every(i => this.selected.has(i));
             if (all_selected) {
                 for (let i of indexes) {
-                    this.selected.delete(i)
+                    this.selected.delete(i);
+                }
+            } else {
+                for (let i of indexes) {
+                    this.selected.add(i);
                 }
             }
         } else if (value === true) {
