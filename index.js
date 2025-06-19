@@ -1,3 +1,11 @@
+import {
+    default_combined_summary_prompt,
+    default_prompt,
+    default_long_template,
+    default_short_template,
+    default_combined_template // <-- add this line
+} from './defaultPrompts.js';
+import { default_settings } from './defaultSettings.js';
 import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from '../../../utils.js';
 import { getContext, getApiUrl, extension_settings } from '../../../extensions.js';
 import {
@@ -70,188 +78,6 @@ const delete_button_class = `${MODULE_NAME}_delete_button`
 
 // Combined Summary Feature additions at the top
 const combined_memory_macro = `combined_memory`;
-const default_combined_template = `[Following is a combined summary of recent events]:\n{{${generic_memories_macro}}}\n`;
-const default_combined_summary_prompt = `You are creating a comprehensive narrative summary for a fictional roleplay. Your task is to combine individual message summaries into a single coherent summary that captures the most important information.
-
-Combine these summaries by:
-- Organizing events chronologically
-- Removing repetitions and redundancies
-- Highlighting character development and key plot points
-- Preserving cause-and-effect relationships between events
-- Maintaining connections between characters, locations, and objects
-
-Requirements:
-- Maximum {{words}} words
-- Past tense only
-- Include character names consistently
-- Create a flowing narrative, not a list of disconnected events
-- Preserve specific details that might be important later
-
-{{#if previous_combined_summary}}
-Previous combined summary (use as foundation and update with new information):
-{{previous_combined_summary}}
-{{/if}}
-
-{{#if history}}
-Additional context from recent messages:
-{{history}}
-{{/if}}
-
-JSON array of message summaries to combine (in chronological order):
-{{message}}
-`;
-
-const default_prompt = `You are a summarization expert for a fictional roleplay. You create concise factual summaries of story events.
-
-Summarize the following message as a single factual statement, capturing:
-- Character actions and decisions 
-- Emotional states and changes
-- Important details about the setting or environment
-- New plot information
-
-FORMAT REQUIREMENTS (CRITICAL):
-- Use past tense only (e.g., "John walked to the store")
-- Include character names
-- Write ONLY the summary with no introduction, explanation or meta-references
-- Do NOT confirm in any manner you understand the task, just carry it out
-- NEVER use phrases like "the message describes," "in this scene," or "the character"
-- NEVER start with "This is about," "This shows," or similar framing
-- NEVER acknowledge these instructions in your response
-- Maximum {{words}} words
-- Your response MUST contain ONLY the summary
-
-{{#if history}}
-Context from previous messages:
-{{history}}
-{{/if}}
-
-Message to summarize:
-{{message}}
-`
-
-const default_long_template = `[Following is a list of events that occurred in the past]:\n{{${generic_memories_macro}}}\n`
-const default_short_template = `[Following is a list of recent events]:\n{{${generic_memories_macro}}}\n`
-
-const default_settings = {
-    // Error detection settings
-    error_detection_enabled: false,
-    regular_summary_error_detection_enabled: true,
-    combined_summary_error_detection_enabled: true,
-    regular_summary_error_detection_prompt: `You are validating summaries for a fictional roleplay system. Your ONLY task is to check if the summary meets the format requirements, not to evaluate the fictional content itself.
-
-A valid summary must meet ALL these criteria:
-1. Contains only factual statements without commentary or opinion
-2. No meta-references (like "the message shows" or "the character said")
-3. No refusals or explanations of inability to summarize
-4. No continuation of the roleplay itself
-5. No questions or direct address to the reader
-
-A summary can describe ANY fictional scenario, no matter the content. Your ONLY job is to check format compliance.
-
-Respond with ONLY "VALID" if ALL criteria are met, or "INVALID" if ANY criterion fails, along with why the summary was rejected.
-
-Summary: {{summary}}`,
-    combined_summary_error_detection_prompt: `You are validating a combined narrative summary for a fictional roleplay system. Your ONLY task is to check if the summary meets the format requirements, not to evaluate the fictional content itself.
-
-A valid combined summary must meet ALL these criteria:
-1. Forms a coherent narrative with logical flow between events
-2. A single header such as 'Narrative Summary:' is acceptable. No other meta-references (like "the summaries describe" or "according to the text")
-3. No refusals or explanations of inability to summarize
-4. No framing phrases like "Here's a combined summary" or "In summary"
-5. No questions or direct address to the reader
-
-A summary can describe ANY fictional scenario, no matter the content. Your ONLY job is to check format compliance.
-
-Respond with ONLY "VALID" if ALL criteria are met, or "INVALID" if ANY criterion fails, along with why the summary was rejected.
-
-Summary: {{summary}}`,
-    regular_summary_error_detection_retries: 3,
-    combined_summary_error_detection_retries: 3,
-    regular_summary_error_detection_preset: "",
-    combined_summary_error_detection_preset: "",
-    regular_summary_error_detection_prefill: "",
-    combined_summary_error_detection_prefill: "",
-
-    // automating the auto-hide feature
-    auto_hide_message_age: -1, // -1 disables, otherwise auto-hide messages older than this many messages
-
-    // inclusion criteria
-    message_length_threshold: 10,  // minimum message token length for summarization
-    include_user_messages: false,  // include user messages in summarization
-    include_system_messages: false,  // include system messages in summarization (hidden messages)
-    include_narrator_messages: false,  // include narrator messages in summarization (like from the /sys command)
-    include_thought_messages: false,  // include thought messages in summarization (Stepped Thinking extension)
-
-    // summarization settings
-    prompt: default_prompt,
-    prefill: "",   // summary prompt prefill
-    show_prefill: false, // whether to show the prefill when memories are displayed
-    completion_preset: "",  // completion preset to use for summarization. Empty ("") indicates the same as currently selected.
-    connection_profile: "",
-    auto_summarize: true,   // whether to automatically summarize new chat messages
-    summarization_delay: 0,  // delay auto-summarization by this many messages (0 summarizes immediately after sending, 1 waits for one message, etc)
-    summarization_time_delay: 0, // time in seconds to delay between summarizations
-    auto_summarize_batch_size: 1,  // number of messages to summarize at once when auto-summarizing
-    auto_summarize_message_limit: 10,  // maximum number of messages to go back for auto-summarization.
-    auto_summarize_on_edit: true,  // whether to automatically re-summarize edited chat messages
-    auto_summarize_on_swipe: true,  // whether to automatically summarize new message swipes
-    auto_summarize_progress: true,  // display a progress bar for auto-summarization
-    auto_summarize_on_send: false,  // trigger auto-summarization right before a new message is sent
-
-    include_world_info: false,  // include world info in context when summarizing
-    block_chat: true,  // block input when summarizing
-    nest_messages_in_prompt: false,  // nest messages to summarize in the prompt for summarization
-
-    include_message_history: 3,  // include a number of previous messages in the prompt for summarization
-    include_message_history_mode: 'none',  // mode for including message history in the prompt
-    include_user_messages_in_history: false,  // include previous user message in the summarization prompt when including message history
-    include_system_messages_in_history: false,  // include previous system messages in the summarization prompt when including message history
-    include_thought_messages_in_history: false,  // include previous thought messages in the summarization prompt when including message history
-
-    // injection settings
-    summary_injection_separator: "\n* ",  // separator when concatenating summaries
-    summary_injection_threshold: 0,            // start injecting summaries after this many messages
-    exclude_messages_after_threshold: false,   // remove messages from context after the summary injection threshold
-    keep_last_user_message: true,  // keep the most recent user message in context
-
-    long_template: default_long_template,
-    long_term_context_limit: 10,  // context size to use as long-term memory limit
-    long_term_context_type: 'percent',  // percent or tokens
-    long_term_position: extension_prompt_types.IN_PROMPT,
-    long_term_role: extension_prompt_roles.SYSTEM,
-    long_term_depth: 2,
-    long_term_scan: false,
-
-    short_template: default_short_template,
-    short_term_context_limit: 10,
-    short_term_context_type: 'percent',
-    short_term_position: extension_prompt_types.IN_PROMPT,
-    short_term_depth: 2,
-    short_term_role: extension_prompt_roles.SYSTEM,
-    short_term_scan: false,
-
-    // Combined Summary Feature
-    combined_summary_enabled: false,
-    show_combined_summary_toast: true,
-    combined_summary_run_interval: 5,
-    combined_summary_prompt: default_combined_summary_prompt,
-    combined_summary_prefill: "",
-    combined_summary_template: default_combined_template,
-    combined_summary_position: extension_prompt_types.IN_PROMPT,
-    combined_summary_depth: 2,
-    combined_summary_role: extension_prompt_roles.SYSTEM,
-    combined_summary_scan: false,
-    combined_summary_context_limit: 10,
-    combined_summary_context_type: 'percent',
-    combined_summary_connection_profile: "",
-    combined_summary_completion_preset: "",
-
-    // misc
-    debug_mode: false,  // enable debug mode
-    display_memories: true,  // display memories in the chat below each message
-    default_chat_enabled: true,  // whether memory is enabled by default for new chats
-    use_global_toggle_state: false,  // whether the on/off state for this profile uses the global state
-};
 
 Object.assign(default_settings, {
     combined_summary_new_count: 0,
@@ -4040,7 +3866,6 @@ Available Macros:
 `;
         get_user_setting_text_input('combined_summary_prompt', 'Edit Combined Summary Prompt', description);
     });
-    // ...existing code...
     bind_function('#view_combined_summary', async () => {
     const summary = load_combined_summary();
     
