@@ -1,7 +1,7 @@
 import {
     get_settings,
     get_memory,
-    summarize_text
+    summarize_text,
 } from './index.js';
 
 export const SCENE_BREAK_KEY = 'scene_break';
@@ -129,6 +129,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         versions = [initialSummary];
         setSceneSummaryVersions(message, set_data, versions);
         setCurrentSceneSummaryIndex(message, set_data, 0);
+        set_data(message, 'scene_summary_memory', initialSummary); // <-- ensure top-level property is set
         saveChatDebounced();
     }
 
@@ -172,6 +173,8 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
 
     // Use the same classes as summary boxes for consistent placement and style
     // Wrap the summary content in a container for easy hiding
+    const isIncluded = get_data(message, 'scene_summary_include') !== false; // default to included
+
     const $sceneBreak = $(`
     <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass}" style="margin:0 0 5px 0;" tabindex="0">
         <div class="sceneBreak-content">
@@ -180,6 +183,12 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
                 Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}
             </div>
             <textarea class="scene-summary-box auto_summarize_memory_text" placeholder="Scene summary...">${sceneSummary}</textarea>
+            <div style="margin-top:0.5em;">
+                <label style="font-size:0.9em;">
+                    <input type="checkbox" class="scene-summary-include-checkbox" ${isIncluded ? 'checked' : ''} />
+                    Include this scene summary in memory injection
+                </label>
+            </div>
             <div class="scene-summary-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
                 <button class="scene-rollback-summary menu_button" title="Go to previous summary"><i class="fa-solid fa-rotate-left"></i> Previous Summary</button>
                 <button class="scene-generate-summary menu_button" title="Generate summary for this scene"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
@@ -216,7 +225,15 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         setSceneSummaryVersions(message, set_data, updatedVersions);
         // Also update the legacy summary field for compatibility
         set_data(message, SCENE_BREAK_SUMMARY_KEY, $(this).val());
+        set_data(message, 'scene_summary_memory', $(this).val()); // <-- ensure top-level property is set
         saveChatDebounced();
+    });
+
+    // --- Include/exclude handler ---
+    $sceneBreak.find('.scene-summary-include-checkbox').on('change', function () {
+        set_data(message, 'scene_summary_include', this.checked);
+        saveChatDebounced();
+        renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
     });
 
     // --- Hyperlink handler ---
@@ -378,6 +395,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         setSceneSummaryVersions(message, set_data, updatedVersions);
         setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
         set_data(message, SCENE_BREAK_SUMMARY_KEY, summary); // update legacy field
+        set_data(message, 'scene_summary_memory', summary); // <-- ensure top-level property is set
         saveChatDebounced();
         renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
     });
@@ -387,7 +405,9 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         let idx = getCurrentSceneSummaryIndex(message, get_data);
         if (idx > 0) {
             setCurrentSceneSummaryIndex(message, set_data, idx - 1);
-            set_data(message, SCENE_BREAK_SUMMARY_KEY, getSceneSummaryVersions(message, get_data)[idx - 1]);
+            let summary = getSceneSummaryVersions(message, get_data)[idx - 1];
+            set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
+            set_data(message, 'scene_summary_memory', summary); // <-- ensure top-level property is set
             saveChatDebounced();
             renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
         }
@@ -398,7 +418,9 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         let idx = getCurrentSceneSummaryIndex(message, get_data);
         if (idx < versions.length - 1) {
             setCurrentSceneSummaryIndex(message, set_data, idx + 1);
-            set_data(message, SCENE_BREAK_SUMMARY_KEY, versions[idx + 1]);
+            let summary = versions[idx + 1];
+            set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
+            set_data(message, 'scene_summary_memory', summary); // <-- ensure top-level property is set
             saveChatDebounced();
             renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
         }
