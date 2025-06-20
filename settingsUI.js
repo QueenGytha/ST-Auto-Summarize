@@ -409,6 +409,10 @@ Available Macros:
         get_user_setting_text_input('scene_summary_prompt', 'Edit Scene Summary Prompt', description);
     });
 
+    // Scene summary context limit and type
+    bind_setting('#scene_summary_context_limit', 'scene_summary_context_limit', 'number');
+    bind_setting('input[name="scene_summary_context_type"]', 'scene_summary_context_type', 'text');
+
     refresh_settings()
 }
 
