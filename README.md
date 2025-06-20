@@ -23,7 +23,8 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - Short-term memory rotates out the most recent message summaries automatically.
 - Long-term memory stores summaries of manually-marked messages beyond the short-term limit.
 - **Combined summary**: Optionally merges all message summaries into a single, coherent narrative summary, removing repetition and highlighting key events. The combined summary can be injected into the prompt at configurable positions and intervals.
-- **Summary validation**: Optionally validates summaries (regular and combined) using a second LLM pass to ensure they meet your format and quality criteria.
+- **Scene summaries**: Optionally generate summaries for scene breaks, with their own prompt, injection, and validation settings.
+- **Summary validation**: Optionally validates summaries (regular, combined, and scene) using a second LLM pass to ensure they meet your format and quality criteria.
 
 **Benefits compared to the built-in summarization:**
 - Summarizing messages individually (as opposed to all at once) gets more accurate summaries and is less likely to miss details.
@@ -39,12 +40,14 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - **Popout config menu**: Customize summarization settings, injection settings, and auto-summarization message inclusion criteria.
 - **Memory editor**: A separate interface for viewing and editing all memories in your chat.
 - **Combined summary**: Optionally generate a single narrative summary from all message summaries, with customizable prompt, template, and validation.
-- **Summary validation**: Optionally validate summaries (regular and combined) using a second LLM pass, with customizable prompt, retries, and preset.
+- **Scene summaries**: Summarize each scene break as a single summary, with customizable prompt, injection, and validation.
+- **Summary validation**: Optionally validate summaries (regular, combined, and scene) using a second LLM pass, with customizable prompt, retries, and preset.
 - **Summaries displayed below messages**: Optionally display summaries in small text below each message, colored according to their status:
   - Green: Included in short-term memory
   - Blue: Marked for long-term memory (included in short-term or long-term memory)
   - Red: Marked for long-term memory, but now out of context
   - Grey: Excluded
+- **Auto-hide**: Automatically exclude messages older than a configurable threshold.
 
 ---
 
@@ -55,6 +58,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - To edit a summary, click on the summary text directly or click the "pen" icon in the message button menu.
 - To perform actions on multiple summaries at once, go to the config and click "Edit Memory". Here you can filter for specific memories or manually select memories to modify.
 - To only summarize certain characters in a group chat, open the group chat edit menu and scroll down to the member list. Click the glowing "brain" icon to toggle whether that character will be automatically summarized (if you have auto-summarization enabled).
+- To manually add or edit scene breaks, use the scene break button in the message menu (if enabled in settings).
 
 ---
 
@@ -72,25 +76,28 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - **Profile Dropdown:** Switch between saved configuration profiles.
 - **Save/Rename/New/Delete/Restore:** Manage your profiles.
 - **Character/Chat Profile:** Set the current profile as default for a character or chat.
+- **Import/Export Profile:** Import or export profiles as JSON files.
 
 #### Summarization Settings
 
 - **Edit Summary Prompt:** Customize the prompt used for summarization.
 - **Preview Summary Prompt:** See a filled-in example using the last message.
 - **Stop Summarization:** Immediately halt any ongoing summarization.
-- **Connection Profile / Completion Preset:** Choose which API and preset to use for summarization.
+- **Connection Profile / Completion Preset:** Choose which API and preset to use for summarization. (Profiles and presets can be set independently for regular, combined, and scene summaries.)
 - **Summary Prefill:** Text to start each summary with.
 - **Include Prefill In Memories:** Show prefill in displayed memories.
 - **Auto Summarize:** Automatically summarize new messages.
 - **Auto Summarize Before Generation:** Summarize before sending a new message.
 - **Auto Summarize Progress Bar:** Show progress when summarizing multiple messages.
 - **Auto Summarize Message Lag/Batch Size/Limit:** Control when and how many messages are summarized at once.
-- **Message History:** Include previous messages or summaries as context for summarization.
+- **Message History:** Include previous messages or summaries as context for summarization. (Configurable mode and count.)
 - **Summarization Time Delay:** Wait between summarizations (for rate-limited APIs).
 - **Re-summarize on Edit/Swipe:** Automatically re-summarize when editing or swiping messages.
 - **Block Chat:** Prevent sending messages while summarizing.
 - **Nest Message in Summary Prompt:** Place the message inside the system prompt (advanced).
 - **Include All Context Content:** Add world info and other context to the summary prompt.
+- **Include User/System/Narrator Messages:** Control which message types are summarized and included in history.
+- **Message Length Threshold:** Only summarize messages above a certain length.
 
 #### Memory Injection Settings
 
@@ -104,6 +111,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - **Context Limit:** How much context (tokens or percent) each memory type can use.
 - **Include in World Info Scanning:** Make memories available for world info scans.
 - **Injection Position/Depth/Role:** Where and how memories are injected into the prompt.
+- **Scan for Memories:** Optionally scan for memories to include in world info or other features.
 
 #### Combined Summary
 
@@ -114,12 +122,22 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - **Combined Completion Preset/Prefill/Context Limit:** Control how the combined summary is generated and injected.
 - **Combined Summary Injection Position/Depth/Role:** Where and how the combined summary is injected into the prompt.
 - **Combined Summary Validation:** Optionally validate the combined summary using a second LLM pass.
+- **Combined Summary Scan:** Optionally scan for combined summaries for world info.
+
+#### Scene Summary
+
+- **Enable Scene Summaries:** Turn on scene-level summarization and injection.
+- **Edit Scene Prompt:** Customize the prompt used for scene summaries.
+- **Scene Completion Preset/Prefill/Context Limit:** Control how scene summaries are generated and injected.
+- **Scene Summary Injection Position/Depth/Role:** Where and how scene summaries are injected into the prompt.
+- **Scene Message History Mode/Count:** Configure which messages and how many are included as context for scene summaries.
+- **Scene Summary Validation:** Optionally validate scene summaries using a second LLM pass.
 
 #### Summary Validation
 
 - **Enable Summary Validation:** Use a second LLM pass to check summary format.
-- **Validate Regular/Combined Summaries:** Enable validation for each type.
-- **Edit Validation Prompt:** Customize the validation criteria for regular and combined summaries.
+- **Validate Regular/Combined/Scene Summaries:** Enable validation for each type.
+- **Edit Validation Prompt:** Customize the validation criteria for regular, combined, and scene summaries.
 - **Validation Completion Preset/Prefill/Max Retries:** Control how validation is performed for each summary type.
 
 #### Auto-Hide
@@ -152,6 +170,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - `/auto_summarize_log_chat`: Logs the current chat to the console.
 - `/auto_summarize_log_settings`: Logs the current extension settings to the console.
 - `/hard_reset`: Resets all extension settings to default.
+- `/scene_summary_injection`: Logs scene summary injection settings, collected indexes, and injection text.
 
 ---
 
@@ -212,12 +231,11 @@ Try them out if you want.
 ### Known Issues
 
 - When editing a message that already has a memory, the memory displayed below the message does not have the right color. This is just a visual bug, and it will correct itself after the next summarization.
+- Validation prompts may have a high false positive rate due to meta-commentary in LLM outputs (see Todo for planned improvements).
 
 ---
 
 ### Todo
-- Manually designating a scene change
-- Examining per scene, with the option of creating a summary per scene
 - Auto-hide older than the last X scenes (with error detection if hidden before summarization)
 - Automatically detecting when there is a scene change
 - Automatically creating and updating lorebooks
