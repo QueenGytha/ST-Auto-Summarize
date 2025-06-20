@@ -41,7 +41,24 @@ export function toggleSceneBreak(index, get_message_div, getContext, set_data, g
     }
 }
 
-// Renders or hides the scene break UI below the message
+// --- Helper functions for versioned scene summaries ---
+function getSceneSummaryVersions(message, get_data) {
+    // Returns the array of summary versions, or an empty array if none
+    return get_data(message, 'scene_summary_versions') || [];
+}
+
+function setSceneSummaryVersions(message, set_data, versions) {
+    set_data(message, 'scene_summary_versions', versions);
+}
+
+function getCurrentSceneSummaryIndex(message, get_data) {
+    return get_data(message, 'scene_summary_current_index') ?? 0;
+}
+
+function setCurrentSceneSummaryIndex(message, set_data, idx) {
+    set_data(message, 'scene_summary_current_index', idx);
+}
+
 export function renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced) {
     const $msgDiv = get_message_div(index);
     if (!$msgDiv?.length) return;
@@ -58,9 +75,26 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
 
     if (!isSet) return;
 
-    // Get persisted values
+    // --- Versioned summaries logic ---
+    let versions = getSceneSummaryVersions(message, get_data);
+    let currentIdx = getCurrentSceneSummaryIndex(message, get_data);
+
+    // If no versions exist, initialize with current summary (for backward compatibility)
+    if (versions.length === 0) {
+        const initialSummary = get_data(message, SCENE_BREAK_SUMMARY_KEY) || '';
+        versions = [initialSummary];
+        setSceneSummaryVersions(message, set_data, versions);
+        setCurrentSceneSummaryIndex(message, set_data, 0);
+        saveChatDebounced();
+    }
+
+    // Clamp currentIdx to valid range
+    if (currentIdx < 0) currentIdx = 0;
+    if (currentIdx >= versions.length) currentIdx = versions.length - 1;
+
+    // Use the current version for display
     const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
-    const sceneSummary = get_data(message, SCENE_BREAK_SUMMARY_KEY) || '';
+    const sceneSummary = versions[currentIdx] || '';
 
     // --- Find the start of the scene (previous VISIBLE scene break or 0) ---
     let startIdx = 0;
@@ -89,15 +123,21 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     // Use the same classes as summary boxes for consistent placement and style
     // Wrap the summary content in a container for easy hiding
     const $sceneBreak = $(`
-        <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass}" style="margin:0 0 5px 0;" tabindex="0">
-            <div class="sceneBreak-content">
-                <input type="text" class="sceneBreak-name auto_summarize_memory_text" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" />
-                <div style="font-size:0.95em; color:inherit; margin-bottom:0.5em;">
-                    Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)
-                </div>
-                <textarea class="scene-summary-box auto_summarize_memory_text" placeholder="Scene summary...">${sceneSummary}</textarea>
+    <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass}" style="margin:0 0 5px 0;" tabindex="0">
+        <div class="sceneBreak-content">
+            <input type="text" class="sceneBreak-name auto_summarize_memory_text" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" />
+            <div style="font-size:0.95em; color:inherit; margin-bottom:0.5em;">
+                Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)
+            </div>
+            <textarea class="scene-summary-box auto_summarize_memory_text" placeholder="Scene summary...">${sceneSummary}</textarea>
+            <div class="scene-summary-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
+                <button class="scene-rollback-summary menu_button" title="Go to previous summary"><i class="fa-solid fa-rotate-left"></i> Previous Summary</button>
+                <button class="scene-generate-summary menu_button" title="Generate summary for this scene"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
+                <button class="scene-rollforward-summary menu_button" title="Go to next summary"><i class="fa-solid fa-rotate-right"></i> Next Summary</button>
+                <span style="align-self:center; font-size:0.9em; color:inherit; margin-left:0.5em;">${versions.length > 1 ? `[${currentIdx + 1}/${versions.length}]` : ''}</span>
             </div>
         </div>
+    </div>
     `);
 
     // === Insert after the summary box, or after .mes_text if no summary box exists ===
@@ -119,6 +159,12 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         saveChatDebounced();
     });
     $sceneBreak.find('.scene-summary-box').on('change blur', function () {
+        // Update the current version in the versions array
+        let updatedVersions = getSceneSummaryVersions(message, get_data).slice();
+        let idx = getCurrentSceneSummaryIndex(message, get_data);
+        updatedVersions[idx] = $(this).val();
+        setSceneSummaryVersions(message, set_data, updatedVersions);
+        // Also update the legacy summary field for compatibility
         set_data(message, SCENE_BREAK_SUMMARY_KEY, $(this).val());
         saveChatDebounced();
     });
@@ -153,6 +199,41 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
                     setTimeout(() => $target.removeClass('scene-highlight'), 1200);
                 }
             }, 500);
+        }
+    });
+
+    // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
+    $sceneBreak.find('.scene-generate-summary').on('click', function(e) {
+        e.stopPropagation();
+        // Create a new blank summary, add to versions, switch to it
+        let updatedVersions = getSceneSummaryVersions(message, get_data).slice();
+        updatedVersions.push('');
+        setSceneSummaryVersions(message, set_data, updatedVersions);
+        setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
+        set_data(message, SCENE_BREAK_SUMMARY_KEY, ''); // update legacy field
+        saveChatDebounced();
+        // Re-render to show the new blank summary
+        renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+    });
+    $sceneBreak.find('.scene-rollback-summary').on('click', function(e) {
+        e.stopPropagation();
+        let idx = getCurrentSceneSummaryIndex(message, get_data);
+        if (idx > 0) {
+            setCurrentSceneSummaryIndex(message, set_data, idx - 1);
+            set_data(message, SCENE_BREAK_SUMMARY_KEY, getSceneSummaryVersions(message, get_data)[idx - 1]);
+            saveChatDebounced();
+            renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+        }
+    });
+    $sceneBreak.find('.scene-rollforward-summary').on('click', function(e) {
+        e.stopPropagation();
+        let versions = getSceneSummaryVersions(message, get_data);
+        let idx = getCurrentSceneSummaryIndex(message, get_data);
+        if (idx < versions.length - 1) {
+            setCurrentSceneSummaryIndex(message, set_data, idx + 1);
+            set_data(message, SCENE_BREAK_SUMMARY_KEY, versions[idx + 1]);
+            saveChatDebounced();
+            renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
         }
     });
 
