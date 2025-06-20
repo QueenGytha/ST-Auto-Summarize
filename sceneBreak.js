@@ -37,13 +37,11 @@ export function toggleSceneBreak(index, get_message_div, getContext, set_data, g
     if (!isSet) {
         set_data(message, SCENE_BREAK_KEY, true);
         set_data(message, SCENE_BREAK_VISIBLE_KEY, true);
-        renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
-        saveChatDebounced();
     } else {
         set_data(message, SCENE_BREAK_VISIBLE_KEY, !visible);
-        renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
-        saveChatDebounced();
     }
+    renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
+    saveChatDebounced();
 }
 
 // --- Helper functions for versioned scene summaries ---
@@ -62,6 +60,46 @@ function getCurrentSceneSummaryIndex(message, get_data) {
 
 function setCurrentSceneSummaryIndex(message, set_data, idx) {
     set_data(message, 'scene_summary_current_index', idx);
+}
+
+// Helper to collect scene content as a chronological array of objects with type
+function collectSceneChronologicalObjects(startIdx, endIdx, ctx, get_memory) {
+    const chat = ctx.chat;
+    const result = [];
+    for (let i = startIdx; i <= endIdx; i++) {
+        const msg = chat[i];
+        const summary = get_memory(msg);
+        if (msg.mes && msg.mes.trim() !== "") {
+            result.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+        }
+        if (summary) {
+            result.push({ type: "summary", index: i, summary });
+        }
+    }
+    return result;
+}
+
+function getSceneRangeIndexes(index, chat, get_data, sceneCount) {
+    // Find all visible scene breaks up to and including index
+    let sceneBreakIndexes = [];
+    for (let i = 0; i <= index; i++) {
+        if (
+            get_data(chat[i], SCENE_BREAK_KEY) &&
+            (get_data(chat[i], SCENE_BREAK_VISIBLE_KEY) === undefined || get_data(chat[i], SCENE_BREAK_VISIBLE_KEY))
+        ) {
+            sceneBreakIndexes.push(i);
+        }
+    }
+    // We want to start after the (sceneBreakIndexes.length - sceneCount - 1)th break (the (sceneCount-1)th before the current one)
+    // For count=1, this is after the last break before the current one (or 0 if none)
+    let startIdx = 0;
+    if (sceneBreakIndexes.length >= sceneCount + 1) {
+        // There are enough breaks to go back sceneCount scenes
+        let idx = sceneBreakIndexes.length - sceneCount - 1;
+        startIdx = sceneBreakIndexes[idx] + 1;
+    }
+    let endIdx = index;
+    return [startIdx, endIdx];
 }
 
 export function renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced) {
@@ -124,6 +162,9 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     // --- Hyperlink to the start message ---
     const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
 
+    // Add preview icon (eye) for scene content preview
+    const previewIcon = `<i class="fa-solid fa-eye scene-preview-summary" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
+
     // Determine visible/hidden class for styling
     const stateClass = isVisible ? "sceneBreak-visible" : "sceneBreak-hidden";
     const borderClass = isVisible ? "auto_summarize_scene_break_border" : "";
@@ -135,7 +176,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         <div class="sceneBreak-content">
             <input type="text" class="sceneBreak-name auto_summarize_memory_text" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" />
             <div style="font-size:0.95em; color:inherit; margin-bottom:0.5em;">
-                Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)
+                Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}
             </div>
             <textarea class="scene-summary-box auto_summarize_memory_text" placeholder="Scene summary...">${sceneSummary}</textarea>
             <div class="scene-summary-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
@@ -210,32 +251,69 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         }
     });
 
-    // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
-    $sceneBreak.find('.scene-generate-summary').on('click', function(e) {
+    // --- Preview scene content handler ---
+    $sceneBreak.find('.scene-preview-summary').off('click').on('click', function(e) {
         e.stopPropagation();
-        // Find start and end index for the last X scenes
         let sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
-        let startIdx = 0;
-        let foundScenes = 0;
-        for (let i = index; i >= 0; i--) {
-            if (
-                get_data(chat[i], SCENE_BREAK_KEY) &&
-                (get_data(chat[i], SCENE_BREAK_VISIBLE_KEY) === undefined || get_data(chat[i], SCENE_BREAK_VISIBLE_KEY))
-            ) {
-                foundScenes++;
-                if (foundScenes >= sceneCount) {
-                    startIdx = i;
-                    break;
-                }
+        let [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
+        let ctx = getContext();
+
+        let mode = get_settings('scene_summary_history_mode') || "both";
+        let sceneObjects = [];
+        for (let i = startIdx; i <= endIdx; i++) {
+            const msg = chat[i];
+            if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
+                sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+            }
+            if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
+                sceneObjects.push({ type: "summary", index: i, summary: get_memory(msg) });
             }
         }
-        let endIdx = index;
-        // Get mode from settings
-        let mode = get_settings('scene_summary_history_mode');
+
+        const pretty = JSON.stringify(sceneObjects, null, 2);
+        const html = `<div>
+            <h3>Scene Content Preview</h3>
+            <pre style="max-height:400px;overflow-y:auto;white-space:pre-wrap;background:#222;color:#fff;padding:1em;border-radius:4px;">${pretty}</pre>
+        </div>`;
+        if (ctx.callPopup) {
+            ctx.callPopup(html, 'text', undefined, {
+                okButton: "Close",
+                wide: true,
+                large: true
+            });
+        } else {
+            alert(pretty);
+        }
+    });
+
+    // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
+    $sceneBreak.find('.scene-generate-summary').off('click').on('click', function(e) {
+        e.stopPropagation();
+        let sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+        let [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
         let ctx = getContext();
-        // Collect content
-        let sceneContent = collectSceneContent(startIdx, endIdx, mode, ctx, get_memory);
-        // Insert the collected content into the current summary version
+
+        let mode = get_settings('scene_summary_history_mode') || "both";
+        let sceneObjects = [];
+        for (let i = startIdx; i <= endIdx; i++) {
+            const msg = chat[i];
+            if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
+                sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+            }
+            if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
+                sceneObjects.push({ type: "summary", index: i, summary: get_memory(msg) });
+            }
+        }
+
+        // Debug output to console
+        if (window.debug) {
+            // eslint-disable-next-line no-console
+            console.debug("[Scene Generate] Scene objects:", sceneObjects);
+        }
+
+        // Insert the collected content (as JSON) into the current summary version
+        let sceneContent = JSON.stringify(sceneObjects, null, 2);
+
         let updatedVersions = getSceneSummaryVersions(message, get_data).slice();
         updatedVersions.push(sceneContent);
         setSceneSummaryVersions(message, set_data, updatedVersions);
@@ -244,7 +322,8 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         saveChatDebounced();
         renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
     });
-    $sceneBreak.find('.scene-rollback-summary').on('click', function(e) {
+
+    $sceneBreak.find('.scene-rollback-summary').off('click').on('click', function(e) {
         e.stopPropagation();
         let idx = getCurrentSceneSummaryIndex(message, get_data);
         if (idx > 0) {
@@ -254,7 +333,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
         }
     });
-    $sceneBreak.find('.scene-rollforward-summary').on('click', function(e) {
+    $sceneBreak.find('.scene-rollforward-summary').off('click').on('click', function(e) {
         e.stopPropagation();
         let versions = getSceneSummaryVersions(message, get_data);
         let idx = getCurrentSceneSummaryIndex(message, get_data);
