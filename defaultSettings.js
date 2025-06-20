@@ -7,6 +7,7 @@ import {
     extension_prompt_types,
     extension_prompt_roles
 } from './index.js';
+import { default_scene_template } from './defaultPrompts.js';
 
 export const default_settings = {
     // Error detection settings
@@ -96,4 +97,27 @@ Object.assign(default_settings, {
     combined_summary_context_type: 'percent',
     combined_summary_connection_profile: "",
     combined_summary_completion_preset: "",
+
+    // --- Scene Summary Settings ---
+    scene_summary_enabled: false,
+    scene_summary_prompt: `Summarize the following scene as if you are writing a concise chapter summary for a roleplay story. Focus on the most important events, character developments, emotional shifts, and plot points that would be useful to remember after this scene is no longer visible. Include character names, significant decisions, changes in relationships, and any details that may be relevant for future scenes. Write in past tense, avoid commentary or meta-statements, and do not include introductions or explanations.\nScene content:\n{{message}}`,
+    scene_summary_default_prompt: `Summarize the following scene as if you are writing a concise chapter summary for a roleplay story. Focus on the most important events, character developments, emotional shifts, and plot points that would be useful to remember after this scene is no longer visible. Include character names, significant decisions, changes in relationships, and any details that may be relevant for future scenes. Write in past tense, avoid commentary or meta-statements, and do not include introductions or explanations.\nScene content:\n{{message}}`,
+    scene_summary_prefill: "",
+    scene_summary_position: 0, // After main prompt
+    scene_summary_depth: 2,
+    scene_summary_role: 0, // System
+    scene_summary_scan: false,
+    scene_summary_context_limit: 10,
+    scene_summary_context_type: 'percent',
+    scene_summary_completion_preset: "",
+    scene_summary_history_mode: "both",
+    scene_summary_template: default_scene_template,
+
+    // --- Scene Summary Validation Settings ---
+    scene_summary_error_detection_enabled: false,
+    scene_summary_error_detection_preset: "",
+    scene_summary_history_count: 1,
+    scene_summary_error_detection_prefill: "",
+    scene_summary_error_detection_retries: 3,
+    scene_summary_error_detection_prompt: `You are validating a scene summary. Return "VALID" if the summary is concise and accurate, otherwise return "INVALID".\n\nSummary:\n{{summary}}`,
 });

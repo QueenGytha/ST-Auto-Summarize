@@ -30,7 +30,11 @@ function set_data(message, key, value) {
         message.swipe_info[swipe_index].extra[MODULE_NAME] = structuredClone(message.extra[MODULE_NAME])
     }
 
-    saveChatDebounced();
+    // Only save if chat is loaded and has a chatId
+    const ctx = getContext();
+    if (ctx?.chat && ctx?.chatId) {
+        saveChatDebounced();
+    }
 }
 function get_data(message, key) {
     // get information from the message object

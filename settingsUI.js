@@ -3,6 +3,7 @@ import {
     debug,
     error,
     toast,
+    get_message_history,
     get_settings,
     set_settings,
     get_settings_element,
@@ -20,6 +21,7 @@ import {
     get_character_profile,
     set_character_profile,
     get_chat_profile,
+    update_scene_summary_preset_dropdown,
     refresh_settings,
     refresh_memory,
     summarize_messages,
@@ -43,7 +45,8 @@ import {
     load_combined_summary,
     save_combined_summary,
     short_memory_macro,
-    long_memory_macro
+    long_memory_macro,
+    generic_memories_macro
 } from './index.js';
 
 // UI initialization
@@ -349,6 +352,66 @@ Available Macros:
     }
 });
     // --- END Combined Summary Settings ---
+
+    // --- Scene Summary Settings ---
+    bind_setting('#scene_summary_enabled', 'scene_summary_enabled', 'boolean');
+    bind_setting('#scene_summary_prompt', 'scene_summary_prompt', 'text');
+    bind_setting('#scene_summary_prefill', 'scene_summary_prefill', 'text');
+    bind_setting('#scene_summary_position', 'scene_summary_position', 'number');
+    bind_setting('#scene_summary_depth', 'scene_summary_depth', 'number');
+    bind_setting('#scene_summary_role', 'scene_summary_role');
+    bind_setting('#scene_summary_scan', 'scene_summary_scan', 'boolean');
+    bind_setting('#scene_summary_history_mode', 'scene_summary_history_mode', 'text');
+    
+    // Persist and display scene_summary_history_count
+    const $sceneHistoryCount = $('#scene_summary_history_count');
+    const $sceneHistoryCountDisplay = $('#scene_summary_history_count_display');
+    // Set default if not present
+    if (get_settings('scene_summary_history_count') === undefined) {
+        set_settings('scene_summary_history_count', 1);
+    }
+    $sceneHistoryCount.val(get_settings('scene_summary_history_count') || 1);
+    $sceneHistoryCountDisplay.text($sceneHistoryCount.val());
+    $sceneHistoryCount.on('input change', function () {
+        let val = Math.max(1, Math.min(99, Number($(this).val()) || 1));
+        set_settings('scene_summary_history_count', val);
+        $sceneHistoryCount.val(val);
+        $sceneHistoryCountDisplay.text(val);
+    });
+
+    // --- Scene Summary Validation Settings ---
+    bind_setting('#scene_summary_error_detection_enabled', 'scene_summary_error_detection_enabled', 'boolean');
+    bind_setting('#scene_summary_error_detection_preset', 'scene_summary_error_detection_preset', 'text');
+    bind_setting('#scene_summary_error_detection_prefill', 'scene_summary_error_detection_prefill', 'text');
+    bind_setting('#scene_summary_error_detection_retries', 'scene_summary_error_detection_retries', 'number');
+    bind_setting('#scene_summary_error_detection_prompt', 'scene_summary_error_detection_prompt', 'text');
+
+    bind_function('#edit_scene_summary_error_detection_prompt', async () => {
+        let description = `
+Configure the prompt used to verify that scene summaries meet your criteria.
+The prompt should return "VALID" for acceptable summaries and "INVALID" for unacceptable ones.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{summary}}:</b> The generated scene summary to validate.</li>
+</ul>`;
+        get_user_setting_text_input('scene_summary_error_detection_prompt', 'Edit Scene Summary Error Detection Prompt', description);
+    });
+    bind_function('#edit_scene_summary_prompt', async () => {
+        let description = `
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{scene}}:</b> The scene content to summarize.</li>
+    <li><b>{{history}}:</b> The message history as configured by the "Scene Message History Mode" setting.</li>
+    <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset.</li>
+</ul>
+`;
+        get_user_setting_text_input('scene_summary_prompt', 'Edit Scene Summary Prompt', description);
+    });
+
+    // Scene summary context limit and type
+    bind_setting('#scene_summary_context_limit', 'scene_summary_context_limit', 'number');
+    bind_setting('input[name="scene_summary_context_type"]', 'scene_summary_context_type', 'text');
 
     refresh_settings()
 }

@@ -329,6 +329,82 @@
                     </label>
                 </div>
 
+                <!-- Scene Summary -->
+                <hr>
+                <h4 class="textAlignCenter">Scene Summary <i class="fa-solid fa-info-circle" title="Summarize each scene break as a single summary, with customizable prompt and injection."></i></h4>
+                <label class="checkbox_label" title="Enable scene-level summarization and injection.">
+                    <input id="scene_summary_enabled" type="checkbox" />
+                    <span>Enable Scene Summaries</span>
+                </label>
+                <div class="flex-container justifyspacebetween alignitemscenter">
+                    <button id="edit_scene_summary_prompt" class="menu_button flex1" title="Edit the scene summary prompt"><span>Edit Scene Prompt</span></button>
+                </div>
+                <input id="scene_summary_prompt" type="hidden" />
+                <input id="scene_summary_default_prompt" type="hidden" value="[Default scene summary prompt here]" />
+                <table>
+                    <tr>
+                        <td><span>Scene Completion Preset</span></td>
+                        <td><select id="scene_summary_completion_preset" class="text_pole"></select></td>
+                    </tr>
+                    <tr>
+                        <td><span>Scene Summary Prefill</span></td>
+                        <td><input id="scene_summary_prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
+                    </tr>
+                    <tr>
+                        <td><span>Scene Message History Mode</span></td>
+                        <td>
+                            <select id="scene_summary_history_mode" class="text_pole">
+                                <option value="messages">Messages Only</option>
+                                <option value="summaries">Summaries Only</option>
+                                <option value="both">Messages and Summaries</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span>Summarize the last <span id="scene_summary_history_count_display">1</span> scenes</span>
+                        </td>
+                        <td>
+                            <input id="scene_summary_history_count" class="text_pole" type="number" min="1" max="99" value="1" />
+                        </td>
+                    </tr>
+                </table>
+                <label title="Where to inject the scene summary.">
+                    <select id="scene_summary_position" class="text_pole">
+                        <option value="-1">Do not inject</option>
+                        <option value="2">Before main prompt</option>
+                        <option value="0">After main prompt</option>
+                        <option value="1">In chat at depth</option>
+                    </select>
+                </label>
+                <label title="Depth for in-chat injection.">
+                    <input id="scene_summary_depth" class="text_pole inline_setting" type="number" min="0" max="99" />
+                    <span>Depth</span>
+                </label>
+                <label title="Role for in-chat injection.">
+                    <select id="scene_summary_role" class="text_pole inline_setting">
+                        <option value="0">System</option>
+                        <option value="1">User</option>
+                        <option value="2">Assistant</option>
+                    </select>
+                </label>
+                <label class="checkbox_label" title="Include in World Info Scanning">
+                    <input id="scene_summary_scan" type="checkbox" />
+                    <span>Include in World Info Scanning</span>
+                </label>
+                <label title="Context limit for scene summary.">
+                    <input id="scene_summary_context_limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
+                    <span>Context Limit</span>
+                </label>
+                <label>
+                    <input type="radio" name="scene_summary_context_type" value="percent" />
+                    <span>%</span>
+                </label>
+                <label>
+                    <input type="radio" name="scene_summary_context_type" value="tokens" />
+                    <span>tk</span>
+                </label>
+
                 <!-- Combined Summary -->
                 <hr>
                 <h4 class="textAlignCenter">Combined Summary <i class="fa-solid fa-info-circle" title="Combine all summaries into a single summary, removing repetition."></i></h4>
@@ -426,6 +502,30 @@
                         <td><input id="regular_summary_error_detection_retries" class="text_pole regular_error_detection_setting" type="number" min="1" max="10" value="3"></td>
                     </tr>
                 </table>
+
+                <!-- Scene summary validation -->
+                <div class="flex-container justifyspacebetween alignitemscenter">
+                    <label class="checkbox_label error_detection_setting" title="Enable validation for scene summaries">
+                        <input id="scene_summary_error_detection_enabled" type="checkbox" />
+                        <span>Validate Scene Summaries</span>
+                    </label>
+                    <button id="edit_scene_summary_error_detection_prompt" class="menu_button error_detection_setting" title="Edit the validation prompt for scene summaries">Edit Validation Prompt</button>
+                </div>
+                <table class="scene_error_detection_container">
+                    <tr>
+                        <td><span>Validation Completion Preset</span></td>
+                        <td><select id="scene_summary_error_detection_preset" class="text_pole scene_error_detection_setting"></select></td>
+                    </tr>
+                    <tr>
+                        <td><span>Validation Prefill</span></td>
+                        <td><input id="scene_summary_error_detection_prefill" class="text_pole scene_error_detection_setting" type="text" placeholder="Start reply with..."></td>
+                    </tr>
+                    <tr>
+                        <td><span>Max Retry Attempts</span></td>
+                        <td><input id="scene_summary_error_detection_retries" class="text_pole scene_error_detection_setting" type="number" min="1" max="10" value="3"></td>
+                    </tr>
+                </table>
+                <input id="scene_summary_error_detection_prompt" type="hidden" />
 
                 <!-- Combined summary validation -->
                 <div class="flex-container justifyspacebetween alignitemscenter">

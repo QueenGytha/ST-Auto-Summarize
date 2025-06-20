@@ -198,6 +198,24 @@ function initialize_slash_commands() {
             }),
         ],
     }));
+
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'log_scene_summary_injection',
+        callback: () => {
+            const settings = {
+                scene_summary_enabled: get_settings('scene_summary_enabled'),
+                scene_summary_position: get_settings('scene_summary_position'),
+                scene_summary_role: get_settings('scene_summary_role'),
+            };
+            const indexes = collect_scene_summary_indexes();
+            const injection = get_scene_memory_injection();
+            log('[Scene Summary Injection] Settings:', settings);
+            log('[Scene Summary Injection] Collected indexes:', indexes);
+            log('[Scene Summary Injection] Injection text:', injection);
+            return { settings, indexes, injection };
+        },
+        helpString: 'Log scene summary injection settings, collected indexes, and injection text.',
+    }));
 }
 
 export {

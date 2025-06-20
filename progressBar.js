@@ -1,4 +1,4 @@
-import { PROGRESS_BAR_ID, debug, stop_summarization, debounce_timeout } from './index.js';
+import { memoryEditInterface, PROGRESS_BAR_ID, debug, stop_summarization, debounce_timeout } from './index.js';
 
 function progress_bar(id, progress, total, title) {
     // Display, update, or remove a progress bar

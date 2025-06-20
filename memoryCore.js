@@ -230,17 +230,94 @@ function get_short_memory() {
     return ctx.substituteParamsExtended(template, {[generic_memories_macro]: text});
 }
 
+// Collect indexes of all visible scene breaks that have a summary
+function collect_scene_summary_indexes() {
+    const ctx = getContext();
+    const chat = ctx.chat;
+    let indexes = [];
+    for (let i = 0; i < chat.length; i++) {
+        const msg = chat[i];
+        if (!msg) continue;
+        if (get_data(msg, 'scene_break_visible') === false) {
+            debug(`[SCENE SUMMARY] Skipping index ${i}: not visible`);
+            continue;
+        }
+        if (get_data(msg, 'scene_summary_include') === false) {
+            debug(`[SCENE SUMMARY] Skipping index ${i}: include flag false`);
+            continue;
+        }
+        const summary = get_data(msg, 'scene_summary_memory');
+        if (summary && summary.trim()) {
+            debug(`[SCENE SUMMARY] Including index ${i}: summary present`);
+            indexes.push(i);
+        } else {
+            debug(`[SCENE SUMMARY] Skipping index ${i}: no summary`);
+        }
+    }
+    debug(`[SCENE SUMMARY] Final collected indexes: ${JSON.stringify(indexes)}`);
+    return indexes;
+}
+
+// Get scene memory injection text (like get_short_memory/get_long_memory)
+function get_scene_memory_injection() {
+    if (!get_settings('scene_summary_enabled')) return "";
+    const ctx = getContext();
+    const chat = ctx.chat;
+    const indexes = collect_scene_summary_indexes();
+
+    let template = get_settings('scene_summary_template');
+
+    // Build an array of scene summary objects with sequential numbering
+    const scene_summaries = indexes.map((idx, i) => {
+        const msg = chat[idx];
+        return {
+            number: i + 1, // sequential scene number
+            name: get_data(msg, 'scene_break_name') || `Scene ${i + 1}`,
+            summary: get_data(msg, 'scene_summary_memory') || ""
+        };
+    });
+
+    const summariesText = scene_summaries.map(
+        s => `- [Scene ${s.number}]: ${s.summary}`
+    ).join('\n');
+    let injection = template.replace('{{scene_summaries}}', summariesText);
+
+    debug(`[SCENE SUMMARY] Injection text:\n${injection}`);
+    return injection;
+}
+
 async function refresh_memory() {
+    debug("[MEMORY INJECTION] refresh_memory called");
+
     let ctx = getContext();
+
+    // --- Declare all injection position/role/depth/scan variables at the top ---
+    let long_term_position = get_settings('long_term_position');
+    let short_term_position = get_settings('short_term_position');
+    let combined_summary_position = get_settings('combined_summary_position');
+    let scene_summary_position = get_settings('scene_summary_position');
+    let long_term_role = get_settings('long_term_role');
+    let short_term_role = get_settings('short_term_role');
+    let combined_summary_role = get_settings('combined_summary_role');
+    let scene_summary_role = get_settings('scene_summary_role');
+    let long_term_depth = get_settings('long_term_depth');
+    let short_term_depth = get_settings('short_term_depth');
+    let combined_summary_depth = get_settings('combined_summary_depth');
+    let scene_summary_depth = get_settings('scene_summary_depth');
+    let long_term_scan = get_settings('long_term_scan');
+    let short_term_scan = get_settings('short_term_scan');
+    let combined_summary_scan = get_settings('combined_summary_scan');
+    let scene_summary_scan = get_settings('scene_summary_scan');
 
     // --- Auto-hide/unhide messages older than X ---
     await auto_hide_messages_by_command();
     // --- end auto-hide ---
 
     if (!chat_enabled()) { // if chat not enabled, remove the injections
-        ctx.setExtensionPrompt(`${MODULE_NAME}_long`, "");
-        ctx.setExtensionPrompt(`${MODULE_NAME}_short`, "");
-        ctx.setExtensionPrompt(`${MODULE_NAME}_combined`, "");
+        ctx.setExtensionPrompt(`${MODULE_NAME}_long`, "", extension_prompt_types.IN_PROMPT, 0);
+        ctx.setExtensionPrompt(`${MODULE_NAME}_short`, "", extension_prompt_types.IN_PROMPT, 0);
+        ctx.setExtensionPrompt(`${MODULE_NAME}_combined`, "", extension_prompt_types.IN_PROMPT, 0);
+        ctx.setExtensionPrompt(`${MODULE_NAME}_scene`, "", extension_prompt_types.IN_PROMPT, 0);
         return;
     }
 
@@ -254,33 +331,42 @@ async function refresh_memory() {
     let short_injection = get_short_memory();
 
     // --- Combined Summary Injection ---
-    // Don't generate combined summary here, just load the existing one
     const combined_summary = load_combined_summary();
     let combined_injection = "";
-    
     if (get_settings('combined_summary_enabled') && combined_summary) {
         let template = get_settings('combined_summary_template');
         combined_injection = ctx.substituteParamsExtended(template, {[generic_memories_macro]: combined_summary});
     }
     // --- END Combined Summary Injection ---
 
-    let long_term_position = get_settings('long_term_position')
-    let short_term_position = get_settings('short_term_position')
-    let combined_summary_position = get_settings('combined_summary_position');
-
-    // if using text completion, we need to wrap it in a system prompt
-    if (main_api !== 'openai') {
-        if (long_term_position !== extension_prompt_types.IN_CHAT && long_injection.length) long_injection = formatInstructModeChat("", long_injection, false, true)
-        if (short_term_position !== extension_prompt_types.IN_CHAT && short_injection.length) short_injection = formatInstructModeChat("", short_injection, false, true)
-        if (combined_summary_position !== extension_prompt_types.IN_CHAT && combined_injection.length) combined_injection = formatInstructModeChat("", combined_injection, false, true)
+    // --- Scene Summary Injection ---
+    let scene_injection = "";
+    if (get_settings('scene_summary_enabled')) {
+        scene_injection = get_scene_memory_injection();
     }
+    debug(`[MEMORY INJECTION] Setting scene summary prompt: position=${scene_summary_position}, role=${scene_summary_role}`);
+    debug(`[MEMORY INJECTION] Scene summary prompt text:\n${scene_injection}`);
+    ctx.setExtensionPrompt(`${MODULE_NAME}_scene`, scene_injection, scene_summary_position, scene_summary_depth, scene_summary_scan, scene_summary_role);
+    // --- END Scene Summary Injection ---
 
     // inject the memories into the templates, if they exist
-    ctx.setExtensionPrompt(`${MODULE_NAME}_long`,  long_injection,  long_term_position, get_settings('long_term_depth'), get_settings('long_term_scan'), get_settings('long_term_role'));
-    ctx.setExtensionPrompt(`${MODULE_NAME}_short`, short_injection, short_term_position, get_settings('short_term_depth'), get_settings('short_term_scan'), get_settings('short_term_role'));
-    ctx.setExtensionPrompt(`${MODULE_NAME}_combined`, combined_injection, combined_summary_position, get_settings('combined_summary_depth'), get_settings('combined_summary_scan'), get_settings('combined_summary_role'));
+    ctx.setExtensionPrompt(`${MODULE_NAME}_long`,  long_injection,  long_term_position, long_term_depth, long_term_scan, long_term_role);
+    ctx.setExtensionPrompt(`${MODULE_NAME}_short`, short_injection, short_term_position, short_term_depth, short_term_scan, short_term_role);
+    ctx.setExtensionPrompt(`${MODULE_NAME}_combined`, combined_injection, combined_summary_position, combined_summary_depth, combined_summary_scan, combined_summary_role);
+    ctx.setExtensionPrompt(`${MODULE_NAME}_scene`, scene_injection, scene_summary_position, scene_summary_depth, scene_summary_scan, scene_summary_role);
 
-    return `${long_injection}\n\n...\n\n${short_injection}\n\n...\n\n${combined_injection}`  // return the concatenated memory text
+    if (get_settings('debug_mode')) {
+        debug(`[MEMORY INJECTION] Long-term injected at position ${long_term_position} as role ${long_term_role}:`);
+        debug(long_injection);
+        debug(`[MEMORY INJECTION] Short-term injected at position ${short_term_position} as role ${short_term_role}:`);
+        debug(short_injection);
+        debug(`[MEMORY INJECTION] Combined summary injected at position ${combined_summary_position} as role ${combined_summary_role}:`);
+        debug(combined_injection);
+        debug(`[MEMORY INJECTION] Scene summary injected at position ${scene_summary_position} as role ${scene_summary_role}:`);
+        debug(scene_injection);
+    }
+
+    return `${long_injection}\n\n...\n\n${short_injection}\n\n...\n\n${combined_injection}\n\n...\n\n${scene_injection}`  // return the concatenated memory text
 }
 const refresh_memory_debounced = debounce(refresh_memory, debounce_timeout.relaxed);
 
