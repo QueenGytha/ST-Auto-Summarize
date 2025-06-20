@@ -59,6 +59,4 @@ Message to summarize:
 export const default_long_template = `[Following is a list of events that occurred in the past]:\n{{generic_memories}}\n`;
 export const default_short_template = `[Following is a list of recent events]:\n{{generic_memories}}\n`;
 export const default_combined_template = `[Following is an overall summary of recent events]:\n{{generic_memories}}\n`;
-export const default_scene_template = `[Following is a collection of summaries of different scenes in the roleplay, in chronological order]:
-{{scene_summaries}}
-`;
+export const default_scene_template = `[Persistent summaries of scenes in this roleplay, in chronological order]:\n{{scene_summaries}}\n`;
