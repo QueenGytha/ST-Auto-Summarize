@@ -1,15 +1,4 @@
-import { initialize_settings_listeners } from './settingsUI.js';
-import { initialize_settings, hard_reset_settings, soft_reset_settings, reset_settings, set_settings, get_settings, get_settings_element, get_manifest, load_settings_html} from './settingsManager.js';
-import { initialize_slash_commands } from './slashCommands.js';
-import { log, debug, error, toast, toast_debounced, saveChatDebounced, count_tokens, get_context_size, get_long_token_limit, get_short_token_limit, get_current_character_identifier, get_current_chat_identifier, get_extension_directory, clean_string_for_title, escape_string, unescape_string, check_st_version } from './utils.js';
-import { get_combined_summary_key, save_combined_summary, load_combined_summary, get_combined_summary_preset_max_tokens, get_combined_memory, create_combined_summary_prompt, collect_messages_to_combine, flag_summaries_as_combined, generate_combined_summary } from './combinedSummary.js';
-import { copy_settings, detect_settings_difference, save_profile, load_profile, export_profile, import_profile, rename_profile, new_profile, delete_profile, toggle_character_profile, toggle_chat_profile, get_character_profile, set_character_profile, get_chat_profile, auto_load_profile, set_chat_profile } from './profileManager.js';
-import { default_combined_summary_prompt, default_prompt, default_long_template, default_short_template, default_combined_template } from './defaultPrompts.js';
-import { MemoryEditInterface } from './memoryEditInterface.js';
-import { default_settings } from './defaultSettings.js';
-import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from '../../../utils.js';
-import { getContext, getApiUrl, extension_settings } from '../../../extensions.js';
-import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, is_send_press, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata } from '../../../../script.js';
+// Imports from SillyTavern
 import { getPresetManager } from '../../../preset-manager.js'
 import { formatInstructModeChat } from '../../../instruct-mode.js';
 import { is_group_generating, selected_group, openGroupId } from '../../../group-chats.js';
@@ -20,6 +9,20 @@ import { MacrosParser } from '../../../macros.js';
 import { commonEnumProviders } from '../../../slash-commands/SlashCommandCommonEnumsProvider.js';
 import { getRegexScripts } from '../../../../scripts/extensions/regex/index.js'
 import { runRegexScript } from '../../../../scripts/extensions/regex/engine.js'
+import { getContext, getApiUrl, extension_settings } from '../../../extensions.js';
+import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from '../../../utils.js';
+import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, is_send_press, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata } from '../../../../script.js';
+
+// Imports from our local files
+import { initialize_settings_listeners } from './settingsUI.js';
+import { initialize_settings, hard_reset_settings, soft_reset_settings, reset_settings, set_settings, get_settings, get_settings_element, get_manifest, load_settings_html} from './settingsManager.js';
+import { initialize_slash_commands } from './slashCommands.js';
+import { log, debug, error, toast, toast_debounced, saveChatDebounced, count_tokens, get_context_size, get_long_token_limit, get_short_token_limit, get_current_character_identifier, get_current_chat_identifier, get_extension_directory, clean_string_for_title, escape_string, unescape_string, check_st_version } from './utils.js';
+import { get_combined_summary_key, save_combined_summary, load_combined_summary, get_combined_summary_preset_max_tokens, get_combined_memory, create_combined_summary_prompt, collect_messages_to_combine, flag_summaries_as_combined, generate_combined_summary } from './combinedSummary.js';
+import { copy_settings, detect_settings_difference, save_profile, load_profile, export_profile, import_profile, rename_profile, new_profile, delete_profile, toggle_character_profile, toggle_chat_profile, get_character_profile, set_character_profile, get_chat_profile, auto_load_profile, set_chat_profile } from './profileManager.js';
+import { default_combined_summary_prompt, default_prompt, default_long_template, default_short_template, default_combined_template } from './defaultPrompts.js';
+import { MemoryEditInterface } from './memoryEditInterface.js';
+import { default_settings } from './defaultSettings.js';
 import { addSceneBreakButton, bindSceneBreakButton, renderAllSceneBreaks } from './sceneBreak.js';
 import { get_message_div, get_summary_style_class, update_message_visuals, update_all_message_visuals, open_edit_memory_input } from './messageVisuals.js';
 import { check_message_exclusion, update_message_inclusion_flags, collect_chat_messages, concatenate_summary, concatenate_summaries, get_long_memory, get_short_memory } from './memoryCore.js';
@@ -1466,7 +1469,6 @@ jQuery(async function () {
 });
 
 
-// ...existing code...
 export {
     // Summarization and memory
     summarize_text,
@@ -1486,15 +1488,10 @@ export {
     forget_message_toggle,
     MODULE_NAME,
     MODULE_NAME_FANCY, 
-    debounce_timeout,
-    getMaxContextSize,
-    debounce,
     get_character_key,
-    getContext,
     get_settings,
     set_settings,
     global_settings,
-    extension_settings,
     debug,
     log,
     refresh_memory,
@@ -1503,9 +1500,6 @@ export {
     get_current_chat_identifier,
     display_injection_preview,
     concatenate_summaries,
-    copyText,
-    getRegexScripts,
-    runRegexScript,
     refresh_settings,
     remember_button_class,
     summarize_button_class,
@@ -1517,17 +1511,13 @@ export {
     css_exclude_memory,
     css_lagging_memory,
     get_summary_style_class,
-    chat_metadata,
-    amount_gen,
     error,
     formatInstructModeChat,
-    getPresetManager,
     get_summary_preset,
     substitute_params,
     toast,
     verify_preset,
     get_summary_preset_max_tokens,
-    // previously not included
     refresh_select2_element,
     get_message_div,
     update_message_visuals,
@@ -1589,7 +1579,6 @@ export {
     summary_div_class,
     summary_reasoning_class,
     PROGRESS_BAR_ID,
-    system_message_types,
     generic_memories_macro,
     refresh_memory_debounced,
     settings_content_class,
@@ -1598,13 +1587,13 @@ export {
     get_connection_profiles,
     get_presets,
     verify_connection_profile,
-    animation_duration,
-    loadMovingUIState,
-    dragElement,
     settings_div_id,
-    //settingsManager
-    saveSettingsDebounced,
     settings_ui_map
+};
+
+export {
+    // Exports from imported SillyTavern modules
+    getPresetManager, is_group_generating, selected_group, openGroupId, loadMovingUIState, renderStoryString, power_user, dragElement, debounce_timeout, MacrosParser, commonEnumProviders, getRegexScripts, runRegexScript, getContext, getApiUrl, extension_settings, getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition, animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, is_send_press, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata
 };
 
 export * from './combinedSummary.js';
