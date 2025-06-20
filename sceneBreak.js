@@ -43,6 +43,11 @@ export function toggleSceneBreak(index, get_message_div, getContext, set_data, g
     }
     renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
     saveChatDebounced();
+
+    // Re-run auto-hide logic after toggling scene break
+    import('./autoHide.js').then(mod => {
+        mod.auto_hide_messages_by_command();
+    });
 }
 
 // --- Helper functions for versioned scene summaries ---
