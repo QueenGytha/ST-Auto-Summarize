@@ -39,7 +39,8 @@ import {
     get_combined_memory,
     MemoryEditInterface,
     short_memory_macro,
-    long_memory_macro
+    long_memory_macro,
+    streamingProcessor
 } from './index.js';
 
 // Event handling
