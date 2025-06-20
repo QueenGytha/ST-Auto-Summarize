@@ -383,3 +383,35 @@ dialog:has(#auto_summarize_memory_state_interface) {
 .auto_summarize_scene_break_hidden {
     display: none !important;
 }
+
+#scene-summary-navigator-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 48px;
+    height: 100vh;
+    background: rgba(30,30,40,0.95);
+    z-index: 1000000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 60px;
+    gap: 8px;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    overflow-y: auto;
+}
+#scene-summary-navigator-bar .scene-nav-link {
+    color: #ffd700;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    margin: 0;
+    padding: 4px 0;
+    text-decoration: underline dotted;
+    transition: color 0.2s;
+}
+#scene-summary-navigator-bar .scene-nav-link:hover {
+    color: #fff;
+    text-decoration: underline solid;
+}
