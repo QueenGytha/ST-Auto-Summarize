@@ -287,12 +287,15 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     });
 
     // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
-    $sceneBreak.find('.scene-generate-summary').off('click').on('click', function(e) {
+    $sceneBreak.find('.scene-generate-summary').off('click').on('click', async function(e) {
         e.stopPropagation();
+        console.log("[SceneBreak] Generate button clicked for scene at index", index);
+
         let sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
         let [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
         let ctx = getContext();
 
+        // Collect scene objects (messages/summaries) as before
         let mode = get_settings('scene_summary_history_mode') || "both";
         let sceneObjects = [];
         for (let i = startIdx; i <= endIdx; i++) {
@@ -305,20 +308,66 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             }
         }
 
-        // Debug output to console
-        if (window.debug) {
-            // eslint-disable-next-line no-console
-            console.debug("[Scene Generate] Scene objects:", sceneObjects);
+        // 1. Get prompt and connection profile for scene summaries
+        let promptTemplate = get_settings('scene_summary_prompt');
+        let prefill = get_settings('scene_summary_prefill') || "";
+        let profile = get_settings('scene_summary_connection_profile');
+        let preset = get_settings('scene_summary_completion_preset');
+        let current_profile = await ctx.get_current_connection_profile?.();
+        let current_preset = await ctx.get_current_preset?.();
+
+        // 2. Prepare prompt (substitute macros)
+        let prompt = promptTemplate;
+        if (ctx.substituteParamsExtended) {
+            prompt = ctx.substituteParamsExtended(prompt, {
+                message: JSON.stringify(sceneObjects, null, 2),
+                prefill
+            }) || prompt;
+        }
+        prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
+        prompt = `${prompt}\n${prefill}`;
+
+        // 3. Switch to scene summary profile/preset if set
+        if (profile) {
+            console.log("[SceneBreak] Switching to connection profile:", profile);
+            await ctx.set_connection_profile?.(profile);
+        }
+        if (preset) {
+            console.log("[SceneBreak] Switching to preset:", preset);
+            await ctx.set_preset?.(preset);
         }
 
-        // Insert the collected content (as JSON) into the current summary version
-        let sceneContent = JSON.stringify(sceneObjects, null, 2);
+        // 4. Show loading state in summary box
+        let $summaryBox = $sceneBreak.find('.scene-summary-box');
+        $summaryBox.val("Generating scene summary...");
 
+        // 5. Generate summary using the same logic as summarize_text
+        let summary = "";
+        try {
+            console.log("[SceneBreak] Sending prompt to AI:", prompt);
+            summary = await ctx.summarize_text?.(prompt);
+            console.log("[SceneBreak] AI response:", summary);
+        } catch (err) {
+            summary = "Error generating summary: " + (err?.message || err);
+            console.error("[SceneBreak] Error generating summary:", err);
+        }
+
+        // 6. Restore previous profile/preset
+        if (profile) {
+            console.log("[SceneBreak] Restoring previous connection profile:", current_profile);
+            await ctx.set_connection_profile?.(current_profile);
+        }
+        if (preset) {
+            console.log("[SceneBreak] Restoring previous preset:", current_preset);
+            await ctx.set_preset?.(current_preset);
+        }
+
+        // 7. Save and display the summary in the box
         let updatedVersions = getSceneSummaryVersions(message, get_data).slice();
-        updatedVersions.push(sceneContent);
+        updatedVersions.push(summary);
         setSceneSummaryVersions(message, set_data, updatedVersions);
         setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
-        set_data(message, SCENE_BREAK_SUMMARY_KEY, sceneContent); // update legacy field
+        set_data(message, SCENE_BREAK_SUMMARY_KEY, summary); // update legacy field
         saveChatDebounced();
         renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
     });

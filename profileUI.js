@@ -229,9 +229,10 @@ function refresh_settings() {
     }
 
     // completion presets
-    update_preset_dropdown()
+    update_preset_dropdown();
     update_combined_summary_preset_dropdown();
-    check_preset_valid()
+    update_scene_summary_preset_dropdown();
+    check_preset_valid();
 
     // if prompt doesn't have {{message}}, insert it
     if (!get_settings('prompt').includes("{{message}}")) {

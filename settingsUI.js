@@ -396,6 +396,17 @@ Available Macros:
 </ul>`;
         get_user_setting_text_input('scene_summary_error_detection_prompt', 'Edit Scene Summary Error Detection Prompt', description);
     });
+    bind_function('#edit_scene_summary_prompt', async () => {
+        let description = `
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{scene}}:</b> The scene content to summarize.</li>
+    <li><b>{{history}}:</b> The message history as configured by the "Scene Message History Mode" setting.</li>
+    <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset.</li>
+</ul>
+`;
+        get_user_setting_text_input('scene_summary_prompt', 'Edit Scene Summary Prompt', description);
+    });
 
     refresh_settings()
 }
