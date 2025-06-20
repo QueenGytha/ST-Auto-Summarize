@@ -265,21 +265,20 @@ function get_scene_memory_injection() {
     const chat = ctx.chat;
     const indexes = collect_scene_summary_indexes();
 
-    // Build an array of scene summary objects
-    const scene_summaries = indexes.map(idx => {
+    let template = get_settings('scene_summary_template');
+
+    // Build an array of scene summary objects with sequential numbering
+    const scene_summaries = indexes.map((idx, i) => {
         const msg = chat[idx];
         return {
-            index: idx,
-            name: get_data(msg, 'scene_break_name') || `Scene ${idx + 1}`,
+            number: i + 1, // sequential scene number
+            name: get_data(msg, 'scene_break_name') || `Scene ${i + 1}`,
             summary: get_data(msg, 'scene_summary_memory') || ""
         };
     });
 
-    // Use the template from settings
-    let template = get_settings('scene_summary_template');
-    // Substitute {{scene_summaries}} with a formatted string
     const summariesText = scene_summaries.map(
-        s => `- [${s.name}]: ${s.summary}`
+        s => `- [Scene ${s.number}]: ${s.summary}`
     ).join('\n');
     let injection = template.replace('{{scene_summaries}}', summariesText);
 
