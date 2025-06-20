@@ -24,6 +24,17 @@ import {
     debounce_timeout
 } from './index.js';
 
+// SUMMARY PROPERTY STRUCTURE:
+// - Short-term and long-term summaries are stored at the root of the message object:
+//     - 'memory': the summary text
+//     - 'include': 'short' or 'long'
+// - Scene summaries are NOT stored at the root. Instead, they use:
+//     - 'scene_summary_memory': the summary text for the scene break
+//     - 'scene_break_visible': whether the scene break is visible
+//     - 'scene_summary_include': whether to include this scene summary in injections
+//     - 'scene_summary_versions': array of all versions of the scene summary
+//     - 'scene_summary_current_index': index of the current version
+
 // Retrieving memories
 function check_message_exclusion(message) {
     // check for any exclusion criteria for a given message based on current settings
@@ -171,6 +182,8 @@ function concatenate_summary(existing_text, message) {
     let separator = get_settings('summary_injection_separator')
     return existing_text + separator + memory
 }
+
+// Scene summaries are stored in 'scene_summary_memory' (not 'memory') on the message object.
 function concatenate_summaries(indexes) {
     let context = getContext();
     let chat = context.chat;
@@ -178,9 +191,18 @@ function concatenate_summaries(indexes) {
     let count = 1;
     for (let i of indexes) {
         let message = chat[i];
-        let memory = get_memory(message);
-        if (memory) {
-            summaries.push({ id: count, summary: memory });
+        let type, summary;
+        if (get_data(message, 'scene_summary_memory')) {
+            // Scene summary
+            type = 'scene';
+            summary = get_data(message, 'scene_summary_memory');
+        } else {
+            // Short/long summary
+            type = get_data(message, 'include');
+            summary = get_data(message, 'memory');
+        }
+        if (summary) {
+            summaries.push({ id: count, summary, type });
             count++;
         }
     }
@@ -231,6 +253,7 @@ function get_short_memory() {
 }
 
 // Collect indexes of all visible scene breaks that have a summary
+// Scene summaries are stored in 'scene_summary_memory' (not 'memory') on the message object.
 function collect_scene_summary_indexes() {
     const ctx = getContext();
     const chat = ctx.chat;
@@ -380,5 +403,6 @@ export {
     get_long_memory,
     get_short_memory,
     refresh_memory,
-    refresh_memory_debounced
+    refresh_memory_debounced,
+    collect_scene_summary_indexes
 };

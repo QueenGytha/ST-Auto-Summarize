@@ -36,11 +36,12 @@ import {
     get_long_memory,
     combined_memory_macro,
     MacrosParser,
-    get_combined_memory,
     MemoryEditInterface,
     short_memory_macro,
     long_memory_macro,
-    streamingProcessor
+    streamingProcessor,
+    initializeSceneNavigatorBar,
+    renderSceneNavigatorBar
 } from './index.js';
 
 // Event handling
@@ -201,6 +202,7 @@ jQuery(async function () {
     eventSource.on(event_types.MORE_MESSAGES_LOADED, () => {
     refresh_memory();
     renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
+    renderSceneNavigatorBar();
     });
     eventSource.on(event_types.CHAT_CHANGED, () => {
         renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
@@ -211,12 +213,14 @@ jQuery(async function () {
     // Global Macros
     MacrosParser.registerMacro(short_memory_macro, () => get_short_memory());
     MacrosParser.registerMacro(long_memory_macro, () => get_long_memory());
-    MacrosParser.registerMacro(combined_memory_macro, () => get_combined_memory());
+    MacrosParser.registerMacro(combined_memory_macro, () => load_combined_summary());
 
     // Export to the Global namespace so can be used in the console for debugging
     window.getContext = getContext;
     window.refresh_memory = refresh_memory;
     window.generate_combined_summary = generate_combined_summary;
+
+    initializeSceneNavigatorBar();
 });
 
 export {

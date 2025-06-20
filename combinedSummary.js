@@ -20,9 +20,9 @@ import {
     get_summary_preset,
     verify_preset,
     amount_gen,
-    get_summary_preset_max_tokens
+    get_summary_preset_max_tokens,
+    collect_scene_summary_indexes
 } from './index.js';
-
 
 function get_combined_summary_key() {
     let ctx = getContext();
@@ -170,89 +170,132 @@ async function get_combined_summary_preset_max_tokens() {
     return preset?.genamt || preset?.openai_max_tokens || amount_gen;
 }
 
-function get_combined_memory() {
-    if (!get_settings('combined_summary_enabled')) return "";
-    let ctx = getContext();
-    let chat = ctx.chat;
-    let indexes = [];
-    for (let i = 0; i < chat.length; i++) {
-        let message = chat[i];
-        if (get_data(message, 'memory') && !get_data(message, 'combined_summary_included')) {
-            indexes.push(i);
-        }
-    }
-    if (indexes.length === 0) return "";
-    let text = concatenate_summaries(indexes);
-    let template = get_settings('combined_summary_template');
-    return ctx.substituteParamsExtended(template, { memories: text });
-}
-
-async function create_combined_summary_prompt() {
-    let ctx = getContext();
-    let summaries = get_combined_memory();
-    let prompt = get_settings('combined_summary_prompt');
-    let words = await get_combined_summary_preset_max_tokens();
-    let previous_summary = load_combined_summary();
-
-    if (!summaries || summaries.trim() === "") {
-        debug("[COMBINED SUMMARY] No summaries to combine, returning null");
-        return null;
-    }
-
-    prompt = ctx.substituteParamsExtended(prompt, {
-        "words": words,
-        "previous_combined_summary": previous_summary || ""
-    });
-    prompt = substitute_conditionals(prompt, {
-        "message": summaries,
-        "history": "",
-        "previous_combined_summary": previous_summary || ""
-    });
-    prompt = substitute_params(prompt, {
-        "message": summaries,
-        "history": "",
-        "previous_combined_summary": previous_summary || ""
-    });
-    prompt = formatInstructModeChat("", prompt, false, true, "", "", "", null);
-    prompt = `${prompt}\n${get_settings('combined_summary_prefill')}`;
-    return prompt;
-}
-
-// New function to collect messages that need to be included in combined summary
 function collect_messages_to_combine() {
     let context = getContext();
     let chat = context.chat;
     let indexes = [];
-    for (let i = 0; i < chat.length; i++) {
-        let message = chat[i];
-        if (get_data(message, 'memory') && get_data(message, 'combined_summary_included') !== true) {
-            indexes.push(i);
+
+    // Settings for each type
+    const shortCount = get_settings('combined_summary_short_count');
+    const shortOnce = get_settings('combined_summary_short_once');
+    const longCount = get_settings('combined_summary_long_count');
+    const longOnce = get_settings('combined_summary_long_once');
+    const sceneCount = get_settings('combined_summary_scene_count');
+    const sceneOnce = get_settings('combined_summary_scene_once');
+
+    // Helper to filter and limit
+    function collect(type, count, once) {
+        if (count === -1) return [];
+        let filtered = [];
+        for (let i = 0; i < chat.length; i++) {
+            let msg = chat[i];
+            if (!get_data(msg, 'memory')) continue;
+            if (get_data(msg, 'include') !== type) continue;
+            if (once && get_data(msg, `combined_summary_included_${type}`)) continue;
+            filtered.push(i);
         }
+        if (count > 0) return filtered.slice(-count); // most recent N
+        return filtered;
     }
+
+    // Short-term
+    indexes.push(...collect('short', shortCount, shortOnce));
+    // Long-term
+    indexes.push(...collect('long', longCount, longOnce));
+
+    // Scene summaries
+    if (sceneCount !== -1) {
+        let sceneIndexes = collect_scene_summary_indexes();
+        let filtered = [];
+        for (let idx of sceneIndexes) {
+            let msg = chat[idx];
+            if (sceneOnce && get_data(msg, 'combined_summary_included_scene')) continue;
+            filtered.push(idx);
+        }
+        if (sceneCount > 0) filtered = filtered.slice(-sceneCount);
+        indexes.push(...filtered);
+    }
+
+    // Remove duplicates and sort
+    indexes = [...new Set(indexes)].sort((a, b) => a - b);
+
     debug(`[COMBINED SUMMARY] Found ${indexes.length} messages to combine`);
     return indexes;
 }
 
-// Update flag_summaries_as_combined function to take an array of indexes
 function flag_summaries_as_combined(indexes) {
     if (!indexes || indexes.length === 0) return;
     let context = getContext();
     let chat = context.chat;
+    const shortOnce = get_settings('combined_summary_short_once');
+    const longOnce = get_settings('combined_summary_long_once');
+    const sceneOnce = get_settings('combined_summary_scene_once');
     for (let i of indexes) {
-        let message = chat[i];
-        set_data(message, 'combined_summary_included', true);
+        let msg = chat[i];
+        let type = get_data(msg, 'include');
+        if (type === 'short' && shortOnce) set_data(msg, 'combined_summary_included_short', true);
+        if (type === 'long' && longOnce) set_data(msg, 'combined_summary_included_long', true);
+        if (get_data(msg, 'scene_summary_memory') && sceneOnce) set_data(msg, 'combined_summary_included_scene', true);
     }
     debug(`[COMBINED SUMMARY] Marked ${indexes.length} summaries as combined`);
 }
 
+// When including scene summaries in combined summaries, use 'scene_summary_memory' from the message object.
+// Do NOT expect scene summaries to be in the root 'memory' property like short/long summaries.
+async function create_combined_summary_prompt() {
+    const ctx = getContext();
+    const summariesToCombine = collect_messages_to_combine();
+    if (!summariesToCombine.length) {
+        debug("[COMBINED SUMMARY] No summaries to combine, returning null");
+        return null;
+    }
+
+    // Get the summaries as JSON array (as required by the default prompt)
+    const summaries_json = concatenate_summaries(summariesToCombine);
+
+    // Get previous combined summary if needed
+    const previous_combined_summary = load_combined_summary();
+
+    // Get message history if needed (optional, depending on your template)
+    // For now, we'll leave it empty:
+    const history = "";
+
+    // Get the template from settings
+    let prompt = get_settings('combined_summary_prompt') || "";
+    let words = await get_combined_summary_preset_max_tokens();
+
+    // Substitute macros
+    prompt = ctx.substituteParamsExtended(prompt, {
+        words,
+        previous_combined_summary: previous_combined_summary || ""
+    });
+
+    // Substitute conditionals ({{#if ...}})
+    prompt = substitute_conditionals(prompt, {
+        message: summaries_json,
+        history,
+        previous_combined_summary: previous_combined_summary || ""
+    });
+
+    // Substitute regular params ({{macro}})
+    prompt = substitute_params(prompt, {
+        message: summaries_json,
+        history,
+        previous_combined_summary: previous_combined_summary || ""
+    });
+
+    // Format as system prompt if required
+    prompt = formatInstructModeChat("", prompt, false, true, "", "", "", null);
+
+    // Add prefill if set
+    prompt = `${prompt}\n${get_settings('combined_summary_prefill') || ""}`;
+
+    return prompt;
+}
+
 export {
-    get_combined_summary_key,
-    save_combined_summary,
-    load_combined_summary,
+    generate_combined_summary,
     get_combined_summary_preset_max_tokens,
-    get_combined_memory,
-    create_combined_summary_prompt,
-    collect_messages_to_combine,
-    flag_summaries_as_combined,
-    generate_combined_summary
-};
+    load_combined_summary,
+    save_combined_summary
+}

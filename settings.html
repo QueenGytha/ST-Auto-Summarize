@@ -332,6 +332,10 @@
                 <!-- Scene Summary -->
                 <hr>
                 <h4 class="textAlignCenter">Scene Summary <i class="fa-solid fa-info-circle" title="Summarize each scene break as a single summary, with customizable prompt and injection."></i></h4>
+                <label class="checkbox_label" title="Show or hide the scene summary navigator bar on the left.">
+                    <input id="scene_summary_navigator_toggle" type="checkbox" />
+                    <span>Show Scene Navigator Bar</span>
+                </label>
                 <label class="checkbox_label" title="Enable scene-level summarization and injection.">
                     <input id="scene_summary_enabled" type="checkbox" />
                     <span>Enable Scene Summaries</span>
@@ -434,6 +438,27 @@
                         <td><span>Combined Summary Prefill</span></td>
                         <td><input id="combined_summary_prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
                     </tr>
+                    <label class="checkbox_label" title="How many short-term memory summaries to include in each combined summary (-1 to exclude, 0 for unlimited).">
+                        <span>Short-term Memory: </span>
+                        <input id="combined_summary_short_count" class="text_pole widthUnset inline_setting" type="number" min="-1" max="999" value="0" />
+                        <span>Include up to this many</span>
+                        <input id="combined_summary_short_once" type="checkbox" />
+                        <span>Mark as used after combining</span>
+                    </label>
+                    <label class="checkbox_label" title="How many long-term memory summaries to include in each combined summary (-1 to exclude, 0 for unlimited).">
+                        <span>Long-term Memory: </span>
+                        <input id="combined_summary_long_count" class="text_pole widthUnset inline_setting" type="number" min="-1" max="999" value="0" />
+                        <span>Include up to this many</span>
+                        <input id="combined_summary_long_once" type="checkbox" />
+                        <span>Mark as used after combining</span>
+                    </label>
+                    <label class="checkbox_label" title="How many scene summaries to include in each combined summary (-1 to exclude, 0 for unlimited).">
+                        <span>Scene Summaries: </span>
+                        <input id="combined_summary_scene_count" class="text_pole widthUnset inline_setting" type="number" min="-1" max="999" value="0" />
+                        <span>Include up to this many</span>
+                        <input id="combined_summary_scene_once" type="checkbox" />
+                        <span>Mark as used after combining</span>
+                    </label>
                 </table>
                 <label title="Where to inject the combined summary.">
                     <select id="combined_summary_position" class="text_pole">
@@ -561,7 +586,12 @@
                 <label title="Automatically hide (exclude from prompts) messages older than this many messages (set -1 to disable)" class="checkbox_label">
                     <span>Auto Hide Messages Older Than The Last</span>
                     <input id="auto_hide_message_age" class="text_pole widthUnset inline_setting" type="number" min="-1" max="9999" />
-                    <span>(-1 to disable)</span>
+                    <span>Message(s) (-1 to disable)</span>
+                </label>
+                <label title="Automatically hide all messages in scenes older than this many scenes (set -1 to disable)" class="checkbox_label">
+                    <span>Auto Hide Messages Older Than The Last</span>
+                    <input id="auto_hide_scene_count" class="text_pole widthUnset inline_setting" type="number" min="-1" max="999" />
+                    <span>Scene(s) (-1 to disable)</span>
                 </label>
 
                 <!-- Misc. -->

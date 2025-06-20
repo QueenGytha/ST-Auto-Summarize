@@ -236,7 +236,8 @@ Try them out if you want.
 ---
 
 ### Todo
-- Auto-hide older than the last X scenes (with error detection if hidden before summarization)
+- Default to off per chat (already a setting?)
+- Default preset to off, with some included preset with generic out-of-the-box settings
 - Automatically detecting when there is a scene change
 - Automatically creating and updating lorebooks
 - 'Auto' option for injection placement, adjusting based on summary size (tips from https://rentry.org/how2claude#summarization)

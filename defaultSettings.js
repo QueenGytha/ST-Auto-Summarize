@@ -76,6 +76,12 @@ A valid summary must meet ALL these criteria:
     combined_summary_context_type: 'percent',
     combined_summary_connection_profile: "",
     combined_summary_completion_preset: "",
+    combined_summary_short_count: 0, // 0 = unlimited, -1 = exclude
+    combined_summary_short_once: false,
+    combined_summary_long_count: 0,
+    combined_summary_long_once: false,
+    combined_summary_scene_count: 0,
+    combined_summary_scene_once: false,
     debug_mode: false,
     display_memories: true,
     default_chat_enabled: true,
@@ -120,4 +126,6 @@ Object.assign(default_settings, {
     scene_summary_error_detection_prefill: "",
     scene_summary_error_detection_retries: 3,
     scene_summary_error_detection_prompt: `You are validating a scene summary. Return "VALID" if the summary is concise and accurate, otherwise return "INVALID".\n\nSummary:\n{{summary}}`,
+    auto_hide_message_age: -1,
+    auto_hide_scene_count: -1,
 });

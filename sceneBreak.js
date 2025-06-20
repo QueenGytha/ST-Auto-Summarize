@@ -4,6 +4,15 @@ import {
     summarize_text,
 } from './index.js';
 
+// SCENE SUMMARY PROPERTY STRUCTURE:
+// - Scene summaries are stored on the message object as:
+//     - 'scene_summary_memory': the current scene summary text (not at the root like 'memory')
+//     - 'scene_summary_versions': array of all versions of the scene summary
+//     - 'scene_summary_current_index': index of the current version
+//     - 'scene_break_visible': whether the scene break is visible
+//     - 'scene_summary_include': whether to include this scene summary in injections
+// - Do NOT expect scene summaries to be stored in the root 'memory' property.
+
 export const SCENE_BREAK_KEY = 'scene_break';
 export const SCENE_BREAK_VISIBLE_KEY = 'scene_break_visible';
 export const SCENE_BREAK_NAME_KEY = 'scene_break_name';
@@ -43,22 +52,34 @@ export function toggleSceneBreak(index, get_message_div, getContext, set_data, g
     }
     renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
     saveChatDebounced();
+
+    // Re-run auto-hide logic after toggling scene break
+    import('./autoHide.js').then(mod => {
+        mod.auto_hide_messages_by_command();
+    });
+
+    // Update navigator bar if present
+    if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
 }
 
 // --- Helper functions for versioned scene summaries ---
+// Scene summary properties are not at the root; see file header for structure.
 function getSceneSummaryVersions(message, get_data) {
     // Returns the array of summary versions, or an empty array if none
     return get_data(message, 'scene_summary_versions') || [];
 }
 
+// Scene summary properties are not at the root; see file header for structure.
 function setSceneSummaryVersions(message, set_data, versions) {
     set_data(message, 'scene_summary_versions', versions);
 }
 
+// Scene summary properties are not at the root; see file header for structure.
 function getCurrentSceneSummaryIndex(message, get_data) {
     return get_data(message, 'scene_summary_current_index') ?? 0;
 }
 
+// Scene summary properties are not at the root; see file header for structure.
 function setCurrentSceneSummaryIndex(message, set_data, idx) {
     set_data(message, 'scene_summary_current_index', idx);
 }
@@ -210,6 +231,8 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     $sceneBreak.find('.sceneBreak-name').on('change blur', function () {
         set_data(message, SCENE_BREAK_NAME_KEY, $(this).val());
         saveChatDebounced();
+        // Update navigator bar if present
+        if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
     });
     $sceneBreak.find('.scene-summary-box').on('change blur', function () {
         // Update the current version in the versions array
@@ -477,21 +500,6 @@ export function renderAllSceneBreaks(get_message_div, getContext, get_data, set_
             renderSceneBreak(i, get_message_div, getContext, get_data, set_data, saveChatDebounced);
         }
     }
-}
-
-function collect_scene_summary_indexes() {
-    const ctx = getContext();
-    const chat = ctx.chat;
-    let indexes = [];
-    for (let i = 0; i < chat.length; i++) {
-        const msg = chat[i];
-        if (!msg) continue;
-        if (get_data(msg, 'scene_break_visible') === false) continue;
-        const summary = get_data(msg, 'scene_summary_memory');
-        if (summary && summary.trim()) {
-            indexes.push(i);
-        }
-    }
-    debug(`[SCENE SUMMARY] Final collected indexes: ${JSON.stringify(indexes)}`);
-    return indexes;
+    // Update navigator bar if present
+    if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
 }
