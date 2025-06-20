@@ -48,6 +48,9 @@ export function toggleSceneBreak(index, get_message_div, getContext, set_data, g
     import('./autoHide.js').then(mod => {
         mod.auto_hide_messages_by_command();
     });
+
+    // Update navigator bar if present
+    if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
 }
 
 // --- Helper functions for versioned scene summaries ---
@@ -215,6 +218,8 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     $sceneBreak.find('.sceneBreak-name').on('change blur', function () {
         set_data(message, SCENE_BREAK_NAME_KEY, $(this).val());
         saveChatDebounced();
+        // Update navigator bar if present
+        if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
     });
     $sceneBreak.find('.scene-summary-box').on('change blur', function () {
         // Update the current version in the versions array
@@ -482,6 +487,8 @@ export function renderAllSceneBreaks(get_message_div, getContext, get_data, set_
             renderSceneBreak(i, get_message_div, getContext, get_data, set_data, saveChatDebounced);
         }
     }
+    // Update navigator bar if present
+    if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
 }
 
 function collect_scene_summary_indexes() {

@@ -57,3 +57,5 @@ export function initializeSceneNavigatorBar() {
     // Initial render
     renderSceneNavigatorBar();
 }
+
+window.renderSceneNavigatorBar = renderSceneNavigatorBar;
