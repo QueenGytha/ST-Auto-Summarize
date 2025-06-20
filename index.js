@@ -23,6 +23,7 @@ import { runRegexScript } from '../../../../scripts/extensions/regex/engine.js'
 import { addSceneBreakButton, bindSceneBreakButton, renderAllSceneBreaks } from './sceneBreak.js';
 import { get_message_div, get_summary_style_class, update_message_visuals, update_all_message_visuals, open_edit_memory_input } from './messageVisuals.js';
 import { check_message_exclusion, update_message_inclusion_flags, collect_chat_messages, concatenate_summary, concatenate_summaries, get_long_memory, get_short_memory } from './memoryCore.js';
+import { progress_bar, remove_progress_bar } from './progressBar.js';
 export { MODULE_NAME };
 
 // THe module name modifies where settings are stored, where information is stored on message objects, macros, etc.
@@ -900,53 +901,6 @@ async function get_user_setting_text_input(key, title, description="") {
         set_settings(key, input);
         refresh_settings()
         refresh_memory()
-    }
-}
-function progress_bar(id, progress, total, title) {
-    // Display, update, or remove a progress bar
-    id = `${PROGRESS_BAR_ID}_${id}`
-    let $existing = $(`.${id}`);
-    if ($existing.length > 0) {  // update the progress bar
-        if (title) $existing.find('div.title').text(title);
-        if (progress) {
-            $existing.find('span.progress').text(progress)
-            $existing.find('progress').val(progress)
-        }
-        if (total) {
-            $existing.find('span.total').text(total)
-            $existing.find('progress').attr('max', total)
-        }
-        return;
-    }
-
-    // create the progress bar
-    let bar = $(`
-<div class="${id} auto_summarize_progress_bar flex-container justifyspacebetween alignitemscenter">
-    <div class="title">${title}</div>
-    <div>(<span class="progress">${progress}</span> / <span class="total">${total}</span>)</div>
-    <progress value="${progress}" max="${total}" class="flex1"></progress>
-    <button class="menu_button fa-solid fa-stop" title="Abort summarization"></button>
-</div>`)
-
-    // add a click event to abort the summarization
-    bar.find('button').on('click', function () {
-        stop_summarization();
-    })
-
-    // append to the main chat area (#sheld)
-    $('#sheld').append(bar);
-
-    // append to the edit interface if it's open
-    if (memoryEditInterface?.is_open()) {
-        memoryEditInterface.$progress_bar.append(bar)
-    }
-}
-function remove_progress_bar(id) {
-    id = `${PROGRESS_BAR_ID}_${id}`
-    let $existing = $(`.${id}`);
-    if ($existing.length > 0) {  // found
-        debug("Removing progress bar")
-        $existing.remove();
     }
 }
 
@@ -2331,6 +2285,7 @@ export {
     css_edit_textarea,
     summary_div_class,
     summary_reasoning_class,
+    PROGRESS_BAR_ID,
     system_message_types,
     generic_memories_macro,
     //settingsManager
@@ -2349,3 +2304,4 @@ export * from './slashCommands.js';
 export * from './settingsManager.js';
 export * from './messageVisuals.js';
 export * from './memoryCore.js';
+export * from './progressBar.js';
