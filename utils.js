@@ -4,7 +4,11 @@ import {
     debounce,
     getContext,
     debounce_timeout,
-    getMaxContextSize
+    getMaxContextSize,
+    default_settings,
+    set_settings,
+    refresh_settings,
+    refresh_memory
 } from './index.js';
 
 function log(message) {
@@ -149,6 +153,52 @@ function check_st_version() {
     }
 }
 
+function display_injection_preview() {
+    let text = refresh_memory()
+    text = `...\n\n${text}\n\n...`
+    display_text_modal("Memory State Preview", text);
+}
+
+async function display_text_modal(title, text="") {
+    // Display a modal with the given title and text
+    // replace newlines in text with <br> for HTML
+    let ctx = getContext();
+    text = text.replace(/\n/g, '<br>');
+    let html = `<h2>${title}</h2><div style="text-align: left; overflow: auto;">${text}</div>`
+    //const popupResult = await ctx.callPopup(html, 'text', undefined, { okButton: `Close` });
+    let popup = new ctx.Popup(html, ctx.POPUP_TYPE.TEXT, undefined, {okButton: 'Close', allowVerticalScrolling: true});
+    await popup.show()
+}
+async function get_user_setting_text_input(key, title, description="") {
+    // Display a modal with a text area input, populated with a given setting value
+    let value = get_settings(key) ?? '';
+
+    title = `
+<h3>${title}</h3>
+<p>${description}</p>
+`
+
+    let restore_button = {  // don't specify "result" key do not close the popup
+        text: 'Restore Default',
+        appendAtEnd: true,
+        action: () => { // fill the input with the default value
+            popup.mainInput.value = default_settings[key] ?? '';
+        }
+    }
+    let ctx = getContext();
+    let popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {rows: 20, customButtons: [restore_button]});
+
+    // Now remove the ".result-control" class to prevent it from submitting when you hit enter.
+    popup.mainInput.classList.remove('result-control');
+
+    let input = await popup.show();
+    if (input) {
+        set_settings(key, input);
+        refresh_settings()
+        refresh_memory()
+    }
+}
+
 export {
     log,
     debug,
@@ -166,5 +216,8 @@ export {
     clean_string_for_title,
     escape_string,
     unescape_string,
-    check_st_version
+    check_st_version,
+    display_injection_preview,
+    display_text_modal,
+    get_user_setting_text_input
 };

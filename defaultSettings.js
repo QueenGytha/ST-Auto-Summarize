@@ -3,8 +3,10 @@ import {
     default_prompt,
     default_long_template,
     default_short_template,
-    default_combined_template // <-- add this
-} from './defaultPrompts.js';
+    default_combined_template,
+    extension_prompt_types,
+    extension_prompt_roles
+} from './index.js';
 
 export const default_settings = {
     // Error detection settings
@@ -78,3 +80,20 @@ A valid summary must meet ALL these criteria:
     default_chat_enabled: true,
     use_global_toggle_state: false,
 };
+
+Object.assign(default_settings, {
+    combined_summary_new_count: 0,
+    combined_summary_enabled: false,
+    show_combined_summary_toast: true,
+    combined_summary_prompt: default_combined_summary_prompt,
+    combined_summary_prefill: "",
+    combined_summary_template: default_combined_template,
+    combined_summary_position: extension_prompt_types.IN_PROMPT,
+    combined_summary_depth: 2,
+    combined_summary_role: extension_prompt_roles.SYSTEM,
+    combined_summary_scan: false,
+    combined_summary_context_limit: 10,
+    combined_summary_context_type: 'percent',
+    combined_summary_connection_profile: "",
+    combined_summary_completion_preset: "",
+});

@@ -14,6 +14,27 @@ const settings_content_class = `auto_summarize_memory_settings_content` // Class
 const group_member_enable_button = `auto_summarize_memory_group_member_enable`
 const group_member_enable_button_highlight = `auto_summarize_memory_group_member_enabled`
 
+// THe module name modifies where settings are stored, where information is stored on message objects, macros, etc.
+const MODULE_NAME = 'auto_summarize_memory';
+const MODULE_NAME_FANCY = 'auto_summarize Memory';
+const PROGRESS_BAR_ID = `${MODULE_NAME}_progress_bar`;
+
+// Macros for long-term and short-term memory injection
+const long_memory_macro = `long_term_memory`;
+const short_memory_macro = `short_term_memory`;
+const generic_memories_macro = `memories`;
+
+// message button classes
+const remember_button_class = `${MODULE_NAME}_remember_button`
+const summarize_button_class = `${MODULE_NAME}_summarize_button`
+const edit_button_class = `${MODULE_NAME}_edit_button`
+const forget_button_class = `${MODULE_NAME}_forget_button`
+const delete_button_class = `${MODULE_NAME}_delete_button`
+
+// Combined Summary Feature additions at the top
+const combined_memory_macro = `combined_memory`;
+
+
 export {
     css_message_div,
     css_short_memory,
@@ -28,5 +49,17 @@ export {
     settings_div_id,
     settings_content_class,
     group_member_enable_button,
-    group_member_enable_button_highlight
+    group_member_enable_button_highlight,
+    MODULE_NAME,
+    MODULE_NAME_FANCY,
+    PROGRESS_BAR_ID,
+    long_memory_macro,
+    short_memory_macro,
+    generic_memories_macro,
+    remember_button_class,
+    summarize_button_class,
+    edit_button_class,
+    forget_button_class,
+    delete_button_class,
+    combined_memory_macro
 };

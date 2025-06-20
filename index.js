@@ -17,7 +17,7 @@ import { animation_duration, scrollChatToBottom, extension_prompt_roles, extensi
 import { initialize_settings_listeners } from './settingsUI.js';
 import { initialize_settings, hard_reset_settings, soft_reset_settings, reset_settings, set_settings, get_settings, get_settings_element, get_manifest, load_settings_html, global_settings, settings_ui_map } from './settingsManager.js';
 import { initialize_slash_commands } from './slashCommands.js';
-import { log, debug, error, toast, toast_debounced, saveChatDebounced, count_tokens, get_context_size, get_long_token_limit, get_short_token_limit, get_current_character_identifier, get_current_chat_identifier, get_extension_directory, clean_string_for_title, escape_string, unescape_string, check_st_version } from './utils.js';
+import { log, debug, error, toast, toast_debounced, saveChatDebounced, count_tokens, get_context_size, get_long_token_limit, get_short_token_limit, get_current_character_identifier, get_current_chat_identifier, get_extension_directory, clean_string_for_title, escape_string, unescape_string, check_st_version, display_injection_preview, display_text_modal, get_user_setting_text_input } from './utils.js';
 import { get_combined_summary_key, save_combined_summary, load_combined_summary, get_combined_summary_preset_max_tokens, get_combined_memory, create_combined_summary_prompt, collect_messages_to_combine, flag_summaries_as_combined, generate_combined_summary } from './combinedSummary.js';
 import { copy_settings, detect_settings_difference, save_profile, load_profile, export_profile, import_profile, rename_profile, new_profile, delete_profile, toggle_character_profile, toggle_chat_profile, get_character_profile, set_character_profile, get_chat_profile, auto_load_profile, set_chat_profile } from './profileManager.js';
 import { default_combined_summary_prompt, default_prompt, default_long_template, default_short_template, default_combined_template } from './defaultPrompts.js';
@@ -39,44 +39,8 @@ import { setStopSummarization, summarize_messages, summarize_message, summarize_
 import { validate_summary } from './summaryValidation.js';
 import { get_current_preset, get_summary_preset, set_preset, get_presets, verify_preset, check_preset_valid, get_summary_preset_max_tokens} from './presetManager.js';
 import { on_chat_event, memoryEditInterface } from './eventHandlers.js';
-import { settings_content_class, group_member_enable_button, group_member_enable_button_highlight, css_message_div, css_short_memory, css_long_memory, css_remember_memory, css_exclude_memory, css_lagging_memory, summary_div_class, summary_reasoning_class, css_button_separator, css_edit_textarea, settings_div_id } from './styleConstants.js';
-
-// THe module name modifies where settings are stored, where information is stored on message objects, macros, etc.
-const MODULE_NAME = 'auto_summarize_memory';
-const MODULE_NAME_FANCY = 'auto_summarize Memory';
-const PROGRESS_BAR_ID = `${MODULE_NAME}_progress_bar`;
-
-// Macros for long-term and short-term memory injection
-const long_memory_macro = `long_term_memory`;
-const short_memory_macro = `short_term_memory`;
-const generic_memories_macro = `memories`;
-
-// message button classes
-const remember_button_class = `${MODULE_NAME}_remember_button`
-const summarize_button_class = `${MODULE_NAME}_summarize_button`
-const edit_button_class = `${MODULE_NAME}_edit_button`
-const forget_button_class = `${MODULE_NAME}_forget_button`
-const delete_button_class = `${MODULE_NAME}_delete_button`
-
-// Combined Summary Feature additions at the top
-const combined_memory_macro = `combined_memory`;
-
-Object.assign(default_settings, {
-    combined_summary_new_count: 0,
-    combined_summary_enabled: false,
-    show_combined_summary_toast: true,
-    combined_summary_prompt: default_combined_summary_prompt,
-    combined_summary_prefill: "",
-    combined_summary_template: default_combined_template,
-    combined_summary_position: extension_prompt_types.IN_PROMPT,
-    combined_summary_depth: 2,
-    combined_summary_role: extension_prompt_roles.SYSTEM,
-    combined_summary_scan: false,
-    combined_summary_context_limit: 10,
-    combined_summary_context_type: 'percent',
-    combined_summary_connection_profile: "",
-    combined_summary_completion_preset: "",
-});
+import { settings_content_class, group_member_enable_button, group_member_enable_button_highlight, css_message_div, css_short_memory, css_long_memory, css_remember_memory, css_exclude_memory, css_lagging_memory, summary_div_class, summary_reasoning_class, css_button_separator, css_edit_textarea, settings_div_id, MODULE_NAME, MODULE_NAME_FANCY, PROGRESS_BAR_ID, short_memory_macro,  long_memory_macro, generic_memories_macro, remember_button_class, summarize_button_class, edit_button_class, forget_button_class, delete_button_class, combined_memory_macro } from './styleConstants.js';
+import { auto_hide_messages_by_command } from './autoHide.js';  
 
 // global flags and whatnot
 setStopSummarization(false);
@@ -162,121 +126,6 @@ function toggle_character_enabled(character_key) {
     set_settings('disabled_group_characters', disabled_characters_settings)
     debug(`${disabled ? "Enabled" : "Disabled"} group character summarization (${character_key})`)
     refresh_memory()
-}
-
-function display_injection_preview() {
-    let text = refresh_memory()
-    text = `...\n\n${text}\n\n...`
-    display_text_modal("Memory State Preview", text);
-}
-
-async function display_text_modal(title, text="") {
-    // Display a modal with the given title and text
-    // replace newlines in text with <br> for HTML
-    let ctx = getContext();
-    text = text.replace(/\n/g, '<br>');
-    let html = `<h2>${title}</h2><div style="text-align: left; overflow: auto;">${text}</div>`
-    //const popupResult = await ctx.callPopup(html, 'text', undefined, { okButton: `Close` });
-    let popup = new ctx.Popup(html, ctx.POPUP_TYPE.TEXT, undefined, {okButton: 'Close', allowVerticalScrolling: true});
-    await popup.show()
-}
-async function get_user_setting_text_input(key, title, description="") {
-    // Display a modal with a text area input, populated with a given setting value
-    let value = get_settings(key) ?? '';
-
-    title = `
-<h3>${title}</h3>
-<p>${description}</p>
-`
-
-    let restore_button = {  // don't specify "result" key do not close the popup
-        text: 'Restore Default',
-        appendAtEnd: true,
-        action: () => { // fill the input with the default value
-            popup.mainInput.value = default_settings[key] ?? '';
-        }
-    }
-    let ctx = getContext();
-    let popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {rows: 20, customButtons: [restore_button]});
-
-    // Now remove the ".result-control" class to prevent it from submitting when you hit enter.
-    popup.mainInput.classList.remove('result-control');
-
-    let input = await popup.show();
-    if (input) {
-        set_settings(key, input);
-        refresh_settings()
-        refresh_memory()
-    }
-}
-
-async function auto_hide_messages_by_command() {
-    let ctx = getContext();
-    let auto_hide_age = get_settings('auto_hide_message_age');
-    if (auto_hide_age < 0) {
-        debug("[auto_hide] Disabled (auto_hide_age < 0)");
-        return;
-    }
-
-    let chat = ctx.chat;
-    let cutoff = chat.length - auto_hide_age;
-    let to_hide = [];
-    let to_unhide = [];
-
-    debug(`[auto_hide] Running. auto_hide_age=${auto_hide_age}, chat.length=${chat.length}, cutoff=${cutoff}`);
-
-    for (let i = 0; i < chat.length; i++) {
-        if (i < cutoff) {
-            debug(`[auto_hide] Will hide message ${i}`);
-            to_hide.push(i);
-        } else {
-            debug(`[auto_hide] Will unhide message ${i}`);
-            to_unhide.push(i);
-        }
-    }
-
-    // Hide in a single range if possible
-    if (to_hide.length > 0) {
-        let start = to_hide[0];
-        let end = to_hide[to_hide.length - 1];
-        debug(`[auto_hide] Hiding messages ${start}-${end}`);
-        await ctx.executeSlashCommandsWithOptions(`/hide ${start}-${end}`);
-    }
-
-    // Batch unhide contiguous ranges
-    if (to_unhide.length > 0) {
-        let batchStart = null;
-        let last = null;
-        for (let i = 0; i < to_unhide.length; i++) {
-            if (batchStart === null) batchStart = to_unhide[i];
-            if (last !== null && to_unhide[i] !== last + 1) {
-                // Send previous batch
-                if (batchStart === last) {
-                    debug(`[auto_hide] Unhiding message ${batchStart}`);
-                    await ctx.executeSlashCommandsWithOptions(`/unhide ${batchStart}`);
-                } else {
-                    debug(`[auto_hide] Unhiding messages ${batchStart}-${last}`);
-                    await ctx.executeSlashCommandsWithOptions(`/unhide ${batchStart}-${last}`);
-                }
-                batchStart = to_unhide[i];
-            }
-            last = to_unhide[i];
-        }
-        // Send final batch
-        if (batchStart !== null) {
-            if (batchStart === last) {
-                debug(`[auto_hide] Unhiding message ${batchStart}`);
-                await ctx.executeSlashCommandsWithOptions(`/unhide ${batchStart}`);
-            } else {
-                debug(`[auto_hide] Unhiding messages ${batchStart}-${last}`);
-                await ctx.executeSlashCommandsWithOptions(`/unhide ${batchStart}-${last}`);
-            }
-        }
-    }
-
-    // Wait a bit for SillyTavern to update the UI/backend
-    debug("[auto_hide] Waiting for backend/UI update...");
-    await new Promise(resolve => setTimeout(resolve, 200));
 }
 
 async function refresh_memory() {
@@ -434,13 +283,14 @@ export {
 
 export {
     // Consts from within index
-    memoryEditInterface, refresh_memory_debounced, MODULE_NAME, MODULE_NAME_FANCY, PROGRESS_BAR_ID, css_message_div, css_short_memory, css_long_memory, css_remember_memory, css_exclude_memory, css_lagging_memory, summary_div_class, summary_reasoning_class, css_button_separator, css_edit_textarea, settings_div_id, settings_content_class, group_member_enable_button, group_member_enable_button_highlight, long_memory_macro, short_memory_macro, generic_memories_macro, remember_button_class, summarize_button_class, edit_button_class, forget_button_class, delete_button_class, combined_memory_macro, global_settings, settings_ui_map
+    memoryEditInterface, refresh_memory_debounced, css_message_div, css_short_memory, css_long_memory, css_remember_memory, css_exclude_memory, css_lagging_memory, summary_div_class, summary_reasoning_class, css_button_separator, css_edit_textarea, settings_div_id, settings_content_class, group_member_enable_button, group_member_enable_button_highlight, global_settings, settings_ui_map
 }
 
 export {
     // Exports from imported SillyTavern modules
     getPresetManager, is_group_generating, selected_group, openGroupId, loadMovingUIState, renderStoryString, power_user, dragElement, debounce_timeout, MacrosParser, commonEnumProviders, getRegexScripts, runRegexScript, getContext, getApiUrl, extension_settings, getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition, animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, is_send_press, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata
 };
+
 
 export * from './combinedSummary.js';
 export * from './profileManager.js';
@@ -467,3 +317,4 @@ export * from './summaryValidation.js';
 export * from './presetManager.js';
 export * from './eventHandlers.js';
 export * from './styleConstants.js';
+export * from './autoHide.js'; 
