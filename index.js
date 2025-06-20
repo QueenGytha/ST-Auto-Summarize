@@ -34,6 +34,7 @@ import { set_data, get_data, get_memory, edit_memory, clear_memory, toggle_memor
 import { initialize_popout, open_popout, close_popout, toggle_popout } from './popout.js';
 import { initialize_message_buttons, initialize_group_member_buttons, set_character_enabled_button_states, add_menu_button, initialize_menu_buttons } from './buttonBindings.js';
 import { check_connection_profiles_active, get_current_connection_profile, get_connection_profile_api, get_summary_connection_profile, set_connection_profile, get_connection_profiles, verify_connection_profile, check_connection_profile_valid } from './connectionProfiles.js';
+import { system_prompt_split, substitute_conditionals, substitute_params } from './promptUtils.js';
 
 // THe module name modifies where settings are stored, where information is stored on message objects, macros, etc.
 const MODULE_NAME = 'auto_summarize_memory';
@@ -765,57 +766,7 @@ function get_message_history(index) {
     // join with newlines
     return history.join('\n')
 }
-function system_prompt_split(text) {
-    // Given text with some number of {{macro}} items, split the text by these items and format the rest as system messages surrounding the macros
-    // It is assumed that the macros will be later replaced with appropriate text
 
-    // split on either {{...}} or {{#if ... /if}}.
-    // /g flag is for global, /s flag makes . match newlines so the {{#if ... /if}} can span multiple lines
-    let parts = text.split(/(\{\{#if.*?\/if}})|(\{\{.*?}})/gs);
-
-    let formatted = parts.map((part) => {
-        if (!part) return ""  // some parts are undefined
-        part = part.trim()  // trim whitespace
-        if (!part) return ""  // if empty after trimming
-        if (part.startsWith('{{') && part.endsWith('}}')) {
-            return part  // don't format macros
-        }
-        let formatted = formatInstructModeChat("assistant", part, false, true, "", "", "", null)
-        return `${formatted}`
-    })
-    return formatted.join('')
-}
-function substitute_conditionals(text, params) {
-    // substitute any {{#if macro}} ... {{/if}} blocks in the text with the corresponding content if the macro is present in the params object.
-    // Does NOT replace the actual macros, that is done in substitute_params()
-
-    let parts = text.split(/(\{\{#if.*?\/if}})/gs);
-    let formatted = parts.map((part) => {
-        if (!part) return ""
-        if (!part.startsWith('{{#if')) return part
-        part = part.trim()  // clean whitespace
-        let macro_name = part.match(/\{\{#if (.*?)}}/)[1]
-        let macro_present = Boolean(params[macro_name]?.trim())
-        let conditional_content = part.match(/\{\{#if.*?}}(.*?)\{\{\/if}}/s)[1] ?? ""
-        return macro_present ? conditional_content : ""
-    })
-    return formatted.join('')
-}
-function substitute_params(text, params) {
-    // custom function to parse macros because I literally cannot find where ST does it in their code.
-    // Does NOT take into account {{#if macro}} ... {{/if}} blocks, that is done in substitute_conditionals()
-    // If the macro is not found in the params object, it is replaced with an empty string
-
-    let parts = text.split(/(\{\{.*?}})/g);
-    let formatted = parts.map((part) => {
-        if (!part) return ""
-        if (!part.startsWith('{{') || !part.endsWith('}}')) return part
-        part = part.trim()  // clean whitespace
-        let macro = part.slice(2, -2)
-        return params[macro] ?? ""
-    })
-    return formatted.join('')
-}
 async function create_summary_prompt(index) {
     // create the full summary prompt for the message at the given index.
     // the instruct template will automatically add an input sequence to the beginning and an output sequence to the end.
@@ -1370,3 +1321,4 @@ export * from './messageData.js';
 export * from './popout.js';
 export * from './buttonBindings.js';
 export * from './connectionProfiles.js';
+export * from './promptUtils.js';
