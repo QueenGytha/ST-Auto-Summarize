@@ -1,91 +1,15 @@
 import { initialize_settings_listeners } from './settingsUI.js';
-import {
-    initialize_settings,
-    hard_reset_settings,
-    soft_reset_settings,
-    reset_settings,
-    set_settings,
-    get_settings,
-    get_settings_element,
-    get_manifest,
-    load_settings_html
-} from './settingsManager.js';
+import { initialize_settings, hard_reset_settings, soft_reset_settings, reset_settings, set_settings, get_settings, get_settings_element, get_manifest, load_settings_html} from './settingsManager.js';
 import { initialize_slash_commands } from './slashCommands.js';
-import {
-    log,
-    debug,
-    error,
-    toast,
-    toast_debounced,
-    saveChatDebounced,
-    count_tokens,
-    get_context_size,
-    get_long_token_limit,
-    get_short_token_limit,
-    get_current_character_identifier,
-    get_current_chat_identifier,
-    get_extension_directory,
-    clean_string_for_title,
-    escape_string,
-    unescape_string,
-    check_st_version
-} from './utils.js';
-import {
-    get_combined_summary_key,
-    save_combined_summary,
-    load_combined_summary,
-    get_combined_summary_preset_max_tokens,
-    get_combined_memory,
-    create_combined_summary_prompt,
-    collect_messages_to_combine,
-    flag_summaries_as_combined,
-    generate_combined_summary
-} from './combinedSummary.js';
-import {
-    copy_settings,
-    detect_settings_difference,
-    save_profile,
-    load_profile,
-    export_profile,
-    import_profile,
-    rename_profile,
-    new_profile,
-    delete_profile,
-    toggle_character_profile,
-    toggle_chat_profile,
-    get_character_profile,
-    set_character_profile,
-    get_chat_profile,
-    auto_load_profile,
-    set_chat_profile
-} from './profileManager.js';
-import {
-    default_combined_summary_prompt,
-    default_prompt,
-    default_long_template,
-    default_short_template,
-    default_combined_template // <-- add this line
-} from './defaultPrompts.js';
+import { log, debug, error, toast, toast_debounced, saveChatDebounced, count_tokens, get_context_size, get_long_token_limit, get_short_token_limit, get_current_character_identifier, get_current_chat_identifier, get_extension_directory, clean_string_for_title, escape_string, unescape_string, check_st_version } from './utils.js';
+import { get_combined_summary_key, save_combined_summary, load_combined_summary, get_combined_summary_preset_max_tokens, get_combined_memory, create_combined_summary_prompt, collect_messages_to_combine, flag_summaries_as_combined, generate_combined_summary } from './combinedSummary.js';
+import { copy_settings, detect_settings_difference, save_profile, load_profile, export_profile, import_profile, rename_profile, new_profile, delete_profile, toggle_character_profile, toggle_chat_profile, get_character_profile, set_character_profile, get_chat_profile, auto_load_profile, set_chat_profile } from './profileManager.js';
+import { default_combined_summary_prompt, default_prompt, default_long_template, default_short_template, default_combined_template } from './defaultPrompts.js';
 import { MemoryEditInterface } from './memoryEditInterface.js';
 import { default_settings } from './defaultSettings.js';
 import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from '../../../utils.js';
 import { getContext, getApiUrl, extension_settings } from '../../../extensions.js';
-import {
-    animation_duration,
-    scrollChatToBottom,
-    extension_prompt_roles,
-    extension_prompt_types,
-    is_send_press,
-    saveSettingsDebounced,
-    generateRaw,
-    getMaxContextSize,
-    streamingProcessor,
-    amount_gen,
-    system_message_types,
-    CONNECT_API_MAP,
-    main_api,
-    chat_metadata,
-} from '../../../../script.js';
+import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, is_send_press, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata } from '../../../../script.js';
 import { getPresetManager } from '../../../preset-manager.js'
 import { formatInstructModeChat } from '../../../instruct-mode.js';
 import { is_group_generating, selected_group, openGroupId } from '../../../group-chats.js';
@@ -96,13 +20,7 @@ import { MacrosParser } from '../../../macros.js';
 import { commonEnumProviders } from '../../../slash-commands/SlashCommandCommonEnumsProvider.js';
 import { getRegexScripts } from '../../../../scripts/extensions/regex/index.js'
 import { runRegexScript } from '../../../../scripts/extensions/regex/engine.js'
-
-import {
-    addSceneBreakButton,
-    bindSceneBreakButton,
-    renderAllSceneBreaks
-} from './sceneBreak.js';
-
+import { addSceneBreakButton, bindSceneBreakButton, renderAllSceneBreaks } from './sceneBreak.js';
 export { MODULE_NAME };
 
 // THe module name modifies where settings are stored, where information is stored on message objects, macros, etc.
