@@ -12,7 +12,16 @@ import {
     character_enabled,
     get_character_key,
     system_message_types,
-    generic_memories_macro
+    generic_memories_macro,
+    auto_hide_messages_by_command,
+    chat_enabled,
+    MODULE_NAME,
+    load_combined_summary,
+    formatInstructModeChat,
+    main_api,
+    extension_prompt_types,
+    debounce,
+    debounce_timeout
 } from './index.js';
 
 // Retrieving memories
@@ -221,6 +230,61 @@ function get_short_memory() {
     return ctx.substituteParamsExtended(template, {[generic_memories_macro]: text});
 }
 
+async function refresh_memory() {
+    let ctx = getContext();
+
+    // --- Auto-hide/unhide messages older than X ---
+    await auto_hide_messages_by_command();
+    // --- end auto-hide ---
+
+    if (!chat_enabled()) { // if chat not enabled, remove the injections
+        ctx.setExtensionPrompt(`${MODULE_NAME}_long`, "");
+        ctx.setExtensionPrompt(`${MODULE_NAME}_short`, "");
+        ctx.setExtensionPrompt(`${MODULE_NAME}_combined`, "");
+        return;
+    }
+
+    debug("Refreshing memory")
+
+    // Update the UI according to the current state of the chat memories, and update the injection prompts accordingly
+    update_message_inclusion_flags()  // update the inclusion flags for all messages
+
+    // get the filled out templates
+    let long_injection = get_long_memory();
+    let short_injection = get_short_memory();
+
+    // --- Combined Summary Injection ---
+    // Don't generate combined summary here, just load the existing one
+    const combined_summary = load_combined_summary();
+    let combined_injection = "";
+    
+    if (get_settings('combined_summary_enabled') && combined_summary) {
+        let template = get_settings('combined_summary_template');
+        combined_injection = ctx.substituteParamsExtended(template, {[generic_memories_macro]: combined_summary});
+    }
+    // --- END Combined Summary Injection ---
+
+    let long_term_position = get_settings('long_term_position')
+    let short_term_position = get_settings('short_term_position')
+    let combined_summary_position = get_settings('combined_summary_position');
+
+    // if using text completion, we need to wrap it in a system prompt
+    if (main_api !== 'openai') {
+        if (long_term_position !== extension_prompt_types.IN_CHAT && long_injection.length) long_injection = formatInstructModeChat("", long_injection, false, true)
+        if (short_term_position !== extension_prompt_types.IN_CHAT && short_injection.length) short_injection = formatInstructModeChat("", short_injection, false, true)
+        if (combined_summary_position !== extension_prompt_types.IN_CHAT && combined_injection.length) combined_injection = formatInstructModeChat("", combined_injection, false, true)
+    }
+
+    // inject the memories into the templates, if they exist
+    ctx.setExtensionPrompt(`${MODULE_NAME}_long`,  long_injection,  long_term_position, get_settings('long_term_depth'), get_settings('long_term_scan'), get_settings('long_term_role'));
+    ctx.setExtensionPrompt(`${MODULE_NAME}_short`, short_injection, short_term_position, get_settings('short_term_depth'), get_settings('short_term_scan'), get_settings('short_term_role'));
+    ctx.setExtensionPrompt(`${MODULE_NAME}_combined`, combined_injection, combined_summary_position, get_settings('combined_summary_depth'), get_settings('combined_summary_scan'), get_settings('combined_summary_role'));
+
+    return `${long_injection}\n\n...\n\n${short_injection}\n\n...\n\n${combined_injection}`  // return the concatenated memory text
+}
+const refresh_memory_debounced = debounce(refresh_memory, debounce_timeout.relaxed);
+
+
 export {
     check_message_exclusion,
     update_message_inclusion_flags,
@@ -228,5 +292,7 @@ export {
     concatenate_summary,
     concatenate_summaries,
     get_long_memory,
-    get_short_memory
+    get_short_memory,
+    refresh_memory,
+    refresh_memory_debounced
 };

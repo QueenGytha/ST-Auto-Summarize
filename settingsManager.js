@@ -7,7 +7,12 @@ import {
     refresh_settings,
     saveSettingsDebounced,
     get_extension_directory,
-    load_profile
+    load_profile,
+    getContext,
+    refresh_memory,
+    update_all_message_visuals,
+    scrollChatToBottom,
+    selected_group
 } from './index.js';
 
 // Settings
@@ -113,6 +118,87 @@ async function load_settings_html() {
     return new Promise(resolve => resolve(found))
 }
 
+function chat_enabled() {
+    // check if the extension is enabled in the current chat
+    let context = getContext();
+
+    // global state
+    if (get_settings('use_global_toggle_state')) {
+        return get_settings('global_toggle_state')
+    }
+
+    // per-chat state
+    return get_settings('chats_enabled')?.[context.chatId] ?? get_settings('default_chat_enabled')
+}
+function toggle_chat_enabled(value=null) {
+    // Change the state of the extension. If value is null, toggle. Otherwise, set to the given value
+    let current = chat_enabled();
+
+    if (value === null) {  // toggle
+        value = !current;
+    } else if (value === current) {
+        return;  // no change
+    }
+
+    // set the new value
+    if (get_settings('use_global_toggle_state')) {   // using the global state - update the global state
+        set_settings('global_toggle_state', value);
+    } else {  // using per-chat state - update the chat state
+        let enabled = get_settings('chats_enabled');
+        let context = getContext();
+        enabled[context.chatId] = value;
+        set_settings('chats_enabled', enabled);
+    }
+
+
+    if (value) {
+        toastr.info(`Memory is now enabled for this chat`);
+    } else {
+        toastr.warning(`Memory is now disabled for this chat`);
+    }
+    refresh_memory()
+
+    // update the message visuals
+    update_all_message_visuals()  //not needed? happens in update_message_influsion_flags
+
+    // refresh settings UI
+    refresh_settings()
+
+    // scroll to the bottom of the chat
+    scrollChatToBottom()
+}
+function character_enabled(character_key) {
+    // check if the given character is enabled for summarization in the current chat
+    let group_id = selected_group
+    if (selected_group === null) return true;  // not in group chat, always enabled
+
+    let disabled_characters_settings = get_settings('disabled_group_characters')
+    let disabled_characters = disabled_characters_settings[group_id]
+    if (!disabled_characters) return true;
+    return !disabled_characters.includes(character_key)
+
+}
+function toggle_character_enabled(character_key) {
+    // Toggle whether the given character is enabled for summarization in the current chat
+    let group_id = selected_group
+    if (group_id === undefined) return true;  // not in group chat, always enabled
+
+    let disabled_characters_settings = get_settings('disabled_group_characters')
+    let disabled_characters = disabled_characters_settings[group_id] || []
+    let disabled = disabled_characters.includes(character_key)
+
+    if (disabled) {  // if currently disabled, enable by removing it from the disabled set
+        disabled_characters.splice(disabled_characters.indexOf(character_key), 1);
+    } else {  // if enabled, disable by adding it to the disabled set
+        disabled_characters.push(character_key);
+    }
+
+    disabled_characters_settings[group_id] = disabled_characters
+    set_settings('disabled_group_characters', disabled_characters_settings)
+    debug(`${disabled ? "Enabled" : "Disabled"} group character summarization (${character_key})`)
+    refresh_memory()
+}
+
 export {
     initialize_settings,
     hard_reset_settings,
@@ -124,5 +210,9 @@ export {
     get_manifest,
     load_settings_html,
     global_settings,
-    settings_ui_map
+    settings_ui_map,
+    chat_enabled,
+    toggle_chat_enabled,
+    character_enabled,
+    toggle_character_enabled
 };

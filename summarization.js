@@ -52,6 +52,9 @@ import {
 } from './index.js';
 
 // Summarization
+let SUMMARIZATION_DELAY_TIMEOUT = null  // the set_timeout object for the summarization delay
+let SUMMARIZATION_DELAY_RESOLVE = null
+
 let STOP_SUMMARIZATION
 function getStopSummarization() {
     return STOP_SUMMARIZATION;
@@ -60,6 +63,7 @@ function getStopSummarization() {
 function setStopSummarization(val) {
     STOP_SUMMARIZATION = val;
 }
+setStopSummarization(false);
 
 async function summarize_messages(indexes=null, show_progress=true) {
     // Summarize the given list of message indexes (or a single index)
