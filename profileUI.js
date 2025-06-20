@@ -114,6 +114,20 @@ function update_profile_section() {
         $chat_icon.addClass(unlock_class)
     }
 }
+
+async function update_scene_summary_preset_dropdown() {
+    let $preset_select = $('#scene_summary_completion_preset');
+    let summary_preset = get_settings('scene_summary_completion_preset');
+    let preset_options = await get_presets();
+    $preset_select.empty();
+    $preset_select.append(`<option value="">Same as Current</option>`);
+    for (let option of preset_options) {
+        $preset_select.append(`<option value="${option}">${option}</option>`);
+    }
+    $preset_select.val(summary_preset);
+    $preset_select.off('click').on('click', () => update_scene_summary_preset_dropdown());
+}
+
 async function update_preset_dropdown() {
     // set the completion preset dropdown
     let $preset_select = $(`.${settings_content_class} #completion_preset`);
@@ -291,5 +305,6 @@ export {
     update_combined_summary_preset_dropdown,
     update_connection_profile_dropdown,
     refresh_settings,
-    update_error_detection_preset_dropdown
+    update_error_detection_preset_dropdown,
+    update_scene_summary_preset_dropdown
 };

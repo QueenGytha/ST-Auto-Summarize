@@ -96,4 +96,26 @@ Object.assign(default_settings, {
     combined_summary_context_type: 'percent',
     combined_summary_connection_profile: "",
     combined_summary_completion_preset: "",
+
+    // --- Scene Summary Settings ---
+    scene_summary_enabled: false,
+    scene_summary_prompt: `Summarize the following scene as concisely as possible:\n{{message}}`,
+    scene_summary_default_prompt: `Summarize the following scene as concisely as possible:\n{{message}}`,
+    scene_summary_prefill: "",
+    scene_summary_position: 0, // After main prompt
+    scene_summary_depth: 2,
+    scene_summary_role: 0, // System
+    scene_summary_scan: false,
+    scene_summary_context_limit: 10,
+    scene_summary_context_type: 'percent',
+    scene_summary_completion_preset: "",
+    scene_summary_history_mode: "both",
+
+    // --- Scene Summary Validation Settings ---
+    scene_summary_error_detection_enabled: false,
+    scene_summary_error_detection_preset: "",
+    scene_summary_history_count: 1,
+    scene_summary_error_detection_prefill: "",
+    scene_summary_error_detection_retries: 3,
+    scene_summary_error_detection_prompt: `You are validating a scene summary. Return "VALID" if the summary is concise and accurate, otherwise return "INVALID".\n\nSummary:\n{{summary}}`,
 });

@@ -1,3 +1,8 @@
+import {
+    get_settings,
+    get_memory
+} from './index.js';
+
 export const SCENE_BREAK_KEY = 'scene_break';
 export const SCENE_BREAK_VISIBLE_KEY = 'scene_break_visible';
 export const SCENE_BREAK_NAME_KEY = 'scene_break_name';
@@ -96,7 +101,9 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
     const sceneSummary = versions[currentIdx] || '';
 
-    // --- Find the start of the scene (previous VISIBLE scene break or 0) ---
+    // --- Find the start of this scene ---
+    // The end is always the current message (index).
+    // The start is the first message after the previous visible scene break, or 0 if none.
     let startIdx = 0;
     for (let i = index - 1; i >= 0; i--) {
         if (
@@ -107,7 +114,8 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             break;
         }
     }
-    // Message numbers in this scene
+
+    // Collect all message indices in this scene
     const sceneMessages = [];
     for (let i = startIdx; i <= index; i++) {
         sceneMessages.push(i);
@@ -205,14 +213,35 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
     $sceneBreak.find('.scene-generate-summary').on('click', function(e) {
         e.stopPropagation();
-        // Create a new blank summary, add to versions, switch to it
+        // Find start and end index for the last X scenes
+        let sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+        let startIdx = 0;
+        let foundScenes = 0;
+        for (let i = index; i >= 0; i--) {
+            if (
+                get_data(chat[i], SCENE_BREAK_KEY) &&
+                (get_data(chat[i], SCENE_BREAK_VISIBLE_KEY) === undefined || get_data(chat[i], SCENE_BREAK_VISIBLE_KEY))
+            ) {
+                foundScenes++;
+                if (foundScenes >= sceneCount) {
+                    startIdx = i;
+                    break;
+                }
+            }
+        }
+        let endIdx = index;
+        // Get mode from settings
+        let mode = get_settings('scene_summary_history_mode');
+        let ctx = getContext();
+        // Collect content
+        let sceneContent = collectSceneContent(startIdx, endIdx, mode, ctx, get_memory);
+        // Insert the collected content into the current summary version
         let updatedVersions = getSceneSummaryVersions(message, get_data).slice();
-        updatedVersions.push('');
+        updatedVersions.push(sceneContent);
         setSceneSummaryVersions(message, set_data, updatedVersions);
         setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
-        set_data(message, SCENE_BREAK_SUMMARY_KEY, ''); // update legacy field
+        set_data(message, SCENE_BREAK_SUMMARY_KEY, sceneContent); // update legacy field
         saveChatDebounced();
-        // Re-render to show the new blank summary
         renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
     });
     $sceneBreak.find('.scene-rollback-summary').on('click', function(e) {
@@ -256,6 +285,29 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     $sceneBreak.on('focusout', function () {
         $(this).removeClass('sceneBreak-selected');
     });
+}
+
+/**
+ * Collects all messages and/or summaries for a scene, regardless of exclusion/hidden status.
+ * @param {number} startIdx - Start index of the scene (inclusive)
+ * @param {number} endIdx - End index of the scene (inclusive)
+ * @param {string} mode - "messages", "summaries", or "both"
+ * @param {object} ctx - Context object
+ * @returns {string} - Concatenated scene content
+ */
+export function collectSceneContent(startIdx, endIdx, mode, ctx, get_memory) {
+    let chat = ctx.chat;
+    let result = [];
+    for (let i = startIdx; i <= endIdx; i++) {
+        let msg = chat[i];
+        if (mode === "messages" || mode === "both") {
+            result.push(msg.mes);
+        }
+        if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
+            result.push(get_memory(msg));
+        }
+    }
+    return result.join('\n');
 }
 
 // Call this after chat loads or refresh to re-render all scene breaks

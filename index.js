@@ -29,7 +29,7 @@ import { check_message_exclusion, update_message_inclusion_flags, collect_chat_m
 import { progress_bar, remove_progress_bar } from './progressBar.js';
 import { bind_setting, bind_function, set_setting_ui_element } from './uiBindings.js';
 import { refresh_character_select, refresh_select2_element } from './characterSelect.js';
-import { update_save_icon_highlight, update_profile_section, update_preset_dropdown, update_combined_summary_preset_dropdown, update_connection_profile_dropdown, refresh_settings, update_error_detection_preset_dropdown } from './profileUI.js';
+import { update_save_icon_highlight, update_profile_section, update_scene_summary_preset_dropdown, update_preset_dropdown, update_combined_summary_preset_dropdown, update_connection_profile_dropdown, refresh_settings, update_error_detection_preset_dropdown } from './profileUI.js';
 import { set_data, get_data, get_memory, edit_memory, clear_memory, toggle_memory_value, get_previous_swipe_memory, remember_message_toggle, forget_message_toggle, get_character_key } from './messageData.js';
 import { initialize_popout, open_popout, close_popout, toggle_popout } from './popout.js';
 import { initialize_message_buttons, initialize_group_member_buttons, set_character_enabled_button_states, add_menu_button, initialize_menu_buttons } from './buttonBindings.js';
