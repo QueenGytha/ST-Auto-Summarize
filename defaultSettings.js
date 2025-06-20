@@ -7,6 +7,7 @@ import {
     extension_prompt_types,
     extension_prompt_roles
 } from './index.js';
+import { default_scene_template } from './defaultPrompts.js';
 
 export const default_settings = {
     // Error detection settings
@@ -110,6 +111,7 @@ Object.assign(default_settings, {
     scene_summary_context_type: 'percent',
     scene_summary_completion_preset: "",
     scene_summary_history_mode: "both",
+    scene_summary_template: default_scene_template,
 
     // --- Scene Summary Validation Settings ---
     scene_summary_error_detection_enabled: false,

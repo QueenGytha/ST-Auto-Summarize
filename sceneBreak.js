@@ -183,12 +183,6 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
                 Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}
             </div>
             <textarea class="scene-summary-box auto_summarize_memory_text" placeholder="Scene summary...">${sceneSummary}</textarea>
-            <div style="margin-top:0.5em;">
-                <label style="font-size:0.9em;">
-                    <input type="checkbox" class="scene-summary-include-checkbox" ${isIncluded ? 'checked' : ''} />
-                    Include this scene summary in memory injection
-                </label>
-            </div>
             <div class="scene-summary-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
                 <button class="scene-rollback-summary menu_button" title="Go to previous summary"><i class="fa-solid fa-rotate-left"></i> Previous Summary</button>
                 <button class="scene-generate-summary menu_button" title="Generate summary for this scene"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
@@ -227,13 +221,6 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         set_data(message, SCENE_BREAK_SUMMARY_KEY, $(this).val());
         set_data(message, 'scene_summary_memory', $(this).val()); // <-- ensure top-level property is set
         saveChatDebounced();
-    });
-
-    // --- Include/exclude handler ---
-    $sceneBreak.find('.scene-summary-include-checkbox').on('change', function () {
-        set_data(message, 'scene_summary_include', this.checked);
-        saveChatDebounced();
-        renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
     });
 
     // --- Hyperlink handler ---
@@ -490,4 +477,21 @@ export function renderAllSceneBreaks(get_message_div, getContext, get_data, set_
             renderSceneBreak(i, get_message_div, getContext, get_data, set_data, saveChatDebounced);
         }
     }
+}
+
+function collect_scene_summary_indexes() {
+    const ctx = getContext();
+    const chat = ctx.chat;
+    let indexes = [];
+    for (let i = 0; i < chat.length; i++) {
+        const msg = chat[i];
+        if (!msg) continue;
+        if (get_data(msg, 'scene_break_visible') === false) continue;
+        const summary = get_data(msg, 'scene_summary_memory');
+        if (summary && summary.trim()) {
+            indexes.push(i);
+        }
+    }
+    debug(`[SCENE SUMMARY] Final collected indexes: ${JSON.stringify(indexes)}`);
+    return indexes;
 }

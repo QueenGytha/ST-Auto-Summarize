@@ -263,18 +263,28 @@ function get_scene_memory_injection() {
     if (!get_settings('scene_summary_enabled')) return "";
     const ctx = getContext();
     const chat = ctx.chat;
-    const get_data = (msg, key) => msg?.[key] ?? msg?.extra?.auto_summarize_memory?.[key];
     const indexes = collect_scene_summary_indexes();
-    let scene_injection = "";
-    for (const idx of indexes) {
+
+    // Build an array of scene summary objects
+    const scene_summaries = indexes.map(idx => {
         const msg = chat[idx];
-        const summary = get_data(msg, 'scene_summary_memory');
-        if (summary && summary.trim()) {
-            scene_injection += `- ${summary}\n`; // <-- This line is critical!
-        }
-    }
-    debug(`[SCENE SUMMARY] Injection text:\n${scene_injection}`);
-    return scene_injection;
+        return {
+            index: idx,
+            name: get_data(msg, 'scene_break_name') || `Scene ${idx + 1}`,
+            summary: get_data(msg, 'scene_summary_memory') || ""
+        };
+    });
+
+    // Use the template from settings
+    let template = get_settings('scene_summary_template');
+    // Substitute {{scene_summaries}} with a formatted string
+    const summariesText = scene_summaries.map(
+        s => `- [${s.name}]: ${s.summary}`
+    ).join('\n');
+    let injection = template.replace('{{scene_summaries}}', summariesText);
+
+    debug(`[SCENE SUMMARY] Injection text:\n${injection}`);
+    return injection;
 }
 
 async function refresh_memory() {
