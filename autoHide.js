@@ -44,7 +44,7 @@ async function auto_hide_messages_by_command() {
         let scenes_to_keep = auto_hide_scene_count;
         if (scene_break_indexes.length >= scenes_to_keep) {
             let first_visible_scene = scene_break_indexes.length - scenes_to_keep;
-            let visible_start = scene_break_indexes[first_visible_scene];
+            let visible_start = scene_break_indexes[first_visible_scene] + 1; // Start after the scene break
 
             // Hide all messages before visible_start (including scene breaks)
             for (let i = 0; i < visible_start; i++) {
