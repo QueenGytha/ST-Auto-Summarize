@@ -9,6 +9,9 @@ import {
     getContext
 } from './index.js';
 
+// For short/long summaries, use 'memory' and 'include' at the root of the message object.
+// For scene summaries, use 'scene_summary_memory' and related keys (see memoryCore.js and sceneBreak.js).
+
 // Message functions
 function set_data(message, key, value) {
     // store information on the message object

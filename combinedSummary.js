@@ -240,6 +240,8 @@ function flag_summaries_as_combined(indexes) {
     debug(`[COMBINED SUMMARY] Marked ${indexes.length} summaries as combined`);
 }
 
+// When including scene summaries in combined summaries, use 'scene_summary_memory' from the message object.
+// Do NOT expect scene summaries to be in the root 'memory' property like short/long summaries.
 async function create_combined_summary_prompt() {
     const ctx = getContext();
     const summariesToCombine = collect_messages_to_combine();
