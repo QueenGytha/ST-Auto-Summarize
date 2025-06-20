@@ -89,7 +89,8 @@ Available Macros:
     });
 
     bind_setting('#combined_summary_run_interval', 'combined_summary_run_interval', 'number');
-    bind_setting('#auto_hide_message_age', 'auto_hide_message_age', 'number', () => refresh_memory());
+    bind_setting('#auto_hide_message_age', 'auto_hide_message_age', 'number', refresh_memory);
+    bind_setting('#auto_hide_scene_count', 'auto_hide_scene_count', 'number', refresh_memory);
     bind_setting('#show_combined_summary_toast', 'show_combined_summary_toast', 'boolean');
 
     // Trigger profile changes

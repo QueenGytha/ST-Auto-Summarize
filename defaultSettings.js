@@ -120,4 +120,6 @@ Object.assign(default_settings, {
     scene_summary_error_detection_prefill: "",
     scene_summary_error_detection_retries: 3,
     scene_summary_error_detection_prompt: `You are validating a scene summary. Return "VALID" if the summary is concise and accurate, otherwise return "INVALID".\n\nSummary:\n{{summary}}`,
+    auto_hide_message_age: -1,
+    auto_hide_scene_count: -1,
 });
