@@ -83,15 +83,15 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
 
     // Determine visible/hidden class for styling
-    const stateClass = isVisible ? "scene-break-visible" : "scene-break-hidden";
+    const stateClass = isVisible ? "sceneBreak-visible" : "sceneBreak-hidden";
     const borderClass = isVisible ? "auto_summarize_scene_break_border" : "";
 
     // Use the same classes as summary boxes for consistent placement and style
     // Wrap the summary content in a container for easy hiding
     const $sceneBreak = $(`
         <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass}" style="margin:0 0 5px 0;" tabindex="0">
-            <div class="scene-break-content">
-                <input type="text" class="scene-break-name auto_summarize_memory_text" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" />
+            <div class="sceneBreak-content">
+                <input type="text" class="sceneBreak-name auto_summarize_memory_text" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" />
                 <div style="font-size:0.95em; color:inherit; margin-bottom:0.5em;">
                     Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)
                 </div>
@@ -114,7 +114,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     }
 
     // --- Editable handlers ---
-    $sceneBreak.find('.scene-break-name').on('change blur', function () {
+    $sceneBreak.find('.sceneBreak-name').on('change blur', function () {
         set_data(message, SCENE_BREAK_NAME_KEY, $(this).val());
         saveChatDebounced();
     });
@@ -158,22 +158,22 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
 
     // --- Selection handlers for visual feedback ---
     $sceneBreak.on('mousedown', function (e) {
-        $('.' + SCENE_BREAK_DIV_CLASS).removeClass('scene-break-selected');
-        $(this).addClass('scene-break-selected');
+        $('.' + SCENE_BREAK_DIV_CLASS).removeClass('sceneBreak-selected');
+        $(this).addClass('sceneBreak-selected');
     });
     // Remove selection when clicking outside any scene break
     $(document).off('mousedown.sceneBreakDeselect').on('mousedown.sceneBreakDeselect', function (e) {
         if (!$(e.target).closest('.' + SCENE_BREAK_DIV_CLASS).length) {
-            $('.' + SCENE_BREAK_DIV_CLASS).removeClass('scene-break-selected');
+            $('.' + SCENE_BREAK_DIV_CLASS).removeClass('sceneBreak-selected');
         }
     });
     // Also add focus/blur for keyboard navigation
     $sceneBreak.on('focusin', function () {
-        $('.' + SCENE_BREAK_DIV_CLASS).removeClass('scene-break-selected');
-        $(this).addClass('scene-break-selected');
+        $('.' + SCENE_BREAK_DIV_CLASS).removeClass('sceneBreak-selected');
+        $(this).addClass('sceneBreak-selected');
     });
     $sceneBreak.on('focusout', function () {
-        $(this).removeClass('scene-break-selected');
+        $(this).removeClass('sceneBreak-selected');
     });
 }
 
