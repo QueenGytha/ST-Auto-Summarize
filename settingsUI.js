@@ -45,7 +45,8 @@ import {
     load_combined_summary,
     save_combined_summary,
     short_memory_macro,
-    long_memory_macro
+    long_memory_macro,
+    generic_memories_macro
 } from './index.js';
 
 // UI initialization

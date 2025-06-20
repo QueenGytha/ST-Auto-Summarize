@@ -1,6 +1,7 @@
 import {
     get_settings,
-    get_memory
+    get_memory,
+    summarize_text
 } from './index.js';
 
 export const SCENE_BREAK_KEY = 'scene_break';
@@ -344,12 +345,21 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         // 5. Generate summary using the same logic as summarize_text
         let summary = "";
         try {
+            // Block input if setting is enabled
+            if (get_settings('block_chat')) {
+                ctx.deactivateSendButtons();
+            }
             console.log("[SceneBreak] Sending prompt to AI:", prompt);
-            summary = await ctx.summarize_text?.(prompt);
+            summary = await summarize_text(prompt);
             console.log("[SceneBreak] AI response:", summary);
         } catch (err) {
             summary = "Error generating summary: " + (err?.message || err);
             console.error("[SceneBreak] Error generating summary:", err);
+        } finally {
+            // Re-enable input if it was blocked
+            if (get_settings('block_chat')) {
+                ctx.activateSendButtons();
+            }
         }
 
         // 6. Restore previous profile/preset
