@@ -49,8 +49,12 @@ export function renderSceneNavigatorBar() {
 
 // Call this after chat loads, scene breaks change, or toggle changes
 export function initializeSceneNavigatorBar() {
+    // Set the checkbox to the saved value on load
+    const checked = get_settings('scene_summary_navigator_toggle');
+    $('#scene_summary_navigator_toggle').prop('checked', !!checked);
+
     // Toggle handler
-    $('#scene_summary_navigator_toggle').on('change', function() {
+    $('#scene_summary_navigator_toggle').off('change').on('change', function() {
         set_settings('scene_summary_navigator_toggle', this.checked);
         renderSceneNavigatorBar();
     });
