@@ -41,7 +41,9 @@ import {
     get_long_token_limit,
     get_short_token_limit,
     load_combined_summary,
-    save_combined_summary
+    save_combined_summary,
+    short_memory_macro,
+    long_memory_macro
 } from './index.js';
 
 // UI initialization
