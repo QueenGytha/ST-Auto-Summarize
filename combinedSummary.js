@@ -1,4 +1,28 @@
-import { summarize_text, set_preset, set_connection_profile, get_current_preset, get_current_connection_profile, get_data, getContext, get_settings, set_settings, debug, error, toast, set_data, concatenate_summaries, formatInstructModeChat, substitute_conditionals, substitute_params, getPresetManager, get_summary_preset, verify_preset, amount_gen } from './index.js';
+import {
+    summarize_text,
+    set_preset,
+    set_connection_profile,
+    get_current_preset,
+    get_current_connection_profile,
+    get_data,
+    getContext,
+    get_settings,
+    set_settings,
+    debug,
+    error,
+    toast,
+    set_data,
+    concatenate_summaries,
+    formatInstructModeChat,
+    substitute_conditionals,
+    substitute_params,
+    getPresetManager,
+    get_summary_preset,
+    verify_preset,
+    amount_gen,
+    get_summary_preset_max_tokens
+} from './index.js';
+
 
 function get_combined_summary_key() {
     let ctx = getContext();

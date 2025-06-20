@@ -1,21 +1,36 @@
-import { 
-    get_data, 
-    set_data, 
-    get_memory, 
-    edit_memory, 
-    clear_memory, 
-    toggle_memory_value, 
-    get_previous_swipe_memory, 
-    remember_message_toggle, 
-    forget_message_toggle, 
-    get_character_key 
-} from './index.js'; // These must be exported from index.js
+import {
+    get_data,
+    set_data,
+    get_memory,
+    edit_memory,
+    clear_memory,
+    toggle_memory_value,
+    get_previous_swipe_memory,
+    remember_message_toggle,
+    forget_message_toggle,
+    get_character_key,
+    getContext,
+    get_settings,
+    set_settings,
+    debug,
+    log,
+    refresh_memory,
+    summarize_messages,
+    display_injection_preview,
+    concatenate_summaries,
+    copyText,
+    getRegexScripts,
+    runRegexScript,
+    remember_button_class,
+    summarize_button_class,
+    forget_button_class,
+    css_message_div,
+    get_summary_style_class,
+    chat_metadata
+} from './index.js';
 
-// Also import any other global functions/constants used in this file:
-import { getContext, get_settings, set_settings, debug, log, refresh_memory, summarize_messages, display_injection_preview, concatenate_summaries, copyText, getRegexScripts, runRegexScript, remember_button_class, summarize_button_class, forget_button_class, css_message_div, get_summary_style_class, chat_metadata } from './index.js';
 
 class MemoryEditInterface {
-
     filtered = []
     displayed = []
     selected = new Set()
