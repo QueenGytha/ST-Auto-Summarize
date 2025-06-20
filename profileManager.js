@@ -9,7 +9,9 @@ import {
     refresh_settings,
     MODULE_NAME,
     get_current_character_identifier,
-    get_current_chat_identifier
+    get_current_chat_identifier,
+    check_preset_valid,
+    update_save_icon_highlight
 } from './index.js';
 
 

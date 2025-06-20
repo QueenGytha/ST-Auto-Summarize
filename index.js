@@ -1,4 +1,23 @@
 import {
+    log,
+    debug,
+    error,
+    toast,
+    toast_debounced,
+    saveChatDebounced,
+    count_tokens,
+    get_context_size,
+    get_long_token_limit,
+    get_short_token_limit,
+    get_current_character_identifier,
+    get_current_chat_identifier,
+    get_extension_directory,
+    clean_string_for_title,
+    escape_string,
+    unescape_string,
+    check_st_version
+} from './utils.js';
+import {
     get_combined_summary_key,
     save_combined_summary,
     load_combined_summary,
@@ -69,7 +88,7 @@ import {
     addSceneBreakButton,
     bindSceneBreakButton,
     renderAllSceneBreaks
-} from './scene-break.js';
+} from './sceneBreak.js';
 
 export { MODULE_NAME };
 
@@ -228,149 +247,6 @@ const global_settings = {
 }
 const settings_ui_map = {}  // map of settings to UI elements
 
-
-// Utility functions
-function log(message) {
-    console.log(`[${MODULE_NAME_FANCY}]`, message);
-}
-function debug(message) {
-    if (get_settings('debug_mode')) {
-        log("[DEBUG] "+message);
-    }
-}
-function error(message) {
-    console.error(`[${MODULE_NAME_FANCY}]`, message);
-    toastr.error(message, MODULE_NAME_FANCY);
-}
-
-function toast(message, type="info") {
-    // debounce the toast messages
-    toastr[type](message, MODULE_NAME_FANCY);
-}
-const toast_debounced = debounce(toast, 500);
-
-const saveChatDebounced = debounce(() => getContext().saveChat(), debounce_timeout.relaxed);
-function count_tokens(text, padding = 0) {
-    // count the number of tokens in a text
-    let ctx = getContext();
-    return ctx.getTokenCount(text, padding);
-}
-function get_context_size() {
-    // Get the current context size
-    return getMaxContextSize();
-}
-function get_long_token_limit() {
-    // Get the long-term memory token limit, given the current context size and settings
-    let long_term_context_limit = get_settings('long_term_context_limit');
-    let number_type = get_settings('long_term_context_type')
-    if (number_type === "percent") {
-        let context_size = get_context_size();
-        return Math.floor(context_size * long_term_context_limit / 100);
-    } else {
-        return long_term_context_limit
-    }
-}
-function get_short_token_limit() {
-    // Get the short-term memory token limit, given the current context size and settings
-    let short_term_context_limit = get_settings('short_term_context_limit');
-    let number_type = get_settings('short_term_context_type')
-    if (number_type === "percent") {
-        let context_size = get_context_size();
-        return Math.floor(context_size * short_term_context_limit / 100);
-    } else {
-        return short_term_context_limit
-    }
-}
-function get_current_character_identifier() {
-    // uniquely identify the current character
-    // You have to use the character's avatar image path to uniquely identify them
-    let context = getContext();
-    if (context.groupId) {
-        return  // if a group is selected, return
-    }
-
-    // otherwise get the avatar image path of the current character
-    let index = context.characterId;
-    if (!index) {  // not a character
-        return null;
-    }
-
-    return context.characters[index].avatar;
-}
-function get_current_chat_identifier() {
-    // uniquely identify the current chat
-    let context = getContext();
-    if (context.groupId) {
-        return context.groupId;
-    }
-    return context.chatId
-
-}
-function get_extension_directory() {
-    // get the directory of the extension
-    let index_path = new URL(import.meta.url).pathname
-    return index_path.substring(0, index_path.lastIndexOf('/'))  // remove the /index.js from the path
-}
-function clean_string_for_title(text) {
-    // clean a given string for use in a div title.
-    return text.replace(/["&'<>]/g, function(match) {
-        switch (match) {
-            case '"': return "&quot;";
-            case "&": return "&amp;";
-            case "'": return "&apos;";
-            case "<": return "&lt;";
-            case ">": return "&gt;";
-        }
-    })
-}
-function escape_string(text) {
-    // escape control characters in the text
-    if (!text) return text
-    return text.replace(/[\x00-\x1F\x7F]/g, function(match) {
-        // Escape control characters
-        switch (match) {
-          case '\n': return '\\n';
-          case '\t': return '\\t';
-          case '\r': return '\\r';
-          case '\b': return '\\b';
-          case '\f': return '\\f';
-          default: return '\\x' + match.charCodeAt(0).toString(16).padStart(2, '0');
-        }
-    });
-}
-function unescape_string(text) {
-    // given a string with escaped characters, unescape them
-    if (!text) return text
-    return text.replace(/\\[ntrbf0x][0-9a-f]{2}|\\[ntrbf]/g, function(match) {
-        switch (match) {
-          case '\\n': return '\n';
-          case '\\t': return '\t';
-          case '\\r': return '\r';
-          case '\\b': return '\b';
-          case '\\f': return '\f';
-          default: {
-            // Handle escaped hexadecimal characters like \\xNN
-            const hexMatch = match.match(/\\x([0-9a-f]{2})/i);
-            if (hexMatch) {
-              return String.fromCharCode(parseInt(hexMatch[1], 16));
-            }
-            return match; // Return as is if no match
-          }
-        }
-    });
-}
-function check_st_version() {
-    // Check to see if the current version of ST is acceptable.
-    // Currently checks for the "symbols" property of the global context,
-    //   which was added in https://github.com/SillyTavern/SillyTavern/pull/3763#issue-2948421833
-    log("Checking ST version...")
-    if (getContext().symbols !== undefined) {
-        return true
-    } else {
-        log(`Symbols not found in context: [${getContext().symbols}]`)
-        toast("Incompatible ST version - please update.", "error")
-    }
-}
 
 // Completion presets
 function get_current_preset() {
@@ -3330,6 +3206,7 @@ jQuery(async function () {
 export {
     // Summarization and memory
     summarize_text,
+    check_preset_valid,
     set_preset,
     set_connection_profile,
     get_current_preset,
@@ -3343,6 +3220,10 @@ export {
     get_previous_swipe_memory,
     remember_message_toggle,
     forget_message_toggle,
+    MODULE_NAME_FANCY, 
+    debounce_timeout,
+    getMaxContextSize,
+    debounce,
     get_character_key,
     getContext,
     get_settings,
@@ -3377,38 +3258,68 @@ export {
     formatInstructModeChat,
     getPresetManager,
     get_summary_preset,
-    substitute_conditionals,
     substitute_params,
     toast,
     verify_preset,
-    // Combined summary
-    get_combined_summary_key,
-    save_combined_summary,
-    load_combined_summary,
-    get_combined_summary_preset_max_tokens,
-    get_combined_memory,
-    create_combined_summary_prompt,
-    collect_messages_to_combine,
-    flag_summaries_as_combined,
-    generate_combined_summary,
-    // Profile management
-    copy_settings,
-    detect_settings_difference,
-    save_profile,
-    load_profile,
-    export_profile,
-    import_profile,
-    rename_profile,
-    new_profile,
-    delete_profile,
-    toggle_character_profile,
-    toggle_chat_profile,
-    get_character_profile,
-    set_character_profile,
-    get_chat_profile,
-    set_chat_profile,
-    auto_load_profile,
-    get_summary_preset_max_tokens
+    get_summary_preset_max_tokens,
+    // previously not included
+    refresh_select2_element,
+    get_message_div,
+    update_message_visuals,
+    update_all_message_visuals,
+    open_edit_memory_input,
+    display_text_modal,
+    get_user_setting_text_input,
+    progress_bar,
+    remove_progress_bar,
+    system_prompt_split,
+    initialize_settings,
+    hard_reset_settings,
+    soft_reset_settings,
+    reset_settings,
+    get_settings_element,
+    get_manifest,
+    load_settings_html,
+    chat_enabled,
+    toggle_chat_enabled,
+    character_enabled,
+    toggle_character_enabled,
+    bind_setting,
+    bind_function,
+    set_setting_ui_element,
+    update_save_icon_highlight,
+    update_profile_section,
+    update_preset_dropdown,
+    update_combined_summary_preset_dropdown,
+    update_connection_profile_dropdown,
+    refresh_character_select,
+    update_error_detection_preset_dropdown,
+    update_message_inclusion_flags,
+    concatenate_summary,
+    collect_chat_messages,
+    get_long_memory,
+    get_short_memory,
+    summarize_message,
+    validate_summary,
+    get_message_history,
+    substitute_conditionals,
+    create_summary_prompt,
+    auto_hide_messages_by_command,
+    stop_summarization,
+    collect_messages_to_auto_summarize,
+    auto_summarize_chat,
+    on_chat_event,
+    initialize_settings_listeners,
+    initialize_message_buttons,
+    initialize_group_member_buttons,
+    set_character_enabled_button_states,
+    initialize_slash_commands,
+    add_menu_button,
+    initialize_menu_buttons,
+    initialize_popout,
+    open_popout,
+    close_popout,
+    toggle_popout
 };
 
 export * from './combinedSummary.js';
@@ -3416,4 +3327,5 @@ export * from './profileManager.js';
 export * from './memoryEditInterface.js';
 export * from './defaultPrompts.js';
 export * from './defaultSettings.js';
-export * from './scene-break.js';
+export * from './sceneBreak.js';
+export * from './utils.js';
