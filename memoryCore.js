@@ -178,9 +178,18 @@ function concatenate_summaries(indexes) {
     let count = 1;
     for (let i of indexes) {
         let message = chat[i];
-        let memory = get_memory(message);
-        if (memory) {
-            summaries.push({ id: count, summary: memory });
+        let type, summary;
+        if (get_data(message, 'scene_summary_memory')) {
+            // Scene summary
+            type = 'scene';
+            summary = get_data(message, 'scene_summary_memory');
+        } else {
+            // Short/long summary
+            type = get_data(message, 'include');
+            summary = get_data(message, 'memory');
+        }
+        if (summary) {
+            summaries.push({ id: count, summary, type });
             count++;
         }
     }
@@ -380,5 +389,6 @@ export {
     get_long_memory,
     get_short_memory,
     refresh_memory,
-    refresh_memory_debounced
+    refresh_memory_debounced,
+    collect_scene_summary_indexes
 };

@@ -490,20 +490,3 @@ export function renderAllSceneBreaks(get_message_div, getContext, get_data, set_
     // Update navigator bar if present
     if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
 }
-
-function collect_scene_summary_indexes() {
-    const ctx = getContext();
-    const chat = ctx.chat;
-    let indexes = [];
-    for (let i = 0; i < chat.length; i++) {
-        const msg = chat[i];
-        if (!msg) continue;
-        if (get_data(msg, 'scene_break_visible') === false) continue;
-        const summary = get_data(msg, 'scene_summary_memory');
-        if (summary && summary.trim()) {
-            indexes.push(i);
-        }
-    }
-    debug(`[SCENE SUMMARY] Final collected indexes: ${JSON.stringify(indexes)}`);
-    return indexes;
-}

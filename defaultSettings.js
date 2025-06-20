@@ -76,6 +76,12 @@ A valid summary must meet ALL these criteria:
     combined_summary_context_type: 'percent',
     combined_summary_connection_profile: "",
     combined_summary_completion_preset: "",
+    combined_summary_short_count: 0, // 0 = unlimited, -1 = exclude
+    combined_summary_short_once: false,
+    combined_summary_long_count: 0,
+    combined_summary_long_once: false,
+    combined_summary_scene_count: 0,
+    combined_summary_scene_once: false,
     debug_mode: false,
     display_memories: true,
     default_chat_enabled: true,

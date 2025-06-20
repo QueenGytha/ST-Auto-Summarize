@@ -36,7 +36,6 @@ import {
     get_long_memory,
     combined_memory_macro,
     MacrosParser,
-    get_combined_memory,
     MemoryEditInterface,
     short_memory_macro,
     long_memory_macro,
@@ -214,7 +213,7 @@ jQuery(async function () {
     // Global Macros
     MacrosParser.registerMacro(short_memory_macro, () => get_short_memory());
     MacrosParser.registerMacro(long_memory_macro, () => get_long_memory());
-    MacrosParser.registerMacro(combined_memory_macro, () => get_combined_memory());
+    MacrosParser.registerMacro(combined_memory_macro, () => load_combined_summary());
 
     // Export to the Global namespace so can be used in the console for debugging
     window.getContext = getContext;

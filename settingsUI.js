@@ -88,6 +88,13 @@ Available Macros:
         get_user_setting_text_input('combined_summary_error_detection_prompt', 'Edit Combined Summary Error Detection Prompt', description);
     });
 
+    bind_setting('#combined_summary_short_count', 'combined_summary_short_count', 'number');
+    bind_setting('#combined_summary_short_once', 'combined_summary_short_once', 'boolean');
+    bind_setting('#combined_summary_long_count', 'combined_summary_long_count', 'number');
+    bind_setting('#combined_summary_long_once', 'combined_summary_long_once', 'boolean');
+    bind_setting('#combined_summary_scene_count', 'combined_summary_scene_count', 'number');
+    bind_setting('#combined_summary_scene_once', 'combined_summary_scene_once', 'boolean');
+
     bind_setting('#combined_summary_run_interval', 'combined_summary_run_interval', 'number');
     bind_setting('#auto_hide_message_age', 'auto_hide_message_age', 'number', refresh_memory);
     bind_setting('#auto_hide_scene_count', 'auto_hide_scene_count', 'number', refresh_memory);
