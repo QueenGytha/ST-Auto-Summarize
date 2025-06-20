@@ -39,7 +39,9 @@ import {
     bind_function,
     reset_settings,
     get_long_token_limit,
-    get_short_token_limit
+    get_short_token_limit,
+    load_combined_summary,
+    save_combined_summary
 } from './index.js';
 
 // UI initialization
