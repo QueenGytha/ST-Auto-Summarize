@@ -4,13 +4,25 @@ import {
     extension_settings,
     MODULE_NAME,
     default_settings,
-    global_settings,
     refresh_settings,
     saveSettingsDebounced,
-    settings_ui_map,
     get_extension_directory,
     load_profile
 } from './index.js';
+
+// Settings
+const global_settings = {
+    profiles: {},  // dict of profiles by name
+    character_profiles: {},  // dict of character identifiers to profile names
+    chat_profiles: {},  // dict of chat identifiers to profile names
+    profile: 'Default', // Current profile
+    notify_on_profile_switch: false,
+    chats_enabled: {},  // dict of chat IDs to whether memory is enabled
+    global_toggle_state: true,  // global state of memory (used when a profile uses the global state)
+    disabled_group_characters: {},  // group chat IDs mapped to a list of disabled character keys
+    memory_edit_interface_settings: {}  // settings last used in the memory edit interface
+}
+const settings_ui_map = {}  // map of settings to UI elements
 
 // Settings Management
 function initialize_settings() {
@@ -110,5 +122,7 @@ export {
     get_settings,
     get_settings_element,
     get_manifest,
-    load_settings_html
+    load_settings_html,
+    global_settings,
+    settings_ui_map
 };

@@ -15,7 +15,7 @@ import { animation_duration, scrollChatToBottom, extension_prompt_roles, extensi
 
 // Imports from our local files
 import { initialize_settings_listeners } from './settingsUI.js';
-import { initialize_settings, hard_reset_settings, soft_reset_settings, reset_settings, set_settings, get_settings, get_settings_element, get_manifest, load_settings_html} from './settingsManager.js';
+import { initialize_settings, hard_reset_settings, soft_reset_settings, reset_settings, set_settings, get_settings, get_settings_element, get_manifest, load_settings_html, global_settings, settings_ui_map } from './settingsManager.js';
 import { initialize_slash_commands } from './slashCommands.js';
 import { log, debug, error, toast, toast_debounced, saveChatDebounced, count_tokens, get_context_size, get_long_token_limit, get_short_token_limit, get_current_character_identifier, get_current_chat_identifier, get_extension_directory, clean_string_for_title, escape_string, unescape_string, check_st_version } from './utils.js';
 import { get_combined_summary_key, save_combined_summary, load_combined_summary, get_combined_summary_preset_max_tokens, get_combined_memory, create_combined_summary_prompt, collect_messages_to_combine, flag_summaries_as_combined, generate_combined_summary } from './combinedSummary.js';
@@ -96,20 +96,6 @@ Object.assign(default_settings, {
 setStopSummarization(false);
 var SUMMARIZATION_DELAY_TIMEOUT = null  // the set_timeout object for the summarization delay
 var SUMMARIZATION_DELAY_RESOLVE = null
-
-// Settings
-const global_settings = {
-    profiles: {},  // dict of profiles by name
-    character_profiles: {},  // dict of character identifiers to profile names
-    chat_profiles: {},  // dict of chat identifiers to profile names
-    profile: 'Default', // Current profile
-    notify_on_profile_switch: false,
-    chats_enabled: {},  // dict of chat IDs to whether memory is enabled
-    global_toggle_state: true,  // global state of memory (used when a profile uses the global state)
-    disabled_group_characters: {},  // group chat IDs mapped to a list of disabled character keys
-    memory_edit_interface_settings: {}  // settings last used in the memory edit interface
-}
-const settings_ui_map = {}  // map of settings to UI elements
 
 function chat_enabled() {
     // check if the extension is enabled in the current chat
