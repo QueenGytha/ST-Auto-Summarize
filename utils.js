@@ -179,14 +179,14 @@ async function get_user_setting_text_input(key, title, description="", defaultVa
         text: 'Restore Default',
         appendAtEnd: true,
         action: () => {
-            popup.mainInput.value = defaultValue;
+            popup.mainInput.value = default_settings[key] ?? '';
         }
     }
     let ctx = getContext();
     let popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {rows: 20, customButtons: [restore_button]});
     popup.mainInput.classList.remove('result-control');
     let input = await popup.show();
-    if (input !== undefined && input !== null) {
+    if (input !== undefined && input !== null && input !== false) {
         set_settings(key, input);
         refresh_settings()
         refresh_memory()
