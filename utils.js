@@ -186,8 +186,7 @@ async function get_user_setting_text_input(key, title, description="", defaultVa
     let popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {rows: 20, customButtons: [restore_button]});
     popup.mainInput.classList.remove('result-control');
     let input = await popup.show();
-    // Only set if input is not undefined or null
-    if (typeof input === "string") {
+    if (input !== undefined && input !== null) {
         set_settings(key, input);
         refresh_settings()
         refresh_memory()

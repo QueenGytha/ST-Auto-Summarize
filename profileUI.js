@@ -40,7 +40,11 @@ import {
     MODULE_NAME_FANCY,
     global_settings,
     detect_settings_difference,
-    getContext
+    getContext,
+    default_short_template,
+    default_long_template,
+    default_scene_template,
+    default_combined_template,
 } from './index.js';
 
 function update_save_icon_highlight() {
@@ -240,8 +244,9 @@ function refresh_settings() {
     check_preset_valid();
 
     // if prompt doesn't have {{message}}, insert it
-    if (!get_settings('prompt').includes("{{message}}")) {
-        set_settings('prompt', get_settings('prompt') + "\n{{message}}")
+    const prompt = get_settings('prompt');
+    if (typeof prompt === "string" && !prompt.includes("{{message}}")) {
+        set_settings('prompt', prompt + "\n{{message}}")
         debug("{{message}} macro not found in summary prompt. It has been added automatically.")
     }
 

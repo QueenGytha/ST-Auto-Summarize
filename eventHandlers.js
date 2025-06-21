@@ -211,7 +211,6 @@ jQuery(async function () {
     let event_types = ctx.event_types;
     debug(`[eventHandlers] Registered event_types: ${JSON.stringify(event_types)}`);
     eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, (id, stuff) => {
-        debug('[eventHandlers] Handler registered for chat_completion_prompt_ready');
         on_chat_event('chat_completion_prompt_ready', id);
     });
     eventSource.makeLast(event_types.CHARACTER_MESSAGE_RENDERED, (id) => on_chat_event('char_message', id));
