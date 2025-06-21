@@ -5,30 +5,32 @@ import {
     default_short_template,
     default_combined_template,
     extension_prompt_types,
-    extension_prompt_roles
+    extension_prompt_roles,
+    scene_summary_prompt,
+    default_scene_template,
+    regular_summary_error_detection_prompt,
+    combined_summary_error_detection_prompt,
+    scene_summary_error_detection_prompt,
 } from './index.js';
-import { default_scene_template } from './defaultPrompts.js';
 
 export const default_settings = {
     // Error detection settings
     error_detection_enabled: false,
     regular_summary_error_detection_enabled: true,
     combined_summary_error_detection_enabled: true,
-    regular_summary_error_detection_prompt: `You are validating summaries for a fictional roleplay system. Your ONLY task is to check if the summary meets the format requirements, not to evaluate the fictional content itself.
-
-A valid summary must meet ALL these criteria:
-1. Contains only factual statements without commentary or opinion
-...`, // (rest of the prompt as in index.js)
-    combined_summary_error_detection_prompt: `...`, // (rest of the prompt as in index.js)
 
     // summarization settings
     prompt: default_prompt,
+    scene_summary_prompt,
+    regular_summary_error_detection_prompt,
+    combined_summary_error_detection_prompt,
+    scene_summary_error_detection_prompt,
     prefill: "",
     show_prefill: false,
     completion_preset: "",
     connection_profile: "",
-    auto_summarize: true,
-    summarization_delay: 0,
+    auto_summarize: false,
+    summarization_delay: 1,
     summarization_time_delay: 0,
     auto_summarize_batch_size: 1,
     auto_summarize_message_limit: 10,
@@ -51,14 +53,14 @@ A valid summary must meet ALL these criteria:
     long_template: default_long_template,
     long_term_context_limit: 10,
     long_term_context_type: 'percent',
-    long_term_position: 0,
+    long_term_position: 2, // Before main prompt (system prompt)
     long_term_role: 0,
     long_term_depth: 2,
     long_term_scan: false,
     short_template: default_short_template,
     short_term_context_limit: 10,
     short_term_context_type: 'percent',
-    short_term_position: 0,
+    short_term_position: 2, // Before main prompt (system prompt)
     short_term_depth: 2,
     short_term_role: 0,
     short_term_scan: false,
@@ -68,7 +70,7 @@ A valid summary must meet ALL these criteria:
     combined_summary_prompt: default_combined_summary_prompt,
     combined_summary_prefill: "",
     combined_summary_template: default_combined_template,
-    combined_summary_position: 0,
+    combined_summary_position: 2, // Before main prompt (system prompt)
     combined_summary_depth: 2,
     combined_summary_role: 0,
     combined_summary_scan: false,
@@ -105,11 +107,9 @@ Object.assign(default_settings, {
     combined_summary_completion_preset: "",
 
     // --- Scene Summary Settings ---
-    scene_summary_enabled: false,
-    scene_summary_prompt: `Summarize the following scene as if you are writing a concise chapter summary for a roleplay story. Focus on the most important events, character developments, emotional shifts, and plot points that would be useful to remember after this scene is no longer visible. Include character names, significant decisions, changes in relationships, and any details that may be relevant for future scenes. Write in past tense, avoid commentary or meta-statements, and do not include introductions or explanations.\nScene content:\n{{message}}`,
-    scene_summary_default_prompt: `Summarize the following scene as if you are writing a concise chapter summary for a roleplay story. Focus on the most important events, character developments, emotional shifts, and plot points that would be useful to remember after this scene is no longer visible. Include character names, significant decisions, changes in relationships, and any details that may be relevant for future scenes. Write in past tense, avoid commentary or meta-statements, and do not include introductions or explanations.\nScene content:\n{{message}}`,
+    scene_summary_enabled: true,
     scene_summary_prefill: "",
-    scene_summary_position: 0, // After main prompt
+    scene_summary_position: 2, // Before main prompt (system prompt)
     scene_summary_depth: 2,
     scene_summary_role: 0, // System
     scene_summary_scan: false,
@@ -125,7 +125,6 @@ Object.assign(default_settings, {
     scene_summary_history_count: 1,
     scene_summary_error_detection_prefill: "",
     scene_summary_error_detection_retries: 3,
-    scene_summary_error_detection_prompt: `You are validating a scene summary. Return "VALID" if the summary is concise and accurate, otherwise return "INVALID".\n\nSummary:\n{{summary}}`,
     auto_hide_message_age: -1,
     auto_hide_scene_count: -1,
 });

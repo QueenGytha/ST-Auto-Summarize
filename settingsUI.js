@@ -17,6 +17,7 @@ import {
     export_profile,
     import_profile,
     toggle_character_profile,
+    create_summary_prompt,
     toggle_chat_profile,
     get_character_profile,
     set_character_profile,
@@ -409,7 +410,7 @@ Available Macros:
         let description = `
 Available Macros:
 <ul style="text-align: left; font-size: smaller;">
-    <li><b>{{scene}}:</b> The scene content to summarize.</li>
+    <li><b>{{message}}:</b> The scene content to summarize.</li>
     <li><b>{{history}}:</b> The message history as configured by the "Scene Message History Mode" setting.</li>
     <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset.</li>
 </ul>
