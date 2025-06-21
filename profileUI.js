@@ -205,6 +205,11 @@ function refresh_settings() {
     // Refresh all settings UI elements according to the current settings
     debug("Refreshing settings...")
 
+    $('#scene_summary_template').val(get_settings('scene_summary_template') || default_scene_template);
+    $('#combined_summary_template').val(get_settings('combined_summary_template') || default_combined_template);
+    $('#short_template').val(get_settings('short_template') || default_short_template);
+    $('#long_template').val(get_settings('long_template') || default_long_template);
+
         // Error detection presets
     update_error_detection_preset_dropdown();
     

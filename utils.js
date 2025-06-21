@@ -169,30 +169,25 @@ async function display_text_modal(title, text="") {
     let popup = new ctx.Popup(html, ctx.POPUP_TYPE.TEXT, undefined, {okButton: 'Close', allowVerticalScrolling: true});
     await popup.show()
 }
-async function get_user_setting_text_input(key, title, description="") {
-    // Display a modal with a text area input, populated with a given setting value
+async function get_user_setting_text_input(key, title, description="", defaultValue="") {
     let value = get_settings(key) ?? '';
-
     title = `
 <h3>${title}</h3>
 <p>${description}</p>
 `
-
-    let restore_button = {  // don't specify "result" key do not close the popup
+    let restore_button = {
         text: 'Restore Default',
         appendAtEnd: true,
-        action: () => { // fill the input with the default value
-            popup.mainInput.value = default_settings[key] ?? '';
+        action: () => {
+            popup.mainInput.value = defaultValue;
         }
     }
     let ctx = getContext();
     let popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {rows: 20, customButtons: [restore_button]});
-
-    // Now remove the ".result-control" class to prevent it from submitting when you hit enter.
     popup.mainInput.classList.remove('result-control');
-
     let input = await popup.show();
-    if (input) {
+    // Only set if input is not undefined or null
+    if (typeof input === "string") {
         set_settings(key, input);
         refresh_settings()
         refresh_memory()

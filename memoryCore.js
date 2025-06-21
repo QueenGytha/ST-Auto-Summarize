@@ -21,7 +21,11 @@ import {
     main_api,
     extension_prompt_types,
     debounce,
-    debounce_timeout
+    debounce_timeout,
+    default_short_template, 
+    default_long_template, 
+    default_scene_template, 
+    default_combined_template 
 } from './index.js';
 
 // INJECTION RECORDING FOR LOGS
@@ -153,7 +157,7 @@ function update_message_inclusion_flags() {
                 long_term_end_index = i;  // this is where long-term memory ends and short-term begins
                 summary = ""  // reset summary
             } else {  // under context limit
-                set_data(message, 'include', 'short');
+                set_data(message, 'include', 'Summary of message(s)');
                 summary = new_summary
                 continue
             }
@@ -200,7 +204,7 @@ function concatenate_summaries(indexes) {
         let type, summary;
         if (get_data(message, 'scene_summary_memory')) {
             // Scene summary
-            type = 'scene';
+            type = 'Scene-wide Sumary';
             summary = get_data(message, 'scene_summary_memory');
         } else {
             // Short/long summary
@@ -295,12 +299,15 @@ function get_scene_memory_injection() {
     const indexes = collect_scene_summary_indexes();
 
     let template = get_settings('scene_summary_template');
+    if (typeof template !== "string" || !template.trim()) {
+        template = default_scene_template;
+    }
 
     // Build an array of scene summary objects with sequential numbering
     const scene_summaries = indexes.map((idx, i) => {
         const msg = chat[idx];
         return {
-            number: i + 1, // sequential scene number
+            number: i + 1,
             name: get_data(msg, 'scene_break_name') || `Scene ${i + 1}`,
             summary: get_data(msg, 'scene_summary_memory') || ""
         };
