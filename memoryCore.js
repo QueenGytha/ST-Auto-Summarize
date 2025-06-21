@@ -24,6 +24,12 @@ import {
     debounce_timeout
 } from './index.js';
 
+// INJECTION RECORDING FOR LOGS
+let last_long_injection = "";
+let last_short_injection = "";
+let last_combined_injection = "";
+let last_scene_injection = "";
+
 // SUMMARY PROPERTY STRUCTURE:
 // - Short-term and long-term summaries are stored at the root of the message object:
 //     - 'memory': the summary text
@@ -304,14 +310,10 @@ function get_scene_memory_injection() {
         s => `- [Scene ${s.number}]: ${s.summary}`
     ).join('\n');
     let injection = template.replace('{{scene_summaries}}', summariesText);
-
-    debug(`[SCENE SUMMARY] Injection text:\n${injection}`);
     return injection;
 }
 
 async function refresh_memory() {
-    debug("[MEMORY INJECTION] refresh_memory called");
-
     let ctx = getContext();
 
     // --- Declare all injection position/role/depth/scan variables at the top ---
@@ -352,7 +354,6 @@ async function refresh_memory() {
     // get the filled out templates
     let long_injection = get_long_memory();
     let short_injection = get_short_memory();
-
     // --- Combined Summary Injection ---
     const combined_summary = load_combined_summary();
     let combined_injection = "";
@@ -360,34 +361,22 @@ async function refresh_memory() {
         let template = get_settings('combined_summary_template');
         combined_injection = ctx.substituteParamsExtended(template, {[generic_memories_macro]: combined_summary});
     }
-    // --- END Combined Summary Injection ---
-
     // --- Scene Summary Injection ---
     let scene_injection = "";
     if (get_settings('scene_summary_enabled')) {
         scene_injection = get_scene_memory_injection();
     }
-    debug(`[MEMORY INJECTION] Setting scene summary prompt: position=${scene_summary_position}, role=${scene_summary_role}`);
-    debug(`[MEMORY INJECTION] Scene summary prompt text:\n${scene_injection}`);
-    ctx.setExtensionPrompt(`${MODULE_NAME}_scene`, scene_injection, scene_summary_position, scene_summary_depth, scene_summary_scan, scene_summary_role);
-    // --- END Scene Summary Injection ---
 
-    // inject the memories into the templates, if they exist
+    // Store for later logging
+    last_long_injection = long_injection;
+    last_short_injection = short_injection;
+    last_combined_injection = combined_injection;
+    last_scene_injection = scene_injection;
+
     ctx.setExtensionPrompt(`${MODULE_NAME}_long`,  long_injection,  long_term_position, long_term_depth, long_term_scan, long_term_role);
     ctx.setExtensionPrompt(`${MODULE_NAME}_short`, short_injection, short_term_position, short_term_depth, short_term_scan, short_term_role);
     ctx.setExtensionPrompt(`${MODULE_NAME}_combined`, combined_injection, combined_summary_position, combined_summary_depth, combined_summary_scan, combined_summary_role);
     ctx.setExtensionPrompt(`${MODULE_NAME}_scene`, scene_injection, scene_summary_position, scene_summary_depth, scene_summary_scan, scene_summary_role);
-
-    if (get_settings('debug_mode')) {
-        debug(`[MEMORY INJECTION] Long-term injected at position ${long_term_position} as role ${long_term_role}:`);
-        debug(long_injection);
-        debug(`[MEMORY INJECTION] Short-term injected at position ${short_term_position} as role ${short_term_role}:`);
-        debug(short_injection);
-        debug(`[MEMORY INJECTION] Combined summary injected at position ${combined_summary_position} as role ${combined_summary_role}:`);
-        debug(combined_injection);
-        debug(`[MEMORY INJECTION] Scene summary injected at position ${scene_summary_position} as role ${scene_summary_role}:`);
-        debug(scene_injection);
-    }
 
     return `${long_injection}\n\n...\n\n${short_injection}\n\n...\n\n${combined_injection}\n\n...\n\n${scene_injection}`  // return the concatenated memory text
 }
@@ -404,5 +393,10 @@ export {
     get_short_memory,
     refresh_memory,
     refresh_memory_debounced,
-    collect_scene_summary_indexes
+    collect_scene_summary_indexes,
+    last_long_injection,
+    last_short_injection,
+    last_combined_injection,
+    last_scene_injection,
+    get_scene_memory_injection
 };
