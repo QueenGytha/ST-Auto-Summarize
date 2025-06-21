@@ -17,15 +17,18 @@ import {
     export_profile,
     import_profile,
     toggle_character_profile,
+    create_summary_prompt,
     toggle_chat_profile,
     get_character_profile,
     set_character_profile,
     get_chat_profile,
     update_scene_summary_preset_dropdown,
+    toggle_chat_enabled,
     refresh_settings,
     refresh_memory,
     summarize_messages,
     stop_summarization,
+    memoryEditInterface,
     remember_message_toggle,
     forget_message_toggle,
     display_injection_preview,
@@ -46,14 +49,18 @@ import {
     save_combined_summary,
     short_memory_macro,
     long_memory_macro,
-    generic_memories_macro
+    generic_memories_macro,
+    default_short_template,
+    default_long_template,
+    default_scene_template,
+    default_combined_template,
 } from './index.js';
 
 // UI initialization
 function initialize_settings_listeners() {
     log("Initializing settings listeners")
 
-        // Error detection section
+
     bind_setting('#error_detection_enabled', 'error_detection_enabled', 'boolean');
     bind_setting('#regular_summary_error_detection_enabled', 'regular_summary_error_detection_enabled', 'boolean');
     bind_setting('#combined_summary_error_detection_enabled', 'combined_summary_error_detection_enabled', 'boolean');
@@ -63,7 +70,59 @@ function initialize_settings_listeners() {
     bind_setting('#combined_summary_error_detection_preset', 'combined_summary_error_detection_preset', 'text');
     bind_setting('#regular_summary_error_detection_prefill', 'regular_summary_error_detection_prefill', 'text');
     bind_setting('#combined_summary_error_detection_prefill', 'combined_summary_error_detection_prefill', 'text');
-    
+    bind_setting('#short_template', 'short_template', 'text');
+    bind_setting('#long_template', 'long_template', 'text');
+    bind_setting('#scene_summary_template', 'scene_summary_template', 'text');
+    bind_setting('#combined_summary_template', 'combined_summary_template', 'text');
+
+    bind_function('#edit_short_term_injection_template', async () => {
+        let description = `
+        This controls the template for short-term memory injection.<br>
+        Macros: <b>{{memories}}</b> will be replaced with the short-term summaries.
+        `;
+        const value = await get_user_setting_text_input('short_template', 'Edit Short-Term Injection Template', description, default_short_template);
+        if (value !== undefined) {
+            set_settings('short_template', value);
+            save_profile();
+        }
+    });
+
+    bind_function('#edit_long_term_injection_template', async () => {
+        let description = `
+        This controls the template for long-term memory injection.<br>
+        Macros: <b>{{memories}}</b> will be replaced with the long-term summaries.
+        `;
+        const value = await get_user_setting_text_input('long_template', 'Edit Long-Term Injection Template', description, default_long_template);
+        if (value !== undefined) {
+            set_settings('long_template', value);
+            save_profile();
+        }
+    });
+
+    bind_function('#edit_scene_injection_template', async () => {
+        let description = `
+    This controls the template for scene summary injection.<br>
+    Macros: <b>{{scene_summaries}}</b> will be replaced with the scene summaries.
+        `;
+        const value = await get_user_setting_text_input('scene_summary_template', 'Edit Scene Injection Template', description, default_scene_template);
+        if (value !== undefined) {
+            set_settings('scene_summary_template', value);
+            save_profile();
+        }
+    });
+
+    bind_function('#edit_combined_injection_template', async () => {
+        let description = `
+    This controls the template for combined summary injection.<br>
+    Macros: <b>{{memories}}</b> will be replaced with the combined summaries.
+        `;
+        const value = await get_user_setting_text_input('combined_summary_template', 'Edit Combined Injection Template', description, default_combined_template);
+        if (value !== undefined) {
+            set_settings('combined_summary_template', value);
+            save_profile();
+        }
+    });
+
     bind_function('#edit_regular_summary_error_detection_prompt', async () => {
         let description = `
 Configure the prompt used to verify that regular summaries meet your criteria.
@@ -409,7 +468,7 @@ Available Macros:
         let description = `
 Available Macros:
 <ul style="text-align: left; font-size: smaller;">
-    <li><b>{{scene}}:</b> The scene content to summarize.</li>
+    <li><b>{{message}}:</b> The scene content to summarize.</li>
     <li><b>{{history}}:</b> The message history as configured by the "Scene Message History Mode" setting.</li>
     <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset.</li>
 </ul>

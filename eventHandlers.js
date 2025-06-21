@@ -13,6 +13,10 @@ import {
     clear_memory,
     get_data,
     set_data,
+    last_long_injection,
+    last_short_injection,
+    last_combined_injection,
+    last_scene_injection,
     load_settings_html,
     initialize_settings_listeners,
     initialize_popout,
@@ -41,12 +45,15 @@ import {
     long_memory_macro,
     streamingProcessor,
     initializeSceneNavigatorBar,
-    renderSceneNavigatorBar
+    renderSceneNavigatorBar,
+    load_combined_summary,
+    get_scene_memory_injection
 } from './index.js';
 
 // Event handling
 var last_message_swiped = null  // if an index, that was the last message swiped
 async function on_chat_event(event=null, data=null) {
+    debug(`[on_chat_event] event: ${event}, data: ${JSON.stringify(data)}`);
     // When the chat is updated, check if the summarization should be triggered
     debug("Chat updated: " + event)
 
@@ -72,12 +79,6 @@ async function on_chat_event(event=null, data=null) {
 
         case 'before_message':
             if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            if (!get_settings('auto_summarize')) break;  // if auto-summarize is disabled, do nothing
-            if (!get_settings('auto_summarize_on_send')) break;  // if auto-summarize-on-send is disabled, skip
-            index = context.chat.length - 1
-            if (last_message_swiped === index) break;  // this is a swipe, skip
-            debug("Summarizing chat before message")
-            await auto_summarize_chat();  // auto-summarize the chat
             break;
 
         // currently no triggers on user message rendered
@@ -149,6 +150,23 @@ async function on_chat_event(event=null, data=null) {
             scrollChatToBottom();
             break;
 
+        case 'message_sent':
+            if (!chat_enabled()) break;
+            if (get_settings('debug_mode')) {
+                if (
+                    last_long_injection ||
+                    last_short_injection ||
+                    last_combined_injection ||
+                    last_scene_injection
+                ) {
+                    if (last_long_injection) debug(`[MEMORY INJECTION] long_injection:\n${last_long_injection}`);
+                    if (last_short_injection) debug(`[MEMORY INJECTION] short_injection:\n${last_short_injection}`);
+                    if (last_combined_injection) debug(`[MEMORY INJECTION] combined_injection:\n${last_combined_injection}`);
+                    if (last_scene_injection) debug(`[MEMORY INJECTION] scene_injection:\n${last_scene_injection}`);
+                }
+            }
+            break;
+
         default:
             if (!chat_enabled()) break;  // if chat is disabled, do nothing
             debug(`Unknown event: "${event}", refreshing memory`)
@@ -191,6 +209,10 @@ jQuery(async function () {
     let ctx = getContext();
     let eventSource = ctx.eventSource;
     let event_types = ctx.event_types;
+    debug(`[eventHandlers] Registered event_types: ${JSON.stringify(event_types)}`);
+    eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, (id, stuff) => {
+        on_chat_event('chat_completion_prompt_ready', id);
+    });
     eventSource.makeLast(event_types.CHARACTER_MESSAGE_RENDERED, (id) => on_chat_event('char_message', id));
     eventSource.on(event_types.USER_MESSAGE_RENDERED, (id) => on_chat_event('user_message', id));
     eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, (id, stuff) => on_chat_event('before_message', id));
@@ -199,6 +221,7 @@ jQuery(async function () {
     eventSource.on(event_types.MESSAGE_SWIPED, (id) => on_chat_event('message_swiped', id));
     eventSource.on(event_types.CHAT_CHANGED, () => on_chat_event('chat_changed'));
     eventSource.on(event_types.MORE_MESSAGES_LOADED, refresh_memory)
+    eventSource.on(event_types.MESSAGE_SENT, (id) => on_chat_event('message_sent', id));
     eventSource.on(event_types.MORE_MESSAGES_LOADED, () => {
     refresh_memory();
     renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
@@ -209,6 +232,13 @@ jQuery(async function () {
     });
     eventSource.on('groupSelected', set_character_enabled_button_states)
     eventSource.on(event_types.GROUP_UPDATED, set_character_enabled_button_states)
+
+    // Log all events for debugging
+Object.entries(event_types).forEach(([key, type]) => {
+    eventSource.on(type, (...args) => {
+        debug(`[eventHandlers] Event triggered: ${key} (${type}), args: ${JSON.stringify(args)}`);
+    });
+});
 
     // Global Macros
     MacrosParser.registerMacro(short_memory_macro, () => get_short_memory());
