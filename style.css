@@ -1,0 +1,417 @@
+:root {
+    --auto_summarize_short: #2E8B57;
+    --auto_summarize_long: #4682B4;
+    --auto_summarize_old: #8B0000;
+    --auto_summarize_excluded: #555;
+    --auto_summarize_redundant_opacity: 50%;
+}
+
+#drawer_content > hr {
+    margin-top: 10px;
+}
+
+.disabled_hint {
+    margin-left: 2px;
+}
+
+/* disabled buttons aren't properly styled by default */
+.settings_input:disabled, #auto_summarize_memory_state_interface *:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.auto_summarize_scene_break_hidden { display: none !important; }
+
+/* tables for formatting settings */
+.auto_summarize_memory_settings_content table {
+    width: 100%;
+}
+
+.scene-highlight {
+    box-shadow: 0 0 0 3px #ffd700, 0 0 10px #ffd700;
+    transition: box-shadow 0.3s;
+}
+
+.auto_summarize_memory_settings_content h4.textAlignCenter {
+    color: #2e8bcb; /* Choose your preferred color */
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    letter-spacing: 0.03em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-bottom: 2px solid #2e8bcb;
+    padding-bottom: 0.2em;
+}
+
+/* add a scrollbar to the popout */
+#qmExtensionPopout {
+    overflow: auto;
+}
+
+/* Dropdowns in a line of text */
+select.inline_setting {
+    margin: 0;
+    padding: 0 5px;
+    width: unset !important;
+    min-width: unset !important;
+    max-width: unset !important;
+    height: 1.2em;
+    line-height: 1em;
+}
+/* text input in a line of text */
+input.inline_setting     {
+    margin: 0;
+    padding: 0 0 0 5px;
+    width: unset !important;
+    min-width: unset !important;
+    max-width: unset !important;
+    height: 1em;
+}
+
+/* buttons that need to grab your attention (Like the save button when there are unsaved changes) */
+.button_highlight {
+    color: var(--active);
+}
+
+/*
+Div displaying the memory on a message.
+By default, text is greyed to indicate that is it not injected.
+*/
+.auto_summarize_memory_display,
+.auto_summarize_scene_break_div {
+    background: transparent !important;
+    color: grey;
+    font-size: small;
+    font-style: italic;
+    border: none;
+    box-shadow: none;
+    padding-right: 2.5em;
+    box-sizing: border-box;
+    background-clip: padding-box;
+    letter-spacing: 0.03em;
+    margin: 0 0 5px 0;
+}
+
+/* If you want to keep the border lines, but not white, adjust here: */
+.auto_summarize_scene_break_border {
+    border-top: 1px solid var(--auto_summarize_long) !important;
+    border-bottom: 1px solid var(--auto_summarize_long) !important;
+    background: transparent !important;
+}
+
+/* to style short-term memories. */
+.auto_summarize_short_memory {
+    color: var(--auto_summarize_short);
+}
+.auto_summarize_short_memory.auto_summarize_lagging_memory {
+    color: rgba(from var(--auto_summarize_short) r g b / var(--auto_summarize_redundant_opacity));
+    text-shadow: none;
+}
+/* to style long-term memories. */
+.auto_summarize_long_memory {
+    color: var(--auto_summarize_long);
+}
+.auto_summarize_long_memory.auto_summarize_lagging_memory {
+    color: rgba(from var(--auto_summarize_long) r g b / var(--auto_summarize_redundant_opacity));
+    text-shadow: none;
+}
+/* to style memories marked for long-term, but are past the context limit */
+.auto_summarize_old_memory {
+    color: var(--auto_summarize_old);
+}
+.auto_summarize_old_memory.auto_summarize_lagging_memory {
+    color: rgba(from var(--auto_summarize_old) r g b / var(--auto_summarize_redundant_opacity));
+    text-shadow: none;
+}
+/* to style memories that are force-excluded */
+.auto_summarize_exclude_memory {
+    color: var(--auto_summarize_excluded);
+}
+
+/* Style the message buttons, separating them from the rest */
+.auto_summarize_memory_button_separator {
+    margin: 0 1em;
+}
+
+/* memory edit text area needs a bit of negative top margin to fit right */
+.auto_summarize_memory_edit_textarea {
+    margin-top: -6px;
+}
+
+/* on small screens, remove the button separator */
+@media all and (max-width: 600px) {
+    .auto_summarize_memory_button_separator {
+        display: none;
+    }
+}
+
+/* make the ST extra button divs flex-wrap */
+.extraMesButtons {
+    flex-wrap: wrap;
+}
+
+/* the progress bar, mimicking the width of the main chat area */
+#sheld .auto_summarize_progress_bar {
+    top: var(--topBarBlockSize);
+    width: var(--sheldWidth);
+    position: fixed;
+    z-index: 999999;
+    padding: 5px;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+}
+
+/* the progres bar when placed in the memory edit interface */
+#auto_summarize_memory_state_interface #progress_bar .auto_summarize_progress_bar {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+}
+#auto_summarize_memory_state_interface #progress_bar {
+    position: relative;
+}
+
+/* in the group member selection, the buttons that toggle summarization */
+.auto_summarize_memory_group_member_enable {
+    transition: all 0.2s ease-in-out;
+}
+.auto_summarize_memory_group_member_enable:not(.auto_summarize_memory_group_member_enabled) {
+    opacity: 0.4;
+    filter: brightness(0.5);
+}
+.auto_summarize_memory_group_member_enable.auto_summarize_memory_group_member_enabled {
+    filter: drop-shadow(0px 0px 5px rgb(65, 210, 243));
+}
+.auto_summarize_memory_group_member_enable:hover {
+    opacity: inherit;
+    filter: drop-shadow(0px 0px 5px rgb(65, 210, 243));
+}
+
+/* Memory state interface */
+dialog:has(#auto_summarize_memory_state_interface) {
+    height: 90vh;  /* make the memory edit dialog always full height */
+}
+#auto_summarize_memory_state_interface {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+#auto_summarize_memory_state_interface #filter_bar {
+    margin: 1em 0;  /* Filter bar vertical margins */
+}
+#auto_summarize_memory_state_interface #filter_bar .filter_box {
+    margin: 0 0.5em;
+    padding: 0.2em 0.5em;
+    border: 1px black solid;
+    border-radius: 5px;
+    box-shadow: 1px 1px 5px black;
+}
+#auto_summarize_memory_state_interface #filter_bar .filter_box button {
+    width: 100%;
+}
+#auto_summarize_memory_state_interface #filter_bar .filter_box label {
+    width: fit-content;
+    margin: auto;
+}
+
+#auto_summarize_memory_state_interface table {
+    overflow-y: auto;
+    display: block;
+}
+#auto_summarize_memory_state_interface button.menu_button i {
+    margin-right: 1em;  /* buttons with icon before text needs margin after the icon */
+}
+#auto_summarize_memory_state_interface #bulk_regex, #auto_summarize_memory_state_interface #bulk_delete, #auto_summarize_memory_state_interface #bulk_summarize  {
+    color: red;
+}
+#auto_summarize_memory_state_interface #regex_selector  {
+    margin: 0;
+}
+#auto_summarize_memory_state_interface table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;  /* to be above the body when scrolling */
+    background: var(--SmartThemeBlurTintColor)
+}
+#auto_summarize_memory_state_interface table {
+    border-collapse: collapse;  /* needed to have borders around cells */
+}
+#auto_summarize_memory_state_interface table tr.last_in_context_top {
+    border-top: 3px dotted var(--SmartThemeQuoteColor) !important;
+}
+#auto_summarize_memory_state_interface table tr.last_in_context_bottom {
+    border-bottom: 3px dotted var(--SmartThemeQuoteColor) !important;
+}
+#auto_summarize_memory_state_interface table tbody td {
+    position: relative;  /* to be under the head when scrolling */
+}
+#auto_summarize_memory_state_interface table td.interface_summary {
+    width: 100%;
+}
+#auto_summarize_memory_state_interface table td.interface_summary textarea {
+    margin: 0;
+    overflow-y: hidden;
+}
+#auto_summarize_memory_state_interface table td.interface_summary textarea span.memory_edit_regex_match {
+    color: red;
+}
+#auto_summarize_memory_state_interface table tr:has(input.interface_message_select:checked, textarea:focus) {
+    background-color: var(--white30a);  /* highlight selected rows */
+}
+#auto_summarize_memory_state_interface table td.interface_summary i {  /* edit icon */
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 0.2em;
+    scale: 0.6;
+    color: var(--white20a);
+}
+#auto_summarize_memory_state_interface table td div.interface_actions {
+    display: flex;
+    margin: 2px;
+}
+
+#auto_summarize_memory_state_interface #selected_count {
+    font-weight: bold;
+}
+
+/* Scene break formatting now matches long-term memory formatting */
+.auto_summarize_scene_break_div,
+.auto_summarize_scene_break_div * {
+    background: transparent !important;
+    color: grey;
+    font-size: small;
+    font-style: italic;
+    border: none;
+    box-shadow: none;
+    padding-right: 2.5em;
+    box-sizing: border-box;
+    background-clip: padding-box;
+    letter-spacing: 0.03em;
+    margin: 0 0 5px 0;
+}
+
+/* Scene break: visible (active) state - matches long-term memory */
+.auto_summarize_scene_break_div.sceneBreak-visible,
+.auto_summarize_scene_break_div.sceneBreak-visible * {
+    color: var(--auto_summarize_long) !important;
+    font-style: normal;
+    border: none;
+    background: transparent !important;
+}
+
+/* Scene break: hidden (inactive) state - matches excluded/greyed */
+.auto_summarize_scene_break_div.sceneBreak-hidden,
+.auto_summarize_scene_break_div.sceneBreak-hidden * {
+    color: grey !important;
+    font-style: italic;
+    border: none;
+    background: transparent !important;
+    opacity: 0.6;
+}
+
+/* Hide the summary content when hidden */
+.auto_summarize_scene_break_div.sceneBreak-hidden .sceneBreak-content {
+    display: none !important;
+}
+
+/* Scene break border only when visible */
+.auto_summarize_scene_break_div.sceneBreak-visible.auto_summarize_scene_break_border {
+    border-top: 1px solid var(--auto_summarize_long) !important;
+    border-bottom: 1px solid var(--auto_summarize_long) !important;
+}
+
+.auto_summarize_scene_break_div.sceneBreak-hidden.auto_summarize_scene_break_border {
+    border-top: none !important;
+    border-bottom: none !important;
+}
+
+/* Scene break visually selected (clicked/focused) */
+.auto_summarize_scene_break_div.sceneBreak-selected,
+.auto_summarize_scene_break_div.sceneBreak-selected * {
+    background: rgba(0,0,0,0.12) !important; /* Matches typical SillyTavern selection highlight */
+    border-color: #ffd700 !important;
+    color: var(--auto_summarize_long, #4682B4) !important;
+    box-shadow: 0 0 0 2px #ffd700;
+    outline: none;
+    font-style: normal;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+/* Scene break name input and summary box styling */
+.auto_summarize_scene_break_div input.sceneBreak-name {
+    font-size: 1em;
+    font-weight: bold;
+    color: inherit;
+    margin-bottom: 0.5em;
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    transition: color 0.2s;
+}
+
+.auto_summarize_scene_break_div textarea.scene-summary-box {
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    padding: 0.5em;
+    min-height: 2em;
+    width: 100%;
+    resize: vertical;
+    color: inherit;
+    font-size: 1em;
+    font-style: inherit;
+    transition: color 0.2s;
+}
+
+/* Scene break link styling */
+.auto_summarize_scene_break_div .scene-start-link {
+    color: var(--auto_summarize_long);
+    text-decoration: underline dotted;
+    cursor: pointer;
+}
+
+.auto_summarize_scene_break_div .scene-start-link:hover {
+    color: #ffd700;
+    text-decoration: underline solid;
+}
+
+/* Hide scene break when not visible */
+.auto_summarize_scene_break_hidden {
+    display: none !important;
+}
+
+#scene-summary-navigator-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 48px;
+    height: 100vh;
+    background: rgba(30,30,40,0.95);
+    z-index: 1000000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 60px;
+    gap: 8px;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    overflow-y: auto;
+}
+#scene-summary-navigator-bar .scene-nav-link {
+    color: #ffd700;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    margin: 0;
+    padding: 4px 0;
+    text-decoration: underline dotted;
+    transition: color 0.2s;
+}
+#scene-summary-navigator-bar .scene-nav-link:hover {
+    color: #fff;
+    text-decoration: underline solid;
+}
