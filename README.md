@@ -1,23 +1,26 @@
-Forked from SillyTavern-MessageSummarize for the original per-message summarization code.  
+Forked from SillyTavern-MessageSummarize for the original per-message summarization code.
 https://github.com/qvink/SillyTavern-MessageSummarize/
 
 ---
 
 ### Contents
+
 - [Description](#description)
 - [Notable Features](#notable-features)
 - [Installation and Usage](#installation-and-usage)
-- [Main Settings & Controls](#main-settings--controls)
+- [Main Settings &amp; Controls](#main-settings--controls)
 - [Slash Commands](#slash-commands)
 - [Custom CSS](#custom-css)
 - [Tips](#tips)
 - [Troubleshooting](#troubleshooting)
 - [Known Issues](#known-issues)
+- [Development](#development)
 - [Todo](#todo)
 
 ---
 
 ### Description
+
 - This extension reworks how memory is stored by summarizing each message individually, rather than all at once.
 - Summaries are injected into the main prompt at two levels: short-term memory and long-term memory.
 - Short-term memory rotates out the most recent message summaries automatically.
@@ -27,6 +30,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - **Summary validation**: Optionally validates summaries (regular, combined, and scene) using a second LLM pass to ensure they meet your format and quality criteria.
 
 **Benefits compared to the built-in summarization:**
+
 - Summarizing messages individually (as opposed to all at once) gets more accurate summaries and is less likely to miss details.
 - Because memory storage is not handled by an LLM, old summaries will never change over time.
 - Each summary is attached to the message it summarizes, so deleting a message removes only the associated memory.
@@ -36,6 +40,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 ---
 
 ### Notable Features
+
 - **Configuration profiles**: Save and load different configuration profiles and set one to be auto-loaded for each character or chat.
 - **Popout config menu**: Customize summarization settings, injection settings, and auto-summarization message inclusion criteria.
 - **Memory editor**: A separate interface for viewing and editing all memories in your chat.
@@ -52,6 +57,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 ---
 
 ### Installation and Usage
+
 - Install the extension in ST using the github link: https://github.com/QueenGytha/ST-Auto-Summarize
 - To mark a message for long-term memory, click the "brain" icon in the message button menu.
 - To re-summarize a message, click the "Quote" icon in the message button menu.
@@ -177,13 +183,15 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 ### Custom CSS
 
 You can easily customize the CSS for displayed memories by setting the following variables:
+
 - `--qvink_short`: In short-term memory (default green)
 - `--qvink_long`: In long-term memory (default blue)
 - `--qvink_old`: Marked for long-term memory, but now out of context (default red)
 - `--qvink_excluded`: Manually force-excluded (default dark grey)
 
-Just make sure to use the `!important` directive to override the default styles.  
+Just make sure to use the `!important` directive to override the default styles.
 For example, to color short-term memories yellow and long-term memories black, you would put the following in your "Custom CSS" user settings:
+
 ```css
 :root {
    --qvink_short: yellow !important;
@@ -195,8 +203,7 @@ For example, to color short-term memories yellow and long-term memories black, y
 
 ### Tips
 
-Each model is different of course, but here are just some general things that I have found help getting clean summarizations.  
-Try them out if you want.
+Each model is different of course, but here are just some general things that I have found help getting clean summarizations.Try them out if you want.
 
 - **Keep it simple**: Longer summary prompts tend to muddy the waters and get less accurate results. Just in general LLMs have trouble with information overload (hence the reason for this extension in the first place).
 - **Low temperature**: I like to use a temp of 0 to reduce creativity and just get down to the facts. No need for flowery language.
@@ -235,7 +242,57 @@ Try them out if you want.
 
 ---
 
+### Development
+
+This extension uses AI-driven development with comprehensive testing and validation.
+
+#### Prerequisites
+- **Node.js**: For development dependencies
+- **SillyTavern**: For testing the extension
+
+#### Setup & Installation
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/QueenGytha/ST-Auto-Summarize.git
+   cd ST-Auto-Summarize
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+#### Development Commands
+```bash
+# Check extension functionality
+npm run test
+
+# Build extension
+npm run build
+
+# Development mode
+npm run dev
+```
+
+#### Key Files
+- **AI_INSTRUCTIONS.md**: Complete development guide
+- **index.js**: Main entry point
+- **summarization.js**: Core summarization logic
+- **memoryCore.js**: Memory management
+- **settingsManager.js**: Settings handling
+
+#### Development Principles
+- **Real Environment Testing**: Test against actual SillyTavern
+- **Standalone Features**: Each feature works independently
+- **Comprehensive Testing**: All scenarios and edge cases covered
+- **Error Handling**: Robust error handling and logging
+
+For detailed development instructions, see [AI_INSTRUCTIONS.md](AI_INSTRUCTIONS.md).
+
+---
+
 ### Todo
+
 - Default to off per chat (already a setting?)
 - Default preset to off, with some included preset with generic out-of-the-box settings
 - Automatically detecting when there is a scene change
@@ -244,3 +301,30 @@ Try them out if you want.
 - Version the individual/combined summaries, with the option to choose between them. Including some screen for ease of viewing
 - The validation prompts have a very large false positive rate, due to meta-commentary eg 'here is the summary:'. Possible solution: convert summaries to JSON objects for ease of validation. This will also be useful later, in portioning out what goes into a summary, vs into a lorebook
 - A navigator bar to easily find the various marked scenes
+
+
+Notes:
+
+
+My experience with the summarization and long-term memory in big adventure RPs that are >2500 messages long:
+
+- All default long-term memory schemes/prompts suck in all frontends - ST, Risu etc. Devs design something that should work in theory, but never verify that it works well in practice.
+- Summarization per message is a waste of time and context, I was never able to make it work well despite trying hard, as it's really simple to automate. Believe me, I tried.
+- Hierarchical memory approaches that many extensions and frontends go with also suck, they're largely useless.
+- Plot/scenario/sequence of what happened is absolutely useless as a summary, it just never works. You are NOT doing this to "make the character reminisce of the past"! That's nonsense. You are doing this to update the card itself and provide a stable reference point, simplifying the history.
+- The only way that works is summarization per logical breakpoint/scene, and only in a specific way (extension of the card).
+- Automated summary is always poor because models still lack the foresight of a human and have no intuition in prompting themselves. You should always correct it by hand.
+- Summary that is too complex will eventually make even the best models dissociate badly. It needs to be simplified and cleaned up from time to time. Some things thrown out, some added, some grouped. You can only do this manually, as only you know what you want from your RP.
+- All current models get distracted by the history just 2 messages into it. Your characters drift and stop follow the definitions. Sometimes it keeps the story coherent and also makes possible characters with huge mood swings or multiple personality modes. But sometimes you want to just truncate the history, leaving only the summarized version, so your {{char}} turns back to being self. This needs to be a manual option.
+- Having the card AND the summary that overrides it is an extra source of confusion for the model. Instead of this, just update the card itself! Sooner or later in a long RP you'll just have to do this anyway because the characters just drift too much as your relationships develop. ST makes it hard because you need to juggle several card versions.
+- Different lore facts revealed in the process should be stored in the lorebook, but the decision should be manual because only you know if you want to make it persistent. To know which locations, NPCs, etc you revealed and what it could trigger, the model needs a separate section in the summary with one-line characteristic of each entity. You can't have too many of those, so you have to choose which ones to make persistent.
+
+The how2claude guide in [&gt;&gt;42367418](https://boards.4chan.org/mlp/thread/42363249#p42367418) has the right idea (ask for an "info panel" and edit it by hand) and has a very good prompt example, but it can be taken much further in a separate summarization extension that would:
+
+> be able to update arbitrary context records (author's note, card, lorebook etc), instead of having a separate injectable summary like the current extension has.
+> have a convenient way to modularize the summarization prompt and the summary itself, akin to the ST prompt manager (toggle the pieces on and off)
+> have a convenient way to detect the scene automatically with a separate prompt, or place a scene breakpoint by hand
+> have a way to truncate the history tail at any arbitrary part of the roleplay manually
+> (THE MOST IMPORTANT PART) have a versioning system for the entire RP session!
+> Make it so that the entire state of SillyTavern is stored per swipe and message and tied to them, so you can roll it back, fork at any point, or delete some messages without fear or having to juggle multiple copies. Your preset, your card, lorebook, author's note, QRs, preset and lorebook toggles, everything should be saved per message/swipe inside the current chat. The original copy of the card/lorebook/etc should stay untouched, so you can start a new chat from scratch if you want.
+>

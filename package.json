@@ -1,0 +1,26 @@
+{
+  "name": "st-auto-summarize",
+  "version": "1.0.0",
+  "description": "Auto-Summarize extension for SillyTavern",
+  "main": "index.js",
+  "keywords": [
+    "sillytavern",
+    "extension",
+    "summarization",
+    "ai"
+  ],
+  "author": "Queen Gytha",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/QueenGytha/ST-Auto-Summarize.git"
+  },
+  "bugs": {
+    "url": "https://github.com/QueenGytha/ST-Auto-Summarize/issues"
+  },
+  "homepage": "https://github.com/QueenGytha/ST-Auto-Summarize#readme"
+}
+

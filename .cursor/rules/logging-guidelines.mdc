@@ -1,0 +1,223 @@
+# Logging Guidelines
+
+## Logging Functions
+
+Use the built-in logging functions from `utils.js`:
+
+```javascript
+import { debug, error, log, toast } from './index.js';
+
+// Basic logging
+log("Extension loaded successfully");
+
+// Debug logging (only shown when debug mode is enabled)
+debug("Processing message", { messageId: 123, character: "Alice" });
+
+// Error logging with toast notification
+error("Failed to summarize message", err);
+
+// User notifications
+toast("Summary saved successfully", "success");
+toast("API connection failed", "error");
+```
+
+## Logging Patterns
+
+### 1. Function Entry/Exit Logging
+```javascript
+async function summarizeMessage(message) {
+    debug("Starting message summarization", { 
+        messageLength: message.mes.length,
+        character: message.character?.name 
+    });
+
+    try {
+        const result = await performSummarization(message);
+        debug("Summarization completed", { 
+            summaryLength: result.length 
+        });
+        return result;
+    } catch (err) {
+        error("Summarization failed", err);
+        throw err;
+    }
+}
+```
+
+### 2. State Change Logging
+```javascript
+function updateMemoryState(message, newState) {
+    debug("Updating memory state", {
+        messageId: message.mes_uid,
+        oldState: message.memory?.include,
+        newState: newState
+    });
+    
+    // Update logic here
+    
+    debug("Memory state updated successfully");
+}
+```
+
+### 3. Performance Logging
+```javascript
+async function batchSummarize(messages) {
+    const startTime = Date.now();
+    debug("Starting batch summarization", { 
+        messageCount: messages.length 
+    });
+
+    // Processing logic here
+
+    const duration = Date.now() - startTime;
+    debug("Batch summarization completed", { 
+        duration: `${duration}ms`,
+        averageTime: `${duration / messages.length}ms per message`
+    });
+}
+```
+
+### 4. Error Context Logging
+```javascript
+async function validateSummary(summary, originalMessage) {
+    try {
+        // Validation logic
+    } catch (err) {
+        error("Summary validation failed", {
+            error: err.message,
+            summary: summary.substring(0, 100) + "...",
+            originalLength: originalMessage.mes.length,
+            character: originalMessage.character?.name
+        });
+        return false;
+    }
+}
+```
+
+## Best Practices
+
+### 1. Use Appropriate Log Levels
+- `log()` - General information about extension operation
+- `debug()` - Detailed information for troubleshooting (only when debug mode enabled)
+- `error()` - Errors that need attention, with stack traces
+- `toast()` - User-facing notifications
+
+### 2. Include Relevant Context
+```javascript
+// Good - includes relevant context
+debug("Processing character message", {
+    character: message.character?.name,
+    messageType: message.is_user ? 'user' : 'character',
+    messageLength: message.mes.length,
+    timestamp: message.timestamp
+});
+
+// Bad - too generic
+debug("Processing message");
+```
+
+### 3. Structured Data in Logs
+```javascript
+// Use objects for structured logging
+debug("Memory injection", {
+    shortTermCount: shortTermMemories.length,
+    longTermCount: longTermMemories.length,
+    totalTokens: shortTermTokens + longTermTokens,
+    contextSize: getMaxContextSize()
+});
+```
+
+### 4. Error Handling
+```javascript
+try {
+    // Risky operation
+} catch (err) {
+    error("Operation failed", {
+        operation: "summarization",
+        messageId: message.mes_uid,
+        error: err.message,
+        stack: err.stack
+    });
+    
+    // Show user-friendly message
+    toast("Failed to process message", "error");
+}
+```
+
+### 5. Performance Monitoring
+```javascript
+function withPerformanceLogging(operation, context = {}) {
+    return async (...args) => {
+        const startTime = Date.now();
+        debug(`Starting ${operation}`, context);
+        
+        try {
+            const result = await originalFunction(...args);
+            const duration = Date.now() - startTime;
+            debug(`${operation} completed`, { 
+                ...context, 
+                duration: `${duration}ms` 
+            });
+            return result;
+        } catch (err) {
+            const duration = Date.now() - startTime;
+            error(`${operation} failed`, { 
+                ...context, 
+                duration: `${duration}ms`,
+                error: err.message 
+            });
+            throw err;
+        }
+    };
+}
+```
+
+## Debug Mode
+
+Enable debug logging through settings:
+```javascript
+// Check if debug mode is enabled
+if (get_settings('debug_mode')) {
+    debug("Debug mode is active");
+}
+
+// Conditional debug logging
+debug("Processing message", { 
+    messageId: message.mes_uid 
+});
+```
+
+## User Notifications
+
+Use toast notifications for user-facing messages:
+```javascript
+// Success notifications
+toast("Summary saved successfully", "success");
+toast("Memory updated", "info");
+
+// Error notifications
+toast("Failed to connect to API", "error");
+toast("Invalid summary format", "warning");
+
+// Progress notifications
+toast("Processing messages...", "info");
+```
+
+## Logging in Event Handlers
+
+For event handlers, include event context:
+```javascript
+function onMessageReceived(event) {
+    debug("Message received", {
+        eventType: event.type,
+        messageCount: event.detail?.length || 1,
+        timestamp: Date.now()
+    });
+    
+    // Handle the event
+}
+```
+description:
+globs:
+alwaysApply: false
+---

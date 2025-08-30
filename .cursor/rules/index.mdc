@@ -1,0 +1,45 @@
+# ST-Auto-Summarize Extension - Master Rule Index
+
+This document serves as the central index for all active Cursor rules within this SillyTavern extension, organized by category. These rules define processes, structures, and guidelines for development.
+
+## Core & General
+
+Fundamental project structure, setup, and general development guidelines.
+
+| Rule File                          | Description                                                 |
+| :--------------------------------- | :---------------------------------------------------------- |
+| @project-structure.mdc             | Project structure and file organization guidelines          |
+| @logging-guidelines.mdc            | How to do logging in the extension                          |
+| @utilities-guidelines.mdc          | Utility functions and helper patterns                       |
+
+## AI & LLM
+
+Guidelines specific to implementing and testing AI and Language Model features.
+
+| Rule File                          | Description                                                 |
+| :--------------------------------- | :---------------------------------------------------------- |
+| @llm-guidelines.mdc                | Guidelines for implementing LLM functionality               |
+| @testing-guidelines.mdc            | Guidelines for writing tests for LLM-related functionality  |
+
+## SillyTavern Integration
+
+Guidelines specific to SillyTavern extension development.
+
+| Rule File                          | Description                                                 |
+| :--------------------------------- | :---------------------------------------------------------- |
+| @sillytavern-integration.mdc       | Guidelines for SillyTavern API integration and patterns     |
+| @ui-integration.mdc                | Guidelines for UI integration with SillyTavern              |
+
+## Features
+
+Rules specific to major extension features.
+
+| Rule File                          | Description                                                 |
+| :--------------------------------- | :---------------------------------------------------------- |
+| @summarization-features.mdc        | Guidelines for summarization feature implementation          |
+| @memory-management.mdc             | Guidelines for memory storage and retrieval                 |
+| @settings-management.mdc           | Guidelines for settings and configuration management         |
+description:
+globs:
+alwaysApply: false
+---

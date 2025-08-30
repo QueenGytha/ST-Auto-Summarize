@@ -1,0 +1,388 @@
+# SillyTavern Integration Guidelines
+
+## Core Integration Points
+
+The extension integrates with SillyTavern through several key APIs and patterns:
+
+### 1. Context and State Management
+```javascript
+import { getContext } from '../../../extensions.js';
+
+// Get current chat context
+const ctx = getContext();
+
+// Access chat data
+const messages = ctx.chat;
+const characters = ctx.characters;
+const characterId = ctx.characterId;
+const chatId = ctx.chatId;
+const groupId = ctx.groupId;
+```
+
+### 2. Extension Settings
+```javascript
+import { extension_settings } from '../../../extensions.js';
+
+// Access extension settings
+const settings = extension_settings.auto_summarize;
+
+// Save settings
+extension_settings.auto_summarize = newSettings;
+```
+
+### 3. Message Data Storage
+```javascript
+import { get_data, set_data } from '../../../extensions.js';
+
+// Store data on messages
+set_data(message, 'memory', summaryData);
+set_data(message, 'include', 'short');
+
+// Retrieve data from messages
+const memory = get_data(message, 'memory');
+const include = get_data(message, 'include');
+```
+
+## API Integration Patterns
+
+### 1. Message Processing
+```javascript
+// Hook into message events
+function onMessageReceived(message) {
+    if (shouldSummarize(message)) {
+        summarizeMessage(message);
+    }
+}
+
+// Check message eligibility
+function shouldSummarize(message) {
+    // Check if extension is enabled
+    if (!get_settings('enabled')) return false;
+    
+    // Check if message is already summarized
+    if (get_data(message, 'memory')) return false;
+    
+    // Check exclusion criteria
+    if (check_message_exclusion(message)) return false;
+    
+    return true;
+}
+```
+
+### 2. Prompt Injection
+```javascript
+import { extension_prompt_types, extension_prompt_roles } from '../../../script.js';
+
+// Inject summaries into prompts
+function injectSummaries(prompt, type, role) {
+    const shortMemory = get_short_memory();
+    const longMemory = get_long_memory();
+    
+    if (shortMemory) {
+        prompt += `\n\nShort-term memory:\n${shortMemory}`;
+    }
+    
+    if (longMemory) {
+        prompt += `\n\nLong-term memory:\n${longMemory}`;
+    }
+    
+    return prompt;
+}
+
+// Register prompt interceptor
+extension_prompt_types.push('memory');
+extension_prompt_roles.push('memory');
+```
+
+### 3. UI Integration
+```javascript
+// Add buttons to message menus
+function addMessageButtons(messageElement, message) {
+    const buttonContainer = messageElement.querySelector('.mes_buttons');
+    if (!buttonContainer) return;
+    
+    // Add memory toggle button
+    const memoryButton = createMemoryButton(message);
+    buttonContainer.appendChild(memoryButton);
+    
+    // Add summary edit button
+    const editButton = createEditButton(message);
+    buttonContainer.appendChild(editButton);
+}
+
+// Create interactive buttons
+function createMemoryButton(message) {
+    const button = document.createElement('button');
+    button.className = 'mes_memory_btn';
+    button.innerHTML = '🧠';
+    button.title = 'Toggle long-term memory';
+    
+    button.onclick = () => toggleMemory(message);
+    
+    return button;
+}
+```
+
+### 4. Settings Integration
+```javascript
+// Register settings in SillyTavern
+function registerSettings() {
+    // Add settings to the extension settings panel
+    const settingsHtml = `
+        <div class="auto_summarize_settings">
+            <h3>Auto-Summarize Settings</h3>
+            <!-- Settings controls -->
+        </div>
+    `;
+    
+    // Insert into settings panel
+    const settingsPanel = document.querySelector('#extensions_settings');
+    settingsPanel.insertAdjacentHTML('beforeend', settingsHtml);
+}
+
+// Handle settings changes
+function onSettingChanged(setting, value) {
+    set_settings(setting, value);
+    
+    // Trigger UI updates if needed
+    if (setting === 'show_summaries') {
+        update_all_message_visuals();
+    }
+}
+```
+
+## Event Handling
+
+### 1. Message Events
+```javascript
+// Listen for new messages
+function setupMessageListeners() {
+    // Hook into message generation
+    eventSource.on(event_types.MESSAGE_SENT, onMessageSent);
+    eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
+    eventSource.on(event_types.MESSAGE_EDITED, onMessageEdited);
+    eventSource.on(event_types.MESSAGE_DELETED, onMessageDeleted);
+}
+
+function onMessageSent(message) {
+    if (get_settings('auto_summarize_before_generation')) {
+        summarizeMessage(message);
+    }
+}
+
+function onMessageReceived(message) {
+    if (get_settings('auto_summarize')) {
+        summarizeMessage(message);
+    }
+}
+```
+
+### 2. Chat Events
+```javascript
+// Handle chat changes
+function setupChatListeners() {
+    eventSource.on(event_types.CHAT_CHANGED, onChatChanged);
+    eventSource.on(event_types.CHARACTER_CHANGED, onCharacterChanged);
+    eventSource.on(event_types.GROUP_CHANGED, onGroupChanged);
+}
+
+function onChatChanged() {
+    // Refresh memory display
+    refresh_memory();
+    
+    // Load chat-specific settings
+    loadChatSettings();
+}
+```
+
+### 3. Extension Events
+```javascript
+// Extension lifecycle events
+function onExtensionLoad() {
+    // Initialize extension
+    initializeExtension();
+    
+    // Setup event listeners
+    setupEventListeners();
+    
+    // Load settings
+    loadSettings();
+}
+
+function onExtensionUnload() {
+    // Cleanup event listeners
+    cleanupEventListeners();
+    
+    // Save settings
+    saveSettings();
+}
+```
+
+## Data Persistence
+
+### 1. Settings Storage
+```javascript
+// Save settings to SillyTavern storage
+function saveSettings() {
+    const settings = {
+        enabled: get_settings('enabled'),
+        summary_prompt: get_settings('summary_prompt'),
+        // ... other settings
+    };
+    
+    localStorage.setItem('auto_summarize_settings', JSON.stringify(settings));
+}
+
+// Load settings from storage
+function loadSettings() {
+    const stored = localStorage.getItem('auto_summarize_settings');
+    if (stored) {
+        const settings = JSON.parse(stored);
+        Object.entries(settings).forEach(([key, value]) => {
+            set_settings(key, value);
+        });
+    }
+}
+```
+
+### 2. Memory Storage
+```javascript
+// Save memory data with messages
+function saveMemoryData(message, memoryData) {
+    set_data(message, 'memory', memoryData);
+    
+    // Also save to chat metadata for persistence
+    const ctx = getContext();
+    if (ctx.chatId) {
+        const chatMemories = getChatMemories(ctx.chatId);
+        chatMemories[message.mes_uid] = memoryData;
+        saveChatMemories(ctx.chatId, chatMemories);
+    }
+}
+
+// Load memory data for chat
+function loadChatMemories(chatId) {
+    const stored = localStorage.getItem(`auto_summarize_memories_${chatId}`);
+    return stored ? JSON.parse(stored) : {};
+}
+```
+
+## Error Handling
+
+### 1. API Error Handling
+```javascript
+// Handle SillyTavern API errors
+function handleApiError(error, context) {
+    error(`API Error in ${context}:`, error);
+    
+    // Show user-friendly error
+    toast(`Failed to ${context}. Please try again.`, 'error');
+    
+    // Log detailed error for debugging
+    if (get_settings('debug_mode')) {
+        console.error('Detailed error:', error);
+    }
+}
+```
+
+### 2. Graceful Degradation
+```javascript
+// Handle missing SillyTavern features
+function checkSillyTavernFeatures() {
+    const requiredFeatures = [
+        'getContext',
+        'get_data',
+        'set_data',
+        'extension_settings'
+    ];
+    
+    const missingFeatures = requiredFeatures.filter(feature => {
+        return typeof window[feature] === 'undefined';
+    });
+    
+    if (missingFeatures.length > 0) {
+        error(`Missing required SillyTavern features: ${missingFeatures.join(', ')}`);
+        return false;
+    }
+    
+    return true;
+}
+```
+
+## Performance Considerations
+
+### 1. Lazy Loading
+```javascript
+// Load features only when needed
+function initializeFeatures() {
+    // Core features always loaded
+    initializeCore();
+    
+    // Optional features loaded on demand
+    if (get_settings('enable_advanced_features')) {
+        initializeAdvancedFeatures();
+    }
+}
+```
+
+### 2. Debounced Updates
+```javascript
+import { debounce } from '../../../utils.js';
+
+// Debounce memory updates
+const updateMemoryDebounced = debounce(() => {
+    update_all_message_visuals();
+}, 500);
+
+// Debounce settings saves
+const saveSettingsDebounced = debounce(() => {
+    saveSettings();
+}, 1000);
+```
+
+### 3. Memory Management
+```javascript
+// Clean up old memory data
+function cleanupOldMemories() {
+    const maxAge = get_settings('memory_max_age') || 30 * 24 * 60 * 60 * 1000; // 30 days
+    const cutoff = Date.now() - maxAge;
+    
+    const ctx = getContext();
+    ctx.chat.forEach(message => {
+        const memory = get_data(message, 'memory');
+        if (memory && memory.timestamp < cutoff) {
+            set_data(message, 'memory', null);
+        }
+    });
+}
+```
+
+## Best Practices
+
+### 1. Compatibility
+- Always check for required SillyTavern features
+- Use feature detection before calling APIs
+- Provide fallbacks for missing functionality
+- Test with different SillyTavern versions
+
+### 2. Performance
+- Minimize DOM queries and updates
+- Use debouncing for frequent operations
+- Cache expensive calculations
+- Clean up event listeners
+
+### 3. User Experience
+- Show loading states for long operations
+- Provide clear error messages
+- Use consistent UI patterns
+- Respect user preferences
+
+### 4. Data Integrity
+- Validate data before saving
+- Handle corrupted data gracefully
+- Provide data recovery options
+- Backup important data
+description:
+globs:
+alwaysApply: false
+---

@@ -1,0 +1,616 @@
+# AI-Driven TDD Strategy for SillyTavern Extension
+
+## Testing Architecture Overview
+
+Given the constraints of requiring SillyTavern to run, we use a multi-layered testing approach:
+
+### 1. Unit Tests (Fast, No SillyTavern Required)
+- Core logic functions
+- Utility functions
+- Data transformation
+- Validation logic
+
+### 2. Integration Tests (Medium Speed, Mocked SillyTavern)
+- API interactions
+- Settings management
+- Memory operations
+- UI components
+
+### 3. End-to-End Tests (Slow, Full SillyTavern)
+- Complete workflows
+- Real LLM interactions
+- Full UI integration
+- Performance testing
+
+## Test Setup and Infrastructure
+
+### 1. Test Environment Configuration
+```javascript
+// test-setup.js
+import { vi } from 'vitest';
+
+// Mock SillyTavern globals
+global.window = {
+    localStorage: {
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+        clear: vi.fn()
+    },
+    document: {
+        createElement: vi.fn(),
+        querySelector: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn()
+    }
+};
+
+// Mock SillyTavern APIs
+global.getContext = vi.fn(() => ({
+    chat: [],
+    characters: {},
+    characterId: null,
+    chatId: 'test-chat',
+    groupId: null,
+    saveChat: vi.fn(),
+    getTokenCount: vi.fn(() => 10),
+    deactivateSendButtons: vi.fn(),
+    activateSendButtons: vi.fn()
+}));
+
+global.extension_settings = {
+    auto_summarize: {}
+};
+
+global.toastr = {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn()
+};
+
+// Mock fetch for API calls
+global.fetch = vi.fn();
+```
+
+### 2. Test Utilities
+```javascript
+// test-utils.js
+export function createMockMessage(overrides = {}) {
+    return {
+        mes: "This is a test message for summarization.",
+        mes_uid: `msg_${Date.now()}_${Math.random()}`,
+        is_user: false,
+        character: { name: "Test Character" },
+        timestamp: Date.now(),
+        extra: { type: 0 },
+        ...overrides
+    };
+}
+
+export function createMockContext(overrides = {}) {
+    return {
+        chat: [],
+        characters: {},
+        characterId: null,
+        chatId: "test-chat",
+        groupId: null,
+        saveChat: vi.fn(),
+        getTokenCount: vi.fn(() => 10),
+        deactivateSendButtons: vi.fn(),
+        activateSendButtons: vi.fn(),
+        ...overrides
+    };
+}
+
+export function createMockSettings(overrides = {}) {
+    return {
+        enabled: true,
+        debug_mode: false,
+        summary_prompt: "Summarize this message:",
+        summary_max_tokens: 100,
+        summary_temperature: 0.7,
+        validate_summaries: false,
+        short_term_limit: 10,
+        long_term_limit: 50,
+        auto_summarize: true,
+        show_summaries: true,
+        ...overrides
+    };
+}
+
+export function mockLLMResponse(content, options = {}) {
+    return {
+        content: content,
+        usage: { total_tokens: 50 },
+        ...options
+    };
+}
+```
+
+## AI-Driven Test Generation
+
+### 1. Test Case Generation with AI
+```javascript
+// ai-test-generator.js
+import { generateRaw } from './index.js';
+
+export async function generateTestCases(functionName, functionCode, context = {}) {
+    const prompt = `
+Generate comprehensive test cases for this JavaScript function:
+
+Function: ${functionName}
+Code:
+${functionCode}
+
+Context: ${JSON.stringify(context, null, 2)}
+
+Generate test cases that cover:
+1. Happy path scenarios
+2. Edge cases and boundary conditions
+3. Error conditions
+4. Different input types
+5. Performance considerations
+
+Format the response as a JSON array of test objects with:
+- name: descriptive test name
+- input: test input data
+- expected: expected output
+- description: what the test validates
+- category: "happy_path", "edge_case", "error", "performance"
+`;
+
+    try {
+        const result = await generateRaw({
+            system: "You are a testing expert. Generate comprehensive test cases in JSON format.",
+            prompt: prompt,
+            max_tokens: 2000,
+            temperature: 0.3
+        });
+
+        return JSON.parse(result.content);
+    } catch (err) {
+        console.error("Failed to generate test cases:", err);
+        return [];
+    }
+}
+
+export async function generateTestImplementation(testCase, functionName) {
+    const prompt = `
+Generate a Vitest test implementation for this test case:
+
+Test Case: ${JSON.stringify(testCase, null, 2)}
+Function: ${functionName}
+
+Generate a complete test function that:
+1. Sets up the test environment
+2. Mocks necessary dependencies
+3. Executes the function
+4. Asserts the expected results
+5. Includes proper error handling
+
+Use the test utilities provided in test-utils.js.
+`;
+
+    try {
+        const result = await generateRaw({
+            system: "You are a testing expert. Generate Vitest test implementations.",
+            prompt: prompt,
+            max_tokens: 1000,
+            temperature: 0.2
+        });
+
+        return result.content;
+    } catch (err) {
+        console.error("Failed to generate test implementation:", err);
+        return null;
+    }
+}
+```
+
+### 2. Automated Test Generation Workflow
+```javascript
+// generate-tests.js
+import { generateTestCases, generateTestImplementation } from './ai-test-generator.js';
+import fs from 'fs';
+import path from 'path';
+
+export async function generateTestsForFile(filePath) {
+    const code = fs.readFileSync(filePath, 'utf8');
+    const fileName = path.basename(filePath, '.js');
+    
+    // Extract functions from the file
+    const functions = extractFunctions(code);
+    
+    for (const func of functions) {
+        console.log(`Generating tests for ${func.name}...`);
+        
+        // Generate test cases
+        const testCases = await generateTestCases(func.name, func.code, {
+            fileName: fileName,
+            moduleType: 'sillytavern_extension'
+        });
+        
+        // Generate test implementations
+        const testImplementations = [];
+        for (const testCase of testCases) {
+            const implementation = await generateTestImplementation(testCase, func.name);
+            if (implementation) {
+                testImplementations.push(implementation);
+            }
+        }
+        
+        // Write test file
+        const testFilePath = path.join('__tests__', `${fileName}.test.js`);
+        const testContent = generateTestFile(fileName, testImplementations);
+        
+        fs.writeFileSync(testFilePath, testContent);
+        console.log(`Tests written to ${testFilePath}`);
+    }
+}
+
+function extractFunctions(code) {
+    // Simple function extraction (can be enhanced)
+    const functionRegex = /(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\([^)]*\)\s*\{[\s\S]*?\n\}/g;
+    const functions = [];
+    let match;
+    
+    while ((match = functionRegex.exec(code)) !== null) {
+        functions.push({
+            name: match[1],
+            code: match[0]
+        });
+    }
+    
+    return functions;
+}
+
+function generateTestFile(moduleName, testImplementations) {
+    return `import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createMockMessage, createMockContext, createMockSettings, mockLLMResponse } from '../test-utils.js';
+import * as ${moduleName} from '../${moduleName}.js';
+
+// Mock dependencies
+vi.mock('../index.js', () => ({
+    get_settings: vi.fn(),
+    set_settings: vi.fn(),
+    getContext: vi.fn(),
+    debug: vi.fn(),
+    error: vi.fn(),
+    toast: vi.fn(),
+    generateRaw: vi.fn(),
+    count_tokens: vi.fn(() => 10),
+    getMaxContextSize: vi.fn(() => 4000)
+}));
+
+describe('${moduleName}', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+${testImplementations.join('\n\n')}
+});
+`;
+}
+```
+
+## Test Categories and Examples
+
+### 1. Unit Tests (Fast)
+```javascript
+// summarization.test.js
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createMockMessage, createMockSettings } from './test-utils.js';
+import { summarizeMessage } from '../summarization.js';
+
+describe('summarization', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('should summarize valid message successfully', async () => {
+        // Arrange
+        const message = createMockMessage();
+        const mockResponse = mockLLMResponse("Test summary");
+        vi.mocked(generateRaw).mockResolvedValue(mockResponse);
+        vi.mocked(get_settings).mockImplementation(createMockSettings);
+
+        // Act
+        const result = await summarizeMessage(message);
+
+        // Assert
+        expect(result).toBe("Test summary");
+        expect(generateRaw).toHaveBeenCalledWith(
+            expect.objectContaining({
+                system: expect.any(String),
+                prompt: expect.stringContaining(message.mes)
+            })
+        );
+    });
+
+    it('should handle API errors gracefully', async () => {
+        // Arrange
+        const message = createMockMessage();
+        vi.mocked(generateRaw).mockRejectedValue(new Error('API Error'));
+        vi.mocked(get_settings).mockImplementation(createMockSettings);
+
+        // Act
+        const result = await summarizeMessage(message);
+
+        // Assert
+        expect(result).toBeNull();
+        expect(error).toHaveBeenCalledWith('Summarization failed', expect.any(Error));
+    });
+
+    it('should skip already summarized messages', async () => {
+        // Arrange
+        const message = createMockMessage();
+        const existingSummary = "Existing summary";
+        set_data(message, 'memory', { text: existingSummary });
+        vi.mocked(get_settings).mockImplementation(createMockSettings);
+
+        // Act
+        const result = await summarizeMessage(message);
+
+        // Assert
+        expect(result).toBe(existingSummary);
+        expect(generateRaw).not.toHaveBeenCalled();
+    });
+});
+```
+
+### 2. Integration Tests (Medium)
+```javascript
+// memory-integration.test.js
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createMockMessage, createMockContext } from './test-utils.js';
+import { storeMemory, getShortTermMemory, getLongTermMemory } from '../memoryCore.js';
+
+describe('memory integration', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        const mockContext = createMockContext();
+        vi.mocked(getContext).mockReturnValue(mockContext);
+    });
+
+    it('should store and retrieve memory correctly', async () => {
+        // Arrange
+        const message = createMockMessage();
+        const summary = "Test summary";
+
+        // Act
+        storeMemory(message, summary);
+        const shortMemory = getShortTermMemory();
+        const longMemory = getLongTermMemory();
+
+        // Assert
+        expect(get_data(message, 'memory')).toEqual(
+            expect.objectContaining({
+                text: summary,
+                timestamp: expect.any(Number)
+            })
+        );
+        expect(shortMemory).toContain(summary);
+    });
+
+    it('should handle memory limits correctly', async () => {
+        // Arrange
+        const messages = Array.from({ length: 15 }, (_, i) => 
+            createMockMessage({ mes: `Message ${i}` })
+        );
+        
+        vi.mocked(getContext).mockReturnValue({
+            ...createMockContext(),
+            chat: messages
+        });
+
+        // Act
+        messages.forEach((msg, i) => {
+            storeMemory(msg, `Summary ${i}`);
+        });
+
+        const shortMemory = getShortTermMemory();
+        const memoryCount = shortMemory.split('\n\n').length;
+
+        // Assert
+        expect(memoryCount).toBeLessThanOrEqual(10); // short_term_limit
+    });
+});
+```
+
+### 3. End-to-End Tests (Slow)
+```javascript
+// e2e-workflow.test.js
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
+describe('end-to-end workflows', () => {
+    let sillytavernProcess;
+
+    beforeAll(async () => {
+        // Start SillyTavern in test mode
+        sillytavernProcess = await startSillyTavernTestMode();
+        await waitForSillyTavernReady();
+    });
+
+    afterAll(async () => {
+        if (sillytavernProcess) {
+            await sillytavernProcess.kill();
+        }
+    });
+
+    it('should complete full summarization workflow', async () => {
+        // This test requires full SillyTavern environment
+        // Only run in CI or when explicitly requested
+        
+        if (process.env.RUN_E2E_TESTS !== 'true') {
+            console.log('Skipping E2E test - RUN_E2E_TESTS not set');
+            return;
+        }
+
+        // Arrange
+        await loadTestCharacter();
+        await sendTestMessage("Hello, this is a test message for summarization.");
+
+        // Act
+        await waitForSummarization();
+
+        // Assert
+        const summary = await getMessageSummary();
+        expect(summary).toBeTruthy();
+        expect(summary.length).toBeGreaterThan(0);
+    }, 30000); // 30 second timeout
+});
+```
+
+## AI-Powered Test Maintenance
+
+### 1. Test Quality Assessment
+```javascript
+// test-quality-analyzer.js
+export async function analyzeTestQuality(testFile) {
+    const prompt = `
+Analyze the quality of this test file:
+
+${testFile}
+
+Assess:
+1. Test coverage (what scenarios are tested)
+2. Test isolation (are tests independent)
+3. Mock usage (are dependencies properly mocked)
+4. Assertion quality (are assertions meaningful)
+5. Performance considerations
+6. Maintainability
+
+Provide a score (1-10) and specific recommendations for improvement.
+`;
+
+    const result = await generateRaw({
+        system: "You are a testing expert. Analyze test quality and provide actionable feedback.",
+        prompt: prompt,
+        max_tokens: 1000,
+        temperature: 0.2
+    });
+
+    return result.content;
+}
+```
+
+### 2. Test Refactoring Suggestions
+```javascript
+// test-refactor-suggester.js
+export async function suggestTestRefactoring(testFile, issues) {
+    const prompt = `
+Refactor this test file to address these issues:
+
+Issues: ${JSON.stringify(issues, null, 2)}
+
+Test File:
+${testFile}
+
+Provide:
+1. Refactored test code
+2. Explanation of changes
+3. Best practices applied
+4. Performance improvements
+`;
+
+    const result = await generateRaw({
+        system: "You are a testing expert. Provide refactored test code with explanations.",
+        prompt: prompt,
+        max_tokens: 2000,
+        temperature: 0.3
+    });
+
+    return result.content;
+}
+```
+
+## CI/CD Integration
+
+### 1. GitHub Actions Workflow
+```yaml
+# .github/workflows/test.yml
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run test:unit
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run test:integration
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run test:e2e
+        env:
+          RUN_E2E_TESTS: true
+```
+
+### 2. Package.json Scripts
+```json
+{
+  "scripts": {
+    "test": "vitest",
+    "test:unit": "vitest __tests__/unit",
+    "test:integration": "vitest __tests__/integration",
+    "test:e2e": "vitest __tests__/e2e",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:generate": "node scripts/generate-tests.js",
+    "test:analyze": "node scripts/analyze-test-quality.js"
+  }
+}
+```
+
+## Best Practices for AI-Driven TDD
+
+### 1. Test Generation
+- Use AI to generate initial test cases
+- Review and refine AI-generated tests
+- Ensure tests cover edge cases
+- Maintain test independence
+
+### 2. Test Maintenance
+- Regularly analyze test quality with AI
+- Refactor tests based on AI suggestions
+- Keep tests up-to-date with code changes
+- Use AI to identify test gaps
+
+### 3. Performance Considerations
+- Run fast tests frequently
+- Use mocks for external dependencies
+- Parallelize test execution
+- Cache test results when possible
+
+### 4. Environment Management
+- Use Docker for consistent test environments
+- Mock SillyTavern APIs for unit tests
+- Use test databases for integration tests
+- Isolate E2E test environments
+description:
+globs:
+alwaysApply: false
+---

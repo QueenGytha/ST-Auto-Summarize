@@ -1,0 +1,467 @@
+# Memory Management Guidelines
+
+## Memory Architecture
+
+The extension uses a two-tier memory system with short-term and long-term storage:
+
+### 1. Memory Data Structure
+```javascript
+// Memory data structure
+const memoryData = {
+    text: "Summary text content",
+    timestamp: Date.now(),
+    version: 1,
+    validated: false,
+    metadata: {
+        character: "Character name",
+        messageType: "user|character|system",
+        tokenCount: 45,
+        quality: 0.85
+    }
+};
+
+// Memory inclusion status
+const inclusionStatus = {
+    include: 'short' | 'long' | 'excluded',
+    remember: false, // User manually marked for long-term
+    exclude: false   // User manually excluded
+};
+```
+
+### 2. Memory Storage
+```javascript
+// Store memory data on message
+function storeMemory(message, summary, options = {}) {
+    const {
+        validated = false,
+        metadata = {}
+    } = options;
+    
+    const memoryData = {
+        text: summary,
+        timestamp: Date.now(),
+        version: 1,
+        validated: validated,
+        metadata: {
+            character: message.character?.name || 'Unknown',
+            messageType: getMessageType(message),
+            tokenCount: count_tokens(summary),
+            quality: calculateQuality(summary, message),
+            ...metadata
+        }
+    };
+    
+    set_data(message, 'memory', memoryData);
+    
+    // Update inclusion status
+    updateMemoryInclusion(message);
+    
+    debug("Memory stored", {
+        messageId: message.mes_uid,
+        summaryLength: summary.length,
+        tokenCount: memoryData.metadata.tokenCount
+    });
+}
+```
+
+## Memory Inclusion Logic
+
+### 1. Automatic Inclusion
+```javascript
+// Determine memory inclusion based on settings and context
+function updateMemoryInclusion(message) {
+    const memory = get_data(message, 'memory');
+    if (!memory) return;
+    
+    // Check manual overrides first
+    if (get_data(message, 'exclude')) {
+        set_data(message, 'include', 'excluded');
+        return;
+    }
+    
+    if (get_data(message, 'remember')) {
+        set_data(message, 'include', 'long');
+        return;
+    }
+    
+    // Check short-term inclusion
+    const shortTermLimit = get_settings('short_term_limit') || 10;
+    const ctx = getContext();
+    const recentMessages = ctx.chat.slice(-shortTermLimit);
+    
+    if (recentMessages.includes(message)) {
+        set_data(message, 'include', 'short');
+    } else {
+        set_data(message, 'include', 'excluded');
+    }
+}
+```
+
+### 2. Manual Memory Control
+```javascript
+// Toggle long-term memory for a message
+function toggleLongTermMemory(message) {
+    const currentRemember = get_data(message, 'remember') || false;
+    const newRemember = !currentRemember;
+    
+    set_data(message, 'remember', newRemember);
+    
+    // Update inclusion status
+    updateMemoryInclusion(message);
+    
+    // Update UI
+    updateMessageVisuals(message);
+    
+    debug("Long-term memory toggled", {
+        messageId: message.mes_uid,
+        remember: newRemember
+    });
+    
+    toast(`Message ${newRemember ? 'marked' : 'unmarked'} for long-term memory`, 'info');
+}
+
+// Exclude message from memory
+function excludeFromMemory(message) {
+    set_data(message, 'exclude', true);
+    set_data(message, 'remember', false);
+    
+    updateMemoryInclusion(message);
+    updateMessageVisuals(message);
+    
+    debug("Message excluded from memory", {
+        messageId: message.mes_uid
+    });
+}
+```
+
+## Memory Retrieval
+
+### 1. Short-Term Memory
+```javascript
+// Get short-term memory for prompt injection
+function getShortTermMemory() {
+    const ctx = getContext();
+    const limit = get_settings('short_term_limit') || 10;
+    const recentMessages = ctx.chat.slice(-limit);
+    
+    const memories = recentMessages
+        .filter(msg => {
+            const include = get_data(msg, 'include');
+            return include === 'short' || include === 'long';
+        })
+        .map(msg => get_data(msg, 'memory'))
+        .filter(memory => memory && memory.text)
+        .map(memory => memory.text);
+    
+    return memories.join('\n\n');
+}
+
+// Get short-term memory with metadata
+function getShortTermMemoryWithMetadata() {
+    const ctx = getContext();
+    const limit = get_settings('short_term_limit') || 10;
+    const recentMessages = ctx.chat.slice(-limit);
+    
+    return recentMessages
+        .filter(msg => {
+            const include = get_data(msg, 'include');
+            return include === 'short' || include === 'long';
+        })
+        .map(msg => ({
+            text: get_data(msg, 'memory')?.text,
+            metadata: get_data(msg, 'memory')?.metadata,
+            messageId: msg.mes_uid
+        }))
+        .filter(item => item.text);
+}
+```
+
+### 2. Long-Term Memory
+```javascript
+// Get long-term memory for prompt injection
+function getLongTermMemory() {
+    const ctx = getContext();
+    const limit = get_settings('long_term_limit') || 50;
+    
+    const memories = ctx.chat
+        .filter(msg => get_data(msg, 'include') === 'long')
+        .slice(-limit)
+        .map(msg => get_data(msg, 'memory'))
+        .filter(memory => memory && memory.text)
+        .map(memory => memory.text);
+    
+    return memories.join('\n\n');
+}
+
+// Get long-term memory with filtering
+function getLongTermMemoryWithFilter(filter = {}) {
+    const ctx = getContext();
+    const limit = get_settings('long_term_limit') || 50;
+    
+    let memories = ctx.chat
+        .filter(msg => get_data(msg, 'include') === 'long')
+        .map(msg => ({
+            message: msg,
+            memory: get_data(msg, 'memory')
+        }))
+        .filter(item => item.memory && item.memory.text);
+    
+    // Apply filters
+    if (filter.character) {
+        memories = memories.filter(item => 
+            item.memory.metadata.character === filter.character
+        );
+    }
+    
+    if (filter.minQuality) {
+        memories = memories.filter(item => 
+            item.memory.metadata.quality >= filter.minQuality
+        );
+    }
+    
+    if (filter.maxTokens) {
+        memories = memories.filter(item => 
+            item.memory.metadata.tokenCount <= filter.maxTokens
+        );
+    }
+    
+    // Apply limit and return
+    return memories
+        .slice(-limit)
+        .map(item => item.memory.text)
+        .join('\n\n');
+}
+```
+
+## Memory Optimization
+
+### 1. Token Management
+```javascript
+// Check if memory fits within token limits
+function checkMemoryTokenLimits(memories, maxTokens) {
+    const totalTokens = memories.reduce((sum, memory) => {
+        return sum + (memory.metadata?.tokenCount || count_tokens(memory.text));
+    }, 0);
+    
+    return {
+        fits: totalTokens <= maxTokens,
+        totalTokens: totalTokens,
+        available: maxTokens - totalTokens
+    };
+}
+
+// Optimize memory selection to fit token limits
+function optimizeMemorySelection(memories, maxTokens) {
+    const sorted = memories.sort((a, b) => {
+        // Sort by quality first, then by recency
+        const qualityDiff = (b.metadata?.quality || 0) - (a.metadata?.quality || 0);
+        if (qualityDiff !== 0) return qualityDiff;
+        return b.timestamp - a.timestamp;
+    });
+    
+    const selected = [];
+    let totalTokens = 0;
+    
+    for (const memory of sorted) {
+        const memoryTokens = memory.metadata?.tokenCount || count_tokens(memory.text);
+        
+        if (totalTokens + memoryTokens <= maxTokens) {
+            selected.push(memory);
+            totalTokens += memoryTokens;
+        } else {
+            break;
+        }
+    }
+    
+    return selected;
+}
+```
+
+### 2. Memory Cleanup
+```javascript
+// Clean up old or low-quality memories
+function cleanupMemories() {
+    const ctx = getContext();
+    const maxAge = get_settings('memory_max_age') || 30 * 24 * 60 * 60 * 1000; // 30 days
+    const minQuality = get_settings('memory_min_quality') || 0.5;
+    const cutoff = Date.now() - maxAge;
+    
+    let cleanedCount = 0;
+    
+    ctx.chat.forEach(message => {
+        const memory = get_data(message, 'memory');
+        if (!memory) return;
+        
+        let shouldClean = false;
+        
+        // Check age
+        if (memory.timestamp < cutoff) {
+            shouldClean = true;
+        }
+        
+        // Check quality
+        if (memory.metadata?.quality < minQuality) {
+            shouldClean = true;
+        }
+        
+        // Don't clean manually remembered messages
+        if (get_data(message, 'remember')) {
+            shouldClean = false;
+        }
+        
+        if (shouldClean) {
+            set_data(message, 'memory', null);
+            set_data(message, 'include', 'excluded');
+            cleanedCount++;
+        }
+    });
+    
+    if (cleanedCount > 0) {
+        debug("Memory cleanup completed", { cleanedCount });
+        update_all_message_visuals();
+    }
+}
+```
+
+## Memory Analytics
+
+### 1. Memory Statistics
+```javascript
+// Get memory statistics
+function getMemoryStatistics() {
+    const ctx = getContext();
+    const memories = ctx.chat
+        .map(msg => get_data(msg, 'memory'))
+        .filter(memory => memory);
+    
+    const stats = {
+        total: memories.length,
+        shortTerm: 0,
+        longTerm: 0,
+        excluded: 0,
+        totalTokens: 0,
+        averageQuality: 0,
+        byCharacter: {},
+        byType: {}
+    };
+    
+    ctx.chat.forEach(message => {
+        const memory = get_data(message, 'memory');
+        const include = get_data(message, 'include');
+        
+        if (memory) {
+            stats.totalTokens += memory.metadata?.tokenCount || 0;
+            stats.averageQuality += memory.metadata?.quality || 0;
+            
+            // Count by character
+            const character = memory.metadata?.character || 'Unknown';
+            stats.byCharacter[character] = (stats.byCharacter[character] || 0) + 1;
+            
+            // Count by type
+            const type = memory.metadata?.messageType || 'unknown';
+            stats.byType[type] = (stats.byType[type] || 0) + 1;
+        }
+        
+        if (include === 'short') stats.shortTerm++;
+        else if (include === 'long') stats.longTerm++;
+        else if (include === 'excluded') stats.excluded++;
+    });
+    
+    if (stats.total > 0) {
+        stats.averageQuality /= stats.total;
+    }
+    
+    return stats;
+}
+```
+
+### 2. Memory Quality Assessment
+```javascript
+// Assess memory quality
+function assessMemoryQuality(memory, originalMessage) {
+    const quality = {
+        score: 0,
+        factors: []
+    };
+    
+    // Length factor
+    const lengthRatio = memory.text.length / originalMessage.mes.length;
+    if (lengthRatio > 0.1 && lengthRatio < 0.8) {
+        quality.score += 0.3;
+        quality.factors.push('Good length ratio');
+    } else {
+        quality.factors.push('Poor length ratio');
+    }
+    
+    // Content factor
+    if (memory.text.toLowerCase().includes('cannot') || memory.text.toLowerCase().includes('unable')) {
+        quality.factors.push('Contains refusal language');
+    } else {
+        quality.score += 0.4;
+        quality.factors.push('No refusal language');
+    }
+    
+    // Completeness factor
+    const hasKeyInfo = checkKeyInformation(memory.text, originalMessage.mes);
+    if (hasKeyInfo) {
+        quality.score += 0.3;
+        quality.factors.push('Contains key information');
+    } else {
+        quality.factors.push('Missing key information');
+    }
+    
+    return quality;
+}
+
+function checkKeyInformation(summary, original) {
+    // Simple heuristic to check if summary contains key information
+    const keyWords = extractKeyWords(original);
+    const summaryWords = summary.toLowerCase().split(/\s+/);
+    
+    const matches = keyWords.filter(word => 
+        summaryWords.includes(word.toLowerCase())
+    );
+    
+    return matches.length >= Math.min(3, keyWords.length * 0.5);
+}
+
+function extractKeyWords(text) {
+    // Simple keyword extraction (names, important nouns)
+    const words = text.split(/\s+/);
+    return words.filter(word => 
+        word.length > 3 && 
+        /^[A-Z]/.test(word) || 
+        /^(the|a|an|and|or|but|in|on|at|to|for|of|with|by)$/i.test(word) === false
+    );
+}
+```
+
+## Best Practices
+
+### 1. Memory Storage
+- Always validate memory data before storing
+- Include metadata for better management
+- Use consistent data structures
+- Handle storage errors gracefully
+
+### 2. Memory Retrieval
+- Optimize for token limits
+- Prioritize high-quality memories
+- Provide filtering options
+- Cache frequently accessed memories
+
+### 3. Memory Maintenance
+- Regular cleanup of old memories
+- Quality-based filtering
+- User control over memory retention
+- Backup important memories
+
+### 4. Performance
+- Efficient memory queries
+- Lazy loading of memory data
+- Optimize token counting
+- Minimize DOM updates
+description:
+globs:
+alwaysApply: false
+---

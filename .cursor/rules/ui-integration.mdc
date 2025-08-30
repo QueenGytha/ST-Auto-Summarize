@@ -1,0 +1,449 @@
+# UI Integration Guidelines
+
+## SillyTavern UI Integration
+
+The extension integrates with SillyTavern's UI through DOM manipulation and event handling:
+
+### 1. Message UI Integration
+```javascript
+// Add elements to message containers
+function addMessageUI(messageElement, message) {
+    // Add summary display
+    const summaryElement = createSummaryElement(message);
+    messageElement.appendChild(summaryElement);
+    
+    // Add memory buttons
+    const buttonContainer = messageElement.querySelector('.mes_buttons');
+    if (buttonContainer) {
+        const memoryButton = createMemoryButton(message);
+        buttonContainer.appendChild(memoryButton);
+    }
+}
+
+// Create summary display element
+function createSummaryElement(message) {
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'auto_summarize_summary';
+    summaryDiv.style.display = 'none'; // Hidden by default
+    
+    const memory = get_data(message, 'memory');
+    if (memory) {
+        summaryDiv.textContent = memory;
+        summaryDiv.style.display = 'block';
+    }
+    
+    return summaryDiv;
+}
+```
+
+### 2. Settings Panel Integration
+```javascript
+// Add settings to SillyTavern's extension panel
+function integrateSettingsPanel() {
+    const settingsPanel = document.querySelector('#extensions_settings');
+    if (!settingsPanel) return;
+    
+    // Create settings container
+    const container = document.createElement('div');
+    container.className = 'auto_summarize_settings_container';
+    container.innerHTML = `
+        <div class="auto_summarize_settings">
+            <h3>Auto-Summarize Settings</h3>
+            <div class="settings_content">
+                <!-- Settings will be populated by settingsUI.js -->
+            </div>
+        </div>
+    `;
+    
+    settingsPanel.appendChild(container);
+    
+    // Initialize settings UI
+    initializeSettingsUI(container.querySelector('.settings_content'));
+}
+```
+
+### 3. Button Integration
+```javascript
+// Add buttons to existing UI elements
+function addExtensionButtons() {
+    // Add to main chat controls
+    const chatControls = document.querySelector('#send_but');
+    if (chatControls) {
+        const memoryToggle = createMemoryToggleButton();
+        chatControls.parentNode.insertBefore(memoryToggle, chatControls);
+    }
+    
+    // Add to character panel
+    const characterPanel = document.querySelector('#character_info');
+    if (characterPanel) {
+        const characterSettings = createCharacterSettingsButton();
+        characterPanel.appendChild(characterSettings);
+    }
+}
+
+// Create interactive buttons
+function createMemoryToggleButton() {
+    const button = document.createElement('button');
+    button.className = 'auto_summarize_toggle_btn';
+    button.innerHTML = '🧠';
+    button.title = 'Toggle Auto-Summarize';
+    
+    // Update button state
+    updateButtonState(button);
+    
+    button.onclick = () => {
+        const enabled = get_settings('enabled');
+        set_settings('enabled', !enabled);
+        updateButtonState(button);
+        toast(`Auto-Summarize ${!enabled ? 'enabled' : 'disabled'}`, 'info');
+    };
+    
+    return button;
+}
+
+function updateButtonState(button) {
+    const enabled = get_settings('enabled');
+    button.classList.toggle('active', enabled);
+    button.style.opacity = enabled ? '1' : '0.5';
+}
+```
+
+## CSS Integration
+
+### 1. Style Organization
+```css
+/* auto_summarize.css - Extension-specific styles */
+
+/* Summary display */
+.auto_summarize_summary {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 5px;
+    padding: 5px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+    border-left: 3px solid #007bff;
+}
+
+/* Memory status indicators */
+.auto_summarize_summary.short_term {
+    border-left-color: #28a745; /* Green for short-term */
+}
+
+.auto_summarize_summary.long_term {
+    border-left-color: #007bff; /* Blue for long-term */
+}
+
+.auto_summarize_summary.excluded {
+    border-left-color: #dc3545; /* Red for excluded */
+}
+
+/* Buttons */
+.auto_summarize_toggle_btn {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.auto_summarize_toggle_btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.auto_summarize_toggle_btn.active {
+    background: rgba(0, 123, 255, 0.2);
+    color: #007bff;
+}
+
+/* Settings panel */
+.auto_summarize_settings {
+    margin: 10px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: #f9f9f9;
+}
+
+.auto_summarize_settings h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 1.1em;
+}
+
+/* Form elements */
+.auto_summarize_settings input,
+.auto_summarize_settings select,
+.auto_summarize_settings textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    margin: 5px 0;
+}
+
+.auto_summarize_settings label {
+    display: block;
+    margin: 10px 0 5px 0;
+    font-weight: bold;
+    color: #555;
+}
+```
+
+### 2. Responsive Design
+```css
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .auto_summarize_summary {
+        font-size: 0.7em;
+        padding: 3px;
+    }
+    
+    .auto_summarize_toggle_btn {
+        font-size: 1em;
+        padding: 3px;
+    }
+    
+    .auto_summarize_settings {
+        padding: 10px;
+        margin: 5px 0;
+    }
+}
+
+/* Dark theme support */
+[data-theme="dark"] .auto_summarize_summary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ccc;
+}
+
+[data-theme="dark"] .auto_summarize_settings {
+    background: #2a2a2a;
+    border-color: #444;
+    color: #fff;
+}
+
+[data-theme="dark"] .auto_summarize_settings input,
+[data-theme="dark"] .auto_summarize_settings select,
+[data-theme="dark"] .auto_summarize_settings textarea {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+}
+```
+
+## Event Handling
+
+### 1. UI Event Listeners
+```javascript
+// Setup UI event listeners
+function setupUIEventListeners() {
+    // Listen for message additions
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    if (node.classList.contains('mes')) {
+                        addMessageUI(node, getMessageFromElement(node));
+                    }
+                }
+            });
+        });
+    });
+    
+    // Observe chat container
+    const chatContainer = document.querySelector('#chat');
+    if (chatContainer) {
+        observer.observe(chatContainer, { childList: true, subtree: true });
+    }
+    
+    // Listen for theme changes
+    document.addEventListener('themeChanged', updateThemeStyles);
+}
+
+// Get message data from DOM element
+function getMessageFromElement(element) {
+    const messageId = element.getAttribute('data-mes-id');
+    const ctx = getContext();
+    return ctx.chat.find(msg => msg.mes_uid === messageId);
+}
+```
+
+### 2. Interactive Elements
+```javascript
+// Create interactive summary elements
+function createInteractiveSummary(message) {
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'auto_summarize_summary interactive';
+    
+    const memory = get_data(message, 'memory');
+    if (memory) {
+        // Make summary editable
+        summaryDiv.contentEditable = true;
+        summaryDiv.textContent = memory;
+        
+        // Add edit handlers
+        summaryDiv.addEventListener('blur', () => {
+            const newSummary = summaryDiv.textContent.trim();
+            if (newSummary !== memory) {
+                updateSummary(message, newSummary);
+            }
+        });
+        
+        // Add keyboard shortcuts
+        summaryDiv.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                summaryDiv.blur();
+            }
+            if (e.key === 'Escape') {
+                summaryDiv.textContent = memory;
+                summaryDiv.blur();
+            }
+        });
+    }
+    
+    return summaryDiv;
+}
+```
+
+## Modal and Popup Integration
+
+### 1. Modal Creation
+```javascript
+// Create modal dialogs
+function createModal(title, content) {
+    const modal = document.createElement('div');
+    modal.className = 'auto_summarize_modal';
+    modal.innerHTML = `
+        <div class="modal_overlay"></div>
+        <div class="modal_content">
+            <div class="modal_header">
+                <h3>${title}</h3>
+                <button class="modal_close">&times;</button>
+            </div>
+            <div class="modal_body">
+                ${content}
+            </div>
+        </div>
+    `;
+    
+    // Add event listeners
+    modal.querySelector('.modal_close').onclick = () => closeModal(modal);
+    modal.querySelector('.modal_overlay').onclick = () => closeModal(modal);
+    
+    return modal;
+}
+
+function showModal(modal) {
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+    
+    // Focus first input
+    const firstInput = modal.querySelector('input, textarea, select');
+    if (firstInput) {
+        firstInput.focus();
+    }
+}
+
+function closeModal(modal) {
+    modal.style.display = 'none';
+    modal.remove();
+}
+```
+
+### 2. Modal Styles
+```css
+/* Modal styles */
+.auto_summarize_modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.auto_summarize_modal .modal_overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.auto_summarize_modal .modal_content {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    max-width: 90%;
+    max-height: 90%;
+    overflow: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.auto_summarize_modal .modal_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.auto_summarize_modal .modal_header h3 {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.auto_summarize_modal .modal_close {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auto_summarize_modal .modal_body {
+    padding: 20px;
+}
+```
+
+## Best Practices
+
+### 1. Performance
+- Use event delegation for dynamic elements
+- Debounce frequent UI updates
+- Minimize DOM queries
+- Use CSS transforms for animations
+
+### 2. Accessibility
+- Add proper ARIA labels
+- Ensure keyboard navigation
+- Provide alt text for icons
+- Maintain color contrast ratios
+
+### 3. User Experience
+- Show loading states
+- Provide clear feedback
+- Use consistent styling
+- Respect user preferences
+
+### 4. Compatibility
+- Test with different browsers
+- Handle missing DOM elements gracefully
+- Use feature detection
+- Provide fallbacks
+description:
+globs:
+alwaysApply: false
+---

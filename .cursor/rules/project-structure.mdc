@@ -1,0 +1,209 @@
+# Project Structure
+
+## Main Structure
+
+The extension follows a modular structure with clear separation of concerns:
+
+```
+ST-Auto-Summarize/
+├── index.js                    # Main entry point and barrel exports
+├── manifest.json               # Extension manifest
+├── README.md                   # Documentation
+├── style.css                   # Extension styles
+├── settings.html               # Settings UI template
+│
+├── Core Functionality
+├── summarization.js            # Main summarization logic
+├── memoryCore.js               # Memory storage and retrieval
+├── summaryValidation.js        # Summary validation logic
+├── combinedSummary.js          # Combined summary generation
+├── sceneBreak.js               # Scene break handling
+│
+├── Settings & Configuration
+├── settingsManager.js          # Settings management
+├── settingsUI.js               # Settings UI logic
+├── defaultSettings.js          # Default configuration
+├── defaultPrompts.js           # Default prompt templates
+├── profileManager.js           # Configuration profiles
+├── profileUI.js                # Profile management UI
+├── connectionProfiles.js       # API connection profiles
+├── presetManager.js            # Completion preset management
+│
+├── UI & User Interface
+├── buttonBindings.js           # Button event handlers
+├── uiBindings.js               # UI element bindings
+├── messageVisuals.js           # Message display logic
+├── memoryEditInterface.js      # Memory editing interface
+├── characterSelect.js          # Character selection logic
+├── popout.js                   # Popout window management
+├── progressBar.js              # Progress indicators
+├── autoHide.js                 # Auto-hide functionality
+├── sceneNavigator.js           # Scene navigation
+│
+├── Utilities & Helpers
+├── utils.js                    # Core utility functions
+├── promptUtils.js              # Prompt formatting utilities
+├── messageData.js              # Message data handling
+├── eventHandlers.js            # Event handling logic
+├── slashCommands.js            # Slash command implementation
+├── styleConstants.js           # CSS constants and themes
+│
+└── Documentation
+└── README.md                   # Extension documentation
+```
+
+## File Naming and Organization
+
+### 1. Core Files
+- Use descriptive names that indicate the file's purpose
+- Group related functionality in the same file
+- Keep files focused on a single responsibility
+
+### 2. Import/Export Pattern
+Use the barrel export pattern in `index.js`:
+```javascript
+// index.js - Barrel exports
+export * from './summarization.js';
+export * from './memoryCore.js';
+export * from './settingsManager.js';
+// ... other exports
+```
+
+### 3. Module Organization
+Organize imports in this order:
+```javascript
+// 1. SillyTavern imports
+import { getContext, getApiUrl, extension_settings } from '../../../extensions.js';
+
+// 2. Extension imports (from index.js)
+import { get_settings, debug, error } from './index.js';
+
+// 3. Third-party imports (if any)
+import { debounce } from 'lodash';
+
+// 4. Local imports (relative paths)
+import { formatPrompt } from './promptUtils.js';
+```
+
+## Code Organization Guidelines
+
+### 1. Function Organization
+Within each file, organize functions in this order:
+```javascript
+// 1. Constants and configuration
+const DEFAULT_SETTINGS = { ... };
+
+// 2. State variables
+let currentState = { ... };
+
+// 3. Utility functions
+function helperFunction() { ... }
+
+// 4. Core functionality
+function mainFunction() { ... }
+
+// 5. Event handlers
+function handleEvent() { ... }
+
+// 6. Exports
+export { mainFunction, handleEvent };
+```
+
+### 2. Settings Management
+- Keep all settings in `defaultSettings.js`
+- Use `settingsManager.js` for settings operations
+- Access settings via `get_settings()` and `set_settings()`
+
+### 3. UI Components
+- Separate UI logic from business logic
+- Use `uiBindings.js` for DOM manipulation
+- Keep CSS in `style.css` with organized sections
+
+### 4. Error Handling
+- Use consistent error handling patterns
+- Log errors with context
+- Show user-friendly error messages
+
+## Best Practices
+
+### 1. File Size
+- Keep files under 500 lines when possible
+- Split large files into focused modules
+- Use barrel exports to maintain clean imports
+
+### 2. Function Size
+- Keep functions focused and under 50 lines
+- Extract complex logic into helper functions
+- Use descriptive function names
+
+### 3. Variable Naming
+- Use camelCase for variables and functions
+- Use UPPER_CASE for constants
+- Use descriptive names that indicate purpose
+
+### 4. Comments and Documentation
+- Add JSDoc comments for complex functions
+- Document configuration options
+- Keep README.md updated with new features
+
+### 5. Code Reusability
+- Extract common patterns into utility functions
+- Use consistent patterns across similar features
+- Avoid code duplication
+
+## Adding New Features
+
+When adding new features:
+
+1. **Create new file** if the feature is substantial
+2. **Add to existing file** if it's a small addition to existing functionality
+3. **Update index.js** with new exports
+4. **Update README.md** with new feature documentation
+5. **Add tests** if applicable
+
+### Example: Adding a new summarization feature
+```
+summarization.js          # Add new function
+defaultPrompts.js         # Add new prompt template
+defaultSettings.js        # Add new settings
+settingsUI.js            # Add UI controls
+README.md                # Update documentation
+```
+
+## Configuration Management
+
+### 1. Settings Structure
+```javascript
+// defaultSettings.js
+export const default_settings = {
+    // Core settings
+    enabled: true,
+    debug_mode: false,
+    
+    // Summarization settings
+    summary_prompt: "...",
+    summary_max_tokens: 100,
+    
+    // Memory settings
+    short_term_limit: 10,
+    long_term_limit: 50,
+    
+    // UI settings
+    show_summaries: true,
+    auto_hide: false
+};
+```
+
+### 2. Profile Management
+- Use `profileManager.js` for configuration profiles
+- Store profiles in SillyTavern's extension storage
+- Support import/export of profiles
+
+### 3. Connection Profiles
+- Manage different API connections
+- Support multiple LLM providers
+- Handle API key management securely
+description:
+globs:
+alwaysApply: false
+---
