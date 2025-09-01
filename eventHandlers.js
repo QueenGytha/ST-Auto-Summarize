@@ -202,6 +202,9 @@ jQuery(async function () {
     initialize_group_member_buttons();
     initialize_slash_commands();
     initialize_menu_buttons();
+    
+    // Refresh settings UI to populate dropdowns and other elements
+    refresh_settings();
 
     addSceneBreakButton();
     bindSceneBreakButton(get_message_div, getContext, set_data, get_data, saveChatDebounced);

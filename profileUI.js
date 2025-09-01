@@ -45,6 +45,7 @@ import {
     default_long_template,
     default_scene_template,
     default_combined_template,
+    reset_connection_profiles_cache,
 } from './index.js';
 
 function update_save_icon_highlight() {
@@ -163,16 +164,33 @@ async function update_combined_summary_preset_dropdown() {
     $preset_select.off('click').on('click', () => update_combined_summary_preset_dropdown());
 }
 async function update_connection_profile_dropdown() {
+    // Reset the connection profiles cache to force a re-check
+    reset_connection_profiles_cache();
+    
     // set the completion preset dropdown
     let $connection_select = $(`.${settings_content_class} #connection_profile`);
     let summary_connection = get_settings('connection_profile')
-    let connection_options = await get_connection_profiles()
-    $connection_select.empty();
-    $connection_select.append(`<option value="">Same as Current</option>`)
-    for (let option of connection_options) {  // construct the dropdown options
-        $connection_select.append(`<option value="${option}">${option}</option>`)
+    
+    try {
+        let connection_options = await get_connection_profiles()
+        if (connection_options && connection_options.length > 0) {
+            $connection_select.empty();
+            $connection_select.append(`<option value="">Same as Current</option>`)
+            for (let option of connection_options) {  // construct the dropdown options
+                $connection_select.append(`<option value="${option}">${option}</option>`)
+            }
+            $connection_select.val(summary_connection)
+        } else {
+            // If no connection profiles available, show a message
+            $connection_select.empty();
+            $connection_select.append(`<option value="">No connection profiles available</option>`)
+        }
+    } catch (error) {
+        // If there's an error, show a message
+        $connection_select.empty();
+        $connection_select.append(`<option value="">Connection profiles not available</option>`)
+        console.log('[ST-Auto-Summarize] Error loading connection profiles:', error);
     }
-    $connection_select.val(summary_connection)
 
     // set a click event to refresh the dropdown
     $connection_select.off('click').on('click', () => update_connection_profile_dropdown());
@@ -229,13 +247,15 @@ function refresh_settings() {
     $(`.${settings_content_class} .combined_error_detection_setting`).prop('disabled', !error_detection_enabled || !combined_error_enabled);
 
     // connection profiles
-    if (check_connection_profiles_active()) {
-        update_connection_profile_dropdown()
+    // Always show the connection profile dropdown - let the user decide if they want to use it
+    update_connection_profile_dropdown()
+    try {
         check_connection_profile_valid()
-    } else { // if connection profiles extension isn't active, hide the connection profile dropdown
-        $(`.${settings_content_class} #connection_profile`).parent().hide()
-        debug("Connection profiles extension not active. Hiding connection profile dropdown.")
+    } catch (error) {
+        console.log('[ST-Auto-Summarize] Error checking connection profile validity:', error);
     }
+    // Make sure the connection profile dropdown is visible
+    $(`.${settings_content_class} #connection_profile`).parent().show()
 
     // completion presets
     update_preset_dropdown();
