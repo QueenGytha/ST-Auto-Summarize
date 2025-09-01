@@ -9,6 +9,7 @@ import {
     get_connection_profiles,
     verify_connection_profile,
     check_connection_profiles_active,
+    check_connection_profile_valid,
     get_current_preset,
     get_current_connection_profile,
     get_summary_preset_max_tokens,
@@ -171,26 +172,16 @@ async function update_connection_profile_dropdown() {
     let $connection_select = $(`.${settings_content_class} #connection_profile`);
     let summary_connection = get_settings('connection_profile')
     
-    try {
-        let connection_options = await get_connection_profiles()
-        if (connection_options && connection_options.length > 0) {
-            $connection_select.empty();
-            $connection_select.append(`<option value="">Same as Current</option>`)
-            for (let option of connection_options) {  // construct the dropdown options
-                $connection_select.append(`<option value="${option}">${option}</option>`)
-            }
-            $connection_select.val(summary_connection)
-        } else {
-            // If no connection profiles available, show a message
-            $connection_select.empty();
-            $connection_select.append(`<option value="">No connection profiles available</option>`)
+    let connection_options = await get_connection_profiles()
+    $connection_select.empty();
+    $connection_select.append(`<option value="">Same as Current</option>`)
+    
+    if (connection_options && Array.isArray(connection_options)) {
+        for (let option of connection_options) {  // construct the dropdown options
+            $connection_select.append(`<option value="${option}">${option}</option>`)
         }
-    } catch (error) {
-        // If there's an error, show a message
-        $connection_select.empty();
-        $connection_select.append(`<option value="">Connection profiles not available</option>`)
-        console.log('[ST-Auto-Summarize] Error loading connection profiles:', error);
     }
+    $connection_select.val(summary_connection)
 
     // set a click event to refresh the dropdown
     $connection_select.off('click').on('click', () => update_connection_profile_dropdown());
@@ -249,11 +240,7 @@ function refresh_settings() {
     // connection profiles
     // Always show the connection profile dropdown - let the user decide if they want to use it
     update_connection_profile_dropdown()
-    try {
-        check_connection_profile_valid()
-    } catch (error) {
-        console.log('[ST-Auto-Summarize] Error checking connection profile validity:', error);
-    }
+    check_connection_profile_valid()
     // Make sure the connection profile dropdown is visible
     $(`.${settings_content_class} #connection_profile`).parent().show()
 

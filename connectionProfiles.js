@@ -1,64 +1,11 @@
-import { get_settings, set_settings, error, debug, toast_debounced, getContext, CONNECT_API_MAP } from './index.js';
+import { get_settings, set_settings, error, debug, toast_debounced, getContext } from './index.js';
 
 // Connection profiles
 let connection_profiles_active;
-let connection_profiles_retry_attempted = false;
 function check_connection_profiles_active() {
     // detect whether the connection profiles extension is active by checking for the UI elements
     if (connection_profiles_active === undefined) {
-        let found = false;
-        
-        console.log('[ST-Auto-Summarize] Checking for connection profiles...');
-        
-        // Method 1: Check the original selector
-        if ($('#sys-settings-button').find('#connection_profiles').length > 0) {
-            found = true;
-            console.log('[ST-Auto-Summarize] Connection profiles found via sys-settings-button');
-        }
-        
-        // Method 2: Check for connection profiles in settings directly
-        if (!found && $('#connection_profiles').length > 0) {
-            found = true;
-            console.log('[ST-Auto-Summarize] Connection profiles found via direct selector');
-        }
-        
-        // Method 3: Check if the /profile command exists (indicates extension is loaded)
-        if (!found) {
-            try {
-                const ctx = getContext();
-                if (ctx && ctx.SlashCommandParser && ctx.SlashCommandParser.commands && ctx.SlashCommandParser.commands.has('profile')) {
-                    found = true;
-                    console.log('[ST-Auto-Summarize] Connection profiles found via slash command');
-                }
-            } catch (e) {
-                // Ignore errors, extension might not be fully loaded yet
-                console.log('[ST-Auto-Summarize] Error checking slash commands:', e.message);
-            }
-        }
-        
-        connection_profiles_active = found;
-        console.log('[ST-Auto-Summarize] Connection profiles active:', found);
-        
-        // If not found and we haven't retried yet, schedule a retry after 2 seconds
-        if (!found && !connection_profiles_retry_attempted) {
-            connection_profiles_retry_attempted = true;
-            console.log('[ST-Auto-Summarize] Connection profiles not found, scheduling retry in 2 seconds');
-            setTimeout(() => {
-                console.log('[ST-Auto-Summarize] Retrying connection profiles detection');
-                connection_profiles_active = undefined; // Reset to force re-check
-                const result = check_connection_profiles_active(); // Retry
-                if (result) {
-                    // Connection profiles were found, refresh the settings UI
-                    console.log('[ST-Auto-Summarize] Connection profiles found after retry, refreshing settings UI');
-                    // Import refresh_settings dynamically to avoid circular imports
-                    import('./profileUI.js').then(module => {
-                        if (module.refresh_settings) {
-                            module.refresh_settings();
-                        }
-                    });
-                }
-            }, 2000);
-        }
+        connection_profiles_active = $('#sys-settings-button').find('#connection_profiles').length > 0
     }
     return connection_profiles_active;
 }
@@ -165,7 +112,6 @@ async function check_connection_profile_valid()  {
 function reset_connection_profiles_cache() {
     // Reset the cached value to force a re-check
     connection_profiles_active = undefined;
-    connection_profiles_retry_attempted = false;
 }
 
 export {
