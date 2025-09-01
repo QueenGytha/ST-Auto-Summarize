@@ -3,6 +3,8 @@ AI_INSTRUCTIONS.md
 
 # Node.js dependencies
 node_modules/
+docs/
+tests/
 
 # Cursor IDE configuration
 .cursor/
@@ -34,3 +36,16 @@ Thumbs.db
 .Trashes
 ehthumbs.db
 Thumbs.db
+ai-centralization/ 
+.cursorrules 
+.claude/ 
+ai-centralization/ 
+.cursorrules 
+.claude/ 
+ai-centralization/ 
+.cursorrules 
+.claude/ 
+ai-centralization/ 
+ai-centralization 
+.cursorrules 
+.claude/ 

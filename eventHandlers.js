@@ -34,6 +34,7 @@ import {
     get_manifest,
     log,
     refresh_settings,
+    update_connection_profile_dropdown,
     check_st_version,
     initialize_settings,
     get_short_memory,
@@ -249,6 +250,8 @@ Object.entries(event_types).forEach(([key, type]) => {
     window.getContext = getContext;
     window.refresh_memory = refresh_memory;
     window.generate_combined_summary = generate_combined_summary;
+    window.refresh_settings = refresh_settings;
+    window.update_connection_profile_dropdown = update_connection_profile_dropdown;
 
     initializeSceneNavigatorBar();
 });
