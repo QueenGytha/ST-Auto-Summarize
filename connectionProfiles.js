@@ -6,6 +6,22 @@ function check_connection_profiles_active() {
     // detect whether the connection profiles extension is active by checking for the UI elements
     if (connection_profiles_active === undefined) {
         connection_profiles_active = $('#sys-settings-button').find('#connection_profiles').length > 0
+        
+        // If not found and we haven't retried yet, schedule a retry after 2 seconds
+        if (!connection_profiles_active) {
+            setTimeout(() => {
+                connection_profiles_active = undefined; // Reset to force re-check
+                // Try to refresh the UI if connection profiles are now available
+                if ($('#sys-settings-button').find('#connection_profiles').length > 0) {
+                    // Connection profiles are now available, refresh the settings UI
+                    import('./profileUI.js').then(module => {
+                        if (module.refresh_settings) {
+                            module.refresh_settings();
+                        }
+                    });
+                }
+            }, 2000);
+        }
     }
     return connection_profiles_active;
 }
@@ -109,11 +125,6 @@ async function check_connection_profile_valid()  {
     return valid
 }
 
-function reset_connection_profiles_cache() {
-    // Reset the cached value to force a re-check
-    connection_profiles_active = undefined;
-}
-
 export {
     check_connection_profiles_active,
     get_current_connection_profile,
@@ -122,6 +133,5 @@ export {
     set_connection_profile,
     get_connection_profiles,
     verify_connection_profile,
-    check_connection_profile_valid,
-    reset_connection_profiles_cache
+    check_connection_profile_valid
 };

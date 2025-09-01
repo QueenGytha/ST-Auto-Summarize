@@ -46,7 +46,6 @@ import {
     default_long_template,
     default_scene_template,
     default_combined_template,
-    reset_connection_profiles_cache,
 } from './index.js';
 
 function update_save_icon_highlight() {
@@ -165,14 +164,12 @@ async function update_combined_summary_preset_dropdown() {
     $preset_select.off('click').on('click', () => update_combined_summary_preset_dropdown());
 }
 async function update_connection_profile_dropdown() {
-    // Reset the connection profiles cache to force a re-check
-    reset_connection_profiles_cache();
-    
     // set the completion preset dropdown
     let $connection_select = $(`.${settings_content_class} #connection_profile`);
     let summary_connection = get_settings('connection_profile')
     
     let connection_options = await get_connection_profiles()
+    
     $connection_select.empty();
     $connection_select.append(`<option value="">Same as Current</option>`)
     
