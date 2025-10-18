@@ -480,6 +480,46 @@ Available Macros:
     bind_setting('#scene_summary_context_limit', 'scene_summary_context_limit', 'number');
     bind_setting('input[name="scene_summary_context_type"]', 'scene_summary_context_type', 'text');
 
+    // --- Auto Scene Break Detection Settings ---
+    bind_setting('#auto_scene_break_enabled', 'auto_scene_break_enabled', 'boolean');
+    bind_setting('#auto_scene_break_on_load', 'auto_scene_break_on_load', 'boolean');
+    bind_setting('#auto_scene_break_on_new_message', 'auto_scene_break_on_new_message', 'boolean');
+    bind_setting('#auto_scene_break_check_which_messages', 'auto_scene_break_check_which_messages', 'text');
+    bind_setting('#auto_scene_break_prompt', 'auto_scene_break_prompt', 'text');
+    bind_setting('#auto_scene_break_prefill', 'auto_scene_break_prefill', 'text');
+    bind_setting('#auto_scene_break_connection_profile', 'auto_scene_break_connection_profile', 'text');
+    bind_setting('#auto_scene_break_completion_preset', 'auto_scene_break_completion_preset', 'text');
+
+    // Message offset with live display update
+    const $autoSceneBreakOffset = $('#auto_scene_break_message_offset');
+    const $autoSceneBreakOffsetValue = $('#auto_scene_break_message_offset_value');
+    if (get_settings('auto_scene_break_message_offset') === undefined) {
+        set_settings('auto_scene_break_message_offset', 1);
+    }
+    $autoSceneBreakOffset.val(get_settings('auto_scene_break_message_offset') ?? 1);
+    $autoSceneBreakOffsetValue.text($autoSceneBreakOffset.val());
+    $autoSceneBreakOffset.on('input change', function () {
+        let val = Number($(this).val());
+        if (isNaN(val)) val = 1;
+        val = Math.max(0, Math.min(10, val));
+        set_settings('auto_scene_break_message_offset', val);
+        $autoSceneBreakOffset.val(val);
+        $autoSceneBreakOffsetValue.text(val);
+    });
+
+    // Edit prompt button
+    bind_function('#edit_auto_scene_break_prompt', async () => {
+        let description = `
+Configure the prompt used to detect scene breaks automatically.
+The prompt should return "true" if the message is a scene break, or "false" if it is not.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{message}}:</b> The message text to analyze for scene break detection.</li>
+</ul>`;
+        get_user_setting_text_input('auto_scene_break_prompt', 'Edit Auto Scene Break Detection Prompt', description);
+    });
+
     refresh_settings()
 }
 

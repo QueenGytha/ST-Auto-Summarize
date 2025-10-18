@@ -1,4 +1,4 @@
-import { get_settings, set_settings, error, debug, toast_debounced, getContext } from './index.js';
+import { get_settings, set_settings, error, debug, toast_debounced, getContext, CONNECT_API_MAP } from './index.js';
 
 // Connection profiles
 let connection_profiles_active;

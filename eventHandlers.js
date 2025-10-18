@@ -48,7 +48,9 @@ import {
     initializeSceneNavigatorBar,
     renderSceneNavigatorBar,
     load_combined_summary,
-    get_scene_memory_injection
+    get_scene_memory_injection,
+    processSceneBreakOnChatLoad,
+    processNewMessageForSceneBreak,
 } from './index.js';
 
 // Event handling
@@ -69,6 +71,8 @@ async function on_chat_event(event=null, data=null) {
             if (context?.chat?.length) {
                 scrollChatToBottom();  // scroll to the bottom of the chat (area is added due to memories)
             }
+            // Auto scene break detection on chat load
+            processSceneBreakOnChatLoad();
             break;
 
         case 'message_deleted':   // message was deleted
@@ -94,6 +98,9 @@ async function on_chat_event(event=null, data=null) {
                 await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
             }
 
+            // Auto scene break detection on new user message
+            processNewMessageForSceneBreak(index);
+
             break;
 
         case 'char_message':
@@ -115,6 +122,9 @@ async function on_chat_event(event=null, data=null) {
                 if (get_settings("auto_summarize_on_send")) break;  // if auto_summarize_on_send is enabled, don't auto-summarize on character message
                 debug("New message detected, summarizing")
                 await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
+
+                // Auto scene break detection on new character message
+                processNewMessageForSceneBreak(index);
                 break;
             }
 

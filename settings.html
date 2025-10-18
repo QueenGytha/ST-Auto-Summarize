@@ -425,6 +425,59 @@
                     <span>tk</span>
                 </label>
 
+                <!-- Auto Scene Break Detection -->
+                <hr>
+                <h4 class="textAlignCenter">Auto Scene Break Detection <i class="fa-solid fa-info-circle" title="Automatically detect and mark scene breaks using AI analysis."></i></h4>
+                <label class="checkbox_label" title="Enable automatic scene break detection using LLM.">
+                    <input id="auto_scene_break_enabled" type="checkbox" />
+                    <span>Enable Auto Scene Break Detection</span>
+                </label>
+                <label class="checkbox_label" title="Automatically check for scene breaks when chat loads.">
+                    <input id="auto_scene_break_on_load" type="checkbox" />
+                    <span>Auto-check on Chat Load</span>
+                </label>
+                <label class="checkbox_label" title="Automatically check for scene breaks when new messages arrive.">
+                    <input id="auto_scene_break_on_new_message" type="checkbox" />
+                    <span>Auto-check on New Messages</span>
+                </label>
+
+                <label title="How many messages back from the latest to skip checking. 0 = check all including latest, 1 = skip latest, 2 = skip 2 latest, etc.">
+                    <span>Message Offset (skip latest N messages): <span id="auto_scene_break_message_offset_value">1</span></span>
+                    <input id="auto_scene_break_message_offset" class="text_pole" type="range" min="0" max="10" step="1" value="1" />
+                </label>
+                <small style="display:block; margin-bottom:0.5em;">Recommended: 1 (skip latest message since you may not like it yet)</small>
+
+                <label title="Which message types to check for scene breaks.">
+                    <span>Check Which Messages:</span>
+                    <select id="auto_scene_break_check_which_messages" class="text_pole">
+                        <option value="character">AI Messages Only</option>
+                        <option value="user">User Messages Only</option>
+                        <option value="both">Both User and AI Messages</option>
+                    </select>
+                </label>
+                <small style="display:block; margin-bottom:0.5em;">Scene breaks typically occur in AI responses, but some users write them in their inputs too.</small>
+
+                <div class="flex-container justifyspacebetween alignitemscenter">
+                    <button id="edit_auto_scene_break_prompt" class="menu_button flex1" title="Edit the auto scene break detection prompt"><span>Edit Detection Prompt</span></button>
+                </div>
+
+                <input id="auto_scene_break_prompt" type="hidden" />
+
+                <table>
+                    <tr title="The connection profile to use for scene break detection. Leave empty to use current profile.">
+                        <td><span>Detection Connection Profile</span></td>
+                        <td><select id="auto_scene_break_connection_profile" class="text_pole"></select></td>
+                    </tr>
+                    <tr title="The completion preset to use for scene break detection. Leave empty to use current preset.">
+                        <td><span>Detection Completion Preset</span></td>
+                        <td><select id="auto_scene_break_completion_preset" class="text_pole"></select></td>
+                    </tr>
+                    <tr title="Start the detection with this prefilled text to enforce true/false output.">
+                        <td><span>Detection Prefill</span></td>
+                        <td><input id="auto_scene_break_prefill" class="text_pole" type="text" placeholder=""></td>
+                    </tr>
+                </table>
+
                 <!-- Combined Summary -->
                 <hr>
                 <h4 class="textAlignCenter">Combined Summary <i class="fa-solid fa-info-circle" title="Combine all summaries into a single summary, removing repetition."></i></h4>

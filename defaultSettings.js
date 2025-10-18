@@ -11,6 +11,7 @@ import {
     regular_summary_error_detection_prompt,
     combined_summary_error_detection_prompt,
     scene_summary_error_detection_prompt,
+    auto_scene_break_detection_prompt,
 } from './index.js';
 
 export const default_settings = {
@@ -127,4 +128,15 @@ Object.assign(default_settings, {
     scene_summary_error_detection_retries: 3,
     auto_hide_message_age: -1,
     auto_hide_scene_count: -1,
+
+    // --- Auto Scene Break Detection Settings ---
+    auto_scene_break_enabled: false,
+    auto_scene_break_on_load: true,
+    auto_scene_break_on_new_message: true,
+    auto_scene_break_message_offset: 1,
+    auto_scene_break_check_which_messages: "both", // "user", "character", "both"
+    auto_scene_break_prompt: auto_scene_break_detection_prompt,
+    auto_scene_break_prefill: "",
+    auto_scene_break_connection_profile: "",
+    auto_scene_break_completion_preset: "",
 });

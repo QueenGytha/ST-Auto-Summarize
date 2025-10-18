@@ -347,30 +347,37 @@ async function summarize_text(prompt) {
     // TODO do the world info injection manually instead
     let include_world_info = get_settings('include_world_info');
     let result;
-    if (include_world_info) {
-        /**
-         * Background generation based on the provided prompt.
-         * @param {string} quiet_prompt Instruction prompt for the AI
-         * @param {boolean} quietToLoud Whether the message should be sent in a foreground (loud) or background (quiet) mode
-         * @param {boolean} skipWIAN whether to skip addition of World Info and Author's Note into the prompt
-         * @param {string} quietImage Image to use for the quiet prompt
-         * @param {string} quietName Name to use for the quiet prompt (defaults to "System:")
-         * @param {number} [responseLength] Maximum response length. If unset, the global default value is used.
-         * @returns
-         */
-        result = await ctx.generateQuietPrompt(prompt, true, false, system_prompt, "assistant");
-    } else {
-        /**
-         * Generates a message using the provided prompt.
-         * @param {string} prompt Prompt to generate a message from
-         * @param {string} api API to use. Main API is used if not specified.
-         * @param {boolean} instructOverride true to override instruct mode, false to use the default value
-         * @param {boolean} quietToLoud true to generate a message in system mode, false to generate a message in character mode
-         * @param {string} [systemPrompt] System prompt to use. Only Instruct mode or OpenAI.
-         * @param {number} [responseLength] Maximum response length. If unset, the global default value is used.
-         * @returns {Promise<string>} Generated message
-         */
-        result = await generateRaw(prompt, '', true, false, system_prompt, null, false);
+
+    try {
+        if (include_world_info) {
+            /**
+             * Background generation based on the provided prompt.
+             * @param {string} quiet_prompt Instruction prompt for the AI
+             * @param {boolean} quietToLoud Whether the message should be sent in a foreground (loud) or background (quiet) mode
+             * @param {boolean} skipWIAN whether to skip addition of World Info and Author's Note into the prompt
+             * @param {string} quietImage Image to use for the quiet prompt
+             * @param {string} quietName Name to use for the quiet prompt (defaults to "System:")
+             * @param {number} [responseLength] Maximum response length. If unset, the global default value is used.
+             * @returns
+             */
+            result = await ctx.generateQuietPrompt(prompt, true, false, system_prompt, "assistant");
+        } else {
+            /**
+             * Generates a message using the provided prompt.
+             * @param {string} prompt Prompt to generate a message from
+             * @param {string} api API to use. Main API is used if not specified.
+             * @param {boolean} instructOverride true to override instruct mode, false to use the default value
+             * @param {boolean} quietToLoud true to generate a message in system mode, false to generate a message in character mode
+             * @param {string} [systemPrompt] System prompt to use. Only Instruct mode or OpenAI.
+             * @param {number} [responseLength] Maximum response length. If unset, the global default value is used.
+             * @returns {Promise<string>} Generated message
+             */
+            result = await generateRaw(prompt, '', true, false, system_prompt, null, false);
+        }
+    } catch (err) {
+        // SillyTavern strips error details before they reach us
+        // Just re-throw for upper-level handling
+        throw err;
     }
 
     // trim incomplete sentences if set in ST settings

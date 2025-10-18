@@ -178,3 +178,26 @@ export const scene_summary_error_detection_prompt = `You are validating a scene 
 export const combined_summary_error_detection_prompt = `...`;
 
 export const scene_summary_default_prompt = `Summarize the following scene as if you are writing a concise chapter summary for a roleplay story. Focus on the most important events, character developments, emotional shifts, and plot points that would be useful to remember after this scene is no longer visible. Include character names, significant decisions, changes in relationships, and any details that may be relevant for future scenes. Write in past tense, avoid commentary or meta-statements, and do not include introductions or explanations.\nScene content:\n{{message}}`;
+
+
+export const auto_scene_break_detection_prompt = `You are analyzing a roleplay conversation to detect scene breaks. A scene break occurs when there is a significant shift in:
+- Location or setting (moving to a different place)
+- Time period (significant time skip like "later that day", "the next morning", etc.)
+- Narrative focus or POV (switching to different characters or perspective)
+- Major plot transition (end of one story arc, beginning of another)
+
+You will be given two messages: the previous message and the current message. Analyze whether the current message represents a scene break compared to the previous message.
+
+Previous message:
+{{previous_message}}
+
+Current message:
+{{current_message}}
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "status": true or false,
+  "rationale": "Brief 1-sentence explanation of why this is or isn't a scene break"
+}
+
+Do not include any text outside the JSON object.`;

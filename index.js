@@ -26,6 +26,7 @@ export * from './memoryEditInterface.js';
 export * from './defaultPrompts.js';
 export * from './defaultSettings.js';
 export * from './sceneBreak.js';
+export * from './autoSceneBreakDetection.js';
 export * from './utils.js';
 export * from './slashCommands.js';
 export * from './settingsManager.js';

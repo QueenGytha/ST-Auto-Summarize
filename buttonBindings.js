@@ -17,7 +17,9 @@ import {
     openGroupId,
     character_enabled,
     group_member_enable_button_highlight,
-    toggle_chat_enabled
+    toggle_chat_enabled,
+    manualSceneBreakDetection,
+    clearAllCheckedFlags
 } from './index.js';
 
 function initialize_message_buttons() {
@@ -135,6 +137,8 @@ function add_menu_button(text, fa_icon, callback, hover=null) {
 }
 function initialize_menu_buttons() {
     add_menu_button("Toggle Memory", "fa-solid fa-brain", toggle_chat_enabled, "Toggle memory for the current chat.")
+    add_menu_button("Scan for Scene Breaks", "fa-solid fa-magnifying-glass", manualSceneBreakDetection, "Automatically detect and mark scene breaks in all messages.")
+    add_menu_button("Clear Scene Break Checks", "fa-solid fa-eraser", clearAllCheckedFlags, "Clear the 'checked' flag from all messages so they can be re-scanned for scene breaks.")
 }
 
 export {

@@ -11,16 +11,21 @@ import {
     refresh_memory
 } from './index.js';
 
-function log(message) {
-    console.log(`[${MODULE_NAME_FANCY}]`, message);
+// Consistent prefix for ALL extension logs - easily searchable
+const LOG_PREFIX = '[AutoSummarize]';
+
+function log(...args) {
+    console.log(LOG_PREFIX, ...args);
 }
-function debug(message) {
+function debug(...args) {
     if (get_settings('debug_mode')) {
-        log("[DEBUG] "+message);
+        console.log(LOG_PREFIX, '[DEBUG]', ...args);
     }
 }
-function error(message) {
-    console.error(`[${MODULE_NAME_FANCY}]`, message);
+function error(...args) {
+    console.error(LOG_PREFIX, '[ERROR]', ...args);
+    // Only show first arg in toast to avoid clutter
+    const message = typeof args[0] === 'string' ? args[0] : String(args[0]);
     toastr.error(message, MODULE_NAME_FANCY);
 }
 
