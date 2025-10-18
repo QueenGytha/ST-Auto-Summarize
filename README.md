@@ -328,3 +328,5 @@ The how2claude guide in [&gt;&gt;42367418](https://boards.4chan.org/mlp/thread/4
 > (THE MOST IMPORTANT PART) have a versioning system for the entire RP session!
 > Make it so that the entire state of SillyTavern is stored per swipe and message and tied to them, so you can roll it back, fork at any point, or delete some messages without fear or having to juggle multiple copies. Your preset, your card, lorebook, author's note, QRs, preset and lorebook toggles, everything should be saved per message/swipe inside the current chat. The original copy of the card/lorebook/etc should stay untouched, so you can start a new chat from scratch if you want.
 >
+
+https://github.com/bmen25124/lorebook-creator

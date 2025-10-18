@@ -97,5 +97,11 @@ public
 
 # Temporary folders
 tmp/
-temp/ 
+temp/
 
+# AI development configuration
+.claude/
+.specify/
+CLAUDE.md
+ai-centralization
+package-lock.json
