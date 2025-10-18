@@ -2,6 +2,7 @@ import {
     get_settings,
     get_memory,
     summarize_text,
+    refresh_memory,
 } from './index.js';
 
 // SCENE SUMMARY PROPERTY STRUCTURE:
@@ -419,6 +420,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
             set_data(message, 'scene_summary_memory', summary); // <-- ensure top-level property is set
             saveChatDebounced();
+            refresh_memory(); // <-- refresh memory injection to use the newly selected summary
             renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
         }
     });
@@ -432,6 +434,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
             set_data(message, 'scene_summary_memory', summary); // <-- ensure top-level property is set
             saveChatDebounced();
+            refresh_memory(); // <-- refresh memory injection to use the newly selected summary
             renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
         }
     });
