@@ -8,7 +8,8 @@ import {
     default_settings,
     set_settings,
     refresh_settings,
-    refresh_memory
+    refresh_memory,
+    save_profile
 } from './index.js';
 
 // Consistent prefix for ALL extension logs - easily searchable
@@ -193,6 +194,7 @@ async function get_user_setting_text_input(key, title, description="", defaultVa
     let input = await popup.show();
     if (input !== undefined && input !== null && input !== false) {
         set_settings(key, input);
+        save_profile(); // auto-save when prompt is edited
         refresh_settings()
         refresh_memory()
     }

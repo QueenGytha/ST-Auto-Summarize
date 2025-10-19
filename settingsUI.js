@@ -422,6 +422,16 @@ Available Macros:
 
     // --- Scene Summary Settings ---
     bind_setting('#scene_summary_enabled', 'scene_summary_enabled', 'boolean');
+    bind_setting('#scene_summary_auto_name', 'scene_summary_auto_name', 'boolean');
+    bind_setting('#scene_summary_auto_name_manual', 'scene_summary_auto_name_manual', 'boolean');
+    bind_setting('#scene_summary_navigator_width', 'scene_summary_navigator_width', 'number', () => {
+        // Re-render navigator bar with new width
+        if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
+    });
+    bind_setting('#scene_summary_navigator_font_size', 'scene_summary_navigator_font_size', 'number', () => {
+        // Re-render navigator bar with new font size
+        if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
+    });
     bind_setting('#scene_summary_prompt', 'scene_summary_prompt', 'text');
     bind_setting('#scene_summary_prefill', 'scene_summary_prefill', 'text');
     bind_setting('#scene_summary_position', 'scene_summary_position', 'number');
@@ -442,6 +452,7 @@ Available Macros:
     $sceneHistoryCount.on('input change', function () {
         let val = Math.max(1, Math.min(99, Number($(this).val()) || 1));
         set_settings('scene_summary_history_count', val);
+        save_profile(); // auto-save when changed
         $sceneHistoryCount.val(val);
         $sceneHistoryCountDisplay.text(val);
     });
@@ -484,6 +495,7 @@ Available Macros:
     bind_setting('#auto_scene_break_enabled', 'auto_scene_break_enabled', 'boolean');
     bind_setting('#auto_scene_break_on_load', 'auto_scene_break_on_load', 'boolean');
     bind_setting('#auto_scene_break_on_new_message', 'auto_scene_break_on_new_message', 'boolean');
+    bind_setting('#auto_scene_break_generate_summary', 'auto_scene_break_generate_summary', 'boolean');
     bind_setting('#auto_scene_break_check_which_messages', 'auto_scene_break_check_which_messages', 'text');
     bind_setting('#auto_scene_break_prompt', 'auto_scene_break_prompt', 'text');
     bind_setting('#auto_scene_break_prefill', 'auto_scene_break_prefill', 'text');
@@ -503,6 +515,7 @@ Available Macros:
         if (isNaN(val)) val = 1;
         val = Math.max(0, Math.min(10, val));
         set_settings('auto_scene_break_message_offset', val);
+        save_profile(); // auto-save when changed
         $autoSceneBreakOffset.val(val);
         $autoSceneBreakOffsetValue.text(val);
     });

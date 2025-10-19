@@ -31,6 +31,7 @@ Automatic scene break detection uses an LLM to analyze messages and determine if
 | `auto_scene_break_enabled` | boolean | false | Master enable/disable toggle |
 | `auto_scene_break_on_load` | boolean | true | Auto-check messages when chat loads |
 | `auto_scene_break_on_new_message` | boolean | true | Auto-check when new message arrives |
+| `auto_scene_break_generate_summary` | boolean | false | Auto-generate scene summary when scene break is detected (completes before checking next messages) |
 | `auto_scene_break_message_offset` | number | 1 | How many messages back from latest to skip (1 = skip latest, 0 = check all including latest) |
 | `auto_scene_break_check_which_messages` | string | "both" | Which messages to check: "user" (user only), "character" (AI only), "both" (all messages) |
 | `auto_scene_break_prompt` | string | (see below) | LLM prompt template for detection |
@@ -151,7 +152,15 @@ async function manualSceneBreakDetection()
      - This sets `scene_break: true` and `scene_break_visible: true`
      - Renders scene break UI on message
 
-5. **Error Handling**
+5. **Auto-Generate Scene Summary** (Optional)
+   - If `auto_scene_break_generate_summary` is enabled:
+     - Call `generateSceneSummary(messageIndex, ...)` from sceneBreak.js
+     - Wait for summary generation to complete before continuing
+     - This ensures sequential processing: summary finishes before checking next message
+     - Handle errors gracefully (log but don't stop scan)
+     - Show progress toasts to user
+
+6. **Error Handling**
    - Catch LLM errors gracefully
    - Log errors but continue processing other messages
    - Do NOT mark message as checked if detection fails (allow retry)
@@ -194,6 +203,11 @@ async function manualSceneBreakDetection()
   <label class="checkbox_label">
     <input type="checkbox" id="auto_scene_break_on_new_message" />
     <span>Auto-check on new messages</span>
+  </label>
+
+  <label class="checkbox_label">
+    <input type="checkbox" id="auto_scene_break_generate_summary" />
+    <span>Auto-generate Scene Summary on Detection</span>
   </label>
 
   <label for="auto_scene_break_message_offset">
@@ -381,17 +395,18 @@ If the LLM response doesn't contain valid JSON, the system falls back to simple 
 ## File Changes Summary
 
 ### New Files
-- `autoSceneBreakDetection.js` - Core detection logic
+- `autoSceneBreakDetection.js` - Core detection logic (with auto-generate scene summary integration)
 
 ### Modified Files
-- `defaultSettings.js` - Add default settings
-- `defaultPrompts.js` - Add default detection prompt
-- `settings.html` - Add UI section
-- `uiBindings.js` - Wire up settings UI
-- `eventHandlers.js` - Add event triggers
-- `index.js` - Add barrel exports
+- `defaultSettings.js` - Add default settings (including `auto_scene_break_generate_summary`)
+- `defaultPrompts.js` - Add default detection prompt with JSON response format
+- `settings.html` - Add UI section with auto-generate checkbox
+- `settingsUI.js` - Wire up settings UI (including auto-generate binding)
+- `eventHandlers.js` - Add event triggers for auto-detection
+- `index.js` - Add barrel exports for autoSceneBreakDetection module
+- `sceneBreak.js` - Extract `generateSceneSummary()` function for reuse
 
 ### Files to Reference
-- `sceneBreak.js` - Use `toggleSceneBreak()` to mark messages
+- `sceneBreak.js` - Use `toggleSceneBreak()` to mark messages and `generateSceneSummary()` to create summaries
 - `summarization.js` - Use `summarize_text()` for LLM calls
 - `connectionProfiles.js` - Profile switching logic

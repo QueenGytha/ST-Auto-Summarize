@@ -9,7 +9,12 @@ import {
     toast,
     saveChatDebounced,
     toggleSceneBreak,
+    generateSceneSummary,
 } from './index.js';
+
+// Module-level cancellation token for the current scan
+// This allows us to cancel delays when user aborts
+let currentScanCancellationToken = null;
 
 /**
  * Check if a message should be scanned for scene break detection
@@ -203,6 +208,31 @@ function delay(ms) {
 }
 
 /**
+ * Interruptible delay that checks for abort signals periodically
+ * Splits the delay into 1-second chunks and checks if we should abort between chunks
+ * @param {number} ms - Milliseconds to delay
+ * @param {object} cancellationToken - Object with a `cancelled` property that can be set to true to abort
+ * @returns {Promise<void>}
+ */
+async function interruptibleDelay(ms, cancellationToken = null) {
+    const chunkSize = 1000; // Check every 1 second
+    const chunks = Math.ceil(ms / chunkSize);
+
+    for (let i = 0; i < chunks; i++) {
+        // Check if cancelled before each chunk
+        if (cancellationToken?.cancelled) {
+            debug('Delay interrupted - cancellation detected');
+            throw new Error('ABORTED');
+        }
+
+        // Wait for the chunk (or remaining time if last chunk)
+        const remainingMs = ms - (i * chunkSize);
+        const waitTime = Math.min(chunkSize, remainingMs);
+        await delay(waitTime);
+    }
+}
+
+/**
  * Detect scene break with exponential backoff retry on ALL errors
  * Since SillyTavern strips error details, we can't detect rate limits specifically.
  * Instead, we retry with backoff on ANY error (rate limit or otherwise).
@@ -210,9 +240,10 @@ function delay(ms) {
  * @param {number} messageIndex - Index in chat array
  * @param {object|null} previousMessage - The previous message for context
  * @param {number} maxRetries - Maximum number of retries (default 5)
+ * @param {object|null} cancellationToken - Token to check for cancellation during delays
  * @returns {Promise<{isSceneBreak: boolean, rationale: string}>} - Object with detection result and rationale
  */
-async function detectSceneBreakWithRetry(message, messageIndex, previousMessage = null, maxRetries = 5) {
+async function detectSceneBreakWithRetry(message, messageIndex, previousMessage = null, maxRetries = 5, cancellationToken = null) {
     let retryCount = 0;
     let lastError = null;
 
@@ -228,6 +259,18 @@ async function detectSceneBreakWithRetry(message, messageIndex, previousMessage 
             error('***** RETRY LOOP CAUGHT ERROR for message', messageIndex, 'attempt', retryCount + 1, '*****');
             error('***** Error message:', err?.message || String(err), '*****');
 
+            // Check if user aborted the request - if so, stop immediately without retrying
+            const errorString = String(err?.message || err);
+            if (errorString.includes('Clicked stop button') || errorString.includes('aborted') || errorString.includes('ABORTED')) {
+                error('***** USER ABORTED - stopping all retries *****');
+                // Mark the cancellation token so delays will also stop
+                if (cancellationToken) {
+                    cancellationToken.cancelled = true;
+                }
+                toast('Scene break detection aborted by user', 'warning');
+                throw new Error('ABORTED'); // Throw special error to signal abort
+            }
+
             // Retry with backoff on ANY error (we can't detect rate limits due to error stripping)
             if (retryCount < maxRetries) {
                 // Calculate exponential backoff delay: 10s, 20s, 40s, 80s, 160s
@@ -238,8 +281,15 @@ async function detectSceneBreakWithRetry(message, messageIndex, previousMessage 
                 toast(`⚠️ Error! Waiting ${backoffDelay/1000}s before retry ${retryCount}/${maxRetries} for message ${messageIndex}...`, 'warning');
                 await delay(50); // Allow toast to display
 
-                await delay(backoffDelay);
-                error('***** Backoff complete, retrying message', messageIndex, '*****');
+                // Use interruptible delay that can be cancelled mid-wait
+                try {
+                    await interruptibleDelay(backoffDelay, cancellationToken);
+                    error('***** Backoff complete, retrying message', messageIndex, '*****');
+                } catch (cancelErr) {
+                    // Delay was interrupted by cancellation
+                    error('***** Backoff cancelled - user aborted *****');
+                    throw new Error('ABORTED');
+                }
                 // Continue to next retry iteration
             } else {
                 // Max retries exceeded - stop scanning
@@ -285,6 +335,25 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
 
     debug('Processing messages', start, 'to', end, '(latest:', latestIndex, ', offset:', offset, ', checking:', checkWhich, ')');
 
+    // Create a new cancellation token for this scan
+    // This allows us to cancel delays when user aborts
+    currentScanCancellationToken = { cancelled: false };
+    const cancellationToken = currentScanCancellationToken;
+
+    // Listen for stop button clicks and cancel the scan
+    const eventSource = ctx.eventSource;
+    const event_types = ctx.event_types;
+
+    const stopHandler = () => {
+        if (cancellationToken && !cancellationToken.cancelled) {
+            debug('!!!!! GENERATION_STOPPED event received - cancelling scan !!!!!');
+            cancellationToken.cancelled = true;
+        }
+    };
+
+    // Add the event listener
+    eventSource.once(event_types.GENERATION_STOPPED, stopHandler);
+
     let checkedCount = 0;
     let detectedCount = 0;
     let errorCount = 0;
@@ -299,6 +368,8 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
 
     if (totalToCheck === 0) {
         toast(`No messages to check (all already scanned or filtered out)`, 'info');
+        currentScanCancellationToken = null; // Clear the token
+        eventSource.off(event_types.GENERATION_STOPPED, stopHandler); // Clean up event listener
         return;
     }
 
@@ -325,8 +396,8 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
             // Get previous message for context (if exists)
             const previousMessage = i > 0 ? chat[i - 1] : null;
 
-            // Detect scene break with exponential backoff retry
-            const { isSceneBreak, rationale } = await detectSceneBreakWithRetry(message, i, previousMessage);
+            // Detect scene break with exponential backoff retry (pass cancellation token)
+            const { isSceneBreak, rationale } = await detectSceneBreakWithRetry(message, i, previousMessage, 5, cancellationToken);
 
             if (isSceneBreak) {
                 detectedCount++;
@@ -340,17 +411,83 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
                 // Use toggleSceneBreak from sceneBreak.js to mark the message
                 const get_message_div = (idx) => $(`div[mesid="${idx}"]`);
                 toggleSceneBreak(i, get_message_div, getContext, set_data, get_data, saveChatDebounced);
+
+                // Auto-generate scene summary if enabled
+                if (get_settings('auto_scene_break_generate_summary')) {
+                    try {
+                        // Delay before generating summary to avoid rate limiting
+                        debug('Waiting 5 seconds before generating scene summary...');
+                        toast(`Waiting 5s before generating scene summary for message ${i}...`, 'info');
+                        await delay(50); // Allow toast to display
+
+                        try {
+                            await interruptibleDelay(5000, cancellationToken);
+                        } catch (cancelErr) {
+                            error('Pre-summary delay cancelled - user aborted');
+                            throw new Error('ABORTED');
+                        }
+
+                        debug('Auto-generating scene summary for message', i);
+                        toast(`Generating scene summary for message ${i}...`, 'info');
+                        await delay(50); // Allow toast to display
+
+                        // Set loading state in summary box (same as manual generation)
+                        const $msgDiv = get_message_div(i);
+                        const $summaryBox = $msgDiv.find('.scene-summary-box');
+                        if ($summaryBox.length) {
+                            $summaryBox.val("Generating scene summary...");
+                        }
+
+                        await generateSceneSummary(i, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+
+                        toast(`✓ Scene summary generated for message ${i}`, 'success');
+                        await delay(50); // Allow toast to display
+                    } catch (err) {
+                        // Check if user aborted summary generation
+                        const errorString = String(err?.message || err);
+                        if (errorString.includes('Clicked stop button') || errorString.includes('aborted')) {
+                            error('Scene summary generation aborted by user for message', i);
+                            cancellationToken.cancelled = true; // Mark token as cancelled
+                            throw new Error('ABORTED'); // Propagate abort to stop entire scan
+                        }
+
+                        error('Failed to auto-generate scene summary for message', i, ':', err);
+                        toast(`Failed to generate scene summary for message ${i}: ${err?.message || String(err)}`, 'error');
+                        await delay(50); // Allow toast to display
+                    }
+                }
             }
 
-            // Add delay between API calls to avoid rate limiting (2 seconds)
+            // Add delay between API calls to avoid rate limiting (5 seconds)
             // Skip delay on last message
+            // Use interruptible delay so user can abort mid-delay
             if (i < end) {
-                await delay(2000);
+                try {
+                    await interruptibleDelay(5000, cancellationToken);
+                } catch (cancelErr) {
+                    // Delay was interrupted - user aborted
+                    error('Between-message delay cancelled - user aborted');
+                    throw new Error('ABORTED');
+                }
             }
         } catch (err) {
-            errorCount++;
             error('!!!!! FATAL ERROR IN MAIN LOOP for message', i, '!!!!!', err);
             error('!!!!! Error message:', err?.message || String(err), '!!!!!');
+
+            // Check if user aborted - if so, stop gracefully without error count
+            const errorString = String(err?.message || err);
+            if (errorString.includes('ABORTED') || errorString.includes('Clicked stop button') || errorString.includes('aborted')) {
+                error('!!!!! USER ABORTED - STOPPING SCAN !!!!!');
+                cancellationToken.cancelled = true; // Ensure token is marked as cancelled
+                currentScanCancellationToken = null; // Clear the module-level token
+                eventSource.off(event_types.GENERATION_STOPPED, stopHandler); // Clean up event listener
+                toast(`⏹️ Scan aborted by user. Checked ${checkedCount}/${totalToCheck}, found ${detectedCount} scene breaks.`, 'info');
+                await delay(100);
+                return;
+            }
+
+            // Not an abort - this is a real error
+            errorCount++;
 
             // Show error toast
             toast(`🛑 Error on message ${i} after all retries: ${err?.message || String(err)}. Checked ${checkedCount}/${totalToCheck}, found ${detectedCount} scene breaks.`, 'error');
@@ -358,12 +495,19 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
 
             // STOP on ANY error (after all retries exhausted)
             error('!!!!! STOPPING SCAN !!!!!');
+            currentScanCancellationToken = null; // Clear the module-level token
+            eventSource.off(event_types.GENERATION_STOPPED, stopHandler); // Clean up event listener
             return;
         }
     }
 
     // Show final summary
     debug('Completed: checked', checkedCount, '/', totalToCheck, 'messages, detected', detectedCount, 'scene breaks,', errorCount, 'errors');
+
+    // Clear the cancellation token now that scan is complete
+    currentScanCancellationToken = null;
+    eventSource.off(event_types.GENERATION_STOPPED, stopHandler); // Clean up event listener
+
     if (errorCount > 0) {
         toast(`Scan complete: ${checkedCount}/${totalToCheck} messages checked, ${detectedCount} scene breaks found (${errorCount} errors)`, 'warning');
     } else if (detectedCount > 0) {

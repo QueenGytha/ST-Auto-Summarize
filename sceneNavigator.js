@@ -2,6 +2,9 @@ import { get_settings, set_settings, getContext, get_data, SCENE_BREAK_KEY, SCEN
 
 export function renderSceneNavigatorBar() {
     const show = get_settings('scene_summary_navigator_toggle');
+    const width = get_settings('scene_summary_navigator_width') ?? 96;
+    const fontSize = get_settings('scene_summary_navigator_font_size') ?? 12;
+
     let $bar = $('#scene-summary-navigator-bar');
     // If not present or in the wrong place, move it after #sheld (main chat container)
     if (!$bar.length) {
@@ -12,6 +15,10 @@ export function renderSceneNavigatorBar() {
         $bar.detach();
         $('#sheld').after($bar);
     }
+
+    // Apply width setting
+    $bar.css('width', `${width}px`);
+
     if (!show) {
         $bar.hide();
         return;
@@ -28,6 +35,10 @@ export function renderSceneNavigatorBar() {
             // Use the actual message index for the label, or use sceneNum for sequential scene numbers
             const label = name !== `#${idx}` ? name : `#${idx}`;
             const $link = $(`<button class="scene-nav-link" title="${label}">${label}</button>`);
+
+            // Apply font size setting
+            $link.css('font-size', `${fontSize}px`);
+
             $link.on('click', () => {
                 const $target = $(`div[mesid="${idx}"]`);
                 if ($target.length) {

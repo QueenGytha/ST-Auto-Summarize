@@ -3,6 +3,7 @@ import {
     get_memory,
     summarize_text,
     refresh_memory,
+    renderSceneNavigatorBar,
 } from './index.js';
 
 // SCENE SUMMARY PROPERTY STRUCTURE:
@@ -232,8 +233,8 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     $sceneBreak.find('.sceneBreak-name').on('change blur', function () {
         set_data(message, SCENE_BREAK_NAME_KEY, $(this).val());
         saveChatDebounced();
-        // Update navigator bar if present
-        if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
+        // Update navigator bar to show the new name immediately
+        renderSceneNavigatorBar();
     });
     $sceneBreak.find('.scene-summary-box').on('change blur', function () {
         // Update the current version in the versions array
@@ -400,6 +401,16 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             await ctx.set_preset?.(current_preset);
         }
 
+        // 6.5. Auto-generate scene name if enabled and not already set (for manual generation)
+        const autoGenerateSceneNameManual = get_settings('scene_summary_auto_name_manual') ?? true;
+        if (autoGenerateSceneNameManual) {
+            // Delay before generating scene name to avoid rate limiting
+            console.log("[SceneBreak] Waiting 5 seconds before generating scene name...");
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+            await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile, preset, current_profile, current_preset);
+        }
+
         // 7. Save and display the summary in the box
         let updatedVersions = getSceneSummaryVersions(message, get_data).slice();
         updatedVersions.push(summary);
@@ -505,4 +516,206 @@ export function renderAllSceneBreaks(get_message_div, getContext, get_data, set_
     }
     // Update navigator bar if present
     if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
+}
+
+/**
+ * Generate a scene summary for a message that has a scene break marker
+ * @param {number} index - Index of the message with the scene break
+ * @param {function} get_message_div - Function to get message div by index
+ * @param {function} getContext - Function to get SillyTavern context
+ * @param {function} get_data - Function to get data from message
+ * @param {function} set_data - Function to set data on message
+ * @param {function} saveChatDebounced - Function to save chat
+ * @returns {Promise<string>} - The generated scene summary
+ */
+/**
+ * Generate a scene name using AI based on the scene summary
+ * @param {string} summary - The scene summary text
+ * @param {object} message - The message object to set the scene name on
+ * @param {function} get_data - Function to get data from message
+ * @param {function} set_data - Function to set data on message
+ * @param {object} ctx - SillyTavern context
+ * @param {string|null} profile - Connection profile to use (optional)
+ * @param {string|null} preset - Completion preset to use (optional)
+ * @param {string|null} current_profile - Current profile to restore after generation (optional)
+ * @param {string|null} current_preset - Current preset to restore after generation (optional)
+ * @returns {Promise<string|null>} - The generated scene name, or null if generation failed
+ */
+async function autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile = null, preset = null, current_profile = null, current_preset = null) {
+    const existingSceneName = get_data(message, SCENE_BREAK_NAME_KEY);
+
+    // Only generate if no name already exists
+    if (existingSceneName) {
+        console.log("[SceneBreak] Scene name already exists, skipping auto-generation");
+        return null;
+    }
+
+    try {
+        console.log("[SceneBreak] Auto-generating scene name...");
+
+        // Create a prompt to generate a brief scene name
+        const sceneNamePrompt = `Based on the following scene summary, generate a very brief scene name (maximum 5 words, like a chapter title).
+
+Scene Summary:
+${summary}
+
+Respond with ONLY the scene name, nothing else. Make it concise and descriptive, like a chapter title.`;
+
+        // Switch to scene summary profile/preset if set (reuse same settings)
+        if (profile) {
+            await ctx.set_connection_profile?.(profile);
+        }
+        if (preset) {
+            await ctx.set_preset?.(preset);
+        }
+
+        // Block input if setting is enabled
+        if (get_settings('block_chat')) {
+            ctx.deactivateSendButtons();
+        }
+
+        const sceneName = await summarize_text(sceneNamePrompt);
+
+        // Re-enable input if it was blocked
+        if (get_settings('block_chat')) {
+            ctx.activateSendButtons();
+        }
+
+        // Restore previous profile/preset
+        if (profile) {
+            await ctx.set_connection_profile?.(current_profile);
+        }
+        if (preset) {
+            await ctx.set_preset?.(current_preset);
+        }
+
+        // Clean up the scene name (remove quotes, trim, limit length)
+        let cleanSceneName = sceneName.trim()
+            .replace(/^["']|["']$/g, '') // Remove leading/trailing quotes
+            .replace(/\n/g, ' ') // Replace newlines with spaces
+            .trim();
+
+        // Limit to ~50 characters max
+        if (cleanSceneName.length > 50) {
+            cleanSceneName = cleanSceneName.substring(0, 47) + '...';
+        }
+
+        console.log("[SceneBreak] Generated scene name:", cleanSceneName);
+        set_data(message, SCENE_BREAK_NAME_KEY, cleanSceneName);
+
+        // Refresh the scene navigator bar to show the new name immediately
+        renderSceneNavigatorBar();
+
+        return cleanSceneName;
+    } catch (err) {
+        console.error("[SceneBreak] Error generating scene name:", err);
+        // Don't fail the whole summary generation if scene name fails
+        return null;
+    }
+}
+
+export async function generateSceneSummary(index, get_message_div, getContext, get_data, set_data, saveChatDebounced) {
+    const ctx = getContext();
+    const chat = ctx.chat;
+    const message = chat[index];
+
+    // Get scene range
+    let sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+    let [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
+
+    // Collect scene objects (messages/summaries)
+    let mode = get_settings('scene_summary_history_mode') || "both";
+    let sceneObjects = [];
+    for (let i = startIdx; i <= endIdx; i++) {
+        const msg = chat[i];
+        if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
+            sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+        }
+        if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
+            sceneObjects.push({ type: "summary", index: i, summary: get_memory(msg) });
+        }
+    }
+
+    // Get prompt and connection profile for scene summaries
+    let promptTemplate = get_settings('scene_summary_prompt');
+    let prefill = get_settings('scene_summary_prefill') || "";
+    let profile = get_settings('scene_summary_connection_profile');
+    let preset = get_settings('scene_summary_completion_preset');
+    let current_profile = await ctx.get_current_connection_profile?.();
+    let current_preset = await ctx.get_current_preset?.();
+
+    // Prepare prompt (substitute macros)
+    let prompt = promptTemplate;
+    if (ctx.substituteParamsExtended) {
+        prompt = ctx.substituteParamsExtended(prompt, {
+            message: JSON.stringify(sceneObjects, null, 2),
+            prefill
+        }) || prompt;
+    }
+    prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
+    prompt = `${prompt}\n${prefill}`;
+
+    // Switch to scene summary profile/preset if set
+    if (profile) {
+        console.log("[SceneBreak] Switching to connection profile:", profile);
+        await ctx.set_connection_profile?.(profile);
+    }
+    if (preset) {
+        console.log("[SceneBreak] Switching to preset:", preset);
+        await ctx.set_preset?.(preset);
+    }
+
+    // Generate summary using the same logic as summarize_text
+    let summary = "";
+    try {
+        // Block input if setting is enabled
+        if (get_settings('block_chat')) {
+            ctx.deactivateSendButtons();
+        }
+        console.log("[SceneBreak] Sending prompt to AI:", prompt);
+        summary = await summarize_text(prompt);
+        console.log("[SceneBreak] AI response:", summary);
+    } catch (err) {
+        summary = "Error generating summary: " + (err?.message || err);
+        console.error("[SceneBreak] Error generating summary:", err);
+        throw err; // Re-throw so caller knows it failed
+    } finally {
+        // Re-enable input if it was blocked
+        if (get_settings('block_chat')) {
+            ctx.activateSendButtons();
+        }
+    }
+
+    // Restore previous profile/preset
+    if (profile) {
+        console.log("[SceneBreak] Restoring previous connection profile:", current_profile);
+        await ctx.set_connection_profile?.(current_profile);
+    }
+    if (preset) {
+        console.log("[SceneBreak] Restoring previous preset:", current_preset);
+        await ctx.set_preset?.(current_preset);
+    }
+
+    // Auto-generate scene name if enabled and not already set
+    const autoGenerateSceneName = get_settings('scene_summary_auto_name') ?? true;
+    if (autoGenerateSceneName) {
+        // Delay before generating scene name to avoid rate limiting
+        console.log("[SceneBreak] Waiting 5 seconds before generating scene name...");
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile, preset, current_profile, current_preset);
+    }
+
+    // Save and display the summary
+    let updatedVersions = getSceneSummaryVersions(message, get_data).slice();
+    updatedVersions.push(summary);
+    setSceneSummaryVersions(message, set_data, updatedVersions);
+    setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
+    set_data(message, SCENE_BREAK_SUMMARY_KEY, summary); // update legacy field
+    set_data(message, 'scene_summary_memory', summary); // ensure top-level property is set
+    saveChatDebounced();
+    refresh_memory(); // Refresh memory injection to include the new summary
+    renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+
+    return summary;
 }

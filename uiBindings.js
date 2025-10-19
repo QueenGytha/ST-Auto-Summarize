@@ -1,15 +1,16 @@
-import { 
-    get_settings, 
-    set_settings, 
-    refresh_settings, 
-    refresh_memory, 
-    refresh_memory_debounced, 
-    error, 
-    escape_string, 
-    unescape_string, 
-    get_settings_element, 
-    settings_content_class, 
-    settings_ui_map 
+import {
+    get_settings,
+    set_settings,
+    refresh_settings,
+    refresh_memory,
+    refresh_memory_debounced,
+    error,
+    escape_string,
+    unescape_string,
+    get_settings_element,
+    settings_content_class,
+    settings_ui_map,
+    save_profile
 } from './index.js';
 
 /**
@@ -58,6 +59,9 @@ function bind_setting(selector, key, type=null, callback=null, disable=true) {
 
         // update the setting
         set_settings(key, value)
+
+        // auto-save to current profile
+        save_profile();
 
         // trigger callback if provided, passing the new value
         if (callback !== null) {

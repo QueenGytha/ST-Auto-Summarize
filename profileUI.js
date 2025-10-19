@@ -215,11 +215,13 @@ async function update_connection_profile_dropdown() {
 async function update_error_detection_preset_dropdown() {
     // Set the completion preset dropdown for error detection
     let $regular_preset_select = $(`.${settings_content_class} #regular_summary_error_detection_preset`);
+    let $scene_preset_select = $(`.${settings_content_class} #scene_summary_error_detection_preset`);
     let $combined_preset_select = $(`.${settings_content_class} #combined_summary_error_detection_preset`);
     let regular_preset = get_settings('regular_summary_error_detection_preset');
+    let scene_preset = get_settings('scene_summary_error_detection_preset');
     let combined_preset = get_settings('combined_summary_error_detection_preset');
     let preset_options = await get_presets();
-    
+
     // Update regular summary error detection preset dropdown
     $regular_preset_select.empty();
     $regular_preset_select.append(`<option value="">Same as Summary</option>`);
@@ -228,7 +230,16 @@ async function update_error_detection_preset_dropdown() {
     }
     $regular_preset_select.val(regular_preset);
     $regular_preset_select.off('click').on('click', () => update_error_detection_preset_dropdown());
-    
+
+    // Update scene summary error detection preset dropdown
+    $scene_preset_select.empty();
+    $scene_preset_select.append(`<option value="">Same as Scene Summary</option>`);
+    for (let option of preset_options) {
+        $scene_preset_select.append(`<option value="${option}">${option}</option>`);
+    }
+    $scene_preset_select.val(scene_preset);
+    $scene_preset_select.off('click').on('click', () => update_error_detection_preset_dropdown());
+
     // Update combined summary error detection preset dropdown
     $combined_preset_select.empty();
     $combined_preset_select.append(`<option value="">Same as Combined Summary</option>`);

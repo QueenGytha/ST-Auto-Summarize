@@ -119,6 +119,10 @@ Object.assign(default_settings, {
     scene_summary_completion_preset: "",
     scene_summary_history_mode: "both",
     scene_summary_template: default_scene_template,
+    scene_summary_auto_name: true, // Auto-generate scene name when auto-generating scene summary (if not already set)
+    scene_summary_auto_name_manual: true, // Auto-generate scene name when manually generating scene summary (if not already set)
+    scene_summary_navigator_width: 96, // Width of scene navigator bar in pixels (default: 96px, double the original 48px)
+    scene_summary_navigator_font_size: 12, // Font size for scene navigator links in pixels (default: 12px)
 
     // --- Scene Summary Validation Settings ---
     scene_summary_error_detection_enabled: false,
@@ -139,4 +143,5 @@ Object.assign(default_settings, {
     auto_scene_break_prefill: "",
     auto_scene_break_connection_profile: "",
     auto_scene_break_completion_preset: "",
+    auto_scene_break_generate_summary: false, // Auto-generate scene summary when scene break is detected
 });
