@@ -12,6 +12,8 @@ import {
     combined_summary_error_detection_prompt,
     scene_summary_error_detection_prompt,
     auto_scene_break_detection_prompt,
+    running_scene_summary_prompt,
+    default_running_scene_template,
 } from './index.js';
 
 export const default_settings = {
@@ -54,14 +56,14 @@ export const default_settings = {
     long_template: default_long_template,
     long_term_context_limit: 10,
     long_term_context_type: 'percent',
-    long_term_position: 2, // Before main prompt (system prompt)
+    long_term_position: -1, // Do not inject (use running scene summary instead)
     long_term_role: 0,
     long_term_depth: 2,
     long_term_scan: false,
     short_template: default_short_template,
     short_term_context_limit: 10,
     short_term_context_type: 'percent',
-    short_term_position: 2, // Before main prompt (system prompt)
+    short_term_position: -1, // Do not inject (use running scene summary instead)
     short_term_depth: 2,
     short_term_role: 0,
     short_term_scan: false,
@@ -71,7 +73,7 @@ export const default_settings = {
     combined_summary_prompt: default_combined_summary_prompt,
     combined_summary_prefill: "",
     combined_summary_template: default_combined_template,
-    combined_summary_position: 2, // Before main prompt (system prompt)
+    combined_summary_position: -1, // Do not inject (not needed with scene-based approach)
     combined_summary_depth: 2,
     combined_summary_role: 0,
     combined_summary_scan: false,
@@ -86,7 +88,7 @@ export const default_settings = {
     combined_summary_scene_count: 0,
     combined_summary_scene_once: false,
     debug_mode: false,
-    display_memories: true,
+    display_memories: false, // Hide per-message summary display (not used with scene-based approach)
     default_chat_enabled: true,
     use_global_toggle_state: false,
 };
@@ -110,7 +112,7 @@ Object.assign(default_settings, {
     // --- Scene Summary Settings ---
     scene_summary_enabled: true,
     scene_summary_prefill: "",
-    scene_summary_position: 2, // Before main prompt (system prompt)
+    scene_summary_position: -1, // Do not inject (running summary replaces individual scenes)
     scene_summary_depth: 2,
     scene_summary_role: 0, // System
     scene_summary_scan: false,
@@ -131,10 +133,10 @@ Object.assign(default_settings, {
     scene_summary_error_detection_prefill: "",
     scene_summary_error_detection_retries: 3,
     auto_hide_message_age: -1,
-    auto_hide_scene_count: -1,
+    auto_hide_scene_count: 3, // Hide messages older than last 3 scenes
 
     // --- Auto Scene Break Detection Settings ---
-    auto_scene_break_enabled: false,
+    auto_scene_break_enabled: true,
     auto_scene_break_on_load: true,
     auto_scene_break_on_new_message: true,
     auto_scene_break_message_offset: 1,
@@ -143,5 +145,22 @@ Object.assign(default_settings, {
     auto_scene_break_prefill: "",
     auto_scene_break_connection_profile: "",
     auto_scene_break_completion_preset: "",
-    auto_scene_break_generate_summary: false, // Auto-generate scene summary when scene break is detected
+    auto_scene_break_generate_summary: true, // Auto-generate scene summary when scene break is detected
+
+    // --- Running Scene Summary Settings ---
+    running_scene_summary_enabled: true, // Enable running scene summary (default behavior, best practice)
+    running_scene_summary_exclude_latest: 1, // Number of latest scenes to exclude (allows manual validation before combining)
+    running_scene_summary_prompt: running_scene_summary_prompt,
+    running_scene_summary_template: default_running_scene_template,
+    running_scene_summary_prefill: "",
+    running_scene_summary_position: 2, // Before main prompt (system prompt)
+    running_scene_summary_depth: 2,
+    running_scene_summary_role: 0, // System
+    running_scene_summary_scan: false,
+    running_scene_summary_context_limit: 40, // High limit - running summary becomes bulk of context as roleplay progresses
+    running_scene_summary_context_type: 'percent',
+    running_scene_summary_completion_preset: "",
+    running_scene_summary_connection_profile: "",
+    running_scene_summary_auto_generate: true, // Auto-generate when new scene summary is created
+    running_scene_summary_show_navbar: true, // Show version controls in navbar
 });

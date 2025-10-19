@@ -6,7 +6,9 @@ import {
     set_connection_profile,
     summarize_text,
     debug,
-    error
+    error,
+    log,
+    SUBSYSTEM
 } from './index.js';
 
 async function validate_summary(summary, type = "regular") {
@@ -16,7 +18,7 @@ async function validate_summary(summary, type = "regular") {
     const enabled_key = type === "regular" ? 'regular_summary_error_detection_enabled' : 'combined_summary_error_detection_enabled';
     if (!get_settings(enabled_key)) return true;
     
-    debug(`[Validation] Validating ${type} summary...`);
+    debug(SUBSYSTEM.VALIDATION, `Validating ${type} summary...`);
     
     // Ensure chat is blocked during validation
     let ctx = getContext();
@@ -44,7 +46,7 @@ async function validate_summary(summary, type = "regular") {
         const preset_key = type === "regular" ? 'regular_summary_error_detection_preset' : 'combined_summary_error_detection_preset';
         const error_preset = get_settings(preset_key);
         if (error_preset) {
-            debug(`[Validation] Using custom validation preset: ${error_preset}`);
+            debug(SUBSYSTEM.VALIDATION, `Using custom validation preset: ${error_preset}`);
             await set_preset(error_preset);
         }
 
@@ -52,24 +54,24 @@ async function validate_summary(summary, type = "regular") {
         const prefill_key = type === "regular" ? 'regular_summary_error_detection_prefill' : 'combined_summary_error_detection_prefill';
         const prefill = get_settings(prefill_key);
         if (prefill) {
-            debug(`[Validation] Adding prefill to validation prompt`);
+            debug(SUBSYSTEM.VALIDATION, `Adding prefill to validation prompt`);
             prompt = `${prompt}\n${prefill}`;
         }
         
         // Generate validation response
         let validation_result;
-        debug(`[Validation] Sending validation prompt: ${prompt.substring(0, 200)}...`);
+        debug(SUBSYSTEM.VALIDATION, `Sending validation prompt: ${prompt.substring(0, 200)}...`);
         validation_result = await summarize_text(prompt);
-        debug(`[Validation] Raw validation result: ${validation_result}`);
+        debug(SUBSYSTEM.VALIDATION, `Raw validation result: ${validation_result}`);
         
         // Clean up and check result
         validation_result = validation_result.trim().toUpperCase();
         const is_valid = validation_result.includes("VALID") && !validation_result.includes("INVALID");
         
         if (!is_valid) {
-            console.log(`[Validation] Summary validation FAILED: "${validation_result}"`);
+            log(SUBSYSTEM.VALIDATION, `Summary validation FAILED: "${validation_result}"`);
         } else {
-            debug(`[Validation] Summary validation passed with result: "${validation_result}"`);
+            debug(SUBSYSTEM.VALIDATION, `Summary validation passed with result: "${validation_result}"`);
         }
         
         // Restore original preset and profile
@@ -78,7 +80,7 @@ async function validate_summary(summary, type = "regular") {
         
         return is_valid;
     } catch (e) {
-        error(`[Validation] Error during summary validation: ${e}`);
+        error(SUBSYSTEM.VALIDATION, `Error during summary validation: ${e}`);
         
         // Restore original preset and profile
         await set_preset(current_preset);

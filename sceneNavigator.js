@@ -56,6 +56,11 @@ export function renderSceneNavigatorBar() {
         }
     });
     $bar.show();
+
+    // Update running summary controls after rendering
+    if (window.updateRunningSceneSummaryNavbar) {
+        window.updateRunningSceneSummaryNavbar();
+    }
 }
 
 // Call this after chat loads, scene breaks change, or toggle changes

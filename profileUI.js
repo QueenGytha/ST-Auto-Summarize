@@ -286,6 +286,8 @@ function refresh_settings() {
     update_scene_summary_preset_dropdown();
     update_auto_scene_break_preset_dropdown();
     update_auto_scene_break_connection_profile_dropdown();
+    update_running_scene_summary_preset_dropdown();
+    update_running_scene_summary_connection_profile_dropdown();
     check_preset_valid();
 
     // if prompt doesn't have {{message}}, insert it
@@ -354,6 +356,34 @@ function refresh_settings() {
     set_character_enabled_button_states()
 }
 
+async function update_running_scene_summary_preset_dropdown() {
+    let $preset_select = $('#running_scene_summary_completion_preset');
+    let summary_preset = get_settings('running_scene_summary_completion_preset');
+    let preset_options = await get_presets();
+    $preset_select.empty();
+    $preset_select.append(`<option value="">Same as Current</option>`);
+    for (let option of preset_options) {
+        $preset_select.append(`<option value="${option}">${option}</option>`);
+    }
+    $preset_select.val(summary_preset);
+    $preset_select.off('click').on('click', () => update_running_scene_summary_preset_dropdown());
+}
+
+async function update_running_scene_summary_connection_profile_dropdown() {
+    let $connection_select = $('#running_scene_summary_connection_profile');
+    let summary_connection = get_settings('running_scene_summary_connection_profile');
+    let connection_options = await get_connection_profiles();
+    $connection_select.empty();
+    $connection_select.append(`<option value="">Same as Current</option>`);
+    if (connection_options && Array.isArray(connection_options)) {
+        for (let option of connection_options) {
+            $connection_select.append(`<option value="${option}">${option}</option>`);
+        }
+    }
+    $connection_select.val(summary_connection);
+    $connection_select.off('click').on('click', () => update_running_scene_summary_connection_profile_dropdown());
+}
+
 export {
     update_save_icon_highlight,
     update_profile_section,
@@ -364,5 +394,7 @@ export {
     update_error_detection_preset_dropdown,
     update_scene_summary_preset_dropdown,
     update_auto_scene_break_preset_dropdown,
-    update_auto_scene_break_connection_profile_dropdown
+    update_auto_scene_break_connection_profile_dropdown,
+    update_running_scene_summary_preset_dropdown,
+    update_running_scene_summary_connection_profile_dropdown
 };

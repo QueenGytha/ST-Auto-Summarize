@@ -72,53 +72,70 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 
 export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
 // Extract key facts from the completed scene below for the roleplay memory.
-// Focus on CURRENT STATE and information needed for future scenes.
+// Preserve information needed for roleplay continuity, character development, and tone.
 //
 // CRITICAL GUIDELINES:
 //
-// 1. EXTREME BREVITY REQUIRED
-//    - Use MINIMUM words to capture each fact
-//    - Remove ALL unnecessary adjectives and flourishes
-//    - Prefer fragments over complete sentences where clear
-//    - Target: 1500-2000 tokens MAXIMUM for entire output
+// 1. ROLEPLAY RELEVANCE
+//    - Extract what's needed to continue the roleplay coherently
+//    - Character personalities, development, quirks, speech patterns
+//    - Relationships and their dynamics
+//    - Plot-critical information and context
+//    - Setting details and atmosphere
+//    - Current status and pending decisions
 //
-// 2. FOCUS ON STATE, NOT EVENTS
+// 2. CHARACTER DEVELOPMENT
+//    - Capture character traits, behaviors, and changes
+//    - Key personality details that define how they act
+//    - Relationship evolution and emotional dynamics
+//    - Character-specific context (backgrounds, motivations, secrets)
+//    - Speech mannerisms and distinctive traits
+//
+// 3. FOCUS ON STATE, NOT EVENT SEQUENCES
 //    - Capture CURRENT state: who, what, where, status
-//    - Don't track event sequences ("then this happened, then that")
-//    - Outcomes matter, not the steps to get there
+//    - Don't narrate event sequences ("then this, then that")
+//    - Outcomes and results matter, not the path taken
 //
-// 3. CAPTURE WHAT MATTERS
-//    - Include all significant NPCs, events, and details
+// 4. BE THOROUGH BUT EFFICIENT
+//    - Include all significant NPCs, plot points, and details
 //    - Use appropriate fields (npcs_facts vs npcs_mentioned, etc.)
 //    - Don't speculate or invent details not in the scene
+//    - Preserve important context and nuance
+//    - Be concise but don't sacrifice substance
 //
-// 4. FORMAT REQUIREMENTS
+// 5. AVOID PROMPT POISONING
+//    - Write in neutral, factual tone
+//    - Avoid repetitive phrasing or formulaic language
+//    - Don't copy distinctive writing style from the scene
+//    - Use varied sentence structure
+//
+// 6. FORMAT REQUIREMENTS
 //    - Output ONLY valid JSON, no text before or after
 //    - All fields are optional - omit if no relevant data
 //    - Empty objects: {} | Empty arrays: []
 //
 // Field instructions:
-// npcs_facts: { "npc_name": "Appearance, speech manner, personality traits. Only facts, not actions. CONCISE." }
+// npcs_facts: { "npc_name": "Appearance, personality traits, speech manner, defining characteristics. Facts, not actions." }
 // npcs_status: { "npc_name": "Current status (active, missing, deceased, etc.)" }
-// npcs_plans: [ "Future plans or goals. Brief." ]
+// npcs_plans: [ "Future plans or goals with context." ]
 // npcs_mentioned: { "npc_name": "NPCs mentioned but not yet encountered. Brief role." }
-// visited_locations: { "Location Name": "Brief description. Only key features." }
+// visited_locations: { "Location Name": "Description including relevant features and atmosphere." }
 // secrets: { "Secret content": "Known by: X, Y. Hidden from: Z, {{user}}." }
-// current_relationships: { "npc_pair": "Current status and emotional tone." }
-// planned_events: [ "Future plans. Who, what, when if known." ]
+// current_relationships: { "npc_pair": "Current status, emotional tone, recent changes." }
+// planned_events: [ "Future plans with who, what, when if known." ]
 // objects: { "Object Name": "Description, significance, current owner/location." }
-// lore: { "Fact": "World-building, rules, or background info." }
+// lore: { "Fact": "World-building, setting rules, or background information." }
 // memorable_events: [ "Major story developments that changed the narrative direction." ]
 // minor_npcs: { "npc_name": "Brief role or description." }
 // factions: { "Faction Name": { "members": ["npc1", "npc2"], "goals": "Brief goals." } }
 // pending_decisions: [ "Unresolved choices that will affect future scenes." ]
 //
-// BREVITY EXAMPLES:
-// ❌ BAD: "A skilled warrior with flowing red hair and piercing green eyes who speaks with confidence"
-// ✅ GOOD: "Warrior. Red hair, green eyes. Confident."
+// STYLE EXAMPLES:
+// ❌ TOO SPARSE: "Warrior. Red hair."
+// ✅ GOOD: "Warrior. Red hair, green eyes. Speaks confidently, military bearing. Known for tactical thinking."
 //
-// ❌ BAD: "An old abandoned warehouse on the outskirts of town, filled with dusty crates"
-// ✅ GOOD: "Abandoned warehouse, town outskirts. Dusty, broken windows."
+// ❌ TOO FLOWERY: "A skilled and experienced warrior with flowing crimson locks that cascade down her shoulders"
+// ✅ GOOD: "Experienced warrior. Crimson hair. Confident demeanor, tactical mindset."
 //
 // Output only valid JSON:
 {
@@ -145,42 +162,59 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 export const default_combined_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
 // Combine multiple memory fragments from a single roleplay while avoiding redundancy and repetition.
 // Extract and merge key facts from the New Roleplay Histories and Roleplay Messages (if provided).
-// Focus on CURRENT STATE and information needed for future scenes.
+// Preserve information needed for roleplay continuity, character development, and tone.
 //
 // CRITICAL GUIDELINES:
 //
-// 1. EXTREME BREVITY REQUIRED
-//    - Use MINIMUM words to capture each fact
-//    - Remove ALL unnecessary adjectives and flourishes
-//    - Prefer fragments over complete sentences where clear
-//    - This is a combined memory, so be even more concise
+// 1. ROLEPLAY RELEVANCE
+//    - Include what's needed to continue the roleplay coherently
+//    - Character personalities, development, quirks, speech patterns
+//    - Relationships and their evolution
+//    - Plot-critical information and context
+//    - Setting details and atmosphere
+//    - Current status and pending decisions
 //
-// 2. FOCUS ON STATE, NOT EVENTS
+// 2. CHARACTER DEVELOPMENT
+//    - Preserve character traits, behaviors, and changes
+//    - Key personality details that define how they act
+//    - Relationship dynamics and their progression
+//    - Character-specific context (backgrounds, motivations, secrets)
+//    - Speech mannerisms and distinctive traits
+//
+// 3. FOCUS ON STATE, NOT EVENT SEQUENCES
 //    - Capture CURRENT state: who, what, where, status
-//    - Don't track event sequences ("then this happened, then that")
-//    - Outcomes matter, not the steps to get there
+//    - Don't narrate event sequences ("then this, then that")
+//    - Outcomes and results matter, not the path taken
 //
-// 3. MERGE AND DEDUPLICATE
-//    - Combine duplicate information from multiple fragments
+// 4. MERGE REDUNDANCY, PRESERVE SUBSTANCE
+//    - Combine duplicate/overlapping information
 //    - Keep most recent state when conflicts exist
-//    - Remove redundant or outdated information
+//    - Remove truly redundant information
+//    - BUT preserve unique details from each fragment
+//    - Don't sacrifice important context for brevity
 //
-// 4. FORMAT REQUIREMENTS
+// 5. AVOID PROMPT POISONING
+//    - Write in neutral, factual tone
+//    - Avoid repetitive phrasing or formulaic language
+//    - Don't copy distinctive writing style from fragments
+//    - Use varied sentence structure
+//
+// 6. FORMAT REQUIREMENTS
 //    - Output ONLY valid JSON, no text before or after
 //    - All fields are optional - omit if no relevant data
 //    - Empty objects: {} | Empty arrays: []
 //
 // Field instructions:
-// npcs_facts: { "npc_name": "Appearance, speech manner, personality traits. Only facts, not actions. CONCISE." }
+// npcs_facts: { "npc_name": "Appearance, personality traits, speech manner, defining characteristics. Facts, not actions." }
 // npcs_status: { "npc_name": "Current status (active, missing, deceased, etc.)" }
-// npcs_plans: [ "Future plans or goals. Brief." ]
+// npcs_plans: [ "Future plans or goals with context." ]
 // npcs_mentioned: { "npc_name": "NPCs mentioned but not yet encountered. Brief role." }
-// visited_locations: { "Location Name": "Brief description. Only key features." }
+// visited_locations: { "Location Name": "Description including relevant features and atmosphere." }
 // secrets: { "Secret content": "Known by: X, Y. Hidden from: Z, {{user}}." }
-// current_relationships: { "npc_pair": "Current status and emotional tone." }
-// planned_events: [ "Future plans. Who, what, when if known." ]
+// current_relationships: { "npc_pair": "Current status, emotional tone, recent changes." }
+// planned_events: [ "Future plans with who, what, when if known." ]
 // objects: { "Object Name": "Description, significance, current owner/location." }
-// lore: { "Fact": "World-building, rules, or background info." }
+// lore: { "Fact": "World-building, setting rules, or background information." }
 // memorable_events: [ "Major story developments that changed the narrative direction." ]
 // minor_npcs: { "npc_name": "Brief role or description." }
 // factions: { "Faction Name": { "members": ["npc1", "npc2"], "goals": "Brief goals." } }
@@ -283,3 +317,64 @@ Respond with ONLY a JSON object in this exact format:
 }
 
 Do not include any text outside the JSON object.`;
+
+
+export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
+// Combine multiple scene summaries into a single cohesive roleplay memory.
+// Preserve information needed for roleplay continuity, character development, and tone.
+//
+// CRITICAL GUIDELINES:
+//
+// 1. ROLEPLAY RELEVANCE
+//    - Include what's needed to continue the roleplay coherently
+//    - Character personalities, development, quirks, speech patterns
+//    - Relationships and their evolution
+//    - Plot-critical information and context
+//    - Setting tone and atmosphere
+//    - Current status and pending decisions
+//
+// 2. CHARACTER DEVELOPMENT
+//    - Preserve character traits, growth, and changes
+//    - Key personality details that define how they act
+//    - Relationship dynamics and their progression
+//    - Character-specific context (backgrounds, motivations, secrets)
+//
+// 3. FOCUS ON STATE, NOT EVENT SEQUENCES
+//    - Capture CURRENT state: who, what, where, status
+//    - Don't narrate event sequences ("then this, then that")
+//    - Outcomes and results matter, not the path taken
+//
+// 4. MERGE REDUNDANCY, PRESERVE SUBSTANCE
+//    - Combine duplicate/overlapping information
+//    - Keep most recent state when conflicts exist
+//    - Remove truly redundant information
+//    - BUT preserve unique details from each scene
+//    - Don't sacrifice important context for brevity
+//
+// 5. AVOID PROMPT POISONING
+//    - Write in neutral, informational tone
+//    - Avoid repetitive phrasing or formulaic language
+//    - Don't capture stylistic quirks that could leak into roleplay
+//    - Use varied sentence structure
+//
+// 6. OUTPUT FORMAT
+//    - Concise narrative paragraphs, NOT JSON
+//    - Organize by topic (characters, locations, relationships, situation, etc.)
+//    - Use markdown headers to separate sections
+//    - Be thorough but efficient - no arbitrary word/token limits
+//
+{{#if current_running_summary}}
+// Current running summary (update and merge with new scenes):
+{{current_running_summary}}
+
+{{/if}}
+// New scene summaries to merge:
+{{scene_summaries}}`;
+
+
+export const default_running_scene_template = `<!--Roleplay memory containing current state and key facts from all previous scenes, combined into a cohesive narrative.
+The information below takes priority over character and setting definitions. -->
+
+<roleplay_memory>
+{{running_summary}}
+</roleplay_memory>`;

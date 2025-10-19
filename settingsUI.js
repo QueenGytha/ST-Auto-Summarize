@@ -3,6 +3,7 @@ import {
     debug,
     error,
     toast,
+    SUBSYSTEM,
     get_message_history,
     get_settings,
     set_settings,
@@ -23,6 +24,8 @@ import {
     set_character_profile,
     get_chat_profile,
     update_scene_summary_preset_dropdown,
+    update_running_scene_summary_preset_dropdown,
+    update_running_scene_summary_connection_profile_dropdown,
     toggle_chat_enabled,
     refresh_settings,
     refresh_memory,
@@ -57,7 +60,7 @@ import {
 } from './index.js';
 
 // UI initialization
-function initialize_settings_listeners() {
+async function initialize_settings_listeners() {
     log("Initializing settings listeners")
 
 
@@ -404,8 +407,8 @@ Available Macros:
             // --- End Cancel button ---
         }, 10); // Short delay to ensure popup is rendered
         
-    } catch (error) {
-        console.error("Error with popup:", error);
+    } catch (err) {
+        error(SUBSYSTEM.UI, "Error with popup:", err);
         // Fallback to basic prompt if the popup fails
         const confirmEdit = confirm("Would you like to manually edit the combined summary?");
         if (confirmEdit) {
@@ -491,6 +494,106 @@ Available Macros:
     bind_setting('#scene_summary_context_limit', 'scene_summary_context_limit', 'number');
     bind_setting('input[name="scene_summary_context_type"]', 'scene_summary_context_type', 'text');
 
+    // --- Running Scene Summary Settings ---
+    bind_setting('#running_scene_summary_enabled', 'running_scene_summary_enabled', 'boolean', refresh_memory);
+    bind_setting('#running_scene_summary_auto_generate', 'running_scene_summary_auto_generate', 'boolean');
+    bind_setting('#running_scene_summary_show_navbar', 'running_scene_summary_show_navbar', 'boolean', () => {
+        // Refresh navbar buttons visibility
+        if (window.updateRunningSceneSummaryNavbar) window.updateRunningSceneSummaryNavbar();
+    });
+    bind_setting('#running_scene_summary_prompt', 'running_scene_summary_prompt', 'text');
+    bind_setting('#running_scene_summary_prefill', 'running_scene_summary_prefill', 'text');
+    bind_setting('#running_scene_summary_completion_preset', 'running_scene_summary_completion_preset', 'text');
+    bind_setting('#running_scene_summary_connection_profile', 'running_scene_summary_connection_profile', 'text');
+    bind_setting('#running_scene_summary_position', 'running_scene_summary_position', 'number');
+    bind_setting('#running_scene_summary_depth', 'running_scene_summary_depth', 'number');
+    bind_setting('#running_scene_summary_role', 'running_scene_summary_role');
+    bind_setting('#running_scene_summary_scan', 'running_scene_summary_scan', 'boolean');
+    bind_setting('#running_scene_summary_context_limit', 'running_scene_summary_context_limit', 'number');
+    bind_setting('input[name="running_scene_summary_context_type"]', 'running_scene_summary_context_type', 'text');
+
+    // Running scene summary exclude latest slider
+    const $runningExcludeLatest = $('#running_scene_summary_exclude_latest');
+    const $runningExcludeLatestDisplay = $('#running_scene_summary_exclude_latest_display');
+    if (get_settings('running_scene_summary_exclude_latest') === undefined) {
+        set_settings('running_scene_summary_exclude_latest', 1);
+    }
+    $runningExcludeLatest.val(get_settings('running_scene_summary_exclude_latest') || 1);
+    $runningExcludeLatestDisplay.text($runningExcludeLatest.val());
+    $runningExcludeLatest.on('input change', function () {
+        let val = Math.max(0, Math.min(5, Number($(this).val()) || 1));
+        set_settings('running_scene_summary_exclude_latest', val);
+        save_profile();
+        $runningExcludeLatest.val(val);
+        $runningExcludeLatestDisplay.text(val);
+    });
+
+    // View/edit running scene summary button
+    bind_function('#view_running_scene_summary', async () => {
+        const { get_running_summary, get_current_running_summary_version, get_running_summary_versions, set_current_running_summary_version } = await import('./runningSceneSummary.js');
+        const current = get_running_summary(get_current_running_summary_version());
+        const ctx = getContext();
+
+        if (!current) {
+            toast('No running summary available yet. Generate a scene summary first.', 'warning');
+            return;
+        }
+
+        const html = `
+            <div>
+                <h3>View/Edit Running Scene Summary</h3>
+                <p>Current version: v${current.version} (${current.prev_scene_index ?? 0} > ${current.new_scene_index ?? 0})</p>
+                <p>Editing will create a new version.</p>
+                <textarea id="view_running_summary_textarea" rows="20" style="width: 100%; height: 400px;">${current.content || ""}</textarea>
+            </div>
+        `;
+
+        try {
+            const result = await ctx.callPopup(html, 'text', undefined, {
+                okButton: "Save",
+                cancelButton: "Cancel",
+                wide: true,
+                large: true
+            });
+
+            if (result) {
+                const edited = $('#view_running_summary_textarea').val();
+                if (edited !== null && edited !== current.content) {
+                    // Editing creates a new version with same scene indexes
+                    const versions = get_running_summary_versions();
+                    const newVersion = {
+                        version: versions.length + 1,
+                        content: edited,
+                        timestamp: Date.now(),
+                        scene_count: current.scene_count,
+                        exclude_count: current.exclude_count,
+                        prev_scene_index: current.prev_scene_index ?? 0,
+                        new_scene_index: current.new_scene_index ?? 0,
+                    };
+                    versions.push(newVersion);
+                    set_current_running_summary_version(newVersion.version);
+                    toast('Created new version from edit', 'success');
+                    refresh_memory();
+                }
+            }
+        } catch (err) {
+            error('Failed to edit running summary', err);
+        }
+    });
+
+    // Edit running scene summary prompt button
+    bind_function('#edit_running_scene_summary_prompt', async () => {
+        let description = `
+Configure the prompt used to combine multiple scene summaries into a cohesive narrative memory.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{current_running_summary}}:</b> The current running summary (if exists).</li>
+    <li><b>{{scene_summaries}}:</b> The individual scene summaries to merge.</li>
+</ul>`;
+        get_user_setting_text_input('running_scene_summary_prompt', 'Edit Running Scene Summary Prompt', description);
+    });
+
     // --- Auto Scene Break Detection Settings ---
     bind_setting('#auto_scene_break_enabled', 'auto_scene_break_enabled', 'boolean');
     bind_setting('#auto_scene_break_on_load', 'auto_scene_break_on_load', 'boolean');
@@ -532,6 +635,11 @@ Available Macros:
 </ul>`;
         get_user_setting_text_input('auto_scene_break_prompt', 'Edit Auto Scene Break Detection Prompt', description);
     });
+
+    // Initialize running scene summary navbar
+    const { createRunningSceneSummaryNavbar, updateRunningSceneSummaryNavbar } = await import('./runningSceneSummaryUI.js');
+    createRunningSceneSummaryNavbar();
+    updateRunningSceneSummaryNavbar();
 
     refresh_settings()
 }

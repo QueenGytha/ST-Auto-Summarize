@@ -7,6 +7,8 @@ import {
     debug,
     error,
     toast,
+    log,
+    SUBSYSTEM,
     saveChatDebounced,
     toggleSceneBreak,
     generateSceneSummary,
@@ -310,17 +312,21 @@ async function detectSceneBreakWithRetry(message, messageIndex, previousMessage 
  * @param {number} endIndex - End index (optional, defaults to latest)
  */
 export async function processAutoSceneBreakDetection(startIndex = null, endIndex = null) {
+    log(SUBSYSTEM.SCENE, '=== processAutoSceneBreakDetection called with startIndex:', startIndex, 'endIndex:', endIndex, '===');
+
     // Check if enabled
     const enabled = get_settings('auto_scene_break_enabled');
     if (!enabled) {
-        debug('Auto scene break detection is disabled');
+        debug(SUBSYSTEM.SCENE, 'Auto scene break detection is disabled - exiting');
         return;
     }
+
+    log(SUBSYSTEM.SCENE, 'Auto scene break detection is ENABLED, proceeding...');
 
     const ctx = getContext();
     const chat = ctx.chat;
     if (!chat || chat.length === 0) {
-        debug('No messages to process');
+        debug(SUBSYSTEM.SCENE, 'No messages to process - chat is empty');
         return;
     }
 
@@ -333,7 +339,7 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
     const start = startIndex !== null ? startIndex : 0;
     const end = endIndex !== null ? endIndex : latestIndex;
 
-    debug('Processing messages', start, 'to', end, '(latest:', latestIndex, ', offset:', offset, ', checking:', checkWhich, ')');
+    log(SUBSYSTEM.SCENE, 'Processing messages', start, 'to', end, '(latest:', latestIndex, ', offset:', offset, ', checking:', checkWhich, ')');
 
     // Create a new cancellation token for this scan
     // This allows us to cancel delays when user aborts
@@ -542,7 +548,7 @@ export async function manualSceneBreakDetection() {
 export async function processNewMessageForSceneBreak(messageIndex) {
     const enabled = get_settings('auto_scene_break_on_new_message');
     if (!enabled) {
-        debug('Auto-check on new message is disabled');
+        debug(SUBSYSTEM.SCENE, 'Auto-check on new message is disabled');
         return;
     }
 
@@ -554,16 +560,17 @@ export async function processNewMessageForSceneBreak(messageIndex) {
     const endIndex = messageIndex - offset;
 
     if (endIndex < 0) {
-        debug('No messages to check based on offset');
+        debug(SUBSYSTEM.SCENE, 'No messages to check based on offset - messageIndex:', messageIndex, 'offset:', offset);
         return;
     }
 
-    debug('New message at index', messageIndex, ', checking up to', endIndex);
+    debug(SUBSYSTEM.SCENE, 'New message at index', messageIndex, ', checking up to', endIndex);
 
     // Only process the range that might include new unchecked messages
     // For efficiency, only check the last few messages
     const startIndex = Math.max(0, endIndex - 5); // Check last 5 messages max
 
+    log(SUBSYSTEM.SCENE, 'Processing auto scene break detection for range', startIndex, 'to', endIndex);
     await processAutoSceneBreakDetection(startIndex, endIndex);
 }
 

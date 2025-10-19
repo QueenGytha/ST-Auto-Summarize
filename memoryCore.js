@@ -22,11 +22,13 @@ import {
     extension_prompt_types,
     debounce,
     debounce_timeout,
-    default_short_template, 
-    default_long_template, 
-    default_scene_template, 
-    default_combined_template 
+    default_short_template,
+    default_long_template,
+    default_scene_template,
+    default_combined_template,
+    SUBSYSTEM,
 } from './index.js';
+import { get_running_summary_injection } from './runningSceneSummary.js';
 
 // INJECTION RECORDING FOR LOGS
 let last_long_injection = "";
@@ -370,8 +372,19 @@ async function refresh_memory() {
     }
     // --- Scene Summary Injection ---
     let scene_injection = "";
-    if (get_settings('scene_summary_enabled')) {
+
+    // Use running scene summary if enabled (default behavior), otherwise individual scene summaries
+    if (get_settings('running_scene_summary_enabled')) {
+        scene_injection = get_running_summary_injection();
+        // Override position/depth/role/scan settings if running summary has specific settings
+        scene_summary_position = get_settings('running_scene_summary_position');
+        scene_summary_depth = get_settings('running_scene_summary_depth');
+        scene_summary_scan = get_settings('running_scene_summary_scan');
+        scene_summary_role = get_settings('running_scene_summary_role');
+        debug(SUBSYSTEM.MEMORY, `Using running scene summary for injection (${scene_injection.length} chars)`);
+    } else if (get_settings('scene_summary_enabled')) {
         scene_injection = get_scene_memory_injection();
+        debug(SUBSYSTEM.MEMORY, `Using individual scene summaries for injection (${scene_injection.length} chars)`);
     }
 
     // Store for later logging

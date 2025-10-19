@@ -27,6 +27,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - Long-term memory stores summaries of manually-marked messages beyond the short-term limit.
 - **Combined summary**: Optionally merges all message summaries into a single, coherent narrative summary, removing repetition and highlighting key events. The combined summary can be injected into the prompt at configurable positions and intervals.
 - **Scene summaries**: Optionally generate summaries for scene breaks, with their own prompt, injection, and validation settings.
+- **Running scene summary (NEW)**: Combines multiple scene summaries into a single, cohesive narrative memory following best practices. Enabled by default. See `docs/RUNNING_SCENE_SUMMARY.md` for details.
 - **Summary validation**: Optionally validates summaries (regular, combined, and scene) using a second LLM pass to ensure they meet your format and quality criteria.
 
 **Benefits compared to the built-in summarization:**
@@ -46,6 +47,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - **Memory editor**: A separate interface for viewing and editing all memories in your chat.
 - **Combined summary**: Optionally generate a single narrative summary from all message summaries, with customizable prompt, template, and validation.
 - **Scene summaries**: Summarize each scene break as a single summary, with customizable prompt, injection, and validation.
+- **Running scene summary (NEW)**: Automatically combines scene summaries into cohesive narrative memory with versioning, navbar controls, and per-scene regeneration. Enabled by default.
 - **Summary validation**: Optionally validate summaries (regular, combined, and scene) using a second LLM pass, with customizable prompt, retries, and preset.
 - **Summaries displayed below messages**: Optionally display summaries in small text below each message, colored according to their status:
   - Green: Included in short-term memory
@@ -142,6 +144,28 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - **Scene Summary Injection Position/Depth/Role:** Where and how scene summaries are injected into the prompt.
 - **Scene Message History Mode/Count:** Configure which messages and how many are included as context for scene summaries.
 - **Scene Summary Validation:** Optionally validate scene summaries using a second LLM pass.
+
+#### Running Scene Summary (Recommended)
+
+**NEW**: Combines multiple scene summaries into a single, cohesive narrative memory following best practices. **Enabled by default.**
+
+- **Enable Running Scene Summary:** Combine all scene summaries into one narrative (recommended default behavior).
+- **Exclude Latest N Scenes:** Wait N scenes before including in running summary (default: 1, allows validation).
+- **Auto-generate on New Scene Summaries:** Automatically regenerate when new scene summaries are created.
+- **Show Navbar Version Controls:** Display floating navbar with version selector, edit, and regenerate buttons.
+- **Edit Running Summary Prompt:** Customize how scenes are combined (narrative output, not JSON).
+- **Version Management:** Switch between generated versions, edit to create new versions, manual regeneration.
+- **Per-Scene Regenerate:** "Regenerate Running" button on each scene summary to manually trigger regeneration.
+- **Running Summary Injection:** Uses separate position/depth/role/scan settings, replaces individual scene injection when enabled.
+
+**How it works:**
+1. Scene summaries are generated individually (as before)
+2. Running summary auto-generates, combining all scenes minus latest N
+3. LLM merges scenes into cohesive narrative (focuses on state, deduplicates, extreme brevity)
+4. Running summary is injected instead of individual scene summaries
+5. Versions are stored - switch between them or edit to create new versions
+
+**See detailed documentation:** `docs/RUNNING_SCENE_SUMMARY.md`
 
 #### Summary Validation
 

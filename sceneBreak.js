@@ -4,7 +4,15 @@ import {
     summarize_text,
     refresh_memory,
     renderSceneNavigatorBar,
+    log,
+    debug,
+    error,
+    SUBSYSTEM,
 } from './index.js';
+import {
+    auto_generate_running_summary,
+    combine_scene_with_running_summary,
+} from './runningSceneSummary.js';
 
 // SCENE SUMMARY PROPERTY STRUCTURE:
 // - Scene summaries are stored on the message object as:
@@ -210,6 +218,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
                 <button class="scene-rollback-summary menu_button" title="Go to previous summary"><i class="fa-solid fa-rotate-left"></i> Previous Summary</button>
                 <button class="scene-generate-summary menu_button" title="Generate summary for this scene"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
                 <button class="scene-rollforward-summary menu_button" title="Go to next summary"><i class="fa-solid fa-rotate-right"></i> Next Summary</button>
+                <button class="scene-regenerate-running menu_button" title="Combine this scene with current running summary" style="margin-left:auto;"><i class="fa-solid fa-sync-alt"></i> Combine</button>
                 <span style="align-self:center; font-size:0.9em; color:inherit; margin-left:0.5em;">${versions.length > 1 ? `[${currentIdx + 1}/${versions.length}]` : ''}</span>
             </div>
         </div>
@@ -319,7 +328,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
     $sceneBreak.find('.scene-generate-summary').off('click').on('click', async function(e) {
         e.stopPropagation();
-        console.log("[SceneBreak] Generate button clicked for scene at index", index);
+        log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
 
         let sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
         let [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
@@ -359,11 +368,11 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
 
         // 3. Switch to scene summary profile/preset if set
         if (profile) {
-            console.log("[SceneBreak] Switching to connection profile:", profile);
+            debug(SUBSYSTEM.SCENE, "Switching to connection profile:", profile);
             await ctx.set_connection_profile?.(profile);
         }
         if (preset) {
-            console.log("[SceneBreak] Switching to preset:", preset);
+            debug(SUBSYSTEM.SCENE, "Switching to preset:", preset);
             await ctx.set_preset?.(preset);
         }
 
@@ -378,12 +387,12 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             if (get_settings('block_chat')) {
                 ctx.deactivateSendButtons();
             }
-            console.log("[SceneBreak] Sending prompt to AI:", prompt);
+            debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
             summary = await summarize_text(prompt);
-            console.log("[SceneBreak] AI response:", summary);
+            debug(SUBSYSTEM.SCENE, "AI response:", summary);
         } catch (err) {
             summary = "Error generating summary: " + (err?.message || err);
-            console.error("[SceneBreak] Error generating summary:", err);
+            error(SUBSYSTEM.SCENE, "Error generating summary:", err);
         } finally {
             // Re-enable input if it was blocked
             if (get_settings('block_chat')) {
@@ -393,11 +402,11 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
 
         // 6. Restore previous profile/preset
         if (profile) {
-            console.log("[SceneBreak] Restoring previous connection profile:", current_profile);
+            debug(SUBSYSTEM.SCENE, "Restoring previous connection profile:", current_profile);
             await ctx.set_connection_profile?.(current_profile);
         }
         if (preset) {
-            console.log("[SceneBreak] Restoring previous preset:", current_preset);
+            debug(SUBSYSTEM.SCENE, "Restoring previous preset:", current_preset);
             await ctx.set_preset?.(current_preset);
         }
 
@@ -405,7 +414,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         const autoGenerateSceneNameManual = get_settings('scene_summary_auto_name_manual') ?? true;
         if (autoGenerateSceneNameManual) {
             // Delay before generating scene name to avoid rate limiting
-            console.log("[SceneBreak] Waiting 5 seconds before generating scene name...");
+            debug(SUBSYSTEM.SCENE, "Waiting 5 seconds before generating scene name...");
             await new Promise(resolve => setTimeout(resolve, 5000));
 
             await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile, preset, current_profile, current_preset);
@@ -447,6 +456,41 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             saveChatDebounced();
             refresh_memory(); // <-- refresh memory injection to use the newly selected summary
             renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+        }
+    });
+
+    // --- Regenerate running summary from this scene onwards ---
+    $sceneBreak.find('.scene-regenerate-running').off('click').on('click', async function(e) {
+        e.stopPropagation();
+        if (!get_settings('running_scene_summary_enabled')) {
+            alert('Running scene summary is not enabled. Enable it in settings first.');
+            return;
+        }
+
+        const sceneSummary = get_data(message, 'scene_summary_memory');
+        if (!sceneSummary) {
+            alert('This scene has no summary yet. Generate a scene summary first.');
+            return;
+        }
+
+        log(SUBSYSTEM.SCENE, "Combine scene with running summary button clicked for scene at index", index);
+
+        const $btn = $(this);
+        $btn.prop('disabled', true);
+        $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> Combining...');
+
+        try {
+            await combine_scene_with_running_summary(index);
+            log(SUBSYSTEM.SCENE, "Scene combined with running summary successfully");
+            if (window.updateVersionSelector) {
+                window.updateVersionSelector();
+            }
+        } catch (err) {
+            error(SUBSYSTEM.SCENE, "Failed to combine scene with running summary:", err);
+            alert('Failed to combine scene with running summary. Check console for details.');
+        } finally {
+            $btn.prop('disabled', false);
+            $btn.html('<i class="fa-solid fa-sync-alt"></i> Combine');
         }
     });
 
@@ -546,12 +590,12 @@ async function autoGenerateSceneNameFromSummary(summary, message, get_data, set_
 
     // Only generate if no name already exists
     if (existingSceneName) {
-        console.log("[SceneBreak] Scene name already exists, skipping auto-generation");
+        debug(SUBSYSTEM.SCENE, "Scene name already exists, skipping auto-generation");
         return null;
     }
 
     try {
-        console.log("[SceneBreak] Auto-generating scene name...");
+        debug(SUBSYSTEM.SCENE, "Auto-generating scene name...");
 
         // Create a prompt to generate a brief scene name
         const sceneNamePrompt = `Based on the following scene summary, generate a very brief scene name (maximum 5 words, like a chapter title).
@@ -600,7 +644,7 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
             cleanSceneName = cleanSceneName.substring(0, 47) + '...';
         }
 
-        console.log("[SceneBreak] Generated scene name:", cleanSceneName);
+        debug(SUBSYSTEM.SCENE, "Generated scene name:", cleanSceneName);
         set_data(message, SCENE_BREAK_NAME_KEY, cleanSceneName);
 
         // Refresh the scene navigator bar to show the new name immediately
@@ -608,7 +652,7 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
 
         return cleanSceneName;
     } catch (err) {
-        console.error("[SceneBreak] Error generating scene name:", err);
+        error(SUBSYSTEM.SCENE, "Error generating scene name:", err);
         // Don't fail the whole summary generation if scene name fails
         return null;
     }
@@ -657,11 +701,11 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
 
     // Switch to scene summary profile/preset if set
     if (profile) {
-        console.log("[SceneBreak] Switching to connection profile:", profile);
+        debug(SUBSYSTEM.SCENE, "Switching to connection profile:", profile);
         await ctx.set_connection_profile?.(profile);
     }
     if (preset) {
-        console.log("[SceneBreak] Switching to preset:", preset);
+        debug(SUBSYSTEM.SCENE, "Switching to preset:", preset);
         await ctx.set_preset?.(preset);
     }
 
@@ -672,12 +716,12 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
         if (get_settings('block_chat')) {
             ctx.deactivateSendButtons();
         }
-        console.log("[SceneBreak] Sending prompt to AI:", prompt);
+        debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
         summary = await summarize_text(prompt);
-        console.log("[SceneBreak] AI response:", summary);
+        debug(SUBSYSTEM.SCENE, "AI response:", summary);
     } catch (err) {
         summary = "Error generating summary: " + (err?.message || err);
-        console.error("[SceneBreak] Error generating summary:", err);
+        error(SUBSYSTEM.SCENE, "Error generating summary:", err);
         throw err; // Re-throw so caller knows it failed
     } finally {
         // Re-enable input if it was blocked
@@ -688,11 +732,11 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
 
     // Restore previous profile/preset
     if (profile) {
-        console.log("[SceneBreak] Restoring previous connection profile:", current_profile);
+        debug(SUBSYSTEM.SCENE, "Restoring previous connection profile:", current_profile);
         await ctx.set_connection_profile?.(current_profile);
     }
     if (preset) {
-        console.log("[SceneBreak] Restoring previous preset:", current_preset);
+        debug(SUBSYSTEM.SCENE, "Restoring previous preset:", current_preset);
         await ctx.set_preset?.(current_preset);
     }
 
@@ -700,7 +744,7 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
     const autoGenerateSceneName = get_settings('scene_summary_auto_name') ?? true;
     if (autoGenerateSceneName) {
         // Delay before generating scene name to avoid rate limiting
-        console.log("[SceneBreak] Waiting 5 seconds before generating scene name...");
+        debug(SUBSYSTEM.SCENE, "Waiting 5 seconds before generating scene name...");
         await new Promise(resolve => setTimeout(resolve, 5000));
 
         await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile, preset, current_profile, current_preset);
@@ -715,6 +759,10 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
     set_data(message, 'scene_summary_memory', summary); // ensure top-level property is set
     saveChatDebounced();
     refresh_memory(); // Refresh memory injection to include the new summary
+
+    // Auto-generate running scene summary if enabled
+    await auto_generate_running_summary(index);
+
     renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
 
     return summary;

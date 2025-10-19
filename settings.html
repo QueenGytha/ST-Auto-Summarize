@@ -441,6 +441,86 @@
                     <span>tk</span>
                 </label>
 
+                <!-- Running Scene Summary -->
+                <hr>
+                <h4 class="textAlignCenter">Running Scene Summary <i class="fa-solid fa-info-circle" title="Combine multiple scene summaries into a single cohesive memory. This is the recommended default behavior matching best practices."></i></h4>
+                <label class="checkbox_label" title="Enable running scene summary - combines all scene summaries into one cohesive narrative memory (recommended default).">
+                    <input id="running_scene_summary_enabled" type="checkbox" />
+                    <span>Enable Running Scene Summary (Recommended)</span>
+                </label>
+                <label title="Number of latest scene summaries to exclude from the running summary. Default: 1 (allows you to validate the latest scene summary before it's combined).">
+                    <span>Exclude Latest <span id="running_scene_summary_exclude_latest_display">1</span> Scene(s)</span>
+                    <input id="running_scene_summary_exclude_latest" class="text_pole" type="range" min="0" max="5" step="1" value="1" />
+                </label>
+                <small style="display:block; margin-bottom:0.5em;">Recommended: 1 (exclude latest scene to allow manual validation before combining)</small>
+
+                <label class="checkbox_label" title="Automatically generate running scene summary when new scene summaries are created.">
+                    <input id="running_scene_summary_auto_generate" type="checkbox" />
+                    <span>Auto-generate on New Scene Summaries</span>
+                </label>
+
+                <label class="checkbox_label" title="Show version control buttons in the navbar to switch between, edit, or delete running summary versions.">
+                    <input id="running_scene_summary_show_navbar" type="checkbox" />
+                    <span>Show Navbar Version Controls</span>
+                </label>
+
+                <div class="flex-container justifyspacebetween alignitemscenter">
+                    <button id="view_running_scene_summary" class="menu_button flex2" title="View/edit the current running scene summary"><span>View Running Summary</span></button>
+                    <button id="edit_running_scene_summary_prompt" class="menu_button flex1" title="Edit the running scene summary prompt"><span>Edit Running Summary Prompt</span></button>
+                </div>
+                <input id="running_scene_summary_prompt" type="hidden" />
+
+                <table>
+                    <tr>
+                        <td><span>Running Summary Completion Preset</span></td>
+                        <td><select id="running_scene_summary_completion_preset" class="text_pole"></select></td>
+                    </tr>
+                    <tr>
+                        <td><span>Running Summary Connection Profile</span></td>
+                        <td><select id="running_scene_summary_connection_profile" class="text_pole"></select></td>
+                    </tr>
+                    <tr>
+                        <td><span>Running Summary Prefill</span></td>
+                        <td><input id="running_scene_summary_prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
+                    </tr>
+                </table>
+
+                <label title="Where to inject the running scene summary.">
+                    <select id="running_scene_summary_position" class="text_pole">
+                        <option value="-1">Do not inject</option>
+                        <option value="2">Before main prompt</option>
+                        <option value="0">After main prompt</option>
+                        <option value="1">In chat at depth</option>
+                    </select>
+                </label>
+                <label title="Depth for in-chat injection.">
+                    <input id="running_scene_summary_depth" class="text_pole inline_setting" type="number" min="0" max="99" />
+                    <span>Depth</span>
+                </label>
+                <label title="Role for in-chat injection.">
+                    <select id="running_scene_summary_role" class="text_pole inline_setting">
+                        <option value="0">System</option>
+                        <option value="1">User</option>
+                        <option value="2">Assistant</option>
+                    </select>
+                </label>
+                <label class="checkbox_label" title="Include in World Info Scanning">
+                    <input id="running_scene_summary_scan" type="checkbox" />
+                    <span>Include in World Info Scanning</span>
+                </label>
+                <label title="Context limit for running scene summary.">
+                    <input id="running_scene_summary_context_limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
+                    <span>Context Limit</span>
+                </label>
+                <label>
+                    <input type="radio" name="running_scene_summary_context_type" value="percent" />
+                    <span>%</span>
+                </label>
+                <label>
+                    <input type="radio" name="running_scene_summary_context_type" value="tokens" />
+                    <span>tk</span>
+                </label>
+
                 <!-- Auto Scene Break Detection -->
                 <hr>
                 <h4 class="textAlignCenter">Auto Scene Break Detection <i class="fa-solid fa-info-circle" title="Automatically detect and mark scene breaks using AI analysis."></i></h4>

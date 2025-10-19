@@ -15,19 +15,50 @@ import {
 // Consistent prefix for ALL extension logs - easily searchable
 const LOG_PREFIX = '[AutoSummarize]';
 
-function log(...args) {
-    console.log(LOG_PREFIX, ...args);
-}
-function debug(...args) {
-    if (get_settings('debug_mode')) {
-        console.log(LOG_PREFIX, '[DEBUG]', ...args);
+// Subsystem prefixes for filtering specific functionality
+const SUBSYSTEM = {
+    CORE: '[Core]',
+    MEMORY: '[Memory]',
+    SCENE: '[Scene]',
+    RUNNING: '[Running]',
+    COMBINED: '[Combined]',
+    VALIDATION: '[Validation]',
+    UI: '[UI]',
+    PROFILE: '[Profile]',
+    EVENT: '[Event]'
+};
+
+function log(subsystem, ...args) {
+    // If subsystem is not a string starting with '[', treat it as a regular arg
+    if (typeof subsystem !== 'string' || !subsystem.startsWith('[')) {
+        console.log(LOG_PREFIX, subsystem, ...args);
+    } else {
+        console.log(LOG_PREFIX, subsystem, ...args);
     }
 }
-function error(...args) {
-    console.error(LOG_PREFIX, '[ERROR]', ...args);
-    // Only show first arg in toast to avoid clutter
-    const message = typeof args[0] === 'string' ? args[0] : String(args[0]);
-    toastr.error(message, MODULE_NAME_FANCY);
+
+function debug(subsystem, ...args) {
+    if (!get_settings('debug_mode')) return;
+
+    // If subsystem is not a string starting with '[', treat it as a regular arg
+    if (typeof subsystem !== 'string' || !subsystem.startsWith('[')) {
+        console.log(LOG_PREFIX, '[DEBUG]', subsystem, ...args);
+    } else {
+        console.log(LOG_PREFIX, '[DEBUG]', subsystem, ...args);
+    }
+}
+
+function error(subsystem, ...args) {
+    // If subsystem is not a string starting with '[', treat it as a regular arg
+    if (typeof subsystem !== 'string' || !subsystem.startsWith('[')) {
+        console.error(LOG_PREFIX, '[ERROR]', subsystem, ...args);
+        const message = typeof subsystem === 'string' ? subsystem : String(subsystem);
+        toastr.error(message, MODULE_NAME_FANCY);
+    } else {
+        console.error(LOG_PREFIX, '[ERROR]', subsystem, ...args);
+        const message = typeof args[0] === 'string' ? args[0] : String(args[0]);
+        toastr.error(message, MODULE_NAME_FANCY);
+    }
 }
 
 function toast(message, type="info") {
@@ -35,6 +66,25 @@ function toast(message, type="info") {
     toastr[type](message, MODULE_NAME_FANCY);
 }
 const toast_debounced = debounce(toast, 500);
+
+/**
+ * IMPORTANT: All extension code MUST use the centralized logging functions (log, debug, error)
+ * instead of raw console.log/error/debug calls. This ensures:
+ * 1. ALL logs have the [AutoSummarize] prefix for easy filtering
+ * 2. Debug logs can be toggled via the debug_mode setting
+ * 3. Error logs automatically show toast notifications to the user
+ * 4. Consistent formatting across the entire extension
+ *
+ * Example usage:
+ *   log(SUBSYSTEM.SCENE, "Scene created", sceneData);
+ *   debug(SUBSYSTEM.MEMORY, "Memory updated", memoryState);
+ *   error(SUBSYSTEM.VALIDATION, "Validation failed", err);
+ *
+ * DO NOT USE:
+ *   console.log() - Use log() instead
+ *   console.error() - Use error() instead
+ *   console.debug() - Use debug() instead
+ */
 
 const saveChatDebounced = debounce(() => getContext().saveChat(), debounce_timeout.relaxed);
 function count_tokens(text, padding = 0) {
@@ -201,6 +251,7 @@ async function get_user_setting_text_input(key, title, description="", defaultVa
 }
 
 export {
+    SUBSYSTEM,
     log,
     debug,
     error,

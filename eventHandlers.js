@@ -1,5 +1,7 @@
 import {
     debug,
+    log,
+    SUBSYSTEM,
     getContext,
     chat_enabled,
     get_settings,
@@ -32,7 +34,6 @@ import {
     renderAllSceneBreaks,
     generate_combined_summary,
     get_manifest,
-    log,
     refresh_settings,
     update_connection_profile_dropdown,
     check_st_version,
@@ -98,8 +99,7 @@ async function on_chat_event(event=null, data=null) {
                 await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
             }
 
-            // Auto scene break detection on new user message
-            processNewMessageForSceneBreak(index);
+            // NOTE: Auto scene break detection runs on 'char_message' after AI responds, not here
 
             break;
 
@@ -118,13 +118,16 @@ async function on_chat_event(event=null, data=null) {
                 break;
             } else { // not a swipe
                 last_message_swiped = null;
+
+                // Auto scene break detection on new character message (runs regardless of auto_summarize setting)
+                log(SUBSYSTEM.EVENT, "Triggering auto scene break detection for character message at index", index);
+                await processNewMessageForSceneBreak(index);
+
                 if (!get_settings('auto_summarize')) break;  // if auto-summarize is disabled, do nothing
                 if (get_settings("auto_summarize_on_send")) break;  // if auto_summarize_on_send is enabled, don't auto-summarize on character message
                 debug("New message detected, summarizing")
                 await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
 
-                // Auto scene break detection on new character message
-                processNewMessageForSceneBreak(index);
                 break;
             }
 
@@ -206,7 +209,7 @@ jQuery(async function () {
     await load_settings_html();
 
     // initialize UI stuff
-    initialize_settings_listeners();
+    await initialize_settings_listeners();
     initialize_popout()
     initialize_message_buttons();
     initialize_group_member_buttons();
