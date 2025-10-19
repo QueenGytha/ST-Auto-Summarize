@@ -27,6 +27,7 @@ export const SCENE_BREAK_KEY = 'scene_break';
 export const SCENE_BREAK_VISIBLE_KEY = 'scene_break_visible';
 export const SCENE_BREAK_NAME_KEY = 'scene_break_name';
 export const SCENE_BREAK_SUMMARY_KEY = 'scene_break_summary';
+export const SCENE_BREAK_COLLAPSED_KEY = 'scene_break_collapsed';
 export const SCENE_BREAK_BUTTON_CLASS = 'auto_summarize_scene_break_button';
 export const SCENE_BREAK_DIV_CLASS = 'auto_summarize_scene_break_div';
 
@@ -172,6 +173,13 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
     const sceneSummary = versions[currentIdx] || '';
 
+    // Check collapsed state - use default setting for new scenes (when undefined)
+    let isCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
+    if (isCollapsed === undefined) {
+        // New scene - use default setting
+        isCollapsed = get_settings('scene_summary_default_collapsed') ?? true;
+    }
+
     // --- Find the start of this scene ---
     // The end is always the current message (index).
     // The start is the first message after the previous visible scene break, or 0 if none.
@@ -201,15 +209,23 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     // Determine visible/hidden class for styling
     const stateClass = isVisible ? "sceneBreak-visible" : "sceneBreak-hidden";
     const borderClass = isVisible ? "auto_summarize_scene_break_border" : "";
+    const collapsedClass = isCollapsed ? "sceneBreak-collapsed" : "";
 
     // Use the same classes as summary boxes for consistent placement and style
     // Wrap the summary content in a container for easy hiding
     const isIncluded = get_data(message, 'scene_summary_include') !== false; // default to included
 
+    // Collapse/expand button icon
+    const collapseIcon = isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up';
+    const collapseTitle = isCollapsed ? 'Expand scene summary' : 'Collapse scene summary';
+
     const $sceneBreak = $(`
-    <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass}" style="margin:0 0 5px 0;" tabindex="0">
+    <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass} ${collapsedClass}" style="margin:0 0 5px 0;" tabindex="0">
+        <div class="sceneBreak-header" style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.5em;">
+            <input type="text" class="sceneBreak-name auto_summarize_memory_text" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" style="flex:1;" />
+            <button class="scene-collapse-toggle menu_button fa-solid ${collapseIcon}" title="${collapseTitle}" style="padding:0.3em 0.6em;"></button>
+        </div>
         <div class="sceneBreak-content">
-            <input type="text" class="sceneBreak-name auto_summarize_memory_text" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" />
             <div style="font-size:0.95em; color:inherit; margin-bottom:0.5em;">
                 Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}
             </div>
@@ -245,6 +261,20 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         // Update navigator bar to show the new name immediately
         renderSceneNavigatorBar();
     });
+
+    // --- Collapse/expand toggle handler ---
+    $sceneBreak.find('.scene-collapse-toggle').on('click', function (e) {
+        e.stopPropagation();
+        // Use same default logic as render function
+        let currentCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
+        if (currentCollapsed === undefined) {
+            currentCollapsed = get_settings('scene_summary_default_collapsed') ?? true;
+        }
+        set_data(message, SCENE_BREAK_COLLAPSED_KEY, !currentCollapsed);
+        saveChatDebounced();
+        renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+    });
+
     $sceneBreak.find('.scene-summary-box').on('change blur', function () {
         // Update the current version in the versions array
         let updatedVersions = getSceneSummaryVersions(message, get_data).slice();

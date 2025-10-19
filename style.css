@@ -384,6 +384,16 @@ dialog:has(#auto_summarize_memory_state_interface) {
     display: none !important;
 }
 
+/* Collapsed scene break - hide content */
+.auto_summarize_scene_break_div.sceneBreak-collapsed .sceneBreak-content {
+    display: none !important;
+}
+
+/* Collapsed scene break - adjust header margin when content is hidden */
+.auto_summarize_scene_break_div.sceneBreak-collapsed .sceneBreak-header {
+    margin-bottom: 0 !important;
+}
+
 #scene-summary-navigator-bar {
     position: fixed;
     top: 0;

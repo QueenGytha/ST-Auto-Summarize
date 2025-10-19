@@ -126,6 +126,7 @@ Object.assign(default_settings, {
     scene_summary_auto_name_manual: true, // Auto-generate scene name when manually generating scene summary (if not already set)
     scene_summary_navigator_width: 96, // Width of scene navigator bar in pixels (default: 96px, double the original 48px)
     scene_summary_navigator_font_size: 12, // Font size for scene navigator links in pixels (default: 12px)
+    scene_summary_default_collapsed: true, // New scene summaries start collapsed by default (only showing scene name)
 
     // --- Scene Summary Validation Settings ---
     scene_summary_error_detection_enabled: false,
