@@ -1,24 +1,54 @@
 export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
-// Analyze the provided Roleplay History. Fill out the JSON template below, following the instructions for each field. Do not speculate or invent details.
-// Output only a single, correctly formatted JSON object. Do not include any text outside the JSON object.
-// If a field has no relevant information, leave it empty ({} for objects, [] for arrays).
-
+// Extract key facts from the scene content below for the roleplay memory.
+// Focus on CURRENT STATE and information needed for future scenes.
+//
+// CRITICAL GUIDELINES:
+//
+// 1. EXTREME BREVITY REQUIRED
+//    - Use MINIMUM words to capture each fact
+//    - Remove ALL unnecessary adjectives and flourishes
+//    - Prefer fragments over complete sentences where clear
+//    - Target: 1500-2000 tokens MAXIMUM for entire output
+//
+// 2. FOCUS ON STATE, NOT EVENTS
+//    - Capture CURRENT state: who, what, where, status
+//    - Don't track event sequences ("then this happened, then that")
+//    - Outcomes matter, not the steps to get there
+//
+// 3. CAPTURE WHAT MATTERS
+//    - Include all significant NPCs, events, and details
+//    - Use appropriate fields (npcs_facts vs npcs_mentioned, etc.)
+//    - Don't speculate or invent details not in the scene
+//
+// 4. FORMAT REQUIREMENTS
+//    - Output ONLY valid JSON, no text before or after
+//    - All fields are optional - omit if no relevant data
+//    - Empty objects: {} | Empty arrays: []
+//
 // Field instructions:
-// npcs_facts: { "npc_name": "Appearance, speech manner, personality traits. Only facts, not actions." }
-// npcs_status: { "npc_name": "Current status (e.g. active, missing, deceased)." }
-// npcs_plans: [ "Future plans or goals discussed by npcs." ]
-// npcs_mentioned: { "npc_name": "Role or N/A" }
-// visited_locations: { "Location Name": "Describe in at least 3 sentences." }
-// secrets: { "Secret": "Kept secret by <npc> from <target>." }
-// current_relationships: { "npc_pair": "Current long-term relationship between recurring npcs or with {{user}}, in at least 3 sentences." }
-// planned_events: [ "Each planned event in at least 3 sentences." ]
-// objects: { "Object Name": "DDescription, significance, and current owner if known." }
+// npcs_facts: { "npc_name": "Appearance, speech manner, personality traits. Only facts, not actions. CONCISE." }
+// npcs_status: { "npc_name": "Current status (active, missing, deceased, etc.)" }
+// npcs_plans: [ "Future plans or goals. Brief." ]
+// npcs_mentioned: { "npc_name": "NPCs mentioned but not yet encountered. Brief role." }
+// visited_locations: { "Location Name": "Brief description. Only key features." }
+// secrets: { "Secret content": "Known by: X, Y. Hidden from: Z, {{user}}." }
+// current_relationships: { "npc_pair": "Current status and emotional tone." }
+// planned_events: [ "Future plans. Who, what, when if known." ]
+// objects: { "Object Name": "Description, significance, current owner/location." }
 // lore: { "Fact": "World-building, rules, or background info." }
-// events: [ "Each event, in at least 2 sentences. Add any additional context if appropriate." ]
-// minor_npcs: { "npc_name": "Brief description or role." }
-// factions: { "Faction Name": { "members": [ "npc1", "npc2" ], "goals": "Description of goals." } }
-// pending_decisions: [ "Each unresolved choice or cliffhanger, in at least 2 sentences." ]
-
+// memorable_events: [ "Major story developments that changed the narrative direction." ]
+// minor_npcs: { "npc_name": "Brief role or description." }
+// factions: { "Faction Name": { "members": ["npc1", "npc2"], "goals": "Brief goals." } }
+// pending_decisions: [ "Unresolved choices that will affect future scenes." ]
+//
+// BREVITY EXAMPLES:
+// ❌ BAD: "A skilled warrior with flowing red hair and piercing green eyes who speaks with confidence"
+// ✅ GOOD: "Warrior. Red hair, green eyes. Confident."
+//
+// ❌ BAD: "An old abandoned warehouse on the outskirts of town, filled with dusty crates"
+// ✅ GOOD: "Abandoned warehouse, town outskirts. Dusty, broken windows."
+//
+// Output only valid JSON:
 {
 	"npcs_facts": {},
 	"npcs_status": {},
@@ -30,37 +60,67 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 	"planned_events": [],
 	"objects": {},
 	"lore": {},
-	"events": [],
+	"memorable_events": [],
 	"minor_npcs": {},
 	"factions": {},
 	"pending_decisions": []
 }
 
-// Roleplay History:
+// Scene Content:
 {{message}}`;
 
 
 export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
-// Analyze the provided Roleplay History. Fill out the JSON template below, following the instructions for each field. Do not speculate or invent details.
-// Output only a single, correctly formatted JSON object. Do not include any text outside the JSON object.
-// If a field has no relevant information, leave it empty ({} for objects, [] for arrays).
-
+// Extract key facts from the completed scene below for the roleplay memory.
+// Focus on CURRENT STATE and information needed for future scenes.
+//
+// CRITICAL GUIDELINES:
+//
+// 1. EXTREME BREVITY REQUIRED
+//    - Use MINIMUM words to capture each fact
+//    - Remove ALL unnecessary adjectives and flourishes
+//    - Prefer fragments over complete sentences where clear
+//    - Target: 1500-2000 tokens MAXIMUM for entire output
+//
+// 2. FOCUS ON STATE, NOT EVENTS
+//    - Capture CURRENT state: who, what, where, status
+//    - Don't track event sequences ("then this happened, then that")
+//    - Outcomes matter, not the steps to get there
+//
+// 3. CAPTURE WHAT MATTERS
+//    - Include all significant NPCs, events, and details
+//    - Use appropriate fields (npcs_facts vs npcs_mentioned, etc.)
+//    - Don't speculate or invent details not in the scene
+//
+// 4. FORMAT REQUIREMENTS
+//    - Output ONLY valid JSON, no text before or after
+//    - All fields are optional - omit if no relevant data
+//    - Empty objects: {} | Empty arrays: []
+//
 // Field instructions:
-// npcs_facts: { "npc_name": "Appearance, speech manner, personality traits. Only facts, not actions." }
-// npcs_status: { "npc_name": "Current status (e.g. active, missing, deceased)." }
-// npcs_plans: [ "Future plans or goals discussed by npcs." ]
-// npcs_mentioned: { "npc_name": "Role or N/A" }
-// visited_locations: { "Location Name": "Describe in at least 3 sentences." }
-// secrets: { "Secret": "Kept secret by <npc> from <target>." }
-// current_relationships: { "npc_pair": "Current long-term relationship between recurring npcs or with {{user}}, in at least 3 sentences." }
-// planned_events: [ "Each planned event in at least 3 sentences." ]
-// objects: { "Object Name": "DDescription, significance, and current owner if known." }
+// npcs_facts: { "npc_name": "Appearance, speech manner, personality traits. Only facts, not actions. CONCISE." }
+// npcs_status: { "npc_name": "Current status (active, missing, deceased, etc.)" }
+// npcs_plans: [ "Future plans or goals. Brief." ]
+// npcs_mentioned: { "npc_name": "NPCs mentioned but not yet encountered. Brief role." }
+// visited_locations: { "Location Name": "Brief description. Only key features." }
+// secrets: { "Secret content": "Known by: X, Y. Hidden from: Z, {{user}}." }
+// current_relationships: { "npc_pair": "Current status and emotional tone." }
+// planned_events: [ "Future plans. Who, what, when if known." ]
+// objects: { "Object Name": "Description, significance, current owner/location." }
 // lore: { "Fact": "World-building, rules, or background info." }
-// events: [ "Each event, in at least 2 sentences. Add any additional context if appropriate." ]
-// minor_npcs: { "npc_name": "Brief description or role." }
-// factions: { "Faction Name": { "members": [ "npc1", "npc2" ], "goals": "Description of goals." } }
-// pending_decisions: [ "Each unresolved choice or cliffhanger, in at least 2 sentences." ]
-
+// memorable_events: [ "Major story developments that changed the narrative direction." ]
+// minor_npcs: { "npc_name": "Brief role or description." }
+// factions: { "Faction Name": { "members": ["npc1", "npc2"], "goals": "Brief goals." } }
+// pending_decisions: [ "Unresolved choices that will affect future scenes." ]
+//
+// BREVITY EXAMPLES:
+// ❌ BAD: "A skilled warrior with flowing red hair and piercing green eyes who speaks with confidence"
+// ✅ GOOD: "Warrior. Red hair, green eyes. Confident."
+//
+// ❌ BAD: "An old abandoned warehouse on the outskirts of town, filled with dusty crates"
+// ✅ GOOD: "Abandoned warehouse, town outskirts. Dusty, broken windows."
+//
+// Output only valid JSON:
 {
 	"npcs_facts": {},
 	"npcs_status": {},
@@ -72,37 +132,59 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 	"planned_events": [],
 	"objects": {},
 	"lore": {},
-	"events": [],
+	"memorable_events": [],
 	"minor_npcs": {},
 	"factions": {},
 	"pending_decisions": []
 }
 
-// Roleplay History:
+// Scene Content:
 {{message}}`;
 
 
 export const default_combined_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
-// You are being given multiple pieces of a single roleplay. Analyze and combine them while avoiding redundancy and repetition.
-// Analyze the provided New Roleplay Histories and Roleplay Messages (if provided). Fill out the JSON template below, following the instructions for each field. Do not speculate or invent details.
-// Output only a single, correctly formatted JSON object. Do not include any text outside the JSON object.
-// If a field has no relevant information, leave it empty ({} for objects, [] for arrays).
-
+// Combine multiple memory fragments from a single roleplay while avoiding redundancy and repetition.
+// Extract and merge key facts from the New Roleplay Histories and Roleplay Messages (if provided).
+// Focus on CURRENT STATE and information needed for future scenes.
+//
+// CRITICAL GUIDELINES:
+//
+// 1. EXTREME BREVITY REQUIRED
+//    - Use MINIMUM words to capture each fact
+//    - Remove ALL unnecessary adjectives and flourishes
+//    - Prefer fragments over complete sentences where clear
+//    - This is a combined memory, so be even more concise
+//
+// 2. FOCUS ON STATE, NOT EVENTS
+//    - Capture CURRENT state: who, what, where, status
+//    - Don't track event sequences ("then this happened, then that")
+//    - Outcomes matter, not the steps to get there
+//
+// 3. MERGE AND DEDUPLICATE
+//    - Combine duplicate information from multiple fragments
+//    - Keep most recent state when conflicts exist
+//    - Remove redundant or outdated information
+//
+// 4. FORMAT REQUIREMENTS
+//    - Output ONLY valid JSON, no text before or after
+//    - All fields are optional - omit if no relevant data
+//    - Empty objects: {} | Empty arrays: []
+//
 // Field instructions:
-// npcs_facts: { "npc_name": "Appearance, speech manner, personality traits. Only facts, not actions." }
-// npcs_status: { "npc_name": "Current status (e.g. active, missing, deceased)." }
-// npcs_plans: [ "Future plans or goals discussed by npcs." ]
-// npcs_mentioned: { "npc_name": "Role or N/A" }
-// visited_locations: { "Location Name": "Describe in at least 3 sentences." }
-// secrets: { "Secret": "Kept secret by <npc> from <target>." }
-// current_relationships: { "npc_pair": "Current long-term relationship between recurring npcs or with {{user}}, in at least 3 sentences." }
-// planned_events: [ "Each planned event in at least 3 sentences." ]
-// objects: { "Object Name": "DDescription, significance, and current owner if known." }
+// npcs_facts: { "npc_name": "Appearance, speech manner, personality traits. Only facts, not actions. CONCISE." }
+// npcs_status: { "npc_name": "Current status (active, missing, deceased, etc.)" }
+// npcs_plans: [ "Future plans or goals. Brief." ]
+// npcs_mentioned: { "npc_name": "NPCs mentioned but not yet encountered. Brief role." }
+// visited_locations: { "Location Name": "Brief description. Only key features." }
+// secrets: { "Secret content": "Known by: X, Y. Hidden from: Z, {{user}}." }
+// current_relationships: { "npc_pair": "Current status and emotional tone." }
+// planned_events: [ "Future plans. Who, what, when if known." ]
+// objects: { "Object Name": "Description, significance, current owner/location." }
 // lore: { "Fact": "World-building, rules, or background info." }
-// events: [ "Each event, in at least 2 sentences. Add any additional context if appropriate." ]
-// minor_npcs: { "npc_name": "Brief description or role." }
-// factions: { "Faction Name": { "members": [ "npc1", "npc2" ], "goals": "Description of goals." } }
-// pending_decisions: [ "Each unresolved choice or cliffhanger, in at least 2 sentences." ]
+// memorable_events: [ "Major story developments that changed the narrative direction." ]
+// minor_npcs: { "npc_name": "Brief role or description." }
+// factions: { "Faction Name": { "members": ["npc1", "npc2"], "goals": "Brief goals." } }
+// pending_decisions: [ "Unresolved choices that will affect future scenes." ]
 
 {
 	"npcs_facts": {},
@@ -115,7 +197,7 @@ export const default_combined_summary_prompt = `// OOC REQUEST: Pause the rolepl
 	"planned_events": [],
 	"objects": {},
 	"lore": {},
-	"events": [],
+	"memorable_events": [],
 	"minor_npcs": {},
 	"factions": {},
 	"pending_decisions": []
@@ -135,36 +217,36 @@ export const default_combined_summary_prompt = `// OOC REQUEST: Pause the rolepl
 {{message}}`;
 
 
-export const default_long_template = `<!--This is what happened so far during the roleplay, and the current state of the scene.
+export const default_long_template = `<!--Roleplay memory containing current state and key facts from previous scenes.
 The information below takes priority over character and setting definitions. -->
 
-<roleplay_summary>
+<roleplay_memory>
 {{memories}}
-</roleplay_summary>`;
+</roleplay_memory>`;
 
 
-export const default_short_template = `<!--This is what happened so far during the roleplay, and the current state of the scene.
+export const default_short_template = `<!--Roleplay memory containing current state and key facts from previous scenes.
 The information below takes priority over character and setting definitions. -->
 
-<roleplay_summary>
+<roleplay_memory>
 {{memories}}
-</roleplay_summary>`;
+</roleplay_memory>`;
 
 
-export const default_combined_template = `<!--This is what happened so far during the roleplay, and the current state of the scene.
+export const default_combined_template = `<!--Roleplay memory containing current state and key facts from previous scenes.
 The information below takes priority over character and setting definitions. -->
 
-<roleplay_summary>
+<roleplay_memory>
 {{memories}}
-</roleplay_summary>`;
+</roleplay_memory>`;
 
 
-export const default_scene_template = `<!--This is what happened so far during the roleplay, and the current state of the scene. This has been ordered into logical chapters.
+export const default_scene_template = `<!--Roleplay memory containing current state and key facts from previous scenes, organized into logical chapters.
 The information below takes priority over character and setting definitions. -->
 
-<roleplay_summary>
+<roleplay_memory>
 {{scene_summaries}}
-</roleplay_summary>`;
+</roleplay_memory>`;
 
 
 export const regular_summary_error_detection_prompt = `You are validating summaries for a fictional roleplay system. Your ONLY task is to check if the summary meets the format requirements, not to evaluate the fictional content itself.
