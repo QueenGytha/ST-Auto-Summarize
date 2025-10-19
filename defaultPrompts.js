@@ -1,72 +1,62 @@
 export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
-// Extract key facts from the scene content below for the roleplay memory.
-// Focus on CURRENT STATE and information needed for future scenes.
+// Extract key information from the message below into a structured JSON format.
+// This feeds both narrative memory AND automatic lorebook population.
 //
-// CRITICAL GUIDELINES:
+// JSON STRUCTURE REQUIREMENTS:
 //
-// 1. EXTREME BREVITY REQUIRED
-//    - Use MINIMUM words to capture each fact
-//    - Remove ALL unnecessary adjectives and flourishes
-//    - Prefer fragments over complete sentences where clear
-//    - Target: 1500-2000 tokens MAXIMUM for entire output
+// {
+//   "narrative": "Pure narrative of events",
+//   "entities": [entity objects],
+//   "character_states": {character state objects}
+// }
 //
-// 2. FOCUS ON STATE, NOT EVENTS
-//    - Capture CURRENT state: who, what, where, status
-//    - Don't track event sequences ("then this happened, then that")
-//    - Outcomes matter, not the steps to get there
+// FIELD GUIDELINES:
 //
-// 3. CAPTURE WHAT MATTERS
-//    - Include all significant NPCs, events, and details
-//    - Use appropriate fields (npcs_facts vs npcs_mentioned, etc.)
-//    - Don't speculate or invent details not in the scene
+// 1. NARRATIVE (required string)
+//    - What happened in this message (events, actions, decisions, outcomes)
+//    - MENTION entities by name for context (locations, NPCs, items)
+//    - DO NOT include entity descriptions in narrative
+//    - Entity descriptions go in the entities array
+//    - Keep concise and factual
+//    - Focus on state changes and outcomes
 //
-// 4. FORMAT REQUIREMENTS
-//    - Output ONLY valid JSON, no text before or after
-//    - All fields are optional - omit if no relevant data
-//    - Empty objects: {} | Empty arrays: []
+// 2. ENTITIES (optional array)
+//    - Extract NEW entities discovered in this message
+//    - OR provide UPDATES to existing entities
 //
-// Field instructions:
-// npcs_facts: { "npc_name": "Appearance, speech manner, personality traits. Only facts, not actions. CONCISE." }
-// npcs_status: { "npc_name": "Current status (active, missing, deceased, etc.)" }
-// npcs_plans: [ "Future plans or goals. Brief." ]
-// npcs_mentioned: { "npc_name": "NPCs mentioned but not yet encountered. Brief role." }
-// visited_locations: { "Location Name": "Brief description. Only key features." }
-// secrets: { "Secret content": "Known by: X, Y. Hidden from: Z, {{user}}." }
-// current_relationships: { "npc_pair": "Current status and emotional tone." }
-// planned_events: [ "Future plans. Who, what, when if known." ]
-// objects: { "Object Name": "Description, significance, current owner/location." }
-// lore: { "Fact": "World-building, rules, or background info." }
-// memorable_events: [ "Major story developments that changed the narrative direction." ]
-// minor_npcs: { "npc_name": "Brief role or description." }
-// factions: { "Faction Name": { "members": ["npc1", "npc2"], "goals": "Brief goals." } }
-// pending_decisions: [ "Unresolved choices that will affect future scenes." ]
+//    Entity Object Format:
+//    {
+//      "name": "Full Entity Name",
+//      "type": "character|npc|creature|location|location-sublocation|item|object|faction|concept",
+//      "properties": ["list", "of", "properties"],  // For NEW entities
+//      "aliases": ["alternate", "names"],
+//      "updates": ["property", "updates"]  // For EXISTING entities
+//    }
 //
-// BREVITY EXAMPLES:
-// ❌ BAD: "A skilled warrior with flowing red hair and piercing green eyes who speaks with confidence"
-// ✅ GOOD: "Warrior. Red hair, green eyes. Confident."
+//    Properties Format (concise, PList-compatible):
+//    - Concise properties (1-5 words each)
+//    - Use nested() for details: "sells(potions, equipment)"
+//    - Comma-separated
 //
-// ❌ BAD: "An old abandoned warehouse on the outskirts of town, filled with dusty crates"
-// ✅ GOOD: "Abandoned warehouse, town outskirts. Dusty, broken windows."
+// 3. CHARACTER_STATES (optional object)
+//    - Current state of main characters ({{char}} and {{user}})
+//    - Only include if state changed significantly
+//    - Format: concise properties
+//    - Include: acquired items, location, relationships, knowledge, goals
 //
-// Output only valid JSON:
+// OUTPUT FORMAT:
+// - Output ONLY valid JSON, no text before or after
+// - All fields except narrative are optional
+// - Empty arrays: [], Empty objects: {}
+//
+// Output template:
 {
-	"npcs_facts": {},
-	"npcs_status": {},
-	"npcs_plans": [],
-	"npcs_mentioned": {},
-	"visited_locations": {},
-	"secrets": {},
-	"current_relationships": {},
-	"planned_events": [],
-	"objects": {},
-	"lore": {},
-	"memorable_events": [],
-	"minor_npcs": {},
-	"factions": {},
-	"pending_decisions": []
+  "narrative": "",
+  "entities": [],
+  "character_states": {}
 }
 
-// Scene Content:
+// Message Content:
 {{message}}`;
 
 

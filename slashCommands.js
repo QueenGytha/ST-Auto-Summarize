@@ -216,6 +216,60 @@ function initialize_slash_commands() {
         },
         helpString: 'Log scene summary injection settings, collected indexes, and injection text.',
     }));
+
+    // Queue management commands
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'queue-status',
+        aliases: ['queue'],
+        callback: async () => {
+            const { getQueueStats } = await import('./operationQueue.js');
+            const stats = getQueueStats();
+            const message = `Queue Status:\n• Total: ${stats.total}\n• Pending: ${stats.pending}\n• Running: ${stats.in_progress}\n• Completed: ${stats.completed}\n• Failed: ${stats.failed}\n• Paused: ${stats.paused}`;
+            toast(message, 'info');
+            return message;
+        },
+        helpString: 'Show operation queue status',
+    }));
+
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'queue-pause',
+        callback: async () => {
+            const { pauseQueue } = await import('./operationQueue.js');
+            pauseQueue();
+            return 'Queue paused';
+        },
+        helpString: 'Pause the operation queue',
+    }));
+
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'queue-resume',
+        callback: async () => {
+            const { resumeQueue } = await import('./operationQueue.js');
+            resumeQueue();
+            return 'Queue resumed';
+        },
+        helpString: 'Resume the operation queue',
+    }));
+
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'queue-clear-completed',
+        callback: async () => {
+            const { clearCompletedOperations } = await import('./operationQueue.js');
+            const count = clearCompletedOperations();
+            return `Cleared ${count} completed operations`;
+        },
+        helpString: 'Clear completed operations from queue',
+    }));
+
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'queue-clear-all',
+        callback: async () => {
+            const { clearAllOperations } = await import('./operationQueue.js');
+            const count = clearAllOperations();
+            return `Cleared all ${count} operations`;
+        },
+        helpString: 'Clear all operations from queue',
+    }));
 }
 
 export {

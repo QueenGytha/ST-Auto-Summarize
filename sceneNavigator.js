@@ -8,7 +8,7 @@ export function renderSceneNavigatorBar() {
     let $bar = $('#scene-summary-navigator-bar');
     // If not present or in the wrong place, move it after #sheld (main chat container)
     if (!$bar.length) {
-        $bar = $('<div id="scene-summary-navigator-bar" style="display:none;"></div>');
+        $bar = $('<div id="scene-summary-navigator-bar"></div>');
         $('#sheld').after($bar); // or $('#chat').before($bar); depending on your layout
     } else if (!$bar.parent().is('body')) {
         // Move to correct place if needed
@@ -19,12 +19,23 @@ export function renderSceneNavigatorBar() {
     // Apply width setting
     $bar.css('width', `${width}px`);
 
+    // Hide/show based on toggle setting and whether there are scene breaks
     if (!show) {
-        $bar.hide();
+        // Even if hidden by toggle, keep the bar in DOM for running summary controls
+        // But hide the scene break navigation links
+        $bar.find('.scene-nav-link').hide();
+        // If there are running summary controls, keep bar visible for those
+        const hasRunningControls = $bar.find('.running-summary-controls').length > 0;
+        if (!hasRunningControls) {
+            $bar.hide();
+        }
         return;
     }
     const ctx = getContext();
     if (!ctx?.chat) return;
+
+    // Save running summary controls before clearing
+    const $runningControls = $bar.find('.running-summary-controls').detach();
     $bar.empty();
 
     // Find all visible scene breaks and number them sequentially
@@ -55,6 +66,12 @@ export function renderSceneNavigatorBar() {
             sceneNum++;
         }
     });
+
+    // Restore running summary controls if they existed
+    if ($runningControls.length) {
+        $bar.append($runningControls);
+    }
+
     $bar.show();
 
     // Update running summary controls after rendering

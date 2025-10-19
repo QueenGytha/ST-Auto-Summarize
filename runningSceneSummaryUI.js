@@ -44,14 +44,16 @@ function createRunningSceneSummaryNavbar() {
     </div>
     `;
 
-    // Append to scene navigator bar
-    const $navbar = $('#scene-summary-navigator-bar');
-    if ($navbar.length) {
-        $navbar.append(html);
-    } else {
-        log(SUBSYSTEM.RUNNING, 'Scene navigator bar not found, controls not added yet');
-        return;
+    // Ensure scene navigator bar exists
+    let $navbar = $('#scene-summary-navigator-bar');
+    if (!$navbar.length) {
+        // Create the bar if it doesn't exist
+        $navbar = $('<div id="scene-summary-navigator-bar"></div>');
+        $('#sheld').after($navbar);
+        log(SUBSYSTEM.RUNNING, 'Created scene navigator bar for running summary controls');
     }
+
+    $navbar.append(html);
 
     // Bind event handlers
     $('#running_summary_version_selector').on('change', async function() {

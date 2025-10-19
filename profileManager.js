@@ -8,6 +8,7 @@ import {
     extension_settings,
     refresh_settings,
     MODULE_NAME,
+    MODULE_NAME_FANCY,
     get_current_character_identifier,
     get_current_chat_identifier,
     check_preset_valid,
@@ -124,7 +125,7 @@ async function import_profile(e) {
     profiles[name] = data
     set_settings('profiles', profiles);
 
-    toast(`auto_summarize Memory profile \"${name}\" imported`, 'success')
+    toast(`${MODULE_NAME_FANCY} profile \"${name}\" imported`, 'success')
     e.target.value = null;
 
     refresh_settings()
@@ -245,7 +246,10 @@ function get_character_profile(key) {
         key = get_current_character_identifier();
     }
     let character_profiles = get_settings('character_profiles');
-    return character_profiles[key]
+    if (!character_profiles || typeof character_profiles !== 'object') {
+        return null;
+    }
+    return character_profiles[key];
 }
 function set_character_profile(key, profile=null) {
     // Set the profile for a given character (or unset it if no profile provided)

@@ -278,6 +278,18 @@ Object.entries(event_types).forEach(([key, type]) => {
     window.update_connection_profile_dropdown = update_connection_profile_dropdown;
 
     initializeSceneNavigatorBar();
+
+    // Initialize operation queue system
+    if (get_settings('operation_queue_enabled') !== false) {
+        const { initOperationQueue } = await import('./operationQueue.js');
+        const { initQueueUI } = await import('./operationQueueUI.js');
+        const { registerAllOperationHandlers } = await import('./operationHandlers.js');
+
+        await initOperationQueue();
+        registerAllOperationHandlers();
+        initQueueUI();
+        debug('[Queue] Operation queue initialized with handlers');
+    }
 });
 
 export {

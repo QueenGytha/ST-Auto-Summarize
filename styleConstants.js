@@ -16,7 +16,7 @@ const group_member_enable_button_highlight = `auto_summarize_memory_group_member
 
 // THe module name modifies where settings are stored, where information is stored on message objects, macros, etc.
 const MODULE_NAME = 'auto_summarize_memory';
-const MODULE_NAME_FANCY = 'auto_summarize Memory';
+const MODULE_NAME_FANCY = 'ST-Auto-Summarize';
 const PROGRESS_BAR_ID = `${MODULE_NAME}_progress_bar`;
 
 // Macros for long-term and short-term memory injection

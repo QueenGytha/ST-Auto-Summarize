@@ -74,9 +74,23 @@ function soft_reset_settings() {
     }
 }
 function reset_settings() {
-    // reset the current profile-specific settings to default
-    Object.assign(extension_settings[MODULE_NAME], structuredClone(default_settings))
-    refresh_settings();   // refresh the UI
+    // Reset ALL settings to defaults by completely replacing the extension settings object
+    // This ensures no leftover settings remain from previous configurations
+
+    // Clear all existing settings
+    delete extension_settings[MODULE_NAME];
+
+    // Set to fresh clone of defaults
+    extension_settings[MODULE_NAME] = structuredClone(default_settings);
+
+    // Save immediately
+    saveSettingsDebounced();
+
+    // Refresh the UI
+    refresh_settings();
+
+    log("All settings restored to defaults");
+    toast("All settings restored to defaults", "success");
 }
 function set_settings(key, value) {
     // Set a setting for the extension and save it

@@ -32,7 +32,7 @@ export const default_settings = {
     show_prefill: false,
     completion_preset: "",
     connection_profile: "",
-    auto_summarize: false,
+    auto_summarize: true,
     summarization_delay: 1,
     summarization_time_delay: 0,
     auto_summarize_batch_size: 1,
@@ -87,7 +87,7 @@ export const default_settings = {
     combined_summary_long_once: false,
     combined_summary_scene_count: 0,
     combined_summary_scene_once: false,
-    debug_mode: false,
+    debug_mode: true,
     display_memories: false, // Hide per-message summary display (not used with scene-based approach)
     default_chat_enabled: true,
     use_global_toggle_state: false,
@@ -165,4 +165,8 @@ Object.assign(default_settings, {
     running_scene_summary_connection_profile: "",
     running_scene_summary_auto_generate: true, // Auto-generate when new scene summary is created
     running_scene_summary_show_navbar: true, // Show version controls in navbar
+
+    // --- Operation Queue Settings ---
+    operation_queue_enabled: true, // Enable persistent operation queue (survives restarts)
+    operation_queue_display_enabled: true, // Show queue UI in navbar
 });
