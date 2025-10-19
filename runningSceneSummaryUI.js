@@ -6,6 +6,7 @@ import {
     log,
     error,
     toast,
+    get_data,
 } from './index.js';
 import {
     get_running_summary_versions,
@@ -149,6 +150,8 @@ function updateVersionSelector() {
     const $selector = $('#running_summary_version_selector');
     if (!$selector.length) return;
 
+    const ctx = getContext();
+    const chat = ctx.chat;
     const versions = get_running_summary_versions();
     const currentVersion = get_current_running_summary_version();
 
@@ -162,8 +165,25 @@ function updateVersionSelector() {
         return;
     }
 
+    // Filter out versions that reference deleted messages (defensive check)
+    const validVersions = versions.filter(v => {
+        const new_scene_idx = v.new_scene_index ?? 0;
+        // Check if the scene index is still valid and has a scene summary
+        if (new_scene_idx >= chat.length) return false;
+        const msg = chat[new_scene_idx];
+        return msg && get_data(msg, 'scene_summary_memory');
+    });
+
+    if (validVersions.length === 0) {
+        $selector.append('<option value="-1">No valid versions</option>');
+        $selector.val('-1');
+        $('#running_summary_edit_btn').prop('disabled', true);
+        debug(SUBSYSTEM.RUNNING, 'All versions reference deleted messages');
+        return;
+    }
+
     // Add versions (newest first)
-    const sortedVersions = versions.slice().sort((a, b) => b.version - a.version);
+    const sortedVersions = validVersions.slice().sort((a, b) => b.version - a.version);
     sortedVersions.forEach(v => {
         // Format: v0 (0 > 3), v1 (3 > 7), etc.
         const prev_idx = v.prev_scene_index ?? 0;
@@ -176,7 +196,7 @@ function updateVersionSelector() {
     $selector.val(currentVersion);
     $('#running_summary_edit_btn').prop('disabled', false);
 
-    debug(SUBSYSTEM.RUNNING, `Version selector updated: ${versions.length} versions, current: ${currentVersion}`);
+    debug(SUBSYSTEM.RUNNING, `Version selector updated: ${validVersions.length} valid versions (${versions.length - validVersions.length} filtered), current: ${currentVersion}`);
 }
 
 // Make functions globally accessible for scene navigator refresh

@@ -120,6 +120,7 @@ Object.assign(default_settings, {
     scene_summary_context_type: 'percent',
     scene_summary_completion_preset: "",
     scene_summary_history_mode: "both",
+    scene_summary_message_types: "both", // "user", "character", "both" - which message types to include
     scene_summary_template: default_scene_template,
     scene_summary_auto_name: true, // Auto-generate scene name when auto-generating scene summary (if not already set)
     scene_summary_auto_name_manual: true, // Auto-generate scene name when manually generating scene summary (if not already set)
@@ -137,10 +138,10 @@ Object.assign(default_settings, {
 
     // --- Auto Scene Break Detection Settings ---
     auto_scene_break_enabled: true,
-    auto_scene_break_on_load: true,
+    auto_scene_break_on_load: false,
     auto_scene_break_on_new_message: true,
     auto_scene_break_message_offset: 1,
-    auto_scene_break_check_which_messages: "both", // "user", "character", "both"
+    auto_scene_break_check_which_messages: "user", // "user", "character", "both"
     auto_scene_break_prompt: auto_scene_break_detection_prompt,
     auto_scene_break_prefill: "",
     auto_scene_break_connection_profile: "",

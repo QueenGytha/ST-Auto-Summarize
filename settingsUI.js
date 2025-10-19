@@ -442,7 +442,8 @@ Available Macros:
     bind_setting('#scene_summary_role', 'scene_summary_role');
     bind_setting('#scene_summary_scan', 'scene_summary_scan', 'boolean');
     bind_setting('#scene_summary_history_mode', 'scene_summary_history_mode', 'text');
-    
+    bind_setting('#scene_summary_message_types', 'scene_summary_message_types', 'text');
+
     // Persist and display scene_summary_history_count
     const $sceneHistoryCount = $('#scene_summary_history_count');
     const $sceneHistoryCountDisplay = $('#scene_summary_history_count_display');

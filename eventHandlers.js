@@ -52,6 +52,7 @@ import {
     get_scene_memory_injection,
     processSceneBreakOnChatLoad,
     processNewMessageForSceneBreak,
+    cleanup_invalid_running_summaries,
 } from './index.js';
 
 // Event handling
@@ -79,8 +80,15 @@ async function on_chat_event(event=null, data=null) {
         case 'message_deleted':   // message was deleted
             last_message_swiped = null;
             if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            debug("Message deleted, refreshing memory")
+            debug("Message deleted, refreshing memory and cleaning up running summaries")
             refresh_memory();
+            cleanup_invalid_running_summaries();
+            // Update the version selector UI after cleanup
+            if (typeof window.updateVersionSelector === 'function') {
+                window.updateVersionSelector();
+            }
+            // Refresh the scene navigator bar to remove deleted scenes
+            renderSceneNavigatorBar();
             break;
 
         case 'before_message':

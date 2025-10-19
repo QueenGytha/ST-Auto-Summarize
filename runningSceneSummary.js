@@ -438,6 +438,84 @@ async function auto_generate_running_summary(scene_index = null) {
 }
 
 /**
+ * Clean up running summary versions that reference deleted messages
+ * Should be called after messages are deleted
+ */
+function cleanup_invalid_running_summaries() {
+    const ctx = getContext();
+    const chat = ctx.chat;
+    const storage = get_running_summary_storage();
+    const versions = storage.versions || [];
+
+    if (versions.length === 0) {
+        debug(SUBSYSTEM.RUNNING, 'No running summary versions to clean up');
+        return;
+    }
+
+    // Get all valid scene summary indexes
+    const valid_scene_indexes = [];
+    for (let i = 0; i < chat.length; i++) {
+        const msg = chat[i];
+        if (get_data(msg, 'scene_summary_memory')) {
+            valid_scene_indexes.push(i);
+        }
+    }
+
+    debug(SUBSYSTEM.RUNNING, `Valid scene indexes: ${valid_scene_indexes.join(', ')}`);
+
+    // Find versions that reference deleted messages
+    const versions_to_delete = [];
+    for (const version of versions) {
+        const new_scene_idx = version.new_scene_index ?? 0;
+
+        // Check if the new_scene_index still exists and has a scene summary
+        // If new_scene_idx >= chat.length, the message was deleted
+        // If the message exists but has no scene summary, it was deleted or the summary was removed
+        if (new_scene_idx >= chat.length || !get_data(chat[new_scene_idx], 'scene_summary_memory')) {
+            versions_to_delete.push(version.version);
+            debug(SUBSYSTEM.RUNNING, `Version ${version.version} references invalid scene at index ${new_scene_idx}`);
+        }
+    }
+
+    // Delete invalid versions
+    if (versions_to_delete.length > 0) {
+        log(SUBSYSTEM.RUNNING, `Cleaning up ${versions_to_delete.length} invalid running summary version(s)`);
+
+        for (const version_num of versions_to_delete) {
+            delete_running_summary_version(version_num);
+        }
+
+        // After cleanup, if current version was deleted, it will be auto-set to the latest
+        // But we should also verify that the new current version is valid
+        const current_version = get_current_running_summary_version();
+        const current = get_running_summary(current_version);
+
+        if (current && current.new_scene_index >= chat.length) {
+            // Current version is still invalid, find the most recent valid one
+            const remaining_versions = get_running_summary_versions();
+            if (remaining_versions.length > 0) {
+                const valid_versions = remaining_versions.filter(v =>
+                    v.new_scene_index < chat.length &&
+                    get_data(chat[v.new_scene_index], 'scene_summary_memory')
+                );
+
+                if (valid_versions.length > 0) {
+                    const latest_valid = valid_versions.reduce((max, v) =>
+                        v.version > max.version ? v : max
+                    );
+                    set_current_running_summary_version(latest_valid.version);
+                    log(SUBSYSTEM.RUNNING, `Set current version to ${latest_valid.version} after cleanup`);
+                }
+            }
+        }
+
+        toast(`Cleaned up ${versions_to_delete.length} invalid running summary version(s)`, 'info');
+    } else {
+        debug(SUBSYSTEM.RUNNING, 'No invalid running summary versions found');
+    }
+}
+
+/**
  * Get running scene summary injection text for memory
  * @returns {string} Formatted injection text
  */
@@ -474,4 +552,5 @@ export {
     combine_scene_with_running_summary,
     auto_generate_running_summary,
     get_running_summary_injection,
+    cleanup_invalid_running_summaries,
 };

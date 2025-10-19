@@ -202,16 +202,19 @@ display_memories: false,          // Hide summaries (reduce clutter)
 **Current:**
 ```javascript
 scene_summary_history_mode: "both",      // Messages + summaries as context
+scene_summary_message_types: "both",     // Include all message types (user + AI)
 scene_summary_history_count: 1,          // Last 1 scene
 ```
 
 **Assessment:** ✅ **Keep as-is**
 
 **Reason:**
-- `"both"` mode includes previous scene's messages AND summary as context
+- `scene_summary_history_mode: "both"` includes previous scene's messages AND summary as context
+- `scene_summary_message_types: "both"` includes all messages (user and AI) for full context
 - Helps maintain continuity across scenes
 - Running summary will deduplicate anyway
 - Provides richer context for better scene summaries
+- Users can set to "user" or "character" if they only want specific message types
 
 ---
 

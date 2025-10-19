@@ -215,10 +215,10 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             </div>
             <textarea class="scene-summary-box auto_summarize_memory_text" placeholder="Scene summary...">${sceneSummary}</textarea>
             <div class="scene-summary-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
-                <button class="scene-rollback-summary menu_button" title="Go to previous summary"><i class="fa-solid fa-rotate-left"></i> Previous Summary</button>
-                <button class="scene-generate-summary menu_button" title="Generate summary for this scene"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
-                <button class="scene-rollforward-summary menu_button" title="Go to next summary"><i class="fa-solid fa-rotate-right"></i> Next Summary</button>
-                <button class="scene-regenerate-running menu_button" title="Combine this scene with current running summary" style="margin-left:auto;"><i class="fa-solid fa-sync-alt"></i> Combine</button>
+                <button class="scene-rollback-summary menu_button" title="Go to previous summary" style="white-space:nowrap;"><i class="fa-solid fa-rotate-left"></i> Previous Summary</button>
+                <button class="scene-generate-summary menu_button" title="Generate summary for this scene" style="white-space:nowrap;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
+                <button class="scene-rollforward-summary menu_button" title="Go to next summary" style="white-space:nowrap;"><i class="fa-solid fa-rotate-right"></i> Next Summary</button>
+                <button class="scene-regenerate-running menu_button" title="Combine this scene with current running summary" style="margin-left:auto; white-space:nowrap;"><i class="fa-solid fa-sync-alt"></i> Combine</button>
                 <span style="align-self:center; font-size:0.9em; color:inherit; margin-left:0.5em;">${versions.length > 1 ? `[${currentIdx + 1}/${versions.length}]` : ''}</span>
             </div>
         </div>
@@ -298,11 +298,18 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         let ctx = getContext();
 
         let mode = get_settings('scene_summary_history_mode') || "both";
+        let messageTypes = get_settings('scene_summary_message_types') || "both";
         let sceneObjects = [];
         for (let i = startIdx; i <= endIdx; i++) {
             const msg = chat[i];
             if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
-                sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+                // Filter by message type
+                const includeMessage = (messageTypes === "both") ||
+                                     (messageTypes === "user" && msg.is_user) ||
+                                     (messageTypes === "character" && !msg.is_user);
+                if (includeMessage) {
+                    sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+                }
             }
             if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
                 sceneObjects.push({ type: "summary", index: i, summary: get_memory(msg) });
@@ -336,11 +343,18 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
 
         // Collect scene objects (messages/summaries) as before
         let mode = get_settings('scene_summary_history_mode') || "both";
+        let messageTypes = get_settings('scene_summary_message_types') || "both";
         let sceneObjects = [];
         for (let i = startIdx; i <= endIdx; i++) {
             const msg = chat[i];
             if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
-                sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+                // Filter by message type
+                const includeMessage = (messageTypes === "both") ||
+                                     (messageTypes === "user" && msg.is_user) ||
+                                     (messageTypes === "character" && !msg.is_user);
+                if (includeMessage) {
+                    sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+                }
             }
             if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
                 sceneObjects.push({ type: "summary", index: i, summary: get_memory(msg) });
@@ -669,11 +683,18 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
 
     // Collect scene objects (messages/summaries)
     let mode = get_settings('scene_summary_history_mode') || "both";
+    let messageTypes = get_settings('scene_summary_message_types') || "both";
     let sceneObjects = [];
     for (let i = startIdx; i <= endIdx; i++) {
         const msg = chat[i];
         if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
-            sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+            // Filter by message type
+            const includeMessage = (messageTypes === "both") ||
+                                 (messageTypes === "user" && msg.is_user) ||
+                                 (messageTypes === "character" && !msg.is_user);
+            if (includeMessage) {
+                sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+            }
         }
         if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
             sceneObjects.push({ type: "summary", index: i, summary: get_memory(msg) });

@@ -143,6 +143,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - **Scene Completion Preset/Prefill/Context Limit:** Control how scene summaries are generated and injected.
 - **Scene Summary Injection Position/Depth/Role:** Where and how scene summaries are injected into the prompt.
 - **Scene Message History Mode/Count:** Configure which messages and how many are included as context for scene summaries.
+- **Include Message Types:** Choose whether to include user messages only, AI messages only, or both when generating scene summaries (default: both).
 - **Scene Summary Validation:** Optionally validate scene summaries using a second LLM pass.
 
 #### Running Scene Summary (Recommended)

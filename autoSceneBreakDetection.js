@@ -332,7 +332,7 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
 
     // Get settings
     const offset = Number(get_settings('auto_scene_break_message_offset')) ?? 0;
-    const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
+    const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'user';
 
     // Determine range
     const latestIndex = chat.length - 1;

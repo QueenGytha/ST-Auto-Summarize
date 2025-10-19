@@ -29,11 +29,11 @@ Automatic scene break detection uses an LLM to analyze messages and determine if
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `auto_scene_break_enabled` | boolean | false | Master enable/disable toggle |
-| `auto_scene_break_on_load` | boolean | true | Auto-check messages when chat loads |
+| `auto_scene_break_on_load` | boolean | false | Auto-check messages when chat loads |
 | `auto_scene_break_on_new_message` | boolean | true | Auto-check when new message arrives |
 | `auto_scene_break_generate_summary` | boolean | false | Auto-generate scene summary when scene break is detected (completes before checking next messages) |
 | `auto_scene_break_message_offset` | number | 1 | How many messages back from latest to skip (1 = skip latest, 0 = check all including latest) |
-| `auto_scene_break_check_which_messages` | string | "both" | Which messages to check: "user" (user only), "character" (AI only), "both" (all messages) |
+| `auto_scene_break_check_which_messages` | string | "user" | Which messages to check: "user" (user only), "character" (AI only), "both" (all messages) |
 | `auto_scene_break_prompt` | string | (see below) | LLM prompt template for detection |
 | `auto_scene_break_prefill` | string | "" | Prefill to enforce true/false output (optional) |
 | `auto_scene_break_connection_profile` | string | "" | Optional API connection profile |
