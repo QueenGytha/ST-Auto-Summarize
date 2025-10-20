@@ -7,10 +7,11 @@
   "scripts": {
     "lint": "eslint *.js",
     "lint:fix": "eslint *.js --fix",
-    "type-check": "tsc --noEmit",
+    "flow": "flow status --flowconfig-name .flowconfig",
+    "flow-check": "flow check --flowconfig-name .flowconfig",
     "audit": "npm audit --audit-level=moderate",
-    "analyze": "npm run lint && npm run type-check",
-    "analyze:full": "npm run lint && npm run type-check && npm run audit"
+    "analyze": "npm run lint && npm run flow-check",
+    "analyze:full": "npm run lint && npm run flow-check && npm run audit"
   },
   "keywords": [
     "sillytavern",
@@ -32,10 +33,16 @@
   },
   "homepage": "https://github.com/QueenGytha/ST-Auto-Summarize#readme",
   "devDependencies": {
+    "@babel/eslint-parser": "^7.28.4",
+    "@babel/plugin-syntax-flow": "^7.27.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.1",
     "eslint": "^9.38.0",
     "eslint-plugin-complexity": "^1.0.2",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-sonarjs": "^3.0.5",
+    "flow-bin": "^0.288.0",
+    "flowgen": "^1.21.0",
     "typescript": "^5.9.3"
   }
 }

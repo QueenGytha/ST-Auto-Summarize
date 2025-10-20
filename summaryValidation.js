@@ -1,3 +1,4 @@
+// @flow
 import {
     get_settings,
     getContext,
@@ -12,11 +13,12 @@ import {
     SUBSYSTEM
 } from './index.js';
 
-async function validate_summary(summary, type = "regular") {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function validate_summary(summary: any, type: any = "regular") {
     if (!get_settings('error_detection_enabled')) return true;
     
     // Check if error detection is enabled for this summary type
-    const enabled_key = type === "regular" ? 'regular_summary_error_detection_enabled' : 'combined_summary_error_detection_enabled';
+    const enabled_key = type === "regular" ? 'message_summary_error_detection_enabled' : 'combined_summary_error_detection_enabled';
     if (!get_settings(enabled_key)) return true;
     
     debug(SUBSYSTEM.VALIDATION, `Validating ${type} summary...`);
@@ -33,7 +35,7 @@ async function validate_summary(summary, type = "regular") {
 
     try {
         // Get the error detection prompt
-        const prompt_key = type === "regular" ? 'regular_summary_error_detection_prompt' : 'combined_summary_error_detection_prompt';
+        const prompt_key = type === "regular" ? 'message_summary_error_detection_prompt' : 'combined_summary_error_detection_prompt';
         let prompt = get_settings(prompt_key);
 
         // Substitute the summary in the prompt
@@ -44,7 +46,7 @@ async function validate_summary(summary, type = "regular") {
         current_profile = await get_current_connection_profile();
 
         // Set the error detection preset
-        const preset_key = type === "regular" ? 'regular_summary_error_detection_preset' : 'combined_summary_error_detection_preset';
+        const preset_key = type === "regular" ? 'message_summary_error_detection_preset' : 'combined_summary_error_detection_preset';
         const error_preset = get_settings(preset_key);
         if (error_preset) {
             debug(SUBSYSTEM.VALIDATION, `Using custom validation preset: ${error_preset}`);
@@ -52,7 +54,7 @@ async function validate_summary(summary, type = "regular") {
         }
 
         // Add prefill if configured
-        const prefill_key = type === "regular" ? 'regular_summary_error_detection_prefill' : 'combined_summary_error_detection_prefill';
+        const prefill_key = type === "regular" ? 'message_summary_error_detection_prefill' : 'combined_summary_error_detection_prefill';
         const prefill = get_settings(prefill_key);
         if (prefill) {
             debug(SUBSYSTEM.VALIDATION, `Adding prefill to validation prompt`);

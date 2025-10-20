@@ -1,6 +1,8 @@
+// @flow
 import { formatInstructModeChat } from './index.js';
 
-function system_prompt_split(text) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function system_prompt_split(text: any) {
     // Given text with some number of {{macro}} items, split the text by these items and format the rest as system messages surrounding the macros
     // It is assumed that the macros will be later replaced with appropriate text
 
@@ -20,7 +22,8 @@ function system_prompt_split(text) {
     })
     return formatted.join('')
 }
-function substitute_conditionals(text, params) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function substitute_conditionals(text: any, params: any) {
     // substitute any {{#if macro}} ... {{/if}} blocks in the text with the corresponding content if the macro is present in the params object.
     // Does NOT replace the actual macros, that is done in substitute_params()
 
@@ -36,7 +39,8 @@ function substitute_conditionals(text, params) {
     })
     return formatted.join('')
 }
-function substitute_params(text, params) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function substitute_params(text: any, params: any) {
     // custom function to parse macros because I literally cannot find where ST does it in their code.
     // Does NOT take into account {{#if macro}} ... {{/if}} blocks, that is done in substitute_conditionals()
     // If the macro is not found in the params object, it is replaced with an empty string

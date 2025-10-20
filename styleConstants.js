@@ -1,8 +1,7 @@
+// @flow
 // CSS classes (must match the CSS file because I'm too stupid to figure out how to do this properly)
 const css_message_div = "auto_summarize_memory_display"
-const css_short_memory = "auto_summarize_short_memory"
-const css_long_memory = "auto_summarize_long_memory"
-const css_remember_memory = `auto_summarize_old_memory`
+const css_single_message_summary = "auto_summarize_single_message_summary"
 const css_exclude_memory = `auto_summarize_exclude_memory`
 const css_lagging_memory = `auto_summarize_lagging_memory`
 const summary_div_class = `auto_summarize_memory_text`  // class put on all added summary divs to identify them
@@ -19,13 +18,11 @@ const MODULE_NAME = 'auto_summarize_memory';
 const MODULE_NAME_FANCY = 'ST-Auto-Summarize';
 const PROGRESS_BAR_ID = `${MODULE_NAME}_progress_bar`;
 
-// Macros for long-term and short-term memory injection
-const long_memory_macro = `long_term_memory`;
-const short_memory_macro = `short_term_memory`;
+// Macros for single message summary injection
+const single_message_summary_macro = `single_message_summary`;
 const generic_memories_macro = `memories`;
 
 // message button classes
-const remember_button_class = `${MODULE_NAME}_remember_button`
 const summarize_button_class = `${MODULE_NAME}_summarize_button`
 const edit_button_class = `${MODULE_NAME}_edit_button`
 const forget_button_class = `${MODULE_NAME}_forget_button`
@@ -37,9 +34,7 @@ const combined_memory_macro = `combined_memory`;
 
 export {
     css_message_div,
-    css_short_memory,
-    css_long_memory,
-    css_remember_memory,
+    css_single_message_summary,
     css_exclude_memory,
     css_lagging_memory,
     summary_div_class,
@@ -53,10 +48,8 @@ export {
     MODULE_NAME,
     MODULE_NAME_FANCY,
     PROGRESS_BAR_ID,
-    long_memory_macro,
-    short_memory_macro,
+    single_message_summary_macro,
     generic_memories_macro,
-    remember_button_class,
     summarize_button_class,
     edit_button_class,
     forget_button_class,

@@ -18,40 +18,32 @@
                 <div class="flex-container justifyspacebetween alignitemscenter">
                     <button id="toggle_chat_memory" class="menu_button flex2" title="Toggle whether memory is enabled for this chat specifically (overrides all settings)."><span>Toggle Memory</span></button>
                     <button id="edit_memory_state" class="menu_button flex2" title="Edit the memories in chat."><span>Edit Memory</span></button>
-                    <button id="view_combined_summary" class="menu_button flex2" title="View the current combined summary"><span>View Combined Summary</span></button>
                     <button id="refresh_memory" class="menu_button fa-solid fa-sync margin0" title="Just refreshes which memories are included and re-renders the memories under each message, doesn't change summaries. This is done automatically all the time, the button is here just in case."></button>
                 </div>
 
                 <hr>
 
-                <div class="inline-drawer">
-                    <div class="inline-drawer-toggle inline-drawer-header">
-                        <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Configuration Profiles</h4>
-                            <button id="import_profile"     class="menu_button fa-solid fa-file-import"    title="Import a config profile"></button>
-                            <button id="export_profile"     class="menu_button fa-solid fa-file-export"    title="Export the current config profile"></button>
-                            <input id="import_file" type="file" hidden="" accept=".json">
-                        </div>
-                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                    </div>
-                    <div class="inline-drawer-content">
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <select id="profile"            class="flex1 text_pole"                                 title="The currently selected profile"></select>
-                            <button id="save_profile"       class="menu_button fa-solid fa-save interactable"       title="Save current profile" tabindex="0"></button>
-                            <button id="rename_profile"     class="menu_button fa-solid fa-pencil interactable"     title="Rename current profile" tabindex="0"></button>
-                            <button id="new_profile"        class="menu_button fa-solid fa-file-circle-plus interactable" title="Create new profile" tabindex="0"></button>
-                            <button id="restore_profile"    class="menu_button fa-solid fa-recycle interactable"    title="Restore current profile" tabindex="0"></button>
-                            <button id="delete_profile"     class="menu_button fa-solid fa-trash-can interactable"  title="Delete current profile" tabindex="0"></button>
-                        </div>
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="character_profile" class="menu_button interactable" title="Auto-load profile for current character" tabindex="0"><i class="fa-solid fa-unlock" style="margin-right: 1em"></i>Character</button>
-                            <button id="chat_profile"      class="menu_button interactable" title="Auto-load profile for current chat"      tabindex="0"><i class="fa-solid fa-unlock" style="margin-right: 1em"></i>Chat</button>
-                            <label class="checkbox_label" title="Show a notification upon switching profiles">
-                                <input id="notify_on_profile_switch" type="checkbox" />
-                                <span>Notify on Switch</span>
-                            </label>
-                        </div>
-                    </div>
+                <div class="flex-container alignitemscenter margin0">
+                    <h4 class="margin0">Configuration Profiles</h4>
+                    <button id="import_profile"     class="menu_button fa-solid fa-file-import"    title="Import a config profile"></button>
+                    <button id="export_profile"     class="menu_button fa-solid fa-file-export"    title="Export the current config profile"></button>
+                    <input id="import_file" type="file" hidden="" accept=".json">
+                </div>
+                <div class="flex-container justifyspacebetween alignitemscenter">
+                    <select id="profile"            class="flex1 text_pole"                                 title="The currently selected profile"></select>
+                    <button id="save_profile"       class="menu_button fa-solid fa-save interactable"       title="Save current profile" tabindex="0"></button>
+                    <button id="rename_profile"     class="menu_button fa-solid fa-pencil interactable"     title="Rename current profile" tabindex="0"></button>
+                    <button id="new_profile"        class="menu_button fa-solid fa-file-circle-plus interactable" title="Create new profile" tabindex="0"></button>
+                    <button id="restore_profile"    class="menu_button fa-solid fa-recycle interactable"    title="Restore current profile" tabindex="0"></button>
+                    <button id="delete_profile"     class="menu_button fa-solid fa-trash-can interactable"  title="Delete current profile" tabindex="0"></button>
+                </div>
+                <div class="flex-container justifyspacebetween alignitemscenter">
+                    <button id="character_profile" class="menu_button interactable" title="Auto-load profile for current character" tabindex="0"><i class="fa-solid fa-unlock" style="margin-right: 1em"></i>Character</button>
+                    <button id="chat_profile"      class="menu_button interactable" title="Auto-load profile for current chat"      tabindex="0"><i class="fa-solid fa-unlock" style="margin-right: 1em"></i>Chat</button>
+                    <label class="checkbox_label" title="Show a notification upon switching profiles">
+                        <input id="notify_on_profile_switch" type="checkbox" />
+                        <span>Notify on Switch</span>
+                    </label>
                 </div>
 
 
@@ -193,7 +185,7 @@
                 <div class="inline-drawer">
                     <div class="inline-drawer-toggle inline-drawer-header">
                         <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">General Injection Settings <i class="fa-solid fa-info-circle" title="Determines how summaries are injected into context, applying to both short and long term memory."></i></h4>
+                            <h4 class="margin0">General Injection Settings <i class="fa-solid fa-info-circle" title="Determines how summaries are injected into context."></i></h4>
                         </div>
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
@@ -215,38 +207,25 @@
                             <span>Preserve Last User Message</span>
                         </label>
                         <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_short_term_injection_template" class="menu_button flex1" title="Edit the short-term memory injection template">Edit Short-term Injection Template</button>
-                            <input id="short_template" type="hidden" />
-                        </div>
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_long_term_injection_template" class="menu_button flex1" title="Edit the long-term memory injection template">Edit Long-term Injection Template</button>
-                            <input id="long_template" type="hidden" />
-                        </div>
-                        <div class="flex-container justifyspacebetween alignitemscenter">
                             <button id="edit_scene_injection_template" class="menu_button flex1" title="Edit the scene summary injection template">Edit Scene Injection Template</button>
                             <input id="scene_summary_template" type="hidden" />
-                        </div>
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_combined_injection_template" class="menu_button flex1" title="Edit the combined summary injection template">Edit Combined Injection Template</button>
-                            <input id="combined_summary_template" type="hidden" />
                         </div>
                     </div>
                 </div>
 
 
-                <!-- Short-term memory -->
+                <!-- Message Summaries -->
                 <hr>
                 <div class="inline-drawer">
                     <div class="inline-drawer-toggle inline-drawer-header">
                         <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Short-term Memory Injection <i class="fa-solid fa-info-circle" title="Determines which messages are included in the short-term memory injection and where. If you change this and include messages that weren't summarized previously, you can either manually trigger a re-summarization or just wait until automatic summarization triggers."></i></h4>
+                            <h4 class="margin0">Message Summaries <i class="fa-solid fa-info-circle" title="Controls which messages are summarized and stored in memory."></i></h4>
                         </div>
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
                         <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_short_term_memory_prompt" class="menu_button flex1" title="Edit the short-term memory prompt"><span>Edit Short-term Prompt</span></button>
-                            <!--<button id="preview_short_term_memory" class="menu_button fa-solid fa-eye interactable" title="Preview the short-term memory injection" tabindex="0"></button>-->
+                            <button id="edit_message_summary_memory_prompt" class="menu_button flex1" title="Edit the message summary prompt"><span>Edit Message Summary Prompt</span></button>
                         </div>
 
                         <label title="Auto-summarize user messages and include summaries in memory." class="checkbox_label">
@@ -272,114 +251,20 @@
                         <br>
 
                         <div class="flex-container justifyspacebetween">
-                            <label title="The max amount of context that short-term memory can take up (percent or number of tokens).">
-                                <input id="short_term_context_limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
-                                <span>Context (<span id="short_term_context_limit_display"></span> tk)</span>
+                            <label title="The max amount of context that message summaries can take up (percent or number of tokens).">
+                                <input id="message_summary_context_limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
+                                <span>Context Limit (<span id="message_summary_context_limit_display"></span> tk)</span>
                             </label>
                             <div>
                                 <label>
-                                    <input type="radio" name="short_term_context_type" value="percent" />
+                                    <input type="radio" name="message_summary_context_type" value="percent" />
                                     <span>%</span>
                                 </label>
                                 <label>
-                                    <input type="radio" name="short_term_context_type" value="tokens" />
+                                    <input type="radio" name="message_summary_context_type" value="tokens" />
                                     <span>tk</span>
                                 </label>
                             </div>
-                        </div>
-
-                        <label class="checkbox_label" title="Include short-term memory in the World Info Scan">
-                            <input id="short_term_scan" type="checkbox" />
-                            <span>Include in World Info Scanning</span>
-                        </label>
-                        <div class="radio_group">
-                            <label title="You can instead inject it into your story string manually with the {{short_term_memory}} macro">
-                                <input type="radio" name="short_term_position" value="-1" />
-                                <span>Do not inject</span>
-                            </label>
-                            <label>
-                                <input type="radio" name="short_term_position" value="2" />
-                                <span>Before main prompt</span>
-                            </label>
-                            <label>
-                                <input type="radio" name="short_term_position" value="0" />
-                                <span>After main prompt</span>
-                            </label>
-                            <label class="flex-container alignItemsCenter" title="How many messages before the current end of the chat.">
-                                <input type="radio" name="short_term_position" value="1" />
-                                <span>In chat at depth</span>
-                                <input id="short_term_depth" class="text_pole inline_setting" type="number" min="0" max="99" />
-                                <span>as</span>
-                                <select id="short_term_role" class="text_pole inline_setting">
-                                    <option value="0">System</option>
-                                    <option value="1">User</option>
-                                    <option value="2">Assistant</option>
-                                </select>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Long-term memory -->
-                <hr>
-                <div class="inline-drawer">
-                    <div class="inline-drawer-toggle inline-drawer-header">
-                        <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Long-Term Memory Injection <i class="fa-solid fa-info-circle" title="Determines where long-term messages are injected."></i></h4>
-                        </div>
-                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                    </div>
-                    <div class="inline-drawer-content">
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_long_term_memory_prompt" class="menu_button flex1" title="Edit the long-term memory prompt"><span>Edit Long-term Prompt</span></button>
-                            <!--<button id="preview_long_term_memory" class="menu_button fa-solid fa-eye interactable" title="Preview the long-term memory injection" tabindex="0"></button>-->
-                        </div>
-
-                        <div class="flex-container justifyspacebetween">
-                            <label title="The max amount of the context that long-term memory can take up (percent or number of tokens).">
-                                <input id="long_term_context_limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
-                                <span>Context (<span id="long_term_context_limit_display"></span> tk)</span>
-                            </label>
-                           <div>
-                                <label>
-                                    <input type="radio" name="long_term_context_type" value="percent" />
-                                    <span>%</span>
-                                </label>
-                                <label>
-                                    <input type="radio" name="long_term_context_type" value="tokens" />
-                                    <span>tk</span>
-                                </label>
-                            </div>
-
-                        </div>
-                        <label class="checkbox_label" title="Include long-term memory in the World Info Scan">
-                            <input id="long_term_scan" type="checkbox" />
-                            <span>Include in World Info Scanning</span>
-                        </label>
-                        <div class="radio_group">
-                            <label title="You can instead inject it into your story string manually with the {{long_term_memory}} macro">
-                                <input type="radio" name="long_term_position" value="-1" />
-                                <span>Do not inject</span>
-                            </label>
-                            <label>
-                                <input type="radio" name="long_term_position" value="2" />
-                                <span>Before main prompt</span>
-                            </label>
-                            <label>
-                                <input type="radio" name="long_term_position" value="0" />
-                                <span>After main prompt</span>
-                            </label>
-                            <label class="flex-container alignItemsCenter" title="How many messages before the current end of the chat.">
-                                <input type="radio" name="long_term_position" value="1" />
-                                <span>In chat at depth</span>
-                                <input id="long_term_depth" class="text_pole inline_setting" type="number" min="0" max="99" />
-                                <span>as</span>
-                                <select id="long_term_role" class="text_pole inline_setting">
-                                    <option value="0">System</option>
-                                    <option value="1">User</option>
-                                    <option value="2">Assistant</option>
-                                </select>
-                            </label>
                         </div>
                     </div>
                 </div>
@@ -658,126 +543,6 @@
                     </div>
                 </div>
 
-                <!-- Combined Summary -->
-                <hr>
-                <div class="inline-drawer">
-                    <div class="inline-drawer-toggle inline-drawer-header">
-                        <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Combined Summary <i class="fa-solid fa-info-circle" title="Combine all summaries into a single summary, removing repetition."></i></h4>
-                        </div>
-                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                    </div>
-                    <div class="inline-drawer-content">
-                <label class="checkbox_label" title="Enable combined summary injection.">
-                    <input id="combined_summary_enabled" type="checkbox" />
-                    <span>Enable Combined Summary</span>
-                </label>
-                <label class="checkbox_label" title="Only run combined summary after this many new summaries.">
-                    <input id="combined_summary_run_interval" class="text_pole widthUnset inline_setting" type="number" min="1" max="999" />
-                    <span>Combined Summary Interval</span>
-                </label>
-                <label class="checkbox_label" title="Show a popup notification when generating a combined summary.">
-                    <input id="show_combined_summary_toast" type="checkbox" />
-                    <span>Show toast popup when generating combined summary</span>
-                </label>
-                <div class="flex-container justifyspacebetween alignitemscenter">
-                    <button id="edit_combined_summary_prompt" class="menu_button flex1" title="Edit the combined summary prompt"><span>Edit Combined Prompt</span></button>
-                </div>
-                <input id="combined_summary_prompt" type="hidden" />
-                <input id="combined_summary_template" type="hidden" />
-                <table>
-                    <tr>
-                        <td><span>Combined Completion Preset</span></td>
-                        <td><select id="combined_summary_completion_preset" class="text_pole"></select></td>
-                    </tr>
-                    <tr>
-                        <td><span>Combined Summary Prefill</span></td>
-                        <td><input id="combined_summary_prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
-                    </tr>
-                    <tr>
-                        <td><span>Short-term Memory Count</span></td>
-                        <td>
-                            <input id="combined_summary_short_count" class="text_pole" type="number" min="-1" max="999" value="0" title="How many short-term summaries to include (-1 to exclude, 0 for unlimited)" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><span>Mark Short-term as Used</span></td>
-                        <td>
-                            <label class="checkbox_label" title="Mark short-term summaries as used after combining">
-                                <input id="combined_summary_short_once" type="checkbox" />
-                                <span>After combining</span>
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><span>Long-term Memory Count</span></td>
-                        <td>
-                            <input id="combined_summary_long_count" class="text_pole" type="number" min="-1" max="999" value="0" title="How many long-term summaries to include (-1 to exclude, 0 for unlimited)" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><span>Mark Long-term as Used</span></td>
-                        <td>
-                            <label class="checkbox_label" title="Mark long-term summaries as used after combining">
-                                <input id="combined_summary_long_once" type="checkbox" />
-                                <span>After combining</span>
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><span>Scene Summaries Count</span></td>
-                        <td>
-                            <input id="combined_summary_scene_count" class="text_pole" type="number" min="-1" max="999" value="0" title="How many scene summaries to include (-1 to exclude, 0 for unlimited)" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><span>Mark Scene Summaries as Used</span></td>
-                        <td>
-                            <label class="checkbox_label" title="Mark scene summaries as used after combining">
-                                <input id="combined_summary_scene_once" type="checkbox" />
-                                <span>After combining</span>
-                            </label>
-                        </td>
-                    </tr>
-                </table>
-                <label title="Where to inject the combined summary.">
-                    <select id="combined_summary_position" class="text_pole">
-                        <option value="-1">Do not inject</option>
-                        <option value="2">Before main prompt</option>
-                        <option value="0">After main prompt</option>
-                        <option value="1">In chat at depth</option>
-                    </select>
-                </label>
-                <label title="Depth for in-chat injection.">
-                    <input id="combined_summary_depth" class="text_pole inline_setting" type="number" min="0" max="99" />
-                    <span>Depth</span>
-                </label>
-                <label title="Role for in-chat injection.">
-                    <select id="combined_summary_role" class="text_pole inline_setting">
-                        <option value="0">System</option>
-                        <option value="1">User</option>
-                        <option value="2">Assistant</option>
-                    </select>
-                </label>
-                <label class="checkbox_label" title="Include in World Info Scanning">
-                    <input id="combined_summary_scan" type="checkbox" />
-                    <span>Include in World Info Scanning</span>
-                </label>
-                        <label title="Context limit for combined summary.">
-                            <input id="combined_summary_context_limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
-                            <span>Context Limit</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="combined_summary_context_type" value="percent" />
-                            <span>%</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="combined_summary_context_type" value="tokens" />
-                            <span>tk</span>
-                        </label>
-                    </div>
-                </div>
-
                 <!-- Error Detection -->
                 <hr>
                 <div class="inline-drawer">
@@ -795,25 +560,25 @@
 
                         <!-- Regular summary validation -->
                 <label class="checkbox_label error_detection_setting" title="Enable validation for regular message summaries">
-                    <input id="regular_summary_error_detection_enabled" type="checkbox" />
+                    <input id="message_summary_error_detection_enabled" type="checkbox" />
                     <span>Validate Regular Summaries</span>
                 </label>
                 <div class="flex-container justifyspacebetween alignitemscenter">
-                    <button id="edit_regular_summary_error_detection_prompt" class="menu_button flex1 error_detection_setting" title="Edit the validation prompt for regular message summaries"><span>Edit Regular Summary Validation Prompt</span></button>
+                    <button id="edit_message_summary_error_detection_prompt" class="menu_button flex1 error_detection_setting" title="Edit the validation prompt for regular message summaries"><span>Edit Message Summary Validation Prompt</span></button>
                 </div>
 
                 <table class="regular_error_detection_container">
                     <tr>
-                        <td><span>Regular Summary Validation Preset</span></td>
-                        <td><select id="regular_summary_error_detection_preset" class="text_pole regular_error_detection_setting"></select></td>
+                        <td><span>Message Summary Validation Preset</span></td>
+                        <td><select id="message_summary_error_detection_preset" class="text_pole regular_error_detection_setting"></select></td>
                     </tr>
                     <tr>
-                        <td><span>Regular Summary Validation Prefill</span></td>
-                        <td><input id="regular_summary_error_detection_prefill" class="text_pole regular_error_detection_setting" type="text" placeholder="Start reply with..."></td>
+                        <td><span>Message Summary Validation Prefill</span></td>
+                        <td><input id="message_summary_error_detection_prefill" class="text_pole regular_error_detection_setting" type="text" placeholder="Start reply with..."></td>
                     </tr>
                     <tr>
-                        <td><span>Regular Summary Max Retry Attempts</span></td>
-                        <td><input id="regular_summary_error_detection_retries" class="text_pole regular_error_detection_setting" type="number" min="1" max="10" value="3"></td>
+                        <td><span>Message Summary Max Retry Attempts</span></td>
+                        <td><input id="message_summary_error_detection_retries" class="text_pole regular_error_detection_setting" type="number" min="1" max="10" value="3"></td>
                     </tr>
                 </table>
 
@@ -841,33 +606,8 @@
                 </table>
                 <input id="scene_summary_error_detection_prompt" type="hidden" />
 
-                <!-- Combined summary validation -->
-                <label class="checkbox_label error_detection_setting" title="Enable validation for combined summaries">
-                    <input id="combined_summary_error_detection_enabled" type="checkbox" />
-                    <span>Validate Combined Summaries</span>
-                </label>
-                <div class="flex-container justifyspacebetween alignitemscenter">
-                    <button id="edit_combined_summary_error_detection_prompt" class="menu_button flex1 error_detection_setting" title="Edit the validation prompt for combined summaries"><span>Edit Combined Summary Validation Prompt</span></button>
-                </div>
-
-                <table class="combined_error_detection_container">
-                    <tr>
-                        <td><span>Combined Summary Validation Preset</span></td>
-                        <td><select id="combined_summary_error_detection_preset" class="text_pole combined_error_detection_setting"></select></td>
-                    </tr>
-                    <tr>
-                        <td><span>Combined Summary Validation Prefill</span></td>
-                        <td><input id="combined_summary_error_detection_prefill" class="text_pole combined_error_detection_setting" type="text" placeholder="Start reply with..."></td>
-                    </tr>
-                    <tr>
-                        <td><span>Combined Summary Max Retry Attempts</span></td>
-                        <td><input id="combined_summary_error_detection_retries" class="text_pole combined_error_detection_setting" type="number" min="1" max="10" value="3"></td>
-                    </tr>
-                </table>
-
                         <!-- Store the prompts in hidden inputs since they're edited via the edit dialog -->
-                        <input id="regular_summary_error_detection_prompt" type="hidden" />
-                        <input id="combined_summary_error_detection_prompt" type="hidden" />
+                        <input id="message_summary_error_detection_prompt" type="hidden" />
                     </div>
                 </div>
 

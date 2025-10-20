@@ -1,3 +1,4 @@
+// @flow
 import {
     get_settings,
     getContext,
@@ -21,6 +22,7 @@ import {
  */
 function createRunningSceneSummaryNavbar() {
     // Remove existing controls if present
+    // $FlowFixMe[cannot-resolve-name]
     $('#scene-summary-navigator-bar .running-summary-controls').remove();
 
     // Create controls HTML (version selector and edit button only, no regenerate)
@@ -44,10 +46,13 @@ function createRunningSceneSummaryNavbar() {
     `;
 
     // Ensure scene navigator bar exists
+    // $FlowFixMe[cannot-resolve-name]
     let $navbar = $('#scene-summary-navigator-bar');
     if (!$navbar.length) {
         // Create the bar if it doesn't exist
+        // $FlowFixMe[cannot-resolve-name]
         $navbar = $('<div id="scene-summary-navigator-bar"></div>');
+        // $FlowFixMe[cannot-resolve-name]
         $('#sheld').after($navbar);
         log(SUBSYSTEM.RUNNING, 'Created scene navigator bar for running summary controls');
     }
@@ -55,7 +60,9 @@ function createRunningSceneSummaryNavbar() {
     $navbar.append(html);
 
     // Bind event handlers
-    $('#running_summary_version_selector').on('change', async function() {
+    // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
+    $('#running_summary_version_selector').on('change', async function (this: any) {
+        // $FlowFixMe[cannot-resolve-name]
         const versionNum = parseInt($(this).val());
         if (versionNum === -1) {
             set_current_running_summary_version(0);
@@ -65,6 +72,7 @@ function createRunningSceneSummaryNavbar() {
         debug(SUBSYSTEM.RUNNING, `Switched to running summary version ${versionNum}`);
     });
 
+    // $FlowFixMe[cannot-resolve-name]
     $('#running_summary_edit_btn').on('click', async function() {
         const current = get_running_summary(get_current_running_summary_version());
         if (!current) {
@@ -90,6 +98,7 @@ function createRunningSceneSummaryNavbar() {
             });
 
             if (result) {
+                // $FlowFixMe[cannot-resolve-name]
                 const edited = $('#running_summary_edit_textarea').val();
                 if (edited !== null && edited !== current.content) {
                     // Editing creates a new version with same scene indexes
@@ -124,6 +133,7 @@ function updateRunningSceneSummaryNavbar() {
     const show = get_settings('running_scene_summary_enabled') &&
                  get_settings('running_scene_summary_show_navbar');
 
+    // $FlowFixMe[cannot-resolve-name]
     const $controls = $('#scene-summary-navigator-bar .running-summary-controls');
 
     if (!$controls.length) {
@@ -148,6 +158,7 @@ function updateRunningSceneSummaryNavbar() {
  * Update the version selector dropdown
  */
 function updateVersionSelector() {
+    // $FlowFixMe[cannot-resolve-name]
     const $selector = $('#running_summary_version_selector');
     if (!$selector.length) return;
 
@@ -162,6 +173,7 @@ function updateVersionSelector() {
     if (versions.length === 0) {
         $selector.append('<option value="-1">No versions</option>');
         $selector.val('-1');
+        // $FlowFixMe[cannot-resolve-name]
         $('#running_summary_edit_btn').prop('disabled', true);
         return;
     }
@@ -178,6 +190,7 @@ function updateVersionSelector() {
     if (validVersions.length === 0) {
         $selector.append('<option value="-1">No valid versions</option>');
         $selector.val('-1');
+        // $FlowFixMe[cannot-resolve-name]
         $('#running_summary_edit_btn').prop('disabled', true);
         debug(SUBSYSTEM.RUNNING, 'All versions reference deleted messages');
         return;
@@ -195,13 +208,16 @@ function updateVersionSelector() {
 
     // Set current selection
     $selector.val(currentVersion);
+    // $FlowFixMe[cannot-resolve-name]
     $('#running_summary_edit_btn').prop('disabled', false);
 
     debug(SUBSYSTEM.RUNNING, `Version selector updated: ${validVersions.length} valid versions (${versions.length - validVersions.length} filtered), current: ${currentVersion}`);
 }
 
 // Make functions globally accessible for scene navigator refresh
+// $FlowFixMe[cannot-resolve-name]
 window.updateRunningSceneSummaryNavbar = updateRunningSceneSummaryNavbar;
+// $FlowFixMe[cannot-resolve-name]
 window.updateVersionSelector = updateVersionSelector;
 
 export {

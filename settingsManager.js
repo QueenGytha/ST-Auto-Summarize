@@ -1,3 +1,4 @@
+// @flow
 import {
     log,
     error,
@@ -46,9 +47,12 @@ function initialize_settings() {
 }
 function hard_reset_settings() {
     // Set the settings to the completely fresh values, deleting all profiles too
+    // $FlowFixMe[prop-missing]
     if (global_settings['profiles']['Default'] === undefined) {  // if the default profile doesn't exist, create it
+        // $FlowFixMe[prop-missing] [cannot-resolve-name]
         global_settings['profiles']['Default'] = structuredClone(default_settings);
     }
+    // $FlowFixMe[cannot-resolve-name]
     extension_settings[MODULE_NAME] = structuredClone({
         ...default_settings,
         ...global_settings
@@ -57,7 +61,9 @@ function hard_reset_settings() {
 function soft_reset_settings() {
     // fix any missing settings without destroying profiles
     extension_settings[MODULE_NAME] = Object.assign(
+        // $FlowFixMe[cannot-resolve-name]
         structuredClone(default_settings),
+        // $FlowFixMe[cannot-resolve-name]
         structuredClone(global_settings),
         extension_settings[MODULE_NAME]
     );
@@ -66,10 +72,12 @@ function soft_reset_settings() {
     const profiles = get_settings('profiles');
     if (Object.keys(profiles).length === 0) {
         log("No profiles found, creating default profile.")
+        // $FlowFixMe[cannot-resolve-name]
         profiles['Default'] = structuredClone(default_settings);
         set_settings('profiles', profiles);
     } else { // for each existing profile, add any missing default settings without overwriting existing settings
         for (const [profile, settings] of Object.entries(profiles)) {
+            // $FlowFixMe[cannot-resolve-name]
             profiles[profile] = Object.assign(structuredClone(default_settings), settings);
         }
         set_settings('profiles', profiles);
@@ -83,6 +91,7 @@ function reset_settings() {
     delete extension_settings[MODULE_NAME];
 
     // Set to fresh clone of defaults
+    // $FlowFixMe[cannot-resolve-name]
     extension_settings[MODULE_NAME] = structuredClone(default_settings);
 
     // Save immediately
@@ -94,36 +103,44 @@ function reset_settings() {
     log("All settings restored to defaults");
     toast("All settings restored to defaults", "success");
 }
-function set_settings(key, value) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function set_settings(key: any, value: any) {
     // Set a setting for the extension and save it
     extension_settings[MODULE_NAME][key] = value;
     saveSettingsDebounced();
 }
-function get_settings(key) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function get_settings(key: any) {
     // Get a setting for the extension, or the default value if not set
     return extension_settings[MODULE_NAME]?.[key] ?? default_settings[key];
 }
-function get_settings_element(key) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function get_settings_element(key: any) {
     return settings_ui_map[key]?.[0]
 }
+// $FlowFixMe[signature-verification-failure]
 async function get_manifest() {
     // Get the manifest.json for the extension
     const module_dir = get_extension_directory();
     const path = `${module_dir}/manifest.json`
+    // $FlowFixMe[cannot-resolve-name]
     const response = await fetch(path)
     if (response.ok) {
         return await response.json();
     }
     error(`Error getting manifest.json from "${path}": status: ${response.status}`);
 }
+// $FlowFixMe[signature-verification-failure]
 async function load_settings_html() {
     // fetch the settings html file and append it to the settings div.
     log("Loading settings.html...")
 
     const module_dir = get_extension_directory()
     const path = `${module_dir}/settings.html`
+    // $FlowFixMe[cannot-resolve-name]
     const found = await $.get(path).then(async response => {
         log(`Loaded settings.html at "${path}"`)
+        // $FlowFixMe[cannot-resolve-name]
         $("#extensions_settings2").append(response);  // load html into the settings div\
         return true
     }).catch((response) => {
@@ -134,6 +151,7 @@ async function load_settings_html() {
     return new Promise(resolve => resolve(found))
 }
 
+// $FlowFixMe[signature-verification-failure]
 function chat_enabled() {
     // check if the extension is enabled in the current chat
     const context = getContext();
@@ -146,7 +164,8 @@ function chat_enabled() {
     // per-chat state
     return get_settings('chats_enabled')?.[context.chatId] ?? get_settings('default_chat_enabled')
 }
-function toggle_chat_enabled(value=null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function toggle_chat_enabled(value: any=null) {
     // Change the state of the extension. If value is null, toggle. Otherwise, set to the given value
     const current = chat_enabled();
 
@@ -168,8 +187,10 @@ function toggle_chat_enabled(value=null) {
 
 
     if (value) {
+        // $FlowFixMe[cannot-resolve-name]
         toastr.info(`Memory is now enabled for this chat`);
     } else {
+        // $FlowFixMe[cannot-resolve-name]
         toastr.warning(`Memory is now disabled for this chat`);
     }
     refresh_memory()
@@ -183,7 +204,8 @@ function toggle_chat_enabled(value=null) {
     // scroll to the bottom of the chat
     scrollChatToBottom()
 }
-function character_enabled(character_key) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function character_enabled(character_key: any) {
     // check if the given character is enabled for summarization in the current chat
     const group_id = selected_group
     if (selected_group === null) return true;  // not in group chat, always enabled
@@ -194,7 +216,8 @@ function character_enabled(character_key) {
     return !disabled_characters.includes(character_key)
 
 }
-function toggle_character_enabled(character_key) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function toggle_character_enabled(character_key: any) {
     // Toggle whether the given character is enabled for summarization in the current chat
     const group_id = selected_group
     if (group_id === undefined) return true;  // not in group chat, always enabled

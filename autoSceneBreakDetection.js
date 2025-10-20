@@ -1,3 +1,4 @@
+// @flow
 import {
     get_settings,
     getContext,
@@ -27,7 +28,8 @@ let currentScanCancellationToken = null;
  * @param {string} checkWhich - Which messages to check ("user", "character", "both")
  * @returns {boolean} - True if message should be checked
  */
-function shouldCheckMessage(message, messageIndex, latestIndex, offset, checkWhich) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function shouldCheckMessage(message: any, messageIndex: any, latestIndex: any, offset: any, checkWhich: any) {
     // Skip the very first message (index 0) - can't be a scene break
     if (messageIndex === 0) {
         return false;
@@ -71,6 +73,81 @@ function shouldCheckMessage(message, messageIndex, latestIndex, offset, checkWhi
     return true;
 }
 
+// Helper: Parse scene break detection response
+// $FlowFixMe[missing-local-annot]
+function parseSceneBreakResponse(response, messageIndex) {
+    try {
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            const isSceneBreak = parsed.status === true || parsed.status === 'true';
+            const rationale = parsed.rationale || '';
+            debug('Parsed JSON for message', messageIndex, '- Status:', isSceneBreak, '- Rationale:', rationale);
+            return { isSceneBreak, rationale };
+        }
+        // Fallback: check if response contains "true"
+        const isSceneBreak = response.toLowerCase().includes('true');
+        debug('No JSON found for message', messageIndex, ', using fallback. Status:', isSceneBreak);
+        return { isSceneBreak, rationale: 'No JSON found, fallback to text search' };
+    } catch (err) {
+        error('Failed to parse JSON response for message', messageIndex, ':', err);
+        const isSceneBreak = response.toLowerCase().includes('true');
+        return { isSceneBreak, rationale: 'JSON parse error, fallback to text search' };
+    }
+}
+
+// Helper: Switch to detection profile/preset
+// $FlowFixMe[missing-local-annot]
+async function switchToDetectionSettings(ctx, profile, preset) {
+    const current_profile = await ctx.get_current_connection_profile?.();
+    const current_preset = await ctx.get_current_preset?.();
+
+    if (profile) {
+        debug('Switching to connection profile:', profile);
+        await ctx.set_connection_profile?.(profile);
+    }
+    if (preset) {
+        debug('Switching to preset:', preset);
+        await ctx.set_preset?.(preset);
+    }
+
+    return { current_profile, current_preset };
+}
+
+// Helper: Restore previous profile/preset
+// $FlowFixMe[missing-local-annot]
+async function restoreSettings(ctx, profile, preset, previous) {
+    if (profile) {
+        debug('Restoring previous connection profile:', previous.current_profile);
+        await ctx.set_connection_profile?.(previous.current_profile);
+    }
+    if (preset) {
+        debug('Restoring previous preset:', previous.current_preset);
+        await ctx.set_preset?.(previous.current_preset);
+    }
+}
+
+// Helper: Build detection prompt
+// $FlowFixMe[missing-local-annot]
+function buildDetectionPrompt(ctx, promptTemplate, message, previousMessage, prefill) {
+    const previousText = previousMessage ? previousMessage.mes : '(No previous message - this is the first message)';
+
+    let prompt = promptTemplate;
+    if (ctx.substituteParamsExtended) {
+        prompt = ctx.substituteParamsExtended(prompt, {
+            previous_message: previousText,
+            current_message: message.mes,
+            message: message.mes,
+            prefill
+        }) || prompt;
+    }
+
+    prompt = prompt.replace(/\{\{previous_message\}\}/g, previousText);
+    prompt = prompt.replace(/\{\{current_message\}\}/g, message.mes);
+    prompt = prompt.replace(/\{\{message\}\}/g, message.mes);
+    return `${prompt}\n${prefill}`;
+}
+
 /**
  * Detect if a message should be a scene break using LLM
  * @param {object} message - The message object being checked
@@ -78,7 +155,8 @@ function shouldCheckMessage(message, messageIndex, latestIndex, offset, checkWhi
  * @param {object|null} previousMessage - The previous message for context (null if first message)
  * @returns {Promise<{isSceneBreak: boolean, rationale: string}>} - Object with detection result and rationale
  */
-async function detectSceneBreak(message, messageIndex, previousMessage = null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function detectSceneBreak(message: any, messageIndex: any, previousMessage: any = null) {
     const ctx = getContext();
 
     try {
@@ -90,98 +168,31 @@ async function detectSceneBreak(message, messageIndex, previousMessage = null) {
         const profile = get_settings('auto_scene_break_connection_profile');
         const preset = get_settings('auto_scene_break_completion_preset');
 
-        // Save current profile/preset to restore later
-        const current_profile = await ctx.get_current_connection_profile?.();
-        const current_preset = await ctx.get_current_preset?.();
+        // Build prompt
+        const prompt = buildDetectionPrompt(ctx, promptTemplate, message, previousMessage, prefill);
 
-        // Format previous message for context (if exists)
-        const previousText = previousMessage ? previousMessage.mes : '(No previous message - this is the first message)';
-
-        // Prepare prompt with both previous and current message
-        let prompt = promptTemplate;
-        if (ctx.substituteParamsExtended) {
-            prompt = ctx.substituteParamsExtended(prompt, {
-                previous_message: previousText,
-                current_message: message.mes,
-                message: message.mes, // Keep for backward compatibility
-                prefill
-            }) || prompt;
-        }
-        // Replace placeholders
-        prompt = prompt.replace(/\{\{previous_message\}\}/g, previousText);
-        prompt = prompt.replace(/\{\{current_message\}\}/g, message.mes);
-        prompt = prompt.replace(/\{\{message\}\}/g, message.mes); // Backward compatibility
-        prompt = `${prompt}\n${prefill}`;
-
-        // Switch to detection profile/preset if set
-        if (profile) {
-            debug('Switching to connection profile:', profile);
-            await ctx.set_connection_profile?.(profile);
-        }
-        if (preset) {
-            debug('Switching to preset:', preset);
-            await ctx.set_preset?.(preset);
-        }
+        // Switch to detection profile/preset and save current
+        const previous = await switchToDetectionSettings(ctx, profile, preset);
 
         // Block input if setting is enabled
-        if (get_settings('block_chat')) {
-            ctx.deactivateSendButtons();
-        }
+        const shouldBlock = get_settings('block_chat');
+        if (shouldBlock) ctx.deactivateSendButtons();
 
         // Call LLM
         debug('Sending prompt to AI for message', messageIndex);
         const response = await summarize_text(prompt);
         debug('AI raw response for message', messageIndex, ':', response);
 
-        // Re-enable input if it was blocked
-        if (get_settings('block_chat')) {
-            ctx.activateSendButtons();
-        }
+        // Re-enable input and restore settings
+        if (shouldBlock) ctx.activateSendButtons();
+        await restoreSettings(ctx, profile, preset, previous);
 
-        // Restore previous profile/preset
-        if (profile) {
-            debug('Restoring previous connection profile:', current_profile);
-            await ctx.set_connection_profile?.(current_profile);
-        }
-        if (preset) {
-            debug('Restoring previous preset:', current_preset);
-            await ctx.set_preset?.(current_preset);
-        }
+        // Parse response
+        const { isSceneBreak, rationale } = parseSceneBreakResponse(response, messageIndex);
 
-        // Parse JSON response
-        let isSceneBreak = false;
-        let rationale = '';
-
-        try {
-            // Try to extract JSON from response (in case there's extra text)
-            const jsonMatch = response.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]);
-                isSceneBreak = parsed.status === true || parsed.status === 'true';
-                rationale = parsed.rationale || '';
-                debug('Parsed JSON for message', messageIndex, '- Status:', isSceneBreak, '- Rationale:', rationale);
-            } else {
-                // Fallback: check if response contains "true" (backward compatibility)
-                isSceneBreak = response.toLowerCase().includes('true');
-                rationale = 'No JSON found, fallback to text search';
-                debug('No JSON found for message', messageIndex, ', using fallback. Status:', isSceneBreak);
-            }
-        } catch (err) {
-            // If JSON parsing fails, fall back to simple text search
-            error('Failed to parse JSON response for message', messageIndex, ':', err);
-            isSceneBreak = response.toLowerCase().includes('true');
-            rationale = 'JSON parse error, fallback to text search';
-            debug('JSON parse failed for message', messageIndex, ', using fallback. Status:', isSceneBreak);
-        }
-
-        // Log the decision with rationale
-        if (isSceneBreak) {
-            debug('✓ SCENE BREAK DETECTED for message', messageIndex);
-            debug('  Rationale:', rationale);
-        } else {
-            debug('✗ No scene break for message', messageIndex);
-            debug('  Rationale:', rationale);
-        }
+        // Log the decision
+        debug(isSceneBreak ? '✓ SCENE BREAK DETECTED' : '✗ No scene break', 'for message', messageIndex);
+        debug('  Rationale:', rationale);
 
         // Mark message as checked
         set_data(message, 'auto_scene_break_checked', true);
@@ -190,13 +201,8 @@ async function detectSceneBreak(message, messageIndex, previousMessage = null) {
         return { isSceneBreak, rationale };
 
     } catch (err) {
-        // SillyTavern strips error details, so we can't detect rate limits specifically
-        // Just log the error and throw it up for retry handling
         error('ERROR in detectSceneBreak for message', messageIndex);
         error('Error message:', err?.message || String(err));
-
-        // DO NOT mark message as checked - allow retry
-        // Throw error up to retry handler
         throw err;
     }
 }
@@ -205,6 +211,7 @@ async function detectSceneBreak(message, messageIndex, previousMessage = null) {
  * Delay for a specified number of milliseconds
  * @param {number} ms - Milliseconds to delay
  */
+// $FlowFixMe[missing-local-annot]
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -216,6 +223,7 @@ function delay(ms) {
  * @param {object} cancellationToken - Object with a `cancelled` property that can be set to true to abort
  * @returns {Promise<void>}
  */
+// $FlowFixMe[missing-local-annot]
 async function interruptibleDelay(ms, cancellationToken = null) {
     const chunkSize = 1000; // Check every 1 second
     const chunks = Math.ceil(ms / chunkSize);
@@ -245,6 +253,7 @@ async function interruptibleDelay(ms, cancellationToken = null) {
  * @param {object|null} cancellationToken - Token to check for cancellation during delays
  * @returns {Promise<{isSceneBreak: boolean, rationale: string}>} - Object with detection result and rationale
  */
+// $FlowFixMe[missing-local-annot]
 async function detectSceneBreakWithRetry(message, messageIndex, previousMessage = null, maxRetries = 5, cancellationToken = null) {
     let retryCount = 0;
     let lastError = null;
@@ -307,6 +316,7 @@ async function detectSceneBreakWithRetry(message, messageIndex, previousMessage 
 }
 
 // Helper: Find and mark existing scene breaks as checked
+// $FlowFixMe[missing-local-annot]
 function findAndMarkExistingSceneBreaks(chat) {
     let latestVisibleSceneBreakIndex = -1;
     for (let i = 0; i < chat.length; i++) {
@@ -337,6 +347,7 @@ function findAndMarkExistingSceneBreaks(chat) {
 }
 
 // Helper: Try to queue scene break detections
+// $FlowFixMe[missing-local-annot]
 async function tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkWhich) {
     const queueEnabled = get_settings('operation_queue_enabled') !== false;
     if (!queueEnabled) return null;
@@ -373,9 +384,11 @@ async function tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkW
 }
 
 // Helper: Handle detected scene break
+// $FlowFixMe[missing-local-annot]
 async function handleDetectedSceneBreak(i, rationale, cancellationToken) {
     debug('Marking message', i, 'as scene break');
 
+    // $FlowFixMe[missing-local-annot] [cannot-resolve-name]
     const get_message_div = (idx) => $(`div[mesid="${idx}"]`);
     toggleSceneBreak(i, get_message_div, getContext, set_data, get_data, saveChatDebounced);
 
@@ -412,6 +425,7 @@ async function handleDetectedSceneBreak(i, rationale, cancellationToken) {
 }
 
 // Helper: Handle scan errors
+// $FlowFixMe[missing-local-annot]
 function handleScanError(err, i, checkedCount, totalToCheck, detectedCount, cancellationToken, eventSource, event_types, stopHandler) {
     error('!!!!! FATAL ERROR IN MAIN LOOP for message', i, '!!!!!', err);
     error('!!!!! Error message:', err?.message || String(err), '!!!!!');
@@ -432,18 +446,71 @@ function handleScanError(err, i, checkedCount, totalToCheck, detectedCount, canc
     return { error: true, message: err?.message || String(err), checkedCount, totalToCheck, detectedCount };
 }
 
-// Helper: Execute scan loop
-async function executeScanLoop(chat, start, end, latestIndex, offset, checkWhich, cancellationToken, eventSource, event_types, stopHandler) {
-    let checkedCount = 0;
-    let detectedCount = 0;
-
-    // Count messages to check
+// Helper: Count messages to check in range
+// $FlowFixMe[missing-local-annot]
+function countMessagesToCheck(chat, start, end, latestIndex, offset, checkWhich) {
     let totalToCheck = 0;
     for (let i = start; i <= end; i++) {
         if (shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich)) {
             totalToCheck++;
         }
     }
+    return totalToCheck;
+}
+
+// Helper: Handle scene break summary generation
+// $FlowFixMe[missing-local-annot]
+async function handleSceneSummaryGeneration(i, rationale, cancellationToken) {
+    try {
+        await handleDetectedSceneBreak(i, rationale, cancellationToken);
+    } catch (err) {
+        const errorString = String(err?.message || err);
+        if (errorString.includes('Clicked stop button') || errorString.includes('aborted')) {
+            error('Scene summary generation aborted by user for message', i);
+            cancellationToken.cancelled = true;
+            throw new Error('ABORTED');
+        }
+        error('Failed to auto-generate scene summary for message', i, ':', err);
+        toast(`Failed to generate scene summary for message ${i}: ${err?.message || String(err)}`, 'error');
+        await delay(50);
+    }
+}
+
+// Helper: Process single message in scan
+// $FlowFixMe[missing-local-annot]
+async function processScanMessage(chat, i, end, cancellationToken) {
+    const previousMessage = i > 0 ? chat[i - 1] : null;
+    const { isSceneBreak, rationale } = await detectSceneBreakWithRetry(chat[i], i, previousMessage, 5, cancellationToken);
+
+    let detectedCount = 0;
+    if (isSceneBreak) {
+        detectedCount = 1;
+        const rationaleText = rationale ? ` - ${rationale}` : '';
+        toast(`✓ Scene break at message ${i}${rationaleText}`, 'success');
+        await delay(50);
+        await handleSceneSummaryGeneration(i, rationale, cancellationToken);
+    }
+
+    // Delay between messages
+    if (i < end) {
+        try {
+            await interruptibleDelay(5000, cancellationToken);
+        } catch {
+            error('Between-message delay cancelled - user aborted');
+            throw new Error('ABORTED');
+        }
+    }
+
+    return detectedCount;
+}
+
+// Helper: Execute scan loop
+// $FlowFixMe[missing-local-annot]
+async function executeScanLoop(chat, start, end, latestIndex, offset, checkWhich, cancellationToken, eventSource, event_types, stopHandler) {
+    let checkedCount = 0;
+    let detectedCount = 0;
+
+    const totalToCheck = countMessagesToCheck(chat, start, end, latestIndex, offset, checkWhich);
 
     if (totalToCheck === 0) {
         toast(`No messages to check (all already scanned or filtered out)`, 'info');
@@ -466,39 +533,8 @@ async function executeScanLoop(chat, start, end, latestIndex, offset, checkWhich
         await delay(50);
 
         try {
-            const previousMessage = i > 0 ? chat[i - 1] : null;
-            const { isSceneBreak, rationale } = await detectSceneBreakWithRetry(message, i, previousMessage, 5, cancellationToken);
-
-            if (isSceneBreak) {
-                detectedCount++;
-                const rationaleText = rationale ? ` - ${rationale}` : '';
-                toast(`✓ Scene break at message ${i}${rationaleText}. Total: ${detectedCount}`, 'success');
-                await delay(50);
-
-                try {
-                    await handleDetectedSceneBreak(i, rationale, cancellationToken);
-                } catch (err) {
-                    const errorString = String(err?.message || err);
-                    if (errorString.includes('Clicked stop button') || errorString.includes('aborted')) {
-                        error('Scene summary generation aborted by user for message', i);
-                        cancellationToken.cancelled = true;
-                        throw new Error('ABORTED');
-                    }
-                    error('Failed to auto-generate scene summary for message', i, ':', err);
-                    toast(`Failed to generate scene summary for message ${i}: ${err?.message || String(err)}`, 'error');
-                    await delay(50);
-                }
-            }
-
-            // Delay between messages
-            if (i < end) {
-                try {
-                    await interruptibleDelay(5000, cancellationToken);
-                } catch {
-                    error('Between-message delay cancelled - user aborted');
-                    throw new Error('ABORTED');
-                }
-            }
+            const detected = await processScanMessage(chat, i, end, cancellationToken);
+            detectedCount += detected;
         } catch (err) {
             const result = handleScanError(err, i, checkedCount, totalToCheck, detectedCount, cancellationToken, eventSource, event_types, stopHandler);
             if (result.aborted) {
@@ -522,7 +558,8 @@ async function executeScanLoop(chat, start, end, latestIndex, offset, checkWhich
  * @param {number} startIndex - Start index (optional, defaults to 0)
  * @param {number} endIndex - End index (optional, defaults to latest)
  */
-export async function processAutoSceneBreakDetection(startIndex = null, endIndex = null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export async function processAutoSceneBreakDetection(startIndex: any = null, endIndex: any = null) {
     log(SUBSYSTEM.SCENE, '=== processAutoSceneBreakDetection called with startIndex:', startIndex, 'endIndex:', endIndex, '===');
 
     // Validate settings
@@ -614,7 +651,8 @@ export async function manualSceneBreakDetection() {
  * Process only new messages (called on MESSAGE_SENT, MESSAGE_RECEIVED events)
  * @param {number} messageIndex - Index of the new message
  */
-export async function processNewMessageForSceneBreak(messageIndex) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export async function processNewMessageForSceneBreak(messageIndex: any) {
     const enabled = get_settings('auto_scene_break_on_new_message');
     if (!enabled) {
         debug(SUBSYSTEM.SCENE, 'Auto-check on new message is disabled');
@@ -660,7 +698,37 @@ export async function processSceneBreakOnChatLoad() {
 }
 
 /**
- * Clear all auto_scene_break_checked flags from all messages
+ * Used when a scene break is hidden to allow re-detection
+ * @param {number} startIndex - Index of the hidden scene break
+ * @param {number} endIndex - Index of the next visible scene break (or end of chat)
+ */
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function clearCheckedFlagsInRange(startIndex: any, endIndex: any) {
+    const ctx = getContext();
+    const chat = ctx.chat;
+
+    if (!chat || chat.length === 0) {
+        return 0;
+    }
+
+    let clearedCount = 0;
+
+    for (let i = startIndex; i < endIndex && i < chat.length; i++) {
+        const message = chat[i];
+        if (get_data(message, 'auto_scene_break_checked')) {
+            set_data(message, 'auto_scene_break_checked', false);
+            clearedCount++;
+        }
+    }
+
+    if (clearedCount > 0) {
+        saveChatDebounced();
+        debug(SUBSYSTEM.SCENE, `Cleared checked flags from ${clearedCount} message(s) in range ${startIndex}-${endIndex - 1}`);
+    }
+
+    return clearedCount;
+}
+/**
  */
 export async function clearAllCheckedFlags() {
     const ctx = getContext();

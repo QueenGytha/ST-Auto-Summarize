@@ -1,3 +1,4 @@
+// @flow
 // operationHandlers.js - Register and handle all queue operations
 
 import {
@@ -23,9 +24,6 @@ import {
     combine_scene_with_running_summary,
 } from './runningSceneSummary.js';
 import {
-    generate_combined_summary,
-} from './combinedSummary.js';
-import {
     getContext,
     get_data,
     set_data,
@@ -40,7 +38,9 @@ import {
 /**
  * Helper to get message div
  */
+// $FlowFixMe[missing-local-annot]
 function get_message_div(index) {
+    // $FlowFixMe[cannot-resolve-name]
     return $(`div[mesid="${index}"]`);
 }
 
@@ -146,7 +146,7 @@ export function registerAllOperationHandlers() {
     // Generate running summary (bulk)
     registerOperationHandler(OperationType.GENERATE_RUNNING_SUMMARY, async (_operation) => {
         debug(SUBSYSTEM.QUEUE, `Executing GENERATE_RUNNING_SUMMARY`);
-        const summary = await generate_running_scene_summary();
+        const summary = await generate_running_scene_summary(true);
         return { summary };
     });
 
@@ -156,13 +156,6 @@ export function registerAllOperationHandlers() {
         debug(SUBSYSTEM.QUEUE, `Executing COMBINE_SCENE_WITH_RUNNING for index ${index}`);
         const summary = await combine_scene_with_running_summary(index);
         return { summary };
-    });
-
-    // Generate combined summary
-    registerOperationHandler(OperationType.GENERATE_COMBINED_SUMMARY, async (_operation) => {
-        debug(SUBSYSTEM.QUEUE, `Executing GENERATE_COMBINED_SUMMARY`);
-        await generate_combined_summary();
-        return { success: true };
     });
 
     log(SUBSYSTEM.QUEUE, 'Registered all operation handlers');

@@ -1,3 +1,4 @@
+// @flow
 import {
     MODULE_NAME_FANCY,
     get_settings,
@@ -29,35 +30,43 @@ const SUBSYSTEM = {
     QUEUE: '[Queue]'
 };
 
-function log(subsystem, ...args) {
+// $FlowFixMe[signature-verification-failure]
+function log(subsystem: any, ...args: Array<any>) {
     // Always log with prefix - subsystem check not needed as both branches are identical
     console.log(LOG_PREFIX, subsystem, ...args);
 }
 
-function debug(subsystem, ...args) {
+// $FlowFixMe[signature-verification-failure]
+function debug(subsystem: any, ...args: Array<any>) {
     if (!get_settings('debug_mode')) return;
 
     // Always log with prefix - subsystem check not needed as both branches are identical
     console.log(LOG_PREFIX, '[DEBUG]', subsystem, ...args);
 }
 
-function error(subsystem, ...args) {
+// $FlowFixMe[signature-verification-failure]
+function error(subsystem: any, ...args: Array<any>) {
     // If subsystem is not a string starting with '[', treat it as a regular arg
     if (typeof subsystem !== 'string' || !subsystem.startsWith('[')) {
         console.error(LOG_PREFIX, '[ERROR]', subsystem, ...args);
         const message = typeof subsystem === 'string' ? subsystem : String(subsystem);
+        // $FlowFixMe[cannot-resolve-name]
         toastr.error(message, MODULE_NAME_FANCY);
     } else {
         console.error(LOG_PREFIX, '[ERROR]', subsystem, ...args);
         const message = typeof args[0] === 'string' ? args[0] : String(args[0]);
+        // $FlowFixMe[cannot-resolve-name]
         toastr.error(message, MODULE_NAME_FANCY);
     }
 }
 
-function toast(message, type="info") {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function toast(message: any, type: any="info") {
     // debounce the toast messages
+    // $FlowFixMe[cannot-resolve-name]
     toastr[type](message, MODULE_NAME_FANCY);
 }
+// $FlowFixMe[signature-verification-failure]
 const toast_debounced = debounce(toast, 500);
 
 /**
@@ -79,27 +88,32 @@ const toast_debounced = debounce(toast, 500);
  *   console.debug() - Use debug() instead
  */
 
+// $FlowFixMe[signature-verification-failure]
 const saveChatDebounced = debounce(() => getContext().saveChat(), debounce_timeout.relaxed);
-function count_tokens(text, padding = 0) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function count_tokens(text: any, padding: any = 0) {
     // count the number of tokens in a text
     const ctx = getContext();
     return ctx.getTokenCount(text, padding);
 }
+// $FlowFixMe[signature-verification-failure]
 function get_context_size() {
     // Get the current context size
     return getMaxContextSize();
 }
+// $FlowFixMe[signature-verification-failure]
 function get_short_token_limit() {
     // Get the single message summary token limit, given the current context size and settings
-    const short_term_context_limit = get_settings('short_term_context_limit');
-    const number_type = get_settings('short_term_context_type')
+    const message_summary_context_limit = get_settings('message_summary_context_limit');
+    const number_type = get_settings('message_summary_context_type')
     if (number_type === "percent") {
         const context_size = get_context_size();
-        return Math.floor(context_size * short_term_context_limit / 100);
+        return Math.floor(context_size * message_summary_context_limit / 100);
     } else {
-        return short_term_context_limit
+        return message_summary_context_limit
     }
 }
+// $FlowFixMe[signature-verification-failure]
 function get_current_character_identifier() {
     // uniquely identify the current character
     // You have to use the character's avatar image path to uniquely identify them
@@ -116,6 +130,7 @@ function get_current_character_identifier() {
 
     return context.characters[index].avatar;
 }
+// $FlowFixMe[signature-verification-failure]
 function get_current_chat_identifier() {
     // uniquely identify the current chat
     const context = getContext();
@@ -125,12 +140,15 @@ function get_current_chat_identifier() {
     return context.chatId
 
 }
+// $FlowFixMe[signature-verification-failure]
 function get_extension_directory() {
     // get the directory of the extension
+    // $FlowFixMe[cannot-resolve-name]
     const index_path = new URL(import.meta.url).pathname
     return index_path.substring(0, index_path.lastIndexOf('/'))  // remove the /index.js from the path
 }
-function clean_string_for_title(text) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function clean_string_for_title(text: any) {
     // clean a given string for use in a div title.
     return text.replace(/["&'<>]/g, function(match) {
         switch (match) {
@@ -142,7 +160,8 @@ function clean_string_for_title(text) {
         }
     })
 }
-function escape_string(text) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function escape_string(text: any) {
     // escape control characters in the text
     if (!text) return text
     return text.replace(/[\x00-\x1F\x7F]/g, function(match) {
@@ -157,7 +176,8 @@ function escape_string(text) {
         }
     });
 }
-function unescape_string(text) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function unescape_string(text: any) {
     // given a string with escaped characters, unescape them
     if (!text) return text
     return text.replace(/\\[ntrbf0x][0-9a-f]{2}|\\[ntrbf]/g, function(match) {
@@ -178,6 +198,7 @@ function unescape_string(text) {
         }
     });
 }
+// $FlowFixMe[signature-verification-failure]
 function check_st_version() {
     // Check to see if the current version of ST is acceptable.
     // Currently checks for the "symbols" property of the global context,
@@ -197,7 +218,8 @@ function display_injection_preview() {
     display_text_modal("Memory State Preview", text);
 }
 
-async function display_text_modal(title, text="") {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function display_text_modal(title: any, text: any="") {
     // Display a modal with the given title and text
     // replace newlines in text with <br> for HTML
     const ctx = getContext();
@@ -207,7 +229,8 @@ async function display_text_modal(title, text="") {
     const popup = new ctx.Popup(html, ctx.POPUP_TYPE.TEXT, undefined, {okButton: 'Close', allowVerticalScrolling: true});
     await popup.show()
 }
-async function get_user_setting_text_input(key, title, description="", _defaultValue="") {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function get_user_setting_text_input(key: any, title: any, description: any="", _defaultValue: any="") {
     const value = get_settings(key) ?? '';
     title = `
 <h3>${title}</h3>
@@ -219,6 +242,7 @@ async function get_user_setting_text_input(key, title, description="", _defaultV
         customButtons: [{
             text: 'Restore Default',
             appendAtEnd: true,
+            // $FlowFixMe[missing-this-annot]
             action: function() {
                 this.mainInput.value = default_settings[key] ?? '';
             }

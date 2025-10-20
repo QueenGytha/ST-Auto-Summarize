@@ -1,6 +1,7 @@
 // ESLint v9+ flat config format
 import complexity from 'eslint-plugin-complexity';
 import sonarjs from 'eslint-plugin-sonarjs';
+import babelParser from '@babel/eslint-parser';
 
 export default [
     {
@@ -13,8 +14,15 @@ export default [
         },
 
         languageOptions: {
+            parser: babelParser,
             ecmaVersion: 2022,
             sourceType: 'module',
+            parserOptions: {
+                requireConfigFile: false,
+                babelOptions: {
+                    plugins: ['@babel/plugin-syntax-flow']
+                }
+            },
             globals: {
                 // Browser environment
                 window: 'readonly',
@@ -53,7 +61,7 @@ export default [
                 vars: 'all',
                 args: 'after-used',
                 ignoreRestSiblings: true,
-                argsIgnorePattern: '^_',            // Allow _unused as convention
+                argsIgnorePattern: '^(_|this$)',    // Allow _unused convention and Flow's this parameter
             }],
             'no-use-before-define': ['error', {    // Catch using variables before declaration
                 functions: false,                   // Allow function hoisting

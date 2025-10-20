@@ -1,3 +1,4 @@
+// @flow
 // operationQueueUI.js - UI for operation queue display in navbar
 
 import {
@@ -49,16 +50,20 @@ export function initQueueUI() {
  */
 function createQueueUI() {
     // Find or create the shared navbar (used by both extensions)
+    // $FlowFixMe[cannot-resolve-name]
     let $navbar = $('#scene-summary-navigator-bar');
 
     if (!$navbar.length) {
         debug(SUBSYSTEM.QUEUE, 'Creating shared navbar');
+        // $FlowFixMe[cannot-resolve-name]
         $navbar = $('<div id="scene-summary-navigator-bar" style="width: 175px;"></div>');
         // Insert after the send button area
+        // $FlowFixMe[cannot-resolve-name]
         $('#sheld').after($navbar);
     }
 
     // Check if queue container already exists (shared between extensions)
+    // $FlowFixMe[cannot-resolve-name]
     let $queueContainer = $('#shared_operation_queue_ui');
 
     if ($queueContainer.length) {
@@ -68,6 +73,7 @@ function createQueueUI() {
     }
 
     // Create shared queue container
+    // $FlowFixMe[cannot-resolve-name]
     $queueContainer = $(`
         <div id="shared_operation_queue_ui" style="margin-top: 1em; padding-top: 1em; border-top: 1px solid var(--SmartThemeBlurTintColor);">
             <div class="queue-header" style="margin-bottom: 0.5em;">
@@ -105,28 +111,38 @@ function createQueueUI() {
  */
 function bindQueueControlEvents() {
     // Pause/Resume
-    $(document).on('click', '#queue_toggle_pause', async function() {
+    // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
+    $(document).on('click', '#queue_toggle_pause', async function (this: any) {
         if (isQueuePaused()) {
             await resumeQueue();
+            // $FlowFixMe[cannot-resolve-name]
             $(this).removeClass('fa-play').addClass('fa-pause');
+            // $FlowFixMe[cannot-resolve-name]
             $(this).attr('title', 'Pause queue');
         } else {
             await pauseQueue();
+            // $FlowFixMe[cannot-resolve-name]
             $(this).removeClass('fa-pause').addClass('fa-play');
+            // $FlowFixMe[cannot-resolve-name]
             $(this).attr('title', 'Resume queue');
         }
     });
 
     // Clear all
+    // $FlowFixMe[cannot-resolve-name]
     $(document).on('click', '#queue_clear_all', async function() {
+        // $FlowFixMe[cannot-resolve-name]
         if (confirm('Clear all operations from queue?')) {
             await clearAllOperations();
         }
     });
 
     // Toggle visibility
-    $(document).on('click', '#queue_toggle_visibility', function() {
+    // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
+    $(document).on('click', '#queue_toggle_visibility', function (this: any) {
+        // $FlowFixMe[cannot-resolve-name]
         const $list = $('#queue_list_container');
+        // $FlowFixMe[cannot-resolve-name]
         const $icon = $(this);
 
         if ($list.is(':visible')) {
@@ -139,7 +155,9 @@ function bindQueueControlEvents() {
     });
 
     // Remove individual operation
-    $(document).on('click', '.queue-operation-remove', async function() {
+    // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
+    $(document).on('click', '.queue-operation-remove', async function (this: any) {
+        // $FlowFixMe[cannot-resolve-name]
         const operationId = $(this).data('operation-id');
         await removeOperation(operationId);
     });
@@ -161,14 +179,17 @@ function updateQueueDisplay() {
     const enabled = get_settings('operation_queue_display_enabled') !== false; // Default to true
 
     if (!enabled) {
+        // $FlowFixMe[incompatible-use]
         queueUIContainer.hide();
         return;
     }
 
+    // $FlowFixMe[incompatible-use]
     queueUIContainer.show();
 
     // Update stats
     const stats = getQueueStats();
+    // $FlowFixMe[cannot-resolve-name]
     const $stats = $('#queue_stats');
     const parts = [];
     if (stats.pending > 0) parts.push(`${stats.pending} pending`);
@@ -177,6 +198,7 @@ function updateQueueDisplay() {
     $stats.text(parts.length > 0 ? parts.join(', ') : 'No operations');
 
     // Update pause/resume button
+    // $FlowFixMe[cannot-resolve-name]
     const $pauseBtn = $('#queue_toggle_pause');
     if (stats.paused) {
         $pauseBtn.removeClass('fa-pause').addClass('fa-play');
@@ -194,6 +216,7 @@ function updateQueueDisplay() {
  * Render operations list
  */
 function renderOperationsList() {
+    // $FlowFixMe[cannot-resolve-name]
     const $list = $('#queue_operations_list');
     const allOperations = getAllOperations();
 
@@ -232,6 +255,7 @@ function renderOperationsList() {
 /**
  * Render individual operation
  */
+// $FlowFixMe[missing-local-annot]
 function renderOperation(operation) {
     const statusIcons = {
         [OperationStatus.PENDING]: '<i class="fa-solid fa-clock" style="color: var(--SmartThemeQuoteColor);"></i>',
@@ -283,6 +307,7 @@ function renderOperation(operation) {
         removeButton = `<button class="queue-operation-remove fa-solid fa-times" data-operation-id="${operation.id}" title="Remove" style="background: none; border: none; cursor: pointer; padding: 0.2em 0.5em; opacity: 0.5;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5"></button>`;
     }
 
+    // $FlowFixMe[cannot-resolve-name]
     return $(`
         <div class="queue-operation" style="background: ${bgColor}; padding: 0.4em; margin-bottom: 0.3em; border-radius: 4px; font-size: 0.8em;">
             <div style="display: flex; align-items: flex-start; gap: 0.4em; margin-bottom: 0.2em;">
@@ -302,6 +327,7 @@ function renderOperation(operation) {
 /**
  * Format operation type for display
  */
+// $FlowFixMe[missing-local-annot]
 function formatOperationType(type) {
     const names = {
         [OperationType.SUMMARIZE_MESSAGE]: 'Summarize',
@@ -311,6 +337,7 @@ function formatOperationType(type) {
         [OperationType.GENERATE_SCENE_NAME]: 'Scene Name',
         [OperationType.GENERATE_RUNNING_SUMMARY]: 'Running Summary',
         [OperationType.COMBINE_SCENE_WITH_RUNNING]: 'Combine Scene',
+        // $FlowFixMe[prop-missing] [invalid-computed-prop]
         [OperationType.GENERATE_COMBINED_SUMMARY]: 'Combined Summary'
     };
 
@@ -320,6 +347,7 @@ function formatOperationType(type) {
 /**
  * Format operation params for display
  */
+// $FlowFixMe[missing-local-annot]
 function formatOperationParams(type, params) {
     switch (type) {
         case OperationType.SUMMARIZE_MESSAGE:
@@ -337,6 +365,9 @@ function formatOperationParams(type, params) {
             return '';
 
         case OperationType.GENERATE_RUNNING_SUMMARY:
+            // falls through
+        // $FlowFixMe[prop-missing]
+        // eslint-disable-next-line no-fallthrough
         case OperationType.GENERATE_COMBINED_SUMMARY:
             return 'All messages';
 
@@ -348,6 +379,7 @@ function formatOperationParams(type, params) {
 /**
  * Format duration in ms to human readable
  */
+// $FlowFixMe[missing-local-annot]
 function formatDuration(ms) {
     if (ms < 1000) {
         return `${ms}ms`;
@@ -369,8 +401,10 @@ export function updateQueueUIVisibility() {
     const enabled = get_settings('operation_queue_display_enabled') !== false;
 
     if (enabled) {
+        // $FlowFixMe[incompatible-use]
         queueUIContainer.show();
     } else {
+        // $FlowFixMe[incompatible-use]
         queueUIContainer.hide();
     }
 }

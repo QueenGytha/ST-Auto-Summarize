@@ -1,3 +1,4 @@
+// @flow
 import { getContext, get_settings, log, settings_content_class } from './index.js';
 
 function refresh_character_select() {
@@ -39,25 +40,30 @@ Use like this:
     </label>
 </div>
  */
-function refresh_select2_element(id, selected, options, placeholder="") {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function refresh_select2_element(id: any, selected: any, options: any, placeholder: any="") {
     // Refresh a select2 element with the given ID (a select element) and set the options
 
     // check whether the dropdown is open. If so, don't update the options (it messes with the widget)
+    // $FlowFixMe[cannot-resolve-name]
     const $dropdown = $(`#select2-${id}-results`)
     if ($dropdown.length > 0) {
         return
     }
 
+    // $FlowFixMe[cannot-resolve-name]
     const $select = $(`#${id}`)
     $select.empty()  // clear current options
 
     // add the options to the dropdown
     for (const {id, name} of options) {
+        // $FlowFixMe[cannot-resolve-name]
         const option = $(`<option value="${id}">${name}</option>`)
         $select.append(option);
     }
 
     // If the select2 widget hasn't been created yet, create it
+    // $FlowFixMe[cannot-resolve-name]
     const $widget = $(`.${settings_content_class} ul#select2-${id}-container`)
     if ($widget.length === 0) {
         $select.select2({  // register as a select2 element

@@ -1,3 +1,4 @@
+// @flow
 import {
     get_settings,
     get_memory,
@@ -14,6 +15,7 @@ import {
     auto_generate_running_summary,
     combine_scene_with_running_summary,
 } from './runningSceneSummary.js';
+import { clearCheckedFlagsInRange } from './autoSceneBreakDetection.js';
 
 // SCENE SUMMARY PROPERTY STRUCTURE:
 // - Scene summaries are stored on the message object as:
@@ -39,12 +41,16 @@ export function addSceneBreakButton() {
     const html = `
 <div title="Mark end of scene" class="mes_button ${SCENE_BREAK_BUTTON_CLASS} fa-solid fa-clapperboard" tabindex="0"></div>
 `;
+    // $FlowFixMe[cannot-resolve-name]
     $("#message_template .mes_buttons .extraMesButtons").prepend(html);
 }
 
 // Handles click events for the scene break button
-export function bindSceneBreakButton(get_message_div, getContext, set_data, get_data, saveChatDebounced) {
-    $("div#chat").on("click", `.${SCENE_BREAK_BUTTON_CLASS}`, function () {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function bindSceneBreakButton(get_message_div: any, getContext: any, set_data: any, get_data: any, saveChatDebounced: any) {
+    // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
+    $("div#chat").on("click", `.${SCENE_BREAK_BUTTON_CLASS}`, function (this: any) {
+        // $FlowFixMe[cannot-resolve-name]
         const message_block = $(this).closest(".mes");
         const message_id = Number(message_block.attr("mesid"));
         toggleSceneBreak(message_id, get_message_div, getContext, set_data, get_data, saveChatDebounced);
@@ -52,7 +58,8 @@ export function bindSceneBreakButton(get_message_div, getContext, set_data, get_
 }
 
 // Toggles the scene break UI and persists state
-export function toggleSceneBreak(index, get_message_div, getContext, set_data, get_data, saveChatDebounced) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function toggleSceneBreak(index: any, get_message_div: any, getContext: any, set_data: any, get_data: any, saveChatDebounced: any) {
     const ctx = getContext();
     const message = ctx.chat[index];
     const isSet = !!get_data(message, SCENE_BREAK_KEY);
@@ -63,6 +70,28 @@ export function toggleSceneBreak(index, get_message_div, getContext, set_data, g
         set_data(message, SCENE_BREAK_VISIBLE_KEY, true);
     } else {
         set_data(message, SCENE_BREAK_VISIBLE_KEY, !visible);
+        // $FlowFixMe[constant-condition]
+        if (isSet && visible && !get_data(message, SCENE_BREAK_VISIBLE_KEY)) {
+            // Scene break was visible, now hidden - clear checked flags
+            const chat = ctx.chat;
+
+            // Find the next visible scene break
+            let nextSceneBreakIndex = chat.length;
+            for (let i = index + 1; i < chat.length; i++) {
+                const isSceneBreak = get_data(chat[i], SCENE_BREAK_KEY);
+                const isVisible = get_data(chat[i], SCENE_BREAK_VISIBLE_KEY);
+                if (isSceneBreak && isVisible) {
+                    nextSceneBreakIndex = i;
+                    break;
+                }
+            }
+
+            // Clear checked flags from hidden scene to next visible scene
+            const clearedCount = clearCheckedFlagsInRange(index, nextSceneBreakIndex);
+            if (clearedCount > 0) {
+                debug(SUBSYSTEM.SCENE, `Scene break at ${index} hidden - cleared ${clearedCount} checked flags (range ${index}-${nextSceneBreakIndex - 1})`);
+            }
+        }
     }
     renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
     saveChatDebounced();
@@ -73,50 +102,37 @@ export function toggleSceneBreak(index, get_message_div, getContext, set_data, g
     });
 
     // Update navigator bar if present
+    // $FlowFixMe[cannot-resolve-name]
     if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
 }
 
 // --- Helper functions for versioned scene summaries ---
 // Scene summary properties are not at the root; see file header for structure.
+// $FlowFixMe[missing-local-annot]
 function getSceneSummaryVersions(message, get_data) {
     // Returns the array of summary versions, or an empty array if none
     return get_data(message, 'scene_summary_versions') || [];
 }
 
 // Scene summary properties are not at the root; see file header for structure.
+// $FlowFixMe[missing-local-annot]
 function setSceneSummaryVersions(message, set_data, versions) {
     set_data(message, 'scene_summary_versions', versions);
 }
 
 // Scene summary properties are not at the root; see file header for structure.
+// $FlowFixMe[missing-local-annot]
 function getCurrentSceneSummaryIndex(message, get_data) {
     return get_data(message, 'scene_summary_current_index') ?? 0;
 }
 
 // Scene summary properties are not at the root; see file header for structure.
+// $FlowFixMe[missing-local-annot]
 function setCurrentSceneSummaryIndex(message, set_data, idx) {
     set_data(message, 'scene_summary_current_index', idx);
 }
 
-// Helper to collect scene content as a chronological array of objects with type
-// Unused currently but may be useful in future
-// eslint-disable-next-line no-unused-vars
-function collectSceneChronologicalObjects(startIdx, endIdx, ctx, get_memory) {
-    const chat = ctx.chat;
-    const result = [];
-    for (let i = startIdx; i <= endIdx; i++) {
-        const msg = chat[i];
-        const summary = get_memory(msg);
-        if (msg.mes && msg.mes.trim() !== "") {
-            result.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
-        }
-        if (summary) {
-            result.push({ type: "summary", index: i, summary });
-        }
-    }
-    return result;
-}
-
+// $FlowFixMe[missing-local-annot]
 function getSceneRangeIndexes(index, chat, get_data, sceneCount) {
     // Find all visible scene breaks up to and including index
     const sceneBreakIndexes = [];
@@ -141,11 +157,13 @@ function getSceneRangeIndexes(index, chat, get_data, sceneCount) {
 }
 
 // Helper: Handle generate summary button click
+// $FlowFixMe[missing-local-annot]
 async function handleGenerateSummaryButtonClick(index, chat, message, $sceneBreak, get_message_div, get_data, set_data, saveChatDebounced) {
     log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
 
     const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
     const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
+    // $FlowFixMe[cannot-resolve-name]
     const ctx = getContext();
 
     // Collect scene objects using the helper from generateSceneSummary
@@ -217,36 +235,22 @@ async function handleGenerateSummaryButtonClick(index, chat, message, $sceneBrea
     set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
     set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary);
     saveChatDebounced();
+    // $FlowFixMe[cannot-resolve-name]
     renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
 }
 
-export function renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced) {
-    const $msgDiv = get_message_div(index);
-    if (!$msgDiv?.length) return;
-
-    // Remove any existing scene break
-    $msgDiv.find(`.${SCENE_BREAK_DIV_CLASS}`).remove();
-
-    const ctx = getContext();
-    const chat = ctx.chat;
-    const message = chat[index];
-    const isSet = !!get_data(message, SCENE_BREAK_KEY);
-    const visible = get_data(message, SCENE_BREAK_VISIBLE_KEY);
-    const isVisible = (visible === undefined) ? true : visible;
-
-    if (!isSet) return;
-
-    // --- Versioned summaries logic ---
+// Helper: Initialize versioned summaries for backward compatibility
+// $FlowFixMe[missing-local-annot]
+function initializeSceneSummaryVersions(message, get_data, set_data, saveChatDebounced) {
     let versions = getSceneSummaryVersions(message, get_data);
     let currentIdx = getCurrentSceneSummaryIndex(message, get_data);
 
-    // If no versions exist, initialize with current summary (for backward compatibility)
     if (versions.length === 0) {
         const initialSummary = get_data(message, SCENE_BREAK_SUMMARY_KEY) || '';
         versions = [initialSummary];
         setSceneSummaryVersions(message, set_data, versions);
         setCurrentSceneSummaryIndex(message, set_data, 0);
-        set_data(message, SCENE_SUMMARY_MEMORY_KEY, initialSummary); // <-- ensure top-level property is set
+        set_data(message, SCENE_SUMMARY_MEMORY_KEY, initialSummary);
         saveChatDebounced();
     }
 
@@ -254,20 +258,12 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     if (currentIdx < 0) currentIdx = 0;
     if (currentIdx >= versions.length) currentIdx = versions.length - 1;
 
-    // Use the current version for display
-    const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
-    const sceneSummary = versions[currentIdx] || '';
+    return { versions, currentIdx };
+}
 
-    // Check collapsed state - use default setting for new scenes (when undefined)
-    let isCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
-    if (isCollapsed === undefined) {
-        // New scene - use default setting
-        isCollapsed = get_settings('scene_summary_default_collapsed') ?? true;
-    }
-
-    // --- Find the start of this scene ---
-    // The end is always the current message (index).
-    // The start is the first message after the previous visible scene break, or 0 if none.
+// Helper: Find scene boundaries
+// $FlowFixMe[missing-local-annot]
+function findSceneBoundaries(chat, index, get_data) {
     let startIdx = 0;
     for (let i = index - 1; i >= 0; i--) {
         if (
@@ -279,32 +275,28 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         }
     }
 
-    // Collect all message indices in this scene
     const sceneMessages = [];
     for (let i = startIdx; i <= index; i++) {
         sceneMessages.push(i);
     }
 
-    // --- Hyperlink to the start message ---
-    const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
+    return { startIdx, sceneMessages };
+}
 
-    // Add preview icon (eye) for scene content preview
+// Helper: Build scene break HTML element
+// $FlowFixMe[missing-local-annot]
+function buildSceneBreakElement(index, startIdx, sceneMessages, sceneName, sceneSummary, isVisible, isCollapsed, versions, currentIdx) {
+    const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
     const previewIcon = `<i class="fa-solid fa-eye scene-preview-summary" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
 
-    // Determine visible/hidden class for styling
     const stateClass = isVisible ? "sceneBreak-visible" : "sceneBreak-hidden";
     const borderClass = isVisible ? "auto_summarize_scene_break_border" : "";
     const collapsedClass = isCollapsed ? "sceneBreak-collapsed" : "";
-
-    // Use the same classes as summary boxes for consistent placement and style
-    // Wrap the summary content in a container for easy hiding
-    // const isIncluded = get_data(message, 'scene_summary_include') !== false; // default to included
-
-    // Collapse/expand button icon
     const collapseIcon = isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up';
     const collapseTitle = isCollapsed ? 'Expand scene summary' : 'Collapse scene summary';
 
-    const $sceneBreak = $(`
+    // $FlowFixMe[cannot-resolve-name]
+    return $(`
     <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass} ${collapsedClass}" style="margin:0 0 5px 0;" tabindex="0">
         <div class="sceneBreak-header" style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.5em;">
             <input type="text" class="sceneBreak-name auto_summarize_memory_text" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" style="flex:1;" />
@@ -325,6 +317,40 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         </div>
     </div>
     `);
+}
+
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function renderSceneBreak(index: any, get_message_div: any, getContext: any, get_data: any, set_data: any, saveChatDebounced: any) {
+    const $msgDiv = get_message_div(index);
+    if (!$msgDiv?.length) return;
+
+    $msgDiv.find(`.${SCENE_BREAK_DIV_CLASS}`).remove();
+
+    const ctx = getContext();
+    const chat = ctx.chat;
+    const message = chat[index];
+    const isSet = !!get_data(message, SCENE_BREAK_KEY);
+    const visible = get_data(message, SCENE_BREAK_VISIBLE_KEY);
+    const isVisible = (visible === undefined) ? true : visible;
+
+    if (!isSet) return;
+
+    // Initialize versioned summaries
+    const { versions, currentIdx } = initializeSceneSummaryVersions(message, get_data, set_data, saveChatDebounced);
+
+    const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
+    const sceneSummary = versions[currentIdx] || '';
+
+    let isCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
+    if (isCollapsed === undefined) {
+        isCollapsed = get_settings('scene_summary_default_collapsed') ?? true;
+    }
+
+    // Find scene boundaries
+    const { startIdx, sceneMessages } = findSceneBoundaries(chat, index, get_data);
+
+    // Build scene break element
+    const $sceneBreak = buildSceneBreakElement(index, startIdx, sceneMessages, sceneName, sceneSummary, isVisible, isCollapsed, versions, currentIdx);
 
     // === Insert after the summary box, or after .mes_text if no summary box exists ===
     const $summaryBox = $msgDiv.find('.auto_summarize_memory_text');
@@ -340,7 +366,9 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     }
 
     // --- Editable handlers ---
+    // $FlowFixMe[missing-this-annot]
     $sceneBreak.find('.sceneBreak-name').on('change blur', function () {
+        // $FlowFixMe[cannot-resolve-name]
         set_data(message, SCENE_BREAK_NAME_KEY, $(this).val());
         saveChatDebounced();
         // Update navigator bar to show the new name immediately
@@ -360,24 +388,32 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
     });
 
+    // $FlowFixMe[missing-this-annot]
     $sceneBreak.find('.scene-summary-box').on('change blur', function () {
         // Update the current version in the versions array
         const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
         const idx = getCurrentSceneSummaryIndex(message, get_data);
+        // $FlowFixMe[cannot-resolve-name]
         updatedVersions[idx] = $(this).val();
         setSceneSummaryVersions(message, set_data, updatedVersions);
         // Also update the legacy summary field for compatibility
+        // $FlowFixMe[cannot-resolve-name]
         set_data(message, SCENE_BREAK_SUMMARY_KEY, $(this).val());
+        // $FlowFixMe[cannot-resolve-name]
         set_data(message, SCENE_SUMMARY_MEMORY_KEY, $(this).val()); // <-- ensure top-level property is set
         saveChatDebounced();
     });
 
     // --- Hyperlink handler ---
+    // $FlowFixMe[missing-this-annot]
     $sceneBreak.find('.scene-start-link').on('click', function () {
+        // $FlowFixMe[cannot-resolve-name]
         const mesid = $(this).data('mesid');
+        // $FlowFixMe[cannot-resolve-name]
         let $target = $(`div[mesid="${mesid}"]`);
         if ($target.length) {
             // Scroll the #chat container so the target is near the top
+            // $FlowFixMe[cannot-resolve-name]
             const $chat = $('#chat');
             const chatOffset = $chat.offset()?.top ?? 0;
             const targetOffset = $target.offset()?.top ?? 0;
@@ -388,9 +424,11 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             setTimeout(() => $target.removeClass('scene-highlight'), 1200);
         } else {
             // fallback: scroll to top to try to load more messages
+            // $FlowFixMe[cannot-resolve-name]
             const $chat = $('#chat');
             $chat.scrollTop(0);
             setTimeout(() => {
+                // $FlowFixMe[cannot-resolve-name]
                 $target = $(`div[mesid="${mesid}"]`);
                 if ($target.length) {
                     const chatOffset = $chat.offset()?.top ?? 0;
@@ -427,6 +465,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
                 }
             }
             if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
+                // $FlowFixMe[incompatible-type]
                 sceneObjects.push({ type: "summary", index: i, summary: get_memory(msg) });
             }
         }
@@ -443,6 +482,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
                 large: true
             });
         } else {
+            // $FlowFixMe[cannot-resolve-name]
             alert(pretty);
         }
     });
@@ -482,21 +522,25 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     });
 
     // --- Regenerate running summary from this scene onwards ---
+    // $FlowFixMe[missing-this-annot]
     $sceneBreak.find('.scene-regenerate-running').off('click').on('click', async function(e) {
         e.stopPropagation();
         if (!get_settings('running_scene_summary_enabled')) {
+            // $FlowFixMe[cannot-resolve-name]
             alert('Running scene summary is not enabled. Enable it in settings first.');
             return;
         }
 
         const sceneSummary = get_data(message, SCENE_SUMMARY_MEMORY_KEY);
         if (!sceneSummary) {
+            // $FlowFixMe[cannot-resolve-name]
             alert('This scene has no summary yet. Generate a scene summary first.');
             return;
         }
 
         log(SUBSYSTEM.SCENE, "Combine scene with running summary button clicked for scene at index", index);
 
+        // $FlowFixMe[cannot-resolve-name]
         const $btn = $(this);
         $btn.prop('disabled', true);
         $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> Combining...');
@@ -504,11 +548,14 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         try {
             await combine_scene_with_running_summary(index);
             log(SUBSYSTEM.SCENE, "Scene combined with running summary successfully");
+            // $FlowFixMe[cannot-resolve-name]
             if (window.updateVersionSelector) {
+                // $FlowFixMe[cannot-resolve-name]
                 window.updateVersionSelector();
             }
         } catch (err) {
             error(SUBSYSTEM.SCENE, "Failed to combine scene with running summary:", err);
+            // $FlowFixMe[cannot-resolve-name]
             alert('Failed to combine scene with running summary. Check console for details.');
         } finally {
             $btn.prop('disabled', false);
@@ -517,22 +564,33 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     });
 
     // --- Selection handlers for visual feedback ---
+    // $FlowFixMe[missing-this-annot]
     $sceneBreak.on('mousedown', function (_e) {
+        // $FlowFixMe[cannot-resolve-name]
         $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
+        // $FlowFixMe[cannot-resolve-name]
         $(this).addClass(SCENE_BREAK_SELECTED_CLASS);
     });
     // Remove selection when clicking outside any scene break
+    // $FlowFixMe[cannot-resolve-name]
     $(document).off('mousedown.sceneBreakDeselect').on('mousedown.sceneBreakDeselect', function (e) {
+        // $FlowFixMe[cannot-resolve-name]
         if (!$(e.target).closest('.' + SCENE_BREAK_DIV_CLASS).length) {
+            // $FlowFixMe[cannot-resolve-name]
             $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
         }
     });
     // Also add focus/blur for keyboard navigation
+    // $FlowFixMe[missing-this-annot]
     $sceneBreak.on('focusin', function () {
+        // $FlowFixMe[cannot-resolve-name]
         $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
+        // $FlowFixMe[cannot-resolve-name]
         $(this).addClass(SCENE_BREAK_SELECTED_CLASS);
     });
+    // $FlowFixMe[missing-this-annot]
     $sceneBreak.on('focusout', function () {
+        // $FlowFixMe[cannot-resolve-name]
         $(this).removeClass(SCENE_BREAK_SELECTED_CLASS);
     });
 }
@@ -545,7 +603,8 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
  * @param {object} ctx - Context object
  * @returns {string} - Concatenated scene content
  */
-export function collectSceneContent(startIdx, endIdx, mode, ctx, get_memory) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function collectSceneContent(startIdx: any, endIdx: any, mode: any, ctx: any, get_memory: any) {
     const chat = ctx.chat;
     const result = [];
     for (let i = startIdx; i <= endIdx; i++) {
@@ -561,7 +620,8 @@ export function collectSceneContent(startIdx, endIdx, mode, ctx, get_memory) {
 }
 
 // Call this after chat loads or refresh to re-render all scene breaks
-export function renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function renderAllSceneBreaks(get_message_div: any, getContext: any, get_data: any, set_data: any, saveChatDebounced: any) {
     const ctx = getContext();
     if (!ctx?.chat) return;
     for (let i = 0; i < ctx.chat.length; i++) {
@@ -581,6 +641,7 @@ export function renderAllSceneBreaks(get_message_div, getContext, get_data, set_
         }
     }
     // Update navigator bar if present
+    // $FlowFixMe[cannot-resolve-name]
     if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
 }
 
@@ -607,6 +668,7 @@ export function renderAllSceneBreaks(get_message_div, getContext, get_data, set_
  * @param {string|null} current_preset - Current preset to restore after generation (optional)
  * @returns {Promise<string|null>} - The generated scene name, or null if generation failed
  */
+// $FlowFixMe[missing-local-annot]
 async function autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile = null, preset = null, current_profile = null, current_preset = null) {
     const existingSceneName = get_data(message, SCENE_BREAK_NAME_KEY);
 
@@ -681,6 +743,7 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
 }
 
 // Helper: Try to queue scene summary generation
+// $FlowFixMe[missing-local-annot]
 async function tryQueueSceneSummary(index) {
     const queueEnabled = get_settings('operation_queue_enabled') !== false;
     if (!queueEnabled) return false;
@@ -701,6 +764,7 @@ async function tryQueueSceneSummary(index) {
 }
 
 // Helper: Collect scene objects for summary
+// $FlowFixMe[missing-local-annot]
 function collectSceneObjects(startIdx, endIdx, chat) {
     const mode = get_settings('scene_summary_history_mode') || "both";
     const messageTypes = get_settings('scene_summary_message_types') || "both";
@@ -717,6 +781,7 @@ function collectSceneObjects(startIdx, endIdx, chat) {
             }
         }
         if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
+            // $FlowFixMe[incompatible-type]
             sceneObjects.push({ type: "summary", index: i, summary: get_memory(msg) });
         }
     }
@@ -725,6 +790,7 @@ function collectSceneObjects(startIdx, endIdx, chat) {
 }
 
 // Helper: Prepare scene summary prompt
+// $FlowFixMe[missing-local-annot]
 function prepareScenePrompt(sceneObjects, ctx) {
     const promptTemplate = get_settings('scene_summary_prompt');
     const prefill = get_settings('scene_summary_prefill') || "";
@@ -743,6 +809,7 @@ function prepareScenePrompt(sceneObjects, ctx) {
 }
 
 // Helper: Switch to scene summary profile/preset
+// $FlowFixMe[missing-local-annot]
 async function switchToSceneProfile(ctx) {
     const profile = get_settings('scene_summary_connection_profile');
     const preset = get_settings('scene_summary_completion_preset');
@@ -762,6 +829,7 @@ async function switchToSceneProfile(ctx) {
 }
 
 // Helper: Restore previous profile/preset
+// $FlowFixMe[missing-local-annot]
 async function restoreProfile(ctx, savedProfiles) {
     const { profile, preset, current_profile, current_preset } = savedProfiles;
 
@@ -776,6 +844,7 @@ async function restoreProfile(ctx, savedProfiles) {
 }
 
 // Helper: Generate summary with error handling
+// $FlowFixMe[missing-local-annot]
 async function executeSceneSummaryGeneration(prompt, ctx) {
     let summary = "";
     try {
@@ -798,6 +867,7 @@ async function executeSceneSummaryGeneration(prompt, ctx) {
 }
 
 // Helper: Save scene summary
+// $FlowFixMe[missing-local-annot]
 function saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced) {
     const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
     updatedVersions.push(summary);
@@ -809,7 +879,8 @@ function saveSceneSummary(message, summary, get_data, set_data, saveChatDebounce
     refresh_memory();
 }
 
-export async function generateSceneSummary(index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue = false) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export async function generateSceneSummary(index: any, get_message_div: any, getContext: any, get_data: any, set_data: any, saveChatDebounced: any, skipQueue: any = false) {
     const ctx = getContext();
     const chat = ctx.chat;
     const message = chat[index];

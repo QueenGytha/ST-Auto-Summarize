@@ -1,3 +1,4 @@
+// @flow
 import {
     log,
     extension_settings,
@@ -19,7 +20,6 @@ import {
     summarize_messages,
     collect_messages_to_auto_summarize,
     display_injection_preview,
-    remember_message_toggle,
     forget_message_toggle,
     toast,
 } from './index.js';
@@ -57,22 +57,6 @@ function initialize_slash_commands() {
             refresh_memory()
         },
         helpString: 'Hard reset all settings',
-    }));
-
-    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'remember',
-        callback: (args, index) => {
-            if (index === "") index = null  // if not provided the index is an empty string, but we need it to be null to get the default behavior
-            remember_message_toggle(index);
-        },
-        helpString: 'Toggle the remember status of a message (default is the most recent message)',
-        unnamedArgumentList: [
-            SlashCommandArgument.fromProps({
-                description: 'Index of the message to toggle',
-                isRequired: false,
-                typeList: ARGUMENT_TYPE.NUMBER,
-            }),
-        ],
     }));
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
@@ -123,6 +107,7 @@ function initialize_slash_commands() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'toggle_memory_display',
         callback: (_args) => {
+            // $FlowFixMe[cannot-resolve-name]
             $(`.${settings_content_class} #display_memories`).click();  // toggle the memory display
         },
         helpString: "Toggle the \"display memories\" setting on the current profile (doesn't save the profile).",

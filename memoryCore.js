@@ -1,3 +1,4 @@
+// @flow
 import {
     get_settings,
     set_data,
@@ -6,7 +7,6 @@ import {
     get_memory,
     count_tokens,
     get_short_token_limit,
-    get_long_token_limit,
     update_all_message_visuals,
     debug,
     character_enabled,
@@ -16,7 +16,6 @@ import {
     auto_hide_messages_by_command,
     chat_enabled,
     MODULE_NAME,
-    load_combined_summary,
     extension_prompt_types,
     debounce,
     debounce_timeout,
@@ -26,15 +25,15 @@ import {
 import { get_running_summary_injection } from './runningSceneSummary.js';
 
 // INJECTION RECORDING FOR LOGS
-let last_long_injection = "";
-let last_short_injection = "";
-let last_combined_injection = "";
+// $FlowFixMe[signature-verification-failure]
+let last_message_summary_injection = "";
+// $FlowFixMe[signature-verification-failure]
 let last_scene_injection = "";
 
 // SUMMARY PROPERTY STRUCTURE:
-// - Short-term and long-term summaries are stored at the root of the message object:
+// - Single message summaries are stored at the root of the message object:
 //     - 'memory': the summary text
-//     - 'include': 'short' or 'long'
+//     - 'include': 'Summary of message(s)'
 // - Scene summaries are NOT stored at the root. Instead, they use:
 //     - 'scene_summary_memory': the summary text for the scene break
 //     - 'scene_break_visible': whether the scene break is visible
@@ -43,7 +42,8 @@ let last_scene_injection = "";
 //     - 'scene_summary_current_index': index of the current version
 
 // Retrieving memories
-function check_message_exclusion(message) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function check_message_exclusion(message: any) {
     // check for any exclusion criteria for a given message based on current settings
     // (this does NOT take context lengths into account, only exclusion criteria based on the message itself).
     if (!message) return false;
@@ -51,11 +51,6 @@ function check_message_exclusion(message) {
     // system messages sent by this extension are always ignored
     if (get_data(message, 'is_auto_summarize_system_memory')) {
         return false;
-    }
-
-    // first check if it has been marked to be remembered by the user - if so, it bypasses all other exclusion criteria
-    if (get_data(message, 'remember')) {
-        return true;
     }
 
     // check if it's marked to be excluded - if so, exclude it
@@ -99,7 +94,7 @@ function check_message_exclusion(message) {
     return true;
 }
 function update_message_inclusion_flags() {
-    // Update all messages in the chat, flagging them as short-term or long-term memories to include in the injection.
+    // Update all messages in the chat, flagging them as single message summaries or long-term memories to include in the injection.
     // This has to be run on the entire chat since it needs to take the context limits into account.
     const context = getContext();
     const chat = context.chat;
@@ -112,10 +107,8 @@ function update_message_inclusion_flags() {
     const first_to_inject = chat.length - injection_threshold
     let last_user_message_identified = false
 
-    // iterate through the chat in reverse order and mark the messages that should be included in short-term and long-term memory
-    let short_limit_reached = false;
-    let long_limit_reached = false;
-    // let long_term_end_index = null;  // index of the most recent message that doesn't fit in short-term memory
+    // iterate through the chat in reverse order and mark the messages that should be included as single message summaries
+    let message_summary_limit_reached = false;
     const end = chat.length - 1;
     let summary = ""  // total concatenated summary so far
     let new_summary = ""  // temp summary storage to check token length
@@ -140,7 +133,7 @@ function update_message_inclusion_flags() {
             continue;
         }
 
-        if (!short_limit_reached) {  // short-term limit hasn't been reached yet
+        if (!message_summary_limit_reached) {  // single message limit hasn't been reached yet
             const memory = get_memory(message)
             if (!memory) {  // If it doesn't have a memory, mark it as excluded and move to the next
                 set_data(message, 'include', null)
@@ -148,27 +141,12 @@ function update_message_inclusion_flags() {
             }
 
             new_summary = concatenate_summary(summary, message)  // concatenate this summary
-            const short_token_size = count_tokens(new_summary);
-            if (short_token_size > get_short_token_limit()) {  // over context limit
-                short_limit_reached = true;
-                // long_term_end_index = i;  // this is where long-term memory ends and short-term begins
+            const message_summary_token_size = count_tokens(new_summary);
+            if (message_summary_token_size > get_short_token_limit()) {  // over context limit
+                message_summary_limit_reached = true;
                 summary = ""  // reset summary
             } else {  // under context limit
                 set_data(message, 'include', 'Summary of message(s)');
-                summary = new_summary
-                continue
-            }
-        }
-
-        // if the short-term limit has been reached, check the long-term limit
-        const remember = get_data(message, 'remember');
-        if (!long_limit_reached && remember) {  // long-term limit hasn't been reached yet and the message was marked to be remembered
-            new_summary = concatenate_summary(summary, message)  // concatenate this summary
-            const long_token_size = count_tokens(new_summary);
-            if (long_token_size > get_long_token_limit()) {  // over context limit
-                long_limit_reached = true;
-            } else {
-                set_data(message, 'include', 'long');  // mark the message as long-term
                 summary = new_summary
                 continue
             }
@@ -180,7 +158,8 @@ function update_message_inclusion_flags() {
 
     update_all_message_visuals()
 }
-function concatenate_summary(existing_text, message) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function concatenate_summary(existing_text: any, message: any) {
     // given an existing text of concatenated summaries, concatenate the next one onto it
     const memory = get_memory(message)
     if (!memory) {  // if there's no summary, do nothing
@@ -191,7 +170,8 @@ function concatenate_summary(existing_text, message) {
 }
 
 // Scene summaries are stored in 'scene_summary_memory' (not 'memory') on the message object.
-function concatenate_summaries(indexes) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function concatenate_summaries(indexes: any) {
     const context = getContext();
     const chat = context.chat;
     const summaries = [];
@@ -204,7 +184,7 @@ function concatenate_summaries(indexes) {
             type = 'Scene-wide Sumary';
             summary = get_data(message, 'scene_summary_memory');
         } else {
-            // Short/long summary
+            // Single message summary
             type = get_data(message, 'include');
             summary = get_data(message, 'memory');
         }
@@ -216,7 +196,8 @@ function concatenate_summaries(indexes) {
     return JSON.stringify(summaries, null, 2);
 }
 
-function collect_chat_messages(include) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function collect_chat_messages(include: any) {
     // Get a list of chat message indexes identified by the given criteria
     const context = getContext();
     const indexes = []  // list of indexes of messages
@@ -234,21 +215,10 @@ function collect_chat_messages(include) {
     indexes.reverse()
     return indexes
 }
-function get_long_memory() {
-    // get the injection text for long-term memory
-    const indexes = collect_chat_messages('long')
-    if (indexes.length === 0) return ""  // if no memories, return empty
-
-    const text = concatenate_summaries(indexes);
-    const template = get_settings('long_template')
-    const ctx = getContext();
-
-    // replace memories macro
-    return ctx.substituteParamsExtended(template, {[generic_memories_macro]: text});
-}
-function get_short_memory() {
-    // get the injection text for short-term memory
-    const indexes = collect_chat_messages('short')
+// $FlowFixMe[signature-verification-failure]
+function get_message_summary_injection() {
+    // get the injection text for single message summary
+    const indexes = collect_chat_messages('Summary of message(s)')
     if (indexes.length === 0) return ""  // if no memories, return empty
 
     const text = concatenate_summaries(indexes);
@@ -261,6 +231,7 @@ function get_short_memory() {
 
 // Collect indexes of all visible scene breaks that have a summary
 // Scene summaries are stored in 'scene_summary_memory' (not 'memory') on the message object.
+// $FlowFixMe[signature-verification-failure]
 function collect_scene_summary_indexes() {
     const ctx = getContext();
     const chat = ctx.chat;
@@ -288,7 +259,8 @@ function collect_scene_summary_indexes() {
     return indexes;
 }
 
-// Get scene memory injection text (like get_short_memory/get_long_memory)
+// Get scene memory injection text (like get_message_summary_injection)
+// $FlowFixMe[signature-verification-failure]
 function get_scene_memory_injection() {
     if (!get_settings('scene_summary_enabled')) return "";
     const ctx = getContext();
@@ -316,25 +288,14 @@ function get_scene_memory_injection() {
     return template.replace('{{scene_summaries}}', summariesText);
 }
 
+// $FlowFixMe[signature-verification-failure]
 async function refresh_memory() {
     const ctx = getContext();
 
-    // --- Declare all injection position/role/depth/scan variables at the top ---
-    const long_term_position = get_settings('long_term_position');
-    const short_term_position = get_settings('short_term_position');
-    const combined_summary_position = get_settings('combined_summary_position');
+    // --- Declare scene injection position/role/depth/scan variables ---
     let scene_summary_position = get_settings('scene_summary_position');
-    const long_term_role = get_settings('long_term_role');
-    const short_term_role = get_settings('short_term_role');
-    const combined_summary_role = get_settings('combined_summary_role');
     let scene_summary_role = get_settings('scene_summary_role');
-    const long_term_depth = get_settings('long_term_depth');
-    const short_term_depth = get_settings('short_term_depth');
-    const combined_summary_depth = get_settings('combined_summary_depth');
     let scene_summary_depth = get_settings('scene_summary_depth');
-    const long_term_scan = get_settings('long_term_scan');
-    const short_term_scan = get_settings('short_term_scan');
-    const combined_summary_scan = get_settings('combined_summary_scan');
     let scene_summary_scan = get_settings('scene_summary_scan');
 
     // --- Auto-hide/unhide messages older than X ---
@@ -342,28 +303,18 @@ async function refresh_memory() {
     // --- end auto-hide ---
 
     if (!chat_enabled()) { // if chat not enabled, remove the injections
-        ctx.setExtensionPrompt(`${MODULE_NAME}_long`, "", extension_prompt_types.IN_PROMPT, 0);
-        ctx.setExtensionPrompt(`${MODULE_NAME}_short`, "", extension_prompt_types.IN_PROMPT, 0);
-        ctx.setExtensionPrompt(`${MODULE_NAME}_combined`, "", extension_prompt_types.IN_PROMPT, 0);
         ctx.setExtensionPrompt(`${MODULE_NAME}_scene`, "", extension_prompt_types.IN_PROMPT, 0);
         return;
     }
 
     debug("Refreshing memory")
 
-    // Update the UI according to the current state of the chat memories, and update the injection prompts accordingly
+    // Update the UI according to the current state of the chat memories
     update_message_inclusion_flags()  // update the inclusion flags for all messages
 
-    // get the filled out templates
-    const long_injection = get_long_memory();
-    const short_injection = get_short_memory();
-    // --- Combined Summary Injection ---
-    const combined_summary = load_combined_summary();
-    let combined_injection = "";
-    if (get_settings('combined_summary_enabled') && combined_summary) {
-        const template = get_settings('combined_summary_template');
-        combined_injection = ctx.substituteParamsExtended(template, {[generic_memories_macro]: combined_summary});
-    }
+    // Get message summaries for logging/debugging (not injected)
+    const message_summary_injection = get_message_summary_injection();
+
     // --- Scene Summary Injection ---
     let scene_injection = "";
 
@@ -382,18 +333,15 @@ async function refresh_memory() {
     }
 
     // Store for later logging
-    last_long_injection = long_injection;
-    last_short_injection = short_injection;
-    last_combined_injection = combined_injection;
+    last_message_summary_injection = message_summary_injection;
     last_scene_injection = scene_injection;
 
-    ctx.setExtensionPrompt(`${MODULE_NAME}_long`,  long_injection,  long_term_position, long_term_depth, long_term_scan, long_term_role);
-    ctx.setExtensionPrompt(`${MODULE_NAME}_short`, short_injection, short_term_position, short_term_depth, short_term_scan, short_term_role);
-    ctx.setExtensionPrompt(`${MODULE_NAME}_combined`, combined_injection, combined_summary_position, combined_summary_depth, combined_summary_scan, combined_summary_role);
+    // Only inject scene summaries (message summaries are NOT injected)
     ctx.setExtensionPrompt(`${MODULE_NAME}_scene`, scene_injection, scene_summary_position, scene_summary_depth, scene_summary_scan, scene_summary_role);
 
-    return `${long_injection}\n\n...\n\n${short_injection}\n\n...\n\n${combined_injection}\n\n...\n\n${scene_injection}`  // return the concatenated memory text
+    return scene_injection;  // return the scene injection
 }
+// $FlowFixMe[signature-verification-failure]
 const refresh_memory_debounced = debounce(refresh_memory, debounce_timeout.relaxed);
 
 
@@ -403,14 +351,11 @@ export {
     collect_chat_messages,
     concatenate_summary,
     concatenate_summaries,
-    get_long_memory,
-    get_short_memory,
+    get_message_summary_injection,
     refresh_memory,
     refresh_memory_debounced,
     collect_scene_summary_indexes,
-    last_long_injection,
-    last_short_injection,
-    last_combined_injection,
+    last_message_summary_injection,
     last_scene_injection,
     get_scene_memory_injection
 };

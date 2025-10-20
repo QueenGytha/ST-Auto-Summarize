@@ -1,3 +1,4 @@
+// @flow
 import {
     get_settings,
     set_settings,
@@ -21,9 +22,11 @@ import {
  * @param disable {boolean} Whether to disable the element when chat is disabled
  */
 
-function bind_setting(selector, key, type=null, callback=null, disable=true) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function bind_setting(selector: any, key: any, type: any=null, callback: any=null, disable: any=true) {
     // Bind a UI element to a setting, so if the UI element changes, the setting is updated
     selector = `.${settings_content_class} ${selector}`  // add the settings div to the selector
+    // $FlowFixMe[cannot-resolve-name]
     const element = $(selector)
     settings_ui_map[key] = [element, type]
 
@@ -45,13 +48,17 @@ function bind_setting(selector, key, type=null, callback=null, disable=true) {
     set_setting_ui_element(key, element, type);
 
     // Make the UI element update the setting when changed
+    // $FlowFixMe[missing-this-annot]
     element.on(trigger, function (_event) {
         let value;
         if (type === 'number') {  // number input
+            // $FlowFixMe[cannot-resolve-name]
             value = Number($(this).val());
         } else if (type === 'boolean') {  // checkbox
+            // $FlowFixMe[cannot-resolve-name]
             value = Boolean($(this).prop('checked'));
         } else {  // text, dropdown, select2
+            // $FlowFixMe[cannot-resolve-name]
             value = $(this).val();
             value = unescape_string(value)  // ensures values like "\n" are NOT escaped from input
         }
@@ -73,15 +80,18 @@ function bind_setting(selector, key, type=null, callback=null, disable=true) {
         // refresh memory state (update message inclusion criteria, etc)
         if (trigger === 'change') {
             refresh_memory();
+        // $FlowFixMe[invalid-compare]
         } else if (trigger === 'input') {
             refresh_memory_debounced();  // debounce the refresh for input elements
         }
     });
 }
-function bind_function(selector, func, disable=true) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function bind_function(selector: any, func: any, disable: any=true) {
     // bind a function to an element (typically a button or input)
     // if disable is true, disable the element if chat is disabled
     selector = `.${settings_content_class} ${selector}`
+    // $FlowFixMe[cannot-resolve-name]
     const element = $(selector);
     if (element.length === 0) {
         error(`No element found for selector [${selector}] when binding function`);
@@ -104,7 +114,8 @@ function bind_function(selector, func, disable=true) {
         });
     }
 }
-function set_setting_ui_element(key, element, type) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function set_setting_ui_element(key: any, element: any, type: any) {
     // Set a UI element to the current setting value
     let radio = false;
     if (element.is('input[type="radio"]')) {

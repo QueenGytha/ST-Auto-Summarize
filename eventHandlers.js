@@ -1,3 +1,4 @@
+// @flow
 import {
     debug,
     log,
@@ -15,9 +16,7 @@ import {
     clear_memory,
     get_data,
     set_data,
-    last_long_injection,
-    last_short_injection,
-    last_combined_injection,
+    last_message_summary_injection,
     last_scene_injection,
     load_settings_html,
     initialize_settings_listeners,
@@ -32,23 +31,18 @@ import {
     saveChatDebounced,
     set_character_enabled_button_states,
     renderAllSceneBreaks,
-    generate_combined_summary,
     get_manifest,
     refresh_settings,
     update_connection_profile_dropdown,
     check_st_version,
     initialize_settings,
-    get_short_memory,
-    get_long_memory,
-    combined_memory_macro,
     MacrosParser,
     MemoryEditInterface,
-    short_memory_macro,
-    long_memory_macro,
+    single_message_summary_macro,
+    get_message_summary_injection,
     streamingProcessor,
     initializeSceneNavigatorBar,
     renderSceneNavigatorBar,
-    load_combined_summary,
     processSceneBreakOnChatLoad,
     processNewMessageForSceneBreak,
     cleanup_invalid_running_summaries,
@@ -83,7 +77,9 @@ async function handleMessageDeleted() {
     refresh_memory();
     cleanup_invalid_running_summaries();
     // Update the version selector UI after cleanup
+    // $FlowFixMe[cannot-resolve-name]
     if (typeof window.updateVersionSelector === 'function') {
+        // $FlowFixMe[cannot-resolve-name]
         window.updateVersionSelector();
     }
     // Refresh the scene navigator bar to remove deleted scenes
@@ -107,6 +103,7 @@ async function handleUserMessage() {
     // NOTE: Auto scene break detection runs on 'char_message' after AI responds, not here
 }
 
+// $FlowFixMe[missing-local-annot]
 async function handleCharMessageSwipe(index) {
     const context = getContext();
     const message = context.chat[index];
@@ -118,6 +115,7 @@ async function handleCharMessageSwipe(index) {
     refresh_memory()
 }
 
+// $FlowFixMe[missing-local-annot]
 async function handleCharMessageNew(index) {
     last_message_swiped = null;
     // Auto scene break detection on new character message (runs regardless of auto_summarize setting)
@@ -130,6 +128,7 @@ async function handleCharMessageNew(index) {
     await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
 }
 
+// $FlowFixMe[missing-local-annot]
 async function handleCharMessage(index) {
     if (!chat_enabled()) return;
     const context = getContext();
@@ -143,6 +142,7 @@ async function handleCharMessage(index) {
     }
 }
 
+// $FlowFixMe[missing-local-annot]
 async function handleMessageEdited(index) {
     if (!chat_enabled()) return;
     const context = getContext();
@@ -156,6 +156,7 @@ async function handleMessageEdited(index) {
     //  then the message edit textbox doesn't close until the summary is done.
 }
 
+// $FlowFixMe[missing-local-annot]
 async function handleMessageSwiped(index) {
     if (!chat_enabled()) return;
     const context = getContext();
@@ -179,20 +180,14 @@ async function handleMessageSwiped(index) {
 async function handleMessageSent() {
     if (!chat_enabled()) return;
     if (get_settings('debug_mode')) {
-        if (
-            last_long_injection ||
-            last_short_injection ||
-            last_combined_injection ||
-            last_scene_injection
-        ) {
-            if (last_long_injection) debug(`[MEMORY INJECTION] long_injection:\n${last_long_injection}`);
-            if (last_short_injection) debug(`[MEMORY INJECTION] short_injection:\n${last_short_injection}`);
-            if (last_combined_injection) debug(`[MEMORY INJECTION] combined_injection:\n${last_combined_injection}`);
+        if (last_message_summary_injection || last_scene_injection) {
+            if (last_message_summary_injection) debug(`[MEMORY INJECTION] message_summary_injection:\n${last_message_summary_injection}`);
             if (last_scene_injection) debug(`[MEMORY INJECTION] scene_injection:\n${last_scene_injection}`);
         }
     }
 }
 
+// $FlowFixMe[missing-local-annot]
 async function handleDefaultEvent(event) {
     if (!chat_enabled()) return;
     debug(`Unknown event: "${event}", refreshing memory`)
@@ -211,7 +206,8 @@ const eventHandlers = {
     'message_sent': handleMessageSent,
 };
 
-async function on_chat_event(event=null, data=null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function on_chat_event(event: any=null, data: any=null) {
     debug(`[on_chat_event] event: ${event}, data: ${JSON.stringify(data)}`);
     debug("Chat updated: " + event)
 
@@ -224,7 +220,9 @@ async function on_chat_event(event=null, data=null) {
 }
 
 // Entry point
+// $FlowFixMe[signature-verification-failure]
 let memoryEditInterface;
+// $FlowFixMe[cannot-resolve-name]
 jQuery(async function () {
     log(`Loading extension...`)
 
@@ -293,15 +291,16 @@ Object.entries(event_types).forEach(([key, type]) => {
 });
 
     // Global Macros
-    MacrosParser.registerMacro(short_memory_macro, () => get_short_memory());
-    MacrosParser.registerMacro(long_memory_macro, () => get_long_memory());
-    MacrosParser.registerMacro(combined_memory_macro, () => load_combined_summary());
+    MacrosParser.registerMacro(single_message_summary_macro, () => get_message_summary_injection());
 
     // Export to the Global namespace so can be used in the console for debugging
+    // $FlowFixMe[cannot-resolve-name]
     window.getContext = getContext;
+    // $FlowFixMe[cannot-resolve-name]
     window.refresh_memory = refresh_memory;
-    window.generate_combined_summary = generate_combined_summary;
+    // $FlowFixMe[cannot-resolve-name]
     window.refresh_settings = refresh_settings;
+    // $FlowFixMe[cannot-resolve-name]
     window.update_connection_profile_dropdown = update_connection_profile_dropdown;
 
     initializeSceneNavigatorBar();

@@ -1,0 +1,30 @@
+// @flow
+// Global type declarations for Flow
+
+// jQuery
+declare var $: any;
+
+// DOM globals
+declare var document: any;
+declare var window: any;
+declare var console: any;
+
+// DOM/JS globals
+declare function structuredClone(value: any): any;
+
+// SillyTavern globals
+declare var eventSource: any;
+declare var event_types: any;
+declare var extension_settings: any;
+declare var characters: any;
+declare var this_chid: any;
+declare var chat_metadata: any;
+declare var saveSettingsDebounced: any;
+declare var substituteParams: any;
+declare var renderExtensionTemplateAsync: any;
+declare var callGenericPopup: any;
+declare var POPUP_TYPE: any;
+declare var Popup: any;
+declare var chat: any;
+declare var toastr: any;
+declare var globalThis: any;

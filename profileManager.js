@@ -1,3 +1,4 @@
+// @flow
 import {
     get_settings,
     set_settings,
@@ -17,11 +18,13 @@ import {
 
 
 // Profile management
-function copy_settings(profile=null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function copy_settings(profile: any=null) {
     // copy the setting from the given profile (or current settings if none provided)
     let settings;
 
     if (!profile) {  // no profile given, copy current settings
+        // $FlowFixMe[cannot-resolve-name]
         settings = structuredClone(extension_settings[MODULE_NAME]);
     } else {  // copy from the profile
         const profiles = get_settings('profiles');
@@ -30,6 +33,7 @@ function copy_settings(profile=null) {
         }
 
         // copy the settings from the profile
+        // $FlowFixMe[cannot-resolve-name]
         settings = structuredClone(profiles[profile]);
     }
 
@@ -39,7 +43,8 @@ function copy_settings(profile=null) {
     }
     return settings;
 }
-function detect_settings_difference(profile=null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function detect_settings_difference(profile: any=null) {
     // check if the current settings differ from the given profile
     if (!profile) {  // if none provided, compare to the current profile
         profile = get_settings('profile')
@@ -49,6 +54,7 @@ function detect_settings_difference(profile=null) {
 
     let different = false;
     for (const key of Object.keys(profile_settings)) {
+        // $FlowFixMe[invalid-computed-prop]
         if (profile_settings[key] !== current_settings[key]) {
             different = true;
             break;
@@ -56,7 +62,8 @@ function detect_settings_difference(profile=null) {
     }
     return different;
 }
-function save_profile(profile=null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function save_profile(profile: any=null) {
     // Save the current settings to the given profile
     if (!profile) {  // if none provided, save to the current profile
         profile = get_settings('profile');
@@ -74,7 +81,8 @@ function save_profile(profile=null) {
     // update the button highlight
     update_save_icon_highlight();
 }
-function load_profile(profile=null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function load_profile(profile: any=null) {
     // load a given settings profile
     const current_profile = get_settings('profile')
     if (!profile) {  // if none provided, reload the current profile
@@ -95,7 +103,8 @@ function load_profile(profile=null) {
     }
     refresh_settings();
 }
-function export_profile(profile=null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function export_profile(profile: any=null) {
     // export a settings profile
     if (!profile) {  // if none provided, reload the current profile
         profile = get_settings('profile')
@@ -109,15 +118,18 @@ function export_profile(profile=null) {
 
     log("Exporting Configuration Profile: "+profile);
     const data = JSON.stringify(settings, null, 4);
+    // $FlowFixMe[cannot-resolve-name]
     download(data, `${profile}.json`, 'application/json');
 }
-async function import_profile(e) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function import_profile(e: any) {
     const file = e.target.files[0];
     if (!file) {
         return;
     }
 
     const name = file.name.replace('.json', '')
+    // $FlowFixMe[cannot-resolve-name]
     const data = await parseJsonFile(file);
 
     // save to the profile
@@ -132,6 +144,7 @@ async function import_profile(e) {
 }
 async function rename_profile() {
     // Rename the current profile via user input
+    // $FlowFixMe[cannot-resolve-name]
     const ctx = getContext();
     const old_name = get_settings('profile');
     const new_name = await ctx.Popup.show.input("Rename Configuration Profile", `Enter a new name:`, old_name);
@@ -240,7 +253,8 @@ function toggle_chat_profile() {
     // otherwise, set it to the current profile.
     set_chat_profile(key, profile === get_chat_profile() ? null : profile);
 }
-function get_character_profile(key) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function get_character_profile(key: any) {
     // Get the profile for a given character
     if (!key) {  // if none given, assume the current character
         key = get_current_character_identifier();
@@ -251,7 +265,8 @@ function get_character_profile(key) {
     }
     return character_profiles[key];
 }
-function set_character_profile(key, profile=null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function set_character_profile(key: any, profile: any=null) {
     // Set the profile for a given character (or unset it if no profile provided)
     const character_profiles = get_settings('character_profiles');
 
@@ -266,7 +281,8 @@ function set_character_profile(key, profile=null) {
     set_settings('character_profiles', character_profiles);
     refresh_settings()
 }
-function get_chat_profile(id) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function get_chat_profile(id: any) {
     // Get the profile for a given chat
     if (!id) {  // if none given, assume the current character
         id = get_current_chat_identifier();
@@ -274,7 +290,8 @@ function get_chat_profile(id) {
     const profiles = get_settings('chat_profiles');
     return profiles[id]
 }
-function set_chat_profile(id, profile=null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function set_chat_profile(id: any, profile: any=null) {
     // Set the profile for a given chat (or unset it if no profile provided)
     const chat_profiles = get_settings('chat_profiles');
 

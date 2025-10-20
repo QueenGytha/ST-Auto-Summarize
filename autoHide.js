@@ -1,3 +1,4 @@
+// @flow
 import {
     getContext,
     get_settings,
@@ -6,6 +7,7 @@ import {
 } from './index.js';
 
 // Helper: Find all visible scene breaks
+// $FlowFixMe[missing-local-annot]
 function findVisibleSceneBreaks(chat) {
     const scene_break_indexes = [];
     for (let i = 0; i < chat.length; i++) {
@@ -17,6 +19,7 @@ function findVisibleSceneBreaks(chat) {
 }
 
 // Helper: Apply age-based hiding rules
+// $FlowFixMe[missing-local-annot]
 function applyAgeBasedHiding(chat, auto_hide_age, to_hide, to_unhide) {
     if (auto_hide_age >= 0) {
         const cutoff = chat.length - auto_hide_age;
@@ -36,6 +39,7 @@ function applyAgeBasedHiding(chat, auto_hide_age, to_hide, to_unhide) {
 }
 
 // Helper: Apply scene-based hiding rules
+// $FlowFixMe[missing-local-annot]
 function applySceneBasedHiding(chat, auto_hide_scene_count, to_hide, to_unhide) {
     if (auto_hide_scene_count < 0) return;
 
@@ -61,6 +65,7 @@ function applySceneBasedHiding(chat, auto_hide_scene_count, to_hide, to_unhide) 
 }
 
 // Helper: Execute hide/unhide command for a range
+// $FlowFixMe[missing-local-annot]
 async function executeCommand(ctx, command, batchStart, last) {
     if (batchStart === last) {
         debug(`[auto_hide] ${command}ing message ${batchStart}`);
@@ -72,6 +77,7 @@ async function executeCommand(ctx, command, batchStart, last) {
 }
 
 // Helper: Process batched commands for contiguous ranges
+// $FlowFixMe[missing-local-annot]
 async function processBatchedCommands(ctx, indexes, command) {
     if (indexes.length === 0) return;
 
@@ -99,7 +105,9 @@ async function auto_hide_messages_by_command() {
     const auto_hide_scene_count = get_settings('auto_hide_scene_count');
     const chat = ctx.chat;
 
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const to_hide = new Set();
+    // $FlowFixMe[underconstrained-implicit-instantiation]
     const to_unhide = new Set();
 
     // Apply hiding rules

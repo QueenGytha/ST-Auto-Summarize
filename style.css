@@ -102,11 +102,11 @@ By default, text is greyed to indicate that is it not injected.
     background: transparent !important;
 }
 
-/* to style short-term memories. */
-.auto_summarize_short_memory {
+/* to style single message summaries. */
+.auto_summarize_single_message_summary {
     color: var(--auto_summarize_short);
 }
-.auto_summarize_short_memory.auto_summarize_lagging_memory {
+.auto_summarize_single_message_summary.auto_summarize_lagging_memory {
     color: rgba(from var(--auto_summarize_short) r g b / var(--auto_summarize_redundant_opacity));
     text-shadow: none;
 }

@@ -1,6 +1,6 @@
+// @flow
 import {
     get_settings,
-    set_settings,
     get_data,
     set_data,
     get_memory,
@@ -32,8 +32,7 @@ import {
     main_api,
     getStringHash,
     generateRaw,
-    trimToEndSentence,
-    generate_combined_summary
+    trimToEndSentence
 } from './index.js';
 
 // Summarization
@@ -41,11 +40,13 @@ let SUMMARIZATION_DELAY_TIMEOUT = null  // the set_timeout object for the summar
 let SUMMARIZATION_DELAY_RESOLVE = null
 
 let STOP_SUMMARIZATION
+// $FlowFixMe[signature-verification-failure]
 function getStopSummarization() {
     return STOP_SUMMARIZATION;
 }
 
-function setStopSummarization(val) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function setStopSummarization(val: any) {
     STOP_SUMMARIZATION = val;
 }
 setStopSummarization(false);
@@ -64,12 +65,14 @@ async function switchToSummarizationProfile() {
 }
 
 // Helper: Restore original profile/preset
+// $FlowFixMe[missing-local-annot]
 async function restoreOriginalProfile(saved) {
     await set_connection_profile(saved.current_profile);
     await set_preset(saved.current_preset);
 }
 
 // Helper: Process time delay between summarizations
+// $FlowFixMe[missing-local-annot]
 async function processTimeDelay(show_progress, n, indexes_length) {
     const time_delay = get_settings('summarization_time_delay');
     if (time_delay <= 0 || n >= indexes_length - 1) return true;
@@ -90,23 +93,8 @@ async function processTimeDelay(show_progress, n, indexes_length) {
     return true;
 }
 
-// Helper: Check and run combined summary if needed
-async function checkAndRunCombinedSummary(anyModified) {
-    if (!anyModified || !get_settings('combined_summary_enabled')) return;
-
-    const run_interval = get_settings('combined_summary_run_interval') || 1;
-    const new_count = get_settings('combined_summary_new_count') || 0;
-
-    if (new_count >= run_interval) {
-        if (get_settings('show_combined_summary_toast')) {
-            toast("Generating combined summary after individual summaries...", "info");
-        }
-        await generate_combined_summary();
-        set_settings('combined_summary_new_count', 0);
-    }
-}
-
 // Helper: Cleanup after summarization
+// $FlowFixMe[missing-local-annot]
 function cleanupAfterSummarization(ctx, show_progress, indexes_length) {
     if (show_progress) remove_progress_bar('summarize');
 
@@ -124,7 +112,8 @@ function cleanupAfterSummarization(ctx, show_progress, indexes_length) {
     memoryEditInterface.update_table();
 }
 
-async function summarize_messages(indexes=null, show_progress=true) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function summarize_messages(indexes: any=null, show_progress: any=true) {
     const ctx = getContext();
 
     // Normalize indexes
@@ -158,7 +147,6 @@ async function summarize_messages(indexes=null, show_progress=true) {
     const savedProfile = await switchToSummarizationProfile();
 
     let n = 0;
-    let anyModified = false;
 
     try {
         for (const i of indexes) {
@@ -169,48 +157,67 @@ async function summarize_messages(indexes=null, show_progress=true) {
                 break;
             }
 
-            const result = await summarize_message(i);
-            if (result.modified) anyModified = true;
+            await summarize_message(i);
 
             const shouldContinue = await processTimeDelay(show_progress, n, indexes.length);
             if (!shouldContinue) break;
 
             n += 1;
         }
-
-        await checkAndRunCombinedSummary(anyModified);
     } finally {
         await restoreOriginalProfile(savedProfile);
         cleanupAfterSummarization(ctx, show_progress, indexes.length);
     }
 }
-async function summarize_message(index) {
+// Helper: Handle summary validation and retries
+// $FlowFixMe[missing-local-annot]
+async function validateAndRetrySummary(summary, index, message, retry_count, max_retries) {
+    const is_valid = await validate_summary(summary, "regular");
+
+    if (is_valid) {
+        debug("[Validation] Summary validation passed");
+        return { valid: true, retry_count };
+    }
+
+    retry_count++;
+    debug(`[Validation] Summary failed validation: "${summary.substring(0, 100)}..."`);
+
+    if (retry_count >= max_retries) {
+        set_data(message, 'exclude', true);
+        toast(`Message ${index}: Failed to generate valid summary after ${max_retries} attempts. Message has been excluded from memory.`, "warning");
+        debug(`[Validation] Max retries (${max_retries}) reached for message ${index}. Marking as excluded.`);
+        return { valid: false, retry_count, maxRetriesReached: true };
+    }
+
+    debug(`[Validation] Retry ${retry_count}/${max_retries} for message ${index}`);
+    return { valid: false, retry_count, maxRetriesReached: false };
+}
+
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function summarize_message(index: any) {
     // Summarize a message given the chat index, replacing any existing memories
     // Should only be used from summarize_messages()
 
     const context = getContext();
-    const message = context.chat[index]
+    const message = context.chat[index];
     const message_hash = getStringHash(message.mes);
 
-    // Temporarily update the message summary text to indicate that it's being summarized (no styling based on inclusion criteria)
-    // A full visual update with style should be done on the whole chat after inclusion criteria have been recalculated
-    update_message_visuals(index, false, "Summarizing...")
-    memoryEditInterface.update_message_visuals(index, null, false, "Summarizing...")
+    // Temporarily update the message summary text to indicate that it's being summarized
+    update_message_visuals(index, false, "Summarizing...");
+    memoryEditInterface.update_message_visuals(index, null, false, "Summarizing...");
 
-    // If the most recent message, scroll to the bottom to get the summary in view.
     if (index === context.chat.length - 1) {
         scrollChatToBottom();
     }
 
-    // construct the full summary prompt for the message
-    const prompt = await create_summary_prompt(index)
+    const prompt = await create_summary_prompt(index);
 
-    // summarize it
     let summary;
     let err = null;
     let retry_count = 0;
-    const max_retries = get_settings('regular_summary_error_detection_retries');
-    
+    const max_retries = get_settings('message_summary_error_detection_retries');
+    const validationEnabled = get_settings('error_detection_enabled') && get_settings('message_summary_error_detection_enabled');
+
     while (true) {
         try {
             if (retry_count > 0) {
@@ -218,42 +225,26 @@ async function summarize_message(index) {
                 update_message_visuals(index, false, `Summarizing (retry ${retry_count}/${max_retries})...`);
                 memoryEditInterface.update_message_visuals(index, null, false, `Summarizing (retry ${retry_count}/${max_retries})...`);
             }
-            
-            debug(`Summarizing message ${index}...`)
+
+            debug(`Summarizing message ${index}...`);
             summary = await summarize_text(prompt);
-            
+
             // Validate the summary if error detection is enabled
-            if (get_settings('error_detection_enabled') && 
-                get_settings('regular_summary_error_detection_enabled')) {
-                
-                const is_valid = await validate_summary(summary, "regular");
-                
-                if (is_valid) {
-                    debug("[Validation] Summary validation passed");
-                    break; // Valid summary, exit the loop
-                } else {
-                    retry_count++;
-                    debug(`[Validation] Summary failed validation: "${summary.substring(0, 100)}..."`);
-                    
-                    if (retry_count >= max_retries) {
-                        err = "Failed to generate valid summary after max retries";
-                        summary = null;
-                        
-                        // Mark the message as force-excluded
-                        set_data(message, 'exclude', true);
-                        
-                        // Show toast notification about failure
-                        toast(`Message ${index}: Failed to generate valid summary after ${max_retries} attempts. Message has been excluded from memory.`, "warning");
-                        
-                        debug(`[Validation] Max retries (${max_retries}) reached for message ${index}. Marking as excluded.`);
-                        break; // Max retries reached, give up
-                    }
-                    debug(`[Validation] Retry ${retry_count}/${max_retries} for message ${index}`);
-                    continue; // Retry summarization
+            if (validationEnabled) {
+                const result = await validateAndRetrySummary(summary, index, message, retry_count, max_retries);
+                retry_count = result.retry_count;
+
+                if (result.valid) {
+                    break;
                 }
+                if (result.maxRetriesReached) {
+                    err = "Failed to generate valid summary after max retries";
+                    summary = null;
+                    break;
+                }
+                continue; // Retry
             } else {
-                // No validation needed
-                break;
+                break; // No validation needed
             }
         } catch (e) {
             if (e === "Clicked stop button") {  // summarization was aborted
@@ -266,7 +257,6 @@ async function summarize_message(index) {
         }
     }
 
-    const previouslyHadSummary = Boolean(get_data(message, 'memory'));
     let wasSummaryModified = false;
 
     if (summary) {
@@ -301,14 +291,6 @@ async function summarize_message(index) {
         set_data(message, 'edited', false);  // clear the error message
         set_data(message, 'prefill', reasoning ? "" : get_settings('prefill'))  // store prefill if there was no reasoning.
         set_data(message, 'reasoning', reasoning)
-        
-        // When regenerating a summary, make sure it's eligible for combining again
-        set_data(message, 'combined_summary_included', false);
-        
-        // Only increment combined summary count if this is a new summary or an updated one
-        if (!previouslyHadSummary || wasSummaryModified) {
-            set_settings('combined_summary_new_count', (get_settings('combined_summary_new_count') || 0) + 1);
-        }
     } else {  // generation failed
         error(`Failed to summarize message ${index} - generation failed.`);
         set_data(message, 'error', err || "Summarization failed");  // store the error message
@@ -329,7 +311,8 @@ async function summarize_message(index) {
     
     return { success: !!summary, modified: wasSummaryModified };
 }
-async function summarize_text(prompt) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function summarize_text(prompt: any) {
     // get size of text
     const token_size = count_tokens(prompt);
 
@@ -346,6 +329,7 @@ async function summarize_text(prompt) {
     // TODO update with a more robust method
     let system_prompt = false
     if (main_api === 'openai') {
+        // $FlowFixMe[incompatible-type]
         system_prompt = "Complete the requested task."
     }
 
@@ -377,6 +361,7 @@ async function summarize_text(prompt) {
              * @param {number} [responseLength] Maximum response length. If unset, the global default value is used.
              * @returns {Promise<string>} Generated message
              */
+            // $FlowFixMe[extra-arg]
             result = await generateRaw(prompt, '', true, false, system_prompt, null, false);
         }
     } catch (err) {
@@ -392,7 +377,8 @@ async function summarize_text(prompt) {
 
     return result;
 }
-function get_message_history(index) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function get_message_history(index: any) {
     // Get a history of messages leading up to the given index (excluding the message at the index)
     // If the include_message_history setting is 0, returns null
     const num_history_messages = get_settings('include_message_history');
@@ -450,7 +436,8 @@ function get_message_history(index) {
     return history.join('\n')
 }
 
-async function create_summary_prompt(index) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function create_summary_prompt(index: any) {
     // create the full summary prompt for the message at the given index.
     // the instruct template will automatically add an input sequence to the beginning and an output sequence to the end.
     // Therefore, if we are NOT using instructOverride, we have to remove the first system sequence at the very beginning which gets added by format_system_prompt.
@@ -513,6 +500,7 @@ function stop_summarization() {
     if (SUMMARIZATION_DELAY_RESOLVE !== null) SUMMARIZATION_DELAY_RESOLVE()  // resolve the delay promise so the await goes through
     log("Aborted summarization.")
 }
+// $FlowFixMe[signature-verification-failure]
 function collect_messages_to_auto_summarize() {
     // iterate through the chat in chronological order and check which messages need to be summarized.
     const context = getContext();
@@ -557,6 +545,7 @@ function collect_messages_to_auto_summarize() {
         messages_to_summarize.push(i)
         debug(`ID [${i}]: Included`)
     }
+    // $FlowFixMe[incompatible-type]
     debug(`Messages to summarize (${messages_to_summarize.length}): ${messages_to_summarize}`)
     return messages_to_summarize.reverse()  // reverse for chronological order
 }

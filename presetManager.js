@@ -1,10 +1,13 @@
+// @flow
 import { get_connection_profile_api, getContext, getPresetManager, amount_gen, get_settings, toast_debounced, debug } from './index.js';
 
 // Completion presets
+// $FlowFixMe[signature-verification-failure]
 function get_current_preset() {
     // get the currently selected completion preset
     return getPresetManager().getSelectedPresetName()
 }
+// $FlowFixMe[signature-verification-failure]
 async function get_summary_preset() {
     // get the current summary preset OR the default if it isn't valid for the current API
     let preset_name = get_settings('completion_preset');
@@ -13,9 +16,11 @@ async function get_summary_preset() {
     }
     return preset_name
 }
-async function set_preset(name) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function set_preset(name: any) {
     if (name === get_current_preset()) return;  // If already using the current preset, return
 
+    // $FlowFixMe[constant-condition]
     if (!check_preset_valid()) return;  // don't set an invalid preset
 
     // Set the completion preset
@@ -26,6 +31,7 @@ async function set_preset(name) {
     const ctx = getContext();
     await ctx.executeSlashCommandsWithOptions(`/preset ${name}`)
 }
+// $FlowFixMe[signature-verification-failure]
 async function get_presets() {
     // Get the list of available completion presets for the selected connection profile API
     const summary_api = await get_connection_profile_api()  // API for the summary connection profile (undefined if not active)
@@ -35,7 +41,8 @@ async function get_presets() {
     // object of {names: index}
     return Object.keys(preset_names)
 }
-async function verify_preset(name) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function verify_preset(name: any) {
     // check if the given preset name is valid for the current API
     if (name === "") return true;  // no preset selected, always valid
 
@@ -48,6 +55,7 @@ async function verify_preset(name) {
     }
 
 }
+// $FlowFixMe[signature-verification-failure]
 async function check_preset_valid() {
     // check whether the current preset selected for summarization is valid
     const summary_preset = get_settings('completion_preset')
@@ -58,6 +66,7 @@ async function check_preset_valid() {
     }
     return true
 }
+// $FlowFixMe[signature-verification-failure]
 async function get_summary_preset_max_tokens() {
     // get the maximum token length for the chosen summary preset
     const preset_name = await get_summary_preset()

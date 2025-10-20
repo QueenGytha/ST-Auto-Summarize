@@ -1,4 +1,3 @@
-// @flow
 // operationQueue.js - Persistent operation queue using shared lorebook entry storage
 
 import {
@@ -10,14 +9,12 @@ import {
     toast,
     get_settings,
     SUBSYSTEM,
-    setSendButtonState,
 } from './index.js';
 
 import {
     loadWorldInfo,
     saveWorldInfo,
     METADATA_KEY
-// $FlowFixMe[cannot-resolve-module]
 } from '../../../world-info.js';
 
 // Queue entry name in lorebook - NEVER ACTIVE (disabled, used only for persistence)
@@ -41,7 +38,6 @@ export const OperationType = {
     GENERATE_SCENE_NAME: 'generate_scene_name',
     GENERATE_RUNNING_SUMMARY: 'generate_running_summary',
     COMBINE_SCENE_WITH_RUNNING: 'combine_scene_with_running',
-    GENERATE_COMBINED_SUMMARY: 'generate_combined_summary',
 };
 
 // Module state
@@ -96,7 +92,6 @@ export async function reloadQueue() {
 
     // Start queue processor if there are pending operations and not paused
     const pending = getPendingOperations();
-    // $FlowFixMe[incompatible-use]
     if (pending.length > 0 && !currentQueue.paused) {
         if (!queueProcessor) {
             log(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations, starting processor`);
@@ -105,7 +100,7 @@ export async function reloadQueue() {
             debug(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations but processor already running`);
         }
     } else if (pending.length > 0) {
-        debug(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations (paused: ${String(currentQueue?.paused ?? 'unknown')})`);
+        debug(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations (paused: ${currentQueue.paused})`);
     }
 
     notifyUIUpdate();
@@ -152,7 +147,7 @@ async function getQueueEntry() {
     if (!queueEntry) {
         log(SUBSYSTEM.QUEUE, `Creating ${QUEUE_ENTRY_NAME} lorebook entry...`);
         const emptyQueue = {
-            queue: ([] : Array<any>),
+            queue: [],
             current_operation_id: null,
             paused: false,
             version: 1
@@ -185,7 +180,6 @@ async function getQueueEntry() {
         if (!worldInfo.entries) {
             worldInfo.entries = {};
         }
-        // $FlowFixMe[invalid-computed-prop]
         worldInfo.entries[newUid] = queueEntry;
 
         // Save the lorebook with new entry
@@ -229,9 +223,9 @@ async function loadQueue() {
                 } catch (parseErr) {
                     error(SUBSYSTEM.QUEUE, 'Failed to parse queue entry content:', parseErr);
                     currentQueue = {
-                        queue: ([] : Array<any>),
+                        queue: [],
                         current_operation_id: null,
-                        paused: (false: boolean),
+                        paused: false,
                         version: 1
                     };
                 }
@@ -239,9 +233,9 @@ async function loadQueue() {
                 // No lorebook entry yet, use empty queue
                 debug(SUBSYSTEM.QUEUE, 'No lorebook queue entry yet, using empty queue');
                 currentQueue = {
-                    queue: ([] : Array<any>),
+                    queue: [],
                     current_operation_id: null,
-                    paused: (false: boolean),
+                    paused: false,
                     version: 1
                 };
             }
@@ -249,9 +243,9 @@ async function loadQueue() {
             // Load from chat_metadata (fallback mode)
             if (!chat_metadata.auto_summarize_operation_queue) {
                 chat_metadata.auto_summarize_operation_queue = {
-                    queue: ([] : Array<any>),
+                    queue: [],
                     current_operation_id: null,
-                    paused: (false: boolean),
+                    paused: false,
                     version: 1
                 };
             }
@@ -277,7 +271,7 @@ async function loadQueue() {
     } catch (err) {
         error(SUBSYSTEM.QUEUE, 'Failed to load queue:', err);
         currentQueue = {
-            queue: ([] : Array<any>),
+            queue: [],
             current_operation_id: null,
             paused: false,
             version: 1
@@ -289,7 +283,6 @@ async function loadQueue() {
  * Save queue to storage (lorebook or chat_metadata based on settings)
  * @param {boolean} force - If true, skip reload and force save current in-memory state
  */
-// $FlowFixMe[missing-local-annot]
 async function saveQueue(force = false) {
     try {
         const useLorebook = get_settings('operation_queue_use_lorebook') !== false;
@@ -334,10 +327,9 @@ async function saveQueue(force = false) {
                 try {
                     const savedQueue = JSON.parse(queueEntry.content || '{}');
                     if (savedQueue.queue && Array.isArray(savedQueue.queue)) {
-                        // BUG FIX: Do NOT overwrite in-memory queue - was causing operations to disappear
-                        // currentQueue = savedQueue;
-                        // $FlowFixMe[incompatible-use]
-                        debug(SUBSYSTEM.QUEUE, `Keeping in-memory queue with ${currentQueue.queue.length} operations`);
+                        // BUG FIX: Commented out - was overwriting in-memory queue
+                        //                         // currentQueue = savedQueue;
+                        debug(SUBSYSTEM.QUEUE, `Reloaded queue from lorebook before save - has ${currentQueue.queue.length} operations`);
                     }
                 } catch {
                     debug(SUBSYSTEM.QUEUE, 'Could not parse existing queue, proceeding with current in-memory queue');
@@ -389,8 +381,7 @@ function generateOperationId() {
  * @param {object} options - Optional settings (priority, dependencies, etc.)
  * @returns {string} Operation ID
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function enqueueOperation(type: any, params: any, options: any = {}) {
+export async function enqueueOperation(type, params, options = {}) {
     if (!isInitialized) {
         await initOperationQueue();
     }
@@ -423,14 +414,12 @@ export async function enqueueOperation(type: any, params: any, options: any = {}
         queueVersion: queueVersion  // Stamp with current version
     };
 
-    // $FlowFixMe[incompatible-use] [incompatible-type]
     currentQueue.queue.push(operation);
     await saveQueue();
 
     debug(SUBSYSTEM.QUEUE, `Enqueued ${type} operation:`, operation.id);
 
     // Auto-start processing if not paused
-    // $FlowFixMe[incompatible-use]
     if (!currentQueue.paused && !queueProcessor) {
         startQueueProcessor();
     }
@@ -441,62 +430,49 @@ export async function enqueueOperation(type: any, params: any, options: any = {}
 /**
  * Get operation by ID
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function getOperation(operationId: any) {
-    // $FlowFixMe[incompatible-use]
+export function getOperation(operationId) {
     return currentQueue.queue.find(op => op.id === operationId);
 }
 
 /**
  * Get all operations
  */
-// $FlowFixMe[signature-verification-failure]
 export function getAllOperations() {
-    // $FlowFixMe[incompatible-use]
     return [...currentQueue.queue];
 }
 
 /**
  * Get pending operations
  */
-// $FlowFixMe[signature-verification-failure]
 export function getPendingOperations() {
-    // $FlowFixMe[incompatible-use]
     return currentQueue.queue.filter(op => op.status === OperationStatus.PENDING);
 }
 
 /**
  * Get in-progress operations
  */
-// $FlowFixMe[signature-verification-failure]
 export function getInProgressOperations() {
-    // $FlowFixMe[incompatible-use]
     return currentQueue.queue.filter(op => op.status === OperationStatus.IN_PROGRESS);
 }
 
 /**
  * Get completed operations
  */
-// $FlowFixMe[signature-verification-failure]
 export function getCompletedOperations() {
-    // $FlowFixMe[incompatible-use]
     return currentQueue.queue.filter(op => op.status === OperationStatus.COMPLETED);
 }
 
 /**
  * Get failed operations
  */
-// $FlowFixMe[signature-verification-failure]
 export function getFailedOperations() {
-    // $FlowFixMe[incompatible-use]
     return currentQueue.queue.filter(op => op.status === OperationStatus.FAILED);
 }
 
 /**
  * Update operation status
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function updateOperationStatus(operationId: any, status: any, errorMsg: any = null) {
+export async function updateOperationStatus(operationId, status, errorMsg = null) {
     const operation = getOperation(operationId);
     if (!operation) {
         error(SUBSYSTEM.QUEUE, `Operation ${operationId} not found`);
@@ -511,7 +487,6 @@ export async function updateOperationStatus(operationId: any, status: any, error
 
     if (status === OperationStatus.COMPLETED || status === OperationStatus.FAILED || status === OperationStatus.CANCELLED) {
         operation.completed_at = Date.now();
-        // $FlowFixMe[incompatible-use]
         currentQueue.current_operation_id = null;
     }
 
@@ -526,15 +501,12 @@ export async function updateOperationStatus(operationId: any, status: any, error
 /**
  * Remove operation from queue
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function removeOperation(operationId: any) {
-    // $FlowFixMe[incompatible-use]
+export async function removeOperation(operationId) {
     const index = currentQueue.queue.findIndex(op => op.id === operationId);
     if (index === -1) {
         return false;
     }
 
-    // $FlowFixMe[incompatible-use]
     currentQueue.queue.splice(index, 1);
     await saveQueue();
 
@@ -545,11 +517,8 @@ export async function removeOperation(operationId: any) {
 /**
  * Clear completed operations from queue
  */
-// $FlowFixMe[signature-verification-failure]
 export async function clearCompletedOperations() {
-    // $FlowFixMe[incompatible-use]
     const before = currentQueue.queue.length;
-    // $FlowFixMe[incompatible-use]
     currentQueue.queue = currentQueue.queue.filter(op =>
         op.status !== OperationStatus.COMPLETED
     );
@@ -568,9 +537,7 @@ export async function clearCompletedOperations() {
  * Clear all operations from queue
  * Stops queue processor and clears all operations regardless of type or status
  */
-// $FlowFixMe[signature-verification-failure]
 export async function clearAllOperations() {
-    // $FlowFixMe[incompatible-use]
     const count = currentQueue.queue.length;
 
     // Set clearing flag to prevent new operations from being enqueued
@@ -585,26 +552,19 @@ export async function clearAllOperations() {
     if (queueProcessor) {
         debug(SUBSYSTEM.QUEUE, 'Stopping queue processor before clearing operations');
         // Set paused flag to stop processor loop
-        // $FlowFixMe[incompatible-use]
         const wasPaused = currentQueue.paused;
-        // $FlowFixMe[incompatible-use] [incompatible-type]
         currentQueue.paused = true;
 
         // Wait for processor to stop (it checks paused flag on each iteration)
         await new Promise(resolve => setTimeout(resolve, 100));
         queueProcessor = null;
-        // Unlock send button since processor is stopped
-        setSendButtonState(false);
 
         // Restore paused state
-        // $FlowFixMe[incompatible-use] [incompatible-type]
         currentQueue.paused = wasPaused;
     }
 
     // Clear all operations regardless of type or status
-    // $FlowFixMe[incompatible-use]
     currentQueue.queue = [];
-    // $FlowFixMe[incompatible-use]
     currentQueue.current_operation_id = null;
 
     await saveQueue(true);  // Force save without reload
@@ -624,7 +584,6 @@ export async function clearAllOperations() {
  * Pause queue processing
  */
 export async function pauseQueue() {
-    // $FlowFixMe[incompatible-use] [incompatible-type]
     currentQueue.paused = true;
     await saveQueue();
     log(SUBSYSTEM.QUEUE, 'Queue paused');
@@ -635,7 +594,6 @@ export async function pauseQueue() {
  * Resume queue processing
  */
 export async function resumeQueue() {
-    // $FlowFixMe[incompatible-use]
     currentQueue.paused = false;
     await saveQueue();
     log(SUBSYSTEM.QUEUE, 'Queue resumed');
@@ -649,9 +607,7 @@ export async function resumeQueue() {
 /**
  * Check if queue is paused
  */
-// $FlowFixMe[signature-verification-failure]
 export function isQueuePaused() {
-    // $FlowFixMe[incompatible-use]
     return currentQueue.paused;
 }
 
@@ -699,11 +655,9 @@ function getNextOperation() {
  * Register operation handler
  * Handlers should be async functions that accept (operation) and return result
  */
-// $FlowFixMe[underconstrained-implicit-instantiation]
 const operationHandlers = new Map();
 
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function registerOperationHandler(operationType: any, handler: any) {
+export function registerOperationHandler(operationType, handler) {
     operationHandlers.set(operationType, handler);
     debug(SUBSYSTEM.QUEUE, `Registered handler for ${operationType}`);
 }
@@ -711,8 +665,7 @@ export function registerOperationHandler(operationType: any, handler: any) {
 /**
  * Execute an operation
  */
-// $FlowFixMe[recursive-definition] [missing-local-annot]
-async function executeOperation(operation: any) {
+async function executeOperation(operation) {
     const handler = operationHandlers.get(operation.type);
 
     if (!handler) {
@@ -764,17 +717,12 @@ function startQueueProcessor() {
     }
 
     debug(SUBSYSTEM.QUEUE, 'Starting queue processor');
-    // Lock send button for entire queue processing duration
-    setSendButtonState(true);
 
-    // $FlowFixMe[definition-cycle]
     queueProcessor = (async () => {
         while (true) {
             // Check if paused
-            // $FlowFixMe[incompatible-use]
             if (currentQueue.paused) {
                 debug(SUBSYSTEM.QUEUE, 'Queue paused, stopping processor');
-                setSendButtonState(false);
                 queueProcessor = null;
                 return;
             }
@@ -784,13 +732,11 @@ function startQueueProcessor() {
 
             if (!operation) {
                 debug(SUBSYSTEM.QUEUE, 'No operations to process, stopping processor');
-                setSendButtonState(false);
                 queueProcessor = null;
                 return;
             }
 
             // Mark operation as in progress BEFORE saving
-            // $FlowFixMe[incompatible-use]
             currentQueue.current_operation_id = operation.id;
             operation.status = OperationStatus.IN_PROGRESS;
             if (!operation.started_at) {
@@ -814,8 +760,7 @@ function startQueueProcessor() {
 /**
  * Register UI update callback
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function registerUIUpdateCallback(callback: any) {
+export function registerUIUpdateCallback(callback) {
     uiUpdateCallback = callback;
     debug(SUBSYSTEM.QUEUE, 'Registered UI update callback');
 }
@@ -836,16 +781,13 @@ function notifyUIUpdate() {
 /**
  * Get queue statistics
  */
-// $FlowFixMe[signature-verification-failure]
 export function getQueueStats() {
     return {
-        // $FlowFixMe[incompatible-use]
         total: currentQueue.queue.length,
         pending: getPendingOperations().length,
         in_progress: getInProgressOperations().length,
         completed: getCompletedOperations().length,
         failed: getFailedOperations().length,
-        // $FlowFixMe[incompatible-use]
         paused: currentQueue.paused
     };
 }

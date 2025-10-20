@@ -1,8 +1,11 @@
+// @flow
 import { memoryEditInterface, PROGRESS_BAR_ID, debug, stop_summarization } from './index.js';
 
-function progress_bar(id, progress, total, title) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function progress_bar(id: any, progress: any, total: any, title: any) {
     // Display, update, or remove a progress bar
     id = `${PROGRESS_BAR_ID}_${id}`
+    // $FlowFixMe[cannot-resolve-name]
     const $existing = $(`.${id}`);
     if ($existing.length > 0) {  // update the progress bar
         if (title) $existing.find('div.title').text(title);
@@ -18,6 +21,7 @@ function progress_bar(id, progress, total, title) {
     }
 
     // create the progress bar
+    // $FlowFixMe[cannot-resolve-name]
     const bar = $(`
 <div class="${id} auto_summarize_progress_bar flex-container justifyspacebetween alignitemscenter">
     <div class="title">${title}</div>
@@ -32,6 +36,7 @@ function progress_bar(id, progress, total, title) {
     })
 
     // append to the main chat area (#sheld)
+    // $FlowFixMe[cannot-resolve-name]
     $('#sheld').append(bar);
 
     // append to the edit interface if it's open
@@ -39,8 +44,10 @@ function progress_bar(id, progress, total, title) {
         memoryEditInterface.$progress_bar.append(bar)
     }
 }
-function remove_progress_bar(id) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function remove_progress_bar(id: any) {
     id = `${PROGRESS_BAR_ID}_${id}`
+    // $FlowFixMe[cannot-resolve-name]
     const $existing = $(`.${id}`);
     if ($existing.length > 0) {  // found
         debug("Removing progress bar")

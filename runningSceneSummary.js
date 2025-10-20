@@ -1,3 +1,4 @@
+// @flow
 import {
     get_settings,
     getContext,
@@ -35,6 +36,7 @@ function get_running_summary_storage() {
  * Get all running scene summary versions
  * @returns {Array} Array of version objects
  */
+// $FlowFixMe[signature-verification-failure]
 function get_running_summary_versions() {
     const storage = get_running_summary_storage();
     return storage.versions || [];
@@ -44,6 +46,7 @@ function get_running_summary_versions() {
  * Get current running scene summary version number
  * @returns {number} Current version number
  */
+// $FlowFixMe[signature-verification-failure]
 function get_current_running_summary_version() {
     const storage = get_running_summary_storage();
     return storage.current_version || 0;
@@ -54,7 +57,8 @@ function get_current_running_summary_version() {
  * @param {number} version - Version number to retrieve (defaults to current)
  * @returns {object|null} Version object or null if not found
  */
-function get_running_summary(version = null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function get_running_summary(version: any = null) {
     const storage = get_running_summary_storage();
     if (version === null) {
         version = storage.current_version;
@@ -68,6 +72,7 @@ function get_running_summary(version = null) {
  * Get current running scene summary content
  * @returns {string} Current running summary content or empty string
  */
+// $FlowFixMe[signature-verification-failure]
 function get_current_running_summary_content() {
     const current = get_running_summary();
     return current ? current.content : "";
@@ -77,7 +82,8 @@ function get_current_running_summary_content() {
  * Set current running scene summary version
  * @param {number} version - Version number to set as current
  */
-function set_current_running_summary_version(version) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function set_current_running_summary_version(version: any) {
     const storage = get_running_summary_storage();
     const versions = storage.versions || [];
 
@@ -101,7 +107,8 @@ function set_current_running_summary_version(version) {
  * @param {number} new_scene_index - New scene index being combined
  * @returns {number} New version number
  */
-function add_running_summary_version(content, scene_count, excluded_count, prev_scene_index = 0, new_scene_index = 0) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function add_running_summary_version(content: any, scene_count: any, excluded_count: any, prev_scene_index: any = 0, new_scene_index: any = 0) {
     const storage = get_running_summary_storage();
     const versions = storage.versions || [];
 
@@ -121,6 +128,7 @@ function add_running_summary_version(content, scene_count, excluded_count, prev_
 
     versions.push(version_obj);
     storage.versions = versions;
+    // $FlowFixMe[incompatible-type]
     storage.current_version = new_version;
 
     saveChatDebounced();
@@ -133,7 +141,8 @@ function add_running_summary_version(content, scene_count, excluded_count, prev_
  * Delete a running scene summary version
  * @param {number} version - Version number to delete
  */
-function delete_running_summary_version(version) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+function delete_running_summary_version(version: any) {
     const storage = get_running_summary_storage();
     const versions = storage.versions || [];
 
@@ -150,6 +159,7 @@ function delete_running_summary_version(version) {
     if (storage.current_version === version) {
         if (versions.length > 0) {
             const latest = versions.reduce((max, v) => Math.max(max, v.version), -1);
+            // $FlowFixMe[incompatible-type]
             storage.current_version = latest;
         } else {
             storage.current_version = 0;
@@ -164,6 +174,7 @@ function delete_running_summary_version(version) {
  * Collect scene summary indexes based on settings
  * @returns {Array} Array of message indexes with scene summaries
  */
+// $FlowFixMe[signature-verification-failure]
 function collect_scene_summary_indexes_for_running() {
     const ctx = getContext();
     const chat = ctx.chat;
@@ -180,6 +191,7 @@ function collect_scene_summary_indexes_for_running() {
     // Exclude latest N scenes if configured
     if (exclude_latest > 0 && indexes.length > exclude_latest) {
         const to_remove = indexes.slice(-exclude_latest);
+        // $FlowFixMe[incompatible-type]
         debug(SUBSYSTEM.RUNNING, `Excluding latest ${exclude_latest} scene(s) from running summary: indexes ${to_remove}`);
         return indexes.slice(0, -exclude_latest);
     }
@@ -191,7 +203,8 @@ function collect_scene_summary_indexes_for_running() {
  * Generate running scene summary by combining individual scene summaries
  * @returns {Promise<string|null>} Generated summary or null on failure
  */
-async function generate_running_scene_summary() {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function generate_running_scene_summary(skipQueue: any = false) {
     if (!get_settings('running_scene_summary_enabled')) {
         debug(SUBSYSTEM.RUNNING, 'Running scene summary disabled, skipping generation');
         return null;
@@ -202,7 +215,7 @@ async function generate_running_scene_summary() {
 
     // Check if operation queue is enabled
     const queueEnabled = get_settings('operation_queue_enabled') !== false;
-    if (queueEnabled) {
+    if (queueEnabled && !skipQueue) {
         debug(SUBSYSTEM.RUNNING, '[Queue] Operation queue enabled, queueing running scene summary generation');
 
         // Import queue integration
@@ -298,10 +311,7 @@ async function generate_running_scene_summary() {
 
         log(SUBSYSTEM.RUNNING, `Created running scene summary version ${version} (0 > ${last_scene_idx})`);
 
-        // Show toast if enabled
-        if (get_settings('show_combined_summary_toast')) {
-            toast(`Running scene summary updated (v${version})`, 'success');
-        }
+        toast(`Running scene summary updated (v${version})`, 'success');
 
         return result;
 
@@ -321,7 +331,8 @@ async function generate_running_scene_summary() {
  * @param {number} scene_index - Chat message index of the scene to combine
  * @returns {Promise<string|null>} Generated summary or null on failure
  */
-async function combine_scene_with_running_summary(scene_index) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function combine_scene_with_running_summary(scene_index: any) {
     if (!get_settings('running_scene_summary_enabled')) {
         debug(SUBSYSTEM.RUNNING, 'Running scene summary disabled, skipping combination');
         return null;
@@ -410,10 +421,7 @@ async function combine_scene_with_running_summary(scene_index) {
 
         log(SUBSYSTEM.RUNNING, `Created running summary version ${version} (${prev_scene_idx} > ${new_scene_idx})`);
 
-        // Show toast if enabled
-        if (get_settings('show_combined_summary_toast')) {
-            toast(`Running summary updated with ${scene_name} (v${version})`, 'success');
-        }
+        toast(`Running summary updated with ${scene_name} (v${version})`, 'success');
 
         return result;
 
@@ -432,7 +440,8 @@ async function combine_scene_with_running_summary(scene_index) {
  * Called after scene summary is created/updated
  * @param {number} scene_index - Index of the scene that was just summarized
  */
-async function auto_generate_running_summary(scene_index = null) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+async function auto_generate_running_summary(scene_index: any = null) {
     if (!get_settings('running_scene_summary_enabled')) return;
     if (!get_settings('running_scene_summary_auto_generate')) return;
 
@@ -453,7 +462,9 @@ async function auto_generate_running_summary(scene_index = null) {
     }
 
     // Update UI dropdown if available
+    // $FlowFixMe[cannot-resolve-name]
     if (typeof window.updateVersionSelector === 'function') {
+        // $FlowFixMe[cannot-resolve-name]
         window.updateVersionSelector();
         debug(SUBSYSTEM.RUNNING, 'Updated version selector UI');
     }
@@ -541,6 +552,7 @@ function cleanup_invalid_running_summaries() {
  * Get running scene summary injection text for memory
  * @returns {string} Formatted injection text
  */
+// $FlowFixMe[signature-verification-failure]
 function get_running_summary_injection() {
     if (!get_settings('running_scene_summary_enabled')) {
         return "";

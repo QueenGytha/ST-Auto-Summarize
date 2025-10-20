@@ -1,3 +1,4 @@
+// @flow
 import {
     get_settings,
     set_settings,
@@ -18,16 +19,16 @@ import {
     detect_settings_difference,
     getContext,
     default_short_template,
-    default_long_template,
     default_scene_template,
-    default_combined_template,
 } from './index.js';
 
 function update_save_icon_highlight() {
     // If the current settings are different than the current profile, highlight the save button
     if (detect_settings_difference()) {
+        // $FlowFixMe[cannot-resolve-name]
         $('#save_profile').addClass('button_highlight');
     } else {
+        // $FlowFixMe[cannot-resolve-name]
         $('#save_profile').removeClass('button_highlight');
     }
 }
@@ -39,8 +40,11 @@ function update_profile_section() {
     const current_chat_profile = get_chat_profile();
     const profile_options = Object.keys(get_settings('profiles'));
 
+    // $FlowFixMe[cannot-resolve-name]
     const $choose_profile_dropdown = $(`.${settings_content_class} #profile`).empty();
+    // $FlowFixMe[cannot-resolve-name]
     const $character = $('button#character_profile')
+    // $FlowFixMe[cannot-resolve-name]
     const $chat = $('button#chat_profile')
     const $character_icon = $character.find('i')
     const $chat_icon = $chat.find('i')
@@ -96,6 +100,7 @@ function update_profile_section() {
 }
 
 async function update_scene_summary_preset_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
     const $preset_select = $('#scene_summary_completion_preset');
     const summary_preset = get_settings('scene_summary_completion_preset');
     const preset_options = await get_presets();
@@ -109,6 +114,7 @@ async function update_scene_summary_preset_dropdown() {
 }
 
 async function update_auto_scene_break_preset_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
     const $preset_select = $('#auto_scene_break_completion_preset');
     const summary_preset = get_settings('auto_scene_break_completion_preset');
     const preset_options = await get_presets();
@@ -122,6 +128,7 @@ async function update_auto_scene_break_preset_dropdown() {
 }
 
 async function update_auto_scene_break_connection_profile_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
     const $connection_select = $('#auto_scene_break_connection_profile');
     const summary_connection = get_settings('auto_scene_break_connection_profile');
     const connection_options = await get_connection_profiles();
@@ -138,6 +145,7 @@ async function update_auto_scene_break_connection_profile_dropdown() {
 
 async function update_preset_dropdown() {
     // set the completion preset dropdown
+    // $FlowFixMe[cannot-resolve-name]
     const $preset_select = $(`.${settings_content_class} #completion_preset`);
     const summary_preset = get_settings('completion_preset')
     const preset_options = await get_presets()
@@ -152,22 +160,9 @@ async function update_preset_dropdown() {
     $preset_select.off('click').on('click', () => update_preset_dropdown());
 
 }
-async function update_combined_summary_preset_dropdown() {
-    const $preset_select = $(`.${settings_content_class} #combined_summary_completion_preset`);
-    const summary_preset = get_settings('combined_summary_completion_preset');
-    const preset_options = await get_presets();
-    $preset_select.empty();
-    $preset_select.append(`<option value="">Same as Current</option>`);
-    for (const option of preset_options) {
-        $preset_select.append(`<option value="${option}">${option}</option>`);
-    }
-    $preset_select.val(summary_preset);
-
-    // Refresh on click
-    $preset_select.off('click').on('click', () => update_combined_summary_preset_dropdown());
-}
 async function update_connection_profile_dropdown() {
     // set the completion preset dropdown
+    // $FlowFixMe[cannot-resolve-name]
     const $connection_select = $(`.${settings_content_class} #connection_profile`);
     const summary_connection = get_settings('connection_profile')
     
@@ -189,12 +184,12 @@ async function update_connection_profile_dropdown() {
 
 async function update_error_detection_preset_dropdown() {
     // Set the completion preset dropdown for error detection
-    const $regular_preset_select = $(`.${settings_content_class} #regular_summary_error_detection_preset`);
+    // $FlowFixMe[cannot-resolve-name]
+    const $regular_preset_select = $(`.${settings_content_class} #message_summary_error_detection_preset`);
+    // $FlowFixMe[cannot-resolve-name]
     const $scene_preset_select = $(`.${settings_content_class} #scene_summary_error_detection_preset`);
-    const $combined_preset_select = $(`.${settings_content_class} #combined_summary_error_detection_preset`);
-    const regular_preset = get_settings('regular_summary_error_detection_preset');
+    const regular_preset = get_settings('message_summary_error_detection_preset');
     const scene_preset = get_settings('scene_summary_error_detection_preset');
-    const combined_preset = get_settings('combined_summary_error_detection_preset');
     const preset_options = await get_presets();
 
     // Update regular summary error detection preset dropdown
@@ -215,112 +210,107 @@ async function update_error_detection_preset_dropdown() {
     $scene_preset_select.val(scene_preset);
     $scene_preset_select.off('click').on('click', () => update_error_detection_preset_dropdown());
 
-    // Update combined summary error detection preset dropdown
-    $combined_preset_select.empty();
-    $combined_preset_select.append(`<option value="">Same as Combined Summary</option>`);
-    for (const option of preset_options) {
-        $combined_preset_select.append(`<option value="${option}">${option}</option>`);
-    }
-    $combined_preset_select.val(combined_preset);
-    $combined_preset_select.off('click').on('click', () => update_error_detection_preset_dropdown());
 }
 
-function refresh_settings() {
-    // Refresh all settings UI elements according to the current settings
-    debug("Refreshing settings...")
-
-    $('#scene_summary_template').val(get_settings('scene_summary_template') || default_scene_template);
-    $('#combined_summary_template').val(get_settings('combined_summary_template') || default_combined_template);
-    $('#short_template').val(get_settings('short_template') || default_short_template);
-    $('#long_template').val(get_settings('long_template') || default_long_template);
-
-        // Error detection presets
+// Helper: Update all preset and profile dropdowns
+function updateAllDropdowns() {
     update_error_detection_preset_dropdown();
-    
-    // Enable/disable error detection fields based on master toggle
-    const error_detection_enabled = get_settings('error_detection_enabled');
-    $(`.${settings_content_class} .error_detection_setting`).prop('disabled', !error_detection_enabled);
-    
-    // Enable/disable type-specific error detection settings
-    const regular_error_enabled = get_settings('regular_summary_error_detection_enabled');
-    const combined_error_enabled = get_settings('combined_summary_error_detection_enabled');
-    
-    $(`.${settings_content_class} .regular_error_detection_setting`).prop('disabled', !error_detection_enabled || !regular_error_enabled);
-    $(`.${settings_content_class} .combined_error_detection_setting`).prop('disabled', !error_detection_enabled || !combined_error_enabled);
+    update_connection_profile_dropdown();
+    check_connection_profile_valid();
+    // $FlowFixMe[cannot-resolve-name]
+    $(`.${settings_content_class} #connection_profile`).parent().show();
 
-    // connection profiles
-    // Always show the connection profile dropdown - let the user decide if they want to use it
-    update_connection_profile_dropdown()
-    check_connection_profile_valid()
-    // Make sure the connection profile dropdown is visible
-    $(`.${settings_content_class} #connection_profile`).parent().show()
-
-    // completion presets
     update_preset_dropdown();
-    update_combined_summary_preset_dropdown();
     update_scene_summary_preset_dropdown();
     update_auto_scene_break_preset_dropdown();
     update_auto_scene_break_connection_profile_dropdown();
     update_running_scene_summary_preset_dropdown();
     update_running_scene_summary_connection_profile_dropdown();
     check_preset_valid();
+}
 
-    // if prompt doesn't have {{message}}, insert it
+// Helper: Update error detection settings
+function updateErrorDetectionSettings() {
+    const error_detection_enabled = get_settings('error_detection_enabled');
+    // $FlowFixMe[cannot-resolve-name]
+    $(`.${settings_content_class} .error_detection_setting`).prop('disabled', !error_detection_enabled);
+
+    const regular_error_enabled = get_settings('message_summary_error_detection_enabled');
+    // $FlowFixMe[cannot-resolve-name]
+    $(`.${settings_content_class} .regular_error_detection_setting`).prop('disabled', !error_detection_enabled || !regular_error_enabled);
+}
+
+// Helper: Validate and fix settings
+function validateAndFixSettings() {
+    // Ensure {{message}} macro is in prompt
     const prompt = get_settings('prompt');
     if (typeof prompt === "string" && !prompt.includes("{{message}}")) {
-        set_settings('prompt', prompt + "\n{{message}}")
-        debug("{{message}} macro not found in summary prompt. It has been added automatically.")
+        set_settings('prompt', prompt + "\n{{message}}");
+        debug("{{message}} macro not found in summary prompt. It has been added automatically.");
     }
 
-    // auto_summarize_message_limit must be >= auto_summarize_batch_size (unless the limit is disabled, i.e. -1)
-    const auto_limit = get_settings('auto_summarize_message_limit')
-    const batch_size = get_settings('auto_summarize_batch_size')
+    // Ensure auto_summarize_message_limit >= auto_summarize_batch_size
+    const auto_limit = get_settings('auto_summarize_message_limit');
+    const batch_size = get_settings('auto_summarize_batch_size');
     if (auto_limit >= 0 && (auto_limit < batch_size)) {
         set_settings('auto_summarize_message_limit', get_settings('auto_summarize_batch_size'));
-        toast("The auto-summarize message limit must be greater than or equal to the batch size.", "warning")
+        toast("The auto-summarize message limit must be greater than or equal to the batch size.", "warning");
+    }
+}
+
+// Helper: Update conditional settings based on dependencies
+function updateConditionalSettings() {
+    const auto_summarize = get_settings('auto_summarize');
+    get_settings_element('auto_summarize_on_send')?.prop('disabled', !auto_summarize);
+    get_settings_element('auto_summarize_message_limit')?.prop('disabled', !auto_summarize);
+    get_settings_element('auto_summarize_batch_size')?.prop('disabled', !auto_summarize);
+    get_settings_element('auto_summarize_progress')?.prop('disabled', !auto_summarize);
+    get_settings_element('summarization_delay')?.prop('disabled', !auto_summarize);
+
+    const history_disabled = get_settings('include_message_history_mode') === "none";
+    get_settings_element('include_message_history')?.prop('disabled', history_disabled);
+    get_settings_element('include_user_messages_in_history')?.prop('disabled', history_disabled);
+    get_settings_element('preview_message_history')?.prop('disabled', history_disabled);
+
+    if (!history_disabled && !get_settings('prompt').includes("{{history}}")) {
+        // $FlowFixMe[cannot-resolve-name]
+        toastr.warning("To include message history, you must use the {{history}} macro in the prompt.");
     }
 
-    // update the save icon highlight
+    const excluding_messages = get_settings('exclude_messages_after_threshold');
+    get_settings_element('keep_last_user_message')?.prop('disabled', !excluding_messages);
+}
+
+function refresh_settings() {
+    // Refresh all settings UI elements according to the current settings
+    debug("Refreshing settings...");
+
+    // $FlowFixMe[cannot-resolve-name]
+    $('#scene_summary_template').val(get_settings('scene_summary_template') || default_scene_template);
+    // $FlowFixMe[cannot-resolve-name]
+    $('#short_template').val(get_settings('short_template') || default_short_template);
+
+    updateErrorDetectionSettings();
+    updateAllDropdowns();
+    validateAndFixSettings();
+
     update_save_icon_highlight();
+    update_profile_section();
 
-    // update the profile section
-    update_profile_section()
-
-    // iterate through the settings map and set each element to the current setting value
+    // Iterate through the settings map and set each element to the current setting value
+    // $FlowFixMe[incompatible-use]
     for (const [key, [element, type]] of Object.entries(settings_ui_map)) {
         set_setting_ui_element(key, element, type);
     }
 
-    // enable or disable settings based on others
+    // Enable or disable settings based on others
     if (chat_enabled()) {
-        $(`.${settings_content_class} .settings_input`).prop('disabled', false);  // enable all settings
-
-        // when auto-summarize is disabled, related settings get disabled
-        const auto_summarize = get_settings('auto_summarize');
-        get_settings_element('auto_summarize_on_send')?.prop('disabled', !auto_summarize)
-        get_settings_element('auto_summarize_message_limit')?.prop('disabled', !auto_summarize);
-        get_settings_element('auto_summarize_batch_size')?.prop('disabled', !auto_summarize);
-        get_settings_element('auto_summarize_progress')?.prop('disabled', !auto_summarize);
-        get_settings_element('summarization_delay')?.prop('disabled', !auto_summarize);
-
-
-        // If message history is disabled, disable the relevant settings
-        const history_disabled = get_settings('include_message_history_mode') === "none";
-        get_settings_element('include_message_history')?.prop('disabled', history_disabled)
-        get_settings_element('include_user_messages_in_history')?.prop('disabled', history_disabled)
-        get_settings_element('preview_message_history')?.prop('disabled', history_disabled)
-
-        if (!history_disabled && !get_settings('prompt').includes("{{history}}")) {
-            toastr.warning("To include message history, you must use the {{history}} macro in the prompt.")
-        }
-
-        // If not excluding message, then disable the option to preserve the last user message
-        const excluding_messages = get_settings('exclude_messages_after_threshold')
-        get_settings_element('keep_last_user_message')?.prop('disabled', !excluding_messages)
-
-
-    } else {  // memory is disabled for this chat
-        $(`.${settings_content_class} .settings_input`).prop('disabled', true);  // disable all settings
+        // $FlowFixMe[cannot-resolve-name]
+        $(`.${settings_content_class} .settings_input`).prop('disabled', false);
+        updateConditionalSettings();
+    } else {
+        // $FlowFixMe[cannot-resolve-name]
+        $(`.${settings_content_class} .settings_input`).prop('disabled', true);
     }
 
 
@@ -332,6 +322,7 @@ function refresh_settings() {
 }
 
 async function update_running_scene_summary_preset_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
     const $preset_select = $('#running_scene_summary_completion_preset');
     const summary_preset = get_settings('running_scene_summary_completion_preset');
     const preset_options = await get_presets();
@@ -345,6 +336,7 @@ async function update_running_scene_summary_preset_dropdown() {
 }
 
 async function update_running_scene_summary_connection_profile_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
     const $connection_select = $('#running_scene_summary_connection_profile');
     const summary_connection = get_settings('running_scene_summary_connection_profile');
     const connection_options = await get_connection_profiles();
@@ -363,7 +355,6 @@ export {
     update_save_icon_highlight,
     update_profile_section,
     update_preset_dropdown,
-    update_combined_summary_preset_dropdown,
     update_connection_profile_dropdown,
     refresh_settings,
     update_error_detection_preset_dropdown,

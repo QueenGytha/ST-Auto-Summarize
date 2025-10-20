@@ -1,0 +1,21 @@
+{
+  "extends": [
+    "../../../../../.eslintrc.cjs"
+  ],
+  "plugins": [
+    "import"
+  ],
+  "rules": {
+    "import/named": "error",
+    "import/no-unresolved": ["error", {
+      "ignore": ["^\\.\\.\\.\\.\\./"]
+    }]
+  },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js"]
+      }
+    }
+  }
+}

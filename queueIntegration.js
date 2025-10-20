@@ -1,3 +1,4 @@
+// @flow
 // queueIntegration.js - Helper functions to queue operations instead of executing immediately
 
 import {
@@ -23,7 +24,8 @@ function isQueueEnabled() {
  * @param {object} options - Additional options (priority, dependencies, etc.)
  * @returns {string} Operation ID
  */
-export function queueSummarizeMessage(index, options = {}) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function queueSummarizeMessage(index: any, options: any = {}) {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue summarization');
         return null;
@@ -49,7 +51,8 @@ export function queueSummarizeMessage(index, options = {}) {
  * @param {object} options - Additional options
  * @returns {Array<string>} Array of operation IDs
  */
-export function queueSummarizeMessages(indexes, options = {}) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function queueSummarizeMessages(indexes: any, options: any = {}) {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue batch summarization');
         return [];
@@ -65,7 +68,8 @@ export function queueSummarizeMessages(indexes, options = {}) {
  * @param {object} options - Additional options
  * @returns {string} Operation ID
  */
-export function queueValidateSummary(summary, type, options = {}) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function queueValidateSummary(summary: any, type: any, options: any = {}) {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue validation');
         return null;
@@ -91,7 +95,8 @@ export function queueValidateSummary(summary, type, options = {}) {
  * @param {object} options - Additional options
  * @returns {string} Operation ID
  */
-export function queueDetectSceneBreak(index, options = {}) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function queueDetectSceneBreak(index: any, options: any = {}) {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue scene break detection');
         return null;
@@ -117,7 +122,8 @@ export function queueDetectSceneBreak(index, options = {}) {
  * @param {object} options - Additional options
  * @returns {Array<string>} Array of operation IDs
  */
-export function queueDetectSceneBreaks(indexes, options = {}) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function queueDetectSceneBreaks(indexes: any, options: any = {}) {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue batch scene detection');
         return [];
@@ -132,7 +138,8 @@ export function queueDetectSceneBreaks(indexes, options = {}) {
  * @param {object} options - Additional options
  * @returns {string} Operation ID
  */
-export function queueGenerateSceneSummary(index, options = {}) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function queueGenerateSceneSummary(index: any, options: any = {}) {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue scene summary generation');
         return null;
@@ -157,7 +164,8 @@ export function queueGenerateSceneSummary(index, options = {}) {
  * @param {object} options - Additional options
  * @returns {string} Operation ID
  */
-export function queueGenerateRunningSummary(options = {}) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function queueGenerateRunningSummary(options: any = {}) {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue running summary generation');
         return null;
@@ -182,7 +190,8 @@ export function queueGenerateRunningSummary(options = {}) {
  * @param {object} options - Additional options
  * @returns {string} Operation ID
  */
-export function queueCombineSceneWithRunning(index, options = {}) {
+// $FlowFixMe[signature-verification-failure] [missing-local-annot]
+export function queueCombineSceneWithRunning(index: any, options: any = {}) {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue scene combination');
         return null;
@@ -202,30 +211,6 @@ export function queueCombineSceneWithRunning(index, options = {}) {
     );
 }
 
-/**
- * Queue a combined summary generation operation
- * @param {object} options - Additional options
- * @returns {string} Operation ID
- */
-export function queueGenerateCombinedSummary(options = {}) {
-    if (!isQueueEnabled()) {
-        debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue combined summary generation');
-        return null;
-    }
-
-    return enqueueOperation(
-        OperationType.GENERATE_COMBINED_SUMMARY,
-        {},
-        {
-            priority: options.priority ?? 0,
-            dependencies: options.dependencies ?? [],
-            metadata: {
-                ...options.metadata
-            }
-        }
-    );
-}
-
 export default {
     queueSummarizeMessage,
     queueSummarizeMessages,
@@ -235,5 +220,4 @@ export default {
     queueGenerateSceneSummary,
     queueGenerateRunningSummary,
     queueCombineSceneWithRunning,
-    queueGenerateCombinedSummary,
 };

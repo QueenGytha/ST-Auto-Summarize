@@ -1,0 +1,241 @@
+
+> st-auto-summarize@1.0.0 flow-check
+> flow check --flowconfig-name .flowconfig
+
+Error -------------------------------- C:\Users\sarah\AppData\Local\Temp\flow\flowlib_91bd851d73e7b183_1\react.js:973:25
+
+Cannot use `MixedElement` as a type because it is an `any`-typed value. Type `MixedElement` properly, so it is no longer
+`any`-typed, to use it as an annotation. [value-as-type]
+
+   973|     type MixedElement = globalThis.React.MixedElement;
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+Error -------------------------------------------------------------------------------------------- eventHandlers.js:40:5
+
+Cannot import `MemoryEditInterface` because there is no `MemoryEditInterface` export in `./index.js`. Did you mean
+`memoryEditInterface`? [missing-export]
+
+   40|     MemoryEditInterface,
+           ^^^^^^^^^^^^^^^^^^^
+
+
+Error ------------------------------------------------------------------------------------- memoryEditInterface.js:74:40
+
+Unexpected token `:`, expected an identifier [ParseError]
+
+   74|             "check":  (msg: any) => msg: any.is_user,
+                                              ^
+
+
+Error ---------------------------------------------------------------------------------------- operationQueue.js:108:100
+
+Cannot get `currentQueue.paused` because property `paused` is missing in null [1]. [incompatible-use]
+
+   operationQueue.js:108:100
+   108|         debug(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations (paused: ${currentQueue.paused})`);
+                                                                                                           ^^^^^^
+
+References:
+   operationQueue.js:48:20
+    48| let currentQueue = null;
+                           ^^^^ [1]
+
+
+Error ----------------------------------------------------------------------------------------- operationQueue.js:427:29
+
+Cannot call `currentQueue.queue.push` because object literal [1] is incompatible with unknown element of empty array [2]
+in array element. [incompatible-type]
+
+   operationQueue.js:427:29
+   427|     currentQueue.queue.push(operation);
+                                    ^^^^^^^^^
+
+References:
+   operationQueue.js:410:23
+                              v
+   410|     const operation = {
+   411|         id: generateOperationId(),
+   412|         type: type,
+   413|         params: params,
+   414|         status: OperationStatus.PENDING,
+   415|         created_at: Date.now(),
+   416|         started_at: null,
+   417|         completed_at: null,
+   418|         error: null,
+   419|         retries: 0,
+   420|         priority: options.priority ?? 0,
+   421|         dependencies: options.dependencies ?? [],
+   422|         metadata: options.metadata ?? {},
+   423|         queueVersion: queueVersion  // Stamp with current version
+   424|     };
+            ^ [1]
+   operationQueue.js:232:32
+   232|                         queue: [],
+                                       ^^ [2]
+
+
+Error ----------------------------------------------------------------------------------------- operationQueue.js:427:29
+
+Cannot call `currentQueue.queue.push` because object literal [1] is incompatible with unknown element of empty array [2]
+in array element. [incompatible-type]
+
+   operationQueue.js:427:29
+   427|     currentQueue.queue.push(operation);
+                                    ^^^^^^^^^
+
+References:
+   operationQueue.js:410:23
+                              v
+   410|     const operation = {
+   411|         id: generateOperationId(),
+   412|         type: type,
+   413|         params: params,
+   414|         status: OperationStatus.PENDING,
+   415|         created_at: Date.now(),
+   416|         started_at: null,
+   417|         completed_at: null,
+   418|         error: null,
+   419|         retries: 0,
+   420|         priority: options.priority ?? 0,
+   421|         dependencies: options.dependencies ?? [],
+   422|         metadata: options.metadata ?? {},
+   423|         queueVersion: queueVersion  // Stamp with current version
+   424|     };
+            ^ [1]
+   operationQueue.js:242:28
+   242|                     queue: [],
+                                   ^^ [2]
+
+
+Error ----------------------------------------------------------------------------------------- operationQueue.js:427:29
+
+Cannot call `currentQueue.queue.push` because object literal [1] is incompatible with unknown element of empty array [2]
+in array element. [incompatible-type]
+
+   operationQueue.js:427:29
+   427|     currentQueue.queue.push(operation);
+                                    ^^^^^^^^^
+
+References:
+   operationQueue.js:410:23
+                              v
+   410|     const operation = {
+   411|         id: generateOperationId(),
+   412|         type: type,
+   413|         params: params,
+   414|         status: OperationStatus.PENDING,
+   415|         created_at: Date.now(),
+   416|         started_at: null,
+   417|         completed_at: null,
+   418|         error: null,
+   419|         retries: 0,
+   420|         priority: options.priority ?? 0,
+   421|         dependencies: options.dependencies ?? [],
+   422|         metadata: options.metadata ?? {},
+   423|         queueVersion: queueVersion  // Stamp with current version
+   424|     };
+            ^ [1]
+   operationQueue.js:280:20
+   280|             queue: [],
+                           ^^ [2]
+
+
+Error ----------------------------------------------------------------------------------------- operationQueue.js:591:31
+
+Cannot assign `true` to `currentQueue.paused` because boolean literal `true` [1] is incompatible with boolean literal
+`false` [2]. [incompatible-type]
+
+   operationQueue.js:591:31
+   591|         currentQueue.paused = true;
+                                      ^^^^ [1]
+
+References:
+   operationQueue.js:254:29
+   254|                     paused: false,
+                                    ^^^^^ [2]
+
+
+Error ----------------------------------------------------------------------------------------- operationQueue.js:601:31
+
+Cannot assign `wasPaused` to `currentQueue.paused` because boolean [1] is incompatible with boolean literal `false` [2].
+[incompatible-type]
+
+   operationQueue.js:601:31
+   601|         currentQueue.paused = wasPaused;
+                                      ^^^^^^^^^
+
+References:
+   operationQueue.js:234:33
+   234|                         paused: false,
+                                        ^^^^^ [1]
+   operationQueue.js:254:29
+   254|                     paused: false,
+                                    ^^^^^ [2]
+
+
+Error ----------------------------------------------------------------------------------------- operationQueue.js:601:31
+
+Cannot assign `wasPaused` to `currentQueue.paused` because boolean [1] is incompatible with boolean literal `false` [2].
+[incompatible-type]
+
+   operationQueue.js:601:31
+   601|         currentQueue.paused = wasPaused;
+                                      ^^^^^^^^^
+
+References:
+   operationQueue.js:244:29
+   244|                     paused: false,
+                                    ^^^^^ [1]
+   operationQueue.js:254:29
+   254|                     paused: false,
+                                    ^^^^^ [2]
+
+
+Error ----------------------------------------------------------------------------------------- operationQueue.js:601:31
+
+Cannot assign `wasPaused` to `currentQueue.paused` because boolean [1] is incompatible with boolean literal `false` [2].
+[incompatible-type]
+
+   operationQueue.js:601:31
+   601|         currentQueue.paused = wasPaused;
+                                      ^^^^^^^^^
+
+References:
+   operationQueue.js:282:21
+   282|             paused: false,
+                            ^^^^^ [1]
+   operationQueue.js:254:29
+   254|                     paused: false,
+                                    ^^^^^ [2]
+
+
+Error ----------------------------------------------------------------------------------------- operationQueue.js:628:27
+
+Cannot assign `true` to `currentQueue.paused` because boolean literal `true` [1] is incompatible with boolean literal
+`false` [2]. [incompatible-type]
+
+   operationQueue.js:628:27
+   628|     currentQueue.paused = true;
+                                  ^^^^ [1]
+
+References:
+   operationQueue.js:254:29
+   254|                     paused: false,
+                                    ^^^^^ [2]
+
+
+Error --------------------------------------------------------------------------------------- operationQueueUI.js:341:10
+
+Cannot use `OperationType.GENERATE_COMBINED_SUMMARY` [1] to assign a computed property. Computed properties may only be
+numeric or string literal values, but this one is a `void` (due to access of non-existent property
+`GENERATE_COMBINED_SUMMARY`) [1]. Can you add an appropriate type annotation to
+`OperationType.GENERATE_COMBINED_SUMMARY` [1]? See https://flow.org/en/docs/types/literals/ for more information on
+literal types. [invalid-computed-prop]
+
+   341|         [OperationType.GENERATE_COMBINED_SUMMARY]: 'Combined Summary'
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ [1]
+
+
+
+Found 13 errors
