@@ -89,17 +89,6 @@ function get_context_size() {
     // Get the current context size
     return getMaxContextSize();
 }
-function get_long_token_limit() {
-    // Get the long-term memory token limit, given the current context size and settings
-    const long_term_context_limit = get_settings('long_term_context_limit');
-    const number_type = get_settings('long_term_context_type')
-    if (number_type === "percent") {
-        const context_size = get_context_size();
-        return Math.floor(context_size * long_term_context_limit / 100);
-    } else {
-        return long_term_context_limit
-    }
-}
 function get_short_token_limit() {
     // Get the short-term memory token limit, given the current context size and settings
     const short_term_context_limit = get_settings('short_term_context_limit');
@@ -254,7 +243,6 @@ export {
     saveChatDebounced,
     count_tokens,
     get_context_size,
-    get_long_token_limit,
     get_short_token_limit,
     get_current_character_identifier,
     get_current_chat_identifier,
