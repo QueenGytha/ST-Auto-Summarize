@@ -8,6 +8,7 @@ import {
     check_connection_profile_valid,
     toast,
     debug,
+    error,
     settings_content_class,
     set_setting_ui_element,
     settings_ui_map,
@@ -20,6 +21,7 @@ import {
     getContext,
     default_short_template,
     default_scene_template,
+    extension_settings,
 } from './index.js';
 
 function update_save_icon_highlight() {
@@ -303,6 +305,9 @@ function refresh_settings() {
         set_setting_ui_element(key, element, type);
     }
 
+    // Refresh Auto-Lorebooks settings UI (merged extension)
+    refresh_lorebooks_settings_ui();
+
     // Enable or disable settings based on others
     if (chat_enabled()) {
         // $FlowFixMe[cannot-resolve-name]
@@ -349,6 +354,73 @@ async function update_running_scene_summary_connection_profile_dropdown() {
     }
     $connection_select.val(summary_connection);
     $connection_select.off('click').on('click', () => update_running_scene_summary_connection_profile_dropdown());
+}
+
+/**
+ * Refresh Auto-Lorebooks settings UI
+ * Loads values from extension_settings.autoLorebooks into UI elements
+ */
+function refresh_lorebooks_settings_ui() {
+    try {
+        // Load global settings from extension_settings.autoLorebooks
+        // $FlowFixMe[prop-missing]
+        const lorebooksSettings = extension_settings.autoLorebooks || {};
+
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-enabled-by-default').prop('checked', lorebooksSettings.enabledByDefault ?? true);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-delete-on-chat-delete').prop('checked', lorebooksSettings.deleteOnChatDelete ?? true);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-name-template').val(lorebooksSettings.nameTemplate || 'z-AutoLB - {{char}} - {{chat}}');
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-debug-mode').prop('checked', lorebooksSettings.debug_mode ?? true);
+
+        // Load queue settings
+        const queueSettings = lorebooksSettings.queue || {};
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-queue-enabled').prop('checked', queueSettings.enabled !== false);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-queue-use-lorebook').prop('checked', queueSettings.use_lorebook !== false);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-queue-display-enabled').prop('checked', queueSettings.display_enabled !== false);
+
+        // Load tracking settings
+        const tracking = lorebooksSettings.tracking || {};
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-enabled').prop('checked', tracking.enabled ?? true);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-intercept-send').prop('checked', tracking.intercept_send_button ?? true);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-auto-create').prop('checked', tracking.auto_create ?? true);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-remove-syntax').prop('checked', tracking.remove_from_message ?? true);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-syntax-gm-notes').val(tracking.syntax_gm_notes || '<-- gm_notes: {{content}} -->');
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-syntax-character-stats').val(tracking.syntax_character_stats || '<-- character_stats: {{content}} -->');
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-merge-prefill').val(tracking.merge_prefill || '');
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-merge-prompt-gm-notes').val(tracking.merge_prompt_gm_notes || '');
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-merge-prompt-character-stats').val(tracking.merge_prompt_character_stats || '');
+
+        // Load summary processing settings
+        const summaryProcessing = lorebooksSettings.summary_processing || {};
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-summary-processing-enabled').prop('checked', summaryProcessing.enabled ?? true);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-summary-skip-duplicates').prop('checked', summaryProcessing.skip_duplicates ?? true);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-summary-merge-prefill').val(summaryProcessing.merge_prefill || '');
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-summary-merge-prompt').val(summaryProcessing.merge_prompt || '');
+
+        debug("Auto-Lorebooks settings UI refreshed");
+
+    } catch (err) {
+        error("Error refreshing Auto-Lorebooks settings UI", err);
+    }
 }
 
 export {

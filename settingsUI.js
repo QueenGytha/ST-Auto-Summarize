@@ -1,6 +1,7 @@
 // @flow
 import {
     log,
+    debug,
     error,
     toast,
     get_message_history,
@@ -29,6 +30,8 @@ import {
     reset_settings,
     get_short_token_limit,
     default_scene_template,
+    extension_settings,
+    saveSettingsDebounced,
 } from './index.js';
 
 // UI initialization
@@ -415,7 +418,278 @@ Available Macros:
     createRunningSceneSummaryNavbar();
     updateRunningSceneSummaryNavbar();
 
+    // Initialize Auto-Lorebooks settings event listeners
+    initialize_lorebooks_settings_listeners();
+
     refresh_settings()
+}
+
+/**
+ * Initialize event listeners for Auto-Lorebooks settings UI
+ */
+function initialize_lorebooks_settings_listeners() {
+    // Global enabled by default checkbox
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-enabled-by-default', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.enabledByDefault = value;
+        saveSettingsDebounced();
+    });
+
+    // Name template input
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('input', '#autolorebooks-name-template', function() {
+        const value = $(this).val().trim();
+        if (value && value.length > 0) {
+            // $FlowFixMe[prop-missing]
+            if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+            // $FlowFixMe[prop-missing]
+            extension_settings.autoLorebooks.nameTemplate = value;
+            saveSettingsDebounced();
+        }
+    });
+
+    // Delete on chat delete checkbox
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-delete-on-chat-delete', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.deleteOnChatDelete = value;
+        saveSettingsDebounced();
+    });
+
+    // Debug mode checkbox
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-debug-mode', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.debug_mode = value;
+        saveSettingsDebounced();
+    });
+
+    // Queue settings
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-queue-enabled', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.queue) extension_settings.autoLorebooks.queue = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.queue.enabled = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-queue-use-lorebook', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.queue) extension_settings.autoLorebooks.queue = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.queue.use_lorebook = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-queue-display-enabled', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.queue) extension_settings.autoLorebooks.queue = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.queue.display_enabled = value;
+        saveSettingsDebounced();
+    });
+
+    // Tracking settings
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-tracking-enabled', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.tracking.enabled = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-tracking-intercept-send', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.tracking.intercept_send_button = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-tracking-auto-create', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.tracking.auto_create = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-tracking-remove-syntax', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.tracking.remove_from_message = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('input', '#autolorebooks-tracking-syntax-gm-notes', function() {
+        const value = $(this).val();
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.tracking.syntax_gm_notes = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('input', '#autolorebooks-tracking-syntax-character-stats', function() {
+        const value = $(this).val();
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.tracking.syntax_character_stats = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('input', '#autolorebooks-tracking-merge-prefill', function() {
+        const value = $(this).val();
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.tracking.merge_prefill = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('input', '#autolorebooks-tracking-merge-prompt-gm-notes', function() {
+        const value = $(this).val();
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.tracking.merge_prompt_gm_notes = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('input', '#autolorebooks-tracking-merge-prompt-character-stats', function() {
+        const value = $(this).val();
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.tracking.merge_prompt_character_stats = value;
+        saveSettingsDebounced();
+    });
+
+    // Summary processing settings
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-summary-processing-enabled', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.summary_processing.enabled = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-summary-skip-duplicates', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.summary_processing.skip_duplicates = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('input', '#autolorebooks-summary-merge-prefill', function() {
+        const value = $(this).val();
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.summary_processing.merge_prefill = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('input', '#autolorebooks-summary-merge-prompt', function() {
+        const value = $(this).val();
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.summary_processing.merge_prompt = value;
+        saveSettingsDebounced();
+    });
+
+    debug("Auto-Lorebooks settings event listeners initialized");
 }
 
 export { initialize_settings_listeners };

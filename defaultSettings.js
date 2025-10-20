@@ -120,4 +120,48 @@ Object.assign(default_settings, {
     operation_queue_enabled: true, // Enable persistent operation queue (survives restarts)
     operation_queue_use_lorebook: true, // Store queue in lorebook entry (visible) vs chat_metadata (hidden)
     operation_queue_display_enabled: true, // Show queue UI in navbar
+
+    // --- Auto-Lorebooks Settings ---
+    auto_lorebooks_enabled_by_default: true, // Enable auto-lorebooks for new chats
+    auto_lorebooks_name_template: 'z-AutoLB - {{char}} - {{chat}}', // Naming template for auto-created lorebooks
+    auto_lorebooks_delete_on_chat_delete: true, // Delete lorebook when chat is deleted
+
+    // --- Auto-Lorebooks Tracking Entries Settings ---
+    auto_lorebooks_tracking_enabled: true, // Enable AI-editable tracking entries (GM Notes, Character Stats)
+    auto_lorebooks_tracking_intercept_send: true, // Intercept send button to process tracking syntax
+    auto_lorebooks_tracking_auto_create: true, // Auto-create tracking entries on chat load
+    auto_lorebooks_tracking_remove_syntax: true, // Remove tracking syntax from message after processing
+    auto_lorebooks_tracking_syntax_gm_notes: '<-- gm_notes: {{content}} -->', // Syntax pattern for GM notes
+    auto_lorebooks_tracking_syntax_character_stats: '<-- character_stats: {{content}} -->', // Syntax pattern for character stats
+    auto_lorebooks_tracking_merge_prefill: '', // Prefill for merge prompts
+    auto_lorebooks_tracking_merge_prompt_gm_notes: '', // Custom merge prompt for GM notes
+    auto_lorebooks_tracking_merge_prompt_character_stats: '', // Custom merge prompt for character stats
+    auto_lorebooks_tracking_merge_connection_profile: '', // Connection profile for merging
+    auto_lorebooks_tracking_merge_completion_preset: '', // Completion preset for merging
+
+    // --- Auto-Lorebooks Summary Processing Settings ---
+    auto_lorebooks_summary_processing_enabled: true, // Enable extracting entities from summaries to lorebook
+    auto_lorebooks_summary_skip_duplicates: true, // Skip entities that already exist in lorebook
+    auto_lorebooks_summary_use_queue: true, // Use operation queue for summary processing
+    auto_lorebooks_summary_merge_prompt: `You are updating a lorebook entry. You have the existing entry content and new information from a summary.
+
+Your task:
+1. Compare the existing content with the new information
+2. Merge them intelligently:
+   - Add new details that don't exist
+   - Update information that has changed
+   - Remove details that are contradicted or no longer relevant
+   - Preserve important existing information
+   - Maintain consistent formatting and tone
+
+Existing Entry Content:
+{{existing_content}}
+
+New Information from Summary:
+{{new_content}}
+
+Output ONLY the merged content, nothing else. Do not include explanations or meta-commentary.`,
+    auto_lorebooks_summary_merge_prefill: '', // Prefill for summary merge prompts
+    auto_lorebooks_summary_merge_connection_profile: '', // Connection profile for summary merging
+    auto_lorebooks_summary_merge_completion_preset: '', // Completion preset for summary merging
 });

@@ -42,6 +42,132 @@ function initialize_settings() {
         hard_reset_settings();
     }
 
+    // Initialize Auto-Lorebooks settings (merged extension uses separate namespace)
+    if (!extension_settings.autoLorebooks) {
+        log("Auto-Lorebooks settings not found. Initializing with defaults...")
+        extension_settings.autoLorebooks = {
+            enabledByDefault: true,
+            nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
+            deleteOnChatDelete: true,
+            debug_mode: true,
+            queue: {
+                enabled: true,
+                use_lorebook: true,
+                display_enabled: true
+            },
+            tracking: {
+                enabled: true,
+                intercept_send_button: true,
+                auto_create: true,
+                remove_from_message: true,
+                syntax_gm_notes: '<-- gm_notes: {{content}} -->',
+                syntax_character_stats: '<-- character_stats: {{content}} -->',
+                merge_prefill: '',
+                merge_prompt_gm_notes: '',
+                merge_prompt_character_stats: '',
+                merge_connection_profile: '',
+                merge_completion_preset: ''
+            },
+            summary_processing: {
+                enabled: true,
+                skip_duplicates: true,
+                use_queue: true,
+                merge_prompt: `You are updating a lorebook entry. You have the existing entry content and new information from a summary.
+
+Your task:
+1. Compare the existing content with the new information
+2. Merge them intelligently:
+   - Add new details that don't exist
+   - Update information that has changed
+   - Remove details that are contradicted or no longer relevant
+   - Preserve important existing information
+   - Maintain consistent formatting and tone
+
+Existing Entry Content:
+{{existing_content}}
+
+New Information from Summary:
+{{new_content}}
+
+Output ONLY the merged content, nothing else. Do not include explanations or meta-commentary.`,
+                merge_prefill: '',
+                merge_connection_profile: '',
+                merge_completion_preset: ''
+            }
+        };
+        saveSettingsDebounced();
+    } else {
+        // Merge with defaults for any missing properties (soft reset for lorebooks)
+        const defaultLorebooks = {
+            enabledByDefault: true,
+            nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
+            deleteOnChatDelete: true,
+            debug_mode: true,
+            queue: {
+                enabled: true,
+                use_lorebook: true,
+                display_enabled: true
+            },
+            tracking: {
+                enabled: true,
+                intercept_send_button: true,
+                auto_create: true,
+                remove_from_message: true,
+                syntax_gm_notes: '<-- gm_notes: {{content}} -->',
+                syntax_character_stats: '<-- character_stats: {{content}} -->',
+                merge_prefill: '',
+                merge_prompt_gm_notes: '',
+                merge_prompt_character_stats: '',
+                merge_connection_profile: '',
+                merge_completion_preset: ''
+            },
+            summary_processing: {
+                enabled: true,
+                skip_duplicates: true,
+                use_queue: true,
+                merge_prompt: `You are updating a lorebook entry. You have the existing entry content and new information from a summary.
+
+Your task:
+1. Compare the existing content with the new information
+2. Merge them intelligently:
+   - Add new details that don't exist
+   - Update information that has changed
+   - Remove details that are contradicted or no longer relevant
+   - Preserve important existing information
+   - Maintain consistent formatting and tone
+
+Existing Entry Content:
+{{existing_content}}
+
+New Information from Summary:
+{{new_content}}
+
+Output ONLY the merged content, nothing else. Do not include explanations or meta-commentary.`,
+                merge_prefill: '',
+                merge_connection_profile: '',
+                merge_completion_preset: ''
+            }
+        };
+
+        // Deep merge nested objects
+        extension_settings.autoLorebooks = {
+            ...defaultLorebooks,
+            ...extension_settings.autoLorebooks,
+            queue: {
+                ...defaultLorebooks.queue,
+                ...extension_settings.autoLorebooks.queue
+            },
+            tracking: {
+                ...defaultLorebooks.tracking,
+                ...extension_settings.autoLorebooks.tracking
+            },
+            summary_processing: {
+                ...defaultLorebooks.summary_processing,
+                ...extension_settings.autoLorebooks.summary_processing
+            }
+        };
+    }
+
     // load default profile
     load_profile();
 }
@@ -87,12 +213,68 @@ function reset_settings() {
     // Reset ALL settings to defaults by completely replacing the extension settings object
     // This ensures no leftover settings remain from previous configurations
 
-    // Clear all existing settings
+    // Clear all existing Auto-Summarize settings
     delete extension_settings[MODULE_NAME];
 
-    // Set to fresh clone of defaults
+    // Set to fresh clone of defaults merged with global_settings (includes profiles, chat_profiles, etc.)
     // $FlowFixMe[cannot-resolve-name]
-    extension_settings[MODULE_NAME] = structuredClone(default_settings);
+    extension_settings[MODULE_NAME] = structuredClone({
+        ...default_settings,
+        ...global_settings
+    });
+
+    // ALSO reset Auto-Lorebooks settings (merged extension uses separate namespace)
+    delete extension_settings.autoLorebooks;
+    extension_settings.autoLorebooks = {
+        enabledByDefault: true,
+        nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
+        deleteOnChatDelete: true,
+        debug_mode: true,
+        queue: {
+            enabled: true,
+            use_lorebook: true,
+            display_enabled: true
+        },
+        tracking: {
+            enabled: true,
+            intercept_send_button: true,
+            auto_create: true,
+            remove_from_message: true,
+            syntax_gm_notes: '<-- gm_notes: {{content}} -->',
+            syntax_character_stats: '<-- character_stats: {{content}} -->',
+            merge_prefill: '',
+            merge_prompt_gm_notes: '',
+            merge_prompt_character_stats: '',
+            merge_connection_profile: '',
+            merge_completion_preset: ''
+        },
+        summary_processing: {
+            enabled: true,
+            skip_duplicates: true,
+            use_queue: true,
+            merge_prompt: `You are updating a lorebook entry. You have the existing entry content and new information from a summary.
+
+Your task:
+1. Compare the existing content with the new information
+2. Merge them intelligently:
+   - Add new details that don't exist
+   - Update information that has changed
+   - Remove details that are contradicted or no longer relevant
+   - Preserve important existing information
+   - Maintain consistent formatting and tone
+
+Existing Entry Content:
+{{existing_content}}
+
+New Information from Summary:
+{{new_content}}
+
+Output ONLY the merged content, nothing else. Do not include explanations or meta-commentary.`,
+            merge_prefill: '',
+            merge_connection_profile: '',
+            merge_completion_preset: ''
+        }
+    };
 
     // Save immediately
     saveSettingsDebounced();
@@ -100,7 +282,7 @@ function reset_settings() {
     // Refresh the UI
     refresh_settings();
 
-    log("All settings restored to defaults");
+    log("All settings restored to defaults (Auto-Summarize + Auto-Lorebooks)");
     toast("All settings restored to defaults", "success");
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
