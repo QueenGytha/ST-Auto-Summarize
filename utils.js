@@ -90,7 +90,7 @@ function get_context_size() {
     return getMaxContextSize();
 }
 function get_short_token_limit() {
-    // Get the short-term memory token limit, given the current context size and settings
+    // Get the single message summary token limit, given the current context size and settings
     const short_term_context_limit = get_settings('short_term_context_limit');
     const number_type = get_settings('short_term_context_type')
     if (number_type === "percent") {
@@ -214,22 +214,23 @@ async function get_user_setting_text_input(key, title, description="", _defaultV
 <p>${description}</p>
 `
     const ctx = getContext();
-    let popup; // Needed for closure in restore_button action
-    const restore_button = {
-        text: 'Restore Default',
-        appendAtEnd: true,
-        action: () => {
-            popup.mainInput.value = default_settings[key] ?? '';
-        }
-    }
-    popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {rows: 20, customButtons: [restore_button]});
+    const popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {
+        rows: 20,
+        customButtons: [{
+            text: 'Restore Default',
+            appendAtEnd: true,
+            action: function() {
+                this.mainInput.value = default_settings[key] ?? '';
+            }
+        }]
+    });
     popup.mainInput.classList.remove('result-control');
     const input = await popup.show();
     if (input !== undefined && input !== null && input !== false) {
         set_settings(key, input);
         save_profile(); // auto-save when prompt is edited
-        refresh_settings()
-        refresh_memory()
+        refresh_settings();
+        refresh_memory();
     }
 }
 
