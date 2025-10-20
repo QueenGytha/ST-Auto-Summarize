@@ -28,7 +28,11 @@ import {
 class MemoryEditInterface {
     filtered /*: Array<any> */ = []
     displayed /*: Array<any> */ = []
-    selected: Set<any> = new Set()
+    selected /*: Set<any> */ = new Set()
+    $content /*: any */
+    popup /*: any */
+    ctx /*: any */
+    settings /*: any */
 
     // $FlowFixMe[missing-local-annot]
     filter_bar = {
@@ -145,9 +149,9 @@ class MemoryEditInterface {
         <div title="Re-Summarize (AI)"                                              class="mes_button fa-solid fa-quote-left ${summarize_button_class}"></div>
     </div>
     `
-    ctx /*: any */ = getContext();
 
     constructor() {
+        this.ctx = getContext();
         // $FlowFixMe[prop-missing]
         this.settings = get_settings('memory_edit_interface_settings')
     }
@@ -280,8 +284,8 @@ class MemoryEditInterface {
         this.$content.find('#preview_memory_state').on('click', () => display_injection_preview())
 
         const self = this;
-        // $FlowFixMe[prop-missing] [missing-this-annot]
-        this.$content.on('change', 'tr textarea', function (this: any) {
+        // $FlowFixMe[missing-this-annot]
+        this.$content.on('change', 'tr textarea', function () {
             // $FlowFixMe[cannot-resolve-name]
             const new_memory = $(this).val();
             // $FlowFixMe[cannot-resolve-name]
@@ -294,20 +298,23 @@ class MemoryEditInterface {
             this.style.height = "auto";
             this.style.height = this.scrollHeight + "px";
         });
-        // $FlowFixMe[prop-missing] [missing-this-annot]
-        this.$content.on('click', 'input.interface_message_select', function (this: any) {
+        // $FlowFixMe[prop-missing]
+        // $FlowFixMe[missing-this-annot]
+        this.$content.on('click', 'input.interface_message_select', function () {
             const index = Number(this.value);
             self.toggle_selected([index])
         })
-        // $FlowFixMe[prop-missing] [missing-this-annot]
-        this.$content.on("click", `tr .${forget_button_class}`, function (this: any) {
+        // $FlowFixMe[prop-missing]
+        // $FlowFixMe[missing-this-annot]
+        this.$content.on("click", `tr .${forget_button_class}`, function () {
             // $FlowFixMe[cannot-resolve-name]
             const message_id = Number($(this).closest('tr').attr('message_id'));
             forget_message_toggle(message_id);
             self.update_table()
         })
-        // $FlowFixMe[prop-missing] [missing-this-annot]
-        this.$content.on("click", `tr .${summarize_button_class}`, async function (this: any) {
+        // $FlowFixMe[prop-missing]
+        // $FlowFixMe[missing-this-annot]
+        this.$content.on("click", `tr .${summarize_button_class}`, async function () {
             // $FlowFixMe[cannot-resolve-name]
             const message_id = Number($(this).closest('tr').attr('message_id'));
             await summarize_messages(message_id);
@@ -322,8 +329,9 @@ class MemoryEditInterface {
         // $FlowFixMe[prop-missing]
         const result = this.popup.show();
         this.update_table()
-        // $FlowFixMe[prop-missing] [missing-this-annot]
-        this.$content.find('tr textarea').each(function (this: any) {
+        // $FlowFixMe[prop-missing]
+        // $FlowFixMe[missing-this-annot]
+        this.$content.find('tr textarea').each(function () {
             this.style.height = 'auto'
             this.style.height = this.scrollHeight + "px";
         })
@@ -335,14 +343,14 @@ class MemoryEditInterface {
     }
 
     // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-    is_open(): any {
+    is_open() /*: any */ {
         // $FlowFixMe[prop-missing]
         if (!this.popup) return false
         // $FlowFixMe[prop-missing]
         return this.$content.closest('dialog').attr('open');
     }
     // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-    global_selection(): any {
+    global_selection() /*: any */ {
         // $FlowFixMe[prop-missing]
         return this.$global_selection_checkbox.is(':checked');
     }
@@ -556,7 +564,7 @@ class MemoryEditInterface {
         this.update_selected()
     }
     // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-    update_message_visuals(i /*: any */, $previous_row /*: any */=null, style /*: any */=true, text /*: any */=null): any {
+    update_message_visuals(i /*: any */, $previous_row /*: any */=null, style /*: any */=true, text /*: any */=null) /*: any */ {
         if (!this.is_open()) return
         const msg = this.ctx.chat[i];
         const memory = text ?? get_memory(msg)

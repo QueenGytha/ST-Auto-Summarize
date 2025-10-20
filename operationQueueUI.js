@@ -111,8 +111,9 @@ function createQueueUI() {
  */
 function bindQueueControlEvents() {
     // Pause/Resume
-    // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
-    $(document).on('click', '#queue_toggle_pause', async function (this: any) {
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('click', '#queue_toggle_pause', async function () {
         if (isQueuePaused()) {
             await resumeQueue();
             // $FlowFixMe[cannot-resolve-name]
@@ -138,8 +139,9 @@ function bindQueueControlEvents() {
     });
 
     // Toggle visibility
-    // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
-    $(document).on('click', '#queue_toggle_visibility', function (this: any) {
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('click', '#queue_toggle_visibility', function () {
         // $FlowFixMe[cannot-resolve-name]
         const $list = $('#queue_list_container');
         // $FlowFixMe[cannot-resolve-name]
@@ -155,8 +157,9 @@ function bindQueueControlEvents() {
     });
 
     // Remove individual operation
-    // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
-    $(document).on('click', '.queue-operation-remove', async function (this: any) {
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('click', '.queue-operation-remove', async function () {
         // $FlowFixMe[cannot-resolve-name]
         const operationId = $(this).data('operation-id');
         await removeOperation(operationId);

@@ -48,8 +48,9 @@ export function addSceneBreakButton() {
 // Handles click events for the scene break button
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
 export function bindSceneBreakButton(get_message_div /*: any */, getContext /*: any */, set_data /*: any */, get_data /*: any */, saveChatDebounced /*: any */) {
-    // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
-    $("div#chat").on("click", `.${SCENE_BREAK_BUTTON_CLASS}`, function (this: any) {
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $("div#chat").on("click", `.${SCENE_BREAK_BUTTON_CLASS}`, function () {
         // $FlowFixMe[cannot-resolve-name]
         const message_block = $(this).closest(".mes");
         const message_id = Number(message_block.attr("mesid"));

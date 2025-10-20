@@ -7,13 +7,14 @@
   "scripts": {
     "build": "babel *.js --out-dir . --ignore 'node_modules/**'",
     "watch": "babel *.js --out-dir . --ignore 'node_modules/**' --watch",
-    "lint": "eslint *.js",
-    "lint:fix": "eslint *.js --fix",
+    "lint": "eslint *.js --ignore-pattern syntax-check.js",
+    "lint:fix": "eslint *.js --ignore-pattern syntax-check.js --fix",
     "flow": "flow status --flowconfig-name .flowconfig",
     "flow-check": "flow check --flowconfig-name .flowconfig",
+    "syntax-check": "node syntax-check.js",
     "audit": "npm audit --audit-level=moderate",
-    "analyze": "npm run lint && npm run flow-check",
-    "analyze:full": "npm run lint && npm run flow-check && npm run audit"
+    "analyze": "npm run lint && npm run syntax-check && npm run flow-check",
+    "analyze:full": "npm run lint && npm run syntax-check && npm run flow-check && npm run audit"
   },
   "keywords": [
     "sillytavern",

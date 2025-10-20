@@ -97,8 +97,9 @@ export function initializeSceneNavigatorBar() {
     $('#scene_summary_navigator_toggle').prop('checked', !!checked);
 
     // Toggle handler
-    // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
-    $('#scene_summary_navigator_toggle').off('change').on('change', function (this: any) {
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $('#scene_summary_navigator_toggle').off('change').on('change', function () {
         set_settings('scene_summary_navigator_toggle', this.checked);
         renderSceneNavigatorBar();
     });

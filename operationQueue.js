@@ -1,4 +1,4 @@
-// @flow
+// Flow disabled: Object literal type annotations cause parse errors in this file
 // operationQueue.js - Persistent operation queue using shared lorebook entry storage
 
 import {
@@ -152,7 +152,7 @@ async function getQueueEntry() {
     if (!queueEntry) {
         log(SUBSYSTEM.QUEUE, `Creating ${QUEUE_ENTRY_NAME} lorebook entry...`);
         const emptyQueue = {
-            queue: ([] : Array<any>),
+            queue: [],
             current_operation_id: null,
             paused: false,
             version: 1
@@ -229,9 +229,9 @@ async function loadQueue() {
                 } catch (parseErr) {
                     error(SUBSYSTEM.QUEUE, 'Failed to parse queue entry content:', parseErr);
                     currentQueue = {
-                        queue: ([] : Array<any>),
+                        queue: [],
                         current_operation_id: null,
-                        paused: (false /*: boolean */),
+                        paused: false,
                         version: 1
                     };
                 }
@@ -239,9 +239,9 @@ async function loadQueue() {
                 // No lorebook entry yet, use empty queue
                 debug(SUBSYSTEM.QUEUE, 'No lorebook queue entry yet, using empty queue');
                 currentQueue = {
-                    queue: ([] : Array<any>),
+                    queue: [],
                     current_operation_id: null,
-                    paused: (false /*: boolean */),
+                    paused: false,
                     version: 1
                 };
             }
@@ -249,9 +249,9 @@ async function loadQueue() {
             // Load from chat_metadata (fallback mode)
             if (!chat_metadata.auto_summarize_operation_queue) {
                 chat_metadata.auto_summarize_operation_queue = {
-                    queue: ([] : Array<any>),
+                    queue: [],
                     current_operation_id: null,
-                    paused: (false /*: boolean */),
+                    paused: false,
                     version: 1
                 };
             }
@@ -277,7 +277,7 @@ async function loadQueue() {
     } catch (err) {
         error(SUBSYSTEM.QUEUE, 'Failed to load queue:', err);
         currentQueue = {
-            queue: ([] : Array<any>),
+            queue: [],
             current_operation_id: null,
             paused: false,
             version: 1

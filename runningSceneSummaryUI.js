@@ -60,8 +60,9 @@ function createRunningSceneSummaryNavbar() {
     $navbar.append(html);
 
     // Bind event handlers
-    // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
-    $('#running_summary_version_selector').on('change', async function (this: any) {
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $('#running_summary_version_selector').on('change', async function () {
         // $FlowFixMe[cannot-resolve-name]
         const versionNum = parseInt($(this).val());
         if (versionNum === -1) {
