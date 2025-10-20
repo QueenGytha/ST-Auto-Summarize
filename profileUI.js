@@ -439,7 +439,7 @@ async function update_autolorebooks_tracking_merge_connection_dropdown() {
     const currentValue = extension_settings.autoLorebooks?.tracking?.merge_connection_profile || '';
     const connection_options = await get_connection_profiles();
     $connection_select.empty();
-    $connection_select.append(`<option value="">Main API</option>`);
+    $connection_select.append(`<option value="">Same as Current</option>`);
     if (connection_options && Array.isArray(connection_options)) {
         for (const option of connection_options) {
             $connection_select.append(`<option value="${option}">${option}</option>`);
@@ -459,7 +459,7 @@ async function update_autolorebooks_tracking_merge_preset_dropdown() {
     const currentValue = extension_settings.autoLorebooks?.tracking?.merge_completion_preset || '';
     const preset_options = await get_presets();
     $preset_select.empty();
-    $preset_select.append(`<option value="">Default</option>`);
+    $preset_select.append(`<option value="">Same as Current</option>`);
     for (const option of preset_options) {
         $preset_select.append(`<option value="${option}">${option}</option>`);
     }
@@ -477,7 +477,7 @@ async function update_autolorebooks_summary_merge_connection_dropdown() {
     const currentValue = extension_settings.autoLorebooks?.summary_processing?.merge_connection_profile || '';
     const connection_options = await get_connection_profiles();
     $connection_select.empty();
-    $connection_select.append(`<option value="">Main API</option>`);
+    $connection_select.append(`<option value="">Same as Current</option>`);
     if (connection_options && Array.isArray(connection_options)) {
         for (const option of connection_options) {
             $connection_select.append(`<option value="${option}">${option}</option>`);
@@ -497,7 +497,7 @@ async function update_autolorebooks_summary_merge_preset_dropdown() {
     const currentValue = extension_settings.autoLorebooks?.summary_processing?.merge_completion_preset || '';
     const preset_options = await get_presets();
     $preset_select.empty();
-    $preset_select.append(`<option value="">Default</option>`);
+    $preset_select.append(`<option value="">Same as Current</option>`);
     for (const option of preset_options) {
         $preset_select.append(`<option value="${option}">${option}</option>`);
     }
