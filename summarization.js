@@ -50,130 +50,138 @@ function setStopSummarization(val) {
 }
 setStopSummarization(false);
 
+// Helper: Switch to summarization profile/preset
+async function switchToSummarizationProfile() {
+    const summary_preset = get_settings('completion_preset');
+    const current_preset = await get_current_preset();
+    const summary_profile = get_settings('connection_profile');
+    const current_profile = await get_current_connection_profile();
+
+    await set_connection_profile(summary_profile);
+    await set_preset(summary_preset);
+
+    return { current_profile, current_preset };
+}
+
+// Helper: Restore original profile/preset
+async function restoreOriginalProfile(saved) {
+    await set_connection_profile(saved.current_profile);
+    await set_preset(saved.current_preset);
+}
+
+// Helper: Process time delay between summarizations
+async function processTimeDelay(show_progress, n, indexes_length) {
+    const time_delay = get_settings('summarization_time_delay');
+    if (time_delay <= 0 || n >= indexes_length - 1) return true;
+
+    if (getStopSummarization()) {
+        log('Summarization stopped');
+        return false;
+    }
+
+    debug(`Delaying generation by ${time_delay} seconds`);
+    if (show_progress) progress_bar('summarize', null, null, "Delaying");
+
+    await new Promise((resolve) => {
+        SUMMARIZATION_DELAY_TIMEOUT = setTimeout(resolve, time_delay * 1000);
+        SUMMARIZATION_DELAY_RESOLVE = resolve;
+    });
+
+    return true;
+}
+
+// Helper: Check and run combined summary if needed
+async function checkAndRunCombinedSummary(anyModified) {
+    if (!anyModified || !get_settings('combined_summary_enabled')) return;
+
+    const run_interval = get_settings('combined_summary_run_interval') || 1;
+    const new_count = get_settings('combined_summary_new_count') || 0;
+
+    if (new_count >= run_interval) {
+        if (get_settings('show_combined_summary_toast')) {
+            toast("Generating combined summary after individual summaries...", "info");
+        }
+        await generate_combined_summary();
+        set_settings('combined_summary_new_count', 0);
+    }
+}
+
+// Helper: Cleanup after summarization
+function cleanupAfterSummarization(ctx, show_progress, indexes_length) {
+    if (show_progress) remove_progress_bar('summarize');
+
+    if (getStopSummarization()) {
+        setStopSummarization(false);
+    } else {
+        debug(`Messages summarized: ${indexes_length}`);
+    }
+
+    if (get_settings('block_chat')) {
+        ctx.activateSendButtons();
+    }
+
+    refresh_memory();
+    memoryEditInterface.update_table();
+}
+
 async function summarize_messages(indexes=null, show_progress=true) {
-    // Summarize the given list of message indexes (or a single index)
     const ctx = getContext();
 
-    if (indexes === null) {  // default to the mose recent message, min 0
-        indexes = [Math.max(ctx.chat.length - 1, 0)]
+    // Normalize indexes
+    if (indexes === null) {
+        indexes = [Math.max(ctx.chat.length - 1, 0)];
     }
-    indexes = Array.isArray(indexes) ? indexes : [indexes]  // cast to array if only one given
+    indexes = Array.isArray(indexes) ? indexes : [indexes];
     if (!indexes.length) return;
 
-    debug(`Summarizing ${indexes.length} messages`)
+    debug(`Summarizing ${indexes.length} messages`);
 
-    // Check if operation queue is enabled - if so, queue operations instead of executing directly
+    // Try to queue if enabled
     if (get_settings('operation_queue_enabled') !== false) {
         const { queueSummarizeMessages } = await import('./queueIntegration.js');
         const queued = queueSummarizeMessages(indexes);
         if (queued && queued.length > 0) {
             debug(`Queued ${queued.length} summarization operations`);
-            return; // Operations will be processed by queue
+            return;
         }
-        // If queueing failed, fall through to direct execution
         debug('Failed to queue operations, executing directly');
     }
 
-     // only show progress if there's more than one message to summarize
+    // Setup
     show_progress = show_progress && indexes.length > 1;
-
-    // set stop flag to false just in case
     setStopSummarization(false);
 
-    // optionally block user from sending chat messages while summarization is in progress
     if (get_settings('block_chat')) {
         ctx.deactivateSendButtons();
     }
 
-    // Save the current completion preset (must happen before you set the connection profile because it changes the preset)
-    const summary_preset = get_settings('completion_preset');
-    const current_preset = await get_current_preset();
-
-    // Get the current connection profile
-    const summary_profile = get_settings('connection_profile');
-    const current_profile = await get_current_connection_profile()
-
-    // set the completion preset and connection profile for summarization (preset must be set after connection profile)
-    await set_connection_profile(summary_profile);
-    await set_preset(summary_preset);
+    const savedProfile = await switchToSummarizationProfile();
 
     let n = 0;
     let anyModified = false;
-    
+
     try {
         for (const i of indexes) {
-            if (show_progress) progress_bar('summarize', n+1, indexes.length, "Summarizing");
+            if (show_progress) progress_bar('summarize', n + 1, indexes.length, "Summarizing");
 
-            // check if summarization was stopped by the user
             if (getStopSummarization()) {
                 log('Summarization stopped');
                 break;
             }
 
             const result = await summarize_message(i);
-            if (result.modified) {
-                anyModified = true;
-            }
+            if (result.modified) anyModified = true;
 
-            // wait for time delay if set
-            const time_delay = get_settings('summarization_time_delay')
-            if (time_delay > 0 && n < indexes.length-1) {  // delay all except the last
-
-                // check if summarization was stopped by the user during summarization
-                if (getStopSummarization()) {
-                    log('Summarization stopped');
-                    break;
-                }
-
-                debug(`Delaying generation by ${time_delay} seconds`)
-                if (show_progress) progress_bar('summarize', null, null, "Delaying")
-                await new Promise((resolve) => {
-                    SUMMARIZATION_DELAY_TIMEOUT = setTimeout(resolve, time_delay * 1000)
-                    SUMMARIZATION_DELAY_RESOLVE = resolve  // store the resolve function to call when cleared
-                });
-            }
+            const shouldContinue = await processTimeDelay(show_progress, n, indexes.length);
+            if (!shouldContinue) break;
 
             n += 1;
         }
 
-        // If any summaries were modified and combined summary settings are enabled, and we meet the threshold
-        // run the combined summary AFTER all individual summaries are complete
-        if (anyModified && get_settings('combined_summary_enabled')) {
-            const run_interval = get_settings('combined_summary_run_interval') || 1;
-            const new_count = get_settings('combined_summary_new_count') || 0;
-            
-            if (new_count >= run_interval) {
-                if (get_settings('show_combined_summary_toast')) {
-                    toast("Generating combined summary after individual summaries...", "info");
-                }
-                
-                // Generate combined summary after individual summaries are done
-                await generate_combined_summary();
-                set_settings('combined_summary_new_count', 0); // reset counter
-            }
-        }
+        await checkAndRunCombinedSummary(anyModified);
     } finally {
-        // restore the completion preset and connection profile
-        await set_connection_profile(current_profile);
-        await set_preset(current_preset);
-
-        // remove the progress bar
-        if (show_progress) remove_progress_bar('summarize');
-
-        if (getStopSummarization()) {  // check if summarization was stopped
-            setStopSummarization(false);  // reset the flag
-        } else {
-            debug(`Messages summarized: ${indexes.length}`);
-        }
-
-        if (get_settings('block_chat')) {
-            ctx.activateSendButtons();
-        }
-
-        refresh_memory();
-
-        // Update the memory state interface if it's open
-        memoryEditInterface.update_table();
+        await restoreOriginalProfile(savedProfile);
+        cleanupAfterSummarization(ctx, show_progress, indexes.length);
     }
 }
 async function summarize_message(index) {

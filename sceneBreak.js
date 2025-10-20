@@ -28,9 +28,11 @@ export const SCENE_BREAK_KEY = 'scene_break';
 export const SCENE_BREAK_VISIBLE_KEY = 'scene_break_visible';
 export const SCENE_BREAK_NAME_KEY = 'scene_break_name';
 export const SCENE_BREAK_SUMMARY_KEY = 'scene_break_summary';
+export const SCENE_SUMMARY_MEMORY_KEY = 'scene_summary_memory';
 export const SCENE_BREAK_COLLAPSED_KEY = 'scene_break_collapsed';
 export const SCENE_BREAK_BUTTON_CLASS = 'auto_summarize_scene_break_button';
 export const SCENE_BREAK_DIV_CLASS = 'auto_summarize_scene_break_div';
+const SCENE_BREAK_SELECTED_CLASS = 'sceneBreak-selected';
 
 // Adds the scene break button to the message template
 export function addSceneBreakButton() {
@@ -138,6 +140,86 @@ function getSceneRangeIndexes(index, chat, get_data, sceneCount) {
     return [startIdx, endIdx];
 }
 
+// Helper: Handle generate summary button click
+async function handleGenerateSummaryButtonClick(index, chat, message, $sceneBreak, get_message_div, get_data, set_data, saveChatDebounced) {
+    log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
+
+    const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+    const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
+    const ctx = getContext();
+
+    // Collect scene objects using the helper from generateSceneSummary
+    const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
+
+    // Prepare prompt
+    const prompt = prepareScenePrompt(sceneObjects, ctx);
+
+    // Switch to scene profile
+    const profile = get_settings('scene_summary_connection_profile');
+    const preset = get_settings('scene_summary_completion_preset');
+    const current_profile = await ctx.get_current_connection_profile?.();
+    const current_preset = await ctx.get_current_preset?.();
+
+    if (profile) {
+        debug(SUBSYSTEM.SCENE, "Switching to connection profile:", profile);
+        await ctx.set_connection_profile?.(profile);
+    }
+    if (preset) {
+        debug(SUBSYSTEM.SCENE, "Switching to preset:", preset);
+        await ctx.set_preset?.(preset);
+    }
+
+    // Show loading state
+    const $summaryBox = $sceneBreak.find('.scene-summary-box');
+    $summaryBox.val("Generating scene summary...");
+
+    // Generate summary
+    let summary = "";
+    try {
+        if (get_settings('block_chat')) {
+            ctx.deactivateSendButtons();
+        }
+        debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
+        summary = await summarize_text(prompt);
+        debug(SUBSYSTEM.SCENE, "AI response:", summary);
+    } catch (err) {
+        summary = "Error generating summary: " + (err?.message || err);
+        error(SUBSYSTEM.SCENE, "Error generating summary:", err);
+    } finally {
+        if (get_settings('block_chat')) {
+            ctx.activateSendButtons();
+        }
+    }
+
+    // Restore profile
+    if (profile) {
+        debug(SUBSYSTEM.SCENE, "Restoring previous connection profile:", current_profile);
+        await ctx.set_connection_profile?.(current_profile);
+    }
+    if (preset) {
+        debug(SUBSYSTEM.SCENE, "Restoring previous preset:", current_preset);
+        await ctx.set_preset?.(current_preset);
+    }
+
+    // Auto-generate scene name if enabled
+    const autoGenerateSceneNameManual = get_settings('scene_summary_auto_name_manual') ?? true;
+    if (autoGenerateSceneNameManual) {
+        debug(SUBSYSTEM.SCENE, "Waiting 5 seconds before generating scene name...");
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile, preset, current_profile, current_preset);
+    }
+
+    // Save and display
+    const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
+    updatedVersions.push(summary);
+    setSceneSummaryVersions(message, set_data, updatedVersions);
+    setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
+    set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
+    set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary);
+    saveChatDebounced();
+    renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+}
+
 export function renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced) {
     const $msgDiv = get_message_div(index);
     if (!$msgDiv?.length) return;
@@ -164,7 +246,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         versions = [initialSummary];
         setSceneSummaryVersions(message, set_data, versions);
         setCurrentSceneSummaryIndex(message, set_data, 0);
-        set_data(message, 'scene_summary_memory', initialSummary); // <-- ensure top-level property is set
+        set_data(message, SCENE_SUMMARY_MEMORY_KEY, initialSummary); // <-- ensure top-level property is set
         saveChatDebounced();
     }
 
@@ -286,7 +368,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         setSceneSummaryVersions(message, set_data, updatedVersions);
         // Also update the legacy summary field for compatibility
         set_data(message, SCENE_BREAK_SUMMARY_KEY, $(this).val());
-        set_data(message, 'scene_summary_memory', $(this).val()); // <-- ensure top-level property is set
+        set_data(message, SCENE_SUMMARY_MEMORY_KEY, $(this).val()); // <-- ensure top-level property is set
         saveChatDebounced();
     });
 
@@ -368,114 +450,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
     $sceneBreak.find('.scene-generate-summary').off('click').on('click', async function(e) {
         e.stopPropagation();
-        log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
-
-        const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
-        const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
-        const ctx = getContext();
-
-        // Collect scene objects (messages/summaries) as before
-        const mode = get_settings('scene_summary_history_mode') || "both";
-        const messageTypes = get_settings('scene_summary_message_types') || "both";
-        const sceneObjects = [];
-        for (let i = startIdx; i <= endIdx; i++) {
-            const msg = chat[i];
-            if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
-                // Filter by message type
-                const includeMessage = (messageTypes === "both") ||
-                                     (messageTypes === "user" && msg.is_user) ||
-                                     (messageTypes === "character" && !msg.is_user);
-                if (includeMessage) {
-                    sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
-                }
-            }
-            if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
-                sceneObjects.push({ type: "summary", index: i, summary: get_memory(msg) });
-            }
-        }
-
-        // 1. Get prompt and connection profile for scene summaries
-        const promptTemplate = get_settings('scene_summary_prompt');
-        const prefill = get_settings('scene_summary_prefill') || "";
-        const profile = get_settings('scene_summary_connection_profile');
-        const preset = get_settings('scene_summary_completion_preset');
-        const current_profile = await ctx.get_current_connection_profile?.();
-        const current_preset = await ctx.get_current_preset?.();
-
-        // 2. Prepare prompt (substitute macros)
-        let prompt = promptTemplate;
-        if (ctx.substituteParamsExtended) {
-            prompt = ctx.substituteParamsExtended(prompt, {
-                message: JSON.stringify(sceneObjects, null, 2),
-                prefill
-            }) || prompt;
-        }
-        prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
-        prompt = `${prompt}\n${prefill}`;
-
-        // 3. Switch to scene summary profile/preset if set
-        if (profile) {
-            debug(SUBSYSTEM.SCENE, "Switching to connection profile:", profile);
-            await ctx.set_connection_profile?.(profile);
-        }
-        if (preset) {
-            debug(SUBSYSTEM.SCENE, "Switching to preset:", preset);
-            await ctx.set_preset?.(preset);
-        }
-
-        // 4. Show loading state in summary box
-        const $summaryBox = $sceneBreak.find('.scene-summary-box');
-        $summaryBox.val("Generating scene summary...");
-
-        // 5. Generate summary using the same logic as summarize_text
-        let summary = "";
-        try {
-            // Block input if setting is enabled
-            if (get_settings('block_chat')) {
-                ctx.deactivateSendButtons();
-            }
-            debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
-            summary = await summarize_text(prompt);
-            debug(SUBSYSTEM.SCENE, "AI response:", summary);
-        } catch (err) {
-            summary = "Error generating summary: " + (err?.message || err);
-            error(SUBSYSTEM.SCENE, "Error generating summary:", err);
-        } finally {
-            // Re-enable input if it was blocked
-            if (get_settings('block_chat')) {
-                ctx.activateSendButtons();
-            }
-        }
-
-        // 6. Restore previous profile/preset
-        if (profile) {
-            debug(SUBSYSTEM.SCENE, "Restoring previous connection profile:", current_profile);
-            await ctx.set_connection_profile?.(current_profile);
-        }
-        if (preset) {
-            debug(SUBSYSTEM.SCENE, "Restoring previous preset:", current_preset);
-            await ctx.set_preset?.(current_preset);
-        }
-
-        // 6.5. Auto-generate scene name if enabled and not already set (for manual generation)
-        const autoGenerateSceneNameManual = get_settings('scene_summary_auto_name_manual') ?? true;
-        if (autoGenerateSceneNameManual) {
-            // Delay before generating scene name to avoid rate limiting
-            debug(SUBSYSTEM.SCENE, "Waiting 5 seconds before generating scene name...");
-            await new Promise(resolve => setTimeout(resolve, 5000));
-
-            await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile, preset, current_profile, current_preset);
-        }
-
-        // 7. Save and display the summary in the box
-        const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
-        updatedVersions.push(summary);
-        setSceneSummaryVersions(message, set_data, updatedVersions);
-        setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
-        set_data(message, SCENE_BREAK_SUMMARY_KEY, summary); // update legacy field
-        set_data(message, 'scene_summary_memory', summary); // <-- ensure top-level property is set
-        saveChatDebounced();
-        renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+        await handleGenerateSummaryButtonClick(index, chat, message, $sceneBreak, get_message_div, get_data, set_data, saveChatDebounced);
     });
 
     $sceneBreak.find('.scene-rollback-summary').off('click').on('click', function(e) {
@@ -485,7 +460,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             setCurrentSceneSummaryIndex(message, set_data, idx - 1);
             const summary = getSceneSummaryVersions(message, get_data)[idx - 1];
             set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
-            set_data(message, 'scene_summary_memory', summary); // <-- ensure top-level property is set
+            set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary); // <-- ensure top-level property is set
             saveChatDebounced();
             refresh_memory(); // <-- refresh memory injection to use the newly selected summary
             renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
@@ -499,7 +474,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             setCurrentSceneSummaryIndex(message, set_data, idx + 1);
             const summary = versions[idx + 1];
             set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
-            set_data(message, 'scene_summary_memory', summary); // <-- ensure top-level property is set
+            set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary); // <-- ensure top-level property is set
             saveChatDebounced();
             refresh_memory(); // <-- refresh memory injection to use the newly selected summary
             renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
@@ -514,7 +489,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
             return;
         }
 
-        const sceneSummary = get_data(message, 'scene_summary_memory');
+        const sceneSummary = get_data(message, SCENE_SUMMARY_MEMORY_KEY);
         if (!sceneSummary) {
             alert('This scene has no summary yet. Generate a scene summary first.');
             return;
@@ -543,22 +518,22 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
 
     // --- Selection handlers for visual feedback ---
     $sceneBreak.on('mousedown', function (_e) {
-        $('.' + SCENE_BREAK_DIV_CLASS).removeClass('sceneBreak-selected');
-        $(this).addClass('sceneBreak-selected');
+        $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
+        $(this).addClass(SCENE_BREAK_SELECTED_CLASS);
     });
     // Remove selection when clicking outside any scene break
     $(document).off('mousedown.sceneBreakDeselect').on('mousedown.sceneBreakDeselect', function (e) {
         if (!$(e.target).closest('.' + SCENE_BREAK_DIV_CLASS).length) {
-            $('.' + SCENE_BREAK_DIV_CLASS).removeClass('sceneBreak-selected');
+            $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
         }
     });
     // Also add focus/blur for keyboard navigation
     $sceneBreak.on('focusin', function () {
-        $('.' + SCENE_BREAK_DIV_CLASS).removeClass('sceneBreak-selected');
-        $(this).addClass('sceneBreak-selected');
+        $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
+        $(this).addClass(SCENE_BREAK_SELECTED_CLASS);
     });
     $sceneBreak.on('focusout', function () {
-        $(this).removeClass('sceneBreak-selected');
+        $(this).removeClass(SCENE_BREAK_SELECTED_CLASS);
     });
 }
 
@@ -705,46 +680,35 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
     }
 }
 
-export async function generateSceneSummary(index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue = false) {
-    const ctx = getContext();
-    const chat = ctx.chat;
-    const message = chat[index];
+// Helper: Try to queue scene summary generation
+async function tryQueueSceneSummary(index) {
+    const queueEnabled = get_settings('operation_queue_enabled') !== false;
+    if (!queueEnabled) return false;
 
-    // Check if operation queue is enabled (skip if called from queue handler)
-    const queueEnabled = !skipQueue && get_settings('operation_queue_enabled') !== false;
-    if (queueEnabled) {
-        debug(SUBSYSTEM.SCENE, `[Queue] Operation queue enabled, queueing scene summary generation for index ${index}`);
+    debug(SUBSYSTEM.SCENE, `[Queue] Operation queue enabled, queueing scene summary generation for index ${index}`);
 
-        // Import queue integration
-        const { queueGenerateSceneSummary } = await import('./queueIntegration.js');
+    const { queueGenerateSceneSummary } = await import('./queueIntegration.js');
+    const operationId = queueGenerateSceneSummary(index);
 
-        // Queue the scene summary generation
-        const operationId = queueGenerateSceneSummary(index);
-
-        if (operationId) {
-            log(SUBSYSTEM.SCENE, `[Queue] Queued scene summary generation for index ${index}:`, operationId);
-            toast(`Queued scene summary generation for message ${index}`, 'info');
-            return; // Operation will be processed by queue
-        }
-
-        debug(SUBSYSTEM.SCENE, `[Queue] Failed to queue operation, falling back to direct execution`);
+    if (operationId) {
+        log(SUBSYSTEM.SCENE, `[Queue] Queued scene summary generation for index ${index}:`, operationId);
+        toast(`Queued scene summary generation for message ${index}`, 'info');
+        return true;
     }
 
-    // Fallback to direct execution if queue disabled or queueing failed
-    debug(SUBSYSTEM.SCENE, `Executing scene summary generation directly for index ${index} (queue ${skipQueue ? 'bypassed' : 'disabled or unavailable'})`);
+    debug(SUBSYSTEM.SCENE, `[Queue] Failed to queue operation, falling back to direct execution`);
+    return false;
+}
 
-    // Get scene range
-    const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
-    const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
-
-    // Collect scene objects (messages/summaries)
+// Helper: Collect scene objects for summary
+function collectSceneObjects(startIdx, endIdx, chat) {
     const mode = get_settings('scene_summary_history_mode') || "both";
     const messageTypes = get_settings('scene_summary_message_types') || "both";
     const sceneObjects = [];
+
     for (let i = startIdx; i <= endIdx; i++) {
         const msg = chat[i];
         if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
-            // Filter by message type
             const includeMessage = (messageTypes === "both") ||
                                  (messageTypes === "user" && msg.is_user) ||
                                  (messageTypes === "character" && !msg.is_user);
@@ -757,15 +721,14 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
         }
     }
 
-    // Get prompt and connection profile for scene summaries
+    return sceneObjects;
+}
+
+// Helper: Prepare scene summary prompt
+function prepareScenePrompt(sceneObjects, ctx) {
     const promptTemplate = get_settings('scene_summary_prompt');
     const prefill = get_settings('scene_summary_prefill') || "";
-    const profile = get_settings('scene_summary_connection_profile');
-    const preset = get_settings('scene_summary_completion_preset');
-    const current_profile = await ctx.get_current_connection_profile?.();
-    const current_preset = await ctx.get_current_preset?.();
 
-    // Prepare prompt (substitute macros)
     let prompt = promptTemplate;
     if (ctx.substituteParamsExtended) {
         prompt = ctx.substituteParamsExtended(prompt, {
@@ -776,7 +739,16 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
     prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
     prompt = `${prompt}\n${prefill}`;
 
-    // Switch to scene summary profile/preset if set
+    return prompt;
+}
+
+// Helper: Switch to scene summary profile/preset
+async function switchToSceneProfile(ctx) {
+    const profile = get_settings('scene_summary_connection_profile');
+    const preset = get_settings('scene_summary_completion_preset');
+    const current_profile = await ctx.get_current_connection_profile?.();
+    const current_preset = await ctx.get_current_preset?.();
+
     if (profile) {
         debug(SUBSYSTEM.SCENE, "Switching to connection profile:", profile);
         await ctx.set_connection_profile?.(profile);
@@ -786,10 +758,27 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
         await ctx.set_preset?.(preset);
     }
 
-    // Generate summary using the same logic as summarize_text
+    return { profile, preset, current_profile, current_preset };
+}
+
+// Helper: Restore previous profile/preset
+async function restoreProfile(ctx, savedProfiles) {
+    const { profile, preset, current_profile, current_preset } = savedProfiles;
+
+    if (profile) {
+        debug(SUBSYSTEM.SCENE, "Restoring previous connection profile:", current_profile);
+        await ctx.set_connection_profile?.(current_profile);
+    }
+    if (preset) {
+        debug(SUBSYSTEM.SCENE, "Restoring previous preset:", current_preset);
+        await ctx.set_preset?.(current_preset);
+    }
+}
+
+// Helper: Generate summary with error handling
+async function executeSceneSummaryGeneration(prompt, ctx) {
     let summary = "";
     try {
-        // Block input if setting is enabled
         if (get_settings('block_chat')) {
             ctx.deactivateSendButtons();
         }
@@ -799,47 +788,69 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
     } catch (err) {
         summary = "Error generating summary: " + (err?.message || err);
         error(SUBSYSTEM.SCENE, "Error generating summary:", err);
-        throw err; // Re-throw so caller knows it failed
+        throw err;
     } finally {
-        // Re-enable input if it was blocked
         if (get_settings('block_chat')) {
             ctx.activateSendButtons();
         }
     }
+    return summary;
+}
 
-    // Restore previous profile/preset
-    if (profile) {
-        debug(SUBSYSTEM.SCENE, "Restoring previous connection profile:", current_profile);
-        await ctx.set_connection_profile?.(current_profile);
-    }
-    if (preset) {
-        debug(SUBSYSTEM.SCENE, "Restoring previous preset:", current_preset);
-        await ctx.set_preset?.(current_preset);
-    }
-
-    // Auto-generate scene name if enabled and not already set
-    const autoGenerateSceneName = get_settings('scene_summary_auto_name') ?? true;
-    if (autoGenerateSceneName) {
-        // Delay before generating scene name to avoid rate limiting
-        debug(SUBSYSTEM.SCENE, "Waiting 5 seconds before generating scene name...");
-        await new Promise(resolve => setTimeout(resolve, 5000));
-
-        await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile, preset, current_profile, current_preset);
-    }
-
-    // Save and display the summary
+// Helper: Save scene summary
+function saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced) {
     const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
     updatedVersions.push(summary);
     setSceneSummaryVersions(message, set_data, updatedVersions);
     setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
-    set_data(message, SCENE_BREAK_SUMMARY_KEY, summary); // update legacy field
-    set_data(message, 'scene_summary_memory', summary); // ensure top-level property is set
+    set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
+    set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary);
     saveChatDebounced();
-    refresh_memory(); // Refresh memory injection to include the new summary
+    refresh_memory();
+}
 
-    // Auto-generate running scene summary if enabled
+export async function generateSceneSummary(index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue = false) {
+    const ctx = getContext();
+    const chat = ctx.chat;
+    const message = chat[index];
+
+    // Try queueing if not bypassed
+    if (!skipQueue && await tryQueueSceneSummary(index)) {
+        return;
+    }
+
+    debug(SUBSYSTEM.SCENE, `Executing scene summary generation directly for index ${index} (queue ${skipQueue ? 'bypassed' : 'disabled or unavailable'})`);
+
+    // Get scene range and collect objects
+    const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+    const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
+    const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
+
+    // Prepare prompt and switch profiles
+    const prompt = prepareScenePrompt(sceneObjects, ctx);
+    const savedProfiles = await switchToSceneProfile(ctx);
+
+    // Generate summary
+    let summary;
+    try {
+        summary = await executeSceneSummaryGeneration(prompt, ctx);
+    } finally {
+        await restoreProfile(ctx, savedProfiles);
+    }
+
+    // Auto-generate scene name if enabled
+    const autoGenerateSceneName = get_settings('scene_summary_auto_name') ?? true;
+    if (autoGenerateSceneName) {
+        debug(SUBSYSTEM.SCENE, "Waiting 5 seconds before generating scene name...");
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        const { profile, preset, current_profile, current_preset } = savedProfiles;
+        await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile, preset, current_profile, current_preset);
+    }
+
+    // Save and render
+    saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced);
     await auto_generate_running_summary(index);
-
     renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
 
     return summary;

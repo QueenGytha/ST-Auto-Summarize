@@ -40,6 +40,83 @@ function load_combined_summary() {
     return get_settings(get_combined_summary_key()) || "";
 }
 
+// Helper: Try to queue combined summary generation
+async function tryQueueCombinedSummary() {
+    const queueEnabled = get_settings('operation_queue_enabled') !== false;
+    if (!queueEnabled) return false;
+
+    debug("[COMBINED SUMMARY] [Queue] Operation queue enabled, queueing combined summary generation");
+
+    const { queueGenerateCombinedSummary } = await import('./queueIntegration.js');
+    const operationId = queueGenerateCombinedSummary();
+
+    if (operationId) {
+        log("[COMBINED SUMMARY] [Queue] Queued combined summary generation:", operationId);
+        if (get_settings('show_combined_summary_toast')) {
+            toast("Queued combined summary generation", "info");
+        }
+        return true;
+    }
+
+    debug("[COMBINED SUMMARY] [Queue] Failed to queue operation, falling back to direct execution");
+    return false;
+}
+
+// Helper: Generate summary with validation and retries
+async function generateCombinedSummaryWithValidation(prompt, previous_summary) {
+    const max_retries = get_settings('combined_summary_error_detection_retries');
+    const validationEnabled = get_settings('error_detection_enabled') &&
+                             get_settings('combined_summary_error_detection_enabled');
+
+    let retry_count = 0;
+
+    debug("=== [COMBINED SUMMARY] Prompt sent to model ===");
+    debug(prompt);
+
+    while (true) {
+        if (retry_count > 0) {
+            debug(`[Validation] Combined summary retry attempt ${retry_count}/${max_retries}`);
+            if (get_settings('show_combined_summary_toast')) {
+                toast(`Generating combined summary (retry ${retry_count}/${max_retries})...`, "info");
+            }
+        }
+
+        const summary = await summarize_text(prompt);
+        debug("=== [COMBINED SUMMARY] Model response ===");
+        debug(summary);
+
+        if (!validationEnabled) {
+            return summary;
+        }
+
+        const is_valid = await validate_summary(summary, "combined");
+
+        if (is_valid) {
+            debug("[Validation] Combined summary validation passed");
+            return summary;
+        }
+
+        retry_count++;
+        debug(`[Validation] Combined summary failed validation: "${summary.substring(0, 100)}..."`);
+
+        if (retry_count >= max_retries) {
+            error(`[Validation] Failed to generate valid combined summary after ${max_retries} retries.`);
+
+            if (previous_summary) {
+                debug("[Validation] Keeping previous valid combined summary");
+                toast(`Failed to generate valid combined summary. Keeping previous summary.`, "warning");
+                return previous_summary;
+            }
+
+            debug("[Validation] No previous summary to fall back to");
+            toast(`Failed to generate valid combined summary. No previous summary found.`, "warning");
+            return null;
+        }
+
+        debug(`[Validation] Retry ${retry_count}/${max_retries} for combined summary`);
+    }
+}
+
 async function generate_combined_summary() {
     if (!get_settings('combined_summary_enabled')) return "Combined Summary is Disabled";
 
@@ -53,39 +130,21 @@ async function generate_combined_summary() {
         return "No new summaries to combine";
     }
 
-    // Check if operation queue is enabled
-    const queueEnabled = get_settings('operation_queue_enabled') !== false;
-    if (queueEnabled) {
-        debug("[COMBINED SUMMARY] [Queue] Operation queue enabled, queueing combined summary generation");
-
-        // Import queue integration
-        const { queueGenerateCombinedSummary } = await import('./queueIntegration.js');
-
-        // Queue the combined summary generation
-        const operationId = queueGenerateCombinedSummary();
-
-        if (operationId) {
-            log("[COMBINED SUMMARY] [Queue] Queued combined summary generation:", operationId);
-            if (get_settings('show_combined_summary_toast')) {
-                toast("Queued combined summary generation", "info");
-            }
-            return "Queued"; // Operation will be processed by queue
-        }
-
-        debug("[COMBINED SUMMARY] [Queue] Failed to queue operation, falling back to direct execution");
+    // Try queueing first
+    if (await tryQueueCombinedSummary()) {
+        return "Queued";
     }
 
-    // Fallback to direct execution if queue disabled or queueing failed
+    // Fallback to direct execution
     debug("[COMBINED SUMMARY] Executing combined summary generation directly (queue disabled or unavailable)");
 
     if (get_settings('show_combined_summary_toast')) {
         toast("Generating combined summary...", "info");
     }
-    
+
     const ctx = getContext();
     const prompt = await create_combined_summary_prompt();
-    
-    // If prompt creation failed due to no summaries, exit early
+
     if (!prompt) {
         debug("[COMBINED SUMMARY] Failed to create prompt, likely no summaries to combine");
         if (get_settings('show_combined_summary_toast')) {
@@ -93,14 +152,13 @@ async function generate_combined_summary() {
         }
         return "Failed to create combined summary prompt";
     }
-    
+
     const profile = get_settings('combined_summary_connection_profile');
     const preset = get_settings('combined_summary_completion_preset');
     const current_profile = await get_current_connection_profile();
     const current_preset = await get_current_preset();
-    const previous_summary = load_combined_summary(); // Store the previous valid summary
+    const previous_summary = load_combined_summary();
 
-    // optionally block user from sending chat messages while summarization is in progress
     if (get_settings('block_chat')) {
         ctx.deactivateSendButtons();
     }
@@ -109,73 +167,17 @@ async function generate_combined_summary() {
     await set_preset(preset);
 
     let summary = "";
-    let retry_count = 0;
-    const max_retries = get_settings('combined_summary_error_detection_retries');
-    
+
     try {
-        debug("=== [COMBINED SUMMARY] Prompt sent to model ===");
-        debug(prompt);
-        
-        while (true) {
-            if (retry_count > 0) {
-                debug(`[Validation] Combined summary retry attempt ${retry_count}/${max_retries}`);
-                if (get_settings('show_combined_summary_toast')) {
-                    toast(`Generating combined summary (retry ${retry_count}/${max_retries})...`, "info");
-                }
-            }
-            
-            summary = await summarize_text(prompt);
-            debug("=== [COMBINED SUMMARY] Model response ===");
-            debug(summary);
-            
-            // Validate the combined summary if error detection is enabled
-            if (get_settings('error_detection_enabled') && 
-                get_settings('combined_summary_error_detection_enabled')) {
-                
-                const is_valid = await validate_summary(summary, "combined");
-                
-                if (is_valid) {
-                    debug("[Validation] Combined summary validation passed");
-                    break; // Valid summary, exit the loop
-                } else {
-                    retry_count++;
-                    debug(`[Validation] Combined summary failed validation: "${summary.substring(0, 100)}..."`);
-                    
-                    if (retry_count >= max_retries) {
-                        error(`[Validation] Failed to generate valid combined summary after ${max_retries} retries.`);
-                        
-                        // Keep the previous summary instead of saving the invalid one
-                        if (previous_summary) {
-                            debug("[Validation] Keeping previous valid combined summary");
-                            summary = previous_summary;
-                            toast(`Failed to generate valid combined summary. Keeping previous summary.`, "warning");
-                        } else {
-                            debug("[Validation] No previous summary to fall back to");
-                            summary = null;
-                            toast(`Failed to generate valid combined summary. No previous summary found.`, "warning");
-                        }
-                        break; // Max retries reached, give up
-                    }
-                    debug(`[Validation] Retry ${retry_count}/${max_retries} for combined summary`);
-                    continue; // Retry summarization
-                }
-            } else {
-                // No validation needed
-                break;
-            }
-        }
-        
-        // Only save if we got a valid summary
+        summary = await generateCombinedSummaryWithValidation(prompt, previous_summary);
+
         if (summary) {
             save_combined_summary(summary);
-
-            // Mark all processed summaries as combined
             flag_summaries_as_combined(summariesToCombine);
         }
     } catch (e) {
         error("Combined summary generation failed: " + e);
     } finally {
-        // Make sure we re-enable input even if there's an error
         if (get_settings('block_chat')) {
             ctx.activateSendButtons();
         }

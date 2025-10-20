@@ -306,6 +306,217 @@ async function detectSceneBreakWithRetry(message, messageIndex, previousMessage 
     throw lastError;
 }
 
+// Helper: Find and mark existing scene breaks as checked
+function findAndMarkExistingSceneBreaks(chat) {
+    let latestVisibleSceneBreakIndex = -1;
+    for (let i = 0; i < chat.length; i++) {
+        const message = chat[i];
+        const hasSceneBreak = get_data(message, 'scene_break');
+        const isVisible = get_data(message, 'scene_break_visible');
+
+        // Scene break is visible if: scene_break is true AND (scene_break_visible is undefined OR true)
+        if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
+            latestVisibleSceneBreakIndex = i;
+            debug(SUBSYSTEM.SCENE, 'Found visible scene break at index', i);
+        }
+    }
+
+    if (latestVisibleSceneBreakIndex >= 0) {
+        log(SUBSYSTEM.SCENE, 'Latest visible scene break found at index', latestVisibleSceneBreakIndex);
+        log(SUBSYSTEM.SCENE, 'Marking messages 0 to', latestVisibleSceneBreakIndex, 'as already checked');
+
+        for (let i = 0; i <= latestVisibleSceneBreakIndex; i++) {
+            set_data(chat[i], 'auto_scene_break_checked', true);
+        }
+
+        saveChatDebounced();
+        toast(`Marked ${latestVisibleSceneBreakIndex + 1} messages before latest scene break as already checked`, 'info');
+    } else {
+        debug(SUBSYSTEM.SCENE, 'No visible scene breaks found - will scan from beginning');
+    }
+}
+
+// Helper: Try to queue scene break detections
+async function tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkWhich) {
+    const queueEnabled = get_settings('operation_queue_enabled') !== false;
+    if (!queueEnabled) return null;
+
+    log(SUBSYSTEM.SCENE, '[Queue] Operation queue enabled, queueing scene break detections instead of executing directly');
+
+    // Import queue integration
+    const { queueDetectSceneBreaks } = await import('./queueIntegration.js');
+
+    // Collect indexes to check
+    const indexesToCheck = [];
+    for (let i = start; i <= end; i++) {
+        if (shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich)) {
+            indexesToCheck.push(i);
+        }
+    }
+
+    if (indexesToCheck.length === 0) {
+        toast(`No messages to check (all already scanned or filtered out)`, 'info');
+        return { queued: true, count: 0 };
+    }
+
+    // Queue all scene break detections
+    const operationIds = queueDetectSceneBreaks(indexesToCheck);
+
+    if (operationIds && operationIds.length > 0) {
+        log(SUBSYSTEM.SCENE, `[Queue] Queued ${operationIds.length} scene break detection operations`);
+        toast(`Queued ${operationIds.length} scene break detection(s)`, 'info');
+        return { queued: true, count: operationIds.length };
+    }
+
+    log(SUBSYSTEM.SCENE, '[Queue] Failed to queue operations, falling back to direct execution');
+    return null;
+}
+
+// Helper: Handle detected scene break
+async function handleDetectedSceneBreak(i, rationale, cancellationToken) {
+    debug('Marking message', i, 'as scene break');
+
+    const get_message_div = (idx) => $(`div[mesid="${idx}"]`);
+    toggleSceneBreak(i, get_message_div, getContext, set_data, get_data, saveChatDebounced);
+
+    // Auto-generate scene summary if enabled
+    if (!get_settings('auto_scene_break_generate_summary')) return;
+
+    // Delay before generating summary to avoid rate limiting
+    debug('Waiting 5 seconds before generating scene summary...');
+    toast(`Waiting 5s before generating scene summary for message ${i}...`, 'info');
+    await delay(50);
+
+    try {
+        await interruptibleDelay(5000, cancellationToken);
+    } catch {
+        error('Pre-summary delay cancelled - user aborted');
+        throw new Error('ABORTED');
+    }
+
+    debug('Auto-generating scene summary for message', i);
+    toast(`Generating scene summary for message ${i}...`, 'info');
+    await delay(50);
+
+    // Set loading state in summary box
+    const $msgDiv = get_message_div(i);
+    const $summaryBox = $msgDiv.find('.scene-summary-box');
+    if ($summaryBox.length) {
+        $summaryBox.val("Generating scene summary...");
+    }
+
+    await generateSceneSummary(i, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+
+    toast(`✓ Scene summary generated for message ${i}`, 'success');
+    await delay(50);
+}
+
+// Helper: Handle scan errors
+function handleScanError(err, i, checkedCount, totalToCheck, detectedCount, cancellationToken, eventSource, event_types, stopHandler) {
+    error('!!!!! FATAL ERROR IN MAIN LOOP for message', i, '!!!!!', err);
+    error('!!!!! Error message:', err?.message || String(err), '!!!!!');
+
+    const errorString = String(err?.message || err);
+    if (errorString.includes('ABORTED') || errorString.includes('Clicked stop button') || errorString.includes('aborted')) {
+        error('!!!!! USER ABORTED - STOPPING SCAN !!!!!');
+        cancellationToken.cancelled = true;
+        currentScanCancellationToken = null;
+        eventSource.off(event_types.GENERATION_STOPPED, stopHandler);
+        return { aborted: true, checkedCount, totalToCheck, detectedCount };
+    }
+
+    // Real error - stop scan
+    error('!!!!! STOPPING SCAN !!!!!');
+    currentScanCancellationToken = null;
+    eventSource.off(event_types.GENERATION_STOPPED, stopHandler);
+    return { error: true, message: err?.message || String(err), checkedCount, totalToCheck, detectedCount };
+}
+
+// Helper: Execute scan loop
+async function executeScanLoop(chat, start, end, latestIndex, offset, checkWhich, cancellationToken, eventSource, event_types, stopHandler) {
+    let checkedCount = 0;
+    let detectedCount = 0;
+
+    // Count messages to check
+    let totalToCheck = 0;
+    for (let i = start; i <= end; i++) {
+        if (shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich)) {
+            totalToCheck++;
+        }
+    }
+
+    if (totalToCheck === 0) {
+        toast(`No messages to check (all already scanned or filtered out)`, 'info');
+        return { checkedCount, detectedCount, totalToCheck };
+    }
+
+    toast(`Starting scene break scan: 0/${totalToCheck} messages to check...`, 'info');
+    await delay(50);
+
+    // Process each message
+    for (let i = start; i <= end; i++) {
+        const message = chat[i];
+
+        if (!shouldCheckMessage(message, i, latestIndex, offset, checkWhich)) {
+            continue;
+        }
+
+        checkedCount++;
+        toast(`Scanning for scene breaks: ${checkedCount}/${totalToCheck} (found ${detectedCount})...`, 'info');
+        await delay(50);
+
+        try {
+            const previousMessage = i > 0 ? chat[i - 1] : null;
+            const { isSceneBreak, rationale } = await detectSceneBreakWithRetry(message, i, previousMessage, 5, cancellationToken);
+
+            if (isSceneBreak) {
+                detectedCount++;
+                const rationaleText = rationale ? ` - ${rationale}` : '';
+                toast(`✓ Scene break at message ${i}${rationaleText}. Total: ${detectedCount}`, 'success');
+                await delay(50);
+
+                try {
+                    await handleDetectedSceneBreak(i, rationale, cancellationToken);
+                } catch (err) {
+                    const errorString = String(err?.message || err);
+                    if (errorString.includes('Clicked stop button') || errorString.includes('aborted')) {
+                        error('Scene summary generation aborted by user for message', i);
+                        cancellationToken.cancelled = true;
+                        throw new Error('ABORTED');
+                    }
+                    error('Failed to auto-generate scene summary for message', i, ':', err);
+                    toast(`Failed to generate scene summary for message ${i}: ${err?.message || String(err)}`, 'error');
+                    await delay(50);
+                }
+            }
+
+            // Delay between messages
+            if (i < end) {
+                try {
+                    await interruptibleDelay(5000, cancellationToken);
+                } catch {
+                    error('Between-message delay cancelled - user aborted');
+                    throw new Error('ABORTED');
+                }
+            }
+        } catch (err) {
+            const result = handleScanError(err, i, checkedCount, totalToCheck, detectedCount, cancellationToken, eventSource, event_types, stopHandler);
+            if (result.aborted) {
+                toast(`⏹️ Scan aborted by user. Checked ${result.checkedCount}/${result.totalToCheck}, found ${result.detectedCount} scene breaks.`, 'info');
+                await delay(100);
+                return null;
+            }
+            if (result.error) {
+                toast(`🛑 Error on message ${i} after all retries: ${result.message}. Checked ${result.checkedCount}/${result.totalToCheck}, found ${result.detectedCount} scene breaks.`, 'error');
+                await delay(100);
+                return null;
+            }
+        }
+    }
+
+    return { checkedCount, detectedCount, totalToCheck };
+}
+
 /**
  * Process messages for auto scene break detection
  * @param {number} startIndex - Start index (optional, defaults to 0)
@@ -314,7 +525,7 @@ async function detectSceneBreakWithRetry(message, messageIndex, previousMessage 
 export async function processAutoSceneBreakDetection(startIndex = null, endIndex = null) {
     log(SUBSYSTEM.SCENE, '=== processAutoSceneBreakDetection called with startIndex:', startIndex, 'endIndex:', endIndex, '===');
 
-    // Check if enabled
+    // Validate settings
     const enabled = get_settings('auto_scene_break_enabled');
     if (!enabled) {
         debug(SUBSYSTEM.SCENE, 'Auto scene break detection is disabled - exiting');
@@ -330,88 +541,28 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
         return;
     }
 
-    // Find existing visible scene breaks to avoid reprocessing
-    let latestVisibleSceneBreakIndex = -1;
-    for (let i = 0; i < chat.length; i++) {
-        const message = chat[i];
-        const hasSceneBreak = get_data(message, 'scene_break');
-        const isVisible = get_data(message, 'scene_break_visible');
+    // Find and mark existing scene breaks
+    findAndMarkExistingSceneBreaks(chat);
 
-        // Scene break is visible if: scene_break is true AND (scene_break_visible is undefined OR true)
-        if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
-            latestVisibleSceneBreakIndex = i;
-            debug(SUBSYSTEM.SCENE, 'Found visible scene break at index', i);
-        }
-    }
-
-    // Mark all messages up to and including the latest visible scene break as checked
-    if (latestVisibleSceneBreakIndex >= 0) {
-        log(SUBSYSTEM.SCENE, 'Latest visible scene break found at index', latestVisibleSceneBreakIndex);
-        log(SUBSYSTEM.SCENE, 'Marking messages 0 to', latestVisibleSceneBreakIndex, 'as already checked');
-
-        for (let i = 0; i <= latestVisibleSceneBreakIndex; i++) {
-            set_data(chat[i], 'auto_scene_break_checked', true);
-        }
-
-        saveChatDebounced();
-        toast(`Marked ${latestVisibleSceneBreakIndex + 1} messages before latest scene break as already checked`, 'info');
-    } else {
-        debug(SUBSYSTEM.SCENE, 'No visible scene breaks found - will scan from beginning');
-    }
-
-    // Get settings
+    // Get settings and determine range
     const offset = Number(get_settings('auto_scene_break_message_offset')) ?? 0;
     const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'user';
-
-    // Determine range
     const latestIndex = chat.length - 1;
     const start = startIndex !== null ? startIndex : 0;
     const end = endIndex !== null ? endIndex : latestIndex;
 
     log(SUBSYSTEM.SCENE, 'Processing messages', start, 'to', end, '(latest:', latestIndex, ', offset:', offset, ', checking:', checkWhich, ')');
 
-    // Check if operation queue is enabled
-    const queueEnabled = get_settings('operation_queue_enabled') !== false;
-    if (queueEnabled) {
-        log(SUBSYSTEM.SCENE, '[Queue] Operation queue enabled, queueing scene break detections instead of executing directly');
+    // Try queueing first
+    const queueResult = await tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkWhich);
+    if (queueResult) return;
 
-        // Import queue integration
-        const { queueDetectSceneBreaks } = await import('./queueIntegration.js');
-
-        // Collect indexes to check
-        const indexesToCheck = [];
-        for (let i = start; i <= end; i++) {
-            if (shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich)) {
-                indexesToCheck.push(i);
-            }
-        }
-
-        if (indexesToCheck.length === 0) {
-            toast(`No messages to check (all already scanned or filtered out)`, 'info');
-            return;
-        }
-
-        // Queue all scene break detections
-        const operationIds = queueDetectSceneBreaks(indexesToCheck);
-
-        if (operationIds && operationIds.length > 0) {
-            log(SUBSYSTEM.SCENE, `[Queue] Queued ${operationIds.length} scene break detection operations`);
-            toast(`Queued ${operationIds.length} scene break detection(s)`, 'info');
-            return; // Operations will be processed by queue
-        }
-
-        log(SUBSYSTEM.SCENE, '[Queue] Failed to queue operations, falling back to direct execution');
-    }
-
-    // Fallback to direct execution if queue disabled or queueing failed
+    // Execute directly
     log(SUBSYSTEM.SCENE, 'Executing scene break detection directly (queue disabled or unavailable)');
 
-    // Create a new cancellation token for this scan
-    // This allows us to cancel delays when user aborts
     currentScanCancellationToken = { cancelled: false };
     const cancellationToken = currentScanCancellationToken;
 
-    // Listen for stop button clicks and cancel the scan
     const eventSource = ctx.eventSource;
     const event_types = ctx.event_types;
 
@@ -422,171 +573,24 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
         }
     };
 
-    // Add the event listener
     eventSource.once(event_types.GENERATION_STOPPED, stopHandler);
 
-    let checkedCount = 0;
-    let detectedCount = 0;
-    let errorCount = 0;
+    const result = await executeScanLoop(chat, start, end, latestIndex, offset, checkWhich, cancellationToken, eventSource, event_types, stopHandler);
 
-    // Count how many messages will actually be checked (after filtering)
-    let totalToCheck = 0;
-    for (let i = start; i <= end; i++) {
-        if (shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich)) {
-            totalToCheck++;
-        }
-    }
-
-    if (totalToCheck === 0) {
-        toast(`No messages to check (all already scanned or filtered out)`, 'info');
-        currentScanCancellationToken = null; // Clear the token
-        eventSource.off(event_types.GENERATION_STOPPED, stopHandler); // Clean up event listener
-        return;
-    }
-
-    // Show initial progress
-    toast(`Starting scene break scan: 0/${totalToCheck} messages to check...`, 'info');
-    await delay(50); // Small delay to allow UI to update
-
-    // Process each message in range
-    for (let i = start; i <= end; i++) {
-        const message = chat[i];
-
-        // Check if message should be scanned
-        if (!shouldCheckMessage(message, i, latestIndex, offset, checkWhich)) {
-            continue;
-        }
-
-        checkedCount++;
-
-        // Show progress on every message for immediate feedback
-        toast(`Scanning for scene breaks: ${checkedCount}/${totalToCheck} (found ${detectedCount})...`, 'info');
-        await delay(50); // Small delay to allow UI to update and show toast
-
-        try {
-            // Get previous message for context (if exists)
-            const previousMessage = i > 0 ? chat[i - 1] : null;
-
-            // Detect scene break with exponential backoff retry (pass cancellation token)
-            const { isSceneBreak, rationale } = await detectSceneBreakWithRetry(message, i, previousMessage, 5, cancellationToken);
-
-            if (isSceneBreak) {
-                detectedCount++;
-                debug('Marking message', i, 'as scene break');
-
-                // Show toast with rationale
-                const rationaleText = rationale ? ` - ${rationale}` : '';
-                toast(`✓ Scene break at message ${i}${rationaleText}. Total: ${detectedCount}`, 'success');
-                await delay(50); // Allow toast to display
-
-                // Use toggleSceneBreak from sceneBreak.js to mark the message
-                const get_message_div = (idx) => $(`div[mesid="${idx}"]`);
-                toggleSceneBreak(i, get_message_div, getContext, set_data, get_data, saveChatDebounced);
-
-                // Auto-generate scene summary if enabled
-                if (get_settings('auto_scene_break_generate_summary')) {
-                    try {
-                        // Delay before generating summary to avoid rate limiting
-                        debug('Waiting 5 seconds before generating scene summary...');
-                        toast(`Waiting 5s before generating scene summary for message ${i}...`, 'info');
-                        await delay(50); // Allow toast to display
-
-                        try {
-                            await interruptibleDelay(5000, cancellationToken);
-                        } catch {
-                            error('Pre-summary delay cancelled - user aborted');
-                            throw new Error('ABORTED');
-                        }
-
-                        debug('Auto-generating scene summary for message', i);
-                        toast(`Generating scene summary for message ${i}...`, 'info');
-                        await delay(50); // Allow toast to display
-
-                        // Set loading state in summary box (same as manual generation)
-                        const $msgDiv = get_message_div(i);
-                        const $summaryBox = $msgDiv.find('.scene-summary-box');
-                        if ($summaryBox.length) {
-                            $summaryBox.val("Generating scene summary...");
-                        }
-
-                        await generateSceneSummary(i, get_message_div, getContext, get_data, set_data, saveChatDebounced);
-
-                        toast(`✓ Scene summary generated for message ${i}`, 'success');
-                        await delay(50); // Allow toast to display
-                    } catch (err) {
-                        // Check if user aborted summary generation
-                        const errorString = String(err?.message || err);
-                        if (errorString.includes('Clicked stop button') || errorString.includes('aborted')) {
-                            error('Scene summary generation aborted by user for message', i);
-                            cancellationToken.cancelled = true; // Mark token as cancelled
-                            throw new Error('ABORTED'); // Propagate abort to stop entire scan
-                        }
-
-                        error('Failed to auto-generate scene summary for message', i, ':', err);
-                        toast(`Failed to generate scene summary for message ${i}: ${err?.message || String(err)}`, 'error');
-                        await delay(50); // Allow toast to display
-                    }
-                }
-            }
-
-            // Add delay between API calls to avoid rate limiting (5 seconds)
-            // Skip delay on last message
-            // Use interruptible delay so user can abort mid-delay
-            if (i < end) {
-                try {
-                    await interruptibleDelay(5000, cancellationToken);
-                } catch {
-                    // Delay was interrupted - user aborted
-                    error('Between-message delay cancelled - user aborted');
-                    throw new Error('ABORTED');
-                }
-            }
-        } catch (err) {
-            error('!!!!! FATAL ERROR IN MAIN LOOP for message', i, '!!!!!', err);
-            error('!!!!! Error message:', err?.message || String(err), '!!!!!');
-
-            // Check if user aborted - if so, stop gracefully without error count
-            const errorString = String(err?.message || err);
-            if (errorString.includes('ABORTED') || errorString.includes('Clicked stop button') || errorString.includes('aborted')) {
-                error('!!!!! USER ABORTED - STOPPING SCAN !!!!!');
-                cancellationToken.cancelled = true; // Ensure token is marked as cancelled
-                currentScanCancellationToken = null; // Clear the module-level token
-                eventSource.off(event_types.GENERATION_STOPPED, stopHandler); // Clean up event listener
-                toast(`⏹️ Scan aborted by user. Checked ${checkedCount}/${totalToCheck}, found ${detectedCount} scene breaks.`, 'info');
-                await delay(100);
-                return;
-            }
-
-            // Not an abort - this is a real error
-            errorCount++;
-
-            // Show error toast
-            toast(`🛑 Error on message ${i} after all retries: ${err?.message || String(err)}. Checked ${checkedCount}/${totalToCheck}, found ${detectedCount} scene breaks.`, 'error');
-            await delay(100); // Allow error toast to display
-
-            // STOP on ANY error (after all retries exhausted)
-            error('!!!!! STOPPING SCAN !!!!!');
-            currentScanCancellationToken = null; // Clear the module-level token
-            eventSource.off(event_types.GENERATION_STOPPED, stopHandler); // Clean up event listener
-            return;
-        }
-    }
-
-    // Show final summary
-    debug('Completed: checked', checkedCount, '/', totalToCheck, 'messages, detected', detectedCount, 'scene breaks,', errorCount, 'errors');
-
-    // Clear the cancellation token now that scan is complete
     currentScanCancellationToken = null;
-    eventSource.off(event_types.GENERATION_STOPPED, stopHandler); // Clean up event listener
+    eventSource.off(event_types.GENERATION_STOPPED, stopHandler);
 
-    if (errorCount > 0) {
-        toast(`Scan complete: ${checkedCount}/${totalToCheck} messages checked, ${detectedCount} scene breaks found (${errorCount} errors)`, 'warning');
-    } else if (detectedCount > 0) {
+    if (!result) return; // Error or abort already handled
+
+    const { checkedCount, detectedCount, totalToCheck } = result;
+    debug('Completed: checked', checkedCount, '/', totalToCheck, 'messages, detected', detectedCount, 'scene breaks');
+
+    if (detectedCount > 0) {
         toast(`Scan complete: Found ${detectedCount} scene break(s) in ${checkedCount} messages!`, 'success');
     } else {
         toast(`Scan complete: ${checkedCount} messages checked, no scene breaks detected`, 'info');
     }
-    await delay(50); // Allow final toast to display
+    await delay(50);
 }
 
 /**

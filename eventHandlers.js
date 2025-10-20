@@ -58,147 +58,168 @@ import {
 let last_message_swiped = null  // if an index, that was the last message swiped
 let operationQueueModule = null;  // Reference to queue module for reloading
 
+// Handler functions for each event type
+async function handleChatChanged() {
+    const context = getContext();
+    last_message_swiped = null;
+    auto_load_profile();  // load the profile for the current chat or character
+    refresh_memory();  // refresh the memory state
+    if (context?.chat?.length) {
+        scrollChatToBottom();  // scroll to the bottom of the chat (area is added due to memories)
+    }
+    // Auto scene break detection on chat load
+    processSceneBreakOnChatLoad();
+
+    // Reload queue from new chat's lorebook
+    if (operationQueueModule) {
+        await operationQueueModule.reloadQueue();
+    }
+}
+
+async function handleMessageDeleted() {
+    if (!chat_enabled()) return;
+    last_message_swiped = null;
+    debug("Message deleted, refreshing memory and cleaning up running summaries")
+    refresh_memory();
+    cleanup_invalid_running_summaries();
+    // Update the version selector UI after cleanup
+    if (typeof window.updateVersionSelector === 'function') {
+        window.updateVersionSelector();
+    }
+    // Refresh the scene navigator bar to remove deleted scenes
+    renderSceneNavigatorBar();
+}
+
+async function handleBeforeMessage() {
+    if (!chat_enabled()) return;
+}
+
+async function handleUserMessage() {
+    if (!chat_enabled()) return;
+    last_message_swiped = null;
+    if (!get_settings('auto_summarize')) return;
+
+    // Summarize the chat if "include_user_messages" is enabled
+    if (get_settings('include_user_messages')) {
+        debug("New user message detected, summarizing")
+        await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
+    }
+    // NOTE: Auto scene break detection runs on 'char_message' after AI responds, not here
+}
+
+async function handleCharMessageSwipe(index) {
+    const context = getContext();
+    const message = context.chat[index];
+    if (!get_settings('auto_summarize_on_swipe')) return;
+    if (!check_message_exclusion(message)) return;
+    if (!get_previous_swipe_memory(message, 'memory')) return;
+    debug("re-summarizing on swipe")
+    await summarize_messages(index);  // summarize the swiped message (handles queue internally)
+    refresh_memory()
+}
+
+async function handleCharMessageNew(index) {
+    last_message_swiped = null;
+    // Auto scene break detection on new character message (runs regardless of auto_summarize setting)
+    log(SUBSYSTEM.EVENT, "Triggering auto scene break detection for character message at index", index);
+    await processNewMessageForSceneBreak(index);
+
+    if (!get_settings('auto_summarize')) return;
+    if (get_settings("auto_summarize_on_send")) return;
+    debug("New message detected, summarizing")
+    await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
+}
+
+async function handleCharMessage(index) {
+    if (!chat_enabled()) return;
+    const context = getContext();
+    if (!context.groupId && context.characterId === undefined) return; // no characters or group selected
+    if (streamingProcessor && !streamingProcessor.isFinished) return;  // Streaming in-progress
+
+    if (last_message_swiped === index) {  // this is a swipe
+        await handleCharMessageSwipe(index);
+    } else { // not a swipe
+        await handleCharMessageNew(index);
+    }
+}
+
+async function handleMessageEdited(index) {
+    if (!chat_enabled()) return;
+    const context = getContext();
+    last_message_swiped = null;
+    if (!get_settings('auto_summarize_on_edit')) return;
+    if (!check_message_exclusion(context.chat[index])) return;
+    if (!get_data(context.chat[index], 'memory')) return;
+    debug("Message with memory edited, summarizing")
+    summarize_messages(index);  // summarize that message (no await so edit goes through, handles queue internally)
+    // TODO: I'd like to be able to refresh the memory here, but we can't await the summarization because
+    //  then the message edit textbox doesn't close until the summary is done.
+}
+
+async function handleMessageSwiped(index) {
+    if (!chat_enabled()) return;
+    const context = getContext();
+    debug("Message swiped, reloading memory")
+
+    // if this is creating a new swipe, remove the current memory.
+    // This is detected when the swipe ID is greater than the last index in the swipes array,
+    //  i.e. when the swipe ID is EQUAL to the length of the swipes array, not when it's length-1.
+    const message = context.chat[index];
+    if (message.swipe_id === message.swipes.length) {
+        clear_memory(message)
+    }
+
+    refresh_memory()
+    last_message_swiped = index;
+
+    // make sure the chat is scrolled to the bottom because the memory will change
+    scrollChatToBottom();
+}
+
+async function handleMessageSent() {
+    if (!chat_enabled()) return;
+    if (get_settings('debug_mode')) {
+        if (
+            last_long_injection ||
+            last_short_injection ||
+            last_combined_injection ||
+            last_scene_injection
+        ) {
+            if (last_long_injection) debug(`[MEMORY INJECTION] long_injection:\n${last_long_injection}`);
+            if (last_short_injection) debug(`[MEMORY INJECTION] short_injection:\n${last_short_injection}`);
+            if (last_combined_injection) debug(`[MEMORY INJECTION] combined_injection:\n${last_combined_injection}`);
+            if (last_scene_injection) debug(`[MEMORY INJECTION] scene_injection:\n${last_scene_injection}`);
+        }
+    }
+}
+
+async function handleDefaultEvent(event) {
+    if (!chat_enabled()) return;
+    debug(`Unknown event: "${event}", refreshing memory`)
+    refresh_memory();
+}
+
+// Event handler map for cleaner dispatch
+const eventHandlers = {
+    'chat_changed': handleChatChanged,
+    'message_deleted': handleMessageDeleted,
+    'before_message': handleBeforeMessage,
+    'user_message': handleUserMessage,
+    'char_message': handleCharMessage,
+    'message_edited': handleMessageEdited,
+    'message_swiped': handleMessageSwiped,
+    'message_sent': handleMessageSent,
+};
+
 async function on_chat_event(event=null, data=null) {
     debug(`[on_chat_event] event: ${event}, data: ${JSON.stringify(data)}`);
-    // When the chat is updated, check if the summarization should be triggered
     debug("Chat updated: " + event)
 
-    const context = getContext();
-    const index = data
-
-    switch (event) {
-        case 'chat_changed':  // chat was changed
-            last_message_swiped = null;
-            auto_load_profile();  // load the profile for the current chat or character
-            refresh_memory();  // refresh the memory state
-            if (context?.chat?.length) {
-                scrollChatToBottom();  // scroll to the bottom of the chat (area is added due to memories)
-            }
-            // Auto scene break detection on chat load
-            processSceneBreakOnChatLoad();
-
-            // Reload queue from new chat's lorebook
-            if (operationQueueModule) {
-                await operationQueueModule.reloadQueue();
-            }
-            break;
-
-        case 'message_deleted':   // message was deleted
-            last_message_swiped = null;
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            debug("Message deleted, refreshing memory and cleaning up running summaries")
-            refresh_memory();
-            cleanup_invalid_running_summaries();
-            // Update the version selector UI after cleanup
-            if (typeof window.updateVersionSelector === 'function') {
-                window.updateVersionSelector();
-            }
-            // Refresh the scene navigator bar to remove deleted scenes
-            renderSceneNavigatorBar();
-            break;
-
-        case 'before_message':
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            break;
-
-        // currently no triggers on user message rendered
-        case 'user_message':
-            last_message_swiped = null;
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            if (!get_settings('auto_summarize')) break;  // if auto-summarize is disabled, do nothing
-
-            // Summarize the chat if "include_user_messages" is enabled
-            if (get_settings('include_user_messages')) {
-                debug("New user message detected, summarizing")
-                await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
-            }
-
-            // NOTE: Auto scene break detection runs on 'char_message' after AI responds, not here
-
-            break;
-
-        case 'char_message':
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            if (!context.groupId && context.characterId === undefined) break; // no characters or group selected
-            if (streamingProcessor && !streamingProcessor.isFinished) break;  // Streaming in-progress
-            if (last_message_swiped === index) {  // this is a swipe
-                const message = context.chat[index];
-                if (!get_settings('auto_summarize_on_swipe')) break;  // if auto-summarize on swipe is disabled, do nothing
-                if (!check_message_exclusion(message)) break;  // if the message is excluded, skip
-                if (!get_previous_swipe_memory(message, 'memory')) break;  // if the previous swipe doesn't have a memory, skip
-                debug("re-summarizing on swipe")
-                await summarize_messages(index);  // summarize the swiped message (handles queue internally)
-                refresh_memory()
-                break;
-            } else { // not a swipe
-                last_message_swiped = null;
-
-                // Auto scene break detection on new character message (runs regardless of auto_summarize setting)
-                log(SUBSYSTEM.EVENT, "Triggering auto scene break detection for character message at index", index);
-                await processNewMessageForSceneBreak(index);
-
-                if (!get_settings('auto_summarize')) break;  // if auto-summarize is disabled, do nothing
-                if (get_settings("auto_summarize_on_send")) break;  // if auto_summarize_on_send is enabled, don't auto-summarize on character message
-                debug("New message detected, summarizing")
-                await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
-
-                break;
-            }
-
-        case 'message_edited':  // Message has been edited
-            last_message_swiped = null;
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            if (!get_settings('auto_summarize_on_edit')) break;  // if auto-summarize on edit is disabled, skip
-            if (!check_message_exclusion(context.chat[index])) break;  // if the message is excluded, skip
-            if (!get_data(context.chat[index], 'memory')) break;  // if the message doesn't have a memory, skip
-            debug("Message with memory edited, summarizing")
-            summarize_messages(index);  // summarize that message (no await so edit goes through, handles queue internally)
-
-            // TODO: I'd like to be able to refresh the memory here, but we can't await the summarization because
-            //  then the message edit textbox doesn't close until the summary is done.
-
-            break;
-
-        case 'message_swiped':  // when this event occurs, don't summarize yet (a new_message event will follow)
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            debug("Message swiped, reloading memory")
-
-            // if this is creating a new swipe, remove the current memory.
-            // This is detected when the swipe ID is greater than the last index in the swipes array,
-            //  i.e. when the swipe ID is EQUAL to the length of the swipes array, not when it's length-1.
-            const message = context.chat[index];
-            if (message.swipe_id === message.swipes.length) {
-                clear_memory(message)
-            }
-
-            refresh_memory()
-            last_message_swiped = index;
-
-            // make sure the chat is scrolled to the bottom because the memory will change
-            scrollChatToBottom();
-            break;
-
-        case 'message_sent':
-            if (!chat_enabled()) break;
-            if (get_settings('debug_mode')) {
-                if (
-                    last_long_injection ||
-                    last_short_injection ||
-                    last_combined_injection ||
-                    last_scene_injection
-                ) {
-                    if (last_long_injection) debug(`[MEMORY INJECTION] long_injection:\n${last_long_injection}`);
-                    if (last_short_injection) debug(`[MEMORY INJECTION] short_injection:\n${last_short_injection}`);
-                    if (last_combined_injection) debug(`[MEMORY INJECTION] combined_injection:\n${last_combined_injection}`);
-                    if (last_scene_injection) debug(`[MEMORY INJECTION] scene_injection:\n${last_scene_injection}`);
-                }
-            }
-            break;
-
-        default:
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            debug(`Unknown event: "${event}", refreshing memory`)
-            refresh_memory();
+    const handler = eventHandlers[event];
+    if (handler) {
+        await handler(data);
+    } else {
+        await handleDefaultEvent(event);
     }
 }
 

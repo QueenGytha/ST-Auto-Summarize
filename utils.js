@@ -225,7 +225,7 @@ async function get_user_setting_text_input(key, title, description="", _defaultV
 <p>${description}</p>
 `
     const ctx = getContext();
-    let popup; // Declare before use in closure
+    let popup; // Needed for closure in restore_button action
     const restore_button = {
         text: 'Restore Default',
         appendAtEnd: true,
