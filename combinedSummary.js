@@ -11,6 +11,7 @@ import {
     debug,
     error,
     toast,
+    log,
     set_data,
     concatenate_summaries,
     formatInstructModeChat,
@@ -20,7 +21,7 @@ import {
     get_summary_preset,
     verify_preset,
     amount_gen,
-    get_summary_preset_max_tokens,
+    validate_summary,
     collect_scene_summary_indexes
 } from './index.js';
 

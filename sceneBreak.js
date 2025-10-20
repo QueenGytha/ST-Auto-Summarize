@@ -97,6 +97,8 @@ function setCurrentSceneSummaryIndex(message, set_data, idx) {
 }
 
 // Helper to collect scene content as a chronological array of objects with type
+// Unused currently but may be useful in future
+// eslint-disable-next-line no-unused-vars
 function collectSceneChronologicalObjects(startIdx, endIdx, ctx, get_memory) {
     const chat = ctx.chat;
     const result = [];
@@ -214,7 +216,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
 
     // Use the same classes as summary boxes for consistent placement and style
     // Wrap the summary content in a container for easy hiding
-    const isIncluded = get_data(message, 'scene_summary_include') !== false; // default to included
+    // const isIncluded = get_data(message, 'scene_summary_include') !== false; // default to included
 
     // Collapse/expand button icon
     const collapseIcon = isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up';
@@ -540,7 +542,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     });
 
     // --- Selection handlers for visual feedback ---
-    $sceneBreak.on('mousedown', function (e) {
+    $sceneBreak.on('mousedown', function (_e) {
         $('.' + SCENE_BREAK_DIV_CLASS).removeClass('sceneBreak-selected');
         $(this).addClass('sceneBreak-selected');
     });

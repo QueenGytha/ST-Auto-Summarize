@@ -1,4 +1,4 @@
-import { getContext, get_settings, log } from './index.js';
+import { getContext, get_settings, log, settings_content_class } from './index.js';
 
 function refresh_character_select() {
     // sets the select2 multiselect for choosing a list of characters
@@ -12,9 +12,9 @@ function refresh_character_select() {
         const id = context.characters[char_id].avatar
         character_options.push({id: id, name: context.characters[char_id].name})
     } else if (group_id) {   // we are in a group - add all members
-        const group = context.groups.find(g => g.id == group_id)  // find the group we are in by ID
+        const group = context.groups.find(g => g.id === group_id)  // find the group we are in by ID
         for (const key of group.members) {
-            const char = context.characters.find(c => c.avatar == key)
+            const char = context.characters.find(c => c.avatar === key)
             character_options.push({id: key, name: char.name})  // add all group members to options
         }
     }

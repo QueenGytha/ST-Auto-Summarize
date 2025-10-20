@@ -13,7 +13,6 @@ import {
     get_current_running_summary_version,
     get_running_summary,
     set_current_running_summary_version,
-    generate_running_scene_summary,
 } from './runningSceneSummary.js';
 
 /**

@@ -1,14 +1,10 @@
 import {
     get_data,
-    set_data,
     get_memory,
     edit_memory,
     clear_memory,
-    toggle_memory_value,
-    get_previous_swipe_memory,
     remember_message_toggle,
     forget_message_toggle,
-    get_character_key,
     getContext,
     get_settings,
     set_settings,
@@ -346,15 +342,16 @@ class MemoryEditInterface {
         this.filtered = []
         for (let i = this.ctx.chat.length-1; i >= 0; i--) {
             const msg = this.ctx.chat[i]
-            let include =  false
-            if (filter_short_term           && this.filter_bar.short_term.check(msg)) include = true;
-            else if (filter_long_term       && this.filter_bar.long_term.check(msg)) include = true;
-            else if (filter_no_summary      && this.filter_bar.no_summary.check(msg)) include = true;
-            else if (filter_errors          && this.filter_bar.errors.check(msg)) include = true;
-            else if (filter_excluded        && this.filter_bar.excluded.check(msg)) include = true;
-            else if (filter_edited          && this.filter_bar.edited.check(msg)) include = true;
-            else if (filter_force_excluded  && this.filter_bar.force_excluded.check(msg)) include = true;
-            else if (filter_user            && this.filter_bar.user.check(msg)) include = true;
+            const include = (
+                (filter_short_term && this.filter_bar.short_term.check(msg)) ||
+                (filter_long_term && this.filter_bar.long_term.check(msg)) ||
+                (filter_no_summary && this.filter_bar.no_summary.check(msg)) ||
+                (filter_errors && this.filter_bar.errors.check(msg)) ||
+                (filter_excluded && this.filter_bar.excluded.check(msg)) ||
+                (filter_edited && this.filter_bar.edited.check(msg)) ||
+                (filter_force_excluded && this.filter_bar.force_excluded.check(msg)) ||
+                (filter_user && this.filter_bar.user.check(msg))
+            );
             if (include) {
                 this.filtered.push(i)
             } else {
@@ -400,11 +397,11 @@ class MemoryEditInterface {
         }
     }
     update_filter_counts() {
-        for (const [id, data] of Object.entries(this.filter_bar)) {
+        for (const data of Object.values(this.filter_bar)) {
             data.count = 0
         }
         for (const msg of this.ctx.chat) {
-            for (const [id, data] of Object.entries(this.filter_bar)) {
+            for (const data of Object.values(this.filter_bar)) {
                 if (data.check(msg)) data.count++
             }
         }

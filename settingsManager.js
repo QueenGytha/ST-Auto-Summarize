@@ -1,6 +1,8 @@
 import {
     log,
     error,
+    toast,
+    debug,
     extension_settings,
     MODULE_NAME,
     default_settings,

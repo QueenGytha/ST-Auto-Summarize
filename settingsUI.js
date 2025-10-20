@@ -1,15 +1,11 @@
 import {
     log,
-    debug,
     error,
     toast,
     SUBSYSTEM,
     get_message_history,
     get_settings,
     set_settings,
-    get_settings_element,
-    get_manifest,
-    load_settings_html,
     save_profile,
     load_profile,
     rename_profile,
@@ -20,29 +16,16 @@ import {
     toggle_character_profile,
     create_summary_prompt,
     toggle_chat_profile,
-    get_character_profile,
-    set_character_profile,
-    get_chat_profile,
-    update_scene_summary_preset_dropdown,
-    update_running_scene_summary_preset_dropdown,
-    update_running_scene_summary_connection_profile_dropdown,
     toggle_chat_enabled,
     refresh_settings,
     refresh_memory,
-    summarize_messages,
     stop_summarization,
     memoryEditInterface,
-    remember_message_toggle,
-    forget_message_toggle,
-    display_injection_preview,
-    collect_messages_to_auto_summarize,
     generate_combined_summary,
     get_summary_preset_max_tokens,
     get_combined_summary_preset_max_tokens,
     get_user_setting_text_input,
     display_text_modal,
-    open_edit_memory_input,
-    MemoryEditInterface,
     bind_setting,
     bind_function,
     reset_settings,
@@ -340,9 +323,6 @@ Available Macros:
     `;
     
     try {
-        // Store original summary for potential restoration
-        const originalSummary = summary;
-        
         // Create a popup with standard buttons that we rename
         const result = await ctx.callPopup(html, 'text', undefined, {
             okButton: "Save",

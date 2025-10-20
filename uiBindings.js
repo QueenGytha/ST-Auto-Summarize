@@ -7,7 +7,6 @@ import {
     error,
     escape_string,
     unescape_string,
-    get_settings_element,
     settings_content_class,
     settings_ui_map,
     save_profile
@@ -46,7 +45,7 @@ function bind_setting(selector, key, type=null, callback=null, disable=true) {
     set_setting_ui_element(key, element, type);
 
     // Make the UI element update the setting when changed
-    element.on(trigger, function (event) {
+    element.on(trigger, function (_event) {
         let value;
         if (type === 'number') {  // number input
             value = Number($(this).val());

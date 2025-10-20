@@ -6,12 +6,10 @@ import {
     get_memory,
     check_message_exclusion,
     update_message_visuals,
-    update_all_message_visuals,
     memoryEditInterface,
     progress_bar,
     remove_progress_bar,
     toast,
-    toast_debounced,
     error,
     debug,
     log,
@@ -28,27 +26,14 @@ import {
     set_connection_profile,
     getContext,
     scrollChatToBottom,
-    debounce,
-    debounce_timeout,
     validate_summary,
-    clear_memory,
     refresh_memory,
-    refresh_settings,
-    auto_hide_messages_by_command,
-    load_combined_summary,
-    get_long_memory,
-    get_short_memory,
-    main_api,
-    extension_prompt_types,
-    extension_prompt_roles,
-    MODULE_NAME,
-    generic_memories_macro,
     power_user,
-    amount_gen,
-    MemoryEditInterface, // for type reference
+    main_api,
     getStringHash,
     generateRaw,
-    trimToEndSentence
+    trimToEndSentence,
+    generate_combined_summary
 } from './index.js';
 
 // Summarization
@@ -419,11 +404,9 @@ function get_message_history(index) {
 
         // whether we include the message itself is determined only by these settings.
         // Even if the message wouldn't be *summarized* we still want to include it in the history for context.
-        if (m.is_user && !get_settings('include_user_messages_in_history')) {
-            include = false;
-        } else if (m.is_system && !get_settings('include_system_messages_in_history')) {
-            include = false;
-        } else if (m.is_thoughts && !get_settings('include_thought_messages_in_history')) {
+        if ((m.is_user && !get_settings('include_user_messages_in_history')) ||
+            (m.is_system && !get_settings('include_system_messages_in_history')) ||
+            (m.is_thoughts && !get_settings('include_thought_messages_in_history'))) {
             include = false;
         }
 

@@ -33,7 +33,6 @@ import {
     get_settings,
     debug,
     log,
-    error,
     toast,
     SUBSYSTEM,
 } from './index.js';
@@ -137,7 +136,7 @@ export function registerAllOperationHandlers() {
 
     // Generate scene name (handled within scene summary generation)
     registerOperationHandler(OperationType.GENERATE_SCENE_NAME, async (operation) => {
-        const { index, summary } = operation.params;
+        const { index } = operation.params;
         debug(SUBSYSTEM.QUEUE, `Executing GENERATE_SCENE_NAME for index ${index}`);
         // Scene name generation is integrated into generateSceneSummary
         // This handler is a placeholder for future standalone implementation
@@ -145,7 +144,7 @@ export function registerAllOperationHandlers() {
     });
 
     // Generate running summary (bulk)
-    registerOperationHandler(OperationType.GENERATE_RUNNING_SUMMARY, async (operation) => {
+    registerOperationHandler(OperationType.GENERATE_RUNNING_SUMMARY, async (_operation) => {
         debug(SUBSYSTEM.QUEUE, `Executing GENERATE_RUNNING_SUMMARY`);
         const summary = await generate_running_scene_summary();
         return { summary };
@@ -160,7 +159,7 @@ export function registerAllOperationHandlers() {
     });
 
     // Generate combined summary
-    registerOperationHandler(OperationType.GENERATE_COMBINED_SUMMARY, async (operation) => {
+    registerOperationHandler(OperationType.GENERATE_COMBINED_SUMMARY, async (_operation) => {
         debug(SUBSYSTEM.QUEUE, `Executing GENERATE_COMBINED_SUMMARY`);
         await generate_combined_summary();
         return { success: true };

@@ -29,7 +29,7 @@ async function set_preset(name) {
 async function get_presets() {
     // Get the list of available completion presets for the selected connection profile API
     const summary_api = await get_connection_profile_api()  // API for the summary connection profile (undefined if not active)
-    const { presets, preset_names } = getPresetManager().getPresetList(summary_api)  // presets for the given API (current if undefined)
+    const { preset_names } = getPresetManager().getPresetList(summary_api)  // presets for the given API (current if undefined)
     // array of names
     if (Array.isArray(preset_names)) return preset_names
     // object of {names: index}

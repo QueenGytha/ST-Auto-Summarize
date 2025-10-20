@@ -1,23 +1,27 @@
 import {
     log,
-    debug,
-    error,
-    toast,
     extension_settings,
     get_settings,
-    set_settings,
     getContext,
     chat_enabled,
-    remember_message_toggle,
-    forget_message_toggle,
     toggle_chat_enabled,
     refresh_memory,
-    summarize_messages,
     stop_summarization,
     get_memory,
-    display_injection_preview,
+    MODULE_NAME,
+    hard_reset_settings,
+    refresh_settings,
+    settings_content_class,
+    toggle_popout,
+    memoryEditInterface,
+    collect_scene_summary_indexes,
+    get_scene_memory_injection,
+    summarize_messages,
     collect_messages_to_auto_summarize,
-    generate_combined_summary,
+    display_injection_preview,
+    remember_message_toggle,
+    forget_message_toggle,
+    toast,
 } from './index.js';
 
 function initialize_slash_commands() {
@@ -25,12 +29,12 @@ function initialize_slash_commands() {
     const SlashCommandParser = ctx.SlashCommandParser
     const SlashCommand = ctx.SlashCommand
     const SlashCommandArgument = ctx.SlashCommandArgument
-    const SlashCommandNamedArgument = ctx.SlashCommandNamedArgument
+    // const SlashCommandNamedArgument = ctx.SlashCommandNamedArgument
     const ARGUMENT_TYPE = ctx.ARGUMENT_TYPE
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'auto_summarize_log_chat',
-        callback: (args) => {
+        callback: (_args) => {
             log(getContext())
             log(getContext().chat)
         },
@@ -39,7 +43,7 @@ function initialize_slash_commands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'auto_summarize_log_settings',
-        callback: async (args) => {
+        callback: async (_args) => {
             log(extension_settings[MODULE_NAME])
         },
         helpString: 'Log current settings',
@@ -47,7 +51,7 @@ function initialize_slash_commands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'hard_reset',
-        callback: (args) => {
+        callback: (_args) => {
             hard_reset_settings()
             refresh_settings()
             refresh_memory()
@@ -110,7 +114,7 @@ function initialize_slash_commands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'get_memory_enabled',
-        callback: (args) => {
+        callback: (_args) => {
             return chat_enabled()
         },
         helpString: 'Return whether memory is currently enabled.'
@@ -118,7 +122,7 @@ function initialize_slash_commands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'toggle_memory_display',
-        callback: (args) => {
+        callback: (_args) => {
             $(`.${settings_content_class} #display_memories`).click();  // toggle the memory display
         },
         helpString: "Toggle the \"display memories\" setting on the current profile (doesn't save the profile).",
@@ -126,7 +130,7 @@ function initialize_slash_commands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'toggle_memory_popout',
-        callback: (args) => {
+        callback: (_args) => {
             toggle_popout()
         },
         helpString: 'Toggle the extension config popout',
@@ -134,7 +138,7 @@ function initialize_slash_commands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'toggle_memory_edit_interface',
-        callback: (args) => {
+        callback: (_args) => {
             memoryEditInterface.show()
         },
         helpString: 'Toggle the memory editing interface',
@@ -142,7 +146,7 @@ function initialize_slash_commands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'toggle_memory_injection_preview',
-        callback: (args) => {
+        callback: (_args) => {
             display_injection_preview()
         },
         helpString: 'Toggle a preview of the current memory injection',
@@ -151,7 +155,7 @@ function initialize_slash_commands() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'summarize_chat',
         helpString: 'Summarize the chat using the auto-summarization criteria, even if auto-summarization is off.',
-        callback: async (args, limit) => {
+        callback: async (_args, _limit) => {
             const indexes = collect_messages_to_auto_summarize()
             await summarize_messages(indexes);
         },
@@ -176,7 +180,7 @@ function initialize_slash_commands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'stop_summarization',
-        callback: (args) => {
+        callback: (_args) => {
             stop_summarization()
         },
         helpString: 'Abort any summarization taking place.',

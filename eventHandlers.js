@@ -49,7 +49,6 @@ import {
     initializeSceneNavigatorBar,
     renderSceneNavigatorBar,
     load_combined_summary,
-    get_scene_memory_injection,
     processSceneBreakOnChatLoad,
     processNewMessageForSceneBreak,
     cleanup_invalid_running_summaries,
@@ -242,12 +241,12 @@ jQuery(async function () {
     const eventSource = ctx.eventSource;
     const event_types = ctx.event_types;
     debug(`[eventHandlers] Registered event_types: ${JSON.stringify(event_types)}`);
-    eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, (id, stuff) => {
+    eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, (id, _stuff) => {
         on_chat_event('chat_completion_prompt_ready', id);
     });
     eventSource.makeLast(event_types.CHARACTER_MESSAGE_RENDERED, (id) => on_chat_event('char_message', id));
     eventSource.on(event_types.USER_MESSAGE_RENDERED, (id) => on_chat_event('user_message', id));
-    eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, (id, stuff) => on_chat_event('before_message', id));
+    eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, (id, _stuff) => on_chat_event('before_message', id));
     eventSource.on(event_types.MESSAGE_DELETED, (id) => on_chat_event('message_deleted', id));
     eventSource.on(event_types.MESSAGE_EDITED, (id) => on_chat_event('message_edited', id));
     eventSource.on(event_types.MESSAGE_SWIPED, (id) => on_chat_event('message_swiped', id));

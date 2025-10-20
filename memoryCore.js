@@ -17,15 +17,10 @@ import {
     chat_enabled,
     MODULE_NAME,
     load_combined_summary,
-    formatInstructModeChat,
-    main_api,
     extension_prompt_types,
     debounce,
     debounce_timeout,
-    default_short_template,
-    default_long_template,
     default_scene_template,
-    default_combined_template,
     SUBSYSTEM,
 } from './index.js';
 import { get_running_summary_injection } from './runningSceneSummary.js';
@@ -120,7 +115,7 @@ function update_message_inclusion_flags() {
     // iterate through the chat in reverse order and mark the messages that should be included in short-term and long-term memory
     let short_limit_reached = false;
     let long_limit_reached = false;
-    let long_term_end_index = null;  // index of the most recent message that doesn't fit in short-term memory
+    // let long_term_end_index = null;  // index of the most recent message that doesn't fit in short-term memory
     const end = chat.length - 1;
     let summary = ""  // total concatenated summary so far
     let new_summary = ""  // temp summary storage to check token length
@@ -156,7 +151,7 @@ function update_message_inclusion_flags() {
             const short_token_size = count_tokens(new_summary);
             if (short_token_size > get_short_token_limit()) {  // over context limit
                 short_limit_reached = true;
-                long_term_end_index = i;  // this is where long-term memory ends and short-term begins
+                // long_term_end_index = i;  // this is where long-term memory ends and short-term begins
                 summary = ""  // reset summary
             } else {  // under context limit
                 set_data(message, 'include', 'Summary of message(s)');

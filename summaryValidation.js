@@ -1,5 +1,6 @@
 import {
     get_settings,
+    getContext,
     get_current_preset,
     get_current_connection_profile,
     set_preset,
@@ -26,21 +27,21 @@ async function validate_summary(summary, type = "regular") {
         ctx.deactivateSendButtons();
     }
 
+    // Save current preset and profile (declare outside try so accessible in catch)
+    let current_preset;
+    let current_profile;
+
     try {
         // Get the error detection prompt
         const prompt_key = type === "regular" ? 'regular_summary_error_detection_prompt' : 'combined_summary_error_detection_prompt';
         let prompt = get_settings(prompt_key);
-        
+
         // Substitute the summary in the prompt
         prompt = prompt.replace("{{summary}}", summary);
-        
-        // Save current preset and profile
-        const summary_preset = type === "regular" ? 
-            get_settings('completion_preset') : 
-            get_settings('combined_summary_completion_preset');
-        const current_preset = await get_current_preset();
-        const summary_profile = get_settings('connection_profile');
-        const current_profile = await get_current_connection_profile();
+
+        // Get current preset and profile
+        current_preset = await get_current_preset();
+        current_profile = await get_current_connection_profile();
 
         // Set the error detection preset
         const preset_key = type === "regular" ? 'regular_summary_error_detection_preset' : 'combined_summary_error_detection_preset';

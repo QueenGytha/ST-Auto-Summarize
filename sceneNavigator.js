@@ -38,11 +38,11 @@ export function renderSceneNavigatorBar() {
     }
 
     // Find all visible scene breaks and number them sequentially
-    let sceneNum = 1;
+    // let sceneNum = 1; // Not currently used - using idx instead
     ctx.chat.forEach((msg, idx) => {
         if (get_data(msg, SCENE_BREAK_KEY) && get_data(msg, SCENE_BREAK_VISIBLE_KEY) !== false) {
             const name = get_data(msg, 'scene_break_name') || `#${idx}`;
-            // Use the actual message index for the label, or use sceneNum for sequential scene numbers
+            // Use the actual message index for the label
             const label = name !== `#${idx}` ? name : `#${idx}`;
             const $link = $(`<button class="scene-nav-link" title="${label}">${label}</button>`);
 
@@ -62,7 +62,7 @@ export function renderSceneNavigatorBar() {
                 }
             });
             $bar.append($link);
-            sceneNum++;
+            // sceneNum++; // Not currently used
         }
     });
 

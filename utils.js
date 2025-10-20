@@ -30,23 +30,15 @@ const SUBSYSTEM = {
 };
 
 function log(subsystem, ...args) {
-    // If subsystem is not a string starting with '[', treat it as a regular arg
-    if (typeof subsystem !== 'string' || !subsystem.startsWith('[')) {
-        console.log(LOG_PREFIX, subsystem, ...args);
-    } else {
-        console.log(LOG_PREFIX, subsystem, ...args);
-    }
+    // Always log with prefix - subsystem check not needed as both branches are identical
+    console.log(LOG_PREFIX, subsystem, ...args);
 }
 
 function debug(subsystem, ...args) {
     if (!get_settings('debug_mode')) return;
 
-    // If subsystem is not a string starting with '[', treat it as a regular arg
-    if (typeof subsystem !== 'string' || !subsystem.startsWith('[')) {
-        console.log(LOG_PREFIX, '[DEBUG]', subsystem, ...args);
-    } else {
-        console.log(LOG_PREFIX, '[DEBUG]', subsystem, ...args);
-    }
+    // Always log with prefix - subsystem check not needed as both branches are identical
+    console.log(LOG_PREFIX, '[DEBUG]', subsystem, ...args);
 }
 
 function error(subsystem, ...args) {
@@ -226,12 +218,14 @@ async function display_text_modal(title, text="") {
     const popup = new ctx.Popup(html, ctx.POPUP_TYPE.TEXT, undefined, {okButton: 'Close', allowVerticalScrolling: true});
     await popup.show()
 }
-async function get_user_setting_text_input(key, title, description="", defaultValue="") {
+async function get_user_setting_text_input(key, title, description="", _defaultValue="") {
     const value = get_settings(key) ?? '';
     title = `
 <h3>${title}</h3>
 <p>${description}</p>
 `
+    const ctx = getContext();
+    let popup; // Declare before use in closure
     const restore_button = {
         text: 'Restore Default',
         appendAtEnd: true,
@@ -239,8 +233,7 @@ async function get_user_setting_text_input(key, title, description="", defaultVa
             popup.mainInput.value = default_settings[key] ?? '';
         }
     }
-    const ctx = getContext();
-    const popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {rows: 20, customButtons: [restore_button]});
+    popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {rows: 20, customButtons: [restore_button]});
     popup.mainInput.classList.remove('result-control');
     const input = await popup.show();
     if (input !== undefined && input !== null && input !== false) {
