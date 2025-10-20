@@ -23,7 +23,7 @@ import {
  */
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function bind_setting(selector: any, key: any, type: any=null, callback: any=null, disable: any=true) {
+function bind_setting(selector /*: any */, key /*: any */, type /*: any */=null, callback /*: any */=null, disable /*: any */=true) {
     // Bind a UI element to a setting, so if the UI element changes, the setting is updated
     selector = `.${settings_content_class} ${selector}`  // add the settings div to the selector
     // $FlowFixMe[cannot-resolve-name]
@@ -87,7 +87,7 @@ function bind_setting(selector: any, key: any, type: any=null, callback: any=nul
     });
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function bind_function(selector: any, func: any, disable: any=true) {
+function bind_function(selector /*: any */, func /*: any */, disable /*: any */=true) {
     // bind a function to an element (typically a button or input)
     // if disable is true, disable the element if chat is disabled
     selector = `.${settings_content_class} ${selector}`
@@ -115,7 +115,7 @@ function bind_function(selector: any, func: any, disable: any=true) {
     }
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function set_setting_ui_element(key: any, element: any, type: any) {
+function set_setting_ui_element(key /*: any */, element /*: any */, type /*: any */) {
     // Set a UI element to the current setting value
     let radio = false;
     if (element.is('input[type="radio"]')) {

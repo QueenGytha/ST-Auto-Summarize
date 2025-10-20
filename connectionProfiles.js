@@ -39,7 +39,7 @@ async function get_current_connection_profile() {
     return result.pipe
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function get_connection_profile_api(name: any) {
+async function get_connection_profile_api(name /*: any */) {
     // Get the API for the given connection profile name. If not given, get the current summary profile.
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
     if (name === undefined) name = await get_summary_connection_profile()
@@ -91,7 +91,7 @@ async function get_summary_connection_profile() {
     return name
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function set_connection_profile(name: any) {
+async function set_connection_profile(name /*: any */) {
     // Set the connection profile
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
     if (name === await get_current_connection_profile()) return;  // If already using the current preset, return
@@ -122,7 +122,7 @@ async function get_connection_profiles() {
 
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function verify_connection_profile(name: any) {
+async function verify_connection_profile(name /*: any */) {
     // check if the given connection profile name is valid
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
     if (name === "") return true;  // no profile selected, always valid

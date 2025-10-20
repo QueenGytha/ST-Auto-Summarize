@@ -43,7 +43,7 @@ let last_scene_injection = "";
 
 // Retrieving memories
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function check_message_exclusion(message: any) {
+function check_message_exclusion(message /*: any */) {
     // check for any exclusion criteria for a given message based on current settings
     // (this does NOT take context lengths into account, only exclusion criteria based on the message itself).
     if (!message) return false;
@@ -159,7 +159,7 @@ function update_message_inclusion_flags() {
     update_all_message_visuals()
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function concatenate_summary(existing_text: any, message: any) {
+function concatenate_summary(existing_text /*: any */, message /*: any */) {
     // given an existing text of concatenated summaries, concatenate the next one onto it
     const memory = get_memory(message)
     if (!memory) {  // if there's no summary, do nothing
@@ -171,7 +171,7 @@ function concatenate_summary(existing_text: any, message: any) {
 
 // Scene summaries are stored in 'scene_summary_memory' (not 'memory') on the message object.
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function concatenate_summaries(indexes: any) {
+function concatenate_summaries(indexes /*: any */) {
     const context = getContext();
     const chat = context.chat;
     const summaries = [];
@@ -197,7 +197,7 @@ function concatenate_summaries(indexes: any) {
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function collect_chat_messages(include: any) {
+function collect_chat_messages(include /*: any */) {
     // Get a list of chat message indexes identified by the given criteria
     const context = getContext();
     const indexes = []  // list of indexes of messages

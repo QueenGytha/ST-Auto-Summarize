@@ -19,7 +19,7 @@ import {
 
 // UI functions
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_message_div(index: any) {
+function get_message_div(index /*: any */) {
     // given a message index, get the div element for that message
     // it will have an attribute "mesid" that is the message index
     // $FlowFixMe[cannot-resolve-name]
@@ -30,7 +30,7 @@ function get_message_div(index: any) {
     return div;
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_summary_style_class(message: any) {
+function get_summary_style_class(message /*: any */) {
     const include = get_data(message, 'include');
     const exclude = get_data(message, 'exclude');  // force-excluded by user
     const lagging = get_data(message, 'lagging');  // not injected yet
@@ -49,7 +49,7 @@ function get_summary_style_class(message: any) {
     return style
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function update_message_visuals(i: any, style: any=true, text: any=null) {
+function update_message_visuals(i /*: any */, style /*: any */=true, text /*: any */=null) {
     // Update the message visuals according to its current memory status
     // Each message div will have a div added to it with the memory for that message.
     // Even if there is no memory, I add the div because otherwise the spacing changes when the memory is added later.
@@ -114,7 +114,7 @@ function update_all_message_visuals() {
     }
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function open_edit_memory_input(index: any) {
+function open_edit_memory_input(index /*: any */) {
     // Allow the user to edit a message summary
     const message = getContext().chat[index];
     let memory = get_memory(message)

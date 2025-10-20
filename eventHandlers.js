@@ -48,6 +48,9 @@ import {
     cleanup_invalid_running_summaries,
 } from './index.js';
 
+// Import lorebooks utilities (will be dynamically imported if enabled)
+import * as lorebookUtils from './utils.js';
+
 // Event handling
 let last_message_swiped = null  // if an index, that was the last message swiped
 let operationQueueModule = null;  // Reference to queue module for reloading
@@ -207,7 +210,7 @@ const eventHandlers = {
 };
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function on_chat_event(event: any=null, data: any=null) {
+async function on_chat_event(event /*: any */=null, data /*: any */=null) {
     debug(`[on_chat_event] event: ${event}, data: ${JSON.stringify(data)}`);
     debug("Chat updated: " + event)
 
@@ -321,6 +324,45 @@ Object.entries(event_types).forEach(([key, type]) => {
         log('[Queue] ✓ Operation queue initialized with handlers');
     } else {
         log('[Queue] Queue disabled by setting, skipping initialization');
+    }
+
+    // Initialize Auto-Lorebooks functionality
+    log('[Lorebooks] Initializing Auto-Lorebooks functionality...');
+    try {
+        const lorebookManager = await import('./lorebookManager.js');
+        const trackingEntries = await import('./trackingEntries.js');
+        const sendButtonInterceptor = await import('./sendButtonInterceptor.js');
+        const categoryIndexes = await import('./categoryIndexes.js');
+        const lorebookEntryMerger = await import('./lorebookEntryMerger.js');
+        const summaryToLorebookProcessor = await import('./summaryToLorebookProcessor.js');
+
+        // Initialize lorebooks modules
+        lorebookManager.initLorebookManager(lorebookUtils);
+        trackingEntries.initTrackingEntries(lorebookUtils, lorebookManager);
+        sendButtonInterceptor.initSendButtonInterceptor(lorebookUtils, trackingEntries);
+        categoryIndexes.initCategoryIndexes(lorebookUtils, lorebookManager, { get_settings });
+
+        // Initialize with operation queue if enabled
+        if (queueSetting !== false && operationQueueModule) {
+            lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, operationQueueModule);
+        } else {
+            lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, null);
+        }
+
+        summaryToLorebookProcessor.initSummaryToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger);
+
+        // Initialize tracking settings
+        trackingEntries.initializeTrackingSettings();
+
+        // Enable send button interception if configured
+        const interceptEnabled = get_settings('autolorebooks')?.tracking?.intercept_send_button ?? true;
+        if (interceptEnabled) {
+            sendButtonInterceptor.enableInterception();
+        }
+
+        log('[Lorebooks] ✓ Auto-Lorebooks functionality initialized');
+    } catch (err) {
+        log('[Lorebooks] Failed to initialize Auto-Lorebooks:', err);
     }
 });
 

@@ -41,7 +41,7 @@ Use like this:
 </div>
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function refresh_select2_element(id: any, selected: any, options: any, placeholder: any="") {
+function refresh_select2_element(id /*: any */, selected /*: any */, options /*: any */, placeholder /*: any */="") {
     // Refresh a select2 element with the given ID (a select element) and set the options
 
     // check whether the dropdown is open. If so, don't update the options (it messes with the widget)

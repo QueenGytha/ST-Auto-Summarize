@@ -14,7 +14,7 @@ import {
 
 // Message functions
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function set_data(message: any, key: any, value: any) {
+function set_data(message /*: any */, key /*: any */, value /*: any */) {
     // store information on the message object
     if (!message.extra) {
         message.extra = {};
@@ -44,12 +44,12 @@ function set_data(message: any, key: any, value: any) {
     }
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_data(message: any, key: any) {
+function get_data(message /*: any */, key /*: any */) {
     // get information from the message object
     return message?.extra?.[MODULE_NAME]?.[key];
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_memory(message: any) {
+function get_memory(message /*: any */) {
     // returns the memory (and reasoning, if present) properly prepended with the prefill (if present)
     let memory = get_data(message, 'memory') ?? ""
     const prefill = get_data(message, 'prefill') ?? ""
@@ -61,7 +61,7 @@ function get_memory(message: any) {
     return memory
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function edit_memory(message: any, text: any) {
+function edit_memory(message /*: any */, text /*: any */) {
     // perform a manual edit of the memory text
 
     const current_text = get_memory(message)
@@ -78,7 +78,7 @@ function edit_memory(message: any, text: any) {
     }
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function clear_memory(message: any) {
+function clear_memory(message /*: any */) {
     // clear the memory from a message
     set_data(message, "memory", null);
     set_data(message, "error", null)  // remove any errors
@@ -88,7 +88,7 @@ function clear_memory(message: any) {
     set_data(message, "exclude", false)
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function toggle_memory_value(indexes: any, value: any, check_value: any, set_value: any) {
+function toggle_memory_value(indexes /*: any */, value /*: any */, check_value /*: any */, set_value /*: any */) {
     // For each message index, call set_value(index, value) function on each.
     // If no value given, toggle the values. Only toggle false if ALL are true.
 
@@ -115,7 +115,7 @@ function toggle_memory_value(indexes: any, value: any, check_value: any, set_val
 
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_previous_swipe_memory(message: any, key: any) {
+function get_previous_swipe_memory(message /*: any */, key /*: any */) {
     // get information from the message's previous swipe
     if (!message.swipe_id) {
         return null;
@@ -123,7 +123,7 @@ function get_previous_swipe_memory(message: any, key: any) {
     return message?.swipe_info?.[message.swipe_id-1]?.extra?.[MODULE_NAME]?.[key];
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function forget_message_toggle(indexes: any=null, value: any=null) {
+function forget_message_toggle(indexes /*: any */=null, value /*: any */=null) {
     // Toggle the "forget" status of a message
     const context = getContext();
 
@@ -149,7 +149,7 @@ function forget_message_toggle(indexes: any=null, value: any=null) {
     refresh_memory()
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_character_key(message: any) {
+function get_character_key(message /*: any */) {
     // get the unique identifier of the character that sent a message
     return message.original_avatar
 }
@@ -157,7 +157,7 @@ function get_character_key(message: any) {
 // Add an interception function to reduce the number of messages injected normally
 // This has to match the manifest.json "generate_interceptor" key
 // $FlowFixMe[prop-missing]
-globalThis.memory_intercept_messages = function (chat: any, _contextSize: any, _abort: any, type: any) {
+globalThis.memory_intercept_messages = function (chat /*: any */, _contextSize /*: any */, _abort /*: any */, type /*: any */) {
     if (!chat_enabled()) return;   // if memory disabled, do nothing
     if (!get_settings('exclude_messages_after_threshold')) return  // if not excluding any messages, do nothing
     refresh_memory()

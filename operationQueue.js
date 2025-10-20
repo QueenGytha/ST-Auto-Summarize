@@ -231,7 +231,7 @@ async function loadQueue() {
                     currentQueue = {
                         queue: ([] : Array<any>),
                         current_operation_id: null,
-                        paused: (false: boolean),
+                        paused: (false /*: boolean */),
                         version: 1
                     };
                 }
@@ -241,7 +241,7 @@ async function loadQueue() {
                 currentQueue = {
                     queue: ([] : Array<any>),
                     current_operation_id: null,
-                    paused: (false: boolean),
+                    paused: (false /*: boolean */),
                     version: 1
                 };
             }
@@ -251,7 +251,7 @@ async function loadQueue() {
                 chat_metadata.auto_summarize_operation_queue = {
                     queue: ([] : Array<any>),
                     current_operation_id: null,
-                    paused: (false: boolean),
+                    paused: (false /*: boolean */),
                     version: 1
                 };
             }
@@ -390,7 +390,7 @@ function generateOperationId() {
  * @returns {string} Operation ID
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function enqueueOperation(type: any, params: any, options: any = {}) {
+export async function enqueueOperation(type /*: any */, params /*: any */, options /*: any */ = {}) {
     if (!isInitialized) {
         await initOperationQueue();
     }
@@ -442,7 +442,7 @@ export async function enqueueOperation(type: any, params: any, options: any = {}
  * Get operation by ID
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function getOperation(operationId: any) {
+export function getOperation(operationId /*: any */) {
     // $FlowFixMe[incompatible-use]
     return currentQueue.queue.find(op => op.id === operationId);
 }
@@ -496,7 +496,7 @@ export function getFailedOperations() {
  * Update operation status
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function updateOperationStatus(operationId: any, status: any, errorMsg: any = null) {
+export async function updateOperationStatus(operationId /*: any */, status /*: any */, errorMsg /*: any */ = null) {
     const operation = getOperation(operationId);
     if (!operation) {
         error(SUBSYSTEM.QUEUE, `Operation ${operationId} not found`);
@@ -527,7 +527,7 @@ export async function updateOperationStatus(operationId: any, status: any, error
  * Remove operation from queue
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function removeOperation(operationId: any) {
+export async function removeOperation(operationId /*: any */) {
     // $FlowFixMe[incompatible-use]
     const index = currentQueue.queue.findIndex(op => op.id === operationId);
     if (index === -1) {
@@ -703,7 +703,7 @@ function getNextOperation() {
 const operationHandlers = new Map();
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function registerOperationHandler(operationType: any, handler: any) {
+export function registerOperationHandler(operationType /*: any */, handler /*: any */) {
     operationHandlers.set(operationType, handler);
     debug(SUBSYSTEM.QUEUE, `Registered handler for ${operationType}`);
 }
@@ -712,7 +712,7 @@ export function registerOperationHandler(operationType: any, handler: any) {
  * Execute an operation
  */
 // $FlowFixMe[recursive-definition] [missing-local-annot]
-async function executeOperation(operation: any) {
+async function executeOperation(operation /*: any */) {
     const handler = operationHandlers.get(operation.type);
 
     if (!handler) {
@@ -815,7 +815,7 @@ function startQueueProcessor() {
  * Register UI update callback
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function registerUIUpdateCallback(callback: any) {
+export function registerUIUpdateCallback(callback /*: any */) {
     uiUpdateCallback = callback;
     debug(SUBSYSTEM.QUEUE, 'Registered UI update callback');
 }

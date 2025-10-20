@@ -26,8 +26,8 @@ import {
 
 
 class MemoryEditInterface {
-    filtered: Array<any> = []
-    displayed: Array<any> = []
+    filtered /*: Array<any> */ = []
+    displayed /*: Array<any> */ = []
     selected: Set<any> = new Set()
 
     // $FlowFixMe[missing-local-annot]
@@ -36,7 +36,7 @@ class MemoryEditInterface {
             "title": "Summaries currently as single message summaries",
             "display": "Single Message",
             // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check": (msg: any) => get_data(msg, 'include') === "Summary of message(s)",
+            "check": (msg /*: any */) => get_data(msg, 'include') === "Summary of message(s)",
             "default": true,
             "count": 0
         },
@@ -44,7 +44,7 @@ class MemoryEditInterface {
             "title": "Summaries not in single message summaries",
             "display": "Forgot",
             // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check": (msg: any) => !get_data(msg, 'include') && get_data(msg, 'memory'),
+            "check": (msg /*: any */) => !get_data(msg, 'include') && get_data(msg, 'memory'),
             "default": false,
             "count": 0
         },
@@ -52,7 +52,7 @@ class MemoryEditInterface {
             "title": "Summaries that have been manually excluded from memory",
             "display": "Excluded",
             // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check":  (msg: any) => get_data(msg, 'exclude'),
+            "check":  (msg /*: any */) => get_data(msg, 'exclude'),
             "default": false,
             "count": 0
         },
@@ -60,7 +60,7 @@ class MemoryEditInterface {
             "title": "Summaries that have been manually edited",
             "display": "Edited",
             // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check": (msg: any) => get_data(msg, 'edited'),
+            "check": (msg /*: any */) => get_data(msg, 'edited'),
             "default": false,
             "count": 0
         },
@@ -68,7 +68,7 @@ class MemoryEditInterface {
             "title": "User messages with or without summaries",
             "display": "User",
             // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check":  (msg: any) => msg.is_user,
+            "check":  (msg /*: any */) => msg.is_user,
             "default": false,
             "count": 0
         },
@@ -76,7 +76,7 @@ class MemoryEditInterface {
             "title": "Messages without a summary",
             "display": "No Summary",
             // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check": (msg: any) => !get_data(msg, 'memory'),
+            "check": (msg /*: any */) => !get_data(msg, 'memory'),
             "default": false,
             "count": 0
         },
@@ -84,7 +84,7 @@ class MemoryEditInterface {
             "title": "Summaries that failed during generation",
             "display": "Errors",
             // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check": (msg: any) => get_data(msg, 'error'),
+            "check": (msg /*: any */) => get_data(msg, 'error'),
             "default": false,
             "count": 0
         },
@@ -145,7 +145,7 @@ class MemoryEditInterface {
         <div title="Re-Summarize (AI)"                                              class="mes_button fa-solid fa-quote-left ${summarize_button_class}"></div>
     </div>
     `
-    ctx: any = getContext();
+    ctx /*: any */ = getContext();
 
     constructor() {
         // $FlowFixMe[prop-missing]
@@ -369,7 +369,7 @@ class MemoryEditInterface {
         this.update_context_line()
     }
     // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-    update_filters(preserve_page: any=false) {
+    update_filters(preserve_page /*: any */=false) {
         log("Updating interface filters...")
         const filter_no_summary = this.filter_bar.no_summary.filtered()
         const filter_message_summary = this.filter_bar.message_summary.filtered()
@@ -532,7 +532,7 @@ class MemoryEditInterface {
         this.$table_body.find(`tr#memory_${closest_id}`).addClass(style)
     }
     // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-    toggle_selected(indexes: any, value: any=null) {
+    toggle_selected(indexes /*: any */, value /*: any */=null) {
         if (value === null) {
             const all_selected = indexes.every(i => this.selected.has(i));
             if (all_selected) {
@@ -556,7 +556,7 @@ class MemoryEditInterface {
         this.update_selected()
     }
     // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-    update_message_visuals(i: any, $previous_row: any=null, style: any=true, text: any=null): any {
+    update_message_visuals(i /*: any */, $previous_row /*: any */=null, style /*: any */=true, text /*: any */=null): any {
         if (!this.is_open()) return
         const msg = this.ctx.chat[i];
         const memory = text ?? get_memory(msg)

@@ -17,7 +17,7 @@ async function get_summary_preset() {
     return preset_name
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function set_preset(name: any) {
+async function set_preset(name /*: any */) {
     if (name === get_current_preset()) return;  // If already using the current preset, return
 
     // $FlowFixMe[constant-condition]
@@ -42,7 +42,7 @@ async function get_presets() {
     return Object.keys(preset_names)
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function verify_preset(name: any) {
+async function verify_preset(name /*: any */) {
     // check if the given preset name is valid for the current API
     if (name === "") return true;  // no preset selected, always valid
 

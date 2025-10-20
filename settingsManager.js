@@ -104,18 +104,18 @@ function reset_settings() {
     toast("All settings restored to defaults", "success");
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function set_settings(key: any, value: any) {
+function set_settings(key /*: any */, value /*: any */) {
     // Set a setting for the extension and save it
     extension_settings[MODULE_NAME][key] = value;
     saveSettingsDebounced();
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_settings(key: any) {
+function get_settings(key /*: any */) {
     // Get a setting for the extension, or the default value if not set
     return extension_settings[MODULE_NAME]?.[key] ?? default_settings[key];
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_settings_element(key: any) {
+function get_settings_element(key /*: any */) {
     return settings_ui_map[key]?.[0]
 }
 // $FlowFixMe[signature-verification-failure]
@@ -165,7 +165,7 @@ function chat_enabled() {
     return get_settings('chats_enabled')?.[context.chatId] ?? get_settings('default_chat_enabled')
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function toggle_chat_enabled(value: any=null) {
+function toggle_chat_enabled(value /*: any */=null) {
     // Change the state of the extension. If value is null, toggle. Otherwise, set to the given value
     const current = chat_enabled();
 
@@ -205,7 +205,7 @@ function toggle_chat_enabled(value: any=null) {
     scrollChatToBottom()
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function character_enabled(character_key: any) {
+function character_enabled(character_key /*: any */) {
     // check if the given character is enabled for summarization in the current chat
     const group_id = selected_group
     if (selected_group === null) return true;  // not in group chat, always enabled
@@ -217,7 +217,7 @@ function character_enabled(character_key: any) {
 
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function toggle_character_enabled(character_key: any) {
+function toggle_character_enabled(character_key /*: any */) {
     // Toggle whether the given character is enabled for summarization in the current chat
     const group_id = selected_group
     if (group_id === undefined) return true;  // not in group chat, always enabled

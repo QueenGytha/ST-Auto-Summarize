@@ -2,7 +2,7 @@
 import { memoryEditInterface, PROGRESS_BAR_ID, debug, stop_summarization } from './index.js';
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function progress_bar(id: any, progress: any, total: any, title: any) {
+function progress_bar(id /*: any */, progress /*: any */, total /*: any */, title /*: any */) {
     // Display, update, or remove a progress bar
     id = `${PROGRESS_BAR_ID}_${id}`
     // $FlowFixMe[cannot-resolve-name]
@@ -45,7 +45,7 @@ function progress_bar(id: any, progress: any, total: any, title: any) {
     }
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function remove_progress_bar(id: any) {
+function remove_progress_bar(id /*: any */) {
     id = `${PROGRESS_BAR_ID}_${id}`
     // $FlowFixMe[cannot-resolve-name]
     const $existing = $(`.${id}`);

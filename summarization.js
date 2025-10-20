@@ -46,7 +46,7 @@ function getStopSummarization() {
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function setStopSummarization(val: any) {
+function setStopSummarization(val /*: any */) {
     STOP_SUMMARIZATION = val;
 }
 setStopSummarization(false);
@@ -113,7 +113,7 @@ function cleanupAfterSummarization(ctx, show_progress, indexes_length) {
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function summarize_messages(indexes: any=null, show_progress: any=true) {
+async function summarize_messages(indexes /*: any */=null, show_progress /*: any */=true) {
     const ctx = getContext();
 
     // Normalize indexes
@@ -194,7 +194,7 @@ async function validateAndRetrySummary(summary, index, message, retry_count, max
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function summarize_message(index: any) {
+async function summarize_message(index /*: any */) {
     // Summarize a message given the chat index, replacing any existing memories
     // Should only be used from summarize_messages()
 
@@ -312,7 +312,7 @@ async function summarize_message(index: any) {
     return { success: !!summary, modified: wasSummaryModified };
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function summarize_text(prompt: any) {
+async function summarize_text(prompt /*: any */) {
     // get size of text
     const token_size = count_tokens(prompt);
 
@@ -378,7 +378,7 @@ async function summarize_text(prompt: any) {
     return result;
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_message_history(index: any) {
+function get_message_history(index /*: any */) {
     // Get a history of messages leading up to the given index (excluding the message at the index)
     // If the include_message_history setting is 0, returns null
     const num_history_messages = get_settings('include_message_history');
@@ -437,7 +437,7 @@ function get_message_history(index: any) {
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function create_summary_prompt(index: any) {
+async function create_summary_prompt(index /*: any */) {
     // create the full summary prompt for the message at the given index.
     // the instruct template will automatically add an input sequence to the beginning and an output sequence to the end.
     // Therefore, if we are NOT using instructOverride, we have to remove the first system sequence at the very beginning which gets added by format_system_prompt.

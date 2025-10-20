@@ -31,13 +31,13 @@ const SUBSYSTEM = {
 };
 
 // $FlowFixMe[signature-verification-failure]
-function log(subsystem: any, ...args: Array<any>) {
+function log(subsystem /*: any */, ...args /*: Array<any> */) {
     // Always log with prefix - subsystem check not needed as both branches are identical
     console.log(LOG_PREFIX, subsystem, ...args);
 }
 
 // $FlowFixMe[signature-verification-failure]
-function debug(subsystem: any, ...args: Array<any>) {
+function debug(subsystem /*: any */, ...args /*: Array<any> */) {
     if (!get_settings('debug_mode')) return;
 
     // Always log with prefix - subsystem check not needed as both branches are identical
@@ -45,7 +45,7 @@ function debug(subsystem: any, ...args: Array<any>) {
 }
 
 // $FlowFixMe[signature-verification-failure]
-function error(subsystem: any, ...args: Array<any>) {
+function error(subsystem /*: any */, ...args /*: Array<any> */) {
     // If subsystem is not a string starting with '[', treat it as a regular arg
     if (typeof subsystem !== 'string' || !subsystem.startsWith('[')) {
         console.error(LOG_PREFIX, '[ERROR]', subsystem, ...args);
@@ -61,7 +61,7 @@ function error(subsystem: any, ...args: Array<any>) {
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function toast(message: any, type: any="info") {
+function toast(message /*: any */, type /*: any */="info") {
     // debounce the toast messages
     // $FlowFixMe[cannot-resolve-name]
     toastr[type](message, MODULE_NAME_FANCY);
@@ -91,7 +91,7 @@ const toast_debounced = debounce(toast, 500);
 // $FlowFixMe[signature-verification-failure]
 const saveChatDebounced = debounce(() => getContext().saveChat(), debounce_timeout.relaxed);
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function count_tokens(text: any, padding: any = 0) {
+function count_tokens(text /*: any */, padding /*: any */ = 0) {
     // count the number of tokens in a text
     const ctx = getContext();
     return ctx.getTokenCount(text, padding);
@@ -148,7 +148,7 @@ function get_extension_directory() {
     return index_path.substring(0, index_path.lastIndexOf('/'))  // remove the /index.js from the path
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function clean_string_for_title(text: any) {
+function clean_string_for_title(text /*: any */) {
     // clean a given string for use in a div title.
     return text.replace(/["&'<>]/g, function(match) {
         switch (match) {
@@ -161,7 +161,7 @@ function clean_string_for_title(text: any) {
     })
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function escape_string(text: any) {
+function escape_string(text /*: any */) {
     // escape control characters in the text
     if (!text) return text
     return text.replace(/[\x00-\x1F\x7F]/g, function(match) {
@@ -177,7 +177,7 @@ function escape_string(text: any) {
     });
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function unescape_string(text: any) {
+function unescape_string(text /*: any */) {
     // given a string with escaped characters, unescape them
     if (!text) return text
     return text.replace(/\\[ntrbf0x][0-9a-f]{2}|\\[ntrbf]/g, function(match) {
@@ -219,7 +219,7 @@ function display_injection_preview() {
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function display_text_modal(title: any, text: any="") {
+async function display_text_modal(title /*: any */, text /*: any */="") {
     // Display a modal with the given title and text
     // replace newlines in text with <br> for HTML
     const ctx = getContext();
@@ -230,7 +230,7 @@ async function display_text_modal(title: any, text: any="") {
     await popup.show()
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function get_user_setting_text_input(key: any, title: any, description: any="", _defaultValue: any="") {
+async function get_user_setting_text_input(key /*: any */, title /*: any */, description /*: any */="", _defaultValue /*: any */="") {
     const value = get_settings(key) ?? '';
     title = `
 <h3>${title}</h3>

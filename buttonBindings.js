@@ -128,7 +128,7 @@ function set_character_enabled_button_states() {
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function add_menu_button(text: any, fa_icon: any, callback: any, hover: any=null) {
+function add_menu_button(text /*: any */, fa_icon /*: any */, callback /*: any */, hover /*: any */ =null) {
     // $FlowFixMe[cannot-resolve-name]
     const $button = $(`
     <div class="list-group-item flex-container flexGap5 interactable" title="${hover ?? text}" tabindex="0">

@@ -64,3 +64,12 @@ export * from './operationQueue.js';
 export * from './operationQueueUI.js';
 export * from './operationHandlers.js';
 export * from './queueIntegration.js';
+
+// Lorebooks functionality (merged from ST-Auto-Lorebooks)
+export * from './lorebookManager.js';
+export * from './lorebookEntryMerger.js';
+export * from './categoryIndexes.js';
+export * from './trackingEntries.js';
+export * from './sendButtonInterceptor.js';
+export * from './summaryToLorebookProcessor.js';
+export * from './tests.js';

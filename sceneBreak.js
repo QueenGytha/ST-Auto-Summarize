@@ -47,7 +47,7 @@ export function addSceneBreakButton() {
 
 // Handles click events for the scene break button
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function bindSceneBreakButton(get_message_div: any, getContext: any, set_data: any, get_data: any, saveChatDebounced: any) {
+export function bindSceneBreakButton(get_message_div /*: any */, getContext /*: any */, set_data /*: any */, get_data /*: any */, saveChatDebounced /*: any */) {
     // $FlowFixMe[cannot-resolve-name] [missing-this-annot]
     $("div#chat").on("click", `.${SCENE_BREAK_BUTTON_CLASS}`, function (this: any) {
         // $FlowFixMe[cannot-resolve-name]
@@ -59,7 +59,7 @@ export function bindSceneBreakButton(get_message_div: any, getContext: any, set_
 
 // Toggles the scene break UI and persists state
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function toggleSceneBreak(index: any, get_message_div: any, getContext: any, set_data: any, get_data: any, saveChatDebounced: any) {
+export function toggleSceneBreak(index /*: any */, get_message_div /*: any */, getContext /*: any */, set_data /*: any */, get_data /*: any */, saveChatDebounced /*: any */) {
     const ctx = getContext();
     const message = ctx.chat[index];
     const isSet = !!get_data(message, SCENE_BREAK_KEY);
@@ -320,7 +320,7 @@ function buildSceneBreakElement(index, startIdx, sceneMessages, sceneName, scene
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function renderSceneBreak(index: any, get_message_div: any, getContext: any, get_data: any, set_data: any, saveChatDebounced: any) {
+export function renderSceneBreak(index /*: any */, get_message_div /*: any */, getContext /*: any */, get_data /*: any */, set_data /*: any */, saveChatDebounced /*: any */) {
     const $msgDiv = get_message_div(index);
     if (!$msgDiv?.length) return;
 
@@ -604,7 +604,7 @@ export function renderSceneBreak(index: any, get_message_div: any, getContext: a
  * @returns {string} - Concatenated scene content
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function collectSceneContent(startIdx: any, endIdx: any, mode: any, ctx: any, get_memory: any) {
+export function collectSceneContent(startIdx /*: any */, endIdx /*: any */, mode /*: any */, ctx /*: any */, get_memory /*: any */) {
     const chat = ctx.chat;
     const result = [];
     for (let i = startIdx; i <= endIdx; i++) {
@@ -621,7 +621,7 @@ export function collectSceneContent(startIdx: any, endIdx: any, mode: any, ctx: 
 
 // Call this after chat loads or refresh to re-render all scene breaks
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function renderAllSceneBreaks(get_message_div: any, getContext: any, get_data: any, set_data: any, saveChatDebounced: any) {
+export function renderAllSceneBreaks(get_message_div /*: any */, getContext /*: any */, get_data /*: any */, set_data /*: any */, saveChatDebounced /*: any */) {
     const ctx = getContext();
     if (!ctx?.chat) return;
     for (let i = 0; i < ctx.chat.length; i++) {
@@ -880,7 +880,7 @@ function saveSceneSummary(message, summary, get_data, set_data, saveChatDebounce
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function generateSceneSummary(index: any, get_message_div: any, getContext: any, get_data: any, set_data: any, saveChatDebounced: any, skipQueue: any = false) {
+export async function generateSceneSummary(index /*: any */, get_message_div /*: any */, getContext /*: any */, get_data /*: any */, set_data /*: any */, saveChatDebounced /*: any */, skipQueue /*: any */ = false) {
     const ctx = getContext();
     const chat = ctx.chat;
     const message = chat[index];

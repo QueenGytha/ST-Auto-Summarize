@@ -14,7 +14,7 @@ import {
 } from './index.js';
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function validate_summary(summary: any, type: any = "regular") {
+async function validate_summary(summary /*: any */, type /*: any */ = "regular") {
     if (!get_settings('error_detection_enabled')) return true;
     
     // Check if error detection is enabled for this summary type
