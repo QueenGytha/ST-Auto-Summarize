@@ -416,11 +416,93 @@ function refresh_lorebooks_settings_ui() {
         // $FlowFixMe[cannot-resolve-name]
         $('#autolorebooks-summary-merge-prompt').val(summaryProcessing.merge_prompt || '');
 
+        // Populate dropdowns (async but don't block)
+        update_autolorebooks_tracking_merge_connection_dropdown();
+        update_autolorebooks_tracking_merge_preset_dropdown();
+        update_autolorebooks_summary_merge_connection_dropdown();
+        update_autolorebooks_summary_merge_preset_dropdown();
+
         debug("Auto-Lorebooks settings UI refreshed");
 
     } catch (err) {
         error("Error refreshing Auto-Lorebooks settings UI", err);
     }
+}
+
+/**
+ * Update Auto-Lorebooks tracking merge connection profile dropdown
+ */
+async function update_autolorebooks_tracking_merge_connection_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
+    const $connection_select = $('#autolorebooks-tracking-merge-connection');
+    // $FlowFixMe[prop-missing]
+    const currentValue = extension_settings.autoLorebooks?.tracking?.merge_connection_profile || '';
+    const connection_options = await get_connection_profiles();
+    $connection_select.empty();
+    $connection_select.append(`<option value="">Main API</option>`);
+    if (connection_options && Array.isArray(connection_options)) {
+        for (const option of connection_options) {
+            $connection_select.append(`<option value="${option}">${option}</option>`);
+        }
+    }
+    $connection_select.val(currentValue);
+    $connection_select.off('click').on('click', () => update_autolorebooks_tracking_merge_connection_dropdown());
+}
+
+/**
+ * Update Auto-Lorebooks tracking merge preset dropdown
+ */
+async function update_autolorebooks_tracking_merge_preset_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
+    const $preset_select = $('#autolorebooks-tracking-merge-preset');
+    // $FlowFixMe[prop-missing]
+    const currentValue = extension_settings.autoLorebooks?.tracking?.merge_completion_preset || '';
+    const preset_options = await get_presets();
+    $preset_select.empty();
+    $preset_select.append(`<option value="">Default</option>`);
+    for (const option of preset_options) {
+        $preset_select.append(`<option value="${option}">${option}</option>`);
+    }
+    $preset_select.val(currentValue);
+    $preset_select.off('click').on('click', () => update_autolorebooks_tracking_merge_preset_dropdown());
+}
+
+/**
+ * Update Auto-Lorebooks summary merge connection profile dropdown
+ */
+async function update_autolorebooks_summary_merge_connection_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
+    const $connection_select = $('#autolorebooks-summary-merge-connection');
+    // $FlowFixMe[prop-missing]
+    const currentValue = extension_settings.autoLorebooks?.summary_processing?.merge_connection_profile || '';
+    const connection_options = await get_connection_profiles();
+    $connection_select.empty();
+    $connection_select.append(`<option value="">Main API</option>`);
+    if (connection_options && Array.isArray(connection_options)) {
+        for (const option of connection_options) {
+            $connection_select.append(`<option value="${option}">${option}</option>`);
+        }
+    }
+    $connection_select.val(currentValue);
+    $connection_select.off('click').on('click', () => update_autolorebooks_summary_merge_connection_dropdown());
+}
+
+/**
+ * Update Auto-Lorebooks summary merge preset dropdown
+ */
+async function update_autolorebooks_summary_merge_preset_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
+    const $preset_select = $('#autolorebooks-summary-merge-preset');
+    // $FlowFixMe[prop-missing]
+    const currentValue = extension_settings.autoLorebooks?.summary_processing?.merge_completion_preset || '';
+    const preset_options = await get_presets();
+    $preset_select.empty();
+    $preset_select.append(`<option value="">Default</option>`);
+    for (const option of preset_options) {
+        $preset_select.append(`<option value="${option}">${option}</option>`);
+    }
+    $preset_select.val(currentValue);
+    $preset_select.off('click').on('click', () => update_autolorebooks_summary_merge_preset_dropdown());
 }
 
 export {

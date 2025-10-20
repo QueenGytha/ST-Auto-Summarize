@@ -599,6 +599,32 @@ function initialize_lorebooks_settings_listeners() {
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-tracking-merge-connection', function() {
+        const value = $(this).val();
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.tracking.merge_connection_profile = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-tracking-merge-preset', function() {
+        const value = $(this).val();
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.tracking.merge_completion_preset = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-tracking-merge-prefill', function() {
         const value = $(this).val();
         // $FlowFixMe[prop-missing]
@@ -660,6 +686,32 @@ function initialize_lorebooks_settings_listeners() {
         if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
         // $FlowFixMe[prop-missing]
         extension_settings.autoLorebooks.summary_processing.skip_duplicates = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-summary-merge-connection', function() {
+        const value = $(this).val();
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.summary_processing.merge_connection_profile = value;
+        saveSettingsDebounced();
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-summary-merge-preset', function() {
+        const value = $(this).val();
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.summary_processing.merge_completion_preset = value;
         saveSettingsDebounced();
     });
 
