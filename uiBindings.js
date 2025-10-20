@@ -25,7 +25,7 @@ import {
 function bind_setting(selector, key, type=null, callback=null, disable=true) {
     // Bind a UI element to a setting, so if the UI element changes, the setting is updated
     selector = `.${settings_content_class} ${selector}`  // add the settings div to the selector
-    let element = $(selector)
+    const element = $(selector)
     settings_ui_map[key] = [element, type]
 
     // if no elements found, log error
@@ -40,7 +40,7 @@ function bind_setting(selector, key, type=null, callback=null, disable=true) {
     }
 
     // default trigger for a settings update is on a "change" event (as opposed to an input event)
-    let trigger = 'change';
+    const trigger = 'change';
 
     // Set the UI element to the current setting value
     set_setting_ui_element(key, element, type);
@@ -83,7 +83,7 @@ function bind_function(selector, func, disable=true) {
     // bind a function to an element (typically a button or input)
     // if disable is true, disable the element if chat is disabled
     selector = `.${settings_content_class} ${selector}`
-    let element = $(selector);
+    const element = $(selector);
     if (element.length === 0) {
         error(`No element found for selector [${selector}] when binding function`);
         return;
@@ -120,7 +120,7 @@ function set_setting_ui_element(key, element, type) {
 
     // initialize the UI element with the setting value
     if (radio) {  // if a radio group, select the one that matches the setting value
-        let selected = element.filter(`[value="${setting_value}"]`)
+        const selected = element.filter(`[value="${setting_value}"]`)
         if (selected.length === 0) {
             error(`Error: No radio button found for value [${setting_value}] for setting [${key}]`);
             return;

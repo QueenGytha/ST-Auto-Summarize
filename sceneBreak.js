@@ -7,6 +7,7 @@ import {
     log,
     debug,
     error,
+    toast,
     SUBSYSTEM,
 } from './index.js';
 import {
@@ -52,8 +53,8 @@ export function bindSceneBreakButton(get_message_div, getContext, set_data, get_
 export function toggleSceneBreak(index, get_message_div, getContext, set_data, get_data, saveChatDebounced) {
     const ctx = getContext();
     const message = ctx.chat[index];
-    let isSet = !!get_data(message, SCENE_BREAK_KEY);
-    let visible = get_data(message, SCENE_BREAK_VISIBLE_KEY);
+    const isSet = !!get_data(message, SCENE_BREAK_KEY);
+    const visible = get_data(message, SCENE_BREAK_VISIBLE_KEY);
 
     if (!isSet) {
         set_data(message, SCENE_BREAK_KEY, true);
@@ -114,7 +115,7 @@ function collectSceneChronologicalObjects(startIdx, endIdx, ctx, get_memory) {
 
 function getSceneRangeIndexes(index, chat, get_data, sceneCount) {
     // Find all visible scene breaks up to and including index
-    let sceneBreakIndexes = [];
+    const sceneBreakIndexes = [];
     for (let i = 0; i <= index; i++) {
         if (
             get_data(chat[i], SCENE_BREAK_KEY) &&
@@ -128,10 +129,10 @@ function getSceneRangeIndexes(index, chat, get_data, sceneCount) {
     let startIdx = 0;
     if (sceneBreakIndexes.length >= sceneCount + 1) {
         // There are enough breaks to go back sceneCount scenes
-        let idx = sceneBreakIndexes.length - sceneCount - 1;
+        const idx = sceneBreakIndexes.length - sceneCount - 1;
         startIdx = sceneBreakIndexes[idx] + 1;
     }
-    let endIdx = index;
+    const endIdx = index;
     return [startIdx, endIdx];
 }
 
@@ -242,11 +243,11 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     `);
 
     // === Insert after the summary box, or after .mes_text if no summary box exists ===
-    let $summaryBox = $msgDiv.find('.auto_summarize_memory_text');
+    const $summaryBox = $msgDiv.find('.auto_summarize_memory_text');
     if ($summaryBox.length) {
         $summaryBox.last().after($sceneBreak);
     } else {
-        let $mesText = $msgDiv.find('.mes_text');
+        const $mesText = $msgDiv.find('.mes_text');
         if ($mesText.length) {
             $mesText.after($sceneBreak);
         } else {
@@ -277,8 +278,8 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
 
     $sceneBreak.find('.scene-summary-box').on('change blur', function () {
         // Update the current version in the versions array
-        let updatedVersions = getSceneSummaryVersions(message, get_data).slice();
-        let idx = getCurrentSceneSummaryIndex(message, get_data);
+        const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
+        const idx = getCurrentSceneSummaryIndex(message, get_data);
         updatedVersions[idx] = $(this).val();
         setSceneSummaryVersions(message, set_data, updatedVersions);
         // Also update the legacy summary field for compatibility
@@ -323,13 +324,13 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     // --- Preview scene content handler ---
     $sceneBreak.find('.scene-preview-summary').off('click').on('click', function(e) {
         e.stopPropagation();
-        let sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
-        let [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
-        let ctx = getContext();
+        const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+        const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
+        const ctx = getContext();
 
-        let mode = get_settings('scene_summary_history_mode') || "both";
-        let messageTypes = get_settings('scene_summary_message_types') || "both";
-        let sceneObjects = [];
+        const mode = get_settings('scene_summary_history_mode') || "both";
+        const messageTypes = get_settings('scene_summary_message_types') || "both";
+        const sceneObjects = [];
         for (let i = startIdx; i <= endIdx; i++) {
             const msg = chat[i];
             if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
@@ -367,14 +368,14 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         e.stopPropagation();
         log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
 
-        let sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
-        let [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
-        let ctx = getContext();
+        const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+        const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
+        const ctx = getContext();
 
         // Collect scene objects (messages/summaries) as before
-        let mode = get_settings('scene_summary_history_mode') || "both";
-        let messageTypes = get_settings('scene_summary_message_types') || "both";
-        let sceneObjects = [];
+        const mode = get_settings('scene_summary_history_mode') || "both";
+        const messageTypes = get_settings('scene_summary_message_types') || "both";
+        const sceneObjects = [];
         for (let i = startIdx; i <= endIdx; i++) {
             const msg = chat[i];
             if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
@@ -392,12 +393,12 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         }
 
         // 1. Get prompt and connection profile for scene summaries
-        let promptTemplate = get_settings('scene_summary_prompt');
-        let prefill = get_settings('scene_summary_prefill') || "";
-        let profile = get_settings('scene_summary_connection_profile');
-        let preset = get_settings('scene_summary_completion_preset');
-        let current_profile = await ctx.get_current_connection_profile?.();
-        let current_preset = await ctx.get_current_preset?.();
+        const promptTemplate = get_settings('scene_summary_prompt');
+        const prefill = get_settings('scene_summary_prefill') || "";
+        const profile = get_settings('scene_summary_connection_profile');
+        const preset = get_settings('scene_summary_completion_preset');
+        const current_profile = await ctx.get_current_connection_profile?.();
+        const current_preset = await ctx.get_current_preset?.();
 
         // 2. Prepare prompt (substitute macros)
         let prompt = promptTemplate;
@@ -421,7 +422,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         }
 
         // 4. Show loading state in summary box
-        let $summaryBox = $sceneBreak.find('.scene-summary-box');
+        const $summaryBox = $sceneBreak.find('.scene-summary-box');
         $summaryBox.val("Generating scene summary...");
 
         // 5. Generate summary using the same logic as summarize_text
@@ -465,7 +466,7 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
         }
 
         // 7. Save and display the summary in the box
-        let updatedVersions = getSceneSummaryVersions(message, get_data).slice();
+        const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
         updatedVersions.push(summary);
         setSceneSummaryVersions(message, set_data, updatedVersions);
         setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
@@ -477,10 +478,10 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
 
     $sceneBreak.find('.scene-rollback-summary').off('click').on('click', function(e) {
         e.stopPropagation();
-        let idx = getCurrentSceneSummaryIndex(message, get_data);
+        const idx = getCurrentSceneSummaryIndex(message, get_data);
         if (idx > 0) {
             setCurrentSceneSummaryIndex(message, set_data, idx - 1);
-            let summary = getSceneSummaryVersions(message, get_data)[idx - 1];
+            const summary = getSceneSummaryVersions(message, get_data)[idx - 1];
             set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
             set_data(message, 'scene_summary_memory', summary); // <-- ensure top-level property is set
             saveChatDebounced();
@@ -490,11 +491,11 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
     });
     $sceneBreak.find('.scene-rollforward-summary').off('click').on('click', function(e) {
         e.stopPropagation();
-        let versions = getSceneSummaryVersions(message, get_data);
-        let idx = getCurrentSceneSummaryIndex(message, get_data);
+        const versions = getSceneSummaryVersions(message, get_data);
+        const idx = getCurrentSceneSummaryIndex(message, get_data);
         if (idx < versions.length - 1) {
             setCurrentSceneSummaryIndex(message, set_data, idx + 1);
-            let summary = versions[idx + 1];
+            const summary = versions[idx + 1];
             set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
             set_data(message, 'scene_summary_memory', summary); // <-- ensure top-level property is set
             saveChatDebounced();
@@ -568,10 +569,10 @@ export function renderSceneBreak(index, get_message_div, getContext, get_data, s
  * @returns {string} - Concatenated scene content
  */
 export function collectSceneContent(startIdx, endIdx, mode, ctx, get_memory) {
-    let chat = ctx.chat;
-    let result = [];
+    const chat = ctx.chat;
+    const result = [];
     for (let i = startIdx; i <= endIdx; i++) {
-        let msg = chat[i];
+        const msg = chat[i];
         if (mode === "messages" || mode === "both") {
             result.push(msg.mes);
         }
@@ -702,19 +703,42 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
     }
 }
 
-export async function generateSceneSummary(index, get_message_div, getContext, get_data, set_data, saveChatDebounced) {
+export async function generateSceneSummary(index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue = false) {
     const ctx = getContext();
     const chat = ctx.chat;
     const message = chat[index];
 
+    // Check if operation queue is enabled (skip if called from queue handler)
+    const queueEnabled = !skipQueue && get_settings('operation_queue_enabled') !== false;
+    if (queueEnabled) {
+        debug(SUBSYSTEM.SCENE, `[Queue] Operation queue enabled, queueing scene summary generation for index ${index}`);
+
+        // Import queue integration
+        const { queueGenerateSceneSummary } = await import('./queueIntegration.js');
+
+        // Queue the scene summary generation
+        const operationId = queueGenerateSceneSummary(index);
+
+        if (operationId) {
+            log(SUBSYSTEM.SCENE, `[Queue] Queued scene summary generation for index ${index}:`, operationId);
+            toast(`Queued scene summary generation for message ${index}`, 'info');
+            return; // Operation will be processed by queue
+        }
+
+        debug(SUBSYSTEM.SCENE, `[Queue] Failed to queue operation, falling back to direct execution`);
+    }
+
+    // Fallback to direct execution if queue disabled or queueing failed
+    debug(SUBSYSTEM.SCENE, `Executing scene summary generation directly for index ${index} (queue ${skipQueue ? 'bypassed' : 'disabled or unavailable'})`);
+
     // Get scene range
-    let sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
-    let [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
+    const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+    const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
 
     // Collect scene objects (messages/summaries)
-    let mode = get_settings('scene_summary_history_mode') || "both";
-    let messageTypes = get_settings('scene_summary_message_types') || "both";
-    let sceneObjects = [];
+    const mode = get_settings('scene_summary_history_mode') || "both";
+    const messageTypes = get_settings('scene_summary_message_types') || "both";
+    const sceneObjects = [];
     for (let i = startIdx; i <= endIdx; i++) {
         const msg = chat[i];
         if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
@@ -732,12 +756,12 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
     }
 
     // Get prompt and connection profile for scene summaries
-    let promptTemplate = get_settings('scene_summary_prompt');
-    let prefill = get_settings('scene_summary_prefill') || "";
-    let profile = get_settings('scene_summary_connection_profile');
-    let preset = get_settings('scene_summary_completion_preset');
-    let current_profile = await ctx.get_current_connection_profile?.();
-    let current_preset = await ctx.get_current_preset?.();
+    const promptTemplate = get_settings('scene_summary_prompt');
+    const prefill = get_settings('scene_summary_prefill') || "";
+    const profile = get_settings('scene_summary_connection_profile');
+    const preset = get_settings('scene_summary_completion_preset');
+    const current_profile = await ctx.get_current_connection_profile?.();
+    const current_preset = await ctx.get_current_preset?.();
 
     // Prepare prompt (substitute macros)
     let prompt = promptTemplate;
@@ -802,7 +826,7 @@ export async function generateSceneSummary(index, get_message_div, getContext, g
     }
 
     // Save and display the summary
-    let updatedVersions = getSceneSummaryVersions(message, get_data).slice();
+    const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
     updatedVersions.push(summary);
     setSceneSummaryVersions(message, set_data, updatedVersions);
     setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);

@@ -56,14 +56,16 @@ import {
 } from './index.js';
 
 // Event handling
-var last_message_swiped = null  // if an index, that was the last message swiped
+let last_message_swiped = null  // if an index, that was the last message swiped
+let operationQueueModule = null;  // Reference to queue module for reloading
+
 async function on_chat_event(event=null, data=null) {
     debug(`[on_chat_event] event: ${event}, data: ${JSON.stringify(data)}`);
     // When the chat is updated, check if the summarization should be triggered
     debug("Chat updated: " + event)
 
     const context = getContext();
-    let index = data
+    const index = data
 
     switch (event) {
         case 'chat_changed':  // chat was changed
@@ -75,6 +77,11 @@ async function on_chat_event(event=null, data=null) {
             }
             // Auto scene break detection on chat load
             processSceneBreakOnChatLoad();
+
+            // Reload queue from new chat's lorebook
+            if (operationQueueModule) {
+                await operationQueueModule.reloadQueue();
+            }
             break;
 
         case 'message_deleted':   // message was deleted
@@ -116,12 +123,12 @@ async function on_chat_event(event=null, data=null) {
             if (!context.groupId && context.characterId === undefined) break; // no characters or group selected
             if (streamingProcessor && !streamingProcessor.isFinished) break;  // Streaming in-progress
             if (last_message_swiped === index) {  // this is a swipe
-                let message = context.chat[index];
+                const message = context.chat[index];
                 if (!get_settings('auto_summarize_on_swipe')) break;  // if auto-summarize on swipe is disabled, do nothing
                 if (!check_message_exclusion(message)) break;  // if the message is excluded, skip
                 if (!get_previous_swipe_memory(message, 'memory')) break;  // if the previous swipe doesn't have a memory, skip
                 debug("re-summarizing on swipe")
-                await summarize_messages(index);  // summarize the swiped message
+                await summarize_messages(index);  // summarize the swiped message (handles queue internally)
                 refresh_memory()
                 break;
             } else { // not a swipe
@@ -146,7 +153,7 @@ async function on_chat_event(event=null, data=null) {
             if (!check_message_exclusion(context.chat[index])) break;  // if the message is excluded, skip
             if (!get_data(context.chat[index], 'memory')) break;  // if the message doesn't have a memory, skip
             debug("Message with memory edited, summarizing")
-            summarize_messages(index);  // summarize that message (no await so the message edit goes through)
+            summarize_messages(index);  // summarize that message (no await so edit goes through, handles queue internally)
 
             // TODO: I'd like to be able to refresh the memory here, but we can't await the summarization because
             //  then the message edit textbox doesn't close until the summary is done.
@@ -160,7 +167,7 @@ async function on_chat_event(event=null, data=null) {
             // if this is creating a new swipe, remove the current memory.
             // This is detected when the swipe ID is greater than the last index in the swipes array,
             //  i.e. when the swipe ID is EQUAL to the length of the swipes array, not when it's length-1.
-            let message = context.chat[index];
+            const message = context.chat[index];
             if (message.swipe_id === message.swipes.length) {
                 clear_memory(message)
             }
@@ -231,9 +238,9 @@ jQuery(async function () {
     bindSceneBreakButton(get_message_div, getContext, set_data, get_data, saveChatDebounced);
 
     // ST event listeners
-    let ctx = getContext();
-    let eventSource = ctx.eventSource;
-    let event_types = ctx.event_types;
+    const ctx = getContext();
+    const eventSource = ctx.eventSource;
+    const event_types = ctx.event_types;
     debug(`[eventHandlers] Registered event_types: ${JSON.stringify(event_types)}`);
     eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, (id, stuff) => {
         on_chat_event('chat_completion_prompt_ready', id);
@@ -280,15 +287,21 @@ Object.entries(event_types).forEach(([key, type]) => {
     initializeSceneNavigatorBar();
 
     // Initialize operation queue system
-    if (get_settings('operation_queue_enabled') !== false) {
-        const { initOperationQueue } = await import('./operationQueue.js');
+    const queueSetting = get_settings('operation_queue_enabled');
+    log('[Queue] Checking queue initialization - setting value:', queueSetting);
+
+    if (queueSetting !== false) {
+        log('[Queue] Initializing operation queue...');
+        operationQueueModule = await import('./operationQueue.js');
         const { initQueueUI } = await import('./operationQueueUI.js');
         const { registerAllOperationHandlers } = await import('./operationHandlers.js');
 
-        await initOperationQueue();
+        await operationQueueModule.initOperationQueue();
         registerAllOperationHandlers();
         initQueueUI();
-        debug('[Queue] Operation queue initialized with handlers');
+        log('[Queue] ✓ Operation queue initialized with handlers');
+    } else {
+        log('[Queue] Queue disabled by setting, skipping initialization');
     }
 });
 

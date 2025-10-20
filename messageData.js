@@ -25,7 +25,7 @@ function set_data(message, key, value) {
     message.extra[MODULE_NAME][key] = value;
 
     // Also save on the current swipe info if present
-    let swipe_index = message.swipe_id
+    const swipe_index = message.swipe_id
     if (swipe_index && message.swipe_info?.[swipe_index]) {
         if (!message.swipe_info[swipe_index].extra) {
             message.swipe_info[swipe_index].extra = {};
@@ -46,7 +46,7 @@ function get_data(message, key) {
 function get_memory(message) {
     // returns the memory (and reasoning, if present) properly prepended with the prefill (if present)
     let memory = get_data(message, 'memory') ?? ""
-    let prefill = get_data(message, 'prefill') ?? ""
+    const prefill = get_data(message, 'prefill') ?? ""
 
     // prepend the prefill to the memory if needed
     if (get_settings('show_prefill')) {
@@ -57,7 +57,7 @@ function get_memory(message) {
 function edit_memory(message, text) {
     // perform a manual edit of the memory text
 
-    let current_text = get_memory(message)
+    const current_text = get_memory(message)
     if (text === current_text) return;  // no change
     set_data(message, "memory", text);
     set_data(message, "error", null)  // remove any errors
@@ -87,7 +87,7 @@ function toggle_memory_value(indexes, value, check_value, set_value) {
 
     if (value === null) {  // no value - toggle
         let all_true = true
-        for (let index of indexes) {
+        for (const index of indexes) {
             if (!check_value(index)) {
                 all_true = false
                 set_value(index, true)
@@ -95,13 +95,13 @@ function toggle_memory_value(indexes, value, check_value, set_value) {
         }
 
         if (all_true) {  // set to false only if all are true
-            for (let index of indexes) {
+            for (const index of indexes) {
                 set_value(index, false)
             }
         }
 
     } else {  // value given
-        for (let index of indexes) {
+        for (const index of indexes) {
             set_value(index, value)
         }
     }
@@ -116,7 +116,7 @@ function get_previous_swipe_memory(message, key) {
 }
 async function remember_message_toggle(indexes=null, value=null) {
     // Toggle the "remember" status of a set of messages
-    let context = getContext();
+    const context = getContext();
 
     if (indexes === null) {  // Default to the last message, min 0
         indexes = [Math.max(context.chat.length-1, 0)];
@@ -125,14 +125,14 @@ async function remember_message_toggle(indexes=null, value=null) {
     }
 
     // messages without a summary
-    let summarize = [];
+    const summarize = [];
 
     function set(index, value) {
-        let message = context.chat[index]
+        const message = context.chat[index]
         set_data(message, 'remember', value);
         set_data(message, 'exclude', false);  // regardless, remove excluded flag
 
-        let memory = get_data(message, 'memory')
+        const memory = get_data(message, 'memory')
         if (value && !memory) {
             summarize.push(index)
         }
@@ -153,7 +153,7 @@ async function remember_message_toggle(indexes=null, value=null) {
 }
 function forget_message_toggle(indexes=null, value=null) {
     // Toggle the "forget" status of a message
-    let context = getContext();
+    const context = getContext();
 
     if (indexes === null) {  // Default to the last message, min 0
         indexes = [Math.max(context.chat.length-1, 0)];
@@ -162,7 +162,7 @@ function forget_message_toggle(indexes=null, value=null) {
     }
 
     function set(index, value) {
-        let message = context.chat[index]
+        const message = context.chat[index]
         set_data(message, 'exclude', value);
         set_data(message, 'remember', false);  // regardless, remove excluded flag
         debug(`Set message ${index} exclude status: ${value}`);
@@ -191,13 +191,13 @@ globalThis.memory_intercept_messages = function (chat, _contextSize, _abort, typ
     if (type === 'continue') start--  // if a continue, keep the most recent message
 
     // symbol is used to prevent accidentally leaking modifications to permanent chat.
-    let IGNORE_SYMBOL = getContext().symbols.ignore
+    const IGNORE_SYMBOL = getContext().symbols.ignore
 
     // Remove any messages that have summaries injected
     for (let i=start; i >= 0; i--) {
         delete chat[i].extra.ignore_formatting
-        let message = chat[i]
-        let lagging = get_data(message, 'lagging')  // The message should be kept
+        const message = chat[i]
+        const lagging = get_data(message, 'lagging')  // The message should be kept
         chat[i] = structuredClone(chat[i])  // keep changes temporary for this generation
         chat[i].extra[IGNORE_SYMBOL] = !lagging
     }

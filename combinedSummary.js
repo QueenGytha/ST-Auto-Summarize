@@ -25,9 +25,9 @@ import {
 } from './index.js';
 
 function get_combined_summary_key() {
-    let ctx = getContext();
-    let chatId = ctx.chatId;
-    let charId = ctx.characterId || 'group';
+    const ctx = getContext();
+    const chatId = ctx.chatId;
+    const charId = ctx.characterId || 'group';
     return `combined_summary_saved_${chatId}_${charId}`;
 }
 
@@ -41,9 +41,9 @@ function load_combined_summary() {
 
 async function generate_combined_summary() {
     if (!get_settings('combined_summary_enabled')) return "Combined Summary is Disabled";
-    
+
     // Check if there are new summaries to process
-    let summariesToCombine = collect_messages_to_combine();
+    const summariesToCombine = collect_messages_to_combine();
     if (summariesToCombine.length === 0) {
         debug("[COMBINED SUMMARY] No new summaries to combine");
         if (get_settings('show_combined_summary_toast')) {
@@ -51,13 +51,38 @@ async function generate_combined_summary() {
         }
         return "No new summaries to combine";
     }
-    
+
+    // Check if operation queue is enabled
+    const queueEnabled = get_settings('operation_queue_enabled') !== false;
+    if (queueEnabled) {
+        debug("[COMBINED SUMMARY] [Queue] Operation queue enabled, queueing combined summary generation");
+
+        // Import queue integration
+        const { queueGenerateCombinedSummary } = await import('./queueIntegration.js');
+
+        // Queue the combined summary generation
+        const operationId = queueGenerateCombinedSummary();
+
+        if (operationId) {
+            log("[COMBINED SUMMARY] [Queue] Queued combined summary generation:", operationId);
+            if (get_settings('show_combined_summary_toast')) {
+                toast("Queued combined summary generation", "info");
+            }
+            return "Queued"; // Operation will be processed by queue
+        }
+
+        debug("[COMBINED SUMMARY] [Queue] Failed to queue operation, falling back to direct execution");
+    }
+
+    // Fallback to direct execution if queue disabled or queueing failed
+    debug("[COMBINED SUMMARY] Executing combined summary generation directly (queue disabled or unavailable)");
+
     if (get_settings('show_combined_summary_toast')) {
         toast("Generating combined summary...", "info");
     }
     
-    let ctx = getContext();
-    let prompt = await create_combined_summary_prompt();
+    const ctx = getContext();
+    const prompt = await create_combined_summary_prompt();
     
     // If prompt creation failed due to no summaries, exit early
     if (!prompt) {
@@ -68,11 +93,11 @@ async function generate_combined_summary() {
         return "Failed to create combined summary prompt";
     }
     
-    let profile = get_settings('combined_summary_connection_profile');
-    let preset = get_settings('combined_summary_completion_preset');
-    let current_profile = await get_current_connection_profile();
-    let current_preset = await get_current_preset();
-    let previous_summary = load_combined_summary(); // Store the previous valid summary
+    const profile = get_settings('combined_summary_connection_profile');
+    const preset = get_settings('combined_summary_completion_preset');
+    const current_profile = await get_current_connection_profile();
+    const current_preset = await get_current_preset();
+    const previous_summary = load_combined_summary(); // Store the previous valid summary
 
     // optionally block user from sending chat messages while summarization is in progress
     if (get_settings('block_chat')) {
@@ -166,13 +191,13 @@ async function get_combined_summary_preset_max_tokens() {
     if (!preset_name || !(await verify_preset(preset_name))) {
         preset_name = await get_summary_preset();
     }
-    let preset = getPresetManager().getCompletionPresetByName(preset_name);
+    const preset = getPresetManager().getCompletionPresetByName(preset_name);
     return preset?.genamt || preset?.openai_max_tokens || amount_gen;
 }
 
 function collect_messages_to_combine() {
-    let context = getContext();
-    let chat = context.chat;
+    const context = getContext();
+    const chat = context.chat;
     let indexes = [];
 
     // Settings for each type
@@ -186,9 +211,9 @@ function collect_messages_to_combine() {
     // Helper to filter and limit
     function collect(type, count, once) {
         if (count === -1) return [];
-        let filtered = [];
+        const filtered = [];
         for (let i = 0; i < chat.length; i++) {
-            let msg = chat[i];
+            const msg = chat[i];
             if (!get_data(msg, 'memory')) continue;
             if (get_data(msg, 'include') !== type) continue;
             if (once && get_data(msg, `combined_summary_included_${type}`)) continue;
@@ -205,10 +230,10 @@ function collect_messages_to_combine() {
 
     // Scene summaries
     if (sceneCount !== -1) {
-        let sceneIndexes = collect_scene_summary_indexes();
+        const sceneIndexes = collect_scene_summary_indexes();
         let filtered = [];
-        for (let idx of sceneIndexes) {
-            let msg = chat[idx];
+        for (const idx of sceneIndexes) {
+            const msg = chat[idx];
             if (sceneOnce && get_data(msg, 'combined_summary_included_scene')) continue;
             filtered.push(idx);
         }
@@ -225,14 +250,14 @@ function collect_messages_to_combine() {
 
 function flag_summaries_as_combined(indexes) {
     if (!indexes || indexes.length === 0) return;
-    let context = getContext();
-    let chat = context.chat;
+    const context = getContext();
+    const chat = context.chat;
     const shortOnce = get_settings('combined_summary_short_once');
     const longOnce = get_settings('combined_summary_long_once');
     const sceneOnce = get_settings('combined_summary_scene_once');
-    for (let i of indexes) {
-        let msg = chat[i];
-        let type = get_data(msg, 'include');
+    for (const i of indexes) {
+        const msg = chat[i];
+        const type = get_data(msg, 'include');
         if (type === 'short' && shortOnce) set_data(msg, 'combined_summary_included_short', true);
         if (type === 'long' && longOnce) set_data(msg, 'combined_summary_included_long', true);
         if (get_data(msg, 'scene_summary_memory') && sceneOnce) set_data(msg, 'combined_summary_included_scene', true);
@@ -262,7 +287,7 @@ async function create_combined_summary_prompt() {
 
     // Get the template from settings
     let prompt = get_settings('combined_summary_prompt') || "";
-    let words = await get_combined_summary_preset_max_tokens();
+    const words = await get_combined_summary_preset_max_tokens();
 
     // Substitute macros
     prompt = ctx.substituteParamsExtended(prompt, {

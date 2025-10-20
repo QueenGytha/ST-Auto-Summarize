@@ -1,6 +1,5 @@
 import {
     get_settings,
-    set_settings,
     getContext,
     chat_metadata,
     SUBSYSTEM,
@@ -200,6 +199,29 @@ async function generate_running_scene_summary() {
 
     const ctx = getContext();
     const chat = ctx.chat;
+
+    // Check if operation queue is enabled
+    const queueEnabled = get_settings('operation_queue_enabled') !== false;
+    if (queueEnabled) {
+        debug(SUBSYSTEM.RUNNING, '[Queue] Operation queue enabled, queueing running scene summary generation');
+
+        // Import queue integration
+        const { queueGenerateRunningSummary } = await import('./queueIntegration.js');
+
+        // Queue the running scene summary generation
+        const operationId = queueGenerateRunningSummary();
+
+        if (operationId) {
+            log(SUBSYSTEM.RUNNING, '[Queue] Queued running scene summary generation:', operationId);
+            toast('Queued running scene summary generation', 'info');
+            return null; // Operation will be processed by queue
+        }
+
+        debug(SUBSYSTEM.RUNNING, '[Queue] Failed to queue operation, falling back to direct execution');
+    }
+
+    // Fallback to direct execution if queue disabled or queueing failed
+    debug(SUBSYSTEM.RUNNING, 'Executing running scene summary generation directly (queue disabled or unavailable)');
 
     debug(SUBSYSTEM.RUNNING, 'Starting running scene summary generation');
 
@@ -529,14 +551,13 @@ function get_running_summary_injection() {
         return "";
     }
 
-    let template = get_settings('running_scene_summary_template') || "";
+    const template = get_settings('running_scene_summary_template') || "";
     if (!template.trim()) {
         // Fallback to simple format
         return current.content;
     }
 
-    const injection = template.replace(/\{\{running_summary\}\}/g, current.content);
-    return injection;
+    return template.replace(/\{\{running_summary\}\}/g, current.content);
 }
 
 export {

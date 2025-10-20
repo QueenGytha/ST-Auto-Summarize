@@ -1,9 +1,9 @@
-import { memoryEditInterface, PROGRESS_BAR_ID, debug, stop_summarization, debounce_timeout } from './index.js';
+import { memoryEditInterface, PROGRESS_BAR_ID, debug, stop_summarization } from './index.js';
 
 function progress_bar(id, progress, total, title) {
     // Display, update, or remove a progress bar
     id = `${PROGRESS_BAR_ID}_${id}`
-    let $existing = $(`.${id}`);
+    const $existing = $(`.${id}`);
     if ($existing.length > 0) {  // update the progress bar
         if (title) $existing.find('div.title').text(title);
         if (progress) {
@@ -18,7 +18,7 @@ function progress_bar(id, progress, total, title) {
     }
 
     // create the progress bar
-    let bar = $(`
+    const bar = $(`
 <div class="${id} auto_summarize_progress_bar flex-container justifyspacebetween alignitemscenter">
     <div class="title">${title}</div>
     <div>(<span class="progress">${progress}</span> / <span class="total">${total}</span>)</div>
@@ -41,7 +41,7 @@ function progress_bar(id, progress, total, title) {
 }
 function remove_progress_bar(id) {
     id = `${PROGRESS_BAR_ID}_${id}`
-    let $existing = $(`.${id}`);
+    const $existing = $(`.${id}`);
     if ($existing.length > 0) {  // found
         debug("Removing progress bar")
         $existing.remove();

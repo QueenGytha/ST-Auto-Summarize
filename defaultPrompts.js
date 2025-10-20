@@ -1,59 +1,95 @@
+// ST-Auto-Summarize Default Prompts
+// New structure: summary (timeline) + lorebooks (detailed entries)
+// See docs/SUMMARY_LOREBOOK_SEPARATION.md for full documentation
+
 export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
 // Extract key information from the message below into a structured JSON format.
-// This feeds both narrative memory AND automatic lorebook population.
+// This separates timeline narrative from detailed reference information.
 //
-// JSON STRUCTURE REQUIREMENTS:
+// CRITICAL: SEPARATION OF CONCERNS
+//
+// SUMMARY field:
+// - High-level timeline of what happened (events, state changes, outcomes)
+// - MENTION entities by name for context
+// - DO NOT describe entities in detail (that goes in lorebooks)
+// - Terse, factual, minimal tokens
+// - Focus on WHAT HAPPENED, not WHO/WHAT things are
+// - Target: 100-300 tokens maximum
+//
+// LOREBOOKS array:
+// - NEW entities discovered OR updates to existing entities
+// - Full descriptions WITH nuance and detail
+// - Each entry needs: name, type, keywords, content
+// - DO NOT include timeline events (that goes in summary)
+// - Only entities worth remembering for later
+//
+// JSON STRUCTURE:
 //
 // {
-//   "narrative": "Pure narrative of events",
-//   "entities": [entity objects],
-//   "character_states": {character state objects}
+//   "summary": "Timeline of what occurred",
+//   "lorebooks": [
+//     {
+//       "name": "Entity Name",
+//       "type": "character|location|item|faction|concept|lore",
+//       "keywords": ["keyword1", "keyword2", "keyword3"],
+//       "content": "Detailed description with nuance"
+//     }
+//   ]
 // }
 //
-// FIELD GUIDELINES:
+// TYPES EXPLAINED:
+// - character: Major NPCs, recurring characters
+// - location: Significant places that may be revisited
+// - item: Important objects, artifacts, equipment
+// - faction: Groups, organizations, factions
+// - concept: Abstract concepts (relationships, secrets, status, knowledge)
+// - lore: World-building facts, historical events, rules
 //
-// 1. NARRATIVE (required string)
-//    - What happened in this message (events, actions, decisions, outcomes)
-//    - MENTION entities by name for context (locations, NPCs, items)
-//    - DO NOT include entity descriptions in narrative
-//    - Entity descriptions go in the entities array
-//    - Keep concise and factual
-//    - Focus on state changes and outcomes
+// KEYWORDS GUIDELINES:
+// - Include entity's canonical name
+// - Include aliases and alternate names
+// - Include related terms that would trigger needing this context
+// - Minimum 2 keywords, maximum 8 recommended
+// - Make them specific and relevant
 //
-// 2. ENTITIES (optional array)
-//    - Extract NEW entities discovered in this message
-//    - OR provide UPDATES to existing entities
+// CONTENT GUIDELINES:
+// - This is where ALL the detail and nuance goes
+// - Be thorough but organized
+// - Include appearance, personality, capabilities, significance
+// - Include relationships and context
+// - Target: 50-200 tokens per entry
 //
-//    Entity Object Format:
-//    {
-//      "name": "Full Entity Name",
-//      "type": "character|npc|creature|location|location-sublocation|item|object|faction|concept",
-//      "properties": ["list", "of", "properties"],  // For NEW entities
-//      "aliases": ["alternate", "names"],
-//      "updates": ["property", "updates"]  // For EXISTING entities
-//    }
+// EXAMPLES OF GOOD SEPARATION:
 //
-//    Properties Format (concise, PList-compatible):
-//    - Concise properties (1-5 words each)
-//    - Use nested() for details: "sells(potions, equipment)"
-//    - Comma-separated
+// Example 1: Combat Scene
+// ✅ SUMMARY: "Bandits ambushed Alice and Bob. Alice killed two with her greatsword. Bob disabled one with throwing knife. Two fled. Alice wounded in shoulder."
+// ✅ LOREBOOK: {"name": "Alice - Combat Capabilities", "type": "concept", "keywords": ["Alice fighting", "greatsword"], "content": "Wields greatsword with lethal skill. Formal training evident. Continues fighting when wounded."}
 //
-// 3. CHARACTER_STATES (optional object)
-//    - Current state of main characters ({{char}} and {{user}})
-//    - Only include if state changed significantly
-//    - Format: concise properties
-//    - Include: acquired items, location, relationships, knowledge, goals
+// Example 2: Discovery
+// ✅ SUMMARY: "They found a hidden chamber behind the waterfall. Ancient murals depicted the First War."
+// ✅ LOREBOOK: {"name": "Hidden Chamber", "type": "location", "keywords": ["hidden chamber", "waterfall chamber"], "content": "Secret room behind waterfall. Stone walls with ancient murals showing the First War. Undisturbed for centuries."}
+//
+// Example 3: Revelation
+// ✅ SUMMARY: "Bob revealed he works for the Shadow Guild. Alice became suspicious but agreed to cooperate."
+// ✅ LOREBOOK: {"name": "Bob's Guild Affiliation", "type": "concept", "keywords": ["Bob Shadow Guild", "Bob secret"], "content": "Bob is Shadow Guild member. Previously hidden from Alice and {{user}}, revealed during confrontation. Constrains his actions due to Guild secrecy."}
+//
+// BAD EXAMPLES:
+//
+// ❌ SUMMARY: "Alice, a skilled warrior with red hair and green eyes, fought the bandits using her greatsword technique..."
+// → Too much description! Just say "Alice fought bandits with greatsword"
+//
+// ❌ LOREBOOK: {"name": "Battle", "content": "Alice and Bob were ambushed and fought bandits on the road"}
+// → That's a timeline event! Belongs in summary, not lorebooks
 //
 // OUTPUT FORMAT:
 // - Output ONLY valid JSON, no text before or after
-// - All fields except narrative are optional
-// - Empty arrays: [], Empty objects: {}
+// - Summary is required (empty string if truly nothing happened)
+// - Lorebooks array is optional (can be empty: [])
 //
 // Output template:
 {
-  "narrative": "",
-  "entities": [],
-  "character_states": {}
+  "summary": "",
+  "lorebooks": []
 }
 
 // Message Content:
@@ -61,88 +97,115 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 
 
 export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
-// Extract key facts from the completed scene below for the roleplay memory.
-// Preserve information needed for roleplay continuity, character development, and tone.
+// Extract key information from the completed scene below into a structured JSON format.
+// This separates timeline narrative from detailed reference information.
 //
-// CRITICAL GUIDELINES:
+// CRITICAL: SEPARATION OF CONCERNS
+//
+// SUMMARY field:
+// - High-level timeline of what happened in this SCENE
+// - Include all major events and state changes
+// - MENTION entities by name but DON'T describe them
+// - Capture current state after scene ends
+// - Terse, factual, past tense for events
+// - Target: 200-500 tokens (scenes are longer than messages)
+//
+// LOREBOOKS array:
+// - NEW entities discovered in this scene
+// - UPDATES to existing entities
+// - Full descriptions WITH all nuance
+// - Each entry: name, type, keywords, content
+// - Only significant entities worth remembering
+//
+// SCENE-SPECIFIC GUIDELINES:
 //
 // 1. ROLEPLAY RELEVANCE
-//    - Extract what's needed to continue the roleplay coherently
-//    - Character personalities, development, quirks, speech patterns
-//    - Relationships and their dynamics
-//    - Plot-critical information and context
+//    - Include what's needed to continue roleplay coherently
+//    - Character development and relationship changes
+//    - Plot-critical information
 //    - Setting details and atmosphere
 //    - Current status and pending decisions
 //
-// 2. CHARACTER DEVELOPMENT
-//    - Capture character traits, behaviors, and changes
-//    - Key personality details that define how they act
-//    - Relationship evolution and emotional dynamics
-//    - Character-specific context (backgrounds, motivations, secrets)
-//    - Speech mannerisms and distinctive traits
+// 2. FOCUS ON STATE, NOT EVENT SEQUENCES
+//    - Capture CURRENT state after scene ends
+//    - Don't narrate step-by-step ("then this, then that")
+//    - Outcomes matter, not the detailed process
 //
-// 3. FOCUS ON STATE, NOT EVENT SEQUENCES
-//    - Capture CURRENT state: who, what, where, status
-//    - Don't narrate event sequences ("then this, then that")
-//    - Outcomes and results matter, not the path taken
+// 3. AVOID PROMPT POISONING
+//    - Neutral, factual tone
+//    - Avoid repetitive phrasing
+//    - Don't copy scene's writing style
+//    - Varied sentence structure
 //
-// 4. BE THOROUGH BUT EFFICIENT
-//    - Include all significant NPCs, plot points, and details
-//    - Use appropriate fields (npcs_facts vs npcs_mentioned, etc.)
-//    - Don't speculate or invent details not in the scene
-//    - Preserve important context and nuance
-//    - Be concise but don't sacrifice substance
+// 4. LOREBOOK ENTRIES FOR SCENES
+//    - Characters: Appearance, personality, speech manner, capabilities
+//    - Locations: Description, features, atmosphere, significance
+//    - Items: Description, capabilities, ownership, significance
+//    - Factions: Members, goals, relationships
+//    - Concepts: Secrets (who knows what), relationships, status changes
+//    - Lore: World-building, history, rules
 //
-// 5. AVOID PROMPT POISONING
-//    - Write in neutral, factual tone
-//    - Avoid repetitive phrasing or formulaic language
-//    - Don't copy distinctive writing style from the scene
-//    - Use varied sentence structure
+// KEYWORDS FOR SCENES:
+// - Think about what would trigger needing this information later
+// - Include variations and related terms
+// - For secrets: include who knows and who doesn't
+// - For relationships: include both character names
+// - For locations: include region/area names
 //
-// 6. FORMAT REQUIREMENTS
-//    - Output ONLY valid JSON, no text before or after
-//    - All fields are optional - omit if no relevant data
-//    - Empty objects: {} | Empty arrays: []
+// SCENE EXAMPLE:
 //
-// Field instructions:
-// npcs_facts: { "npc_name": "Appearance, personality traits, speech manner, defining characteristics. Facts, not actions." }
-// npcs_status: { "npc_name": "Current status (active, missing, deceased, etc.)" }
-// npcs_plans: [ "Future plans or goals with context." ]
-// npcs_mentioned: { "npc_name": "NPCs mentioned but not yet encountered. Brief role." }
-// visited_locations: { "Location Name": "Description including relevant features and atmosphere." }
-// secrets: { "Secret content": "Known by: X, Y. Hidden from: Z, {{user}}." }
-// current_relationships: { "npc_pair": "Current status, emotional tone, recent changes." }
-// planned_events: [ "Future plans with who, what, when if known." ]
-// objects: { "Object Name": "Description, significance, current owner/location." }
-// lore: { "Fact": "World-building, setting rules, or background information." }
-// memorable_events: [ "Major story developments that changed the narrative direction." ]
-// minor_npcs: { "npc_name": "Brief role or description." }
-// factions: { "Faction Name": { "members": ["npc1", "npc2"], "goals": "Brief goals." } }
-// pending_decisions: [ "Unresolved choices that will affect future scenes." ]
+// Scene: Alice confronts Bob about his suspicious behavior. Bob reveals he's working for the Shadow Guild, opposing corrupt nobility. He knows who stole the Sunblade through Guild intelligence but can't reveal it without exposing operations. Alice is torn between duty and sympathy. They agree to work together with a three-day deadline for Bob to reveal the thief.
+//
+// GOOD OUTPUT:
+// {
+//   "summary": "Alice confronted Bob about suspicious behavior. Bob revealed Shadow Guild membership and knowledge of Sunblade thief through Guild intelligence. He refused immediate revelation to protect Guild operations. Alice conflicted between duty to recover Sunblade and sympathy for anti-corruption cause. They agreed to cooperate with three-day deadline for thief's identity.",
+//   "lorebooks": [
+//     {
+//       "name": "Shadow Guild",
+//       "type": "faction",
+//       "keywords": ["Shadow Guild", "the Guild", "secret organization", "anti-nobility"],
+//       "content": "Secret organization opposing corrupt nobility. Bob is member. Has intelligence network tracking significant persons. Operations must stay covert. Goal: undermine corrupt noble power."
+//     },
+//     {
+//       "name": "Bob - Shadow Guild Member",
+//       "type": "concept",
+//       "keywords": ["Bob secret", "Bob affiliation", "Bob Guild", "Bob organization"],
+//       "content": "Bob is Shadow Guild member. Previously hidden from Alice and {{user}}, revealed during confrontation. Source of his knowledge about Sunblade thief. Constrained by Guild secrecy requirements. Alice now knows."
+//     },
+//     {
+//       "name": "Alice & Bob - Alliance",
+//       "type": "concept",
+//       "keywords": ["Alice Bob relationship", "alliance", "cooperation", "three day deadline"],
+//       "content": "Agreed to work together despite Guild revelation. Tension between Alice's duty (recover Sunblade) and sympathy for Bob's cause. Three-day deadline for thief revelation. Trust is conditional and strained."
+//     },
+//     {
+//       "name": "Sunblade Thief Identity",
+//       "type": "concept",
+//       "keywords": ["thief identity", "Sunblade thief", "who stole Sunblade"],
+//       "content": "Bob knows thief's identity through Shadow Guild intelligence. Information kept secret from Alice and {{user}} to protect Guild operations. Bob agreed to reveal within three days."
+//     }
+//   ]
+// }
 //
 // STYLE EXAMPLES:
+//
+// SUMMARY:
+// ✅ GOOD: "Alice and Bob traveled to Eastern Ruins. Temple ransacked, Sunblade stolen. Bob revealed knowledge of thief but refused details. Alice suspicious. Camped outside ruins."
+// ❌ BAD: "Alice, a skilled warrior with red hair, and Bob, a mysterious rogue, made their way through the forest to reach the ancient Eastern Ruins, a sacred temple complex..."
+//
+// LOREBOOK CONTENT:
+// ✅ GOOD: "Skilled warrior. Red hair, green eyes, late 20s. Confident and direct speech. Military background evident in posture. Searching for stolen Sunblade entrusted to her family. Trusts {{user}} but suspicious of Bob's secrecy."
 // ❌ TOO SPARSE: "Warrior. Red hair."
-// ✅ GOOD: "Warrior. Red hair, green eyes. Speaks confidently, military bearing. Known for tactical thinking."
+// ❌ TOO FLOWERY: "A highly skilled and experienced warrior woman with flowing crimson locks cascading down her shoulders and piercing emerald eyes that seem to see into one's soul..."
 //
-// ❌ TOO FLOWERY: "A skilled and experienced warrior with flowing crimson locks that cascade down her shoulders"
-// ✅ GOOD: "Experienced warrior. Crimson hair. Confident demeanor, tactical mindset."
+// OUTPUT FORMAT:
+// - Output ONLY valid JSON, no text before or after
+// - Summary is required
+// - Lorebooks array is optional (empty array if no new entities)
 //
-// Output only valid JSON:
 {
-	"npcs_facts": {},
-	"npcs_status": {},
-	"npcs_plans": [],
-	"npcs_mentioned": {},
-	"visited_locations": {},
-	"secrets": {},
-	"current_relationships": {},
-	"planned_events": [],
-	"objects": {},
-	"lore": {},
-	"memorable_events": [],
-	"minor_npcs": {},
-	"factions": {},
-	"pending_decisions": []
+  "summary": "",
+  "lorebooks": []
 }
 
 // Scene Content:
@@ -150,101 +213,92 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 
 
 export const default_combined_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
-// Combine multiple memory fragments from a single roleplay while avoiding redundancy and repetition.
-// Extract and merge key facts from the New Roleplay Histories and Roleplay Messages (if provided).
-// Preserve information needed for roleplay continuity, character development, and tone.
+// COMBINE multiple scene summaries into a single unified timeline.
+// You are receiving ONLY the summary (timeline) portions, NOT the lorebook entries.
 //
-// CRITICAL GUIDELINES:
+// CRITICAL: MERGE TIMELINES WITHOUT REDUNDANCY
 //
-// 1. ROLEPLAY RELEVANCE
-//    - Include what's needed to continue the roleplay coherently
-//    - Character personalities, development, quirks, speech patterns
-//    - Relationships and their evolution
-//    - Plot-critical information and context
-//    - Setting details and atmosphere
-//    - Current status and pending decisions
+// Your task:
+// - Merge all scene summaries into one cohesive timeline
+// - Remove redundant/repeated information
+// - Keep most recent state when conflicts exist
+// - Preserve unique details from each scene
+// - Focus on CURRENT state and recent developments
+// - Create clear narrative flow across scenes
+// - Target: 500-1000 tokens for combined summary
 //
-// 2. CHARACTER DEVELOPMENT
-//    - Preserve character traits, behaviors, and changes
-//    - Key personality details that define how they act
-//    - Relationship dynamics and their progression
-//    - Character-specific context (backgrounds, motivations, secrets)
-//    - Speech mannerisms and distinctive traits
+// You are NOT merging lorebook entries (those are handled separately)
 //
-// 3. FOCUS ON STATE, NOT EVENT SEQUENCES
-//    - Capture CURRENT state: who, what, where, status
-//    - Don't narrate event sequences ("then this, then that")
-//    - Outcomes and results matter, not the path taken
+// TIMELINE MERGING GUIDELINES:
 //
-// 4. MERGE REDUNDANCY, PRESERVE SUBSTANCE
-//    - Combine duplicate/overlapping information
-//    - Keep most recent state when conflicts exist
-//    - Remove truly redundant information
-//    - BUT preserve unique details from each fragment
-//    - Don't sacrifice important context for brevity
+// 1. CHRONOLOGICAL FLOW
+//    - Combine scene summaries in order
+//    - Remove redundant repetitions ("They traveled to X" mentioned twice)
+//    - Focus on progression and state changes
+//    - Create narrative continuity across scenes
 //
-// 5. AVOID PROMPT POISONING
-//    - Write in neutral, factual tone
-//    - Avoid repetitive phrasing or formulaic language
-//    - Don't copy distinctive writing style from fragments
-//    - Use varied sentence structure
+// 2. STATE TRACKING
+//    - Most recent state takes priority
+//    - Track changes over time (was allied → became hostile)
+//    - Don't sacrifice important unique details for brevity
+//    - Current status after all scenes is most important
 //
-// 6. FORMAT REQUIREMENTS
-//    - Output ONLY valid JSON, no text before or after
-//    - All fields are optional - omit if no relevant data
-//    - Empty objects: {} | Empty arrays: []
+// 3. CONFLICT RESOLUTION
+//    - Most recent information wins
+//    - If contradiction, use later scene's version
+//    - Note significant changes in brief
 //
-// Field instructions:
-// npcs_facts: { "npc_name": "Appearance, personality traits, speech manner, defining characteristics. Facts, not actions." }
-// npcs_status: { "npc_name": "Current status (active, missing, deceased, etc.)" }
-// npcs_plans: [ "Future plans or goals with context." ]
-// npcs_mentioned: { "npc_name": "NPCs mentioned but not yet encountered. Brief role." }
-// visited_locations: { "Location Name": "Description including relevant features and atmosphere." }
-// secrets: { "Secret content": "Known by: X, Y. Hidden from: Z, {{user}}." }
-// current_relationships: { "npc_pair": "Current status, emotional tone, recent changes." }
-// planned_events: [ "Future plans with who, what, when if known." ]
-// objects: { "Object Name": "Description, significance, current owner/location." }
-// lore: { "Fact": "World-building, setting rules, or background information." }
-// memorable_events: [ "Major story developments that changed the narrative direction." ]
-// minor_npcs: { "npc_name": "Brief role or description." }
-// factions: { "Faction Name": { "members": ["npc1", "npc2"], "goals": "Brief goals." } }
-// pending_decisions: [ "Unresolved choices that will affect future scenes." ]
-
-{
-	"npcs_facts": {},
-	"npcs_status": {},
-	"npcs_plans": [],
-	"npcs_mentioned": {},
-	"visited_locations": {},
-	"secrets": {},
-	"current_relationships": {},
-	"planned_events": [],
-	"objects": {},
-	"lore": {},
-	"memorable_events": [],
-	"minor_npcs": {},
-	"factions": {},
-	"pending_decisions": []
-}
-
+// 4. DEDUPLICATION
+//    - If info appears in multiple scenes, consolidate
+//    - Keep the most informative version
+//    - Remove pure repetition
+//
+// EXAMPLE MERGING:
+//
+// INPUT (ONLY summary fields from 3 scenes):
+//
+// Scene 1 summary:
+// "Alice and Bob met at tavern. Bartender Grim told them about eastern road bandits led by Scarface."
+//
+// Scene 2 summary:
+// "Traveled to Eastern Ruins. Temple ransacked, Sunblade stolen. Bob revealed Shadow Guild membership and knowledge of thief's identity but refused to share. Alice suspicious but agreed to cooperate."
+//
+// Scene 3 summary:
+// "Bandits ambushed on eastern road. Alice killed two, Bob disabled one, two fled. Alice wounded in shoulder by arrow. Found map on dead bandit showing camp location in Darkwood."
+//
+// MERGED OUTPUT (just the combined summary, as a string):
+// "Alice and Bob met at tavern where bartender Grim warned about eastern road bandits led by Scarface. They traveled to Eastern Ruins and found the temple ransacked with Sunblade stolen. Bob revealed his Shadow Guild membership and that he knows thief's identity through Guild intelligence, but refused to share immediately to protect operations. Alice became suspicious but agreed to work together. Returning via eastern road, Scarface's bandits ambushed them. Alice killed two attackers, Bob disabled one with throwing knife, two fled. Alice sustained arrow wound in shoulder but remained functional. Recovered map from dead bandit showing gang's camp in Darkwood Forest. Current status: Alliance formed but strained, Alice injured, have lead on bandit camp location."
+//
+// NOTE: You are ONLY combining timelines. Lorebook entries are merged separately by the system.
+//
+// REMEMBER:
+// - Don't just concatenate - actually MERGE
+// - Remove truly redundant information
+// - Create flowing narrative across scenes
+// - Focus on current state after all scenes
+// - Quality over quantity
+//
 {{#if previous_combined_summary}}
-// The current roleplay history template. Use this as the basis of your analysis, updating it with any new or changed information, removing anything which is no longer relevant and fully resolved:
+// EXISTING COMBINED SUMMARY (update this with new scene summaries):
 {{previous_combined_summary}}
 {{/if}}
 
 {{#if history}}
-// Recent direct roleplay messages for context:
+// Recent roleplay messages for additional context:
 {{history}}
 {{/if}}
 
-// New Roleplay Histories:
-{{message}}`;
+// NEW SCENE SUMMARIES TO MERGE (timeline only, lorebooks handled separately):
+{{message}}
+
+// Output the UPDATED combined summary as a plain string (NOT JSON):
+`;
 
 
 export const default_long_template = `<!--Roleplay memory containing current state and key facts from previous scenes.
 The information below takes priority over character and setting definitions. -->
 
-<roleplay_memory>
+<roleplay_memory format="json">
 {{memories}}
 </roleplay_memory>`;
 
@@ -252,7 +306,7 @@ The information below takes priority over character and setting definitions. -->
 export const default_short_template = `<!--Roleplay memory containing current state and key facts from previous scenes.
 The information below takes priority over character and setting definitions. -->
 
-<roleplay_memory>
+<roleplay_memory format="json">
 {{memories}}
 </roleplay_memory>`;
 
@@ -260,30 +314,78 @@ The information below takes priority over character and setting definitions. -->
 export const default_combined_template = `<!--Roleplay memory containing current state and key facts from previous scenes.
 The information below takes priority over character and setting definitions. -->
 
-<roleplay_memory>
+<roleplay_memory format="json">
 {{memories}}
 </roleplay_memory>`;
 
 
-export const default_scene_template = `<!--Roleplay memory containing current state and key facts from previous scenes, organized into logical chapters.
+export const default_scene_template = `<!--Roleplay memory containing current state and key facts from previous scenes, organized by scene.
 The information below takes priority over character and setting definitions. -->
 
-<roleplay_memory>
+<roleplay_memory format="json">
 {{scene_summaries}}
 </roleplay_memory>`;
 
 
-export const regular_summary_error_detection_prompt = `You are validating summaries for a fictional roleplay system. Your ONLY task is to check if the summary meets the format requirements, not to evaluate the fictional content itself.
+// Validation prompts check format and structure
+export const regular_summary_error_detection_prompt = `You are validating a roleplay memory extraction for proper format.
 
-A valid summary must meet ALL these criteria:
-1. Contains only factual statements without commentary or opinion
-...`;
+Check that the JSON meets these criteria:
+1. Valid JSON structure
+2. Has "summary" field (string)
+3. Has "lorebooks" field (array, may be empty)
+4. Summary focuses on timeline/events, not detailed descriptions
+5. Each lorebook entry has: name, type, keywords (array), content
+6. No timeline events in lorebook content
+7. No detailed descriptions in summary
 
-export const scene_summary_error_detection_prompt = `You are validating a scene summary. Return "VALID" if the summary is concise and accurate, otherwise return "INVALID".\n\nSummary:\n{{summary}}`;
+Respond with ONLY:
+- "VALID" if all criteria met
+- "INVALID: [specific issue]" if any criteria failed
 
-export const combined_summary_error_detection_prompt = `...`;
+Memory to validate:
+{{summary}}`;
 
-export const scene_summary_default_prompt = `Summarize the following scene as if you are writing a concise chapter summary for a roleplay story. Focus on the most important events, character developments, emotional shifts, and plot points that would be useful to remember after this scene is no longer visible. Include character names, significant decisions, changes in relationships, and any details that may be relevant for future scenes. Write in past tense, avoid commentary or meta-statements, and do not include introductions or explanations.\nScene content:\n{{message}}`;
+export const scene_summary_error_detection_prompt = `You are validating a scene memory extraction for proper format.
+
+Check that the JSON meets these criteria:
+1. Valid JSON structure
+2. Has "summary" field (string, covers scene events)
+3. Has "lorebooks" field (array, may be empty)
+4. Summary is concise timeline of scene events
+5. Lorebook entries have all required fields
+6. Good separation: events in summary, details in lorebooks
+
+Respond with ONLY:
+- "VALID" if all criteria met
+- "INVALID: [specific issue]" if any criteria failed
+
+Scene memory to validate:
+{{summary}}`;
+
+export const combined_summary_error_detection_prompt = `You are validating a combined memory structure.
+
+Check that the JSON meets these criteria:
+1. Valid JSON structure
+2. Has "summary" field (comprehensive timeline)
+3. Has "lorebooks" field (consolidated entries)
+4. Summary merges multiple scenes without redundancy
+5. No duplicate lorebook entries (same name + type)
+6. Removed obsolete/irrelevant entries
+
+Respond with ONLY:
+- "VALID" if all criteria met
+- "INVALID: [specific issue]" if any criteria failed
+
+Combined memory to validate:
+{{summary}}`;
+
+
+// Legacy scene summary prompt (narrative style, not JSON)
+export const scene_summary_default_prompt = `Extract key facts from the following scene for roleplay memory. Focus on important events, character developments, emotional shifts, and plot points that will be useful after this scene is no longer visible. Include character names, significant decisions, relationship changes, and relevant details for future scenes. Write in past tense, avoid commentary, stay factual.
+
+Scene content:
+{{message}}`;
 
 
 export const auto_scene_break_detection_prompt = `You are analyzing a roleplay conversation to detect scene breaks. A scene break occurs when there is a significant shift in:
@@ -311,54 +413,74 @@ Do not include any text outside the JSON object.`;
 
 export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
 // Combine multiple scene summaries into a single cohesive roleplay memory.
-// Preserve information needed for roleplay continuity, character development, and tone.
+// This is a NARRATIVE summary (NOT JSON), following best practices for long-term memory.
 //
 // CRITICAL GUIDELINES:
 //
-// 1. ROLEPLAY RELEVANCE
-//    - Include what's needed to continue the roleplay coherently
-//    - Character personalities, development, quirks, speech patterns
-//    - Relationships and their evolution
-//    - Plot-critical information and context
-//    - Setting tone and atmosphere
-//    - Current status and pending decisions
+// 1. EXTREME BREVITY REQUIRED
+//    - Use MINIMUM words to capture essential facts
+//    - Remove ALL redundancy across scenes
+//    - Prefer fragments over complete sentences
+//    - Target: 1500-2000 tokens MAXIMUM for entire output
 //
-// 2. CHARACTER DEVELOPMENT
-//    - Preserve character traits, growth, and changes
-//    - Key personality details that define how they act
-//    - Relationship dynamics and their progression
-//    - Character-specific context (backgrounds, motivations, secrets)
-//
-// 3. FOCUS ON STATE, NOT EVENT SEQUENCES
+// 2. FOCUS ON STATE, NOT EVENT SEQUENCES
 //    - Capture CURRENT state: who, what, where, status
-//    - Don't narrate event sequences ("then this, then that")
-//    - Outcomes and results matter, not the path taken
+//    - Don't narrate step-by-step sequences
+//    - Outcomes and results matter, not how we got there
 //
-// 4. MERGE REDUNDANCY, PRESERVE SUBSTANCE
-//    - Combine duplicate/overlapping information
+// 3. MERGE AND DEDUPLICATE
+//    - Combine overlapping information from multiple scenes
 //    - Keep most recent state when conflicts exist
-//    - Remove truly redundant information
-//    - BUT preserve unique details from each scene
-//    - Don't sacrifice important context for brevity
+//    - Remove information that's no longer relevant
+//    - Preserve unique important details
+//
+// 4. ORGANIZE BY TOPIC
+//    - Group information logically (characters, locations, situation, etc.)
+//    - Use markdown headers (##) to separate sections
+//    - Keep related information together
 //
 // 5. AVOID PROMPT POISONING
-//    - Write in neutral, informational tone
-//    - Avoid repetitive phrasing or formulaic language
-//    - Don't capture stylistic quirks that could leak into roleplay
-//    - Use varied sentence structure
+//    - Neutral, informational tone
+//    - Avoid repetitive phrasing
+//    - Don't echo stylistic quirks from scenes
+//    - Varied sentence structure
 //
-// 6. OUTPUT FORMAT
-//    - Concise narrative paragraphs, NOT JSON
-//    - Organize by topic (characters, locations, relationships, situation, etc.)
-//    - Use markdown headers to separate sections
-//    - Be thorough but efficient - no arbitrary word/token limits
+// OUTPUT FORMAT:
+// - Narrative paragraphs with markdown headers
+// - NOT JSON format
+// - Organized by topic/category
+// - Concise but complete
+//
+// EXAMPLE OUTPUT STRUCTURE:
+//
+// ## Current Situation
+// [Brief description of where things stand now]
+//
+// ## Characters
+// **Character Name**: [Key facts, appearance, personality, current status]
+// **Another Character**: [Key facts...]
+//
+// ## Locations
+// **Location Name**: [Description, current state, significance]
+//
+// ## Key Items & Objects
+// **Item Name**: [Description, ownership, significance]
+//
+// ## Relationships & Dynamics
+// **Character & Character**: [Relationship status, recent changes]
+//
+// ## Active Goals & Plans
+// - [Goal or plan with who and what]
+//
+// ## Secrets & Hidden Information
+// **Secret**: Known by X, Y. Hidden from Z.
 //
 {{#if current_running_summary}}
-// Current running summary (update and merge with new scenes):
+// CURRENT RUNNING SUMMARY (update and merge with new scenes):
 {{current_running_summary}}
 
 {{/if}}
-// New scene summaries to merge:
+// NEW SCENE SUMMARIES TO MERGE:
 {{scene_summaries}}`;
 
 

@@ -79,7 +79,7 @@ async function initialize_settings_listeners() {
     bind_setting('#combined_summary_template', 'combined_summary_template', 'text');
 
     bind_function('#edit_short_term_injection_template', async () => {
-        let description = `
+        const description = `
         This controls the template for short-term memory injection.<br>
         Macros: <b>{{memories}}</b> will be replaced with the short-term summaries.
         `;
@@ -91,7 +91,7 @@ async function initialize_settings_listeners() {
     });
 
     bind_function('#edit_long_term_injection_template', async () => {
-        let description = `
+        const description = `
         This controls the template for long-term memory injection.<br>
         Macros: <b>{{memories}}</b> will be replaced with the long-term summaries.
         `;
@@ -103,7 +103,7 @@ async function initialize_settings_listeners() {
     });
 
     bind_function('#edit_scene_injection_template', async () => {
-        let description = `
+        const description = `
     This controls the template for scene summary injection.<br>
     Macros: <b>{{scene_summaries}}</b> will be replaced with the scene summaries.
         `;
@@ -115,7 +115,7 @@ async function initialize_settings_listeners() {
     });
 
     bind_function('#edit_combined_injection_template', async () => {
-        let description = `
+        const description = `
     This controls the template for combined summary injection.<br>
     Macros: <b>{{memories}}</b> will be replaced with the combined summaries.
         `;
@@ -127,7 +127,7 @@ async function initialize_settings_listeners() {
     });
 
     bind_function('#edit_regular_summary_error_detection_prompt', async () => {
-        let description = `
+        const description = `
 Configure the prompt used to verify that regular summaries meet your criteria.
 The prompt should return "VALID" for acceptable summaries and "INVALID" for unacceptable ones.
 
@@ -139,7 +139,7 @@ Available Macros:
     });
     
     bind_function('#edit_combined_summary_error_detection_prompt', async () => {
-        let description = `
+        const description = `
 Configure the prompt used to verify that combined summaries meet your criteria.
 The prompt should return "VALID" for acceptable summaries and "INVALID" for unacceptable ones.
 
@@ -191,8 +191,8 @@ Available Macros:
     bind_function("#refresh_memory", () => refresh_memory());
 
     bind_function('#edit_summary_prompt', async () => {
-        let max_tokens = await get_summary_preset_max_tokens()
-        let description = `
+        const max_tokens = await get_summary_preset_max_tokens()
+        const description = `
 Available Macros:
 <ul style="text-align: left; font-size: smaller;">
     <li><b>{{message}}:</b> The message text.</li>
@@ -203,7 +203,7 @@ Available Macros:
         get_user_setting_text_input('prompt', 'Edit Summary Prompt', description)
     })
     bind_function('#edit_long_term_memory_prompt', async () => {
-        let description = `
+        const description = `
 <ul style="text-align: left; font-size: smaller;">
     <li>This will be the content of the <b>{{${long_memory_macro}}}</b> macro.</li>
     <li>If there is nothing in long-term memory, the whole macro will be empty.</li>
@@ -212,7 +212,7 @@ Available Macros:
         get_user_setting_text_input('long_template', `Edit Long-Term Memory Injection`, description)
     })
     bind_function('#edit_short_term_memory_prompt', async () => {
-        let description = `
+        const description = `
 <ul style="text-align: left; font-size: smaller;">
     <li>This will be the content of the <b>{{${short_memory_macro}}}</b> macro.</li>
     <li>If there is nothing in short-term memory, the whole macro will be empty.</li>
@@ -221,12 +221,12 @@ Available Macros:
         get_user_setting_text_input('short_template', `Edit Short-Term Memory Injection`, description)
     })
     bind_function('#preview_message_history', async () => {
-        let chat = getContext().chat;
-        let history = get_message_history(chat.length-1);
+        const chat = getContext().chat;
+        const history = get_message_history(chat.length-1);
         display_text_modal("{{history}} Macro Preview (Last Message)", history);
     })
     bind_function('#preview_summary_prompt', async () => {
-        let text = await create_summary_prompt(getContext().chat.length-1)
+        const text = await create_summary_prompt(getContext().chat.length-1)
         display_text_modal("Summary Prompt Preview (Last Message)", text);
     })
 
@@ -288,6 +288,11 @@ Available Macros:
     bind_setting('#default_chat_enabled', 'default_chat_enabled', 'boolean');
     bind_setting('#use_global_toggle_state', 'use_global_toggle_state', 'boolean');
 
+    // Operation Queue settings
+    bind_setting('#operation_queue_enabled', 'operation_queue_enabled', 'boolean');
+    bind_setting('#operation_queue_use_lorebook', 'operation_queue_use_lorebook', 'boolean');
+    bind_setting('#operation_queue_display_enabled', 'operation_queue_display_enabled', 'boolean');
+
     // trigger the change event once to update the display at start
     $('#long_term_context_limit').trigger('change');
     $('#short_term_context_limit').trigger('change');
@@ -305,8 +310,8 @@ Available Macros:
     bind_setting('input[name="combined_summary_context_type"]', 'combined_summary_context_type', 'text');
     bind_setting('#combined_summary_completion_preset', 'combined_summary_completion_preset', 'text');
     bind_function('#edit_combined_summary_prompt', async () => {
-        let max_tokens = await get_combined_summary_preset_max_tokens();
-        let description = `
+        const max_tokens = await get_combined_summary_preset_max_tokens();
+        const description = `
 Available Macros:
 <ul style="text-align: left; font-size: smaller;">
     <li><b>{{message}}:</b> The concatenated summaries.</li>
@@ -321,12 +326,12 @@ Available Macros:
     const summary = load_combined_summary();
     
     // Create a popup with editable textarea
-    let ctx = getContext();
-    let title = "Current Combined Summary";
-    let description = "You can edit the combined summary below:";
+    const ctx = getContext();
+    const title = "Current Combined Summary";
+    const description = "You can edit the combined summary below:";
     
     // Create HTML with a textarea but NO custom buttons - we'll handle them using callPopup's default buttons
-    let html = `
+    const html = `
         <div>
             <h3>${title}</h3>
             <p>${description}</p>
@@ -375,7 +380,7 @@ Available Macros:
                 
                 try {
                     toast("Generating new combined summary...", "info");
-                    let newSummary = await generate_combined_summary();
+                    const newSummary = await generate_combined_summary();
                     $('#combined_summary_textarea').val(newSummary || "");
                 } catch (err) {
                     toast("Error generating combined summary: " + err, "error");
@@ -454,7 +459,7 @@ Available Macros:
     $sceneHistoryCount.val(get_settings('scene_summary_history_count') || 1);
     $sceneHistoryCountDisplay.text($sceneHistoryCount.val());
     $sceneHistoryCount.on('input change', function () {
-        let val = Math.max(1, Math.min(99, Number($(this).val()) || 1));
+        const val = Math.max(1, Math.min(99, Number($(this).val()) || 1));
         set_settings('scene_summary_history_count', val);
         save_profile(); // auto-save when changed
         $sceneHistoryCount.val(val);
@@ -469,7 +474,7 @@ Available Macros:
     bind_setting('#scene_summary_error_detection_prompt', 'scene_summary_error_detection_prompt', 'text');
 
     bind_function('#edit_scene_summary_error_detection_prompt', async () => {
-        let description = `
+        const description = `
 Configure the prompt used to verify that scene summaries meet your criteria.
 The prompt should return "VALID" for acceptable summaries and "INVALID" for unacceptable ones.
 
@@ -480,7 +485,7 @@ Available Macros:
         get_user_setting_text_input('scene_summary_error_detection_prompt', 'Edit Scene Summary Error Detection Prompt', description);
     });
     bind_function('#edit_scene_summary_prompt', async () => {
-        let description = `
+        const description = `
 Available Macros:
 <ul style="text-align: left; font-size: smaller;">
     <li><b>{{message}}:</b> The scene content to summarize.</li>
@@ -522,7 +527,7 @@ Available Macros:
     $runningExcludeLatest.val(get_settings('running_scene_summary_exclude_latest') || 1);
     $runningExcludeLatestDisplay.text($runningExcludeLatest.val());
     $runningExcludeLatest.on('input change', function () {
-        let val = Math.max(0, Math.min(5, Number($(this).val()) || 1));
+        const val = Math.max(0, Math.min(5, Number($(this).val()) || 1));
         set_settings('running_scene_summary_exclude_latest', val);
         save_profile();
         $runningExcludeLatest.val(val);
@@ -584,7 +589,7 @@ Available Macros:
 
     // Edit running scene summary prompt button
     bind_function('#edit_running_scene_summary_prompt', async () => {
-        let description = `
+        const description = `
 Configure the prompt used to combine multiple scene summaries into a cohesive narrative memory.
 
 Available Macros:
@@ -626,7 +631,7 @@ Available Macros:
 
     // Edit prompt button
     bind_function('#edit_auto_scene_break_prompt', async () => {
-        let description = `
+        const description = `
 Configure the prompt used to detect scene breaks automatically.
 The prompt should return "true" if the message is a scene break, or "false" if it is not.
 

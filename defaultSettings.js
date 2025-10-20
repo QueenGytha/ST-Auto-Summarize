@@ -1,3 +1,4 @@
+// Testing hooks functionality
 import {
     default_combined_summary_prompt,
     default_prompt,
@@ -124,6 +125,7 @@ Object.assign(default_settings, {
     scene_summary_template: default_scene_template,
     scene_summary_auto_name: true, // Auto-generate scene name when auto-generating scene summary (if not already set)
     scene_summary_auto_name_manual: true, // Auto-generate scene name when manually generating scene summary (if not already set)
+    scene_summary_navigator_toggle: true, // Show scene navigator bar with scene links and operations
     scene_summary_navigator_width: 96, // Width of scene navigator bar in pixels (default: 96px, double the original 48px)
     scene_summary_navigator_font_size: 12, // Font size for scene navigator links in pixels (default: 12px)
     scene_summary_default_collapsed: true, // New scene summaries start collapsed by default (only showing scene name)
@@ -168,5 +170,6 @@ Object.assign(default_settings, {
 
     // --- Operation Queue Settings ---
     operation_queue_enabled: true, // Enable persistent operation queue (survives restarts)
+    operation_queue_use_lorebook: true, // Store queue in lorebook entry (visible) vs chat_metadata (hidden)
     operation_queue_display_enabled: true, // Show queue UI in navbar
 });

@@ -1,4 +1,4 @@
-import { get_settings, set_settings, error, debug, toast_debounced, getContext, CONNECT_API_MAP } from './index.js';
+import { get_settings, error, debug, toast_debounced, getContext, CONNECT_API_MAP } from './index.js';
 
 // Connection profiles
 let connection_profiles_active;
@@ -28,16 +28,16 @@ function check_connection_profiles_active() {
 async function get_current_connection_profile() {
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
     // get the current connection profile
-    let ctx = getContext();
-    let result = await ctx.executeSlashCommandsWithOptions(`/profile`)
+    const ctx = getContext();
+    const result = await ctx.executeSlashCommandsWithOptions(`/profile`)
     return result.pipe
 }
 async function get_connection_profile_api(name) {
     // Get the API for the given connection profile name. If not given, get the current summary profile.
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
     if (name === undefined) name = await get_summary_connection_profile()
-    let ctx = getContext();
-    let result = await ctx.executeSlashCommandsWithOptions(`/profile-get ${name}`)
+    const ctx = getContext();
+    const result = await ctx.executeSlashCommandsWithOptions(`/profile-get ${name}`)
 
     if (!result.pipe) {
         debug(`/profile-get ${name} returned nothing - no connection profile selected`)
@@ -89,15 +89,15 @@ async function set_connection_profile(name) {
     if (get_settings('debug_mode')) {
         toastr.info(`Setting connection profile to "${name}"`);
     }
-    let ctx = getContext();
+    const ctx = getContext();
     await ctx.executeSlashCommandsWithOptions(`/profile ${name}`)
 }
 async function get_connection_profiles() {
     // Get a list of available connection profiles
 
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
-    let ctx = getContext();
-    let result = await ctx.executeSlashCommandsWithOptions(`/profile-list`)
+    const ctx = getContext();
+    const result = await ctx.executeSlashCommandsWithOptions(`/profile-list`)
     try {
         return JSON.parse(result.pipe)
     } catch {
@@ -111,14 +111,14 @@ async function verify_connection_profile(name) {
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
     if (name === "") return true;  // no profile selected, always valid
 
-    let names = await get_connection_profiles()
+    const names = await get_connection_profiles()
     return names.includes(name)
 }
 async function check_connection_profile_valid()  {
     // check whether the current connection profile selected for summarization is valid
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
-    let summary_connection = get_settings('connection_profile')
-    let valid = await verify_connection_profile(summary_connection)
+    const summary_connection = get_settings('connection_profile')
+    const valid = await verify_connection_profile(summary_connection)
     if (!valid) {
         toast_debounced(`Your selected summary connection profile "${summary_connection}" is not valid.`, "warning")
     }

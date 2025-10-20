@@ -14,7 +14,6 @@ import {
 import {
     loadWorldInfo,
     saveWorldInfo,
-    createWorldInfoEntry,
     METADATA_KEY
 } from '../../../world-info.js';
 
@@ -47,6 +46,8 @@ let isInitialized = false;
 let currentQueue = null;
 let queueProcessor = null;
 let uiUpdateCallback = null;
+let isClearing = false;  // Flag to prevent enqueuing during clear
+let queueVersion = 0;  // Incremented on clear to invalidate in-flight operations
 
 /**
  * Initialize the operation queue system
@@ -57,13 +58,53 @@ export async function initOperationQueue() {
         return;
     }
 
-    debug(SUBSYSTEM.QUEUE, 'Initializing operation queue system');
+    log(SUBSYSTEM.QUEUE, '>>> Initializing operation queue system <<<');
+
+    // Load queue from storage (this will create the lorebook entry if needed)
+    log(SUBSYSTEM.QUEUE, 'Loading queue from storage...');
+    await loadQueue();
+
+    // Ensure the queue entry exists in the lorebook
+    log(SUBSYSTEM.QUEUE, 'Checking for queue entry in lorebook...');
+    const queueEntry = await getQueueEntry();
+    if (queueEntry) {
+        log(SUBSYSTEM.QUEUE, `✓ Queue entry exists with UID ${queueEntry.uid}`);
+    } else {
+        log(SUBSYSTEM.QUEUE, '⚠ No lorebook attached yet, queue entry will be created when lorebook is available');
+    }
+
+    isInitialized = true;
+    log(SUBSYSTEM.QUEUE, '✓ Operation queue system initialized successfully');
+}
+
+/**
+ * Reload queue from lorebook (called on chat change)
+ */
+export async function reloadQueue() {
+    if (!isInitialized) {
+        debug(SUBSYSTEM.QUEUE, 'Queue not initialized yet, skipping reload');
+        return;
+    }
+
+    log(SUBSYSTEM.QUEUE, 'Reloading queue from current chat lorebook...');
 
     // Load queue from storage
     await loadQueue();
 
-    isInitialized = true;
-    log(SUBSYSTEM.QUEUE, 'Operation queue system initialized');
+    // Start queue processor if there are pending operations and not paused
+    const pending = getPendingOperations();
+    if (pending.length > 0 && !currentQueue.paused) {
+        if (!queueProcessor) {
+            log(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations, starting processor`);
+            startQueueProcessor();
+        } else {
+            debug(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations but processor already running`);
+        }
+    } else if (pending.length > 0) {
+        debug(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations (paused: ${currentQueue.paused})`);
+    }
+
+    notifyUIUpdate();
 }
 
 /**
@@ -80,9 +121,11 @@ function getAttachedLorebook() {
 async function getQueueEntry() {
     const lorebookName = getAttachedLorebook();
     if (!lorebookName) {
-        debug(SUBSYSTEM.QUEUE, 'No lorebook attached, cannot access queue entry');
+        log(SUBSYSTEM.QUEUE, '⚠ No lorebook attached, cannot access queue entry');
         return null;
     }
+
+    log(SUBSYSTEM.QUEUE, `Lorebook attached: "${lorebookName}"`);
 
     // Load the lorebook
     const worldInfo = await loadWorldInfo(lorebookName);
@@ -91,12 +134,19 @@ async function getQueueEntry() {
         return null;
     }
 
+    // Convert entries to array if it's an object (SillyTavern uses object with UID keys)
+    const entriesArray = Array.isArray(worldInfo.entries)
+        ? worldInfo.entries
+        : Object.values(worldInfo.entries || {});
+
+    log(SUBSYSTEM.QUEUE, `Lorebook loaded, has ${entriesArray.length} entries`);
+
     // Find the queue entry
-    let queueEntry = worldInfo.entries.find(e => e.comment === QUEUE_ENTRY_NAME);
+    let queueEntry = entriesArray.find(e => e.comment === QUEUE_ENTRY_NAME);
 
     // Create the queue entry if it doesn't exist
     if (!queueEntry) {
-        debug(SUBSYSTEM.QUEUE, 'Creating __operation_queue lorebook entry');
+        log(SUBSYSTEM.QUEUE, `Creating ${QUEUE_ENTRY_NAME} lorebook entry...`);
         const emptyQueue = {
             queue: [],
             current_operation_id: null,
@@ -104,7 +154,12 @@ async function getQueueEntry() {
             version: 1
         };
 
-        queueEntry = createWorldInfoEntry(lorebookName, {
+        // Generate a unique UID for the new entry
+        const newUid = Date.now();
+
+        // Create the entry object manually
+        queueEntry = {
+            uid: newUid,
             key: [],
             keysecondary: [],
             content: JSON.stringify(emptyQueue, null, 2),
@@ -114,60 +169,90 @@ async function getQueueEntry() {
             excludeRecursion: true,  // Never trigger other entries
             order: 9999,  // Low priority
             position: 0,
-            depth: 0
-        });
+            depth: 4,
+            selectiveLogic: 0,
+            addMemo: false,
+            displayIndex: newUid,
+            probability: 100,
+            useProbability: true
+        };
 
-        if (!queueEntry) {
-            error(SUBSYSTEM.QUEUE, 'Failed to create queue entry');
-            return null;
+        // Add the entry to the worldInfo.entries object
+        if (!worldInfo.entries) {
+            worldInfo.entries = {};
         }
+        worldInfo.entries[newUid] = queueEntry;
 
         // Save the lorebook with new entry
-        await saveWorldInfo(lorebookName, worldInfo);
-        debug(SUBSYSTEM.QUEUE, 'Created queue entry with UID:', queueEntry.uid);
+        try {
+            await saveWorldInfo(lorebookName, worldInfo, true);
+            log(SUBSYSTEM.QUEUE, `✓ Created queue entry with UID: ${queueEntry.uid}`);
+        } catch (saveErr) {
+            error(SUBSYSTEM.QUEUE, 'Failed to save lorebook after creating queue entry:', saveErr);
+            return null;
+        }
     }
 
     return queueEntry;
 }
 
 /**
- * Load queue from lorebook entry
+ * Load queue from storage (lorebook or chat_metadata based on settings)
  */
 async function loadQueue() {
     try {
-        const queueEntry = await getQueueEntry();
+        const useLorebook = get_settings('operation_queue_use_lorebook') !== false;
+        log(SUBSYSTEM.QUEUE, `Loading queue - mode: ${useLorebook ? 'LOREBOOK' : 'CHAT_METADATA'}`);
 
-        if (!queueEntry) {
-            debug(SUBSYSTEM.QUEUE, 'No queue entry available, using default empty queue');
-            currentQueue = {
-                queue: [],
-                current_operation_id: null,
-                paused: false,
-                version: 1
-            };
-            return;
-        }
+        if (useLorebook) {
+            log(SUBSYSTEM.QUEUE, 'Attempting to get queue entry from lorebook...');
+            // Try to load from lorebook entry
+            const queueEntry = await getQueueEntry();
 
-        // Parse queue from entry content
-        try {
-            currentQueue = JSON.parse(queueEntry.content || '{}');
-            if (!currentQueue.queue) {
-                currentQueue.queue = [];
+            if (queueEntry) {
+                log(SUBSYSTEM.QUEUE, '✓ Found existing queue entry in lorebook');
+                // Parse queue from entry content
+                try {
+                    currentQueue = JSON.parse(queueEntry.content || '{}');
+                    if (!currentQueue.queue) {
+                        currentQueue.queue = [];
+                    }
+                    if (currentQueue.version === undefined) {
+                        currentQueue.version = 1;
+                    }
+                    debug(SUBSYSTEM.QUEUE, `Loaded queue from lorebook with ${currentQueue.queue.length} operations`);
+                } catch (parseErr) {
+                    error(SUBSYSTEM.QUEUE, 'Failed to parse queue entry content:', parseErr);
+                    currentQueue = {
+                        queue: [],
+                        current_operation_id: null,
+                        paused: false,
+                        version: 1
+                    };
+                }
+            } else {
+                // No lorebook entry yet, use empty queue
+                debug(SUBSYSTEM.QUEUE, 'No lorebook queue entry yet, using empty queue');
+                currentQueue = {
+                    queue: [],
+                    current_operation_id: null,
+                    paused: false,
+                    version: 1
+                };
             }
-            if (currentQueue.version === undefined) {
-                currentQueue.version = 1;
+        } else {
+            // Load from chat_metadata (fallback mode)
+            if (!chat_metadata.auto_summarize_operation_queue) {
+                chat_metadata.auto_summarize_operation_queue = {
+                    queue: [],
+                    current_operation_id: null,
+                    paused: false,
+                    version: 1
+                };
             }
-        } catch (parseErr) {
-            error(SUBSYSTEM.QUEUE, 'Failed to parse queue entry content:', parseErr);
-            currentQueue = {
-                queue: [],
-                current_operation_id: null,
-                paused: false,
-                version: 1
-            };
+            currentQueue = chat_metadata.auto_summarize_operation_queue;
+            debug(SUBSYSTEM.QUEUE, `Loaded queue from chat_metadata with ${currentQueue.queue.length} operations`);
         }
-
-        debug(SUBSYSTEM.QUEUE, `Loaded queue with ${currentQueue.queue.length} operations`);
 
         // Clean up any stale in_progress operations (from crashes/restarts)
         let cleanedCount = 0;
@@ -196,36 +281,86 @@ async function loadQueue() {
 }
 
 /**
- * Save queue to lorebook entry
+ * Save queue to storage (lorebook or chat_metadata based on settings)
+ * @param {boolean} force - If true, skip reload and force save current in-memory state
  */
-async function saveQueue() {
+async function saveQueue(force = false) {
     try {
-        const lorebookName = getAttachedLorebook();
-        if (!lorebookName) {
-            debug(SUBSYSTEM.QUEUE, 'No lorebook attached, cannot save');
-            return;
+        const useLorebook = get_settings('operation_queue_use_lorebook') !== false;
+
+        if (useLorebook) {
+            // Save to lorebook entry
+            const lorebookName = getAttachedLorebook();
+            if (!lorebookName) {
+                debug(SUBSYSTEM.QUEUE, 'No lorebook attached, cannot save to lorebook');
+                return;
+            }
+
+            // Ensure the queue entry exists first
+            const existingEntry = await getQueueEntry();
+            if (!existingEntry) {
+                error(SUBSYSTEM.QUEUE, 'Failed to get or create queue entry, cannot save');
+                return;
+            }
+
+            // Load the lorebook fresh to get current state
+            const worldInfo = await loadWorldInfo(lorebookName);
+            if (!worldInfo) {
+                error(SUBSYSTEM.QUEUE, 'Failed to load lorebook:', lorebookName);
+                return;
+            }
+
+            // Convert entries to array if it's an object
+            const entriesArray = Array.isArray(worldInfo.entries)
+                ? worldInfo.entries
+                : Object.values(worldInfo.entries || {});
+
+            // Find the queue entry in the freshly loaded worldInfo
+            const queueEntry = entriesArray.find(e => e.comment === QUEUE_ENTRY_NAME);
+            if (!queueEntry) {
+                error(SUBSYSTEM.QUEUE, 'Queue entry disappeared after creation, cannot save');
+                return;
+            }
+
+            // Reload from lorebook unless this is a forced save (like during clear)
+            // This prevents overwriting changes made by other extensions (e.g. Auto-Lorebooks)
+            if (!force) {
+                try {
+                    const savedQueue = JSON.parse(queueEntry.content || '{}');
+                    if (savedQueue.queue && Array.isArray(savedQueue.queue)) {
+                        currentQueue = savedQueue;
+                        debug(SUBSYSTEM.QUEUE, `Reloaded queue from lorebook before save - has ${currentQueue.queue.length} operations`);
+                    }
+                } catch {
+                    debug(SUBSYSTEM.QUEUE, 'Could not parse existing queue, proceeding with current in-memory queue');
+                }
+            }
+
+            // Update the entry content in the worldInfo structure
+            queueEntry.content = JSON.stringify(currentQueue, null, 2);
+
+            // Also update in the worldInfo.entries object if it's keyed by UID
+            if (!Array.isArray(worldInfo.entries) && worldInfo.entries[queueEntry.uid]) {
+                worldInfo.entries[queueEntry.uid].content = queueEntry.content;
+            }
+
+            // Save the lorebook
+            await saveWorldInfo(lorebookName, worldInfo, true);
+
+            debug(SUBSYSTEM.QUEUE, 'Saved queue to lorebook entry');
+        } else {
+            // Save to chat_metadata (fallback mode)
+            chat_metadata.auto_summarize_operation_queue = currentQueue;
+
+            // Trigger a chat save
+            const ctx = getContext();
+            if (ctx.saveChat) {
+                ctx.saveChat();
+            }
+
+            debug(SUBSYSTEM.QUEUE, 'Saved queue to chat_metadata');
         }
 
-        const worldInfo = await loadWorldInfo(lorebookName);
-        if (!worldInfo) {
-            error(SUBSYSTEM.QUEUE, 'Failed to load lorebook:', lorebookName);
-            return;
-        }
-
-        // Find and update the queue entry
-        const queueEntry = worldInfo.entries.find(e => e.comment === QUEUE_ENTRY_NAME);
-        if (!queueEntry) {
-            error(SUBSYSTEM.QUEUE, 'Queue entry not found, cannot save');
-            return;
-        }
-
-        // Update the entry content
-        queueEntry.content = JSON.stringify(currentQueue, null, 2);
-
-        // Save the lorebook
-        await saveWorldInfo(lorebookName, worldInfo);
-
-        debug(SUBSYSTEM.QUEUE, 'Saved queue to lorebook entry');
         notifyUIUpdate();
     } catch (err) {
         error(SUBSYSTEM.QUEUE, 'Failed to save queue:', err);
@@ -251,6 +386,18 @@ export async function enqueueOperation(type, params, options = {}) {
         await initOperationQueue();
     }
 
+    // Prevent enqueueing operations if queue is being cleared
+    if (isClearing) {
+        debug(SUBSYSTEM.QUEUE, `Rejecting enqueue of ${type} - queue is being cleared`);
+        return null;
+    }
+
+    // Check if queue version has changed (queue was cleared while this was pending)
+    if (options.queueVersion !== undefined && options.queueVersion !== queueVersion) {
+        debug(SUBSYSTEM.QUEUE, `Rejecting enqueue of ${type} - queue was cleared (version mismatch: ${options.queueVersion} !== ${queueVersion})`);
+        return null;
+    }
+
     const operation = {
         id: generateOperationId(),
         type: type,
@@ -261,10 +408,10 @@ export async function enqueueOperation(type, params, options = {}) {
         completed_at: null,
         error: null,
         retries: 0,
-        max_retries: options.max_retries ?? 3,
         priority: options.priority ?? 0,
         dependencies: options.dependencies ?? [],
-        metadata: options.metadata ?? {}
+        metadata: options.metadata ?? {},
+        queueVersion: queueVersion  // Stamp with current version
     };
 
     currentQueue.queue.push(operation);
@@ -388,14 +535,46 @@ export async function clearCompletedOperations() {
 
 /**
  * Clear all operations from queue
+ * Stops queue processor and clears all operations regardless of type or status
  */
 export async function clearAllOperations() {
     const count = currentQueue.queue.length;
+
+    // Set clearing flag to prevent new operations from being enqueued
+    isClearing = true;
+    debug(SUBSYSTEM.QUEUE, 'Setting isClearing flag to prevent new operations during clear');
+
+    // Increment queue version to invalidate any in-flight operations
+    queueVersion++;
+    debug(SUBSYSTEM.QUEUE, `Incremented queue version to ${queueVersion} - invalidating in-flight operations`);
+
+    // Stop the queue processor first to prevent operations from continuing
+    if (queueProcessor) {
+        debug(SUBSYSTEM.QUEUE, 'Stopping queue processor before clearing operations');
+        // Set paused flag to stop processor loop
+        const wasPaused = currentQueue.paused;
+        currentQueue.paused = true;
+
+        // Wait for processor to stop (it checks paused flag on each iteration)
+        await new Promise(resolve => setTimeout(resolve, 100));
+        queueProcessor = null;
+
+        // Restore paused state
+        currentQueue.paused = wasPaused;
+    }
+
+    // Clear all operations regardless of type or status
     currentQueue.queue = [];
     currentQueue.current_operation_id = null;
-    await saveQueue();
 
-    debug(SUBSYSTEM.QUEUE, `Cleared all ${count} operations`);
+    await saveQueue(true);  // Force save without reload
+
+    // Clear the flag after a short delay to allow any in-flight enqueue attempts to be rejected
+    await new Promise(resolve => setTimeout(resolve, 500));
+    isClearing = false;
+    debug(SUBSYSTEM.QUEUE, 'Cleared isClearing flag - enqueue operations now allowed');
+
+    debug(SUBSYSTEM.QUEUE, `Cleared all ${count} operations (including in-progress)`);
     toast(`Cleared all ${count} operation(s)`, 'info');
 
     return count;
@@ -445,6 +624,7 @@ function getNextOperation() {
 
     // Filter out operations with unmet dependencies
     const ready = pending.filter(op => {
+        // Check dependencies
         if (!op.dependencies || op.dependencies.length === 0) {
             return true;
         }
@@ -499,20 +679,31 @@ async function executeOperation(operation) {
         const result = await handler(operation);
         await updateOperationStatus(operation.id, OperationStatus.COMPLETED);
         debug(SUBSYSTEM.QUEUE, `Completed ${operation.type}:`, operation.id);
+
+        // Auto-remove completed operations
+        await removeOperation(operation.id);
+        debug(SUBSYSTEM.QUEUE, `Auto-removed completed operation:`, operation.id);
+
         return result;
     } catch (err) {
         error(SUBSYSTEM.QUEUE, `Failed ${operation.type}:`, operation.id, err);
 
-        // Check if we should retry
-        if (operation.retries < operation.max_retries) {
-            operation.retries++;
-            await updateOperationStatus(operation.id, OperationStatus.PENDING, `Retry ${operation.retries}/${operation.max_retries}: ${err.message || err}`);
-            debug(SUBSYSTEM.QUEUE, `Will retry ${operation.type} (${operation.retries}/${operation.max_retries})`);
-        } else {
-            await updateOperationStatus(operation.id, OperationStatus.FAILED, err.message || String(err));
-        }
+        // Always retry - increment retry counter
+        operation.retries++;
 
-        throw err;
+        // Calculate exponential backoff delay: 10s, 20s, 40s, 80s, 160s, then cap at 5 minutes
+        const backoffDelay = Math.min(10 * Math.pow(2, operation.retries - 1) * 1000, 300000);
+
+        await updateOperationStatus(operation.id, OperationStatus.PENDING, `Retry ${operation.retries} after ${backoffDelay/1000}s: ${err.message || err}`);
+        log(SUBSYSTEM.QUEUE, `⚠️ Operation failed! Waiting ${backoffDelay/1000}s before retry ${operation.retries}`);
+
+        // WAIT the backoff delay before retrying (blocks the entire queue)
+        await saveQueue();
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+
+        // Retry the operation immediately after backoff
+        debug(SUBSYSTEM.QUEUE, `Retrying ${operation.type} after backoff...`);
+        return await executeOperation(operation); // Recursive retry - never give up
     }
 }
 
@@ -545,19 +736,23 @@ function startQueueProcessor() {
                 return;
             }
 
-            // Execute operation
+            // Mark operation as in progress BEFORE saving
             currentQueue.current_operation_id = operation.id;
+            operation.status = OperationStatus.IN_PROGRESS;
+            if (!operation.started_at) {
+                operation.started_at = Date.now();
+            }
             await saveQueue();
 
             try {
                 await executeOperation(operation);
-            } catch (err) {
+            } catch {
                 // Error already handled in executeOperation
                 // Continue processing other operations
             }
 
-            // Small delay between operations
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Delay between operations to avoid rate limiting (5 seconds)
+            await new Promise(resolve => setTimeout(resolve, 5000));
         }
     })();
 }
@@ -599,6 +794,7 @@ export function getQueueStats() {
 
 export default {
     initOperationQueue,
+    reloadQueue,
     enqueueOperation,
     getOperation,
     getAllOperations,

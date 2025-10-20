@@ -3,6 +3,7 @@
 import {
     registerOperationHandler,
     OperationType,
+    enqueueOperation,
 } from './operationQueue.js';
 import {
     summarize_message,
@@ -15,6 +16,7 @@ import {
 } from './autoSceneBreakDetection.js';
 import {
     generateSceneSummary,
+    toggleSceneBreak,
 } from './sceneBreak.js';
 import {
     generate_running_scene_summary,
@@ -28,9 +30,11 @@ import {
     get_data,
     set_data,
     saveChatDebounced,
+    get_settings,
     debug,
     log,
     error,
+    toast,
     SUBSYSTEM,
 } from './index.js';
 
@@ -49,8 +53,7 @@ export function registerAllOperationHandlers() {
     registerOperationHandler(OperationType.SUMMARIZE_MESSAGE, async (operation) => {
         const { index } = operation.params;
         debug(SUBSYSTEM.QUEUE, `Executing SUMMARIZE_MESSAGE for index ${index}`);
-        const result = await summarize_message(index);
-        return result;
+        return await summarize_message(index);
     });
 
     // Validate summary
@@ -70,6 +73,38 @@ export function registerAllOperationHandlers() {
 
         debug(SUBSYSTEM.QUEUE, `Executing DETECT_SCENE_BREAK for index ${index}`);
         const result = await detectSceneBreak(message, index, previousMessage);
+
+        // If scene break detected, actually set it on the message
+        if (result.isSceneBreak) {
+            debug(SUBSYSTEM.QUEUE, `✓ Scene break detected for message ${index}, setting scene break marker`);
+            const rationaleText = result.rationale ? ` - ${result.rationale}` : '';
+            toast(`✓ Scene break at message ${index}${rationaleText}`, 'success');
+
+            toggleSceneBreak(index, get_message_div, getContext, set_data, get_data, saveChatDebounced);
+
+            // Auto-generate scene summary if enabled - ENQUEUE as separate operation
+            if (get_settings('auto_scene_break_generate_summary')) {
+                debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_SUMMARY for message ${index}`);
+
+                // Enqueue summary generation as next operation (high priority so it runs before more detections)
+                const summaryOpId = enqueueOperation(
+                    OperationType.GENERATE_SCENE_SUMMARY,
+                    { index },
+                    {
+                        priority: 10, // High priority - process before more detections
+                        metadata: {
+                            scene_index: index,
+                            triggered_by: 'auto_scene_break_detection'
+                        }
+                    }
+                );
+
+                debug(SUBSYSTEM.QUEUE, `✓ Enqueued GENERATE_SCENE_SUMMARY (${summaryOpId}) for message ${index}`);
+            }
+        } else {
+            debug(SUBSYSTEM.QUEUE, `✗ No scene break for message ${index}`);
+        }
+
         return result;
     });
 
@@ -77,14 +112,26 @@ export function registerAllOperationHandlers() {
     registerOperationHandler(OperationType.GENERATE_SCENE_SUMMARY, async (operation) => {
         const { index } = operation.params;
         debug(SUBSYSTEM.QUEUE, `Executing GENERATE_SCENE_SUMMARY for index ${index}`);
+        toast(`Generating scene summary for message ${index}...`, 'info');
+
+        // Set loading state in summary box
+        const $msgDiv = get_message_div(index);
+        const $summaryBox = $msgDiv.find('.scene-summary-box');
+        if ($summaryBox.length) {
+            $summaryBox.val("Generating scene summary...");
+        }
+
         const summary = await generateSceneSummary(
             index,
             get_message_div,
             getContext,
             get_data,
             set_data,
-            saveChatDebounced
+            saveChatDebounced,
+            true  // skipQueue = true when called from queue handler
         );
+
+        toast(`✓ Scene summary generated for message ${index}`, 'success');
         return { summary };
     });
 

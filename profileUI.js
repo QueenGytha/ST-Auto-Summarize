@@ -57,22 +57,22 @@ function update_save_icon_highlight() {
     }
 }
 function update_profile_section() {
-    let context = getContext()
+    const context = getContext()
 
-    let current_profile = get_settings('profile')
-    let current_character_profile = get_character_profile();
-    let current_chat_profile = get_chat_profile();
-    let profile_options = Object.keys(get_settings('profiles'));
+    const current_profile = get_settings('profile')
+    const current_character_profile = get_character_profile();
+    const current_chat_profile = get_chat_profile();
+    const profile_options = Object.keys(get_settings('profiles'));
 
-    let $choose_profile_dropdown = $(`.${settings_content_class} #profile`).empty();
-    let $character = $('button#character_profile')
-    let $chat = $('button#chat_profile')
-    let $character_icon = $character.find('i')
-    let $chat_icon = $chat.find('i')
+    const $choose_profile_dropdown = $(`.${settings_content_class} #profile`).empty();
+    const $character = $('button#character_profile')
+    const $chat = $('button#chat_profile')
+    const $character_icon = $character.find('i')
+    const $chat_icon = $chat.find('i')
 
 
     // Set the profile dropdowns to reflect the available profiles and the currently chosen one
-    for (let profile of profile_options) {
+    for (const profile of profile_options) {
         // if the current character/chat has a default profile, indicate as such
         let text = profile
         if (profile === current_character_profile) {
@@ -95,9 +95,9 @@ function update_profile_section() {
 
     // button highlights and icons
 
-    let lock_class = 'fa-lock'
-    let unlock_class = 'fa-unlock'
-    let highlight_class = 'button_highlight'
+    const lock_class = 'fa-lock'
+    const unlock_class = 'fa-unlock'
+    const highlight_class = 'button_highlight'
 
     if (current_character_profile === current_profile) {
         $character.addClass(highlight_class);
@@ -121,12 +121,12 @@ function update_profile_section() {
 }
 
 async function update_scene_summary_preset_dropdown() {
-    let $preset_select = $('#scene_summary_completion_preset');
-    let summary_preset = get_settings('scene_summary_completion_preset');
-    let preset_options = await get_presets();
+    const $preset_select = $('#scene_summary_completion_preset');
+    const summary_preset = get_settings('scene_summary_completion_preset');
+    const preset_options = await get_presets();
     $preset_select.empty();
     $preset_select.append(`<option value="">Same as Current</option>`);
-    for (let option of preset_options) {
+    for (const option of preset_options) {
         $preset_select.append(`<option value="${option}">${option}</option>`);
     }
     $preset_select.val(summary_preset);
@@ -134,12 +134,12 @@ async function update_scene_summary_preset_dropdown() {
 }
 
 async function update_auto_scene_break_preset_dropdown() {
-    let $preset_select = $('#auto_scene_break_completion_preset');
-    let summary_preset = get_settings('auto_scene_break_completion_preset');
-    let preset_options = await get_presets();
+    const $preset_select = $('#auto_scene_break_completion_preset');
+    const summary_preset = get_settings('auto_scene_break_completion_preset');
+    const preset_options = await get_presets();
     $preset_select.empty();
     $preset_select.append(`<option value="">Same as Current</option>`);
-    for (let option of preset_options) {
+    for (const option of preset_options) {
         $preset_select.append(`<option value="${option}">${option}</option>`);
     }
     $preset_select.val(summary_preset);
@@ -147,13 +147,13 @@ async function update_auto_scene_break_preset_dropdown() {
 }
 
 async function update_auto_scene_break_connection_profile_dropdown() {
-    let $connection_select = $('#auto_scene_break_connection_profile');
-    let summary_connection = get_settings('auto_scene_break_connection_profile');
-    let connection_options = await get_connection_profiles();
+    const $connection_select = $('#auto_scene_break_connection_profile');
+    const summary_connection = get_settings('auto_scene_break_connection_profile');
+    const connection_options = await get_connection_profiles();
     $connection_select.empty();
     $connection_select.append(`<option value="">Same as Current</option>`);
     if (connection_options && Array.isArray(connection_options)) {
-        for (let option of connection_options) {
+        for (const option of connection_options) {
             $connection_select.append(`<option value="${option}">${option}</option>`);
         }
     }
@@ -163,12 +163,12 @@ async function update_auto_scene_break_connection_profile_dropdown() {
 
 async function update_preset_dropdown() {
     // set the completion preset dropdown
-    let $preset_select = $(`.${settings_content_class} #completion_preset`);
-    let summary_preset = get_settings('completion_preset')
-    let preset_options = await get_presets()
+    const $preset_select = $(`.${settings_content_class} #completion_preset`);
+    const summary_preset = get_settings('completion_preset')
+    const preset_options = await get_presets()
     $preset_select.empty();
     $preset_select.append(`<option value="">Same as Current</option>`)
-    for (let option of preset_options) {  // construct the dropdown options
+    for (const option of preset_options) {  // construct the dropdown options
         $preset_select.append(`<option value="${option}">${option}</option>`)
     }
     $preset_select.val(summary_preset)
@@ -178,12 +178,12 @@ async function update_preset_dropdown() {
 
 }
 async function update_combined_summary_preset_dropdown() {
-    let $preset_select = $(`.${settings_content_class} #combined_summary_completion_preset`);
-    let summary_preset = get_settings('combined_summary_completion_preset');
-    let preset_options = await get_presets();
+    const $preset_select = $(`.${settings_content_class} #combined_summary_completion_preset`);
+    const summary_preset = get_settings('combined_summary_completion_preset');
+    const preset_options = await get_presets();
     $preset_select.empty();
     $preset_select.append(`<option value="">Same as Current</option>`);
-    for (let option of preset_options) {
+    for (const option of preset_options) {
         $preset_select.append(`<option value="${option}">${option}</option>`);
     }
     $preset_select.val(summary_preset);
@@ -193,16 +193,16 @@ async function update_combined_summary_preset_dropdown() {
 }
 async function update_connection_profile_dropdown() {
     // set the completion preset dropdown
-    let $connection_select = $(`.${settings_content_class} #connection_profile`);
-    let summary_connection = get_settings('connection_profile')
+    const $connection_select = $(`.${settings_content_class} #connection_profile`);
+    const summary_connection = get_settings('connection_profile')
     
-    let connection_options = await get_connection_profiles()
+    const connection_options = await get_connection_profiles()
     
     $connection_select.empty();
     $connection_select.append(`<option value="">Same as Current</option>`)
     
     if (connection_options && Array.isArray(connection_options)) {
-        for (let option of connection_options) {  // construct the dropdown options
+        for (const option of connection_options) {  // construct the dropdown options
             $connection_select.append(`<option value="${option}">${option}</option>`)
         }
     }
@@ -214,18 +214,18 @@ async function update_connection_profile_dropdown() {
 
 async function update_error_detection_preset_dropdown() {
     // Set the completion preset dropdown for error detection
-    let $regular_preset_select = $(`.${settings_content_class} #regular_summary_error_detection_preset`);
-    let $scene_preset_select = $(`.${settings_content_class} #scene_summary_error_detection_preset`);
-    let $combined_preset_select = $(`.${settings_content_class} #combined_summary_error_detection_preset`);
-    let regular_preset = get_settings('regular_summary_error_detection_preset');
-    let scene_preset = get_settings('scene_summary_error_detection_preset');
-    let combined_preset = get_settings('combined_summary_error_detection_preset');
-    let preset_options = await get_presets();
+    const $regular_preset_select = $(`.${settings_content_class} #regular_summary_error_detection_preset`);
+    const $scene_preset_select = $(`.${settings_content_class} #scene_summary_error_detection_preset`);
+    const $combined_preset_select = $(`.${settings_content_class} #combined_summary_error_detection_preset`);
+    const regular_preset = get_settings('regular_summary_error_detection_preset');
+    const scene_preset = get_settings('scene_summary_error_detection_preset');
+    const combined_preset = get_settings('combined_summary_error_detection_preset');
+    const preset_options = await get_presets();
 
     // Update regular summary error detection preset dropdown
     $regular_preset_select.empty();
     $regular_preset_select.append(`<option value="">Same as Summary</option>`);
-    for (let option of preset_options) {
+    for (const option of preset_options) {
         $regular_preset_select.append(`<option value="${option}">${option}</option>`);
     }
     $regular_preset_select.val(regular_preset);
@@ -234,7 +234,7 @@ async function update_error_detection_preset_dropdown() {
     // Update scene summary error detection preset dropdown
     $scene_preset_select.empty();
     $scene_preset_select.append(`<option value="">Same as Scene Summary</option>`);
-    for (let option of preset_options) {
+    for (const option of preset_options) {
         $scene_preset_select.append(`<option value="${option}">${option}</option>`);
     }
     $scene_preset_select.val(scene_preset);
@@ -243,7 +243,7 @@ async function update_error_detection_preset_dropdown() {
     // Update combined summary error detection preset dropdown
     $combined_preset_select.empty();
     $combined_preset_select.append(`<option value="">Same as Combined Summary</option>`);
-    for (let option of preset_options) {
+    for (const option of preset_options) {
         $combined_preset_select.append(`<option value="${option}">${option}</option>`);
     }
     $combined_preset_select.val(combined_preset);
@@ -263,12 +263,12 @@ function refresh_settings() {
     update_error_detection_preset_dropdown();
     
     // Enable/disable error detection fields based on master toggle
-    let error_detection_enabled = get_settings('error_detection_enabled');
+    const error_detection_enabled = get_settings('error_detection_enabled');
     $(`.${settings_content_class} .error_detection_setting`).prop('disabled', !error_detection_enabled);
     
     // Enable/disable type-specific error detection settings
-    let regular_error_enabled = get_settings('regular_summary_error_detection_enabled');
-    let combined_error_enabled = get_settings('combined_summary_error_detection_enabled');
+    const regular_error_enabled = get_settings('regular_summary_error_detection_enabled');
+    const combined_error_enabled = get_settings('combined_summary_error_detection_enabled');
     
     $(`.${settings_content_class} .regular_error_detection_setting`).prop('disabled', !error_detection_enabled || !regular_error_enabled);
     $(`.${settings_content_class} .combined_error_detection_setting`).prop('disabled', !error_detection_enabled || !combined_error_enabled);
@@ -298,8 +298,8 @@ function refresh_settings() {
     }
 
     // auto_summarize_message_limit must be >= auto_summarize_batch_size (unless the limit is disabled, i.e. -1)
-    let auto_limit = get_settings('auto_summarize_message_limit')
-    let batch_size = get_settings('auto_summarize_batch_size')
+    const auto_limit = get_settings('auto_summarize_message_limit')
+    const batch_size = get_settings('auto_summarize_batch_size')
     if (auto_limit >= 0 && (auto_limit < batch_size)) {
         set_settings('auto_summarize_message_limit', get_settings('auto_summarize_batch_size'));
         toast("The auto-summarize message limit must be greater than or equal to the batch size.", "warning")
@@ -312,7 +312,7 @@ function refresh_settings() {
     update_profile_section()
 
     // iterate through the settings map and set each element to the current setting value
-    for (let [key, [element, type]] of Object.entries(settings_ui_map)) {
+    for (const [key, [element, type]] of Object.entries(settings_ui_map)) {
         set_setting_ui_element(key, element, type);
     }
 
@@ -321,7 +321,7 @@ function refresh_settings() {
         $(`.${settings_content_class} .settings_input`).prop('disabled', false);  // enable all settings
 
         // when auto-summarize is disabled, related settings get disabled
-        let auto_summarize = get_settings('auto_summarize');
+        const auto_summarize = get_settings('auto_summarize');
         get_settings_element('auto_summarize_on_send')?.prop('disabled', !auto_summarize)
         get_settings_element('auto_summarize_message_limit')?.prop('disabled', !auto_summarize);
         get_settings_element('auto_summarize_batch_size')?.prop('disabled', !auto_summarize);
@@ -330,7 +330,7 @@ function refresh_settings() {
 
 
         // If message history is disabled, disable the relevant settings
-        let history_disabled = get_settings('include_message_history_mode') === "none";
+        const history_disabled = get_settings('include_message_history_mode') === "none";
         get_settings_element('include_message_history')?.prop('disabled', history_disabled)
         get_settings_element('include_user_messages_in_history')?.prop('disabled', history_disabled)
         get_settings_element('preview_message_history')?.prop('disabled', history_disabled)
@@ -340,7 +340,7 @@ function refresh_settings() {
         }
 
         // If not excluding message, then disable the option to preserve the last user message
-        let excluding_messages = get_settings('exclude_messages_after_threshold')
+        const excluding_messages = get_settings('exclude_messages_after_threshold')
         get_settings_element('keep_last_user_message')?.prop('disabled', !excluding_messages)
 
 
@@ -357,12 +357,12 @@ function refresh_settings() {
 }
 
 async function update_running_scene_summary_preset_dropdown() {
-    let $preset_select = $('#running_scene_summary_completion_preset');
-    let summary_preset = get_settings('running_scene_summary_completion_preset');
-    let preset_options = await get_presets();
+    const $preset_select = $('#running_scene_summary_completion_preset');
+    const summary_preset = get_settings('running_scene_summary_completion_preset');
+    const preset_options = await get_presets();
     $preset_select.empty();
     $preset_select.append(`<option value="">Same as Current</option>`);
-    for (let option of preset_options) {
+    for (const option of preset_options) {
         $preset_select.append(`<option value="${option}">${option}</option>`);
     }
     $preset_select.val(summary_preset);
@@ -370,13 +370,13 @@ async function update_running_scene_summary_preset_dropdown() {
 }
 
 async function update_running_scene_summary_connection_profile_dropdown() {
-    let $connection_select = $('#running_scene_summary_connection_profile');
-    let summary_connection = get_settings('running_scene_summary_connection_profile');
-    let connection_options = await get_connection_profiles();
+    const $connection_select = $('#running_scene_summary_connection_profile');
+    const summary_connection = get_settings('running_scene_summary_connection_profile');
+    const connection_options = await get_connection_profiles();
     $connection_select.empty();
     $connection_select.append(`<option value="">Same as Current</option>`);
     if (connection_options && Array.isArray(connection_options)) {
-        for (let option of connection_options) {
+        for (const option of connection_options) {
             $connection_select.append(`<option value="${option}">${option}</option>`);
         }
     }

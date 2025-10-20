@@ -25,9 +25,9 @@ import {
 function initialize_message_buttons() {
     // Add the message buttons to the chat messages
     debug("Initializing message buttons")
-    let ctx = getContext()
+    const ctx = getContext()
 
-    let html = `
+    const html = `
 <div title="Remember (toggle inclusion of summary in long-term memory)" class="mes_button ${remember_button_class} fa-solid fa-brain" tabindex="0"></div>
 <div title="Force Exclude (toggle inclusion of summary from all memory)" class="mes_button ${forget_button_class} fa-solid fa-ban" tabindex="0"></div>
 <div title="Edit Summary" class="mes_button ${edit_button_class} fa-solid fa-pen-fancy" tabindex="0"></div>
@@ -38,7 +38,7 @@ function initialize_message_buttons() {
     $("#message_template .mes_buttons .extraMesButtons").prepend(html);
 
     // button events
-    let $chat = $("div#chat")
+    const $chat = $("div#chat")
     $chat.on("click", `.${remember_button_class}`, async function () {
         const message_block = $(this).closest(".mes");
         const message_id = Number(message_block.attr("mesid"));
@@ -75,15 +75,14 @@ function initialize_group_member_buttons() {
     // Insert a button into the group member selection to disable summarization
     debug("Initializing group member buttons")
 
-    let $template = $('#group_member_template').find('.group_member_icon')
-    let $button = $(`<div title="Toggle summarization for memory" class="right_menu_button fa-solid fa-lg fa-brain ${group_member_enable_button}"></div>`)
+    const $template = $('#group_member_template').find('.group_member_icon')
+    const $button = $(`<div title="Toggle summarization for memory" class="right_menu_button fa-solid fa-lg fa-brain ${group_member_enable_button}"></div>`)
 
     // add listeners
     $(document).on("click", `.${group_member_enable_button}`, (e) => {
 
-        let member_block = $(e.target).closest('.group_member');
-        let char_key = member_block.data('id')
-        let char_id = member_block.attr('chid')
+        const member_block = $(e.target).closest('.group_member');
+        const char_key = member_block.data('id')
 
         if (!char_key) {
             error("Character key not found in group member block.")
@@ -98,7 +97,7 @@ function initialize_group_member_buttons() {
 }
 function set_character_enabled_button_states() {
     // for each character in the group chat, set the button state based on their enabled status
-    let $enable_buttons = $(`#rm_group_members`).find(`.${group_member_enable_button}`)
+    const $enable_buttons = $(`#rm_group_members`).find(`.${group_member_enable_button}`)
 
     // if we are creating a new group (openGroupId is undefined), then hide the buttons
     if (openGroupId === undefined) {
@@ -107,10 +106,10 @@ function set_character_enabled_button_states() {
     }
 
     // set the state of each button
-    for (let button of $enable_buttons) {
-        let member_block = $(button).closest('.group_member');
-        let char_key = member_block.data('id')
-        let enabled = character_enabled(char_key)
+    for (const button of $enable_buttons) {
+        const member_block = $(button).closest('.group_member');
+        const char_key = member_block.data('id')
+        const enabled = character_enabled(char_key)
         if (enabled) {
             $(button).addClass(group_member_enable_button_highlight)
         } else {
@@ -120,14 +119,14 @@ function set_character_enabled_button_states() {
 }
 
 function add_menu_button(text, fa_icon, callback, hover=null) {
-    let $button = $(`
+    const $button = $(`
     <div class="list-group-item flex-container flexGap5 interactable" title="${hover ?? text}" tabindex="0">
         <i class="${fa_icon}"></i>
         <span>${text}</span>
     </div>
     `)
 
-    let $extensions_menu = $('#extensionsMenu');
+    const $extensions_menu = $('#extensionsMenu');
     if (!$extensions_menu.length) {
         error('Could not find the extensions menu');
     }

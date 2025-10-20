@@ -34,7 +34,6 @@ export function queueSummarizeMessage(index, options = {}) {
         { index },
         {
             priority: options.priority ?? 0,
-            max_retries: options.max_retries ?? 3,
             dependencies: options.dependencies ?? [],
             metadata: {
                 message_index: index,
@@ -77,7 +76,6 @@ export function queueValidateSummary(summary, type, options = {}) {
         { summary, type },
         {
             priority: options.priority ?? 1, // Higher priority for validation
-            max_retries: options.max_retries ?? 2,
             dependencies: options.dependencies ?? [],
             metadata: {
                 validation_type: type,
@@ -104,7 +102,6 @@ export function queueDetectSceneBreak(index, options = {}) {
         { index },
         {
             priority: options.priority ?? 0,
-            max_retries: options.max_retries ?? 5, // More retries for scene detection
             dependencies: options.dependencies ?? [],
             metadata: {
                 message_index: index,
@@ -146,7 +143,6 @@ export function queueGenerateSceneSummary(index, options = {}) {
         { index },
         {
             priority: options.priority ?? 0,
-            max_retries: options.max_retries ?? 3,
             dependencies: options.dependencies ?? [],
             metadata: {
                 scene_index: index,
@@ -172,7 +168,6 @@ export function queueGenerateRunningSummary(options = {}) {
         {},
         {
             priority: options.priority ?? 0,
-            max_retries: options.max_retries ?? 3,
             dependencies: options.dependencies ?? [],
             metadata: {
                 ...options.metadata
@@ -198,7 +193,6 @@ export function queueCombineSceneWithRunning(index, options = {}) {
         { index },
         {
             priority: options.priority ?? 0,
-            max_retries: options.max_retries ?? 3,
             dependencies: options.dependencies ?? [],
             metadata: {
                 scene_index: index,
@@ -224,7 +218,6 @@ export function queueGenerateCombinedSummary(options = {}) {
         {},
         {
             priority: options.priority ?? 0,
-            max_retries: options.max_retries ?? 3,
             dependencies: options.dependencies ?? [],
             metadata: {
                 ...options.metadata

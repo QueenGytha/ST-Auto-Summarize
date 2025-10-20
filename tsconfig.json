@@ -1,0 +1,54 @@
+{
+  "compilerOptions": {
+    // Enable type checking for JavaScript files
+    "checkJs": true,
+
+    // Don't emit output files (we're only type-checking)
+    "noEmit": true,
+
+    // Target modern JavaScript
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": ["ES2022", "DOM"],
+
+    // Module resolution
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+
+    // Strict type checking (helps catch AI-generated code issues)
+    "strict": false,  // Start lenient, can be increased later
+    "noImplicitAny": false,  // Allow implicit any for now
+    "strictNullChecks": true,  // Catch null/undefined errors
+    "strictFunctionTypes": true,  // Enforce function type compatibility
+
+    // Additional checks
+    "noUnusedLocals": true,  // Catch unused variables
+    "noUnusedParameters": false,  // Allow unused parameters (common in callbacks)
+    "noImplicitReturns": true,  // Ensure all code paths return a value
+    "noFallthroughCasesInSwitch": true,  // Catch missing breaks in switch
+
+    // Allow JS files and skip lib checking
+    "allowJs": true,
+    "skipLibCheck": true,
+
+    // Support for module imports
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    // Base URL for module resolution
+    "baseUrl": ".",
+    "paths": {
+      "../../../../script.js": ["../../../../script.js"],
+      "../../../*": ["../../../*"]
+    }
+  },
+  "include": [
+    "*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "../../../../lib",
+    "../../../world-info.js",
+    "../../../../script.js"
+  ]
+}

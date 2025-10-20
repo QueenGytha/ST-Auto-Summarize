@@ -61,13 +61,13 @@ function soft_reset_settings() {
     );
 
     // check for any missing profiles
-    let profiles = get_settings('profiles');
+    const profiles = get_settings('profiles');
     if (Object.keys(profiles).length === 0) {
         log("No profiles found, creating default profile.")
         profiles['Default'] = structuredClone(default_settings);
         set_settings('profiles', profiles);
     } else { // for each existing profile, add any missing default settings without overwriting existing settings
-        for (let [profile, settings] of Object.entries(profiles)) {
+        for (const [profile, settings] of Object.entries(profiles)) {
             profiles[profile] = Object.assign(structuredClone(default_settings), settings);
         }
         set_settings('profiles', profiles);
@@ -106,9 +106,9 @@ function get_settings_element(key) {
 }
 async function get_manifest() {
     // Get the manifest.json for the extension
-    let module_dir = get_extension_directory();
-    let path = `${module_dir}/manifest.json`
-    let response = await fetch(path)
+    const module_dir = get_extension_directory();
+    const path = `${module_dir}/manifest.json`
+    const response = await fetch(path)
     if (response.ok) {
         return await response.json();
     }
@@ -118,9 +118,9 @@ async function load_settings_html() {
     // fetch the settings html file and append it to the settings div.
     log("Loading settings.html...")
 
-    let module_dir = get_extension_directory()
-    let path = `${module_dir}/settings.html`
-    let found = await $.get(path).then(async response => {
+    const module_dir = get_extension_directory()
+    const path = `${module_dir}/settings.html`
+    const found = await $.get(path).then(async response => {
         log(`Loaded settings.html at "${path}"`)
         $("#extensions_settings2").append(response);  // load html into the settings div\
         return true
@@ -134,7 +134,7 @@ async function load_settings_html() {
 
 function chat_enabled() {
     // check if the extension is enabled in the current chat
-    let context = getContext();
+    const context = getContext();
 
     // global state
     if (get_settings('use_global_toggle_state')) {
@@ -146,7 +146,7 @@ function chat_enabled() {
 }
 function toggle_chat_enabled(value=null) {
     // Change the state of the extension. If value is null, toggle. Otherwise, set to the given value
-    let current = chat_enabled();
+    const current = chat_enabled();
 
     if (value === null) {  // toggle
         value = !current;
@@ -158,8 +158,8 @@ function toggle_chat_enabled(value=null) {
     if (get_settings('use_global_toggle_state')) {   // using the global state - update the global state
         set_settings('global_toggle_state', value);
     } else {  // using per-chat state - update the chat state
-        let enabled = get_settings('chats_enabled');
-        let context = getContext();
+        const enabled = get_settings('chats_enabled');
+        const context = getContext();
         enabled[context.chatId] = value;
         set_settings('chats_enabled', enabled);
     }
@@ -183,23 +183,23 @@ function toggle_chat_enabled(value=null) {
 }
 function character_enabled(character_key) {
     // check if the given character is enabled for summarization in the current chat
-    let group_id = selected_group
+    const group_id = selected_group
     if (selected_group === null) return true;  // not in group chat, always enabled
 
-    let disabled_characters_settings = get_settings('disabled_group_characters')
-    let disabled_characters = disabled_characters_settings[group_id]
+    const disabled_characters_settings = get_settings('disabled_group_characters')
+    const disabled_characters = disabled_characters_settings[group_id]
     if (!disabled_characters) return true;
     return !disabled_characters.includes(character_key)
 
 }
 function toggle_character_enabled(character_key) {
     // Toggle whether the given character is enabled for summarization in the current chat
-    let group_id = selected_group
+    const group_id = selected_group
     if (group_id === undefined) return true;  // not in group chat, always enabled
 
-    let disabled_characters_settings = get_settings('disabled_group_characters')
-    let disabled_characters = disabled_characters_settings[group_id] || []
-    let disabled = disabled_characters.includes(character_key)
+    const disabled_characters_settings = get_settings('disabled_group_characters')
+    const disabled_characters = disabled_characters_settings[group_id] || []
+    const disabled = disabled_characters.includes(character_key)
 
     if (disabled) {  // if currently disabled, enable by removing it from the disabled set
         disabled_characters.splice(disabled_characters.indexOf(character_key), 1);

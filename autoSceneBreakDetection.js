@@ -287,7 +287,7 @@ async function detectSceneBreakWithRetry(message, messageIndex, previousMessage 
                 try {
                     await interruptibleDelay(backoffDelay, cancellationToken);
                     error('***** Backoff complete, retrying message', messageIndex, '*****');
-                } catch (cancelErr) {
+                } catch {
                     // Delay was interrupted by cancellation
                     error('***** Backoff cancelled - user aborted *****');
                     throw new Error('ABORTED');
@@ -330,6 +330,35 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
         return;
     }
 
+    // Find existing visible scene breaks to avoid reprocessing
+    let latestVisibleSceneBreakIndex = -1;
+    for (let i = 0; i < chat.length; i++) {
+        const message = chat[i];
+        const hasSceneBreak = get_data(message, 'scene_break');
+        const isVisible = get_data(message, 'scene_break_visible');
+
+        // Scene break is visible if: scene_break is true AND (scene_break_visible is undefined OR true)
+        if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
+            latestVisibleSceneBreakIndex = i;
+            debug(SUBSYSTEM.SCENE, 'Found visible scene break at index', i);
+        }
+    }
+
+    // Mark all messages up to and including the latest visible scene break as checked
+    if (latestVisibleSceneBreakIndex >= 0) {
+        log(SUBSYSTEM.SCENE, 'Latest visible scene break found at index', latestVisibleSceneBreakIndex);
+        log(SUBSYSTEM.SCENE, 'Marking messages 0 to', latestVisibleSceneBreakIndex, 'as already checked');
+
+        for (let i = 0; i <= latestVisibleSceneBreakIndex; i++) {
+            set_data(chat[i], 'auto_scene_break_checked', true);
+        }
+
+        saveChatDebounced();
+        toast(`Marked ${latestVisibleSceneBreakIndex + 1} messages before latest scene break as already checked`, 'info');
+    } else {
+        debug(SUBSYSTEM.SCENE, 'No visible scene breaks found - will scan from beginning');
+    }
+
     // Get settings
     const offset = Number(get_settings('auto_scene_break_message_offset')) ?? 0;
     const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'user';
@@ -340,6 +369,42 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
     const end = endIndex !== null ? endIndex : latestIndex;
 
     log(SUBSYSTEM.SCENE, 'Processing messages', start, 'to', end, '(latest:', latestIndex, ', offset:', offset, ', checking:', checkWhich, ')');
+
+    // Check if operation queue is enabled
+    const queueEnabled = get_settings('operation_queue_enabled') !== false;
+    if (queueEnabled) {
+        log(SUBSYSTEM.SCENE, '[Queue] Operation queue enabled, queueing scene break detections instead of executing directly');
+
+        // Import queue integration
+        const { queueDetectSceneBreaks } = await import('./queueIntegration.js');
+
+        // Collect indexes to check
+        const indexesToCheck = [];
+        for (let i = start; i <= end; i++) {
+            if (shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich)) {
+                indexesToCheck.push(i);
+            }
+        }
+
+        if (indexesToCheck.length === 0) {
+            toast(`No messages to check (all already scanned or filtered out)`, 'info');
+            return;
+        }
+
+        // Queue all scene break detections
+        const operationIds = queueDetectSceneBreaks(indexesToCheck);
+
+        if (operationIds && operationIds.length > 0) {
+            log(SUBSYSTEM.SCENE, `[Queue] Queued ${operationIds.length} scene break detection operations`);
+            toast(`Queued ${operationIds.length} scene break detection(s)`, 'info');
+            return; // Operations will be processed by queue
+        }
+
+        log(SUBSYSTEM.SCENE, '[Queue] Failed to queue operations, falling back to direct execution');
+    }
+
+    // Fallback to direct execution if queue disabled or queueing failed
+    log(SUBSYSTEM.SCENE, 'Executing scene break detection directly (queue disabled or unavailable)');
 
     // Create a new cancellation token for this scan
     // This allows us to cancel delays when user aborts
@@ -428,7 +493,7 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
 
                         try {
                             await interruptibleDelay(5000, cancellationToken);
-                        } catch (cancelErr) {
+                        } catch {
                             error('Pre-summary delay cancelled - user aborted');
                             throw new Error('ABORTED');
                         }
@@ -470,7 +535,7 @@ export async function processAutoSceneBreakDetection(startIndex = null, endIndex
             if (i < end) {
                 try {
                     await interruptibleDelay(5000, cancellationToken);
-                } catch (cancelErr) {
+                } catch {
                     // Delay was interrupted - user aborted
                     error('Between-message delay cancelled - user aborted');
                     throw new Error('ABORTED');

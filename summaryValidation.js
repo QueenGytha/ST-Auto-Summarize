@@ -21,7 +21,7 @@ async function validate_summary(summary, type = "regular") {
     debug(SUBSYSTEM.VALIDATION, `Validating ${type} summary...`);
     
     // Ensure chat is blocked during validation
-    let ctx = getContext();
+    const ctx = getContext();
     if (get_settings('block_chat')) {
         ctx.deactivateSendButtons();
     }

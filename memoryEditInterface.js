@@ -182,20 +182,20 @@ class MemoryEditInterface {
 
         this.$mass_select_checkbox = this.$content.find('#mass_select')
         this.$mass_select_checkbox.on('change', () => {
-            let checked = this.$mass_select_checkbox.is(':checked')
-            let indexes = this.global_selection() ? this.filtered : this.displayed
+            const checked = this.$mass_select_checkbox.is(':checked')
+            const indexes = this.global_selection() ? this.filtered : this.displayed
             this.toggle_selected(indexes, checked)
         })
 
         this.update_regex_section()
 
         this.update_filter_counts()
-        for (let [id, data] of Object.entries(this.filter_bar)) {
-            let select_button_id = `select_${id}`
-            let filter_checkbox_id = `filter_${id}`
-            let checked = this.settings[id] ?? data.default
+        for (const [id, data] of Object.entries(this.filter_bar)) {
+            const select_button_id = `select_${id}`
+            const filter_checkbox_id = `filter_${id}`
+            const checked = this.settings[id] ?? data.default
 
-            let $el = $(`
+            const $el = $(`
 <div class="filter_box flex1">
     <label class="checkbox_label" title="${data.title}">
         <input id="${filter_checkbox_id}" type="checkbox" ${checked ? "checked" : ""}/>
@@ -208,8 +208,8 @@ class MemoryEditInterface {
 
             this.$content.find('#filter_bar').append($el)
 
-            let $select = $el.find("#"+select_button_id)
-            let $filter = $el.find("#"+filter_checkbox_id)
+            const $select = $el.find("#"+select_button_id)
+            const $filter = $el.find("#"+filter_checkbox_id)
 
             data.filtered = () => $filter.is(':checked')
 
@@ -219,10 +219,10 @@ class MemoryEditInterface {
             })
 
             $select.on('click', () => {
-                let all_indexes = this.global_selection() ? this.filtered : this.displayed
-                let select = []
-                for (let i of all_indexes) {
-                    let message = this.ctx.chat[i];
+                const all_indexes = this.global_selection() ? this.filtered : this.displayed
+                const select = []
+                for (const i of all_indexes) {
+                    const message = this.ctx.chat[i];
                     if (data.check(message)) {
                         select.push(i);
                     }
@@ -242,7 +242,7 @@ class MemoryEditInterface {
             this.update_table()
         })
         this.$content.find(`#bulk_summarize`).on('click', async () => {
-            let indexes = Array.from(this.selected).sort()
+            const indexes = Array.from(this.selected).sort()
             await summarize_messages(indexes);
             this.update_table()
         })
@@ -258,11 +258,11 @@ class MemoryEditInterface {
         })
         this.$content.find('#preview_memory_state').on('click', () => display_injection_preview())
 
-        let self = this;
+        const self = this;
         this.$content.on('change', 'tr textarea', function () {
-            let new_memory = $(this).val();
-            let message_id = Number($(this).closest('tr').attr('message_id'));
-            let message = self.ctx.chat[message_id]
+            const new_memory = $(this).val();
+            const message_id = Number($(this).closest('tr').attr('message_id'));
+            const message = self.ctx.chat[message_id]
             edit_memory(message, new_memory)
             self.update_table()
         }).on("input", 'tr textarea', function () {
@@ -270,21 +270,21 @@ class MemoryEditInterface {
             this.style.height = this.scrollHeight + "px";
         });
         this.$content.on('click', 'input.interface_message_select', function () {
-            let index = Number(this.value);
+            const index = Number(this.value);
             self.toggle_selected([index])
         })
         this.$content.on("click", `tr .${remember_button_class}`, function () {
-            let message_id = Number($(this).closest('tr').attr('message_id'));
+            const message_id = Number($(this).closest('tr').attr('message_id'));
             remember_message_toggle(message_id);
             self.update_table()
         });
         this.$content.on("click", `tr .${forget_button_class}`, function () {
-            let message_id = Number($(this).closest('tr').attr('message_id'));
+            const message_id = Number($(this).closest('tr').attr('message_id'));
             forget_message_toggle(message_id);
             self.update_table()
         })
         this.$content.on("click", `tr .${summarize_button_class}`, async function () {
-            let message_id = Number($(this).closest('tr').attr('message_id'));
+            const message_id = Number($(this).closest('tr').attr('message_id'));
             await summarize_messages(message_id);
         });
     }
@@ -294,7 +294,7 @@ class MemoryEditInterface {
         this.update_filters()
         this.selected.clear()
         this.update_selected()
-        let result = this.popup.show();
+        const result = this.popup.show();
         this.update_table()
         this.$content.find('tr textarea').each(function () {
             this.style.height = 'auto'
@@ -315,8 +315,8 @@ class MemoryEditInterface {
     }
 
     clear() {
-        let $rows = this.$table_body.find('tr')
-        for (let row of $rows) {
+        const $rows = this.$table_body.find('tr')
+        for (const row of $rows) {
             row.remove()
         }
     }
@@ -326,7 +326,7 @@ class MemoryEditInterface {
         debug("Updating memory interface...")
         let $row;
         let $previous_row;
-        for (let i of this.displayed) {
+        for (const i of this.displayed) {
             $row = this.update_message_visuals(i, $previous_row)
             $previous_row = $row
         }
@@ -335,17 +335,17 @@ class MemoryEditInterface {
     }
     update_filters(preserve_page=false) {
         log("Updating interface filters...")
-        let filter_no_summary = this.filter_bar.no_summary.filtered()
-        let filter_short_term = this.filter_bar.short_term.filtered()
-        let filter_long_term = this.filter_bar.long_term.filtered()
-        let filter_excluded = this.filter_bar.excluded.filtered()
-        let filter_force_excluded = this.filter_bar.force_excluded.filtered()
-        let filter_edited = this.filter_bar.edited.filtered()
-        let filter_errors = this.filter_bar.errors.filtered()
-        let filter_user = this.filter_bar.user.filtered()
+        const filter_no_summary = this.filter_bar.no_summary.filtered()
+        const filter_short_term = this.filter_bar.short_term.filtered()
+        const filter_long_term = this.filter_bar.long_term.filtered()
+        const filter_excluded = this.filter_bar.excluded.filtered()
+        const filter_force_excluded = this.filter_bar.force_excluded.filtered()
+        const filter_edited = this.filter_bar.edited.filtered()
+        const filter_errors = this.filter_bar.errors.filtered()
+        const filter_user = this.filter_bar.user.filtered()
         this.filtered = []
         for (let i = this.ctx.chat.length-1; i >= 0; i--) {
-            let msg = this.ctx.chat[i]
+            const msg = this.ctx.chat[i]
             let include =  false
             if (filter_short_term           && this.filter_bar.short_term.check(msg)) include = true;
             else if (filter_long_term       && this.filter_bar.long_term.check(msg)) include = true;
@@ -382,8 +382,8 @@ class MemoryEditInterface {
         }
     }
     update_selected() {
-        let $checkboxes = this.$table_body.find(`input.interface_message_select`)
-        for (let checkbox of $checkboxes) {
+        const $checkboxes = this.$table_body.find(`input.interface_message_select`)
+        for (const checkbox of $checkboxes) {
             if ('value' in checkbox) {
                 $(checkbox).prop('checked', this.selected.has(Number(checkbox.value)));
             }
@@ -400,11 +400,11 @@ class MemoryEditInterface {
         }
     }
     update_filter_counts() {
-        for (let [id, data] of Object.entries(this.filter_bar)) {
+        for (const [id, data] of Object.entries(this.filter_bar)) {
             data.count = 0
         }
-        for (let msg of this.ctx.chat) {
-            for (let [id, data] of Object.entries(this.filter_bar)) {
+        for (const msg of this.ctx.chat) {
+            for (const [id, data] of Object.entries(this.filter_bar)) {
                 if (data.check(msg)) data.count++
             }
         }
@@ -412,15 +412,15 @@ class MemoryEditInterface {
     update_regex_section() {
         this.$regex_selector = this.$content.find('#regex_selector')
         this.$replace_button = this.$content.find('#bulk_regex')
-        let script_list = getRegexScripts()
-        let scripts = {}
+        const script_list = getRegexScripts()
+        const scripts = {}
         Object.keys(script_list).forEach(function(i) {
-            let script = script_list[i]
+            const script = script_list[i]
             scripts[script.scriptName] = script
         });
         this.$regex_selector.empty();
         this.$regex_selector.append(`<option value="">Select Script</option>`)
-        for (let name of Object.keys(scripts)) {
+        for (const name of Object.keys(scripts)) {
             this.$regex_selector.append(`<option value="${name}">${name}</option>`)
         }
         this.$regex_selector.val(this.settings.regex_script || "")
@@ -429,23 +429,23 @@ class MemoryEditInterface {
             this.save_settings()
         })
         this.$replace_button.on('click', () => {
-            let script_name = this.$regex_selector.val()
-            let script = scripts[script_name]
+            const script_name = this.$regex_selector.val()
+            const script = scripts[script_name]
             log(`Running regex script \"${script_name}\" on selected memories`)
-            for (let i of this.selected) {
-                let message = this.ctx.chat[i]
-                let memory = get_memory(message)
-                let new_text = runRegexScript(script, memory)
+            for (const i of this.selected) {
+                const message = this.ctx.chat[i]
+                const memory = get_memory(message)
+                const new_text = runRegexScript(script, memory)
                 edit_memory(message, new_text)
             }
             this.update_table()
         })
     }
     update_context_line() {
-        let target_id = chat_metadata["lastInContextMessageId"]
-        let to_check = this.settings.reverse_page_sort ? this.displayed.slice().reverse() : this.displayed
-        let start = to_check[0]
-        let end = to_check[to_check.length-1]
+        const target_id = chat_metadata["lastInContextMessageId"]
+        const to_check = this.settings.reverse_page_sort ? this.displayed.slice().reverse() : this.displayed
+        const start = to_check[0]
+        const end = to_check[to_check.length-1]
         let closest_id;
         let style;
         if (target_id > start) {
@@ -456,7 +456,7 @@ class MemoryEditInterface {
             style = this.settings.reverse_page_sort ? 'last_in_context_top' : 'last_in_context_bottom'
         } else {
             closest_id = start;
-            for (let id of to_check) {
+            for (const id of to_check) {
                 if (id >= target_id) closest_id = id
                 else break;
             }
@@ -467,22 +467,22 @@ class MemoryEditInterface {
     }
     toggle_selected(indexes, value=null) {
         if (value === null) {
-            let all_selected = indexes.every(i => this.selected.has(i));
+            const all_selected = indexes.every(i => this.selected.has(i));
             if (all_selected) {
-                for (let i of indexes) {
+                for (const i of indexes) {
                     this.selected.delete(i);
                 }
             } else {
-                for (let i of indexes) {
+                for (const i of indexes) {
                     this.selected.add(i);
                 }
             }
         } else if (value === true) {
-            for (let i of indexes) {
+            for (const i of indexes) {
                 this.selected.add(i)
             }
         } else if (value === false) {
-            for (let i of indexes) {
+            for (const i of indexes) {
                 this.selected.delete(i)
             }
         }
@@ -490,11 +490,11 @@ class MemoryEditInterface {
     }
     update_message_visuals(i, $previous_row=null, style=true, text=null) {
         if (!this.is_open()) return
-        let msg = this.ctx.chat[i];
-        let memory = text ?? get_memory(msg)
-        let error = get_data(msg, 'error') || ""
-        let edited = get_data(msg, 'edited')
-        let row_id = `memory_${i}`
+        const msg = this.ctx.chat[i];
+        const memory = text ?? get_memory(msg)
+        const error = get_data(msg, 'error') || ""
+        const edited = get_data(msg, 'edited')
+        const row_id = `memory_${i}`
         let $row = this.$table_body.find(`tr#${row_id}`);
         let $memory;
         let $select_checkbox;
@@ -546,14 +546,14 @@ class MemoryEditInterface {
         this.$table.scrollTop(this.$table[0].scrollHeight);
     }
     copy_to_clipboard() {
-        let text = concatenate_summaries(Array.from(this.selected));
+        const text = concatenate_summaries(Array.from(this.selected));
         copyText(text)
         toastr.info("All memories copied to clipboard.")
     }
     save_settings() {
         this.settings.global_selection = this.$global_selection_checkbox.is(':checked')
         this.settings.reverse_page_sort = this.$reverse_page_sort.is(':checked')
-        for (let [id, data] of Object.entries(this.filter_bar)) {
+        for (const [id, data] of Object.entries(this.filter_bar)) {
             this.settings[id] = data.filtered()
         }
         set_settings('memory_edit_interface_settings', this.settings)

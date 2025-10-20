@@ -23,13 +23,13 @@ async function set_preset(name) {
     if (get_settings('debug_mode')) {
         // commented out toast // toastr.info(`Setting completion preset to ${name}`);
     }
-    let ctx = getContext();
+    const ctx = getContext();
     await ctx.executeSlashCommandsWithOptions(`/preset ${name}`)
 }
 async function get_presets() {
     // Get the list of available completion presets for the selected connection profile API
-    let summary_api = await get_connection_profile_api()  // API for the summary connection profile (undefined if not active)
-    let { presets, preset_names } = getPresetManager().getPresetList(summary_api)  // presets for the given API (current if undefined)
+    const summary_api = await get_connection_profile_api()  // API for the summary connection profile (undefined if not active)
+    const { presets, preset_names } = getPresetManager().getPresetList(summary_api)  // presets for the given API (current if undefined)
     // array of names
     if (Array.isArray(preset_names)) return preset_names
     // object of {names: index}
@@ -39,7 +39,7 @@ async function verify_preset(name) {
     // check if the given preset name is valid for the current API
     if (name === "") return true;  // no preset selected, always valid
 
-    let preset_names = await get_presets()
+    const preset_names = await get_presets()
 
     if (Array.isArray(preset_names)) {  // array of names
         return preset_names.includes(name)
@@ -50,8 +50,8 @@ async function verify_preset(name) {
 }
 async function check_preset_valid() {
     // check whether the current preset selected for summarization is valid
-    let summary_preset = get_settings('completion_preset')
-    let valid_preset = await verify_preset(summary_preset)
+    const summary_preset = get_settings('completion_preset')
+    const valid_preset = await verify_preset(summary_preset)
     if (!valid_preset) {
         toast_debounced(`Your selected summary preset "${summary_preset}" is not valid for the current API.`, "warning")
         return false
@@ -60,12 +60,12 @@ async function check_preset_valid() {
 }
 async function get_summary_preset_max_tokens() {
     // get the maximum token length for the chosen summary preset
-    let preset_name = await get_summary_preset()
-    let preset = getPresetManager().getCompletionPresetByName(preset_name)
+    const preset_name = await get_summary_preset()
+    const preset = getPresetManager().getCompletionPresetByName(preset_name)
 
     // if the preset doesn't have a genamt (which it may not for some reason), use the current genamt. See https://discord.com/channels/1100685673633153084/1100820587586273343/1341566534908121149
     // Also if you are using chat completion, it's openai_max_tokens instead.
-    let max_tokens = preset?.genamt || preset?.openai_max_tokens || amount_gen
+    const max_tokens = preset?.genamt || preset?.openai_max_tokens || amount_gen
     debug("Got summary preset genamt: "+max_tokens)
 
     return max_tokens

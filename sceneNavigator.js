@@ -19,24 +19,23 @@ export function renderSceneNavigatorBar() {
     // Apply width setting
     $bar.css('width', `${width}px`);
 
-    // Hide/show based on toggle setting and whether there are scene breaks
+    // Hide/show entire navbar based on toggle setting
     if (!show) {
-        // Even if hidden by toggle, keep the bar in DOM for running summary controls
-        // But hide the scene break navigation links
-        $bar.find('.scene-nav-link').hide();
-        // If there are running summary controls, keep bar visible for those
-        const hasRunningControls = $bar.find('.running-summary-controls').length > 0;
-        if (!hasRunningControls) {
-            $bar.hide();
-        }
+        $bar.hide();
         return;
     }
     const ctx = getContext();
     if (!ctx?.chat) return;
 
-    // Save running summary controls before clearing
+    // Save running summary controls and queue UI before clearing
     const $runningControls = $bar.find('.running-summary-controls').detach();
+    const $queueUI = $bar.find('#shared_operation_queue_ui').detach();
     $bar.empty();
+
+    // Restore queue UI first (should be at top)
+    if ($queueUI.length) {
+        $bar.append($queueUI);
+    }
 
     // Find all visible scene breaks and number them sequentially
     let sceneNum = 1;

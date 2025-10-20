@@ -21,12 +21,12 @@ import {
 } from './index.js';
 
 function initialize_slash_commands() {
-    let ctx = getContext()
-    let SlashCommandParser = ctx.SlashCommandParser
-    let SlashCommand = ctx.SlashCommand
-    let SlashCommandArgument = ctx.SlashCommandArgument
-    let SlashCommandNamedArgument = ctx.SlashCommandNamedArgument
-    let ARGUMENT_TYPE = ctx.ARGUMENT_TYPE
+    const ctx = getContext()
+    const SlashCommandParser = ctx.SlashCommandParser
+    const SlashCommand = ctx.SlashCommand
+    const SlashCommandArgument = ctx.SlashCommandArgument
+    const SlashCommandNamedArgument = ctx.SlashCommandNamedArgument
+    const ARGUMENT_TYPE = ctx.ARGUMENT_TYPE
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'auto_summarize_log_chat',
@@ -152,7 +152,7 @@ function initialize_slash_commands() {
         name: 'summarize_chat',
         helpString: 'Summarize the chat using the auto-summarization criteria, even if auto-summarization is off.',
         callback: async (args, limit) => {
-            let indexes = collect_messages_to_auto_summarize()
+            const indexes = collect_messages_to_auto_summarize()
             await summarize_messages(indexes);
         },
     }));
@@ -185,7 +185,7 @@ function initialize_slash_commands() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'get_memory',
         callback: async (args, index) => {
-            let chat = getContext().chat
+            const chat = getContext().chat
             if (index === "") index = chat.length - 1
             return get_memory(chat[index])
         },
@@ -252,23 +252,23 @@ function initialize_slash_commands() {
     }));
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'queue-clear-completed',
-        callback: async () => {
-            const { clearCompletedOperations } = await import('./operationQueue.js');
-            const count = clearCompletedOperations();
-            return `Cleared ${count} completed operations`;
-        },
-        helpString: 'Clear completed operations from queue',
-    }));
-
-    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'queue-clear-all',
         callback: async () => {
             const { clearAllOperations } = await import('./operationQueue.js');
-            const count = clearAllOperations();
+            const count = await clearAllOperations();
             return `Cleared all ${count} operations`;
         },
         helpString: 'Clear all operations from queue',
+    }));
+
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'queue-test',
+        callback: async () => {
+            const { enqueueOperation, OperationType } = await import('./operationQueue.js');
+            const opId = await enqueueOperation(OperationType.SUMMARIZE_MESSAGE, { index: 0 }, {});
+            return `Test operation added to queue: ${opId}`;
+        },
+        helpString: 'Add a test operation to the queue (for debugging)',
     }));
 }
 

@@ -3,12 +3,9 @@
 import {
     getQueueStats,
     getAllOperations,
-    getPendingOperations,
-    getInProgressOperations,
     pauseQueue,
     resumeQueue,
     isQueuePaused,
-    clearCompletedOperations,
     clearAllOperations,
     removeOperation,
     registerUIUpdateCallback,
@@ -83,7 +80,6 @@ function createQueueUI() {
                 </div>
                 <div class="queue-controls" style="display: flex; gap: 0.3em; flex-wrap: wrap;">
                     <button id="queue_toggle_pause" class="menu_button fa-solid fa-pause" title="Pause/Resume queue" style="flex: 1;"></button>
-                    <button id="queue_clear_completed" class="menu_button fa-solid fa-check-double" title="Clear completed" style="flex: 1;"></button>
                     <button id="queue_clear_all" class="menu_button fa-solid fa-trash" title="Clear all" style="flex: 1;"></button>
                 </div>
             </div>
@@ -119,11 +115,6 @@ function bindQueueControlEvents() {
             $(this).removeClass('fa-pause').addClass('fa-play');
             $(this).attr('title', 'Resume queue');
         }
-    });
-
-    // Clear completed
-    $(document).on('click', '#queue_clear_completed', async function() {
-        await clearCompletedOperations();
     });
 
     // Clear all
@@ -182,7 +173,6 @@ function updateQueueDisplay() {
     const parts = [];
     if (stats.pending > 0) parts.push(`${stats.pending} pending`);
     if (stats.in_progress > 0) parts.push(`${stats.in_progress} running`);
-    if (stats.completed > 0) parts.push(`${stats.completed} done`);
     if (stats.failed > 0) parts.push(`${stats.failed} failed`);
     $stats.text(parts.length > 0 ? parts.join(', ') : 'No operations');
 
@@ -205,14 +195,17 @@ function updateQueueDisplay() {
  */
 function renderOperationsList() {
     const $list = $('#queue_operations_list');
-    const operations = getAllOperations();
+    const allOperations = getAllOperations();
+
+    // Filter out completed operations (they're auto-removed)
+    const operations = allOperations.filter(op => op.status !== OperationStatus.COMPLETED);
 
     if (operations.length === 0) {
         $list.html('<div style="opacity: 0.6; padding: 0.5em; text-align: center;">No operations in queue</div>');
         return;
     }
 
-    // Sort: in_progress first, then pending, then completed/failed
+    // Sort: in_progress first, then pending, then failed/cancelled
     const sorted = [...operations].sort((a, b) => {
         const statusOrder = {
             [OperationStatus.IN_PROGRESS]: 0,
@@ -281,7 +274,7 @@ function renderOperation(operation) {
     // Retry info
     let retryText = '';
     if (operation.retries > 0) {
-        retryText = `<span style="font-size: 0.8em; opacity: 0.6;">(retry ${operation.retries}/${operation.max_retries})</span>`;
+        retryText = `<span style="font-size: 0.8em; opacity: 0.6;">(retry ${operation.retries})</span>`;
     }
 
     // Remove button (only for pending/failed/cancelled)

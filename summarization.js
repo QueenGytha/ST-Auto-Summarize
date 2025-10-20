@@ -67,7 +67,7 @@ setStopSummarization(false);
 
 async function summarize_messages(indexes=null, show_progress=true) {
     // Summarize the given list of message indexes (or a single index)
-    let ctx = getContext();
+    const ctx = getContext();
 
     if (indexes === null) {  // default to the mose recent message, min 0
         indexes = [Math.max(ctx.chat.length - 1, 0)]
@@ -76,6 +76,18 @@ async function summarize_messages(indexes=null, show_progress=true) {
     if (!indexes.length) return;
 
     debug(`Summarizing ${indexes.length} messages`)
+
+    // Check if operation queue is enabled - if so, queue operations instead of executing directly
+    if (get_settings('operation_queue_enabled') !== false) {
+        const { queueSummarizeMessages } = await import('./queueIntegration.js');
+        const queued = queueSummarizeMessages(indexes);
+        if (queued && queued.length > 0) {
+            debug(`Queued ${queued.length} summarization operations`);
+            return; // Operations will be processed by queue
+        }
+        // If queueing failed, fall through to direct execution
+        debug('Failed to queue operations, executing directly');
+    }
 
      // only show progress if there's more than one message to summarize
     show_progress = show_progress && indexes.length > 1;
@@ -89,12 +101,12 @@ async function summarize_messages(indexes=null, show_progress=true) {
     }
 
     // Save the current completion preset (must happen before you set the connection profile because it changes the preset)
-    let summary_preset = get_settings('completion_preset');
-    let current_preset = await get_current_preset();
+    const summary_preset = get_settings('completion_preset');
+    const current_preset = await get_current_preset();
 
     // Get the current connection profile
-    let summary_profile = get_settings('connection_profile');
-    let current_profile = await get_current_connection_profile()
+    const summary_profile = get_settings('connection_profile');
+    const current_profile = await get_current_connection_profile()
 
     // set the completion preset and connection profile for summarization (preset must be set after connection profile)
     await set_connection_profile(summary_profile);
@@ -104,7 +116,7 @@ async function summarize_messages(indexes=null, show_progress=true) {
     let anyModified = false;
     
     try {
-        for (let i of indexes) {
+        for (const i of indexes) {
             if (show_progress) progress_bar('summarize', n+1, indexes.length, "Summarizing");
 
             // check if summarization was stopped by the user
@@ -119,7 +131,7 @@ async function summarize_messages(indexes=null, show_progress=true) {
             }
 
             // wait for time delay if set
-            let time_delay = get_settings('summarization_time_delay')
+            const time_delay = get_settings('summarization_time_delay')
             if (time_delay > 0 && n < indexes.length-1) {  // delay all except the last
 
                 // check if summarization was stopped by the user during summarization
@@ -142,8 +154,8 @@ async function summarize_messages(indexes=null, show_progress=true) {
         // If any summaries were modified and combined summary settings are enabled, and we meet the threshold
         // run the combined summary AFTER all individual summaries are complete
         if (anyModified && get_settings('combined_summary_enabled')) {
-            let run_interval = get_settings('combined_summary_run_interval') || 1;
-            let new_count = get_settings('combined_summary_new_count') || 0;
+            const run_interval = get_settings('combined_summary_run_interval') || 1;
+            const new_count = get_settings('combined_summary_new_count') || 0;
             
             if (new_count >= run_interval) {
                 if (get_settings('show_combined_summary_toast')) {
@@ -183,9 +195,9 @@ async function summarize_message(index) {
     // Summarize a message given the chat index, replacing any existing memories
     // Should only be used from summarize_messages()
 
-    let context = getContext();
-    let message = context.chat[index]
-    let message_hash = getStringHash(message.mes);
+    const context = getContext();
+    const message = context.chat[index]
+    const message_hash = getStringHash(message.mes);
 
     // Temporarily update the message summary text to indicate that it's being summarized (no styling based on inclusion criteria)
     // A full visual update with style should be done on the whole chat after inclusion criteria have been recalculated
@@ -198,7 +210,7 @@ async function summarize_message(index) {
     }
 
     // construct the full summary prompt for the message
-    let prompt = await create_summary_prompt(index)
+    const prompt = await create_summary_prompt(index)
 
     // summarize it
     let summary;
@@ -268,13 +280,13 @@ async function summarize_message(index) {
         debug("Message summarized: " + summary)
 
         // stick the prefill on the front and try to parse reasoning
-        let prefill = get_settings('prefill')
+        const prefill = get_settings('prefill')
         let prefilled_summary = summary
         if (prefill) {
             prefilled_summary = `${prefill}${summary}`
         }
 
-        let parsed_reasoning_object = context.parseReasoningFromString(prefilled_summary)
+        const parsed_reasoning_object = context.parseReasoningFromString(prefilled_summary)
         let reasoning = "";
         if (parsed_reasoning_object?.reasoning) {
             debug("Reasoning parsed: ")
@@ -326,14 +338,14 @@ async function summarize_message(index) {
 }
 async function summarize_text(prompt) {
     // get size of text
-    let token_size = count_tokens(prompt);
+    const token_size = count_tokens(prompt);
 
-    let context_size = get_context_size();
+    const context_size = get_context_size();
     if (token_size > context_size) {
         error(`Text ${token_size} exceeds context size ${context_size}.`);
     }
 
-    let ctx = getContext()
+    const ctx = getContext()
 
     // At least one openai-style API required at least two messages to be sent.
     // We can do this by adding a system prompt, which will get added as another message in generateRaw().
@@ -345,7 +357,7 @@ async function summarize_text(prompt) {
     }
 
     // TODO do the world info injection manually instead
-    let include_world_info = get_settings('include_world_info');
+    const include_world_info = get_settings('include_world_info');
     let result;
 
     try {
@@ -390,19 +402,19 @@ async function summarize_text(prompt) {
 function get_message_history(index) {
     // Get a history of messages leading up to the given index (excluding the message at the index)
     // If the include_message_history setting is 0, returns null
-    let num_history_messages = get_settings('include_message_history');
-    let mode = get_settings('include_message_history_mode');
+    const num_history_messages = get_settings('include_message_history');
+    const mode = get_settings('include_message_history_mode');
     if (num_history_messages === 0 || mode === "none") {
         return;
     }
 
-    let ctx = getContext()
-    let chat = ctx.chat
+    const ctx = getContext()
+    const chat = ctx.chat
 
     let num_included = 0;
-    let history = []
+    const history = []
     for (let i = index-1; num_included < num_history_messages && i>=0; i--) {
-        let m = chat[i];
+        const m = chat[i];
         let include = true
 
         // whether we include the message itself is determined only by these settings.
@@ -422,7 +434,7 @@ function get_message_history(index) {
 
             // Whether we include the *summary* is determined by the regular summary inclusion criteria.
             // This is so the inclusion matches the summary injection.
-            let include_summary = check_message_exclusion(m)
+            const include_summary = check_message_exclusion(m)
             let memory = get_memory(m)
             if (include_summary && memory) {
                 memory = `Summary: ${memory}`
@@ -453,21 +465,21 @@ async function create_summary_prompt(index) {
     // Therefore, if we are NOT using instructOverride, we have to remove the first system sequence at the very beginning which gets added by format_system_prompt.
     // If we ARE using instructOverride, we have to add a final trailing output sequence
 
-    let ctx = getContext()
-    let chat = ctx.chat
-    let message = chat[index];
+    const ctx = getContext()
+    const chat = ctx.chat
+    const message = chat[index];
 
     // get history of messages (formatted as system messages) leading up to the message
-    let history_text = get_message_history(index);
+    const history_text = get_message_history(index);
 
     // format the message itself
-    let message_text = formatInstructModeChat(message.name, message.mes, message.is_user, false, "", ctx.name1, ctx.name2, null)
+    const message_text = formatInstructModeChat(message.name, message.mes, message.is_user, false, "", ctx.name1, ctx.name2, null)
 
     // get the full prompt template from settings
     let prompt = get_settings('prompt');
 
     // first substitute any global macros like {{persona}}, {{char}}, etc...
-    let words = await get_summary_preset_max_tokens()
+    const words = await get_summary_preset_max_tokens()
     prompt = ctx.substituteParamsExtended(prompt, {"words": words})
 
     // then substitute any {{#if macro}} ... {{/if}} blocks
@@ -492,7 +504,7 @@ async function create_summary_prompt(index) {
     }
 
     // If using instructOverride, append the assistant starting message template to the text, replacing the name with "assistant" if needed
-    let output_sequence = ctx.substituteParamsExtended(power_user.instruct.output_sequence, {name: "assistant"});
+    const output_sequence = ctx.substituteParamsExtended(power_user.instruct.output_sequence, {name: "assistant"});
     prompt = `${prompt}\n${output_sequence}`
 
     // finally, append the prefill
@@ -504,7 +516,7 @@ async function create_summary_prompt(index) {
 function stop_summarization() {
     // Immediately stop summarization of the chat
     setStopSummarization(true);  // set the flag
-    let ctx = getContext()
+    const ctx = getContext()
     ctx.stopGeneration();  // stop generation on current message
     clearTimeout(SUMMARIZATION_DELAY_TIMEOUT)  // clear the summarization delay timeout
     if (SUMMARIZATION_DELAY_RESOLVE !== null) SUMMARIZATION_DELAY_RESOLVE()  // resolve the delay promise so the await goes through
@@ -512,19 +524,19 @@ function stop_summarization() {
 }
 function collect_messages_to_auto_summarize() {
     // iterate through the chat in chronological order and check which messages need to be summarized.
-    let context = getContext();
+    const context = getContext();
 
-    let messages_to_summarize = []  // list of indexes of messages to summarize
-    let depth_limit = get_settings('auto_summarize_message_limit')  // how many valid messages back we can go
-    let lag = get_settings('summarization_delay');  // number of messages to delay summarization for
+    const messages_to_summarize = []  // list of indexes of messages to summarize
+    const depth_limit = get_settings('auto_summarize_message_limit')  // how many valid messages back we can go
+    const lag = get_settings('summarization_delay');  // number of messages to delay summarization for
     let depth = 0
     debug(`Collecting messages to summarize. Depth limit: ${depth_limit}, Lag: ${lag}`)
     for (let i = context.chat.length-1; i >= 0; i--) {
         // get current message
-        let message = context.chat[i];
+        const message = context.chat[i];
 
         // check message exclusion criteria
-        let include = check_message_exclusion(message);  // check if the message should be included due to current settings
+        const include = check_message_exclusion(message);  // check if the message should be included due to current settings
         if (!include) {
             debug(`ID [${i}]: excluded`)
             continue;
@@ -563,13 +575,13 @@ async function auto_summarize_chat() {
     let messages_to_summarize = collect_messages_to_auto_summarize()
 
     // If we don't have enough messages to batch, don't summarize
-    let messages_to_batch = get_settings('auto_summarize_batch_size');  // number of messages to summarize in a batch
+    const messages_to_batch = get_settings('auto_summarize_batch_size');  // number of messages to summarize in a batch
     if (messages_to_summarize.length < messages_to_batch) {
         debug(`Not enough messages (${messages_to_summarize.length}) to summarize in a batch (${messages_to_batch})`)
         messages_to_summarize = []
     }
 
-    let show_progress = get_settings('auto_summarize_progress');
+    const show_progress = get_settings('auto_summarize_progress');
     await summarize_messages(messages_to_summarize, show_progress);
 }
 
