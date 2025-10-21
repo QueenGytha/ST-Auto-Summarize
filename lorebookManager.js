@@ -1,6 +1,7 @@
 // @flow
 // lorebookManager.js - Lorebook creation and management for ST-Auto-Lorebooks
 
+// $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import {
     createNewWorldInfo,
     deleteWorldInfo,
@@ -11,18 +12,23 @@ import {
     METADATA_KEY,
     world_names
 } from '../../../world-info.js';
+// $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { chat_metadata, saveMetadata, getCurrentChatId, characters, this_chid, name2 } from '../../../../script.js';
+// $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { extension_settings } from '../../../extensions.js';
+// $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { selected_group, groups } from '../../../group-chats.js';
 
 // Will be imported from index.js via barrel exports
-let log, debug, error, toast, generateLorebookName, getUniqueLorebookName;
+let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */, generateLorebookName /*: any */, getUniqueLorebookName /*: any */;  // Utility functions - any type is legitimate
 
 /**
  * Initialize the lorebook manager with imported utilities
  * This is called from index.js after all exports are set up
  */
-export function initLorebookManager(utils) {
+// $FlowFixMe[signature-verification-failure]
+export function initLorebookManager(utils /*: any */) /*: void */ {
+    // utils is any type - object with various utility functions - legitimate use of any
     log = utils.log;
     debug = utils.debug;
     error = utils.error;
@@ -35,7 +41,7 @@ export function initLorebookManager(utils) {
  * Get current context information (character name, chat ID, group info)
  * @returns {Object} Context object with characterName, chatId, isGroupChat, groupName
  */
-export function getCurrentContext() {
+export function getCurrentContext() /*: any */ {
     try {
         let characterName = null;
         let chatId = null;
@@ -90,7 +96,7 @@ export function getCurrentContext() {
  * Check if auto-lorebooks is enabled for current chat
  * @returns {boolean} True if enabled
  */
-export function isAutoLorebooksEnabled() {
+export function isAutoLorebooksEnabled() /*: boolean */ {
     try {
         // Check chat-specific setting first
         const chatSetting = chat_metadata?.auto_lorebooks?.enabled;
@@ -111,7 +117,7 @@ export function isAutoLorebooksEnabled() {
  * Set auto-lorebooks enabled state for current chat
  * @param {boolean} enabled - Enable or disable
  */
-export function setAutoLorebooksEnabled(enabled) {
+export function setAutoLorebooksEnabled(enabled /*: boolean */) /*: void */ {
     try {
         if (!chat_metadata.auto_lorebooks) {
             chat_metadata.auto_lorebooks = {};
@@ -131,7 +137,7 @@ export function setAutoLorebooksEnabled(enabled) {
  * Get the lorebook currently attached to this chat
  * @returns {string|null} Lorebook name or null
  */
-export function getAttachedLorebook() {
+export function getAttachedLorebook() /*: ?string */ {
     try {
         return chat_metadata?.[METADATA_KEY] || null;
     } catch (err) {
@@ -145,7 +151,7 @@ export function getAttachedLorebook() {
  * @param {string} lorebookName - Name of lorebook to check
  * @returns {boolean} True if exists
  */
-export function lorebookExists(lorebookName) {
+export function lorebookExists(lorebookName /*: string */) /*: boolean */ {
     try {
         if (!lorebookName) return false;
         return world_names && world_names.includes(lorebookName);
@@ -161,7 +167,7 @@ export function lorebookExists(lorebookName) {
  * @param {string} missingLorebookName - Name of the missing lorebook
  * @returns {Promise<string|null>} New lorebook name or null
  */
-export async function handleMissingLorebook(missingLorebookName) {
+export async function handleMissingLorebook(missingLorebookName /*: string */) /*: Promise<void> */ {
     try {
         log(`Detected missing lorebook: "${missingLorebookName}"`);
 
@@ -217,7 +223,7 @@ export async function handleMissingLorebook(missingLorebookName) {
  * @param {string} lorebookName - Name of lorebook to attach
  * @returns {boolean} Success
  */
-export function attachLorebook(lorebookName) {
+export function attachLorebook(lorebookName /*: string */) /*: void */ {
     try {
         if (!lorebookName) {
             error("Cannot attach lorebook: name is empty");
@@ -255,7 +261,7 @@ export function attachLorebook(lorebookName) {
  * Create a new lorebook for the current chat
  * @returns {Promise<string|null>} Created lorebook name or null on failure
  */
-export async function createChatLorebook() {
+export async function createChatLorebook() /*: Promise<any> */ {
     try {
         // Get current context
         const context = getCurrentContext();
@@ -297,7 +303,7 @@ export async function createChatLorebook() {
  * Ensure the current chat has a lorebook (create if needed)
  * @returns {Promise<boolean>} Success
  */
-export async function ensureChatLorebook() {
+export async function ensureChatLorebook() /*: Promise<void> */ {
     try {
         // Check if enabled
         if (!isAutoLorebooksEnabled()) {
@@ -341,7 +347,7 @@ export async function ensureChatLorebook() {
  * @param {string} lorebookName - Name of lorebook to delete
  * @returns {Promise<boolean>} Success
  */
-export async function deleteChatLorebook(lorebookName) {
+export async function deleteChatLorebook(lorebookName /*: string */) /*: Promise<void> */ {
     try {
         if (!lorebookName) {
             debug("No lorebook to delete");
@@ -383,7 +389,7 @@ export async function deleteChatLorebook(lorebookName) {
  * Get lorebook metadata for current chat
  * @returns {Object|null} Metadata object or null
  */
-export function getLorebookMetadata() {
+export function getLorebookMetadata() /*: any */ {
     try {
         return chat_metadata?.auto_lorebooks || null;
     } catch (err) {
@@ -417,7 +423,7 @@ export async function initializeChatLorebook() {
  * @param {Object} entryData - Entry data (keys, content, etc.)
  * @returns {Promise<Object|null>} Created entry object or null on failure
  */
-export async function addLorebookEntry(lorebookName, entryData = {}) {
+export async function addLorebookEntry(lorebookName /*: string */, entryData /*: any */ = {}) /*: Promise<any> */ {
     try {
         if (!lorebookName) {
             error("Cannot add entry: lorebook name is empty");
@@ -491,7 +497,7 @@ export async function addLorebookEntry(lorebookName, entryData = {}) {
  * @param {Object} updates - Object containing fields to update
  * @returns {Promise<boolean>} Success
  */
-export async function modifyLorebookEntry(lorebookName, uid, updates = {}) {
+export async function modifyLorebookEntry(lorebookName /*: string */, uid /*: string */, updates /*: any */ = {}) /*: Promise<any> */ {
     try {
         if (!lorebookName) {
             error("Cannot modify entry: lorebook name is empty");
@@ -574,7 +580,7 @@ export async function modifyLorebookEntry(lorebookName, uid, updates = {}) {
  * @param {boolean} silent - Skip confirmation dialog
  * @returns {Promise<boolean>} Success
  */
-export async function deleteLorebookEntry(lorebookName, uid, silent = true) {
+export async function deleteLorebookEntry(lorebookName /*: string */, uid /*: string */, silent /*: boolean */ = true) /*: Promise<void> */ {
     try {
         if (!lorebookName) {
             error("Cannot delete entry: lorebook name is empty");
@@ -631,7 +637,7 @@ export async function deleteLorebookEntry(lorebookName, uid, silent = true) {
  * @param {string} lorebookName - Name of the lorebook
  * @returns {Promise<Array|null>} Array of entries or null on failure
  */
-export async function getLorebookEntries(lorebookName) {
+export async function getLorebookEntries(lorebookName /*: string */) /*: Promise<any> */ {
     try {
         if (!lorebookName) {
             error("Cannot get entries: lorebook name is empty");
