@@ -124,7 +124,7 @@ async function callAIForMerge(existingContent /*: string */, newContent /*: stri
         const preset = getSummaryProcessingSetting('merge_completion_preset') || null;
 
         // Prepare generation options
-        const options = {
+        const options /*: any */ = {
             quiet_prompt: prompt,
             quiet: true,
             force_name2: true
@@ -141,6 +141,8 @@ async function callAIForMerge(existingContent /*: string */, newContent /*: stri
         }
 
         // Call the AI
+        // $FlowFixMe[extra-arg] - generateRaw signature mismatch with Flow definition
+        // $FlowFixMe[incompatible-type] - generateRaw signature mismatch with Flow definition
         const mergedContent = await generateRaw(prompt, '', false, false, options);
 
         if (!mergedContent || mergedContent.trim().length === 0) {
@@ -234,7 +236,7 @@ export async function executeMerge(lorebookName /*: string */, existingEntry /*:
         );
 
         // Prepare updates
-        const updates = {
+        const updates /*: any */ = {
             content: mergedContent
         };
 
