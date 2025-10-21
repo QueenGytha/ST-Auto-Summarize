@@ -255,7 +255,7 @@ function initialize_slash_commands() {
         callback: async () => {
             const { enqueueOperation, OperationType } = await import('./operationQueue.js');
             const opId = await enqueueOperation(OperationType.SUMMARIZE_MESSAGE, { index: 0 }, {});
-            return `Test operation added to queue: ${opId}`;
+            return `Test operation added to queue: ${opId ?? 'null'}`;
         },
         helpString: 'Add a test operation to the queue (for debugging)',
     }));

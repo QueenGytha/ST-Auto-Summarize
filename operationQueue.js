@@ -33,7 +33,7 @@ export const OperationStatus /*: { [key: string]: OperationStatusType } */ = /*:
 } /*:: : { [key: string]: OperationStatusType }) */;
 
 // Operation type constants
-export const OperationType = {
+export const OperationType /*: { [key: string]: OperationTypeType } */ = /*:: ( */ {
     SUMMARIZE_MESSAGE: 'summarize_message',
     VALIDATE_SUMMARY: 'validate_summary',
     DETECT_SCENE_BREAK: 'detect_scene_break',
@@ -44,7 +44,7 @@ export const OperationType = {
     GENERATE_COMBINED_SUMMARY: 'generate_combined_summary',
     PROCESS_LOREBOOK_ENTRY: 'process_lorebook_entry',
     MERGE_LOREBOOK_ENTRY: 'merge_lorebook_entry',
-};
+} /*:: : { [key: string]: OperationTypeType }) */;
 
 // Flow type definitions
 /*::
@@ -424,8 +424,9 @@ function generateOperationId() {
  * @param {object} options - Optional settings (priority, dependencies, etc.)
  * @returns {string} Operation ID
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function enqueueOperation(type /*: any */, params /*: any */, options /*: any */ = {}) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export async function enqueueOperation(type /*: OperationTypeType */, params /*: any */, options /*: Object */ = {}) /*: Promise<?string> */ {
+    // params is any as defined in Operation type - legitimate use of any
     if (!isInitialized) {
         await initOperationQueue();
     }
@@ -476,8 +477,8 @@ export async function enqueueOperation(type /*: any */, params /*: any */, optio
 /**
  * Get operation by ID
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function getOperation(operationId /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export function getOperation(operationId /*: string */) /*: ?Operation */ {
     // $FlowFixMe[incompatible-use]
     return currentQueue.queue.find(op => op.id === operationId);
 }
@@ -530,8 +531,8 @@ export function getFailedOperations() {
 /**
  * Update operation status
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function updateOperationStatus(operationId /*: any */, status /*: any */, errorMsg /*: any */ = null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export async function updateOperationStatus(operationId /*: string */, status /*: OperationStatusType */, errorMsg /*: ?string */ = null) /*: Promise<void> */ {
     const operation = getOperation(operationId);
     if (!operation) {
         error(SUBSYSTEM.QUEUE, `Operation ${operationId} not found`);
@@ -561,8 +562,8 @@ export async function updateOperationStatus(operationId /*: any */, status /*: a
 /**
  * Remove operation from queue
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function removeOperation(operationId /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export async function removeOperation(operationId /*: string */) /*: Promise<boolean> */ {
     // $FlowFixMe[incompatible-use]
     const index = currentQueue.queue.findIndex(op => op.id === operationId);
     if (index === -1) {
@@ -737,8 +738,9 @@ function getNextOperation() {
 // $FlowFixMe[underconstrained-implicit-instantiation]
 const operationHandlers = new Map();
 
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function registerOperationHandler(operationType /*: any */, handler /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export function registerOperationHandler(operationType /*: string */, handler /*: (operation: Operation) => Promise<any> */) /*: void */ {
+    // handler returns any because different operations return different result types - legitimate use of any
     operationHandlers.set(operationType, handler);
     debug(SUBSYSTEM.QUEUE, `Registered handler for ${operationType}`);
 }
@@ -746,8 +748,9 @@ export function registerOperationHandler(operationType /*: any */, handler /*: a
 /**
  * Execute an operation
  */
-// $FlowFixMe[recursive-definition] [missing-local-annot]
-async function executeOperation(operation /*: any */) {
+// $FlowFixMe[recursive-definition] - Function signature is correct but Flow needs annotation
+async function executeOperation(operation /*: Operation */) /*: Promise<any> */ {
+    // returns any because different operations return different result types - legitimate use of any
     const handler = operationHandlers.get(operation.type);
 
     if (!handler) {
@@ -849,8 +852,8 @@ function startQueueProcessor() {
 /**
  * Register UI update callback
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function registerUIUpdateCallback(callback /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export function registerUIUpdateCallback(callback /*: () => void */) /*: void */ {
     uiUpdateCallback = callback;
     debug(SUBSYSTEM.QUEUE, 'Registered UI update callback');
 }

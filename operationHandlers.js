@@ -92,7 +92,7 @@ export function registerAllOperationHandlers() {
                 debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_SUMMARY for message ${index}`);
 
                 // Enqueue summary generation as next operation (high priority so it runs before more detections)
-                const summaryOpId = enqueueOperation(
+                const summaryOpId = await enqueueOperation(
                     OperationType.GENERATE_SCENE_SUMMARY,
                     { index },
                     {
@@ -104,7 +104,7 @@ export function registerAllOperationHandlers() {
                     }
                 );
 
-                debug(SUBSYSTEM.QUEUE, `✓ Enqueued GENERATE_SCENE_SUMMARY (${summaryOpId}) for message ${index}`);
+                debug(SUBSYSTEM.QUEUE, `✓ Enqueued GENERATE_SCENE_SUMMARY (${summaryOpId ?? 'null'}) for message ${index}`);
             }
         } else {
             debug(SUBSYSTEM.QUEUE, `✗ No scene break for message ${index}`);
