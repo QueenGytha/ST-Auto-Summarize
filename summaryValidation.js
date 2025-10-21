@@ -76,16 +76,18 @@ async function validate_summary(summary /*: any */, type /*: any */ = "regular")
         } else {
             debug(SUBSYSTEM.VALIDATION, `Summary validation passed with result: "${validation_result}"`);
         }
-        
+
         // Restore original preset and profile
+        // $FlowFixMe[incompatible-type] - current_preset might be uninitialized if error before line 45, will fix in typing pass
         await set_preset(current_preset);
         await set_connection_profile(current_profile);
-        
+
         return is_valid;
     } catch (e) {
         error(SUBSYSTEM.VALIDATION, `Error during summary validation: ${e}`);
-        
+
         // Restore original preset and profile
+        // $FlowFixMe[incompatible-type] - current_preset might be uninitialized if error before line 45, will fix in typing pass
         await set_preset(current_preset);
         await set_connection_profile(current_profile);
         

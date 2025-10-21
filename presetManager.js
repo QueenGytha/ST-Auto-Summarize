@@ -16,8 +16,8 @@ async function get_summary_preset() {
     }
     return preset_name
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function set_preset(name /*: any */) {
+// $FlowFixMe[signature-verification-failure]
+async function set_preset(name /*: string */) /*: Promise<void> */ {
     if (name === get_current_preset()) return;  // If already using the current preset, return
 
     // $FlowFixMe[constant-condition]
@@ -32,17 +32,18 @@ async function set_preset(name /*: any */) {
     await ctx.executeSlashCommandsWithOptions(`/preset ${name}`)
 }
 // $FlowFixMe[signature-verification-failure]
-async function get_presets() {
+async function get_presets() /*: Promise<Array<string>> */ {
     // Get the list of available completion presets for the selected connection profile API
     const summary_api = await get_connection_profile_api()  // API for the summary connection profile (undefined if not active)
     const { preset_names } = getPresetManager().getPresetList(summary_api)  // presets for the given API (current if undefined)
     // array of names
     if (Array.isArray(preset_names)) return preset_names
     // object of {names: index}
-    return Object.keys(preset_names)
+    // $FlowFixMe[incompatible-type] - Object.keys returns Array<string> but Flow can't infer preset_names type
+    return (Object.keys(preset_names) /*: Array<string> */)
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function verify_preset(name /*: any */) {
+// $FlowFixMe[signature-verification-failure]
+async function verify_preset(name /*: string */) /*: Promise<boolean> */ {
     // check if the given preset name is valid for the current API
     if (name === "") return true;  // no preset selected, always valid
 
