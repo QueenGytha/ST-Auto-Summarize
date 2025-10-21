@@ -166,25 +166,5 @@ Output ONLY the merged content, nothing else. Do not include explanations or met
     auto_lorebooks_summary_merge_connection_profile: '', // Connection profile for summary merging
     auto_lorebooks_summary_merge_completion_preset: '', // Completion preset for summary merging
 
-    // --- Auto-Lorebooks Keyword Generation Settings ---
-    auto_lorebooks_keyword_generation_enabled: true, // Enable AI keyword generation for new entries
-    auto_lorebooks_keyword_generation_prompt: `You are generating activation keywords for a lorebook entry.
-
-Given the following lorebook entry information, generate a list of keywords that should trigger this entry:
-
-Entry Name: {{entry_name}}
-Entry Content: {{entry_content}}
-
-Generate 2-5 keywords that would naturally appear in conversation when this entry should be activated.
-Keywords should be:
-- Relevant to the entry content
-- Likely to appear in natural conversation
-- Case-insensitive (will be lowercased automatically)
-- Focused on the main subject/entity
-
-Output ONLY a JSON array of keyword strings, nothing else.
-Example: ["rainbow dash", "dash", "rd"]`,
-    auto_lorebooks_keyword_generation_prefill: '', // Prefill for keyword generation
-    auto_lorebooks_keyword_generation_connection_profile: '', // Connection profile for keyword generation
-    auto_lorebooks_keyword_generation_completion_preset: '', // Completion preset for keyword generation
+    // (Removed) Auto-Lorebooks Keyword Generation Settings – keywords now come from summary JSON
 });

@@ -2,33 +2,15 @@
 // summaryToLorebookProcessor.js - Extract lorebook entries from summary JSON objects and process them
 
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
-import { chat_metadata, saveMetadata, generateRaw } from './stubs/externals.js';
-// $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
-import { extension_settings } from './stubs/externals.js';
+import { chat_metadata, saveMetadata } from './stubs/externals.js';
+// (Removed) extension_settings import; no longer used
 
 // Will be imported from index.js via barrel exports
-let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */, get_settings /*: any */;  // Utility functions - any type is legitimate
+let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */;  // Utility functions - any type is legitimate
 let getAttachedLorebook /*: any */, getLorebookEntries /*: any */, addLorebookEntry /*: any */;  // Lorebook functions - any type is legitimate
 let mergeLorebookEntry /*: any */;  // Entry merger function - any type is legitimate
 
-/**
- * Safe settings accessor that works even before module initialization
- * Falls back to direct extension_settings access if get_settings not initialized
- */
-function getSetting(key /*: string */, defaultValue /*: any */ = null) /*: any */ {
-    // defaultValue and return are any - can be various types - legitimate use of any
-    try {
-        // Try using get_settings if initialized
-        if (get_settings && typeof get_settings === 'function') {
-            return get_settings(key) ?? defaultValue;
-        }
-
-        // Fallback to direct access
-        return extension_settings?.autoLorebooks?.[key] ?? defaultValue;
-    } catch {
-        return defaultValue;
-    }
-}
+// Removed getSetting helper; no settings access needed here
 
 /**
  * Initialize the summary-to-lorebook processor module
@@ -40,7 +22,6 @@ export function initSummaryToLorebookProcessor(utils /*: any */, lorebookManager
     debug = utils.debug;
     error = utils.error;
     toast = utils.toast;
-    get_settings = utils.get_settings;
 
     // Import lorebook manager functions
     if (lorebookManagerModule) {
@@ -195,7 +176,8 @@ function normalizeEntryData(entry /*: any */) /*: any */ {
     return {
         comment: entry.comment || entry.name || '',
         content: entry.content || entry.description || '',
-        keys: entry.keys || entry.key || [],
+        // Accept "keywords" (from prompt JSON), "keys" (internal), or "key" (WI format)
+        keys: entry.keys || entry.keywords || entry.key || [],
         secondaryKeys: entry.secondaryKeys || entry.keysecondary || [],
         constant: entry.constant ?? false,
         disable: entry.disable ?? false,
@@ -205,87 +187,7 @@ function normalizeEntryData(entry /*: any */) /*: any */ {
     };
 }
 
-/**
- * Generate keywords for a lorebook entry using AI
- * @param {string} entryName - Name/comment of the entry
- * @param {string} entryContent - Content of the entry
- * @returns {Promise<Array<string>>} Generated keywords or empty array
- */
-async function generateKeywordsForEntry(entryName /*: string */, entryContent /*: string */) /*: Promise<Array<string>> */ {
-    try {
-        // Check if keyword generation is enabled
-        const keywordGenEnabled = getSetting('auto_lorebooks_keyword_generation_enabled', true);
-        if (!keywordGenEnabled) {
-            debug('Keyword generation disabled, skipping');
-            return [];
-        }
-
-        debug(`Generating keywords for entry: ${entryName}`);
-
-        // Get prompt template
-        const promptTemplate = getSetting('auto_lorebooks_keyword_generation_prompt') ||
-            extension_settings?.autoLorebooks?.keyword_generation_prompt || '';
-
-        if (!promptTemplate) {
-            error('No keyword generation prompt configured');
-            return [];
-        }
-
-        // Build prompt
-        let prompt = promptTemplate
-            .replace(/\{\{entry_name\}\}/g, entryName || '')
-            .replace(/\{\{entry_content\}\}/g, entryContent || '');
-
-        // Add prefill if configured
-        const prefill = getSetting('auto_lorebooks_keyword_generation_prefill') || '';
-        if (prefill) {
-            prompt = `${prompt}\n${prefill}`;
-        }
-
-        // Call AI with new object-based signature
-        debug('Calling AI for keyword generation...');
-        // $FlowFixMe[incompatible-call] - generateRaw signature
-        const response = await generateRaw({
-            prompt: prompt,
-            api: '',
-            instructOverride: false,
-            quietToLoud: false
-        });
-
-        if (!response || response.trim().length === 0) {
-            error('AI returned empty response for keyword generation');
-            return [];
-        }
-
-        // Parse JSON response
-        // Strip markdown code fences if present
-        let jsonText = response.trim();
-        const codeFenceMatch = jsonText.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-        if (codeFenceMatch) {
-            jsonText = codeFenceMatch[1].trim();
-        }
-
-        const keywords = JSON.parse(jsonText);
-
-        if (!Array.isArray(keywords)) {
-            error('AI response is not an array:', keywords);
-            return [];
-        }
-
-        // Filter and clean keywords
-        const cleanedKeywords = keywords
-            .filter(k => k && typeof k === 'string')
-            .map(k => k.trim())
-            .filter(k => k.length > 0);
-
-        debug(`Generated ${cleanedKeywords.length} keywords: ${cleanedKeywords.join(', ')}`);
-        return cleanedKeywords;
-
-    } catch (err) {
-        error('Error generating keywords:', err);
-        return [];
-    }
-}
+// Standalone keyword generation has been removed; entries must provide keywords in the summary JSON.
 
 /**
  * Process a single summary object - extracts lorebook entries and creates/merges them
@@ -392,22 +294,6 @@ export async function processSummaryToLorebook(summary /*: any */, options /*: a
                 debug(`Creating new entry: ${normalizedEntry.comment}`);
 
                 try {
-                    // Generate keywords if none provided
-                    if (!normalizedEntry.keys || normalizedEntry.keys.length === 0) {
-                        debug(`No keywords provided, generating keywords for: ${normalizedEntry.comment}`);
-                        const generatedKeys = await generateKeywordsForEntry(
-                            normalizedEntry.comment,
-                            normalizedEntry.content
-                        );
-
-                        if (generatedKeys && generatedKeys.length > 0) {
-                            normalizedEntry.keys = generatedKeys;
-                            debug(`Generated ${generatedKeys.length} keywords: ${generatedKeys.join(', ')}`);
-                        } else {
-                            debug('No keywords generated, entry will have no activation keywords');
-                        }
-                    }
-
                     const createdEntry = await addLorebookEntry(lorebookName, normalizedEntry);
 
                     if (createdEntry) {
@@ -533,21 +419,7 @@ export async function processSingleLorebookEntry(entryData /*: any */, options /
             // Entry doesn't exist - create new
             debug(`Creating new entry: ${normalizedEntry.comment}`);
 
-            // Generate keywords if none provided
-            if (!normalizedEntry.keys || normalizedEntry.keys.length === 0) {
-                debug(`No keywords provided, generating keywords for: ${normalizedEntry.comment}`);
-                const generatedKeys = await generateKeywordsForEntry(
-                    normalizedEntry.comment,
-                    normalizedEntry.content
-                );
-
-                if (generatedKeys && generatedKeys.length > 0) {
-                    normalizedEntry.keys = generatedKeys;
-                    debug(`Generated ${generatedKeys.length} keywords: ${generatedKeys.join(', ')}`);
-                } else {
-                    debug('No keywords generated, entry will have no activation keywords');
-                }
-            }
+            // Keywords must be supplied in the summary JSON entry
 
             const createdEntry = await addLorebookEntry(lorebookName, normalizedEntry);
 

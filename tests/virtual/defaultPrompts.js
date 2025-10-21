@@ -30,6 +30,7 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 // - NEW entities discovered OR updates to existing entities
 // - Full descriptions WITH nuance and detail
 // - Each entry needs: name, type, keywords, content
+// - Optional: secondaryKeys (array) for AND disambiguation of generic terms
 // - DO NOT include timeline events (that goes in summary)
 // - Only entities worth remembering for later
 //
@@ -42,6 +43,7 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 //       "name": "Entity Name",
 //       "type": "character|location|item|faction|concept|lore",
 //       "keywords": ["keyword1", "keyword2", "keyword3"],
+//       "secondaryKeys": ["disambiguation term"], // optional
 //       "content": "Detailed description with nuance"
 //     }
 //   ]
@@ -56,11 +58,13 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 // - lore: World-building facts, historical events, rules
 //
 // KEYWORDS GUIDELINES:
-// - Include entity's canonical name
-// - Include aliases and alternate names
-// - Include related terms that would trigger needing this context
-// - Minimum 2 keywords, maximum 8 recommended
-// - Make them specific and relevant
+// - 2–5 keywords; all lowercase
+// - Include canonical name and common aliases
+// - Use natural phrases users would actually type
+// - Prefer specific multi-word nouns over generic single words
+// - Avoid generic terms (e.g., "place", "city", "market", "warrior") and verbs
+// - If a keyword is ambiguous, add an AND disambiguator via optional secondaryKeys (array)
+// - Do NOT output regex patterns
 //
 // CONTENT GUIDELINES:
 // - This is where ALL the detail and nuance goes
@@ -134,6 +138,7 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 // - UPDATES to existing entities
 // - Full descriptions WITH all nuance
 // - Each entry: name, type, keywords, content
+// - Optional: secondaryKeys (array) for AND disambiguation of generic terms
 // - Only significant entities worth remembering
 //
 // SCENE-SPECIFIC GUIDELINES:
@@ -164,12 +169,15 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 //    - Concepts: Secrets (who knows what), relationships, status changes
 //    - Lore: World-building, history, rules
 //
-// KEYWORDS FOR SCENES:
-// - Think about what would trigger needing this information later
-// - Include variations and related terms
-// - For secrets: include who knows and who doesn't
-// - For relationships: include both character names
-// - For locations: include region/area names
+// KEYWORDS GUIDELINES (SCENES):
+// - 2–5 keywords; all lowercase
+// - Include canonical name and common aliases
+// - Use natural phrases likely to appear in chat
+// - Prefer specific multi-word nouns over generic single words
+// - Avoid generic terms ("place", "city", "market", etc.) and verbs
+// - If a keyword is ambiguous, add an AND disambiguator via optional secondaryKeys
+// - For relationships: include both names (e.g., "alice bob")
+// - For locations: include area/region qualifiers when needed
 //
 // SCENE EXAMPLE:
 //
@@ -264,6 +272,7 @@ Check that the JSON meets these criteria:
 3. Has "lorebooks" field (array, may be empty)
 4. Summary focuses on timeline/events, not detailed descriptions
 5. Each lorebook entry has: name, type, keywords (array), content
+   - Optional: secondaryKeys (array) is allowed
 6. No timeline events in lorebook content
 7. No detailed descriptions in summary
 
@@ -281,7 +290,8 @@ Check that the JSON meets these criteria:
 2. Has "summary" field (string, covers scene events)
 3. Has "lorebooks" field (array, may be empty)
 4. Summary is concise timeline of scene events
-5. Lorebook entries have all required fields
+5. Lorebook entries have required fields (name, type, keywords, content)
+   - Optional: secondaryKeys (array) is allowed
 6. Good separation: events in summary, details in lorebooks
 
 Respond with ONLY:
