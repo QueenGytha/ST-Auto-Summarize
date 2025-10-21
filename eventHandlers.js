@@ -209,11 +209,14 @@ const eventHandlers = {
     'message_sent': handleMessageSent,
 };
 
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function on_chat_event(event /*: any */=null, data /*: any */=null) {
+// $FlowFixMe[signature-verification-failure]
+async function on_chat_event(event /*: ?string */=null, data /*: any */=null) /*: Promise<void> */ {
+    // data is any type - different event types pass different data types (number for message id, undefined, etc.) - legitimate use of any
+    if (!event) return;  // Guard against null event
     debug(`[on_chat_event] event: ${event}, data: ${JSON.stringify(data)}`);
     debug("Chat updated: " + event)
 
+    // $FlowFixMe[invalid-computed-prop] - eventHandlers is an object with string keys, check for existence below
     const handler = eventHandlers[event];
     if (handler) {
         await handler(data);
