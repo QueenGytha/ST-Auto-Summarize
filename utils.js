@@ -237,19 +237,25 @@ async function get_user_setting_text_input(key /*: any */, title /*: any */, des
 <p>${description}</p>
 `
     const ctx = getContext();
-    const popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {
+    // Use let with any type annotation to avoid Flow recursive definition error
+    // Can't use const because Flow would throw recursive-definition error
+    /* eslint-disable prefer-const */
+    let popup /*: any */;
+    popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {
         rows: 20,
         customButtons: [{
             text: 'Restore Default',
             appendAtEnd: true,
             // $FlowFixMe[missing-this-annot]
             action: function() {
-                this.mainInput.value = default_settings[key] ?? '';
+                // Capture popup from outer scope since 'this' is not bound correctly
+                popup.mainInput.value = default_settings[key] ?? '';
             }
         }]
     });
     popup.mainInput.classList.remove('result-control');
     const input = await popup.show();
+    /* eslint-enable prefer-const */
     if (input !== undefined && input !== null && input !== false) {
         set_settings(key, input);
         save_profile(); // auto-save when prompt is edited

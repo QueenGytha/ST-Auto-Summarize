@@ -11,6 +11,7 @@ import {
     running_scene_summary_prompt,
     default_running_scene_template,
 } from './index.js';
+import { DEFAULT_MERGE_PROMPTS } from './trackingEntries.js';
 
 export const default_settings = {
     // Error detection settings
@@ -134,8 +135,8 @@ Object.assign(default_settings, {
     auto_lorebooks_tracking_syntax_gm_notes: '<-- gm_notes: {{content}} -->', // Syntax pattern for GM notes
     auto_lorebooks_tracking_syntax_character_stats: '<-- character_stats: {{content}} -->', // Syntax pattern for character stats
     auto_lorebooks_tracking_merge_prefill: '', // Prefill for merge prompts
-    auto_lorebooks_tracking_merge_prompt_gm_notes: '', // Custom merge prompt for GM notes
-    auto_lorebooks_tracking_merge_prompt_character_stats: '', // Custom merge prompt for character stats
+    auto_lorebooks_tracking_merge_prompt_gm_notes: DEFAULT_MERGE_PROMPTS.gm_notes, // Default merge prompt for GM notes
+    auto_lorebooks_tracking_merge_prompt_character_stats: DEFAULT_MERGE_PROMPTS.character_stats, // Default merge prompt for character stats
     auto_lorebooks_tracking_merge_connection_profile: '', // Connection profile for merging
     auto_lorebooks_tracking_merge_completion_preset: '', // Completion preset for merging
 

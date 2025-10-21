@@ -33,7 +33,7 @@ const TRACKING_ENTRY_CONFIG = {
 /**
  * Default prompts for merging updates
  */
-const DEFAULT_MERGE_PROMPTS = {
+export const DEFAULT_MERGE_PROMPTS = {
     gm_notes: `You are a Game Master assistant helping to maintain campaign notes.
 
 Current GM Notes:

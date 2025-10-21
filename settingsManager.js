@@ -17,6 +17,7 @@ import {
     scrollChatToBottom,
     selected_group
 } from './index.js';
+import { DEFAULT_MERGE_PROMPTS } from './trackingEntries.js';
 
 // Settings
 const global_settings = {
@@ -243,8 +244,8 @@ function reset_settings() {
             syntax_gm_notes: '<-- gm_notes: {{content}} -->',
             syntax_character_stats: '<-- character_stats: {{content}} -->',
             merge_prefill: '',
-            merge_prompt_gm_notes: '',
-            merge_prompt_character_stats: '',
+            merge_prompt_gm_notes: DEFAULT_MERGE_PROMPTS.gm_notes,
+            merge_prompt_character_stats: DEFAULT_MERGE_PROMPTS.character_stats,
             merge_connection_profile: '',
             merge_completion_preset: ''
         },

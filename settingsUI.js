@@ -33,6 +33,7 @@ import {
     extension_settings,
     saveSettingsDebounced,
 } from './index.js';
+import { DEFAULT_MERGE_PROMPTS } from './trackingEntries.js';
 
 // UI initialization
 async function initialize_settings_listeners() {
@@ -67,7 +68,7 @@ Available Macros:
 <ul style="text-align: left; font-size: smaller;">
     <li><b>{{summary}}:</b> The generated summary to validate.</li>
 </ul>`;
-        get_user_setting_text_input('message_summary_error_detection_prompt', 'Edit Message Summary Error Detection Prompt', description);
+        await get_user_setting_text_input('message_summary_error_detection_prompt', 'Edit Message Summary Error Detection Prompt', description);
     });
 
     bind_setting('#auto_hide_message_age', 'auto_hide_message_age', 'number', refresh_memory);
@@ -114,7 +115,7 @@ Available Macros:
     <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset (Currently: ${max_tokens}).</li>
 </ul>
 `
-        get_user_setting_text_input('prompt', 'Edit Summary Prompt', description)
+        await get_user_setting_text_input('prompt', 'Edit Summary Prompt', description)
     })
     bind_function('#preview_message_history', async () => {
         // $FlowFixMe[cannot-resolve-name]
@@ -242,7 +243,7 @@ Available Macros:
 <ul style="text-align: left; font-size: smaller;">
     <li><b>{{summary}}:</b> The generated scene summary to validate.</li>
 </ul>`;
-        get_user_setting_text_input('scene_summary_error_detection_prompt', 'Edit Scene Summary Error Detection Prompt', description);
+        await get_user_setting_text_input('scene_summary_error_detection_prompt', 'Edit Scene Summary Error Detection Prompt', description);
     });
     bind_function('#edit_scene_summary_prompt', async () => {
         const description = `
@@ -253,7 +254,7 @@ Available Macros:
     <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset.</li>
 </ul>
 `;
-        get_user_setting_text_input('scene_summary_prompt', 'Edit Scene Summary Prompt', description);
+        await get_user_setting_text_input('scene_summary_prompt', 'Edit Scene Summary Prompt', description);
     });
 
     // Scene summary context limit and type
@@ -364,7 +365,7 @@ Available Macros:
     <li><b>{{current_running_summary}}:</b> The current running summary (if exists).</li>
     <li><b>{{scene_summaries}}:</b> The individual scene summaries to merge.</li>
 </ul>`;
-        get_user_setting_text_input('running_scene_summary_prompt', 'Edit Running Scene Summary Prompt', description);
+        await get_user_setting_text_input('running_scene_summary_prompt', 'Edit Running Scene Summary Prompt', description);
     });
 
     // --- Auto Scene Break Detection Settings ---
@@ -410,7 +411,7 @@ Available Macros:
 <ul style="text-align: left; font-size: smaller;">
     <li><b>{{message}}:</b> The message text to analyze for scene break detection.</li>
 </ul>`;
-        get_user_setting_text_input('auto_scene_break_prompt', 'Edit Auto Scene Break Detection Prompt', description);
+        await get_user_setting_text_input('auto_scene_break_prompt', 'Edit Auto Scene Break Detection Prompt', description);
     });
 
     // Initialize running scene summary navbar
@@ -660,6 +661,27 @@ function initialize_lorebooks_settings_listeners() {
         // $FlowFixMe[prop-missing]
         extension_settings.autoLorebooks.tracking.merge_prompt_character_stats = value;
         saveSettingsDebounced();
+    });
+
+    // Restore default buttons for merge prompts
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('click', '#restore-gm-notes-merge-prompt', function() {
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-merge-prompt-gm-notes').val(DEFAULT_MERGE_PROMPTS.gm_notes);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-merge-prompt-gm-notes').trigger('input');
+        toast('GM Notes merge prompt restored to default', 'success');
+    });
+
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('click', '#restore-character-stats-merge-prompt', function() {
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-merge-prompt-character-stats').val(DEFAULT_MERGE_PROMPTS.character_stats);
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-tracking-merge-prompt-character-stats').trigger('input');
+        toast('Character Stats merge prompt restored to default', 'success');
     });
 
     // Summary processing settings
