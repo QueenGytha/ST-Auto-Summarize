@@ -28,3 +28,44 @@ declare var Popup: any;
 declare var chat: any;
 declare var toastr: any;
 declare var globalThis: any;
+
+// SillyTavern Message Type (based on actual message structure in script.js)
+// extra is optional for backwards compatibility with old chat files
+declare type STMessage = {
+    name: string,
+    is_user: boolean,
+    is_system: boolean,
+    is_thoughts?: boolean,
+    send_date: number,
+    mes: string,
+    original_avatar?: string,
+    extra?: {
+        isSmallSys?: boolean,
+        token_count?: number,
+        display_text?: string,
+        type?: string,
+        ignore_formatting?: boolean,
+        [key: string]: any,
+        ...
+    },
+    force_avatar?: string,
+    swipe_id?: number,
+    swipes?: Array<string>,
+    swipe_info?: Array<{
+        send_date: number,
+        gen_started?: number,
+        gen_finished?: number,
+        extra?: {
+            token_count?: number,
+            ...
+        },
+        ...
+    }>,
+    ...
+};
+
+// Common function types used throughout the extension
+declare type GetData = (message: STMessage, key: string) => any;
+declare type SetData = (message: STMessage, key: string, value: any) => void;
+declare type GetMessageDiv = (index: number) => any;
+declare type SaveChatDebounced = () => void;

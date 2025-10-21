@@ -308,6 +308,13 @@ declare module "../../../../script.js" {
   declare export function saveChatDebounced(): void;
 
   /**
+   * Saves metadata for current chat or group
+   * If in a group chat, saves group metadata. Otherwise saves chat metadata.
+   * @returns Promise that resolves when save completes
+   */
+  declare export function saveMetadata(): Promise<void>;
+
+  /**
    * Gets current chat ID
    * @returns Current chat ID or undefined
    */
@@ -786,6 +793,10 @@ declare module "../../../../scripts/st-context.js" {
       ignore: Symbol,
       ...
     };
+    set_connection_profile?: (profile: string) => Promise<void>;
+    set_preset?: (preset: string) => Promise<void>;
+    get_current_connection_profile?: () => Promise<string>;
+    get_current_preset?: () => Promise<string>;
   }
 
   /**
@@ -918,7 +929,241 @@ declare module "../../../../scripts/extensions/regex/engine.js" {
    * @returns Processed text
    */
   declare export function runRegexScript(
-    scriptName: string,
-    text: string
-  ): Promise<string>;
+    scriptName: any,
+    text: string,
+    options?: { characterOverride?: any, ... }
+  ): string;
+}
+
+declare module "../../../extensions.js" {
+  /**
+   * Gets the SillyTavern context object
+   * Re-exported from st-context.js
+   * @returns Full SillyTavern context (typed as any in module context)
+   */
+  declare export function getContext(): any;
+
+  /**
+   * Gets the Extras API URL from extension settings
+   * @returns API URL string
+   */
+  declare export function getApiUrl(): string;
+
+  /**
+   * Global extension settings object
+   * Dynamic structure - properties added by extensions at runtime
+   */
+  declare export var extension_settings: {
+    apiUrl: string,
+    apiKey: string,
+    autoConnect: boolean,
+    notifyUpdates: boolean,
+    disabledExtensions: Array<string>,
+    expressionOverrides: Array<any>,
+    memory: { [key: string]: any, ... },
+    note: {
+      default: string,
+      chara: Array<any>,
+      wiAddition: Array<any>,
+      ...
+    },
+    // Most properties are dynamically added by extensions
+    [key: string]: any,
+    ...
+  };
+}
+
+declare module "../../../utils.js" {
+  /**
+   * Hash function for strings
+   * @param str - String to hash
+   * @param seed - Optional seed value
+   * @returns 32-bit integer hash
+   */
+  declare export function getStringHash(str: string, seed?: number): number;
+
+  /**
+   * Creates a debounced function that delays invoking func until after timeout
+   * @param func - Function to debounce
+   * @param timeout - Timeout in milliseconds
+   * @returns Debounced function
+   */
+  declare export function debounce<F: Function>(
+    func: F,
+    timeout?: number
+  ): (...args: any[]) => void;
+
+  /**
+   * Copies text to clipboard
+   * @param text - Text to copy
+   */
+  declare export function copyText(text: string): void;
+
+  /**
+   * Trims text to end at a complete sentence
+   * @param input - Input text to trim
+   * @returns Trimmed text ending at sentence boundary
+   */
+  declare export function trimToEndSentence(input: string): string;
+
+  /**
+   * Triggers browser download of content
+   * @param content - Content to download (string or Blob)
+   * @param fileName - Name for downloaded file
+   * @param contentType - MIME type of content
+   */
+  declare export function download(
+    content: string | any,
+    fileName: string,
+    contentType: string
+  ): void;
+
+  /**
+   * Reads a File object and parses as JSON
+   * @param file - File to parse
+   * @returns Parsed JSON data
+   */
+  declare export function parseJsonFile(file: any): Promise<any>;
+
+  /**
+   * Polls a condition function until it returns true or timeout
+   * @param condition - Function that returns boolean
+   * @param timeout - Timeout in milliseconds
+   * @param interval - Poll interval in milliseconds
+   * @param options - Additional options
+   * @returns Promise that resolves when condition becomes true
+   */
+  declare export function waitUntilCondition(
+    condition: () => boolean,
+    timeout?: number,
+    interval?: number,
+    options?: Object
+  ): Promise<void>;
+}
+
+declare module "../../../power-user.js" {
+  /**
+   * Loads saved positions of moveable UI elements from localStorage
+   */
+  declare export function loadMovingUIState(): void;
+
+  /**
+   * Renders a template string with macros/variables substituted
+   * @param params - Parameters to substitute
+   * @param options - Optional custom settings
+   * @returns Rendered string with substitutions applied
+   */
+  declare export function renderStoryString(
+    params: any,
+    options?: {
+      customStoryString?: string | null,
+      customInstructSettings?: any | null,
+      customContextSettings?: any | null,
+      ...
+    }
+  ): string;
+
+  /**
+   * Global power user settings object
+   * Contains UI preferences and advanced settings
+   * Dynamic structure that grows with features
+   */
+  declare export var power_user: {
+    [key: string]: any,
+    ...
+  };
+}
+
+declare module "../../../group-chats.js" {
+  /**
+   * Boolean flag indicating if group chat is currently generating
+   * Similar to is_send_press but for groups
+   */
+  declare export var is_group_generating: boolean;
+
+  /**
+   * Currently selected group ID
+   * null if no group selected
+   */
+  declare export var selected_group: string | null;
+
+  /**
+   * ID of currently open group chat
+   * null if no group chat open
+   */
+  declare export var openGroupId: string | null;
+
+  /**
+   * Array of all loaded group objects
+   * Each object contains group metadata
+   */
+  declare export var groups: Array<any>;
+}
+
+declare module "../../../instruct-mode.js" {
+  /**
+   * Formats a message for instruct mode
+   * @returns Formatted message string
+   */
+  declare export function formatInstructModeChat(
+    name: string,
+    mes: string,
+    isUser: boolean,
+    isNarrator: boolean,
+    forceAvatar: any,
+    name1: string,
+    name2: string,
+    forceOutputSequence: any,
+    customInstruct?: any | null
+  ): string;
+}
+
+declare module "../../../preset-manager.js" {
+  /**
+   * Gets the preset manager for an API
+   * @param apiId - API identifier
+   * @returns Preset manager instance
+   */
+  declare export function getPresetManager(apiId?: string): any;
+}
+
+declare module "../../../RossAscends-mods.js" {
+  /**
+   * Makes a jQuery element draggable
+   * @param $elmnt - jQuery element to make draggable
+   */
+  declare export function dragElement($elmnt: any): void;
+}
+
+declare module "../../../constants.js" {
+  /**
+   * Debounce timeout constants
+   */
+  declare export var debounce_timeout: {
+    standard: number,
+    relaxed: number,
+    extended: number,
+    ...
+  };
+}
+
+declare module "../../../macros.js" {
+  /**
+   * Macro parser class for handling text substitution
+   */
+  declare export class MacrosParser {
+    constructor(): void;
+    static registerMacro(name: string, callback: () => any): void;
+    [key: string]: any;
+  }
+}
+
+declare module "../../../slash-commands/SlashCommandCommonEnumsProvider.js" {
+  /**
+   * Common enum providers for slash commands
+   */
+  declare export var commonEnumProviders: {
+    [key: string]: any,
+    ...
+  };
 }

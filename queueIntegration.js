@@ -22,16 +22,15 @@ function isQueueEnabled() {
  * Queue a message summarization operation
  * @param {number} index - Message index
  * @param {object} options - Additional options (priority, dependencies, etc.)
- * @returns {string} Operation ID
+ * @returns {Promise<string>} Operation ID
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function queueSummarizeMessage(index /*: any */, options /*: any */ = {}) {
+export async function queueSummarizeMessage(index /*: number */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue summarization');
         return null;
     }
 
-    return enqueueOperation(
+    return await enqueueOperation(
         OperationType.SUMMARIZE_MESSAGE,
         { index },
         {
@@ -49,16 +48,15 @@ export function queueSummarizeMessage(index /*: any */, options /*: any */ = {})
  * Queue multiple message summarization operations
  * @param {Array<number>} indexes - Array of message indexes
  * @param {object} options - Additional options
- * @returns {Array<string>} Array of operation IDs
+ * @returns {Promise<Array<string>>} Array of operation IDs
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function queueSummarizeMessages(indexes /*: any */, options /*: any */ = {}) {
+export async function queueSummarizeMessages(indexes /*: Array<number> */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<Array<?string>> */ {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue batch summarization');
         return [];
     }
 
-    return indexes.map(index => queueSummarizeMessage(index, options));
+    return await Promise.all(indexes.map(index => queueSummarizeMessage(index, options)));
 }
 
 /**
@@ -66,16 +64,15 @@ export function queueSummarizeMessages(indexes /*: any */, options /*: any */ = 
  * @param {string} summary - Summary text to validate
  * @param {string} type - Validation type ('regular' or 'scene')
  * @param {object} options - Additional options
- * @returns {string} Operation ID
+ * @returns {Promise<string>} Operation ID
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function queueValidateSummary(summary /*: any */, type /*: any */, options /*: any */ = {}) {
+export async function queueValidateSummary(summary /*: string */, type /*: string */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue validation');
         return null;
     }
 
-    return enqueueOperation(
+    return await enqueueOperation(
         OperationType.VALIDATE_SUMMARY,
         { summary, type },
         {
@@ -93,16 +90,15 @@ export function queueValidateSummary(summary /*: any */, type /*: any */, option
  * Queue a scene break detection operation
  * @param {number} index - Message index
  * @param {object} options - Additional options
- * @returns {string} Operation ID
+ * @returns {Promise<string>} Operation ID
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function queueDetectSceneBreak(index /*: any */, options /*: any */ = {}) {
+export async function queueDetectSceneBreak(index /*: number */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue scene break detection');
         return null;
     }
 
-    return enqueueOperation(
+    return await enqueueOperation(
         OperationType.DETECT_SCENE_BREAK,
         { index },
         {
@@ -120,32 +116,30 @@ export function queueDetectSceneBreak(index /*: any */, options /*: any */ = {})
  * Queue multiple scene break detection operations
  * @param {Array<number>} indexes - Array of message indexes
  * @param {object} options - Additional options
- * @returns {Array<string>} Array of operation IDs
+ * @returns {Promise<Array<string>>} Array of operation IDs
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function queueDetectSceneBreaks(indexes /*: any */, options /*: any */ = {}) {
+export async function queueDetectSceneBreaks(indexes /*: Array<number> */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<Array<?string>> */ {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue batch scene detection');
         return [];
     }
 
-    return indexes.map(index => queueDetectSceneBreak(index, options));
+    return await Promise.all(indexes.map(index => queueDetectSceneBreak(index, options)));
 }
 
 /**
  * Queue a scene summary generation operation
  * @param {number} index - Scene break message index
  * @param {object} options - Additional options
- * @returns {string} Operation ID
+ * @returns {Promise<string>} Operation ID
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function queueGenerateSceneSummary(index /*: any */, options /*: any */ = {}) {
+export async function queueGenerateSceneSummary(index /*: number */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue scene summary generation');
         return null;
     }
 
-    return enqueueOperation(
+    return await enqueueOperation(
         OperationType.GENERATE_SCENE_SUMMARY,
         { index },
         {
@@ -162,16 +156,15 @@ export function queueGenerateSceneSummary(index /*: any */, options /*: any */ =
 /**
  * Queue a running summary generation operation (bulk)
  * @param {object} options - Additional options
- * @returns {string} Operation ID
+ * @returns {Promise<string>} Operation ID
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function queueGenerateRunningSummary(options /*: any */ = {}) {
+export async function queueGenerateRunningSummary(options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue running summary generation');
         return null;
     }
 
-    return enqueueOperation(
+    return await enqueueOperation(
         OperationType.GENERATE_RUNNING_SUMMARY,
         {},
         {
@@ -188,16 +181,15 @@ export function queueGenerateRunningSummary(options /*: any */ = {}) {
  * Queue combining a scene with running summary
  * @param {number} index - Scene index to combine
  * @param {object} options - Additional options
- * @returns {string} Operation ID
+ * @returns {Promise<string>} Operation ID
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function queueCombineSceneWithRunning(index /*: any */, options /*: any */ = {}) {
+export async function queueCombineSceneWithRunning(index /*: number */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue scene combination');
         return null;
     }
 
-    return enqueueOperation(
+    return await enqueueOperation(
         OperationType.COMBINE_SCENE_WITH_RUNNING,
         { index },
         {
@@ -205,6 +197,37 @@ export function queueCombineSceneWithRunning(index /*: any */, options /*: any *
             dependencies: options.dependencies ?? [],
             metadata: {
                 scene_index: index,
+                ...options.metadata
+            }
+        }
+    );
+}
+
+/**
+ * Queue processing of a single lorebook entry
+ * @param {Object} entryData - Lorebook entry data {name, type, keywords, content}
+ * @param {number} messageIndex - Message index this entry came from
+ * @param {Object} options - Queue options
+ * @returns {Promise<string|null>} Operation ID or null if queue disabled
+ */
+export async function queueProcessLorebookEntry(entryData /*: Object */, messageIndex /*: number */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
+    if (!isQueueEnabled()) {
+        debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue lorebook entry processing');
+        return null;
+    }
+
+    const entryName = entryData.name || entryData.comment || 'Unknown';
+    debug(SUBSYSTEM.QUEUE, `Queueing lorebook entry: ${entryName} from message ${messageIndex}`);
+
+    return await enqueueOperation(
+        OperationType.PROCESS_LOREBOOK_ENTRY,
+        { entryData, messageIndex },
+        {
+            priority: options.priority ?? 0,
+            dependencies: options.dependencies ?? [],
+            metadata: {
+                entry_name: entryName,
+                message_index: messageIndex,
                 ...options.metadata
             }
         }
@@ -220,4 +243,5 @@ export default {
     queueGenerateSceneSummary,
     queueGenerateRunningSummary,
     queueCombineSceneWithRunning,
+    queueProcessLorebookEntry,
 };

@@ -30,7 +30,7 @@ function get_message_div(index /*: any */) {
     return div;
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_summary_style_class(message /*: any */) {
+function get_summary_style_class(message /*: STMessage */) {
     const include = get_data(message, 'include');
     const exclude = get_data(message, 'exclude');  // force-excluded by user
     const lagging = get_data(message, 'lagging');  // not injected yet

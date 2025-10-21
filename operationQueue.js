@@ -1,4 +1,4 @@
-// Flow disabled: Object literal type annotations cause parse errors in this file
+// @flow
 // operationQueue.js - Persistent operation queue using shared lorebook entry storage
 
 import {
@@ -24,13 +24,13 @@ import {
 const QUEUE_ENTRY_NAME = '__operation_queue';
 
 // Operation status constants
-export const OperationStatus = {
+export const OperationStatus /*: { [key: string]: OperationStatusType } */ = /*:: ( */ {
     PENDING: 'pending',
     IN_PROGRESS: 'in_progress',
     COMPLETED: 'completed',
     FAILED: 'failed',
     CANCELLED: 'cancelled'
-};
+} /*:: : { [key: string]: OperationStatusType }) */;
 
 // Operation type constants
 export const OperationType = {
@@ -42,15 +42,48 @@ export const OperationType = {
     GENERATE_RUNNING_SUMMARY: 'generate_running_summary',
     COMBINE_SCENE_WITH_RUNNING: 'combine_scene_with_running',
     GENERATE_COMBINED_SUMMARY: 'generate_combined_summary',
+    PROCESS_LOREBOOK_ENTRY: 'process_lorebook_entry',
+    MERGE_LOREBOOK_ENTRY: 'merge_lorebook_entry',
 };
 
+// Flow type definitions
+/*::
+type OperationStatusType = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
+type OperationTypeType = 'summarize_message' | 'validate_summary' | 'detect_scene_break' | 'generate_scene_summary' | 'generate_scene_name' | 'generate_running_summary' | 'combine_scene_with_running' | 'generate_combined_summary' | 'process_lorebook_entry' | 'merge_lorebook_entry';
+
+type Operation = {
+    id: string,
+    type: OperationTypeType,
+    params: any,
+    status: OperationStatusType,
+    created_at: number,
+    started_at: ?number,
+    completed_at: ?number,
+    error: ?string,
+    retries: number,
+    priority: number,
+    dependencies: Array<string>,
+    metadata: any,
+    queueVersion: number,
+    ...
+};
+
+type QueueStructure = {
+    queue: Array<Operation>,
+    current_operation_id: ?string,
+    paused: boolean,
+    version: number,
+    ...
+};
+*/
+
 // Module state
-let isInitialized = false;
-let currentQueue = null;
-let queueProcessor = null;
-let uiUpdateCallback = null;
-let isClearing = false;  // Flag to prevent enqueuing during clear
-let queueVersion = 0;  // Incremented on clear to invalidate in-flight operations
+let isInitialized /*: boolean */ = false;
+let currentQueue /*: ?QueueStructure */ = null;
+let queueProcessor /*: ?Promise<void> */ = null;
+let uiUpdateCallback /*: ?Function */ = null;
+let isClearing /*: boolean */ = false;  // Flag to prevent enqueuing during clear
+let queueVersion /*: number */ = 0;  // Incremented on clear to invalidate in-flight operations
 
 /**
  * Initialize the operation queue system
@@ -228,60 +261,62 @@ async function loadQueue() {
                     debug(SUBSYSTEM.QUEUE, `Loaded queue from lorebook with ${currentQueue.queue.length} operations`);
                 } catch (parseErr) {
                     error(SUBSYSTEM.QUEUE, 'Failed to parse queue entry content:', parseErr);
-                    currentQueue = {
+                    currentQueue = /*:: ( */ {
                         queue: [],
                         current_operation_id: null,
                         paused: false,
                         version: 1
-                    };
+                    } /*:: : QueueStructure) */;
                 }
             } else {
                 // No lorebook entry yet, use empty queue
                 debug(SUBSYSTEM.QUEUE, 'No lorebook queue entry yet, using empty queue');
-                currentQueue = {
+                currentQueue = /*:: ( */ {
                     queue: [],
                     current_operation_id: null,
                     paused: false,
                     version: 1
-                };
+                } /*:: : QueueStructure) */;
             }
         } else {
             // Load from chat_metadata (fallback mode)
             if (!chat_metadata.auto_summarize_operation_queue) {
-                chat_metadata.auto_summarize_operation_queue = {
+                chat_metadata.auto_summarize_operation_queue = /*:: ( */ {
                     queue: [],
                     current_operation_id: null,
                     paused: false,
                     version: 1
-                };
+                } /*:: : QueueStructure) */;
             }
             currentQueue = chat_metadata.auto_summarize_operation_queue;
             debug(SUBSYSTEM.QUEUE, `Loaded queue from chat_metadata with ${currentQueue.queue.length} operations`);
         }
 
         // Clean up any stale in_progress operations (from crashes/restarts)
-        let cleanedCount = 0;
-        for (const op of currentQueue.queue) {
-            if (op.status === OperationStatus.IN_PROGRESS) {
-                op.status = OperationStatus.PENDING;
-                cleanedCount++;
+        if (currentQueue) {
+            let cleanedCount = 0;
+            for (const op of currentQueue.queue) {
+                if (op.status === OperationStatus.IN_PROGRESS) {
+                    op.status = OperationStatus.PENDING;
+                    cleanedCount++;
+                }
             }
-        }
 
-        if (cleanedCount > 0) {
-            debug(SUBSYSTEM.QUEUE, `Cleaned ${cleanedCount} stale in_progress operations`);
-            await saveQueue();
+            if (cleanedCount > 0) {
+                debug(SUBSYSTEM.QUEUE, `Cleaned ${cleanedCount} stale in_progress operations`);
+                await saveQueue();
+            }
         }
 
         notifyUIUpdate();
     } catch (err) {
         error(SUBSYSTEM.QUEUE, 'Failed to load queue:', err);
-        currentQueue = {
+        currentQueue = /*:: ( */ {
             queue: [],
             current_operation_id: null,
             paused: false,
             version: 1
-        };
+        } /*:: : QueueStructure) */;
     }
 }
 
@@ -407,7 +442,7 @@ export async function enqueueOperation(type /*: any */, params /*: any */, optio
         return null;
     }
 
-    const operation = {
+    const operation /*: Operation */ = /*:: ( */ {
         id: generateOperationId(),
         type: type,
         params: params,
@@ -421,7 +456,7 @@ export async function enqueueOperation(type /*: any */, params /*: any */, optio
         dependencies: options.dependencies ?? [],
         metadata: options.metadata ?? {},
         queueVersion: queueVersion  // Stamp with current version
-    };
+    } /*:: : Operation) */;
 
     // $FlowFixMe[incompatible-use] [incompatible-type]
     currentQueue.queue.push(operation);
@@ -792,7 +827,7 @@ function startQueueProcessor() {
             // Mark operation as in progress BEFORE saving
             // $FlowFixMe[incompatible-use]
             currentQueue.current_operation_id = operation.id;
-            operation.status = OperationStatus.IN_PROGRESS;
+            operation.status = /*:: ( */ OperationStatus.IN_PROGRESS /*:: : OperationStatusType) */;
             if (!operation.started_at) {
                 operation.started_at = Date.now();
             }

@@ -1,9 +1,10 @@
 // summaryToLorebookProcessor.js - Extract lorebook entries from summary JSON objects and process them
 
-import { chat_metadata, saveMetadata } from '../../../../script.js';
+import { chat_metadata, saveMetadata, generateRaw } from '../../../../script.js';
+import { extension_settings } from '../../../extensions.js';
 
 // Will be imported from index.js via barrel exports
-let log, debug, error, toast;
+let log, debug, error, toast, get_settings;
 let getAttachedLorebook, getLorebookEntries, addLorebookEntry;
 let mergeLorebookEntry;
 
@@ -15,6 +16,7 @@ export function initSummaryToLorebookProcessor(utils, lorebookManagerModule, ent
     debug = utils.debug;
     error = utils.error;
     toast = utils.toast;
+    get_settings = utils.get_settings;
 
     // Import lorebook manager functions
     if (lorebookManagerModule) {
@@ -96,7 +98,13 @@ function simpleHash(str) {
  */
 function extractLorebookData(summary) {
     try {
-        // Check if summary has a lorebook property
+        // Check if summary has a lorebooks array (plural - standard format)
+        if (summary.lorebooks && Array.isArray(summary.lorebooks)) {
+            debug('Found lorebooks array in summary');
+            return { entries: summary.lorebooks };
+        }
+
+        // Check if summary has a lorebook property (singular - legacy format)
         if (summary.lorebook) {
             debug('Found lorebook property in summary');
             return summary.lorebook;
@@ -171,6 +179,101 @@ function normalizeEntryData(entry) {
         position: entry.position ?? 0,
         depth: entry.depth ?? 4
     };
+}
+
+/**
+ * Generate keywords for a lorebook entry using AI
+ * @param {string} entryName - Name/comment of the entry
+ * @param {string} entryContent - Content of the entry
+ * @returns {Promise<Array<string>>} Generated keywords or empty array
+ */
+async function generateKeywordsForEntry(entryName, entryContent) {
+    try {
+        // Check if keyword generation is enabled
+        const keywordGenEnabled = get_settings('auto_lorebooks_keyword_generation_enabled');
+        if (!keywordGenEnabled) {
+            debug('Keyword generation disabled, skipping');
+            return [];
+        }
+
+        debug(`Generating keywords for entry: ${entryName}`);
+
+        // Get prompt template
+        const promptTemplate = get_settings('auto_lorebooks_keyword_generation_prompt') ||
+            extension_settings?.autoLorebooks?.keyword_generation_prompt || '';
+
+        if (!promptTemplate) {
+            error('No keyword generation prompt configured');
+            return [];
+        }
+
+        // Build prompt
+        let prompt = promptTemplate
+            .replace(/\{\{entry_name\}\}/g, entryName || '')
+            .replace(/\{\{entry_content\}\}/g, entryContent || '');
+
+        // Add prefill if configured
+        const prefill = get_settings('auto_lorebooks_keyword_generation_prefill') || '';
+        if (prefill) {
+            prompt = `${prompt}\n${prefill}`;
+        }
+
+        // Get connection profile and preset from settings
+        const connectionProfile = get_settings('auto_lorebooks_keyword_generation_connection_profile') || null;
+        const preset = get_settings('auto_lorebooks_keyword_generation_completion_preset') || null;
+
+        // Prepare generation options
+        const options = {
+            quiet_prompt: prompt,
+            quiet: true,
+            force_name2: true
+        };
+
+        if (connectionProfile) {
+            options.connectionProfile = connectionProfile;
+        }
+
+        if (preset) {
+            options.preset = preset;
+        }
+
+        // Call AI
+        debug('Calling AI for keyword generation...');
+        const response = await generateRaw(prompt, '', false, false, options);
+
+        if (!response || response.trim().length === 0) {
+            error('AI returned empty response for keyword generation');
+            return [];
+        }
+
+        // Parse JSON response
+        // Strip markdown code fences if present
+        let jsonText = response.trim();
+        const codeFenceMatch = jsonText.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+        if (codeFenceMatch) {
+            jsonText = codeFenceMatch[1].trim();
+        }
+
+        const keywords = JSON.parse(jsonText);
+
+        if (!Array.isArray(keywords)) {
+            error('AI response is not an array:', keywords);
+            return [];
+        }
+
+        // Filter and clean keywords
+        const cleanedKeywords = keywords
+            .filter(k => k && typeof k === 'string')
+            .map(k => k.trim())
+            .filter(k => k.length > 0);
+
+        debug(`Generated ${cleanedKeywords.length} keywords: ${cleanedKeywords.join(', ')}`);
+        return cleanedKeywords;
+
+    } catch (err) {
+        error('Error generating keywords:', err);
+        return [];
+    }
 }
 
 /**
@@ -278,6 +381,22 @@ export async function processSummaryToLorebook(summary, options = {}) {
                 debug(`Creating new entry: ${normalizedEntry.comment}`);
 
                 try {
+                    // Generate keywords if none provided
+                    if (!normalizedEntry.keys || normalizedEntry.keys.length === 0) {
+                        debug(`No keywords provided, generating keywords for: ${normalizedEntry.comment}`);
+                        const generatedKeys = await generateKeywordsForEntry(
+                            normalizedEntry.comment,
+                            normalizedEntry.content
+                        );
+
+                        if (generatedKeys && generatedKeys.length > 0) {
+                            normalizedEntry.keys = generatedKeys;
+                            debug(`Generated ${generatedKeys.length} keywords: ${generatedKeys.join(', ')}`);
+                        } else {
+                            debug('No keywords generated, entry will have no activation keywords');
+                        }
+                    }
+
                     const createdEntry = await addLorebookEntry(lorebookName, normalizedEntry);
 
                     if (createdEntry) {
@@ -325,6 +444,124 @@ export async function processSummaryToLorebook(summary, options = {}) {
         return {
             success: false,
             message: err.message
+        };
+    }
+}
+
+/**
+ * Process a single lorebook entry - creates or merges with existing entry
+ * @param {Object} entryData - Single lorebook entry data
+ * @param {Object} options - Processing options
+ * @returns {Promise<Object>} Processing result
+ */
+export async function processSingleLorebookEntry(entryData, options = {}) {
+    try {
+        const { useQueue = false } = options;
+
+        if (!entryData) {
+            return {
+                success: false,
+                message: 'No entry data provided'
+            };
+        }
+
+        // Get attached lorebook
+        const lorebookName = getAttachedLorebook();
+        if (!lorebookName) {
+            error('No lorebook attached to process entry');
+            return {
+                success: false,
+                message: 'No lorebook attached'
+            };
+        }
+
+        // Normalize the entry data
+        const normalizedEntry = normalizeEntryData(entryData);
+        debug(`Processing lorebook entry: ${normalizedEntry.comment}`);
+
+        // Get existing entries
+        const existingEntries = await getLorebookEntries(lorebookName);
+        if (!existingEntries) {
+            error('Failed to get existing entries');
+            return {
+                success: false,
+                message: 'Failed to load lorebook'
+            };
+        }
+
+        // Check if entry exists
+        const existingEntry = findExistingEntry(existingEntries, normalizedEntry);
+
+        if (existingEntry) {
+            // Entry exists - merge with AI
+            debug(`Found existing entry: ${existingEntry.comment} (UID: ${existingEntry.uid})`);
+
+            const mergeResult = await mergeLorebookEntry(
+                lorebookName,
+                existingEntry,
+                normalizedEntry,
+                { useQueue }
+            );
+
+            if (mergeResult.success) {
+                return {
+                    success: true,
+                    action: 'merged',
+                    comment: normalizedEntry.comment,
+                    uid: existingEntry.uid
+                };
+            } else {
+                return {
+                    success: false,
+                    message: mergeResult.message,
+                    comment: normalizedEntry.comment
+                };
+            }
+
+        } else {
+            // Entry doesn't exist - create new
+            debug(`Creating new entry: ${normalizedEntry.comment}`);
+
+            // Generate keywords if none provided
+            if (!normalizedEntry.keys || normalizedEntry.keys.length === 0) {
+                debug(`No keywords provided, generating keywords for: ${normalizedEntry.comment}`);
+                const generatedKeys = await generateKeywordsForEntry(
+                    normalizedEntry.comment,
+                    normalizedEntry.content
+                );
+
+                if (generatedKeys && generatedKeys.length > 0) {
+                    normalizedEntry.keys = generatedKeys;
+                    debug(`Generated ${generatedKeys.length} keywords: ${generatedKeys.join(', ')}`);
+                } else {
+                    debug('No keywords generated, entry will have no activation keywords');
+                }
+            }
+
+            const createdEntry = await addLorebookEntry(lorebookName, normalizedEntry);
+
+            if (createdEntry) {
+                return {
+                    success: true,
+                    action: 'created',
+                    comment: normalizedEntry.comment,
+                    uid: createdEntry.uid
+                };
+            } else {
+                return {
+                    success: false,
+                    message: 'Failed to create entry',
+                    comment: normalizedEntry.comment
+                };
+            }
+        }
+
+    } catch (err) {
+        error('Error processing single lorebook entry', err);
+        return {
+            success: false,
+            message: err.message,
+            comment: entryData?.comment || entryData?.name || 'Unknown'
         };
     }
 }
@@ -401,6 +638,7 @@ export function clearProcessedSummaries() {
 export default {
     initSummaryToLorebookProcessor,
     processSummaryToLorebook,
+    processSingleLorebookEntry,
     processSummariesToLorebook,
     clearProcessedSummaries,
     isSummaryProcessed

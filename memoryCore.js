@@ -43,7 +43,7 @@ let last_scene_injection = "";
 
 // Retrieving memories
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function check_message_exclusion(message /*: any */) {
+function check_message_exclusion(message /*: STMessage */) {
     // check for any exclusion criteria for a given message based on current settings
     // (this does NOT take context lengths into account, only exclusion criteria based on the message itself).
     if (!message) return false;
@@ -75,7 +75,7 @@ function check_message_exclusion(message /*: any */) {
     }
 
     // check if it's a narrator message
-    if (!get_settings('include_narrator_messages') && message.extra.type === system_message_types.NARRATOR) {
+    if (!get_settings('include_narrator_messages') && message.extra?.type === system_message_types.NARRATOR) {
         return false
     }
 
@@ -159,7 +159,7 @@ function update_message_inclusion_flags() {
     update_all_message_visuals()
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function concatenate_summary(existing_text /*: any */, message /*: any */) {
+function concatenate_summary(existing_text /*: any */, message /*: STMessage */) {
     // given an existing text of concatenated summaries, concatenate the next one onto it
     const memory = get_memory(message)
     if (!memory) {  // if there's no summary, do nothing

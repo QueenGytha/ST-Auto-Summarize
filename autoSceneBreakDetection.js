@@ -29,7 +29,7 @@ let currentScanCancellationToken = null;
  * @returns {boolean} - True if message should be checked
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function shouldCheckMessage(message /*: any */, messageIndex /*: any */, latestIndex /*: any */, offset /*: any */, checkWhich /*: any */) {
+function shouldCheckMessage(message /*: STMessage */, messageIndex /*: any */, latestIndex /*: any */, offset /*: any */, checkWhich /*: any */) {
     // Skip the very first message (index 0) - can't be a scene break
     if (messageIndex === 0) {
         return false;
@@ -156,7 +156,7 @@ function buildDetectionPrompt(ctx, promptTemplate, message, previousMessage, pre
  * @returns {Promise<{isSceneBreak: boolean, rationale: string}>} - Object with detection result and rationale
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function detectSceneBreak(message /*: any */, messageIndex /*: any */, previousMessage /*: any */ = null) {
+async function detectSceneBreak(message /*: STMessage */, messageIndex /*: any */, previousMessage /*: any */ = null) {
     const ctx = getContext();
 
     try {
@@ -371,7 +371,7 @@ async function tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkW
     }
 
     // Queue all scene break detections
-    const operationIds = queueDetectSceneBreaks(indexesToCheck);
+    const operationIds = await queueDetectSceneBreaks(indexesToCheck);
 
     if (operationIds && operationIds.length > 0) {
         log(SUBSYSTEM.SCENE, `[Queue] Queued ${operationIds.length} scene break detection operations`);

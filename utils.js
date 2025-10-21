@@ -61,7 +61,7 @@ function error(subsystem /*: any */, ...args /*: Array<any> */) {
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function toast(message /*: any */, type /*: any */="info") {
+function toast(message /*: string */, type /*: any */="info") {
     // debounce the toast messages
     // $FlowFixMe[cannot-resolve-name]
     toastr[type](message, MODULE_NAME_FANCY);

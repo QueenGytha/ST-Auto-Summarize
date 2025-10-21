@@ -17,6 +17,9 @@ import {
     set_connection_profile,
     running_scene_summary_prompt,
 } from './index.js';
+import {
+    queueProcessLorebookEntry,
+} from './queueIntegration.js';
 
 /**
  * Get running scene summary storage object from chat metadata
@@ -222,7 +225,7 @@ async function generate_running_scene_summary(skipQueue /*: any */ = false) {
         const { queueGenerateRunningSummary } = await import('./queueIntegration.js');
 
         // Queue the running scene summary generation
-        const operationId = queueGenerateRunningSummary();
+        const operationId = await queueGenerateRunningSummary();
 
         if (operationId) {
             log(SUBSYSTEM.RUNNING, '[Queue] Queued running scene summary generation:', operationId);
@@ -475,6 +478,55 @@ async function combine_scene_with_running_summary(scene_index /*: any */) {
         const version = add_running_summary_version(result, scene_count, exclude_count, prev_scene_idx, new_scene_idx);
 
         log(SUBSYSTEM.RUNNING, `Created running summary version ${version} (${prev_scene_idx} > ${new_scene_idx})`);
+
+        // Extract and queue lorebook entries if Auto-Lorebooks is enabled
+        const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_processing_enabled');
+        if (autoLorebooksEnabled && scene_summary) {
+            try {
+                // Parse the original scene summary JSON for lorebooks
+                let json_for_lorebooks = scene_summary.trim();
+                const code_fence = json_for_lorebooks.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+                if (code_fence) {
+                    json_for_lorebooks = code_fence[1].trim();
+                }
+
+                const parsed = JSON.parse(json_for_lorebooks);
+                if (parsed.lorebooks && Array.isArray(parsed.lorebooks)) {
+                    debug(SUBSYSTEM.RUNNING, `Found ${parsed.lorebooks.length} lorebook entries in scene summary, queueing for processing`);
+
+                    // Deduplicate entries by name/comment before queueing
+                    const seenNames /*: Set<string> */ = new Set();
+                    const uniqueEntries = [];
+
+                    for (const entry of parsed.lorebooks) {
+                        if (entry && (entry.name || entry.comment)) {
+                            const entryName = (entry.name || entry.comment).toLowerCase().trim();
+
+                            if (seenNames.has(entryName)) {
+                                debug(SUBSYSTEM.RUNNING, `Skipping duplicate lorebook entry: ${entry.name || entry.comment}`);
+                                continue;
+                            }
+
+                            seenNames.add(entryName);
+                            uniqueEntries.push(entry);
+                        }
+                    }
+
+                    debug(SUBSYSTEM.RUNNING, `After deduplication: ${uniqueEntries.length} unique entries (removed ${parsed.lorebooks.length - uniqueEntries.length} duplicates)`);
+
+                    for (const entry of uniqueEntries) {
+                        const opId = await queueProcessLorebookEntry(entry, scene_index);
+                        if (opId) {
+                            debug(SUBSYSTEM.RUNNING, `Queued lorebook entry: ${entry.name || entry.comment} (${opId})`);
+                        }
+                    }
+                } else {
+                    debug(SUBSYSTEM.RUNNING, `No lorebooks array found in scene summary`);
+                }
+            } catch (err) {
+                debug(SUBSYSTEM.RUNNING, `Scene summary is not JSON or error extracting lorebooks: ${err.message}`);
+            }
+        }
 
         toast(`Running summary updated with ${scene_name} (v${version})`, 'success');
 

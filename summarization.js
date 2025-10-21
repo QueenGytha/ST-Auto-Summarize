@@ -128,7 +128,7 @@ async function summarize_messages(indexes /*: any */=null, show_progress /*: any
     // Try to queue if enabled
     if (get_settings('operation_queue_enabled') !== false) {
         const { queueSummarizeMessages } = await import('./queueIntegration.js');
-        const queued = queueSummarizeMessages(indexes);
+        const queued = await queueSummarizeMessages(indexes);
         if (queued && queued.length > 0) {
             debug(`Queued ${queued.length} summarization operations`);
             return;

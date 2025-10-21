@@ -1,4 +1,6 @@
 // @flow
+/*:: import type { STContext } from '../../../../scripts/st-context.js'; */
+
 import {
     get_settings,
     get_memory,
@@ -16,6 +18,7 @@ import {
 } from './runningSceneSummary.js';
 import {
     queueCombineSceneWithRunning,
+    queueProcessLorebookEntry,
 } from './queueIntegration.js';
 import { clearCheckedFlagsInRange } from './autoSceneBreakDetection.js';
 
@@ -49,7 +52,7 @@ export function addSceneBreakButton() {
 
 // Handles click events for the scene break button
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function bindSceneBreakButton(get_message_div /*: any */, getContext /*: any */, set_data /*: any */, get_data /*: any */, saveChatDebounced /*: any */) {
+export function bindSceneBreakButton(get_message_div /*: (index: number) => any */, getContext /*: () => STContext */, set_data /*: (message: any, key: string, value: any) => void */, get_data /*: (message: any, key: string) => any */, saveChatDebounced /*: () => void */) {
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $("div#chat").on("click", `.${SCENE_BREAK_BUTTON_CLASS}`, function () {
@@ -62,7 +65,7 @@ export function bindSceneBreakButton(get_message_div /*: any */, getContext /*: 
 
 // Toggles the scene break UI and persists state
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function toggleSceneBreak(index /*: any */, get_message_div /*: any */, getContext /*: any */, set_data /*: any */, get_data /*: any */, saveChatDebounced /*: any */) {
+export function toggleSceneBreak(index /*: number */, get_message_div /*: (index: number) => any */, getContext /*: () => STContext */, set_data /*: (message: any, key: string, value: any) => void */, get_data /*: (message: any, key: string) => any */, saveChatDebounced /*: () => void */) {
     const ctx = getContext();
     const message = ctx.chat[index];
     const isSet = !!get_data(message, SCENE_BREAK_KEY);
@@ -112,31 +115,31 @@ export function toggleSceneBreak(index /*: any */, get_message_div /*: any */, g
 // --- Helper functions for versioned scene summaries ---
 // Scene summary properties are not at the root; see file header for structure.
 // $FlowFixMe[missing-local-annot]
-function getSceneSummaryVersions(message, get_data) {
+function getSceneSummaryVersions(message /*: STMessage */, get_data /*: (message: any, key: string) => any */) {
     // Returns the array of summary versions, or an empty array if none
     return get_data(message, 'scene_summary_versions') || [];
 }
 
 // Scene summary properties are not at the root; see file header for structure.
 // $FlowFixMe[missing-local-annot]
-function setSceneSummaryVersions(message, set_data, versions) {
+function setSceneSummaryVersions(message /*: STMessage */, set_data /*: (message: any, key: string, value: any) => void */, versions /*: Array<string> */) {
     set_data(message, 'scene_summary_versions', versions);
 }
 
 // Scene summary properties are not at the root; see file header for structure.
 // $FlowFixMe[missing-local-annot]
-function getCurrentSceneSummaryIndex(message, get_data) {
+function getCurrentSceneSummaryIndex(message /*: STMessage */, get_data /*: (message: any, key: string) => any */) {
     return get_data(message, 'scene_summary_current_index') ?? 0;
 }
 
 // Scene summary properties are not at the root; see file header for structure.
 // $FlowFixMe[missing-local-annot]
-function setCurrentSceneSummaryIndex(message, set_data, idx) {
+function setCurrentSceneSummaryIndex(message /*: STMessage */, set_data /*: (message: any, key: string, value: any) => void */, idx /*: number */) {
     set_data(message, 'scene_summary_current_index', idx);
 }
 
 // $FlowFixMe[missing-local-annot]
-function getSceneRangeIndexes(index, chat, get_data, sceneCount) {
+function getSceneRangeIndexes(index /*: number */, chat /*: Array<any> */, get_data /*: (message: any, key: string) => any */, sceneCount /*: number */) {
     // Find all visible scene breaks up to and including index
     const sceneBreakIndexes = [];
     for (let i = 0; i <= index; i++) {
@@ -161,90 +164,17 @@ function getSceneRangeIndexes(index, chat, get_data, sceneCount) {
 
 // Helper: Handle generate summary button click
 // $FlowFixMe[missing-local-annot]
-async function handleGenerateSummaryButtonClick(index, chat, message, $sceneBreak, get_message_div, get_data, set_data, saveChatDebounced) {
+async function handleGenerateSummaryButtonClick(index /*: number */, chat /*: Array<any> */, message /*: STMessage */, $sceneBreak /*: any */, get_message_div /*: (index: number) => any */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */) {
     log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
 
-    const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
-    const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
+    // Use the queue-enabled generateSceneSummary function
     // $FlowFixMe[cannot-resolve-name]
-    const ctx = getContext();
-
-    // Collect scene objects using the helper from generateSceneSummary
-    const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
-
-    // Prepare prompt
-    const prompt = prepareScenePrompt(sceneObjects, ctx);
-
-    // Switch to scene profile
-    const profile = get_settings('scene_summary_connection_profile');
-    const preset = get_settings('scene_summary_completion_preset');
-    const current_profile = await ctx.get_current_connection_profile?.();
-    const current_preset = await ctx.get_current_preset?.();
-
-    if (profile) {
-        debug(SUBSYSTEM.SCENE, "Switching to connection profile:", profile);
-        await ctx.set_connection_profile?.(profile);
-    }
-    if (preset) {
-        debug(SUBSYSTEM.SCENE, "Switching to preset:", preset);
-        await ctx.set_preset?.(preset);
-    }
-
-    // Show loading state
-    const $summaryBox = $sceneBreak.find('.scene-summary-box');
-    $summaryBox.val("Generating scene summary...");
-
-    // Generate summary
-    let summary = "";
-    try {
-        if (get_settings('block_chat')) {
-            ctx.deactivateSendButtons();
-        }
-        debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
-        summary = await summarize_text(prompt);
-        debug(SUBSYSTEM.SCENE, "AI response:", summary);
-    } catch (err) {
-        summary = "Error generating summary: " + (err?.message || err);
-        error(SUBSYSTEM.SCENE, "Error generating summary:", err);
-    } finally {
-        if (get_settings('block_chat')) {
-            ctx.activateSendButtons();
-        }
-    }
-
-    // Restore profile
-    if (profile) {
-        debug(SUBSYSTEM.SCENE, "Restoring previous connection profile:", current_profile);
-        await ctx.set_connection_profile?.(current_profile);
-    }
-    if (preset) {
-        debug(SUBSYSTEM.SCENE, "Restoring previous preset:", current_preset);
-        await ctx.set_preset?.(current_preset);
-    }
-
-    // Auto-generate scene name if enabled
-    const autoGenerateSceneNameManual = get_settings('scene_summary_auto_name_manual') ?? true;
-    if (autoGenerateSceneNameManual) {
-        debug(SUBSYSTEM.SCENE, "Waiting 5 seconds before generating scene name...");
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile, preset, current_profile, current_preset);
-    }
-
-    // Save and display
-    const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
-    updatedVersions.push(summary);
-    setSceneSummaryVersions(message, set_data, updatedVersions);
-    setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
-    set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
-    set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary);
-    saveChatDebounced();
-    // $FlowFixMe[cannot-resolve-name]
-    renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+    await generateSceneSummary(index, get_message_div, getContext, get_data, set_data, saveChatDebounced, false);
 }
 
 // Helper: Initialize versioned summaries for backward compatibility
 // $FlowFixMe[missing-local-annot]
-function initializeSceneSummaryVersions(message, get_data, set_data, saveChatDebounced) {
+function initializeSceneSummaryVersions(message /*: STMessage */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */) {
     let versions = getSceneSummaryVersions(message, get_data);
     let currentIdx = getCurrentSceneSummaryIndex(message, get_data);
 
@@ -266,7 +196,7 @@ function initializeSceneSummaryVersions(message, get_data, set_data, saveChatDeb
 
 // Helper: Find scene boundaries
 // $FlowFixMe[missing-local-annot]
-function findSceneBoundaries(chat, index, get_data) {
+function findSceneBoundaries(chat /*: Array<any> */, index /*: number */, get_data /*: (message: any, key: string) => any */) {
     let startIdx = 0;
     for (let i = index - 1; i >= 0; i--) {
         if (
@@ -288,7 +218,7 @@ function findSceneBoundaries(chat, index, get_data) {
 
 // Helper: Build scene break HTML element
 // $FlowFixMe[missing-local-annot]
-function buildSceneBreakElement(index, startIdx, sceneMessages, sceneName, sceneSummary, isVisible, isCollapsed, versions, currentIdx) {
+function buildSceneBreakElement(index /*: number */, startIdx /*: number */, sceneMessages /*: Array<number> */, sceneName /*: string */, sceneSummary /*: string */, isVisible /*: boolean */, isCollapsed /*: boolean */, versions /*: Array<string> */, currentIdx /*: number */) {
     const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
     const previewIcon = `<i class="fa-solid fa-eye scene-preview-summary" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
 
@@ -323,7 +253,7 @@ function buildSceneBreakElement(index, startIdx, sceneMessages, sceneName, scene
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function renderSceneBreak(index /*: any */, get_message_div /*: any */, getContext /*: any */, get_data /*: any */, set_data /*: any */, saveChatDebounced /*: any */) {
+export function renderSceneBreak(index /*: number */, get_message_div /*: (index: number) => any */, getContext /*: () => STContext */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */) {
     const $msgDiv = get_message_div(index);
     if (!$msgDiv?.length) return;
 
@@ -544,7 +474,7 @@ export function renderSceneBreak(index /*: any */, get_message_div /*: any */, g
         log(SUBSYSTEM.SCENE, "Combine scene with running summary button clicked for scene at index", index);
 
         // Queue the operation - this will lock the UI and process through the queue
-        const opId = queueCombineSceneWithRunning(index);
+        const opId = await queueCombineSceneWithRunning(index);
 
         if (opId) {
             log(SUBSYSTEM.SCENE, "Scene combine operation queued with ID:", opId);
@@ -597,7 +527,7 @@ export function renderSceneBreak(index /*: any */, get_message_div /*: any */, g
  * @returns {string} - Concatenated scene content
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function collectSceneContent(startIdx /*: any */, endIdx /*: any */, mode /*: any */, ctx /*: any */, get_memory /*: any */) {
+export function collectSceneContent(startIdx /*: number */, endIdx /*: number */, mode /*: string */, ctx /*: STContext */, get_memory /*: (message: any) => ?string */) {
     const chat = ctx.chat;
     const result = [];
     for (let i = startIdx; i <= endIdx; i++) {
@@ -614,7 +544,7 @@ export function collectSceneContent(startIdx /*: any */, endIdx /*: any */, mode
 
 // Call this after chat loads or refresh to re-render all scene breaks
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function renderAllSceneBreaks(get_message_div /*: any */, getContext /*: any */, get_data /*: any */, set_data /*: any */, saveChatDebounced /*: any */) {
+export function renderAllSceneBreaks(get_message_div /*: (index: number) => any */, getContext /*: () => STContext */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */) {
     const ctx = getContext();
     if (!ctx?.chat) return;
     for (let i = 0; i < ctx.chat.length; i++) {
@@ -662,7 +592,7 @@ export function renderAllSceneBreaks(get_message_div /*: any */, getContext /*: 
  * @returns {Promise<string|null>} - The generated scene name, or null if generation failed
  */
 // $FlowFixMe[missing-local-annot]
-async function autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile = null, preset = null, current_profile = null, current_preset = null) {
+async function autoGenerateSceneNameFromSummary(summary /*: string */, message /*: STMessage */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, ctx /*: STContext */, profile /*: ?string */ = null, preset /*: ?string */ = null, current_profile /*: ?string */ = null, current_preset /*: ?string */ = null) {
     const existingSceneName = get_data(message, SCENE_BREAK_NAME_KEY);
 
     // Only generate if no name already exists
@@ -703,10 +633,10 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
         }
 
         // Restore previous profile/preset
-        if (profile) {
+        if (profile && current_profile) {
             await ctx.set_connection_profile?.(current_profile);
         }
-        if (preset) {
+        if (preset && current_preset) {
             await ctx.set_preset?.(current_preset);
         }
 
@@ -737,14 +667,14 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
 
 // Helper: Try to queue scene summary generation
 // $FlowFixMe[missing-local-annot]
-async function tryQueueSceneSummary(index) {
+async function tryQueueSceneSummary(index /*: number */) {
     const queueEnabled = get_settings('operation_queue_enabled') !== false;
     if (!queueEnabled) return false;
 
     debug(SUBSYSTEM.SCENE, `[Queue] Operation queue enabled, queueing scene summary generation for index ${index}`);
 
     const { queueGenerateSceneSummary } = await import('./queueIntegration.js');
-    const operationId = queueGenerateSceneSummary(index);
+    const operationId = await queueGenerateSceneSummary(index);
 
     if (operationId) {
         log(SUBSYSTEM.SCENE, `[Queue] Queued scene summary generation for index ${index}:`, operationId);
@@ -758,7 +688,7 @@ async function tryQueueSceneSummary(index) {
 
 // Helper: Collect scene objects for summary
 // $FlowFixMe[missing-local-annot]
-function collectSceneObjects(startIdx, endIdx, chat) {
+function collectSceneObjects(startIdx /*: number */, endIdx /*: number */, chat /*: Array<any> */) {
     const mode = get_settings('scene_summary_history_mode') || "both";
     const messageTypes = get_settings('scene_summary_message_types') || "both";
     const sceneObjects = [];
@@ -784,7 +714,7 @@ function collectSceneObjects(startIdx, endIdx, chat) {
 
 // Helper: Prepare scene summary prompt
 // $FlowFixMe[missing-local-annot]
-function prepareScenePrompt(sceneObjects, ctx) {
+function prepareScenePrompt(sceneObjects /*: Array<any> */, ctx /*: STContext */) {
     const promptTemplate = get_settings('scene_summary_prompt');
     const prefill = get_settings('scene_summary_prefill') || "";
 
@@ -803,7 +733,7 @@ function prepareScenePrompt(sceneObjects, ctx) {
 
 // Helper: Switch to scene summary profile/preset
 // $FlowFixMe[missing-local-annot]
-async function switchToSceneProfile(ctx) {
+async function switchToSceneProfile(ctx /*: STContext */) {
     const profile = get_settings('scene_summary_connection_profile');
     const preset = get_settings('scene_summary_completion_preset');
     const current_profile = await ctx.get_current_connection_profile?.();
@@ -823,7 +753,7 @@ async function switchToSceneProfile(ctx) {
 
 // Helper: Restore previous profile/preset
 // $FlowFixMe[missing-local-annot]
-async function restoreProfile(ctx, savedProfiles) {
+async function restoreProfile(ctx /*: STContext */, savedProfiles /*: any */) {
     const { profile, preset, current_profile, current_preset } = savedProfiles;
 
     if (profile) {
@@ -838,7 +768,7 @@ async function restoreProfile(ctx, savedProfiles) {
 
 // Helper: Generate summary with error handling
 // $FlowFixMe[missing-local-annot]
-async function executeSceneSummaryGeneration(prompt, ctx) {
+async function executeSceneSummaryGeneration(prompt /*: string */, ctx /*: STContext */) {
     let summary = "";
     try {
         if (get_settings('block_chat')) {
@@ -859,9 +789,9 @@ async function executeSceneSummaryGeneration(prompt, ctx) {
     return summary;
 }
 
-// Helper: Save scene summary
+// Helper: Save scene summary and queue lorebook entries
 // $FlowFixMe[missing-local-annot]
-function saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced) {
+async function saveSceneSummary(message /*: STMessage */, summary /*: string */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */, messageIndex /*: number */) {
     const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
     updatedVersions.push(summary);
     setSceneSummaryVersions(message, set_data, updatedVersions);
@@ -870,10 +800,71 @@ function saveSceneSummary(message, summary, get_data, set_data, saveChatDebounce
     set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary);
     saveChatDebounced();
     refresh_memory();
+
+    // Extract and queue lorebook entries if Auto-Lorebooks is enabled
+    const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_processing_enabled');
+    if (autoLorebooksEnabled && summary) {
+        await extractAndQueueLorebookEntries(summary, messageIndex);
+    }
+}
+
+// Helper: Extract lorebooks from summary JSON and queue each as individual operation
+// $FlowFixMe[missing-local-annot]
+async function extractAndQueueLorebookEntries(summary /*: string */, messageIndex /*: number */) {
+    try {
+        // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+        let jsonText = summary.trim();
+        const codeFenceMatch = jsonText.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+        if (codeFenceMatch) {
+            jsonText = codeFenceMatch[1].trim();
+            debug(SUBSYSTEM.SCENE, `Stripped code fences from scene summary at index ${messageIndex}`);
+        }
+
+        // Try to parse as JSON
+        const parsed = JSON.parse(jsonText);
+
+        // Check for 'lorebooks' array (standard format)
+        if (parsed.lorebooks && Array.isArray(parsed.lorebooks)) {
+            debug(SUBSYSTEM.SCENE, `Found ${parsed.lorebooks.length} lorebook entries in scene summary at index ${messageIndex}`);
+
+            // Deduplicate entries by name/comment before queueing
+            const seenNames /*: Set<string> */ = new Set();
+            const uniqueEntries = [];
+
+            for (const entry of parsed.lorebooks) {
+                if (entry && (entry.name || entry.comment)) {
+                    const entryName = (entry.name || entry.comment).toLowerCase().trim();
+
+                    if (seenNames.has(entryName)) {
+                        debug(SUBSYSTEM.SCENE, `Skipping duplicate lorebook entry: ${entry.name || entry.comment}`);
+                        continue;
+                    }
+
+                    seenNames.add(entryName);
+                    uniqueEntries.push(entry);
+                }
+            }
+
+            debug(SUBSYSTEM.SCENE, `After deduplication: ${uniqueEntries.length} unique entries (removed ${parsed.lorebooks.length - uniqueEntries.length} duplicates)`);
+
+            // Queue each unique entry individually
+            for (const entry of uniqueEntries) {
+                const opId = await queueProcessLorebookEntry(entry, messageIndex);
+                if (opId) {
+                    debug(SUBSYSTEM.SCENE, `Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);
+                }
+            }
+        } else {
+            debug(SUBSYSTEM.SCENE, `No lorebooks array found in scene summary at index ${messageIndex}`);
+        }
+    } catch (err) {
+        // Not JSON or parsing failed - skip lorebook processing
+        debug(SUBSYSTEM.SCENE, `Scene summary is not JSON, skipping lorebook extraction: ${err.message}`);
+    }
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function generateSceneSummary(index /*: any */, get_message_div /*: any */, getContext /*: any */, get_data /*: any */, set_data /*: any */, saveChatDebounced /*: any */, skipQueue /*: any */ = false) {
+export async function generateSceneSummary(index /*: number */, get_message_div /*: (index: number) => any */, getContext /*: () => STContext */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */, skipQueue /*: boolean */ = false) {
     const ctx = getContext();
     const chat = ctx.chat;
     const message = chat[index];
@@ -913,7 +904,7 @@ export async function generateSceneSummary(index /*: any */, get_message_div /*:
     }
 
     // Save and render
-    saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced);
+    await saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced, index);
     await auto_generate_running_summary(index);
     renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
 

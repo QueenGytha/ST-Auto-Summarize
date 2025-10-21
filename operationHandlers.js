@@ -24,6 +24,12 @@ import {
     combine_scene_with_running_summary,
 } from './runningSceneSummary.js';
 import {
+    processSingleLorebookEntry,
+} from './summaryToLorebookProcessor.js';
+import {
+    mergeLorebookEntryByUid,
+} from './lorebookEntryMerger.js';
+import {
     getContext,
     get_data,
     set_data,
@@ -156,6 +162,30 @@ export function registerAllOperationHandlers() {
         debug(SUBSYSTEM.QUEUE, `Executing COMBINE_SCENE_WITH_RUNNING for index ${index}`);
         const summary = await combine_scene_with_running_summary(index);
         return { summary };
+    });
+
+    // Process single lorebook entry
+    registerOperationHandler(OperationType.PROCESS_LOREBOOK_ENTRY, async (operation) => {
+        const { entryData } = operation.params;
+        debug(SUBSYSTEM.QUEUE, `Executing PROCESS_LOREBOOK_ENTRY for: ${entryData.name || entryData.comment || 'Unknown'}`);
+        const result = await processSingleLorebookEntry(entryData, { useQueue: true });
+        return result;
+    });
+
+    // Merge lorebook entry
+    registerOperationHandler(OperationType.MERGE_LOREBOOK_ENTRY, async (operation) => {
+        const { lorebookName, entryUid, existingContent, newContent, newKeys, newSecondaryKeys } = operation.params;
+        const entryComment = operation.metadata?.entry_comment || entryUid;
+        debug(SUBSYSTEM.QUEUE, `Executing MERGE_LOREBOOK_ENTRY for: ${entryComment}`);
+        const result = await mergeLorebookEntryByUid({
+            lorebookName,
+            entryUid,
+            existingContent,
+            newContent,
+            newKeys,
+            newSecondaryKeys
+        });
+        return result;
     });
 
     log(SUBSYSTEM.QUEUE, 'Registered all operation handlers');
