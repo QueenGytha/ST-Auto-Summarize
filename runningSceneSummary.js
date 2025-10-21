@@ -257,8 +257,16 @@ async function generate_running_scene_summary(skipQueue /*: any */ = false) {
 
         // Extract only the 'summary' field from the JSON (exclude 'lorebooks')
         let summary_text = scene_summary;
+
+        // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+        let json_to_parse = scene_summary.trim();
+        const code_fence_match = json_to_parse.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+        if (code_fence_match) {
+            json_to_parse = code_fence_match[1].trim();
+        }
+
         try {
-            const parsed = JSON.parse(scene_summary);
+            const parsed = JSON.parse(json_to_parse);
             if (parsed && typeof parsed === 'object') {
                 if (parsed.summary) {
                     summary_text = parsed.summary;
@@ -378,8 +386,17 @@ async function combine_scene_with_running_summary(scene_index /*: any */) {
     // Scene summaries are JSON with { "summary": "...", "lorebooks": [...] }
     // For combining, we only want the timeline summary, not the lorebook entries
     let summary_text = scene_summary;
+
+    // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+    let json_to_parse = scene_summary.trim();
+    const code_fence_match = json_to_parse.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+    if (code_fence_match) {
+        json_to_parse = code_fence_match[1].trim();
+        debug(SUBSYSTEM.RUNNING, `Stripped markdown code fences from scene summary`);
+    }
+
     try {
-        const parsed = JSON.parse(scene_summary);
+        const parsed = JSON.parse(json_to_parse);
         if (parsed && typeof parsed === 'object') {
             if (parsed.summary) {
                 summary_text = parsed.summary;
