@@ -38,8 +38,8 @@ async function get_current_connection_profile() {
     const result = await ctx.executeSlashCommandsWithOptions(`/profile`)
     return result.pipe
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function get_connection_profile_api(name /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+async function get_connection_profile_api(name /*: ?string */) /*: Promise<?string> */ {
     // Get the API for the given connection profile name. If not given, get the current summary profile.
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
     if (name === undefined) name = await get_summary_connection_profile()
@@ -90,10 +90,11 @@ async function get_summary_connection_profile() {
 
     return name
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function set_connection_profile(name /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+async function set_connection_profile(name /*: ?string */) /*: Promise<void> */ {
     // Set the connection profile
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
+    if (!name) return;  // if no name provided, return
     if (name === await get_current_connection_profile()) return;  // If already using the current preset, return
     if (!await check_connection_profile_valid()) return;  // don't set an invalid preset
 
@@ -121,8 +122,8 @@ async function get_connection_profiles() {
     }
 
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function verify_connection_profile(name /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+async function verify_connection_profile(name /*: string */) /*: Promise<?boolean> */ {
     // check if the given connection profile name is valid
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
     if (name === "") return true;  // no profile selected, always valid
