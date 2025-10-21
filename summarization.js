@@ -46,7 +46,7 @@ function getStopSummarization() {
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function setStopSummarization(val /*: any */) {
+function setStopSummarization(val /*: boolean */) /*: void */ {
     STOP_SUMMARIZATION = val;
 }
 setStopSummarization(false);
@@ -113,22 +113,28 @@ function cleanupAfterSummarization(ctx, show_progress, indexes_length) {
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function summarize_messages(indexes /*: any */=null, show_progress /*: any */=true) {
+async function summarize_messages(indexes /*: ?(number | Array<number>) */=null, show_progress /*: boolean */=true) /*: Promise<void> */ {
     const ctx = getContext();
 
     // Normalize indexes
+    let indexArray /*: Array<number> */;
     if (indexes === null) {
-        indexes = [Math.max(ctx.chat.length - 1, 0)];
+        indexArray = [Math.max(ctx.chat.length - 1, 0)];
+    } else if (Array.isArray(indexes)) {
+        indexArray = indexes;
+    } else {
+        // $FlowFixMe[incompatible-type] - indexes is number here (not null, not array)
+        indexArray = [indexes];
     }
-    indexes = Array.isArray(indexes) ? indexes : [indexes];
-    if (!indexes.length) return;
+    if (!indexArray.length) return;
 
-    debug(`Summarizing ${indexes.length} messages`);
+    debug(`Summarizing ${indexArray.length} messages`);
 
     // Try to queue if enabled
     if (get_settings('operation_queue_enabled') !== false) {
         const { queueSummarizeMessages } = await import('./queueIntegration.js');
-        const queued = await queueSummarizeMessages(indexes);
+        // $FlowFixMe[incompatible-type] - indexArray is guaranteed to be Array<number> by type narrowing above
+        const queued = await queueSummarizeMessages(indexArray);
         if (queued && queued.length > 0) {
             debug(`Queued ${queued.length} summarization operations`);
             return;
@@ -137,7 +143,7 @@ async function summarize_messages(indexes /*: any */=null, show_progress /*: any
     }
 
     // Setup
-    show_progress = show_progress && indexes.length > 1;
+    show_progress = show_progress && indexArray.length > 1;
     setStopSummarization(false);
 
     if (get_settings('block_chat')) {
@@ -149,24 +155,25 @@ async function summarize_messages(indexes /*: any */=null, show_progress /*: any
     let n = 0;
 
     try {
-        for (const i of indexes) {
-            if (show_progress) progress_bar('summarize', n + 1, indexes.length, "Summarizing");
+        for (const i of indexArray) {
+            if (show_progress) progress_bar('summarize', n + 1, indexArray.length, "Summarizing");
 
             if (getStopSummarization()) {
                 log('Summarization stopped');
                 break;
             }
 
+            // $FlowFixMe[incompatible-type] - i is number from indexArray which is Array<number>
             await summarize_message(i);
 
-            const shouldContinue = await processTimeDelay(show_progress, n, indexes.length);
+            const shouldContinue = await processTimeDelay(show_progress, n, indexArray.length);
             if (!shouldContinue) break;
 
             n += 1;
         }
     } finally {
         await restoreOriginalProfile(savedProfile);
-        cleanupAfterSummarization(ctx, show_progress, indexes.length);
+        cleanupAfterSummarization(ctx, show_progress, indexArray.length);
     }
 }
 // Helper: Handle summary validation and retries
@@ -194,7 +201,7 @@ async function validateAndRetrySummary(summary, index, message, retry_count, max
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function summarize_message(index /*: any */) {
+async function summarize_message(index /*: number */) /*: Promise<{success: boolean, modified: boolean}> */ {
     // Summarize a message given the chat index, replacing any existing memories
     // Should only be used from summarize_messages()
 
@@ -312,7 +319,7 @@ async function summarize_message(index /*: any */) {
     return { success: !!summary, modified: wasSummaryModified };
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function summarize_text(prompt /*: any */) {
+async function summarize_text(prompt /*: string */) /*: Promise<string> */ {
     // get size of text
     const token_size = count_tokens(prompt);
 
@@ -362,7 +369,16 @@ async function summarize_text(prompt /*: any */) {
              * @returns {Promise<string>} Generated message
              */
             // $FlowFixMe[extra-arg]
-            result = await generateRaw(prompt, '', true, false, system_prompt, null, false);
+            result = await generateRaw({
+                prompt: prompt,
+                api: '',
+                instructOverride: true,
+                quietToLoud: false,
+                // $FlowFixMe[incompatible-type] - system_prompt can be false or string, passing as-is
+                systemPrompt: system_prompt,
+                responseLength: null,
+                trimNames: false
+            });
         }
     } catch (err) {
         // SillyTavern strips error details before they reach us
@@ -378,13 +394,13 @@ async function summarize_text(prompt /*: any */) {
     return result;
 }
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_message_history(index /*: any */) {
+function get_message_history(index /*: number */) /*: string */ {
     // Get a history of messages leading up to the given index (excluding the message at the index)
-    // If the include_message_history setting is 0, returns null
+    // If the include_message_history setting is 0, returns empty string
     const num_history_messages = get_settings('include_message_history');
     const mode = get_settings('include_message_history_mode');
     if (num_history_messages === 0 || mode === "none") {
-        return;
+        return "";
     }
 
     const ctx = getContext()
@@ -437,7 +453,7 @@ function get_message_history(index /*: any */) {
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function create_summary_prompt(index /*: any */) {
+async function create_summary_prompt(index /*: number */) /*: Promise<string> */ {
     // create the full summary prompt for the message at the given index.
     // the instruct template will automatically add an input sequence to the beginning and an output sequence to the end.
     // Therefore, if we are NOT using instructOverride, we have to remove the first system sequence at the very beginning which gets added by format_system_prompt.
