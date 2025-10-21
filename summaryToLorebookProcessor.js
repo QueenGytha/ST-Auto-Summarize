@@ -25,7 +25,7 @@ function getSetting(key /*: string */, defaultValue /*: any */ = null) /*: any *
 
         // Fallback to direct access
         return extension_settings?.autoLorebooks?.[key] ?? defaultValue;
-    } catch (err) {
+    } catch {
         return defaultValue;
     }
 }

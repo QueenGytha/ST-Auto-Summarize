@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify-flow-annotations.js - Ensure all JS files have // @flow annotation
+// verify-flow-annotations.js - Ensure all JS files have Flow type annotations
 /* eslint-env node */
 
 import fs from 'fs';
