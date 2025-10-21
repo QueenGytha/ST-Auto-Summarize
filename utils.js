@@ -30,22 +30,25 @@ const SUBSYSTEM = {
     QUEUE: '[Queue]'
 };
 
-// $FlowFixMe[signature-verification-failure]
-function log(subsystem /*: any */, ...args /*: Array<any> */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function log(subsystem /*: any */, ...args /*: Array<any> */) /*: void */ {
+    // subsystem and args are any type for flexible logging - legitimate use of any
     // Always log with prefix - subsystem check not needed as both branches are identical
     console.log(LOG_PREFIX, subsystem, ...args);
 }
 
-// $FlowFixMe[signature-verification-failure]
-function debug(subsystem /*: any */, ...args /*: Array<any> */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function debug(subsystem /*: any */, ...args /*: Array<any> */) /*: void */ {
+    // subsystem and args are any type for flexible logging - legitimate use of any
     if (!get_settings('debug_mode')) return;
 
     // Always log with prefix - subsystem check not needed as both branches are identical
     console.log(LOG_PREFIX, '[DEBUG]', subsystem, ...args);
 }
 
-// $FlowFixMe[signature-verification-failure]
-function error(subsystem /*: any */, ...args /*: Array<any> */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function error(subsystem /*: any */, ...args /*: Array<any> */) /*: void */ {
+    // subsystem and args are any type for flexible error logging - legitimate use of any
     // If subsystem is not a string starting with '[', treat it as a regular arg
     if (typeof subsystem !== 'string' || !subsystem.startsWith('[')) {
         console.error(LOG_PREFIX, '[ERROR]', subsystem, ...args);
@@ -60,8 +63,8 @@ function error(subsystem /*: any */, ...args /*: Array<any> */) {
     }
 }
 
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function toast(message /*: string */, type /*: any */="info") {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function toast(message /*: string */, type /*: string */="info") /*: void */ {
     // debounce the toast messages
     // $FlowFixMe[cannot-resolve-name]
     toastr[type](message, MODULE_NAME_FANCY);
@@ -90,8 +93,9 @@ const toast_debounced = debounce(toast, 500);
 
 // $FlowFixMe[signature-verification-failure]
 const saveChatDebounced = debounce(() => getContext().saveChat(), debounce_timeout.relaxed);
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function count_tokens(text /*: any */, padding /*: any */ = 0) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function count_tokens(text /*: any */, padding /*: number */ = 0) /*: number */ {
+    // text is any type because ST API accepts any type - legitimate use of any
     // count the number of tokens in a text
     const ctx = getContext();
     return ctx.getTokenCount(text, padding);
@@ -147,8 +151,8 @@ function get_extension_directory() {
     const index_path = new URL(import.meta.url).pathname
     return index_path.substring(0, index_path.lastIndexOf('/'))  // remove the /index.js from the path
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function clean_string_for_title(text /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function clean_string_for_title(text /*: string */) /*: string */ {
     // clean a given string for use in a div title.
     return text.replace(/["&'<>]/g, function(match) {
         switch (match) {
@@ -157,11 +161,12 @@ function clean_string_for_title(text /*: any */) {
             case "'": return "&apos;";
             case "<": return "&lt;";
             case ">": return "&gt;";
+            default: return match;  // Flow requires explicit default case
         }
     })
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function escape_string(text /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function escape_string(text /*: ?string */) /*: ?string */ {
     // escape control characters in the text
     if (!text) return text
     return text.replace(/[\x00-\x1F\x7F]/g, function(match) {
@@ -176,8 +181,8 @@ function escape_string(text /*: any */) {
         }
     });
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function unescape_string(text /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function unescape_string(text /*: ?string */) /*: ?string */ {
     // given a string with escaped characters, unescape them
     if (!text) return text
     return text.replace(/\\[ntrbf0x][0-9a-f]{2}|\\[ntrbf]/g, function(match) {
@@ -218,8 +223,8 @@ function display_injection_preview() {
     display_text_modal("Memory State Preview", text);
 }
 
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function display_text_modal(title /*: any */, text /*: any */="") {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+async function display_text_modal(title /*: string */, text /*: string */="") /*: Promise<void> */ {
     // Display a modal with the given title and text
     // replace newlines in text with <br> for HTML
     const ctx = getContext();
@@ -229,8 +234,9 @@ async function display_text_modal(title /*: any */, text /*: any */="") {
     const popup = new ctx.Popup(html, ctx.POPUP_TYPE.TEXT, undefined, {okButton: 'Close', allowVerticalScrolling: true});
     await popup.show()
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function get_user_setting_text_input(key /*: any */, title /*: any */, description /*: any */="", _defaultValue /*: any */="") {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+async function get_user_setting_text_input(key /*: string */, title /*: string */, description /*: string */="", _defaultValue /*: any */="") /*: Promise<void> */ {
+    // _defaultValue is unused parameter - any is acceptable
     const value = get_settings(key) ?? '';
     title = `
 <h3>${title}</h3>
@@ -239,6 +245,7 @@ async function get_user_setting_text_input(key /*: any */, title /*: any */, des
     const ctx = getContext();
     // Use let with any type annotation to avoid Flow recursive definition error
     // Can't use const because Flow would throw recursive-definition error
+    // popup is any type to avoid Flow recursive definition - legitimate use of any
     /* eslint-disable prefer-const */
     let popup /*: any */;
     popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {
@@ -249,6 +256,7 @@ async function get_user_setting_text_input(key /*: any */, title /*: any */, des
             // $FlowFixMe[missing-this-annot]
             action: function() {
                 // Capture popup from outer scope since 'this' is not bound correctly
+                // $FlowFixMe[invalid-computed-prop] - dynamic property access with string key
                 popup.mainInput.value = default_settings[key] ?? '';
             }
         }]
