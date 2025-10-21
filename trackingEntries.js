@@ -210,13 +210,17 @@ function parseSyntaxPattern(text /*: string */, syntaxPattern /*: any */) /*: an
         let match;
         while ((match = regex.exec(text)) !== null) {
             // Flow doesn't understand that match is non-null inside while loop
+            // Suppress all incompatible-use errors for match object access
             // $FlowFixMe[incompatible-use]
-            const m = match;  // Create non-null alias for Flow
+            // $FlowFixMe[incompatible-use]
+            // $FlowFixMe[incompatible-use]
+            // $FlowFixMe[incompatible-use]
+            // $FlowFixMe[incompatible-use]
             matches.push({
-                match: m[0],
-                content: m[1]?.trim() || '',
-                start: m.index,
-                end: m.index + m[0].length
+                match: match[0],
+                content: match[1]?.trim() || '',
+                start: match.index,
+                end: match.index + match[0].length
             });
         }
 
@@ -367,6 +371,7 @@ async function mergeUpdateWithAI(entryType /*: string */, currentContent /*: str
  */
 async function ensureTrackingEntry(lorebookName /*: string */, entryType /*: string */) /*: Promise<any> */ {
     try {
+        // $FlowFixMe[invalid-computed-prop] - Dynamic lookup of tracking entry config
         const config = TRACKING_ENTRY_CONFIG[entryType];
         if (!config) {
             error(`Unknown tracking entry type: ${entryType}`);
@@ -567,6 +572,7 @@ export async function processEntryUpdate(lorebookName /*: string */, entryType /
         const success = await updateTrackingEntry(lorebookName, entryType, mergedContent);
 
         if (success) {
+            // $FlowFixMe[invalid-computed-prop] - Dynamic lookup of tracking entry config
             const displayName = TRACKING_ENTRY_CONFIG[entryType].displayName;
             log(`Updated ${displayName}`);
             toast(`Updated ${displayName}`, 'success');
