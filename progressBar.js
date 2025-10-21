@@ -1,8 +1,8 @@
 // @flow
 import { memoryEditInterface, PROGRESS_BAR_ID, debug, stop_summarization } from './index.js';
 
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function progress_bar(id /*: any */, progress /*: any */, total /*: any */, title /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function progress_bar(id /*: string */, progress /*: ?number */, total /*: ?number */, title /*: ?string */) /*: void */ {
     // Display, update, or remove a progress bar
     id = `${PROGRESS_BAR_ID}_${id}`
     // $FlowFixMe[cannot-resolve-name]
@@ -20,13 +20,13 @@ function progress_bar(id /*: any */, progress /*: any */, total /*: any */, titl
         return;
     }
 
-    // create the progress bar
+    // create the progress bar (use defaults for nullable parameters)
     // $FlowFixMe[cannot-resolve-name]
     const bar = $(`
 <div class="${id} auto_summarize_progress_bar flex-container justifyspacebetween alignitemscenter">
-    <div class="title">${title}</div>
-    <div>(<span class="progress">${progress}</span> / <span class="total">${total}</span>)</div>
-    <progress value="${progress}" max="${total}" class="flex1"></progress>
+    <div class="title">${title ?? ''}</div>
+    <div>(<span class="progress">${progress ?? 0}</span> / <span class="total">${total ?? 0}</span>)</div>
+    <progress value="${progress ?? 0}" max="${total ?? 0}" class="flex1"></progress>
     <button class="menu_button fa-solid fa-stop" title="Abort summarization"></button>
 </div>`)
 
@@ -44,8 +44,8 @@ function progress_bar(id /*: any */, progress /*: any */, total /*: any */, titl
         memoryEditInterface.$progress_bar.append(bar)
     }
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function remove_progress_bar(id /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function remove_progress_bar(id /*: string */) /*: void */ {
     id = `${PROGRESS_BAR_ID}_${id}`
     // $FlowFixMe[cannot-resolve-name]
     const $existing = $(`.${id}`);
