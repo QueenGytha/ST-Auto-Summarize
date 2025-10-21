@@ -210,12 +210,8 @@ function parseSyntaxPattern(text /*: string */, syntaxPattern /*: any */) /*: an
         let match;
         while ((match = regex.exec(text)) !== null) {
             // Flow doesn't understand that match is non-null inside while loop
-            // Suppress all incompatible-use errors for match object access
-            // $FlowFixMe[incompatible-use]
-            // $FlowFixMe[incompatible-use]
-            // $FlowFixMe[incompatible-use]
-            // $FlowFixMe[incompatible-use]
-            // $FlowFixMe[incompatible-use]
+            // Assert non-null for Flow
+            if (!match) continue; // This will never happen but satisfies Flow
             matches.push({
                 match: match[0],
                 content: match[1]?.trim() || '',
