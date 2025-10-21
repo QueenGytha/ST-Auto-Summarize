@@ -13,8 +13,8 @@ import {
     SUBSYSTEM
 } from './index.js';
 
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function validate_summary(summary /*: any */, type /*: any */ = "regular") {
+// $FlowFixMe[signature-verification-failure]
+async function validate_summary(summary /*: string */, type /*: string */ = "regular") /*: Promise<boolean> */ {
     if (!get_settings('error_detection_enabled')) return true;
     
     // Check if error detection is enabled for this summary type
@@ -30,8 +30,8 @@ async function validate_summary(summary /*: any */, type /*: any */ = "regular")
     }
 
     // Save current preset and profile (declare outside try so accessible in catch)
-    let current_preset;
-    let current_profile;
+    let current_preset /*: ?string */ = null;
+    let current_profile /*: ?string */ = null;
 
     try {
         // Get the error detection prompt
@@ -77,20 +77,18 @@ async function validate_summary(summary /*: any */, type /*: any */ = "regular")
             debug(SUBSYSTEM.VALIDATION, `Summary validation passed with result: "${validation_result}"`);
         }
 
-        // Restore original preset and profile
-        // $FlowFixMe[incompatible-type] - current_preset might be uninitialized if error before line 45, will fix in typing pass
-        await set_preset(current_preset);
-        await set_connection_profile(current_profile);
+        // Restore original preset and profile (only if they were initialized)
+        if (current_preset) await set_preset(current_preset);
+        if (current_profile) await set_connection_profile(current_profile);
 
         return is_valid;
     } catch (e) {
         error(SUBSYSTEM.VALIDATION, `Error during summary validation: ${e}`);
 
-        // Restore original preset and profile
-        // $FlowFixMe[incompatible-type] - current_preset might be uninitialized if error before line 45, will fix in typing pass
-        await set_preset(current_preset);
-        await set_connection_profile(current_profile);
-        
+        // Restore original preset and profile (only if they were initialized)
+        if (current_preset) await set_preset(current_preset);
+        if (current_profile) await set_connection_profile(current_profile);
+
         // If validation fails technically, assume the summary is valid
         return true;
     } finally {
