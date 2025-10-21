@@ -18,8 +18,8 @@ import {
 
 
 // Profile management
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function copy_settings(profile /*: any */ =null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function copy_settings(profile /*: ?string */ =null) /*: Object */ {
     // copy the setting from the given profile (or current settings if none provided)
     let settings;
 
@@ -43,8 +43,8 @@ function copy_settings(profile /*: any */ =null) {
     }
     return settings;
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function detect_settings_difference(profile /*: any */ =null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function detect_settings_difference(profile /*: ?string */ =null) /*: boolean */ {
     // check if the current settings differ from the given profile
     if (!profile) {  // if none provided, compare to the current profile
         profile = get_settings('profile')
@@ -62,8 +62,8 @@ function detect_settings_difference(profile /*: any */ =null) {
     }
     return different;
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function save_profile(profile /*: any */ =null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function save_profile(profile /*: ?string */ =null) /*: void */ {
     // Save the current settings to the given profile
     if (!profile) {  // if none provided, save to the current profile
         profile = get_settings('profile');
@@ -81,8 +81,8 @@ function save_profile(profile /*: any */ =null) {
     // update the button highlight
     update_save_icon_highlight();
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function load_profile(profile /*: any */ =null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function load_profile(profile /*: ?string */ =null) /*: void */ {
     // load a given settings profile
     const current_profile = get_settings('profile')
     if (!profile) {  // if none provided, reload the current profile
@@ -103,8 +103,8 @@ function load_profile(profile /*: any */ =null) {
     }
     refresh_settings();
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function export_profile(profile /*: any */ =null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function export_profile(profile /*: ?string */ =null) /*: void */ {
     // export a settings profile
     if (!profile) {  // if none provided, reload the current profile
         profile = get_settings('profile')
@@ -121,8 +121,9 @@ function export_profile(profile /*: any */ =null) {
     // $FlowFixMe[cannot-resolve-name]
     download(data, `${profile}.json`, 'application/json');
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function import_profile(e /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+async function import_profile(e /*: any */) /*: Promise<void> */ {
+    // e is a DOM event object - legitimate use of any
     const file = e.target.files[0];
     if (!file) {
         return;
@@ -253,8 +254,8 @@ function toggle_chat_profile() {
     // otherwise, set it to the current profile.
     set_chat_profile(key, profile === get_chat_profile() ? null : profile);
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_character_profile(key /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function get_character_profile(key /*: ?string */ = null) /*: ?string */ {
     // Get the profile for a given character
     if (!key) {  // if none given, assume the current character
         key = get_current_character_identifier();
@@ -265,8 +266,8 @@ function get_character_profile(key /*: any */) {
     }
     return character_profiles[key];
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function set_character_profile(key /*: any */, profile /*: any */ =null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function set_character_profile(key /*: string */, profile /*: ?string */ =null) /*: void */ {
     // Set the profile for a given character (or unset it if no profile provided)
     const character_profiles = get_settings('character_profiles');
 
@@ -281,8 +282,8 @@ function set_character_profile(key /*: any */, profile /*: any */ =null) {
     set_settings('character_profiles', character_profiles);
     refresh_settings()
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_chat_profile(id /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function get_chat_profile(id /*: ?string */ = null) /*: ?string */ {
     // Get the profile for a given chat
     if (!id) {  // if none given, assume the current character
         id = get_current_chat_identifier();
@@ -290,8 +291,8 @@ function get_chat_profile(id /*: any */) {
     const profiles = get_settings('chat_profiles');
     return profiles[id]
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function set_chat_profile(id /*: any */, profile /*: any */ =null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function set_chat_profile(id /*: string */, profile /*: ?string */ =null) /*: void */ {
     // Set the profile for a given chat (or unset it if no profile provided)
     const chat_profiles = get_settings('chat_profiles');
 
