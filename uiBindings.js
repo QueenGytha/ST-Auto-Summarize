@@ -22,12 +22,14 @@ import {
  * @param disable {boolean} Whether to disable the element when chat is disabled
  */
 
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function bind_setting(selector /*: any */, key /*: any */, type /*: any */=null, callback /*: any */=null, disable /*: any */=true) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function bind_setting(selector /*: string */, key /*: string */, type /*: ?string */=null, callback /*: ?(value: any) => void */=null, disable /*: boolean */=true) /*: void */ {
+    // callback accepts any type value (number, boolean, string) - legitimate use of any
     // Bind a UI element to a setting, so if the UI element changes, the setting is updated
     selector = `.${settings_content_class} ${selector}`  // add the settings div to the selector
     // $FlowFixMe[cannot-resolve-name]
     const element = $(selector)
+    // $FlowFixMe[prop-missing] - settings_ui_map is dynamically typed object
     settings_ui_map[key] = [element, type]
 
     // if no elements found, log error
@@ -71,6 +73,7 @@ function bind_setting(selector /*: any */, key /*: any */, type /*: any */=null,
 
         // trigger callback if provided, passing the new value
         if (callback !== null) {
+            // $FlowFixMe[not-a-function] - callback is null-checked above
             callback(value);
         }
 
@@ -86,8 +89,9 @@ function bind_setting(selector /*: any */, key /*: any */, type /*: any */=null,
         }
     });
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function bind_function(selector /*: any */, func /*: any */, disable /*: any */=true) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function bind_function(selector /*: string */, func /*: (event: any) => any */, disable /*: boolean */=true) /*: void */ {
+    // event parameter is complex DOM event, return can be void or Promise - legitimate use of any
     // bind a function to an element (typically a button or input)
     // if disable is true, disable the element if chat is disabled
     selector = `.${settings_content_class} ${selector}`
@@ -114,8 +118,9 @@ function bind_function(selector /*: any */, func /*: any */, disable /*: any */=
         });
     }
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function set_setting_ui_element(key /*: any */, element /*: any */, type /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function set_setting_ui_element(key /*: string */, element /*: any */, type /*: ?string */) /*: void */ {
+    // element is jQuery object - complex type, legitimate use of any
     // Set a UI element to the current setting value
     let radio = false;
     if (element.is('input[type="radio"]')) {
