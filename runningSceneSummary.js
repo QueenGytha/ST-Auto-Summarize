@@ -249,12 +249,29 @@ async function generate_running_scene_summary(skipQueue /*: any */ = false) {
 
     debug(SUBSYSTEM.RUNNING, `Found ${indexes.length} scene summaries (excluding latest ${exclude_count})`);
 
-    // Build scene summaries text
+    // Build scene summaries text (extract only 'summary' field, exclude 'lorebooks')
     const scene_summaries_text = indexes.map((idx, i) => {
         const msg = chat[idx];
-        const summary = get_data(msg, 'scene_summary_memory') || "";
+        const scene_summary = get_data(msg, 'scene_summary_memory') || "";
         const name = get_data(msg, 'scene_break_name') || `Scene ${i + 1}`;
-        return `[Scene ${i + 1}: ${name}]\n${summary}`;
+
+        // Extract only the 'summary' field from the JSON (exclude 'lorebooks')
+        let summary_text = scene_summary;
+        try {
+            const parsed = JSON.parse(scene_summary);
+            if (parsed && typeof parsed === 'object') {
+                if (parsed.summary) {
+                    summary_text = parsed.summary;
+                } else {
+                    // Valid JSON but no 'summary' property - use empty string
+                    summary_text = "";
+                }
+            }
+        } catch {
+            // Not JSON or parsing failed - use the whole text as-is
+        }
+
+        return `[Scene ${i + 1}: ${name}]\n${summary_text}`;
     }).join('\n\n');
 
     // Get current running summary if exists
@@ -357,11 +374,32 @@ async function combine_scene_with_running_summary(scene_index /*: any */) {
 
     debug(SUBSYSTEM.RUNNING, `Combining running summary with scene at index ${scene_index} (${scene_name})`);
 
+    // Extract only the 'summary' field from the JSON (exclude 'lorebooks')
+    // Scene summaries are JSON with { "summary": "...", "lorebooks": [...] }
+    // For combining, we only want the timeline summary, not the lorebook entries
+    let summary_text = scene_summary;
+    try {
+        const parsed = JSON.parse(scene_summary);
+        if (parsed && typeof parsed === 'object') {
+            if (parsed.summary) {
+                summary_text = parsed.summary;
+                debug(SUBSYSTEM.RUNNING, `Extracted summary field from JSON (${summary_text.length} chars, excluding lorebooks)`);
+            } else {
+                // Valid JSON but no 'summary' property - use empty string
+                summary_text = "";
+                debug(SUBSYSTEM.RUNNING, `Scene summary is JSON but missing 'summary' property, using empty string`);
+            }
+        }
+    } catch (err) {
+        // Not JSON or parsing failed - use the whole text as-is
+        debug(SUBSYSTEM.RUNNING, `Scene summary is not JSON, using as-is: ${err.message}`);
+    }
+
     // Get current running summary
     const current_summary = get_current_running_summary_content();
 
-    // Build scene summaries text (just this one scene)
-    const scene_summaries_text = `[${scene_name}]\n${scene_summary}`;
+    // Build scene summaries text (just this one scene's summary, without lorebooks)
+    const scene_summaries_text = `[${scene_name}]\n${summary_text}`;
 
     // Build prompt
     let prompt = get_settings('running_scene_summary_prompt') || running_scene_summary_prompt;

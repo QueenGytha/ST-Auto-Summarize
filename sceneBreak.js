@@ -13,8 +13,10 @@ import {
 } from './index.js';
 import {
     auto_generate_running_summary,
-    combine_scene_with_running_summary,
 } from './runningSceneSummary.js';
+import {
+    queueCombineSceneWithRunning,
+} from './queueIntegration.js';
 import { clearCheckedFlagsInRange } from './autoSceneBreakDetection.js';
 
 // SCENE SUMMARY PROPERTY STRUCTURE:
@@ -541,26 +543,16 @@ export function renderSceneBreak(index /*: any */, get_message_div /*: any */, g
 
         log(SUBSYSTEM.SCENE, "Combine scene with running summary button clicked for scene at index", index);
 
-        // $FlowFixMe[cannot-resolve-name]
-        const $btn = $(this);
-        $btn.prop('disabled', true);
-        $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> Combining...');
+        // Queue the operation - this will lock the UI and process through the queue
+        const opId = queueCombineSceneWithRunning(index);
 
-        try {
-            await combine_scene_with_running_summary(index);
-            log(SUBSYSTEM.SCENE, "Scene combined with running summary successfully");
+        if (opId) {
+            log(SUBSYSTEM.SCENE, "Scene combine operation queued with ID:", opId);
+            toast('Scene combine operation queued', 'success');
+        } else {
+            error(SUBSYSTEM.SCENE, "Failed to queue scene combine operation");
             // $FlowFixMe[cannot-resolve-name]
-            if (window.updateVersionSelector) {
-                // $FlowFixMe[cannot-resolve-name]
-                window.updateVersionSelector();
-            }
-        } catch (err) {
-            error(SUBSYSTEM.SCENE, "Failed to combine scene with running summary:", err);
-            // $FlowFixMe[cannot-resolve-name]
-            alert('Failed to combine scene with running summary. Check console for details.');
-        } finally {
-            $btn.prop('disabled', false);
-            $btn.html('<i class="fa-solid fa-sync-alt"></i> Combine');
+            alert('Failed to queue operation. Check console for details.');
         }
     });
 
