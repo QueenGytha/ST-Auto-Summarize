@@ -115,11 +115,12 @@ function getTrackingSetting(key /*: string */, defaultValue /*: any */ = null) /
 function setTrackingSetting(key /*: string */, value /*: any */) /*: void */ {
     try {
         if (!extension_settings.autoLorebooks) {
-            extension_settings.autoLorebooks = {};
+            extension_settings.autoLorebooks = ({} /*: any */);
         }
         if (!extension_settings.autoLorebooks.tracking) {
-            extension_settings.autoLorebooks.tracking = {};
+            extension_settings.autoLorebooks.tracking = ({} /*: any */);
         }
+        // $FlowFixMe[prop-missing] - Dynamic property assignment to tracking settings
         extension_settings.autoLorebooks.tracking[key] = value;
     } catch (err) {
         error("Error setting tracking setting", err);
@@ -208,11 +209,14 @@ function parseSyntaxPattern(text /*: string */, syntaxPattern /*: any */) /*: an
 
         let match;
         while ((match = regex.exec(text)) !== null) {
+            // Flow doesn't understand that match is non-null inside while loop
+            // $FlowFixMe[incompatible-use]
+            const m = match;  // Create non-null alias for Flow
             matches.push({
-                match: match[0],
-                content: match[1]?.trim() || '',
-                start: match.index,
-                end: match.index + match[0].length
+                match: m[0],
+                content: m[1]?.trim() || '',
+                start: m.index,
+                end: m.index + m[0].length
             });
         }
 
@@ -294,7 +298,7 @@ export function removeTrackingSyntax(messageText /*: string */, updates /*: any 
  * @param {string} newUpdate - New update to merge
  * @returns {Promise<string|null>} Merged content or null on failure
  */
-async function mergeUpdateWithAI(entryType /*: string */, currentContent /*: string */, newUpdate /*: string */) /*: Promise<string> */ {
+async function mergeUpdateWithAI(entryType /*: string */, currentContent /*: string */, newUpdate /*: string */) /*: Promise<?string> */ {
     try {
         const mergePrompt = getTrackingSetting(`merge_prompt_${entryType}`);
         if (!mergePrompt) {
@@ -328,6 +332,7 @@ async function mergeUpdateWithAI(entryType /*: string */, currentContent /*: str
             }
 
             // Call AI
+            // $FlowFixMe[extra-arg] - generateRaw signature mismatch with Flow definition
             const result = await generateRaw(prompt, '', false, false, prefill);
 
             if (!result || typeof result !== 'string') {
@@ -433,7 +438,7 @@ async function ensureTrackingEntry(lorebookName /*: string */, entryType /*: str
  * @param {string} newContent - New content to set
  * @returns {Promise<boolean>} Success
  */
-async function updateTrackingEntry(lorebookName /*: string */, entryType /*: string */, newContent /*: string */) /*: Promise<void> */ {
+async function updateTrackingEntry(lorebookName /*: string */, entryType /*: string */, newContent /*: string */) /*: Promise<boolean> */ {
     try {
         // Ensure entry exists
         const entry = await ensureTrackingEntry(lorebookName, entryType);
@@ -464,7 +469,7 @@ async function updateTrackingEntry(lorebookName /*: string */, entryType /*: str
  * @param {Object} message - SillyTavern message object
  * @returns {Promise<boolean>} Success
  */
-export async function processTrackingUpdates(message /*: any */) /*: Promise<void> */ {
+export async function processTrackingUpdates(message /*: any */) /*: Promise<boolean> */ {
     try {
         // Check if tracking is enabled
         if (!getTrackingSetting('enabled', true)) {
@@ -538,7 +543,7 @@ export async function processTrackingUpdates(message /*: any */) /*: Promise<voi
  * @param {string} updateContent - Update content
  * @returns {Promise<boolean>} Success
  */
-export async function processEntryUpdate(lorebookName /*: string */, entryType /*: string */, updateContent /*: string */) /*: Promise<void> */ {
+export async function processEntryUpdate(lorebookName /*: string */, entryType /*: string */, updateContent /*: string */) /*: Promise<boolean> */ {
     try {
         // Get current entry
         const entry = await ensureTrackingEntry(lorebookName, entryType);

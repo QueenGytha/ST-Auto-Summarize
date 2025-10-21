@@ -4,12 +4,14 @@
 // These are always active but DON'T trigger the actual entity entries (prevents context bloat)
 
 // Will be imported from index.js via barrel exports
-let log, debug, error, getLorebookEntries, addLorebookEntry, modifyLorebookEntry, deleteLorebookEntry, getSetting;
+let log /*: any */, debug /*: any */, error /*: any */, getLorebookEntries /*: any */, addLorebookEntry /*: any */, modifyLorebookEntry /*: any */, deleteLorebookEntry /*: any */, getSetting /*: any */;  // Utility and lorebook functions - any type is legitimate
 
 /**
  * Initialize the category indexes manager with imported utilities
  */
-export function initCategoryIndexes(utils, lorebookManagerUtils, settingsManagerUtils) {
+// $FlowFixMe[signature-verification-failure]
+export function initCategoryIndexes(utils /*: any */, lorebookManagerUtils /*: any */, settingsManagerUtils /*: any */) /*: void */ {
+    // All parameters are any type - objects with various properties - legitimate use of any
     log = utils.log;
     debug = utils.debug;
     error = utils.error;
@@ -77,7 +79,7 @@ const CATEGORY_CONFIG = {
  * @param {string} entryName - Entry comment/name
  * @returns {string|null} - Category prefix or null
  */
-function extractCategoryPrefix(entryName) {
+function extractCategoryPrefix(entryName /*: string */) /*: ?string */ {
     if (!entryName) return null;
 
     // Check for each category prefix
@@ -95,7 +97,7 @@ function extractCategoryPrefix(entryName) {
  * @param {string} entryName - Full entry name (e.g., "character-Alice")
  * @returns {string} - Entity name without prefix
  */
-function extractEntityName(entryName) {
+function extractEntityName(entryName /*: string */) /*: string */ {
     const parts = entryName.split('-');
     if (parts.length > 1) {
         return parts.slice(1).join('-'); // Handle names with hyphens
@@ -108,7 +110,7 @@ function extractEntityName(entryName) {
  * @param {string} lorebookName - Name of lorebook to scan
  * @returns {Promise<Object>} - Object with category arrays
  */
-async function categorizeEntries(lorebookName) {
+async function categorizeEntries(lorebookName /*: string */) /*: Promise<any> */ {
     try {
         const entries = await getLorebookEntries(lorebookName);
         if (!entries) {
@@ -116,7 +118,7 @@ async function categorizeEntries(lorebookName) {
             return {};
         }
 
-        const categorized = {};
+        const categorized /*: any */ = {};
 
         // Initialize all categories
         for (const prefix of Object.keys(CATEGORY_CONFIG)) {
@@ -159,8 +161,9 @@ async function categorizeEntries(lorebookName) {
  * @param {Array<string>} entityNames - List of entity names in this category
  * @returns {Promise<boolean>} - Success status
  */
-async function updateCategoryIndexEntry(lorebookName, categoryPrefix, entityNames) {
+async function updateCategoryIndexEntry(lorebookName /*: string */, categoryPrefix /*: string */, entityNames /*: any */) /*: Promise<boolean> */ {
     try {
+        // $FlowFixMe[invalid-computed-prop] - Dynamic lookup of category config
         const config = CATEGORY_CONFIG[categoryPrefix];
         if (!config) {
             error(`Unknown category prefix: ${categoryPrefix}`);
@@ -223,7 +226,7 @@ async function updateCategoryIndexEntry(lorebookName, categoryPrefix, entityName
  * @param {string} lorebookName - Name of lorebook to update
  * @returns {Promise<boolean>} - Success status
  */
-export async function updateAllCategoryIndexes(lorebookName) {
+export async function updateAllCategoryIndexes(lorebookName /*: string */) /*: Promise<boolean> */ {
     try {
         if (!lorebookName) {
             debug("No lorebook name provided for category index update");
@@ -236,9 +239,11 @@ export async function updateAllCategoryIndexes(lorebookName) {
             debug(`[Queue] Operation queue enabled, queueing update of all category indexes`);
 
             // Import queue integration
+            // $FlowFixMe[prop-missing] - Dynamic import, function may not exist in queueIntegration
             const { queueUpdateAllCategoryIndexes } = await import('./queueIntegration.js');
 
             // Queue the category indexes update
+            // $FlowFixMe[not-a-function] - Function exists at runtime if queue enabled
             const operationId = queueUpdateAllCategoryIndexes(lorebookName);
 
             if (operationId) {
@@ -284,8 +289,9 @@ export async function updateAllCategoryIndexes(lorebookName) {
  * @param {string} categoryPrefix - Category to update (e.g., 'character')
  * @returns {Promise<boolean>} - Success status
  */
-export async function updateCategoryIndex(lorebookName, categoryPrefix) {
+export async function updateCategoryIndex(lorebookName /*: string */, categoryPrefix /*: string */) /*: Promise<boolean> */ {
     try {
+        // $FlowFixMe[invalid-computed-prop] - Dynamic lookup of category config
         if (!CATEGORY_CONFIG[categoryPrefix]) {
             error(`Invalid category prefix: ${categoryPrefix}`);
             return false;
@@ -297,9 +303,11 @@ export async function updateCategoryIndex(lorebookName, categoryPrefix) {
             debug(`[Queue] Operation queue enabled, queueing category index update for ${categoryPrefix}`);
 
             // Import queue integration
+            // $FlowFixMe[prop-missing] - Dynamic import, function may not exist in queueIntegration
             const { queueUpdateCategoryIndex } = await import('./queueIntegration.js');
 
             // Queue the category index update
+            // $FlowFixMe[not-a-function] - Function exists at runtime if queue enabled
             const operationId = queueUpdateCategoryIndex(lorebookName, categoryPrefix);
 
             if (operationId) {
@@ -331,7 +339,7 @@ export async function updateCategoryIndex(lorebookName, categoryPrefix) {
  * @param {string} entityType - Entity type (character, npc, creature, etc.)
  * @returns {string} - Category prefix
  */
-export function getCategoryForEntityType(entityType) {
+export function getCategoryForEntityType(entityType /*: string */) /*: string */ {
     switch (entityType) {
         case 'character':
         case 'npc':
@@ -359,7 +367,7 @@ export function getCategoryForEntityType(entityType) {
  * @param {string} lorebookName - Name of lorebook
  * @returns {Promise<boolean>} - Success status
  */
-export async function removeCategoryIndexes(lorebookName) {
+export async function removeCategoryIndexes(lorebookName /*: string */) /*: Promise<boolean> */ {
     try {
         debug(`Removing all category indexes from: ${lorebookName}`);
 
@@ -389,11 +397,11 @@ export async function removeCategoryIndexes(lorebookName) {
  * @param {string} lorebookName - Name of lorebook
  * @returns {Promise<Object>} - Statistics object
  */
-export async function getCategoryStats(lorebookName) {
+export async function getCategoryStats(lorebookName /*: string */) /*: Promise<any> */ {
     try {
         const categorized = await categorizeEntries(lorebookName);
 
-        const stats = {
+        const stats /*: any */ = {
             total: 0,
             categories: {}
         };

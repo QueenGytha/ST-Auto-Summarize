@@ -120,7 +120,7 @@ export function isAutoLorebooksEnabled() /*: boolean */ {
 export function setAutoLorebooksEnabled(enabled /*: boolean */) /*: void */ {
     try {
         if (!chat_metadata.auto_lorebooks) {
-            chat_metadata.auto_lorebooks = {};
+            chat_metadata.auto_lorebooks = ({} /*: any */);
         }
 
         chat_metadata.auto_lorebooks.enabled = enabled;
@@ -167,7 +167,7 @@ export function lorebookExists(lorebookName /*: string */) /*: boolean */ {
  * @param {string} missingLorebookName - Name of the missing lorebook
  * @returns {Promise<string|null>} New lorebook name or null
  */
-export async function handleMissingLorebook(missingLorebookName /*: string */) /*: Promise<void> */ {
+export async function handleMissingLorebook(missingLorebookName /*: string */) /*: Promise<any> */ {
     try {
         log(`Detected missing lorebook: "${missingLorebookName}"`);
 
@@ -241,7 +241,7 @@ export function attachLorebook(lorebookName /*: string */) /*: void */ {
 
         // Store in our extension metadata
         if (!chat_metadata.auto_lorebooks) {
-            chat_metadata.auto_lorebooks = {};
+            chat_metadata.auto_lorebooks = ({} /*: any */);
         }
         chat_metadata.auto_lorebooks.lorebookName = lorebookName;
         chat_metadata.auto_lorebooks.attachedAt = Date.now();
@@ -303,7 +303,7 @@ export async function createChatLorebook() /*: Promise<any> */ {
  * Ensure the current chat has a lorebook (create if needed)
  * @returns {Promise<boolean>} Success
  */
-export async function ensureChatLorebook() /*: Promise<void> */ {
+export async function ensureChatLorebook() /*: Promise<boolean> */ {
     try {
         // Check if enabled
         if (!isAutoLorebooksEnabled()) {
@@ -347,7 +347,7 @@ export async function ensureChatLorebook() /*: Promise<void> */ {
  * @param {string} lorebookName - Name of lorebook to delete
  * @returns {Promise<boolean>} Success
  */
-export async function deleteChatLorebook(lorebookName /*: string */) /*: Promise<void> */ {
+export async function deleteChatLorebook(lorebookName /*: string */) /*: Promise<boolean> */ {
     try {
         if (!lorebookName) {
             debug("No lorebook to delete");
@@ -580,7 +580,7 @@ export async function modifyLorebookEntry(lorebookName /*: string */, uid /*: st
  * @param {boolean} silent - Skip confirmation dialog
  * @returns {Promise<boolean>} Success
  */
-export async function deleteLorebookEntry(lorebookName /*: string */, uid /*: string */, silent /*: boolean */ = true) /*: Promise<void> */ {
+export async function deleteLorebookEntry(lorebookName /*: string */, uid /*: string */, silent /*: boolean */ = true) /*: Promise<boolean> */ {
     try {
         if (!lorebookName) {
             error("Cannot delete entry: lorebook name is empty");
