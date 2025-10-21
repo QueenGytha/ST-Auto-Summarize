@@ -1,18 +1,22 @@
 // @flow
 // summaryToLorebookProcessor.js - Extract lorebook entries from summary JSON objects and process them
 
+// $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { chat_metadata, saveMetadata, generateRaw } from '../../../../script.js';
+// $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { extension_settings } from '../../../extensions.js';
 
 // Will be imported from index.js via barrel exports
-let log, debug, error, toast, get_settings;
-let getAttachedLorebook, getLorebookEntries, addLorebookEntry;
-let mergeLorebookEntry;
+let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */, get_settings /*: any */;  // Utility functions - any type is legitimate
+let getAttachedLorebook /*: any */, getLorebookEntries /*: any */, addLorebookEntry /*: any */;  // Lorebook functions - any type is legitimate
+let mergeLorebookEntry /*: any */;  // Entry merger function - any type is legitimate
 
 /**
  * Initialize the summary-to-lorebook processor module
  */
-export function initSummaryToLorebookProcessor(utils, lorebookManagerModule, entryMergerModule) {
+// $FlowFixMe[signature-verification-failure]
+export function initSummaryToLorebookProcessor(utils /*: any */, lorebookManagerModule /*: any */, entryMergerModule /*: any */) /*: void */ {
+    // All parameters are any type - objects with various properties - legitimate use of any
     log = utils.log;
     debug = utils.debug;
     error = utils.error;
@@ -36,7 +40,7 @@ export function initSummaryToLorebookProcessor(utils, lorebookManagerModule, ent
  * Get processed summaries tracker from chat metadata
  * @returns {Set<string>} Set of processed summary IDs
  */
-function getProcessedSummaries() {
+function getProcessedSummaries() /*: any */ {
     if (!chat_metadata.auto_lorebooks_processed_summaries) {
         chat_metadata.auto_lorebooks_processed_summaries = [];
     }
@@ -47,7 +51,7 @@ function getProcessedSummaries() {
  * Mark a summary as processed
  * @param {string} summaryId - Unique ID for the summary
  */
-function markSummaryProcessed(summaryId) {
+function markSummaryProcessed(summaryId /*: string */) /*: void */ {
     const processed = getProcessedSummaries();
     processed.add(summaryId);
     chat_metadata.auto_lorebooks_processed_summaries = Array.from(processed);
@@ -60,7 +64,7 @@ function markSummaryProcessed(summaryId) {
  * @param {string} summaryId - Unique ID for the summary
  * @returns {boolean}
  */
-function isSummaryProcessed(summaryId) {
+function isSummaryProcessed(summaryId /*: string */) /*: boolean */ {
     return getProcessedSummaries().has(summaryId);
 }
 
@@ -69,7 +73,7 @@ function isSummaryProcessed(summaryId) {
  * @param {Object} summary - Summary object
  * @returns {string} Unique ID
  */
-function generateSummaryId(summary) {
+function generateSummaryId(summary /*: any */) /*: string */ {
     // Use timestamp + content hash as ID
     const timestamp = summary.timestamp || Date.now();
     const content = JSON.stringify(summary.lorebook || summary);
@@ -82,7 +86,7 @@ function generateSummaryId(summary) {
  * @param {string} str - String to hash
  * @returns {string} Hash value
  */
-function simpleHash(str) {
+function simpleHash(str /*: string */) /*: number */ {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
         const char = str.charCodeAt(i);
@@ -97,7 +101,7 @@ function simpleHash(str) {
  * @param {Object} summary - Summary object
  * @returns {Object|null} Lorebook data or null
  */
-function extractLorebookData(summary) {
+function extractLorebookData(summary /*: any */) /*: any */ {
     try {
         // Check if summary has a lorebooks array (plural - standard format)
         if (summary.lorebooks && Array.isArray(summary.lorebooks)) {
@@ -138,7 +142,7 @@ function extractLorebookData(summary) {
  * @param {Object} newEntry - New entry to find
  * @returns {Object|null} Matching entry or null
  */
-function findExistingEntry(entries, newEntry) {
+function findExistingEntry(entries /*: any */, newEntry /*: any */) /*: any */ {
     if (!entries || !newEntry) return null;
 
     const searchComment = (newEntry.comment || newEntry.name || '').toLowerCase().trim();
@@ -168,7 +172,7 @@ function findExistingEntry(entries, newEntry) {
  * @param {Object} entry - Entry data
  * @returns {Object} Normalized entry
  */
-function normalizeEntryData(entry) {
+function normalizeEntryData(entry /*: any */) /*: any */ {
     return {
         comment: entry.comment || entry.name || '',
         content: entry.content || entry.description || '',
@@ -188,7 +192,7 @@ function normalizeEntryData(entry) {
  * @param {string} entryContent - Content of the entry
  * @returns {Promise<Array<string>>} Generated keywords or empty array
  */
-async function generateKeywordsForEntry(entryName, entryContent) {
+async function generateKeywordsForEntry(entryName /*: string */, entryContent /*: string */) /*: Promise<Array<string>> */ {
     try {
         // Check if keyword generation is enabled
         const keywordGenEnabled = get_settings('auto_lorebooks_keyword_generation_enabled');
@@ -283,7 +287,7 @@ async function generateKeywordsForEntry(entryName, entryContent) {
  * @param {Object} options - Processing options
  * @returns {Promise<Object>} Processing result
  */
-export async function processSummaryToLorebook(summary, options = {}) {
+export async function processSummaryToLorebook(summary /*: any */, options /*: any */ = {}) /*: Promise<any> */ {
     try {
         const {
             useQueue = true,
@@ -455,7 +459,7 @@ export async function processSummaryToLorebook(summary, options = {}) {
  * @param {Object} options - Processing options
  * @returns {Promise<Object>} Processing result
  */
-export async function processSingleLorebookEntry(entryData, options = {}) {
+export async function processSingleLorebookEntry(entryData /*: any */, options /*: any */ = {}) /*: Promise<any> */ {
     try {
         const { useQueue = false } = options;
 
@@ -573,7 +577,7 @@ export async function processSingleLorebookEntry(entryData, options = {}) {
  * @param {Object} options - Processing options
  * @returns {Promise<Object>} Combined results
  */
-export async function processSummariesToLorebook(summaries, options = {}) {
+export async function processSummariesToLorebook(summaries /*: any */, options /*: any */ = {}) /*: Promise<any> */ {
     try {
         if (!Array.isArray(summaries) || summaries.length === 0) {
             return {
@@ -629,7 +633,7 @@ export async function processSummariesToLorebook(summaries, options = {}) {
 /**
  * Clear processed summaries tracker
  */
-export function clearProcessedSummaries() {
+export function clearProcessedSummaries() /*: void */ {
     chat_metadata.auto_lorebooks_processed_summaries = [];
     saveMetadata();
     log('Cleared processed summaries tracker');
