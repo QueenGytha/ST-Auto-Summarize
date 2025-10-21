@@ -230,7 +230,7 @@ export function disableInterception() {
 /**
  * Update interception state based on settings
  */
-export function updateInterceptionState(enabled) {
+export function updateInterceptionState(enabled /*: boolean */) /*: void */ {
     try {
         if (enabled) {
             enableInterception();
@@ -245,7 +245,7 @@ export function updateInterceptionState(enabled) {
 /**
  * Check if interception is currently active
  */
-export function isInterceptionActive() {
+export function isInterceptionActive() /*: boolean */ {
     return isIntercepting;
 }
 
