@@ -12,6 +12,25 @@ let getAttachedLorebook /*: any */, getLorebookEntries /*: any */, addLorebookEn
 let mergeLorebookEntry /*: any */;  // Entry merger function - any type is legitimate
 
 /**
+ * Safe settings accessor that works even before module initialization
+ * Falls back to direct extension_settings access if get_settings not initialized
+ */
+function getSetting(key /*: string */, defaultValue /*: any */ = null) /*: any */ {
+    // defaultValue and return are any - can be various types - legitimate use of any
+    try {
+        // Try using get_settings if initialized
+        if (get_settings && typeof get_settings === 'function') {
+            return get_settings(key) ?? defaultValue;
+        }
+
+        // Fallback to direct access
+        return extension_settings?.autoLorebooks?.[key] ?? defaultValue;
+    } catch (err) {
+        return defaultValue;
+    }
+}
+
+/**
  * Initialize the summary-to-lorebook processor module
  */
 // $FlowFixMe[signature-verification-failure]
@@ -195,7 +214,7 @@ function normalizeEntryData(entry /*: any */) /*: any */ {
 async function generateKeywordsForEntry(entryName /*: string */, entryContent /*: string */) /*: Promise<Array<string>> */ {
     try {
         // Check if keyword generation is enabled
-        const keywordGenEnabled = get_settings('auto_lorebooks_keyword_generation_enabled');
+        const keywordGenEnabled = getSetting('auto_lorebooks_keyword_generation_enabled', true);
         if (!keywordGenEnabled) {
             debug('Keyword generation disabled, skipping');
             return [];
@@ -204,7 +223,7 @@ async function generateKeywordsForEntry(entryName /*: string */, entryContent /*
         debug(`Generating keywords for entry: ${entryName}`);
 
         // Get prompt template
-        const promptTemplate = get_settings('auto_lorebooks_keyword_generation_prompt') ||
+        const promptTemplate = getSetting('auto_lorebooks_keyword_generation_prompt') ||
             extension_settings?.autoLorebooks?.keyword_generation_prompt || '';
 
         if (!promptTemplate) {
@@ -218,14 +237,14 @@ async function generateKeywordsForEntry(entryName /*: string */, entryContent /*
             .replace(/\{\{entry_content\}\}/g, entryContent || '');
 
         // Add prefill if configured
-        const prefill = get_settings('auto_lorebooks_keyword_generation_prefill') || '';
+        const prefill = getSetting('auto_lorebooks_keyword_generation_prefill') || '';
         if (prefill) {
             prompt = `${prompt}\n${prefill}`;
         }
 
         // Get connection profile and preset from settings
-        const connectionProfile = get_settings('auto_lorebooks_keyword_generation_connection_profile') || null;
-        const preset = get_settings('auto_lorebooks_keyword_generation_completion_preset') || null;
+        const connectionProfile = getSetting('auto_lorebooks_keyword_generation_connection_profile') || null;
+        const preset = getSetting('auto_lorebooks_keyword_generation_completion_preset') || null;
 
         // Prepare generation options
         const options /*: any */ = {
