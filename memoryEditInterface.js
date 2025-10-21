@@ -26,69 +26,69 @@ import {
 
 
 class MemoryEditInterface {
-    filtered /*: Array<any> */ = []
-    displayed /*: Array<any> */ = []
-    selected /*: Set<any> */ = new Set()
-    $content /*: any */
-    popup /*: any */
-    ctx /*: any */
-    settings /*: any */
+    filtered /*: Array<number> */ = []  // message indexes
+    displayed /*: Array<number> */ = []  // message indexes
+    selected /*: Set<number> */ = new Set()  // message indexes
+    $content /*: any */  // jQuery object - legitimate use of any
+    popup /*: any */  // popup object - legitimate use of any
+    ctx /*: any */  // SillyTavern context - legitimate use of any
+    settings /*: Object */
 
     // $FlowFixMe[missing-local-annot]
     filter_bar = {
         "message_summary": {
             "title": "Summaries currently as single message summaries",
             "display": "Single Message",
-            // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check": (msg /*: any */) => get_data(msg, 'include') === "Summary of message(s)",
+            // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+            "check": (msg /*: STMessage */) /*: boolean */ => get_data(msg, 'include') === "Summary of message(s)",
             "default": true,
             "count": 0
         },
         "excluded": {
             "title": "Summaries not in single message summaries",
             "display": "Forgot",
-            // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check": (msg /*: any */) => !get_data(msg, 'include') && get_data(msg, 'memory'),
+            // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+            "check": (msg /*: STMessage */) /*: boolean */ => !get_data(msg, 'include') && get_data(msg, 'memory'),
             "default": false,
             "count": 0
         },
         "force_excluded": {
             "title": "Summaries that have been manually excluded from memory",
             "display": "Excluded",
-            // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check":  (msg /*: any */) => get_data(msg, 'exclude'),
+            // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+            "check":  (msg /*: STMessage */) /*: boolean */ => get_data(msg, 'exclude'),
             "default": false,
             "count": 0
         },
         "edited": {
             "title": "Summaries that have been manually edited",
             "display": "Edited",
-            // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check": (msg /*: any */) => get_data(msg, 'edited'),
+            // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+            "check": (msg /*: STMessage */) /*: boolean */ => get_data(msg, 'edited'),
             "default": false,
             "count": 0
         },
         "user": {
             "title": "User messages with or without summaries",
             "display": "User",
-            // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check":  (msg /*: any */) => msg.is_user,
+            // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+            "check":  (msg /*: STMessage */) /*: boolean */ => msg.is_user,
             "default": false,
             "count": 0
         },
         "no_summary": {
             "title": "Messages without a summary",
             "display": "No Summary",
-            // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check": (msg /*: any */) => !get_data(msg, 'memory'),
+            // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+            "check": (msg /*: STMessage */) /*: boolean */ => !get_data(msg, 'memory'),
             "default": false,
             "count": 0
         },
         "errors": {
             "title": "Summaries that failed during generation",
             "display": "Errors",
-            // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-            "check": (msg /*: any */) => get_data(msg, 'error'),
+            // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+            "check": (msg /*: STMessage */) /*: boolean */ => get_data(msg, 'error'),
             "default": false,
             "count": 0
         },
@@ -342,15 +342,15 @@ class MemoryEditInterface {
         await result
     }
 
-    // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-    is_open() /*: any */ {
+    // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+    is_open() /*: boolean */ {
         // $FlowFixMe[prop-missing]
         if (!this.popup) return false
         // $FlowFixMe[prop-missing]
         return this.$content.closest('dialog').attr('open');
     }
-    // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-    global_selection() /*: any */ {
+    // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+    global_selection() /*: boolean */ {
         // $FlowFixMe[prop-missing]
         return this.$global_selection_checkbox.is(':checked');
     }
@@ -376,8 +376,8 @@ class MemoryEditInterface {
         this.update_selected()
         this.update_context_line()
     }
-    // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-    update_filters(preserve_page /*: any */=false) {
+    // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+    update_filters(preserve_page /*: boolean */=false) /*: void */ {
         log("Updating interface filters...")
         const filter_no_summary = this.filter_bar.no_summary.filtered()
         const filter_message_summary = this.filter_bar.message_summary.filtered()
@@ -539,8 +539,8 @@ class MemoryEditInterface {
         // $FlowFixMe[prop-missing]
         this.$table_body.find(`tr#memory_${closest_id}`).addClass(style)
     }
-    // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-    toggle_selected(indexes /*: any */, value /*: any */=null) {
+    // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+    toggle_selected(indexes /*: Array<number> */, value /*: ?boolean */=null) /*: void */ {
         if (value === null) {
             const all_selected = indexes.every(i => this.selected.has(i));
             if (all_selected) {
@@ -563,8 +563,9 @@ class MemoryEditInterface {
         }
         this.update_selected()
     }
-    // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-    update_message_visuals(i /*: any */, $previous_row /*: any */=null, style /*: any */=true, text /*: any */=null) /*: any */ {
+    // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+    update_message_visuals(i /*: number */, $previous_row /*: any */=null, style /*: boolean */=true, text /*: ?string */=null) /*: any */ {
+        // $previous_row is jQuery object, return is jQuery object - legitimate use of any
         if (!this.is_open()) return
         const msg = this.ctx.chat[i];
         const memory = text ?? get_memory(msg)
