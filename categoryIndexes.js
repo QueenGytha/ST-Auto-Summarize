@@ -1,3 +1,4 @@
+// @flow
 // categoryIndexes.js - Automatic category index entries for ST-Auto-Lorebooks
 // Creates "Characters", "Locations", etc. entries that list all entities in each category
 // These are always active but DON'T trigger the actual entity entries (prevents context bloat)

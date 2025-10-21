@@ -1,3 +1,4 @@
+// @flow
 // sendButtonInterceptor.js - Intercept send button to process latest message before generation
 
 import { saveMetadataDebounced } from '../../../extensions.js';

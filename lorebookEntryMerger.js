@@ -1,3 +1,4 @@
+// @flow
 // lorebookEntryMerger.js - AI-powered merging of new lorebook content with existing entries
 
 import { extension_settings } from '../../../extensions.js';

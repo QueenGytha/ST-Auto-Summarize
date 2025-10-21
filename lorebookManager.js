@@ -1,3 +1,4 @@
+// @flow
 // lorebookManager.js - Lorebook creation and management for ST-Auto-Lorebooks
 
 import {

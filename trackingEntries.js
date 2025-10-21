@@ -1,3 +1,4 @@
+// @flow
 // trackingEntries.js - AI-editable tracking entries (GM notes, character stats, etc.)
 
 import { extension_settings } from '../../../extensions.js';

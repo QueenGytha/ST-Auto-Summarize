@@ -1,3 +1,4 @@
+// @flow
 // summaryToLorebookProcessor.js - Extract lorebook entries from summary JSON objects and process them
 
 import { chat_metadata, saveMetadata, generateRaw } from '../../../../script.js';
