@@ -13,13 +13,13 @@ import {
     METADATA_KEY,
     world_names
     // $FlowFixMe[cannot-resolve-module]
-} from '../../../world-info.js';
+} from './stubs/externals.js';
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
-import { chat_metadata, saveMetadata, getCurrentChatId, characters, this_chid, name2 } from '../../../../script.js';
+import { chat_metadata, saveMetadata, getCurrentChatId, characters, this_chid, name2 } from './stubs/externals.js';
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
-import { extension_settings } from '../../../extensions.js';
+import { extension_settings } from './stubs/externals.js';
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
-import { selected_group, groups } from '../../../group-chats.js';
+import { selected_group, groups } from './stubs/externals.js';
 
 // Will be imported from index.js via barrel exports
 let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */, generateLorebookName /*: any */, getUniqueLorebookName /*: any */;  // Utility functions - any type is legitimate

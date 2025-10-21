@@ -790,7 +790,7 @@ declare module "../../../../scripts/st-context.js" {
     unshallowGroupMembers: any;
     openThirdPartyExtensionMenu: any;
     symbols: {
-      ignore: Symbol,
+      ignore: mixed,
       ...
     };
     set_connection_profile?: (profile: string) => Promise<void>;

@@ -1,28 +1,28 @@
 // @flow
 // Imports from SillyTavern
 // $FlowFixMe[cannot-resolve-module]
-import { getPresetManager } from '../../../preset-manager.js'
+import { getPresetManager } from './stubs/externals.js'
 // $FlowFixMe[cannot-resolve-module]
-import { formatInstructModeChat } from '../../../instruct-mode.js';
+import { formatInstructModeChat } from './stubs/externals.js';
 // $FlowFixMe[cannot-resolve-module]
-import { is_group_generating, selected_group, openGroupId, groups } from '../../../group-chats.js';
+import { is_group_generating, selected_group, openGroupId, groups } from './stubs/externals.js';
 // $FlowFixMe[cannot-resolve-module]
-import { loadMovingUIState, renderStoryString, power_user } from '../../../power-user.js';
+import { loadMovingUIState, renderStoryString, power_user } from './stubs/externals.js';
 // $FlowFixMe[cannot-resolve-module]
-import { dragElement } from '../../../RossAscends-mods.js';
+import { dragElement } from './stubs/externals.js';
 // $FlowFixMe[cannot-resolve-module]
-import { debounce_timeout } from '../../../constants.js';
+import { debounce_timeout } from './stubs/externals.js';
 // $FlowFixMe[cannot-resolve-module]
-import { MacrosParser } from '../../../macros.js';
+import { MacrosParser } from './stubs/externals.js';
 // $FlowFixMe[cannot-resolve-module]
-import { commonEnumProviders } from '../../../slash-commands/SlashCommandCommonEnumsProvider.js';
-import { getRegexScripts } from '../../../../scripts/extensions/regex/index.js'
-import { runRegexScript } from '../../../../scripts/extensions/regex/engine.js'
+import { commonEnumProviders } from './stubs/externals.js';
+import { getRegexScripts } from './stubs/externals.js'
+import { runRegexScript } from './stubs/externals.js'
 // $FlowFixMe[cannot-resolve-module]
-import { getContext, getApiUrl, extension_settings } from '../../../extensions.js';
+import { getContext, getApiUrl, extension_settings } from './stubs/externals.js';
 // $FlowFixMe[cannot-resolve-module]
-import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from '../../../utils.js';
-import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, setSendButtonState, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata } from '../../../../script.js';
+import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from './stubs/externals.js';
+import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, setSendButtonState, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata } from './stubs/externals.js';
 
 export {
     // Exports from imported SillyTavern modules

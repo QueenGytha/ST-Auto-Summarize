@@ -9,6 +9,9 @@
 .*/node_modules/.*
 .*/lib/.*
 .*/src/.*
+# Ignore Flow's bundled react lib (not used here; causes MixedElement error on Windows)
+.*/react\.js$
+.*/React\.js$
 
 [untyped]
 # Don't type-check these files' SOURCE, but use libdefs if available
@@ -16,6 +19,8 @@
 <PROJECT_ROOT>/\.\./\.\./\.\./\.\./script\.js
 <PROJECT_ROOT>/\.\./\.\./\.\./\.\./scripts/.*
 <PROJECT_ROOT>/\.\./\.\./\.\./\.\./world-info\.js
+.*/flowlib_.*/react\.js
+.*/flowlib_.*/React\.js
 
 [include]
 

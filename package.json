@@ -8,6 +8,7 @@
     "build": "babel *.js --out-dir . --ignore 'node_modules/**'",
     "watch": "babel *.js --out-dir . --ignore 'node_modules/**' --watch",
     "lint": "eslint *.js --ignore-pattern syntax-check.js --ignore-pattern verify-flow-annotations.js",
+    "lint:quiet": "eslint *.js --ignore-pattern syntax-check.js --ignore-pattern verify-flow-annotations.js --quiet",
     "lint:fix": "eslint *.js --ignore-pattern syntax-check.js --ignore-pattern verify-flow-annotations.js --fix",
     "flow": "flow status --flowconfig-name .flowconfig",
     "flow-check": "flow check --flowconfig-name .flowconfig",
@@ -15,7 +16,8 @@
     "verify-flow-annotations": "node verify-flow-annotations.js",
     "audit": "npm audit --audit-level=moderate",
     "analyze": "npm run verify-flow-annotations && npm run lint && npm run syntax-check && npm run flow-check",
-    "analyze:full": "npm run verify-flow-annotations && npm run lint && npm run syntax-check && npm run flow-check && npm run audit"
+    "analyze:full": "npm run verify-flow-annotations && npm run lint && npm run syntax-check && npm run flow-check && npm run audit",
+    "test": "node tests/run-tests.js"
   },
   "keywords": [
     "sillytavern",

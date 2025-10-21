@@ -27,7 +27,6 @@ declare var POPUP_TYPE: any;
 declare var Popup: any;
 declare var chat: any;
 declare var toastr: any;
-declare var globalThis: any;
 
 // SillyTavern Message Type (based on actual message structure in script.js)
 // extra is optional for backwards compatibility with old chat files
