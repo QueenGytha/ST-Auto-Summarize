@@ -1,13 +1,15 @@
 // @flow
 // trackingEntries.js - AI-editable tracking entries (GM notes, character stats, etc.)
 
+// $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { extension_settings } from '../../../extensions.js';
+// $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { generateRaw } from '../../../../script.js';
 
 // Will be imported from index.js via barrel exports
-let log, debug, error, toast;
-let getAttachedLorebook, lorebookExists, handleMissingLorebook, addLorebookEntry, modifyLorebookEntry, getLorebookEntries;
-let queueMergeGMNotes, queueMergeCharacterStats;
+let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */;  // Utility functions - any type is legitimate
+let getAttachedLorebook /*: any */, lorebookExists /*: any */, handleMissingLorebook /*: any */, addLorebookEntry /*: any */, modifyLorebookEntry /*: any */, getLorebookEntries /*: any */;  // Lorebook functions - any type is legitimate
+let queueMergeGMNotes /*: any */, queueMergeCharacterStats /*: any */;  // Queue functions - any type is legitimate
 
 /**
  * Configuration for tracking entry types
@@ -75,7 +77,7 @@ Output only the merged content, nothing else.`
 /**
  * Initialize the tracking entries module
  */
-export function initTrackingEntries(utils, lorebookManager, queueIntegrationModule) {
+export function initTrackingEntries(utils /*: any */, lorebookManager /*: any */, queueIntegrationModule /*: any */) /*: void */ {
     log = utils.log;
     debug = utils.debug;
     error = utils.error;
@@ -97,7 +99,7 @@ export function initTrackingEntries(utils, lorebookManager, queueIntegrationModu
 /**
  * Get tracking settings (with defaults)
  */
-function getTrackingSetting(key, defaultValue = null) {
+function getTrackingSetting(key /*: string */, defaultValue /*: any */ = null) /*: any */ {
     try {
         const settings = extension_settings?.autoLorebooks?.tracking || {};
         return settings[key] ?? defaultValue;
@@ -110,7 +112,7 @@ function getTrackingSetting(key, defaultValue = null) {
 /**
  * Set tracking setting
  */
-function setTrackingSetting(key, value) {
+function setTrackingSetting(key /*: string */, value /*: any */) /*: void */ {
     try {
         if (!extension_settings.autoLorebooks) {
             extension_settings.autoLorebooks = {};
@@ -127,7 +129,7 @@ function setTrackingSetting(key, value) {
 /**
  * Initialize default tracking settings
  */
-export function initializeTrackingSettings() {
+export function initializeTrackingSettings() /*: void */ {
     try {
         // Enable/disable tracking
         if (getTrackingSetting('enabled') === null) {
@@ -193,7 +195,7 @@ export function initializeTrackingSettings() {
  * @param {string} syntaxPattern - Pattern like "<-- gm_notes: {{content}} -->"
  * @returns {Array<{match: string, content: string, start: number, end: number}>} Matches
  */
-function parseSyntaxPattern(text, syntaxPattern) {
+function parseSyntaxPattern(text /*: string */, syntaxPattern /*: any */) /*: any */ {
     try {
         // Convert pattern to regex
         // Escape special regex characters except {{content}}
@@ -227,7 +229,7 @@ function parseSyntaxPattern(text, syntaxPattern) {
  * @param {string} messageText - The message text to parse
  * @returns {Object} { gm_notes: [...], character_stats: [...] }
  */
-export function parseMessageForUpdates(messageText) {
+export function parseMessageForUpdates(messageText /*: string */) /*: any */ {
     try {
         if (!messageText || typeof messageText !== 'string') {
             return { gm_notes: [], character_stats: [] };
@@ -260,7 +262,7 @@ export function parseMessageForUpdates(messageText) {
  * @param {Object} updates - Updates object from parseMessageForUpdates
  * @returns {string} Cleaned message text
  */
-export function removeTrackingSyntax(messageText, updates) {
+export function removeTrackingSyntax(messageText /*: string */, updates /*: any */) /*: string */ {
     try {
         let cleaned = messageText;
 
@@ -292,7 +294,7 @@ export function removeTrackingSyntax(messageText, updates) {
  * @param {string} newUpdate - New update to merge
  * @returns {Promise<string|null>} Merged content or null on failure
  */
-async function mergeUpdateWithAI(entryType, currentContent, newUpdate) {
+async function mergeUpdateWithAI(entryType /*: string */, currentContent /*: string */, newUpdate /*: string */) /*: Promise<string> */ {
     try {
         const mergePrompt = getTrackingSetting(`merge_prompt_${entryType}`);
         if (!mergePrompt) {
@@ -358,7 +360,7 @@ async function mergeUpdateWithAI(entryType, currentContent, newUpdate) {
  * @param {string} entryType - 'gm_notes' or 'character_stats'
  * @returns {Promise<Object|null>} Entry object or null
  */
-async function ensureTrackingEntry(lorebookName, entryType) {
+async function ensureTrackingEntry(lorebookName /*: string */, entryType /*: string */) /*: Promise<any> */ {
     try {
         const config = TRACKING_ENTRY_CONFIG[entryType];
         if (!config) {
@@ -431,7 +433,7 @@ async function ensureTrackingEntry(lorebookName, entryType) {
  * @param {string} newContent - New content to set
  * @returns {Promise<boolean>} Success
  */
-async function updateTrackingEntry(lorebookName, entryType, newContent) {
+async function updateTrackingEntry(lorebookName /*: string */, entryType /*: string */, newContent /*: string */) /*: Promise<void> */ {
     try {
         // Ensure entry exists
         const entry = await ensureTrackingEntry(lorebookName, entryType);
@@ -462,7 +464,7 @@ async function updateTrackingEntry(lorebookName, entryType, newContent) {
  * @param {Object} message - SillyTavern message object
  * @returns {Promise<boolean>} Success
  */
-export async function processTrackingUpdates(message) {
+export async function processTrackingUpdates(message /*: any */) /*: Promise<void> */ {
     try {
         // Check if tracking is enabled
         if (!getTrackingSetting('enabled', true)) {
@@ -536,7 +538,7 @@ export async function processTrackingUpdates(message) {
  * @param {string} updateContent - Update content
  * @returns {Promise<boolean>} Success
  */
-export async function processEntryUpdate(lorebookName, entryType, updateContent) {
+export async function processEntryUpdate(lorebookName /*: string */, entryType /*: string */, updateContent /*: string */) /*: Promise<void> */ {
     try {
         // Get current entry
         const entry = await ensureTrackingEntry(lorebookName, entryType);
@@ -577,7 +579,7 @@ export async function processEntryUpdate(lorebookName, entryType, updateContent)
  * Initialize tracking entries for current chat
  * @returns {Promise<void>}
  */
-export async function initializeChatTrackingEntries() {
+export async function initializeChatTrackingEntries() /*: Promise<void> */ {
     try {
         if (!getTrackingSetting('enabled', true)) {
             return;
