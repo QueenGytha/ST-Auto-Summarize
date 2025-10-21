@@ -286,19 +286,22 @@ Output ONLY the merged content, nothing else. Do not include explanations or met
     log("All settings restored to defaults (Auto-Summarize + Auto-Lorebooks)");
     toast("All settings restored to defaults", "success");
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function set_settings(key /*: any */, value /*: any */) {
-    // Set a setting for the extension and save it
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function set_settings(key /*: string */, value /*: any */) /*: void */ {
+    // Set a setting for the extension and save it (value can be any type - legitimate use of any)
     extension_settings[MODULE_NAME][key] = value;
     saveSettingsDebounced();
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_settings(key /*: any */) {
-    // Get a setting for the extension, or the default value if not set
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function get_settings(key /*: string */) /*: any */ {
+    // Get a setting for the extension, or the default value if not set (returns any type - legitimate use of any)
+    // $FlowFixMe[invalid-computed-prop] - key is a dynamic string property
     return extension_settings[MODULE_NAME]?.[key] ?? default_settings[key];
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_settings_element(key /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function get_settings_element(key /*: string */) /*: any */ {
+    // Returns DOM/jQuery element - any is appropriate
+    // $FlowFixMe[invalid-computed-prop] - key is a dynamic string property
     return settings_ui_map[key]?.[0]
 }
 // $FlowFixMe[signature-verification-failure]
@@ -347,8 +350,8 @@ function chat_enabled() {
     // per-chat state
     return get_settings('chats_enabled')?.[context.chatId] ?? get_settings('default_chat_enabled')
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function toggle_chat_enabled(value /*: any */=null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function toggle_chat_enabled(value /*: ?boolean */=null) /*: void */ {
     // Change the state of the extension. If value is null, toggle. Otherwise, set to the given value
     const current = chat_enabled();
 
@@ -387,8 +390,8 @@ function toggle_chat_enabled(value /*: any */=null) {
     // scroll to the bottom of the chat
     scrollChatToBottom()
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function character_enabled(character_key /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function character_enabled(character_key /*: string */) /*: boolean */ {
     // check if the given character is enabled for summarization in the current chat
     const group_id = selected_group
     if (selected_group === null) return true;  // not in group chat, always enabled
@@ -399,11 +402,11 @@ function character_enabled(character_key /*: any */) {
     return !disabled_characters.includes(character_key)
 
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function toggle_character_enabled(character_key /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function toggle_character_enabled(character_key /*: string */) /*: void */ {
     // Toggle whether the given character is enabled for summarization in the current chat
     const group_id = selected_group
-    if (group_id === undefined) return true;  // not in group chat, always enabled
+    if (group_id === undefined) return;  // not in group chat, nothing to toggle
 
     const disabled_characters_settings = get_settings('disabled_group_characters')
     const disabled_characters = disabled_characters_settings[group_id] || []
