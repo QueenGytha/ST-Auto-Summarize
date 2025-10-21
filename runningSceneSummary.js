@@ -60,8 +60,8 @@ function get_current_running_summary_version() {
  * @param {number} version - Version number to retrieve (defaults to current)
  * @returns {object|null} Version object or null if not found
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_running_summary(version /*: any */ = null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function get_running_summary(version /*: ?number */ = null) /*: ?Object */ {
     const storage = get_running_summary_storage();
     if (version === null) {
         version = storage.current_version;
@@ -85,8 +85,8 @@ function get_current_running_summary_content() {
  * Set current running scene summary version
  * @param {number} version - Version number to set as current
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function set_current_running_summary_version(version /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function set_current_running_summary_version(version /*: number */) /*: void */ {
     const storage = get_running_summary_storage();
     const versions = storage.versions || [];
 
@@ -96,6 +96,7 @@ function set_current_running_summary_version(version /*: any */) {
         return;
     }
 
+    // $FlowFixMe[incompatible-type] - current_version can be any number, not just 0
     storage.current_version = version;
     saveChatDebounced();
     debug(SUBSYSTEM.RUNNING, `Set current running summary version to ${version}`);
@@ -110,8 +111,14 @@ function set_current_running_summary_version(version /*: any */) {
  * @param {number} new_scene_index - New scene index being combined
  * @returns {number} New version number
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function add_running_summary_version(content /*: any */, scene_count /*: any */, excluded_count /*: any */, prev_scene_index /*: any */ = 0, new_scene_index /*: any */ = 0) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function add_running_summary_version(
+    content /*: string */,
+    scene_count /*: number */,
+    excluded_count /*: number */,
+    prev_scene_index /*: number */ = 0,
+    new_scene_index /*: number */ = 0
+) /*: number */ {
     const storage = get_running_summary_storage();
     const versions = storage.versions || [];
 
@@ -144,8 +151,8 @@ function add_running_summary_version(content /*: any */, scene_count /*: any */,
  * Delete a running scene summary version
  * @param {number} version - Version number to delete
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function delete_running_summary_version(version /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function delete_running_summary_version(version /*: number */) /*: void */ {
     const storage = get_running_summary_storage();
     const versions = storage.versions || [];
 
@@ -206,8 +213,8 @@ function collect_scene_summary_indexes_for_running() {
  * Generate running scene summary by combining individual scene summaries
  * @returns {Promise<string|null>} Generated summary or null on failure
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function generate_running_scene_summary(skipQueue /*: any */ = false) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+async function generate_running_scene_summary(skipQueue /*: boolean */ = false) /*: Promise<?string> */ {
     if (!get_settings('running_scene_summary_enabled')) {
         debug(SUBSYSTEM.RUNNING, 'Running scene summary disabled, skipping generation');
         return null;
@@ -359,8 +366,8 @@ async function generate_running_scene_summary(skipQueue /*: any */ = false) {
  * @param {number} scene_index - Chat message index of the scene to combine
  * @returns {Promise<string|null>} Generated summary or null on failure
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function combine_scene_with_running_summary(scene_index /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+async function combine_scene_with_running_summary(scene_index /*: number */) /*: Promise<?string> */ {
     if (!get_settings('running_scene_summary_enabled')) {
         debug(SUBSYSTEM.RUNNING, 'Running scene summary disabled, skipping combination');
         return null;
@@ -547,8 +554,8 @@ async function combine_scene_with_running_summary(scene_index /*: any */) {
  * Called after scene summary is created/updated
  * @param {number} scene_index - Index of the scene that was just summarized
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function auto_generate_running_summary(scene_index /*: any */ = null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+async function auto_generate_running_summary(scene_index /*: ?number */ = null) /*: Promise<void> */ {
     if (!get_settings('running_scene_summary_enabled')) return;
     if (!get_settings('running_scene_summary_auto_generate')) return;
 
@@ -561,6 +568,7 @@ async function auto_generate_running_summary(scene_index /*: any */ = null) {
     if (hasExistingVersions && scene_index !== null) {
         // Use incremental combine to add this scene to the existing running summary
         debug(SUBSYSTEM.RUNNING, 'Existing running summary found, using incremental combine');
+        // $FlowFixMe[incompatible-type] - scene_index is not null here due to condition above
         await combine_scene_with_running_summary(scene_index);
     } else {
         // No existing summary or no scene index provided - do bulk regeneration
