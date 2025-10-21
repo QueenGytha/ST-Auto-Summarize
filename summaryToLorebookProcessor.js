@@ -86,7 +86,7 @@ function generateSummaryId(summary /*: any */) /*: string */ {
  * @param {string} str - String to hash
  * @returns {string} Hash value
  */
-function simpleHash(str /*: string */) /*: number */ {
+function simpleHash(str /*: string */) /*: string */ {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
         const char = str.charCodeAt(i);
@@ -228,7 +228,7 @@ async function generateKeywordsForEntry(entryName /*: string */, entryContent /*
         const preset = get_settings('auto_lorebooks_keyword_generation_completion_preset') || null;
 
         // Prepare generation options
-        const options = {
+        const options /*: any */ = {
             quiet_prompt: prompt,
             quiet: true,
             force_name2: true
@@ -244,6 +244,7 @@ async function generateKeywordsForEntry(entryName /*: string */, entryContent /*
 
         // Call AI
         debug('Calling AI for keyword generation...');
+        // $FlowFixMe[extra-arg] - generateRaw signature mismatch with Flow definition
         const response = await generateRaw(prompt, '', false, false, options);
 
         if (!response || response.trim().length === 0) {
@@ -338,7 +339,7 @@ export async function processSummaryToLorebook(summary /*: any */, options /*: a
         }
 
         // Process each entry
-        const results = {
+        const results /*: any */ = {
             created: [],
             merged: [],
             failed: []
