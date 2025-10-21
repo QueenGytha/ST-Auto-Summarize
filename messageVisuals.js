@@ -18,19 +18,19 @@ import {
 } from './index.js';
 
 // UI functions
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_message_div(index /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Return type is jQuery object (complex, use any)
+function get_message_div(index /*: number */) /*: any */ {
     // given a message index, get the div element for that message
     // it will have an attribute "mesid" that is the message index
-    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[cannot-resolve-name] - $ is jQuery (global)
     const div = $(`div[mesid="${index}"]`);
     if (div.length === 0) {
         return null;
     }
     return div;
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function get_summary_style_class(message /*: STMessage */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function get_summary_style_class(message /*: STMessage */) /*: string */ {
     const include = get_data(message, 'include');
     const exclude = get_data(message, 'exclude');  // force-excluded by user
     const lagging = get_data(message, 'lagging');  // not injected yet
@@ -48,8 +48,8 @@ function get_summary_style_class(message /*: STMessage */) {
 
     return style
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function update_message_visuals(i /*: any */, style /*: any */=true, text /*: any */=null) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function update_message_visuals(i /*: number */, style /*: boolean */=true, text /*: ?string */=null) /*: void */ {
     // Update the message visuals according to its current memory status
     // Each message div will have a div added to it with the memory for that message.
     // Even if there is no memory, I add the div because otherwise the spacing changes when the memory is added later.
@@ -113,8 +113,8 @@ function update_all_message_visuals() {
         update_message_visuals(i, true);
     }
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function open_edit_memory_input(index /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function open_edit_memory_input(index /*: number */) /*: void */ {
     // Allow the user to edit a message summary
     const message = getContext().chat[index];
     let memory = get_memory(message)
