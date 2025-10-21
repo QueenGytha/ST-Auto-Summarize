@@ -331,9 +331,15 @@ async function mergeUpdateWithAI(entryType /*: string */, currentContent /*: str
                 await window.setConnectionProfile(connectionProfile);
             }
 
-            // Call AI
-            // $FlowFixMe[extra-arg] - generateRaw signature mismatch with Flow definition
-            const result = await generateRaw(prompt, '', false, false, prefill);
+            // Call AI with new object-based signature
+            // $FlowFixMe[incompatible-call] - generateRaw signature
+            const result = await generateRaw({
+                prompt: prompt,
+                api: '',
+                instructOverride: false,
+                quietToLoud: false,
+                prefill: prefill
+            });
 
             if (!result || typeof result !== 'string') {
                 error("AI merge returned invalid result");

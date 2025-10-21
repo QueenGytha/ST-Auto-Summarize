@@ -242,29 +242,15 @@ async function generateKeywordsForEntry(entryName /*: string */, entryContent /*
             prompt = `${prompt}\n${prefill}`;
         }
 
-        // Get connection profile and preset from settings
-        const connectionProfile = getSetting('auto_lorebooks_keyword_generation_connection_profile') || null;
-        const preset = getSetting('auto_lorebooks_keyword_generation_completion_preset') || null;
-
-        // Prepare generation options
-        const options /*: any */ = {
-            quiet_prompt: prompt,
-            quiet: true,
-            force_name2: true
-        };
-
-        if (connectionProfile) {
-            options.connectionProfile = connectionProfile;
-        }
-
-        if (preset) {
-            options.preset = preset;
-        }
-
-        // Call AI
+        // Call AI with new object-based signature
         debug('Calling AI for keyword generation...');
-        // $FlowFixMe[extra-arg] - generateRaw signature mismatch with Flow definition
-        const response = await generateRaw(prompt, '', false, false, options);
+        // $FlowFixMe[incompatible-call] - generateRaw signature
+        const response = await generateRaw({
+            prompt: prompt,
+            api: '',
+            instructOverride: false,
+            quietToLoud: false
+        });
 
         if (!response || response.trim().length === 0) {
             error('AI returned empty response for keyword generation');

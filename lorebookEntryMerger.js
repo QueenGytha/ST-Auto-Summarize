@@ -119,31 +119,14 @@ async function callAIForMerge(existingContent /*: string */, newContent /*: stri
         debug('Calling AI for entry merge...');
         debug('Prompt:', prompt.substring(0, 200) + '...');
 
-        // Get connection profile and preset from settings
-        const connectionProfile = getSummaryProcessingSetting('merge_connection_profile') || null;
-        const preset = getSummaryProcessingSetting('merge_completion_preset') || null;
-
-        // Prepare generation options
-        const options /*: any */ = {
-            quiet_prompt: prompt,
-            quiet: true,
-            force_name2: true
-        };
-
-        // Set connection profile if specified
-        if (connectionProfile) {
-            options.connectionProfile = connectionProfile;
-        }
-
-        // Set preset if specified
-        if (preset) {
-            options.preset = preset;
-        }
-
-        // Call the AI
-        // $FlowFixMe[extra-arg] - generateRaw signature mismatch with Flow definition
-        // $FlowFixMe[incompatible-type] - generateRaw signature mismatch with Flow definition
-        const mergedContent = await generateRaw(prompt, '', false, false, options);
+        // Call the AI with new object-based signature
+        // $FlowFixMe[incompatible-call] - generateRaw signature
+        const mergedContent = await generateRaw({
+            prompt: prompt,
+            api: '',
+            instructOverride: false,
+            quietToLoud: false
+        });
 
         if (!mergedContent || mergedContent.trim().length === 0) {
             throw new Error('AI returned empty response');
