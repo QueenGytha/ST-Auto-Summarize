@@ -158,8 +158,8 @@ function update_message_inclusion_flags() {
 
     update_all_message_visuals()
 }
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function concatenate_summary(existing_text /*: any */, message /*: STMessage */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function concatenate_summary(existing_text /*: string */, message /*: STMessage */) /*: string */ {
     // given an existing text of concatenated summaries, concatenate the next one onto it
     const memory = get_memory(message)
     if (!memory) {  // if there's no summary, do nothing
@@ -170,8 +170,8 @@ function concatenate_summary(existing_text /*: any */, message /*: STMessage */)
 }
 
 // Scene summaries are stored in 'scene_summary_memory' (not 'memory') on the message object.
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function concatenate_summaries(indexes /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function concatenate_summaries(indexes /*: Array<number> */) /*: string */ {
     const context = getContext();
     const chat = context.chat;
     const summaries = [];
@@ -196,8 +196,8 @@ function concatenate_summaries(indexes /*: any */) {
     return JSON.stringify(summaries, null, 2);
 }
 
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function collect_chat_messages(include /*: any */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+function collect_chat_messages(include /*: string */) /*: Array<number> */ {
     // Get a list of chat message indexes identified by the given criteria
     const context = getContext();
     const indexes = []  // list of indexes of messages
