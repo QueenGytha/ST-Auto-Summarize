@@ -2,6 +2,7 @@
 // lorebookManager.js - Lorebook creation and management for ST-Auto-Lorebooks
 
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
+// $FlowFixMe[missing-export] - All exports exist in world-info.js at runtime
 import {
     createNewWorldInfo,
     deleteWorldInfo,
@@ -11,6 +12,7 @@ import {
     deleteWorldInfoEntry,
     METADATA_KEY,
     world_names
+    // $FlowFixMe[cannot-resolve-module]
 } from '../../../world-info.js';
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { chat_metadata, saveMetadata, getCurrentChatId, characters, this_chid, name2 } from '../../../../script.js';
@@ -223,7 +225,7 @@ export async function handleMissingLorebook(missingLorebookName /*: string */) /
  * @param {string} lorebookName - Name of lorebook to attach
  * @returns {boolean} Success
  */
-export function attachLorebook(lorebookName /*: string */) /*: void */ {
+export function attachLorebook(lorebookName /*: string */) /*: boolean */ {
     try {
         if (!lorebookName) {
             error("Cannot attach lorebook: name is empty");
@@ -504,7 +506,7 @@ export async function modifyLorebookEntry(lorebookName /*: string */, uid /*: st
             return false;
         }
 
-        if (uid === undefined || uid === null) {
+        if (uid === undefined || uid == null) {
             error("Cannot modify entry: UID is required");
             return false;
         }
@@ -587,7 +589,7 @@ export async function deleteLorebookEntry(lorebookName /*: string */, uid /*: st
             return false;
         }
 
-        if (uid === undefined || uid === null) {
+        if (uid === undefined || uid == null) {
             error("Cannot delete entry: UID is required");
             return false;
         }
