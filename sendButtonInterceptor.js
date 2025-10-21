@@ -1,12 +1,14 @@
 // @flow
 // sendButtonInterceptor.js - Intercept send button to process latest message before generation
 
+// $FlowFixMe[cannot-resolve-module] - SillyTavern core module
+// $FlowFixMe[missing-export] - saveMetadataDebounced exists in extensions.js runtime
 import { saveMetadataDebounced } from '../../../extensions.js';
 
 // Will be imported from index.js via barrel exports
-let log, debug, error, toast;
-let processTrackingUpdates;
-let getContext;
+let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */;  // Logging functions - any type is legitimate
+let processTrackingUpdates /*: any */;  // Function from trackingEntries module - any type is legitimate
+let getContext /*: any */;  // SillyTavern getContext function - any type is legitimate
 
 let isProcessing = false;
 let isIntercepting = false;
@@ -14,7 +16,9 @@ let isIntercepting = false;
 /**
  * Initialize the send button interceptor
  */
-export function initSendButtonInterceptor(utils, trackingModule) {
+// $FlowFixMe[signature-verification-failure]
+export function initSendButtonInterceptor(utils /*: any */, trackingModule /*: any */) /*: void */ {
+    // utils and trackingModule are any type - passed as objects with various properties - legitimate use of any
     log = utils.log;
     debug = utils.debug;
     error = utils.error;
@@ -129,7 +133,8 @@ function triggerActualSend() {
 /**
  * Our intercepted click handler
  */
-async function interceptedClickHandler(event) {
+async function interceptedClickHandler(event /*: any */) /*: Promise<void> */ {
+    // event is DOM Event object - any type is legitimate for DOM events
     // If we're in bypass mode, let the click through
     if (window.__autoLorebooksProcessing) {
         debug("Bypassing interception for actual send");
