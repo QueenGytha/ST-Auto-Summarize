@@ -4,6 +4,7 @@
 import {
     enqueueOperation,
     OperationType,
+    getAllOperations,
 } from './operationQueue.js';
 import {
     get_settings,
@@ -218,6 +219,36 @@ export async function queueProcessLorebookEntry(entryData /*: Object */, message
 
     const entryName = entryData.name || entryData.comment || 'Unknown';
     debug(SUBSYSTEM.QUEUE, `Queueing lorebook entry: ${entryName} from message ${messageIndex}`);
+
+    // De-duplicate: if there is already a pending or in-progress operation for the same entry
+    // (either PROCESS_LOREBOOK_ENTRY or MERGE_LOREBOOK_ENTRY), skip enqueuing again.
+    try {
+        const lowerName = String(entryName).toLowerCase().trim();
+        const ops = getAllOperations();
+        const hasDuplicate = ops.some(op => {
+            const status = op.status;
+            const active = status === 'pending' || status === 'in_progress';
+            if (!active) return false;
+
+            if (op.type === OperationType.PROCESS_LOREBOOK_ENTRY) {
+                const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
+                const sameMsg = op?.metadata?.message_index === messageIndex;
+                return metaName === lowerName && sameMsg;
+            }
+
+            if (op.type === OperationType.MERGE_LOREBOOK_ENTRY) {
+                const metaName = String(op?.metadata?.entry_comment || '').toLowerCase().trim();
+                return metaName === lowerName; // merge ops are per entry UID; name match is sufficient
+            }
+
+            return false;
+        });
+
+        if (hasDuplicate) {
+            debug(SUBSYSTEM.QUEUE, `Skipping duplicate lorebook op for: ${entryName}`);
+            return null;
+        }
+    } catch { /* best effort dedup */ }
 
     return await enqueueOperation(
         OperationType.PROCESS_LOREBOOK_ENTRY,

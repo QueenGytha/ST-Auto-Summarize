@@ -772,23 +772,31 @@ async function executeOperation(operation /*: Operation */) /*: Promise<any> */ 
         return result;
     } catch (err) {
         error(SUBSYSTEM.QUEUE, `Failed ${operation.type}:`, operation.id, err);
+        const errText = (err && err.message) ? String(err.message) : String(err);
 
-        // Always retry - increment retry counter
+        // Do not retry on non-transient client errors
+        const nonRetryable = /bad request|invalid request|unsupported|unauthorized|forbidden/i.test(errText);
+
+        // Cap retries to avoid infinite loops
+        const MAX_RETRIES = 3;
+
+        if (nonRetryable || operation.retries >= MAX_RETRIES) {
+            await updateOperationStatus(operation.id, OperationStatus.FAILED, errText);
+            // Remove failed operation to unblock queue; surface error to user
+            await removeOperation(operation.id);
+            toast(`Queue operation failed (${operation.type}): ${errText}`, 'warning');
+            return null;
+        }
+
+        // Retry with exponential backoff
         operation.retries++;
-
-        // Calculate exponential backoff delay: 10s, 20s, 40s, 80s, 160s, then cap at 5 minutes
         const backoffDelay = Math.min(10 * Math.pow(2, operation.retries - 1) * 1000, 300000);
-
-        await updateOperationStatus(operation.id, OperationStatus.PENDING, `Retry ${operation.retries} after ${backoffDelay/1000}s: ${err.message || err}`);
+        await updateOperationStatus(operation.id, OperationStatus.PENDING, `Retry ${operation.retries} after ${backoffDelay/1000}s: ${errText}`);
         log(SUBSYSTEM.QUEUE, `⚠️ Operation failed! Waiting ${backoffDelay/1000}s before retry ${operation.retries}`);
-
-        // WAIT the backoff delay before retrying (blocks the entire queue)
         await saveQueue();
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
-
-        // Retry the operation immediately after backoff
         debug(SUBSYSTEM.QUEUE, `Retrying ${operation.type} after backoff...`);
-        return await executeOperation(operation); // Recursive retry - never give up
+        return await executeOperation(operation);
     }
 }
 
