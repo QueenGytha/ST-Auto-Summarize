@@ -29,7 +29,13 @@ let currentScanCancellationToken = null;
  * @returns {boolean} - True if message should be checked
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function shouldCheckMessage(message /*: STMessage */, messageIndex /*: any */, latestIndex /*: any */, offset /*: any */, checkWhich /*: any */) {
+function shouldCheckMessage(
+    message /*: STMessage */,
+    messageIndex /*: number */,
+    latestIndex /*: number */,
+    offset /*: number */,
+    checkWhich /*: string */
+) /*: boolean */ {
     // Skip the very first message (index 0) - can't be a scene break
     if (messageIndex === 0) {
         return false;
@@ -156,7 +162,11 @@ function buildDetectionPrompt(ctx, promptTemplate, message, previousMessage, pre
  * @returns {Promise<{isSceneBreak: boolean, rationale: string}>} - Object with detection result and rationale
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-async function detectSceneBreak(message /*: STMessage */, messageIndex /*: any */, previousMessage /*: any */ = null) {
+async function detectSceneBreak(
+    message /*: STMessage */,
+    messageIndex /*: number */,
+    previousMessage /*: ?STMessage */ = null
+) /*: Promise<{isSceneBreak: boolean, rationale: string}> */ {
     const ctx = getContext();
 
     try {
@@ -559,7 +569,10 @@ async function executeScanLoop(chat, start, end, latestIndex, offset, checkWhich
  * @param {number} endIndex - End index (optional, defaults to latest)
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function processAutoSceneBreakDetection(startIndex /*: any */ = null, endIndex /*: any */ = null) {
+export async function processAutoSceneBreakDetection(
+    startIndex /*: ?number */ = null,
+    endIndex /*: ?number */ = null
+) /*: Promise<void> */ {
     log(SUBSYSTEM.SCENE, '=== processAutoSceneBreakDetection called with startIndex:', startIndex, 'endIndex:', endIndex, '===');
 
     // Validate settings
@@ -652,7 +665,7 @@ export async function manualSceneBreakDetection() {
  * @param {number} messageIndex - Index of the new message
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function processNewMessageForSceneBreak(messageIndex /*: any */) {
+export async function processNewMessageForSceneBreak(messageIndex /*: number */) /*: Promise<void> */ {
     const enabled = get_settings('auto_scene_break_on_new_message');
     if (!enabled) {
         debug(SUBSYSTEM.SCENE, 'Auto-check on new message is disabled');
@@ -703,7 +716,10 @@ export async function processSceneBreakOnChatLoad() {
  * @param {number} endIndex - Index of the next visible scene break (or end of chat)
  */
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function clearCheckedFlagsInRange(startIndex /*: any */, endIndex /*: any */) {
+export function clearCheckedFlagsInRange(
+    startIndex /*: number */,
+    endIndex /*: number */
+) /*: number */ {
     const ctx = getContext();
     const chat = ctx.chat;
 
