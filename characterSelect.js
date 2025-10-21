@@ -40,8 +40,9 @@ Use like this:
     </label>
 </div>
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-function refresh_select2_element(id /*: any */, selected /*: any */, options /*: any */, placeholder /*: any */="") {
+// $FlowFixMe[signature-verification-failure]
+function refresh_select2_element(id /*: string */, selected /*: any */, options /*: Array<{id: string, name: string}> */, placeholder /*: string */="") /*: void */ {
+    // selected is any type - can be string, number, or array for multi-select values - legitimate use of any
     // Refresh a select2 element with the given ID (a select element) and set the options
 
     // check whether the dropdown is open. If so, don't update the options (it messes with the widget)
