@@ -51,8 +51,14 @@ export function addSceneBreakButton() {
 }
 
 // Handles click events for the scene break button
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function bindSceneBreakButton(get_message_div /*: (index: number) => any */, getContext /*: () => STContext */, set_data /*: (message: any, key: string, value: any) => void */, get_data /*: (message: any, key: string) => any */, saveChatDebounced /*: () => void */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export function bindSceneBreakButton(
+    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
+    getContext /*: () => STContext */,
+    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
+    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
+    saveChatDebounced /*: () => void */
+) /*: void */ {
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $("div#chat").on("click", `.${SCENE_BREAK_BUTTON_CLASS}`, function () {
@@ -64,8 +70,15 @@ export function bindSceneBreakButton(get_message_div /*: (index: number) => any 
 }
 
 // Toggles the scene break UI and persists state
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function toggleSceneBreak(index /*: number */, get_message_div /*: (index: number) => any */, getContext /*: () => STContext */, set_data /*: (message: any, key: string, value: any) => void */, get_data /*: (message: any, key: string) => any */, saveChatDebounced /*: () => void */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export function toggleSceneBreak(
+    index /*: number */,
+    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
+    getContext /*: () => STContext */,
+    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
+    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
+    saveChatDebounced /*: () => void */
+) /*: void */ {
     const ctx = getContext();
     const message = ctx.chat[index];
     const isSet = !!get_data(message, SCENE_BREAK_KEY);
@@ -114,32 +127,51 @@ export function toggleSceneBreak(index /*: number */, get_message_div /*: (index
 
 // --- Helper functions for versioned scene summaries ---
 // Scene summary properties are not at the root; see file header for structure.
-// $FlowFixMe[missing-local-annot]
-function getSceneSummaryVersions(message /*: STMessage */, get_data /*: (message: any, key: string) => any */) {
+// $FlowFixMe[missing-local-annot] - Return type is inferred correctly
+function getSceneSummaryVersions(
+    message /*: STMessage */,
+    get_data /*: (message: STMessage, key: string) => any */  // Returns any type - legitimate
+) /*: Array<string> */ {
     // Returns the array of summary versions, or an empty array if none
     return get_data(message, 'scene_summary_versions') || [];
 }
 
 // Scene summary properties are not at the root; see file header for structure.
-// $FlowFixMe[missing-local-annot]
-function setSceneSummaryVersions(message /*: STMessage */, set_data /*: (message: any, key: string, value: any) => void */, versions /*: Array<string> */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+function setSceneSummaryVersions(
+    message /*: STMessage */,
+    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
+    versions /*: Array<string> */
+) /*: void */ {
     set_data(message, 'scene_summary_versions', versions);
 }
 
 // Scene summary properties are not at the root; see file header for structure.
-// $FlowFixMe[missing-local-annot]
-function getCurrentSceneSummaryIndex(message /*: STMessage */, get_data /*: (message: any, key: string) => any */) {
+// $FlowFixMe[missing-local-annot] - Return type is inferred correctly
+function getCurrentSceneSummaryIndex(
+    message /*: STMessage */,
+    get_data /*: (message: STMessage, key: string) => any */  // Returns any type - legitimate
+) /*: number */ {
     return get_data(message, 'scene_summary_current_index') ?? 0;
 }
 
 // Scene summary properties are not at the root; see file header for structure.
-// $FlowFixMe[missing-local-annot]
-function setCurrentSceneSummaryIndex(message /*: STMessage */, set_data /*: (message: any, key: string, value: any) => void */, idx /*: number */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+function setCurrentSceneSummaryIndex(
+    message /*: STMessage */,
+    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
+    idx /*: number */
+) /*: void */ {
     set_data(message, 'scene_summary_current_index', idx);
 }
 
-// $FlowFixMe[missing-local-annot]
-function getSceneRangeIndexes(index /*: number */, chat /*: Array<any> */, get_data /*: (message: any, key: string) => any */, sceneCount /*: number */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+function getSceneRangeIndexes(
+    index /*: number */,
+    chat /*: Array<STMessage> */,
+    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
+    sceneCount /*: number */
+) /*: [number, number] */ {
     // Find all visible scene breaks up to and including index
     const sceneBreakIndexes = [];
     for (let i = 0; i <= index; i++) {
@@ -163,8 +195,17 @@ function getSceneRangeIndexes(index /*: number */, chat /*: Array<any> */, get_d
 }
 
 // Helper: Handle generate summary button click
-// $FlowFixMe[missing-local-annot]
-async function handleGenerateSummaryButtonClick(index /*: number */, chat /*: Array<any> */, message /*: STMessage */, $sceneBreak /*: any */, get_message_div /*: (index: number) => any */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+async function handleGenerateSummaryButtonClick(
+    index /*: number */,
+    chat /*: Array<STMessage> */,
+    message /*: STMessage */,
+    $sceneBreak /*: any */,  // jQuery object - any is appropriate
+    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
+    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
+    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
+    saveChatDebounced /*: () => void */
+) /*: Promise<void> */ {
     log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
 
     // Use the queue-enabled generateSceneSummary function
@@ -173,8 +214,13 @@ async function handleGenerateSummaryButtonClick(index /*: number */, chat /*: Ar
 }
 
 // Helper: Initialize versioned summaries for backward compatibility
-// $FlowFixMe[missing-local-annot]
-function initializeSceneSummaryVersions(message /*: STMessage */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+function initializeSceneSummaryVersions(
+    message /*: STMessage */,
+    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
+    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
+    saveChatDebounced /*: () => void */
+) /*: {versions: Array<string>, currentIdx: number} */ {
     let versions = getSceneSummaryVersions(message, get_data);
     let currentIdx = getCurrentSceneSummaryIndex(message, get_data);
 
@@ -195,8 +241,12 @@ function initializeSceneSummaryVersions(message /*: STMessage */, get_data /*: (
 }
 
 // Helper: Find scene boundaries
-// $FlowFixMe[missing-local-annot]
-function findSceneBoundaries(chat /*: Array<any> */, index /*: number */, get_data /*: (message: any, key: string) => any */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+function findSceneBoundaries(
+    chat /*: Array<STMessage> */,
+    index /*: number */,
+    get_data /*: (message: STMessage, key: string) => any */  // Returns any type - legitimate
+) /*: {startIdx: number, sceneMessages: Array<number>} */ {
     let startIdx = 0;
     for (let i = index - 1; i >= 0; i--) {
         if (
@@ -217,8 +267,18 @@ function findSceneBoundaries(chat /*: Array<any> */, index /*: number */, get_da
 }
 
 // Helper: Build scene break HTML element
-// $FlowFixMe[missing-local-annot]
-function buildSceneBreakElement(index /*: number */, startIdx /*: number */, sceneMessages /*: Array<number> */, sceneName /*: string */, sceneSummary /*: string */, isVisible /*: boolean */, isCollapsed /*: boolean */, versions /*: Array<string> */, currentIdx /*: number */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+function buildSceneBreakElement(
+    index /*: number */,
+    startIdx /*: number */,
+    sceneMessages /*: Array<number> */,
+    sceneName /*: string */,
+    sceneSummary /*: string */,
+    isVisible /*: boolean */,
+    isCollapsed /*: boolean */,
+    versions /*: Array<string> */,
+    currentIdx /*: number */
+) /*: any */ {  // Returns jQuery object - any is appropriate
     const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
     const previewIcon = `<i class="fa-solid fa-eye scene-preview-summary" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
 
@@ -252,8 +312,15 @@ function buildSceneBreakElement(index /*: number */, startIdx /*: number */, sce
     `);
 }
 
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function renderSceneBreak(index /*: number */, get_message_div /*: (index: number) => any */, getContext /*: () => STContext */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export function renderSceneBreak(
+    index /*: number */,
+    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
+    getContext /*: () => STContext */,
+    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
+    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
+    saveChatDebounced /*: () => void */
+) /*: void */ {
     const $msgDiv = get_message_div(index);
     if (!$msgDiv?.length) return;
 
@@ -526,8 +593,14 @@ export function renderSceneBreak(index /*: number */, get_message_div /*: (index
  * @param {object} ctx - Context object
  * @returns {string} - Concatenated scene content
  */
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function collectSceneContent(startIdx /*: number */, endIdx /*: number */, mode /*: string */, ctx /*: STContext */, get_memory /*: (message: any) => ?string */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export function collectSceneContent(
+    startIdx /*: number */,
+    endIdx /*: number */,
+    mode /*: string */,
+    ctx /*: STContext */,
+    get_memory /*: (message: STMessage) => ?string */
+) /*: string */ {
     const chat = ctx.chat;
     const result = [];
     for (let i = startIdx; i <= endIdx; i++) {
@@ -543,8 +616,14 @@ export function collectSceneContent(startIdx /*: number */, endIdx /*: number */
 }
 
 // Call this after chat loads or refresh to re-render all scene breaks
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export function renderAllSceneBreaks(get_message_div /*: (index: number) => any */, getContext /*: () => STContext */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export function renderAllSceneBreaks(
+    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
+    getContext /*: () => STContext */,
+    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
+    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
+    saveChatDebounced /*: () => void */
+) /*: void */ {
     const ctx = getContext();
     if (!ctx?.chat) return;
     for (let i = 0; i < ctx.chat.length; i++) {
@@ -591,8 +670,18 @@ export function renderAllSceneBreaks(get_message_div /*: (index: number) => any 
  * @param {string|null} current_preset - Current preset to restore after generation (optional)
  * @returns {Promise<string|null>} - The generated scene name, or null if generation failed
  */
-// $FlowFixMe[missing-local-annot]
-async function autoGenerateSceneNameFromSummary(summary /*: string */, message /*: STMessage */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, ctx /*: STContext */, profile /*: ?string */ = null, preset /*: ?string */ = null, current_profile /*: ?string */ = null, current_preset /*: ?string */ = null) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+async function autoGenerateSceneNameFromSummary(
+    summary /*: string */,
+    message /*: STMessage */,
+    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
+    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
+    ctx /*: STContext */,
+    profile /*: ?string */ = null,
+    preset /*: ?string */ = null,
+    current_profile /*: ?string */ = null,
+    current_preset /*: ?string */ = null
+) /*: Promise<?string> */ {
     const existingSceneName = get_data(message, SCENE_BREAK_NAME_KEY);
 
     // Only generate if no name already exists
@@ -666,8 +755,8 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
 }
 
 // Helper: Try to queue scene summary generation
-// $FlowFixMe[missing-local-annot]
-async function tryQueueSceneSummary(index /*: number */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+async function tryQueueSceneSummary(index /*: number */) /*: Promise<boolean> */ {
     const queueEnabled = get_settings('operation_queue_enabled') !== false;
     if (!queueEnabled) return false;
 
@@ -687,8 +776,12 @@ async function tryQueueSceneSummary(index /*: number */) {
 }
 
 // Helper: Collect scene objects for summary
-// $FlowFixMe[missing-local-annot]
-function collectSceneObjects(startIdx /*: number */, endIdx /*: number */, chat /*: Array<any> */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+function collectSceneObjects(
+    startIdx /*: number */,
+    endIdx /*: number */,
+    chat /*: Array<STMessage> */
+) /*: Array<Object> */ {
     const mode = get_settings('scene_summary_history_mode') || "both";
     const messageTypes = get_settings('scene_summary_message_types') || "both";
     const sceneObjects = [];
@@ -713,8 +806,11 @@ function collectSceneObjects(startIdx /*: number */, endIdx /*: number */, chat 
 }
 
 // Helper: Prepare scene summary prompt
-// $FlowFixMe[missing-local-annot]
-function prepareScenePrompt(sceneObjects /*: Array<any> */, ctx /*: STContext */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+function prepareScenePrompt(
+    sceneObjects /*: Array<Object> */,
+    ctx /*: STContext */
+) /*: string */ {
     const promptTemplate = get_settings('scene_summary_prompt');
     const prefill = get_settings('scene_summary_prefill') || "";
 
@@ -732,8 +828,8 @@ function prepareScenePrompt(sceneObjects /*: Array<any> */, ctx /*: STContext */
 }
 
 // Helper: Switch to scene summary profile/preset
-// $FlowFixMe[missing-local-annot]
-async function switchToSceneProfile(ctx /*: STContext */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+async function switchToSceneProfile(ctx /*: STContext */) /*: Promise<{profile: ?string, preset: ?string, current_profile: any, current_preset: any}> */ {
     const profile = get_settings('scene_summary_connection_profile');
     const preset = get_settings('scene_summary_completion_preset');
     const current_profile = await ctx.get_current_connection_profile?.();
@@ -752,8 +848,11 @@ async function switchToSceneProfile(ctx /*: STContext */) {
 }
 
 // Helper: Restore previous profile/preset
-// $FlowFixMe[missing-local-annot]
-async function restoreProfile(ctx /*: STContext */, savedProfiles /*: any */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+async function restoreProfile(
+    ctx /*: STContext */,
+    savedProfiles /*: {profile: ?string, preset: ?string, current_profile: any, current_preset: any} */  // any for current profile/preset is appropriate
+) /*: Promise<void> */ {
     const { profile, preset, current_profile, current_preset } = savedProfiles;
 
     if (profile) {
@@ -767,8 +866,11 @@ async function restoreProfile(ctx /*: STContext */, savedProfiles /*: any */) {
 }
 
 // Helper: Generate summary with error handling
-// $FlowFixMe[missing-local-annot]
-async function executeSceneSummaryGeneration(prompt /*: string */, ctx /*: STContext */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+async function executeSceneSummaryGeneration(
+    prompt /*: string */,
+    ctx /*: STContext */
+) /*: Promise<string> */ {
     let summary = "";
     try {
         if (get_settings('block_chat')) {
@@ -790,8 +892,15 @@ async function executeSceneSummaryGeneration(prompt /*: string */, ctx /*: STCon
 }
 
 // Helper: Save scene summary and queue lorebook entries
-// $FlowFixMe[missing-local-annot]
-async function saveSceneSummary(message /*: STMessage */, summary /*: string */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */, messageIndex /*: number */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+async function saveSceneSummary(
+    message /*: STMessage */,
+    summary /*: string */,
+    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
+    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
+    saveChatDebounced /*: () => void */,
+    messageIndex /*: number */
+) /*: Promise<void> */ {
     const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
     updatedVersions.push(summary);
     setSceneSummaryVersions(message, set_data, updatedVersions);
@@ -809,8 +918,11 @@ async function saveSceneSummary(message /*: STMessage */, summary /*: string */,
 }
 
 // Helper: Extract lorebooks from summary JSON and queue each as individual operation
-// $FlowFixMe[missing-local-annot]
-async function extractAndQueueLorebookEntries(summary /*: string */, messageIndex /*: number */) {
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+async function extractAndQueueLorebookEntries(
+    summary /*: string */,
+    messageIndex /*: number */
+) /*: Promise<void> */ {
     try {
         // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
         let jsonText = summary.trim();
@@ -863,8 +975,16 @@ async function extractAndQueueLorebookEntries(summary /*: string */, messageInde
     }
 }
 
-// $FlowFixMe[signature-verification-failure] [missing-local-annot]
-export async function generateSceneSummary(index /*: number */, get_message_div /*: (index: number) => any */, getContext /*: () => STContext */, get_data /*: (message: any, key: string) => any */, set_data /*: (message: any, key: string, value: any) => void */, saveChatDebounced /*: () => void */, skipQueue /*: boolean */ = false) {
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+export async function generateSceneSummary(
+    index /*: number */,
+    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
+    getContext /*: () => STContext */,
+    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
+    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
+    saveChatDebounced /*: () => void */,
+    skipQueue /*: boolean */ = false
+) /*: Promise<?string> */ {
     const ctx = getContext();
     const chat = ctx.chat;
     const message = chat[index];
