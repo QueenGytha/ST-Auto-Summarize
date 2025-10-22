@@ -36,10 +36,23 @@ export const SCENE_BREAK_VISIBLE_KEY = 'scene_break_visible';
 export const SCENE_BREAK_NAME_KEY = 'scene_break_name';
 export const SCENE_BREAK_SUMMARY_KEY = 'scene_break_summary';
 export const SCENE_SUMMARY_MEMORY_KEY = 'scene_summary_memory';
+export const SCENE_SUMMARY_HASH_KEY = 'scene_summary_hash';
 export const SCENE_BREAK_COLLAPSED_KEY = 'scene_break_collapsed';
 export const SCENE_BREAK_BUTTON_CLASS = 'auto_summarize_scene_break_button';
 export const SCENE_BREAK_DIV_CLASS = 'auto_summarize_scene_break_div';
 const SCENE_BREAK_SELECTED_CLASS = 'sceneBreak-selected';
+
+// Simple deterministic hash to detect when summary content changes
+function computeSummaryHash(summaryText /*: string */) /*: string */ {
+    const text = (summaryText || '').trim();
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+        const charCode = text.charCodeAt(i);
+        hash = ((hash << 5) - hash) + charCode;
+        hash |= 0; // force 32-bit int
+    }
+    return Math.abs(hash).toString(36);
+}
 
 // Adds the scene break button to the message template
 export function addSceneBreakButton() {
@@ -230,6 +243,7 @@ function initializeSceneSummaryVersions(
         setSceneSummaryVersions(message, set_data, versions);
         setCurrentSceneSummaryIndex(message, set_data, 0);
         set_data(message, SCENE_SUMMARY_MEMORY_KEY, initialSummary);
+        set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(initialSummary));
         saveChatDebounced();
     }
 
@@ -394,13 +408,15 @@ export function renderSceneBreak(
         const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
         const idx = getCurrentSceneSummaryIndex(message, get_data);
         // $FlowFixMe[cannot-resolve-name]
-        updatedVersions[idx] = $(this).val();
+        const newSummary = $(this).val();
+        updatedVersions[idx] = newSummary;
         setSceneSummaryVersions(message, set_data, updatedVersions);
         // Also update the legacy summary field for compatibility
         // $FlowFixMe[cannot-resolve-name]
-        set_data(message, SCENE_BREAK_SUMMARY_KEY, $(this).val());
+        set_data(message, SCENE_BREAK_SUMMARY_KEY, newSummary);
         // $FlowFixMe[cannot-resolve-name]
-        set_data(message, SCENE_SUMMARY_MEMORY_KEY, $(this).val()); // <-- ensure top-level property is set
+        set_data(message, SCENE_SUMMARY_MEMORY_KEY, newSummary); // <-- ensure top-level property is set
+        set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(newSummary));
         saveChatDebounced();
     });
 
@@ -501,6 +517,7 @@ export function renderSceneBreak(
             const summary = getSceneSummaryVersions(message, get_data)[idx - 1];
             set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
             set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary); // <-- ensure top-level property is set
+            set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
             saveChatDebounced();
             refresh_memory(); // <-- refresh memory injection to use the newly selected summary
             renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
@@ -515,6 +532,7 @@ export function renderSceneBreak(
             const summary = versions[idx + 1];
             set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
             set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary); // <-- ensure top-level property is set
+            set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
             saveChatDebounced();
             refresh_memory(); // <-- refresh memory injection to use the newly selected summary
             renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
@@ -907,6 +925,7 @@ async function saveSceneSummary(
     setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
     set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
     set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary);
+    set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
     saveChatDebounced();
     refresh_memory();
 
@@ -924,6 +943,8 @@ async function extractAndQueueLorebookEntries(
     messageIndex /*: number */
 ) /*: Promise<void> */ {
     try {
+        const summaryHash = computeSummaryHash(summary);
+
         // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
         let jsonText = summary.trim();
         const codeFenceMatch = jsonText.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
@@ -961,7 +982,7 @@ async function extractAndQueueLorebookEntries(
 
             // Queue each unique entry individually
             for (const entry of uniqueEntries) {
-                const opId = await queueProcessLorebookEntry(entry, messageIndex);
+                const opId = await queueProcessLorebookEntry(entry, messageIndex, summaryHash);
                 if (opId) {
                     debug(SUBSYSTEM.SCENE, `Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);
                 }

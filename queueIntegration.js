@@ -5,6 +5,8 @@ import {
     enqueueOperation,
     OperationType,
     getAllOperations,
+    updateOperationStatus,
+    OperationStatus,
 } from './operationQueue.js';
 import {
     get_settings,
@@ -208,23 +210,40 @@ export async function queueCombineSceneWithRunning(index /*: number */, options 
  * Queue processing of a single lorebook entry
  * @param {Object} entryData - Lorebook entry data {name, type, keywords, content}
  * @param {number} messageIndex - Message index this entry came from
+ * @param {?string} summaryHash - Hash of the summary version that produced this entry
  * @param {Object} options - Queue options
  * @returns {Promise<string|null>} Operation ID or null if queue disabled
  */
-export async function queueProcessLorebookEntry(entryData /*: Object */, messageIndex /*: number */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
+export async function queueProcessLorebookEntry(entryData /*: Object */, messageIndex /*: number */, summaryHash /*: ?string */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue lorebook entry processing');
         return null;
     }
 
     const entryName = entryData.name || entryData.comment || 'Unknown';
+    const lowerName = String(entryName).toLowerCase().trim();
     debug(SUBSYSTEM.QUEUE, `Queueing lorebook entry: ${entryName} from message ${messageIndex}`);
 
     // De-duplicate: if there is already a pending or in-progress operation for the same entry
     // (either PROCESS_LOREBOOK_ENTRY or MERGE_LOREBOOK_ENTRY), skip enqueuing again.
+    let ops /*: Array<any> */ = [];
     try {
-        const lowerName = String(entryName).toLowerCase().trim();
-        const ops = getAllOperations();
+        ops = getAllOperations();
+
+        // Cancel pending operations for this message/entry produced by older summary versions
+        if (summaryHash) {
+            for (const op of ops) {
+                if (op.type !== OperationType.PROCESS_LOREBOOK_ENTRY) continue;
+                if (op.status !== OperationStatus.PENDING) continue;
+                const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
+                if (metaName !== lowerName) continue;
+                if (op?.metadata?.message_index !== messageIndex) continue;
+                const opHash = op.params?.summaryHash || op.metadata?.summary_hash || null;
+                if (opHash && opHash === summaryHash) continue;
+                await updateOperationStatus(op.id, OperationStatus.CANCELLED, 'Replaced by newer summary version');
+            }
+        }
+
         const hasDuplicate = ops.some(op => {
             const status = op.status;
             const active = status === 'pending' || status === 'in_progress';
@@ -233,11 +252,18 @@ export async function queueProcessLorebookEntry(entryData /*: Object */, message
             if (op.type === OperationType.PROCESS_LOREBOOK_ENTRY) {
                 const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
                 const sameMsg = op?.metadata?.message_index === messageIndex;
-                return metaName === lowerName && sameMsg;
+                if (!sameMsg || metaName !== lowerName) return false;
+                const opHash = op.params?.summaryHash || op.metadata?.summary_hash || null;
+                if (summaryHash && opHash && opHash !== summaryHash) return false;
+                return true;
             }
 
             if (op.type === OperationType.MERGE_LOREBOOK_ENTRY) {
                 const metaName = String(op?.metadata?.entry_comment || '').toLowerCase().trim();
+                if (summaryHash) {
+                    const opHash = op.params?.summaryHash || op.metadata?.summary_hash || null;
+                    if (opHash && opHash !== summaryHash) return false;
+                }
                 return metaName === lowerName; // merge ops are per entry UID; name match is sufficient
             }
 
@@ -252,13 +278,14 @@ export async function queueProcessLorebookEntry(entryData /*: Object */, message
 
     return await enqueueOperation(
         OperationType.PROCESS_LOREBOOK_ENTRY,
-        { entryData, messageIndex },
+        { entryData, messageIndex, summaryHash },
         {
             priority: options.priority ?? 0,
             dependencies: options.dependencies ?? [],
             metadata: {
                 entry_name: entryName,
                 message_index: messageIndex,
+                summary_hash: summaryHash || null,
                 ...options.metadata
             }
         }

@@ -18,6 +18,7 @@ import {
 import {
     generateSceneSummary,
     toggleSceneBreak,
+    SCENE_SUMMARY_HASH_KEY,
 } from './sceneBreak.js';
 import {
     generate_running_scene_summary,
@@ -166,7 +167,25 @@ export function registerAllOperationHandlers() {
 
     // Process single lorebook entry
     registerOperationHandler(OperationType.PROCESS_LOREBOOK_ENTRY, async (operation) => {
-        const { entryData } = operation.params;
+        const { entryData, messageIndex, summaryHash } = operation.params;
+
+        if (typeof messageIndex === 'number' && summaryHash) {
+            const ctx = getContext();
+            const chat = (ctx && ctx.chat) ? ctx.chat : [];
+            const message = chat[messageIndex];
+            if (message) {
+                const currentHash = get_data(message, SCENE_SUMMARY_HASH_KEY);
+                if (currentHash && currentHash !== summaryHash) {
+                    debug(SUBSYSTEM.QUEUE, `Skipping PROCESS_LOREBOOK_ENTRY for outdated summary hash (message ${messageIndex})`);
+                    return {
+                        success: true,
+                        skipped: true,
+                        reason: 'outdated_summary'
+                    };
+                }
+            }
+        }
+
         debug(SUBSYSTEM.QUEUE, `Executing PROCESS_LOREBOOK_ENTRY for: ${entryData.name || entryData.comment || 'Unknown'}`);
         const result = await processSingleLorebookEntry(entryData, { useQueue: true });
         return result;
