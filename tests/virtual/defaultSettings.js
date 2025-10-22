@@ -10,7 +10,9 @@ import {
     auto_scene_break_detection_prompt,
     running_scene_summary_prompt,
     default_running_scene_template,
-} from './index.js';
+    auto_lorebook_triage_prompt,
+    auto_lorebook_resolution_prompt,
+} from './defaultPrompts.js';
 import { DEFAULT_MERGE_PROMPTS } from './trackingEntries.js';
 
 export const default_settings = {
@@ -165,6 +167,14 @@ Output ONLY the merged content, nothing else. Do not include explanations or met
     auto_lorebooks_summary_merge_prefill: '', // Prefill for summary merge prompts
     auto_lorebooks_summary_merge_connection_profile: '', // Connection profile for summary merging
     auto_lorebooks_summary_merge_completion_preset: '', // Completion preset for summary merging
+    auto_lorebooks_summary_triage_prompt: auto_lorebook_triage_prompt,
+    auto_lorebooks_summary_triage_prefill: '',
+    auto_lorebooks_summary_triage_connection_profile: '',
+    auto_lorebooks_summary_triage_completion_preset: '',
+    auto_lorebooks_summary_resolution_prompt: auto_lorebook_resolution_prompt,
+    auto_lorebooks_summary_resolution_prefill: '',
+    auto_lorebooks_summary_resolution_connection_profile: '',
+    auto_lorebooks_summary_resolution_completion_preset: '',
 
     // (Removed) Auto-Lorebooks Keyword Generation Settings – keywords now come from summary JSON
 });

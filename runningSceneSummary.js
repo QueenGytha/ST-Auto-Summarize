@@ -15,8 +15,8 @@ import {
     set_preset,
     get_current_connection_profile,
     set_connection_profile,
-    running_scene_summary_prompt,
 } from './index.js';
+import { running_scene_summary_prompt } from './defaultPrompts.js';
 // Lorebook processing for running summary has been disabled; no queue integration needed here.
 
 /**

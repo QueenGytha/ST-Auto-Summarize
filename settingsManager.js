@@ -101,6 +101,7 @@ Output ONLY the merged content, nothing else. Do not include explanations or met
         saveSettingsDebounced();
     } else {
         // Merge with defaults for any missing properties (soft reset for lorebooks)
+        const defaultsAny /*: any */ = default_settings;
         const defaultLorebooks = {
             enabledByDefault: true,
             nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
@@ -149,7 +150,15 @@ New Information from Summary:
 Output ONLY the merged content, nothing else. Do not include explanations or meta-commentary.`,
                 merge_prefill: '',
                 merge_connection_profile: '',
-                merge_completion_preset: ''
+                merge_completion_preset: '',
+                triage_prompt: defaultsAny.auto_lorebooks_summary_triage_prompt,
+                triage_prefill: defaultsAny.auto_lorebooks_summary_triage_prefill,
+                triage_connection_profile: defaultsAny.auto_lorebooks_summary_triage_connection_profile,
+                triage_completion_preset: defaultsAny.auto_lorebooks_summary_triage_completion_preset,
+                resolution_prompt: defaultsAny.auto_lorebooks_summary_resolution_prompt,
+                resolution_prefill: defaultsAny.auto_lorebooks_summary_resolution_prefill,
+                resolution_connection_profile: defaultsAny.auto_lorebooks_summary_resolution_connection_profile,
+                resolution_completion_preset: defaultsAny.auto_lorebooks_summary_resolution_completion_preset
             }
         };
 

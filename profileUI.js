@@ -19,10 +19,9 @@ import {
     get_settings_element,
     detect_settings_difference,
     getContext,
-    default_short_template,
-    default_scene_template,
     extension_settings,
 } from './index.js';
+import { default_short_template, default_scene_template } from './defaultPrompts.js';
 import { ensureEntityTypesSetting, renderEntityTypesList } from './entityTypeSettingsUI.js';
 
 function update_save_icon_highlight() {
@@ -416,6 +415,14 @@ function refresh_lorebooks_settings_ui() {
         $('#autolorebooks-summary-merge-prefill').val(summaryProcessing.merge_prefill || '');
         // $FlowFixMe[cannot-resolve-name]
         $('#autolorebooks-summary-merge-prompt').val(summaryProcessing.merge_prompt || '');
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-summary-triage-prefill').val(summaryProcessing.triage_prefill || '');
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-summary-triage-prompt').val(summaryProcessing.triage_prompt || '');
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-summary-resolution-prefill').val(summaryProcessing.resolution_prefill || '');
+        // $FlowFixMe[cannot-resolve-name]
+        $('#autolorebooks-summary-resolution-prompt').val(summaryProcessing.resolution_prompt || '');
 
         ensureEntityTypesSetting();
         renderEntityTypesList();
@@ -425,6 +432,10 @@ function refresh_lorebooks_settings_ui() {
         update_autolorebooks_tracking_merge_preset_dropdown();
         update_autolorebooks_summary_merge_connection_dropdown();
         update_autolorebooks_summary_merge_preset_dropdown();
+        update_autolorebooks_summary_triage_connection_dropdown();
+        update_autolorebooks_summary_triage_preset_dropdown();
+        update_autolorebooks_summary_resolution_connection_dropdown();
+        update_autolorebooks_summary_resolution_preset_dropdown();
 
         debug("Auto-Lorebooks settings UI refreshed");
 
@@ -507,6 +518,82 @@ async function update_autolorebooks_summary_merge_preset_dropdown() {
     }
     $preset_select.val(currentValue);
     $preset_select.off('click').on('click', () => update_autolorebooks_summary_merge_preset_dropdown());
+}
+
+/**
+ * Update Auto-Lorebooks summary triage connection profile dropdown
+ */
+async function update_autolorebooks_summary_triage_connection_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
+    const $connection_select = $('#autolorebooks-summary-triage-connection');
+    // $FlowFixMe[prop-missing]
+    const currentValue = extension_settings.autoLorebooks?.summary_processing?.triage_connection_profile || '';
+    const connection_options = await get_connection_profiles();
+    $connection_select.empty();
+    $connection_select.append(`<option value="">Same as Current</option>`);
+    if (connection_options && Array.isArray(connection_options)) {
+        for (const option of connection_options) {
+            $connection_select.append(`<option value="${option}">${option}</option>`);
+        }
+    }
+    $connection_select.val(currentValue);
+    $connection_select.off('click').on('click', () => update_autolorebooks_summary_triage_connection_dropdown());
+}
+
+/**
+ * Update Auto-Lorebooks summary triage preset dropdown
+ */
+async function update_autolorebooks_summary_triage_preset_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
+    const $preset_select = $('#autolorebooks-summary-triage-preset');
+    // $FlowFixMe[prop-missing]
+    const currentValue = extension_settings.autoLorebooks?.summary_processing?.triage_completion_preset || '';
+    const preset_options = await get_presets();
+    $preset_select.empty();
+    $preset_select.append(`<option value="">Same as Current</option>`);
+    for (const option of preset_options) {
+        $preset_select.append(`<option value="${option}">${option}</option>`);
+    }
+    $preset_select.val(currentValue);
+    $preset_select.off('click').on('click', () => update_autolorebooks_summary_triage_preset_dropdown());
+}
+
+/**
+ * Update Auto-Lorebooks summary resolution connection profile dropdown
+ */
+async function update_autolorebooks_summary_resolution_connection_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
+    const $connection_select = $('#autolorebooks-summary-resolution-connection');
+    // $FlowFixMe[prop-missing]
+    const currentValue = extension_settings.autoLorebooks?.summary_processing?.resolution_connection_profile || '';
+    const connection_options = await get_connection_profiles();
+    $connection_select.empty();
+    $connection_select.append(`<option value="">Same as Current</option>`);
+    if (connection_options && Array.isArray(connection_options)) {
+        for (const option of connection_options) {
+            $connection_select.append(`<option value="${option}">${option}</option>`);
+        }
+    }
+    $connection_select.val(currentValue);
+    $connection_select.off('click').on('click', () => update_autolorebooks_summary_resolution_connection_dropdown());
+}
+
+/**
+ * Update Auto-Lorebooks summary resolution preset dropdown
+ */
+async function update_autolorebooks_summary_resolution_preset_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
+    const $preset_select = $('#autolorebooks-summary-resolution-preset');
+    // $FlowFixMe[prop-missing]
+    const currentValue = extension_settings.autoLorebooks?.summary_processing?.resolution_completion_preset || '';
+    const preset_options = await get_presets();
+    $preset_select.empty();
+    $preset_select.append(`<option value="">Same as Current</option>`);
+    for (const option of preset_options) {
+        $preset_select.append(`<option value="${option}">${option}</option>`);
+    }
+    $preset_select.val(currentValue);
+    $preset_select.off('click').on('click', () => update_autolorebooks_summary_resolution_preset_dropdown());
 }
 
 export {

@@ -378,6 +378,69 @@ export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay 
 // NEW SCENE SUMMARIES TO MERGE:
 {{scene_summaries}}`;
 
+export const auto_lorebook_triage_prompt = `You are the Auto-Lorebooks registry triage assistant for SillyTavern.
+
+Known lorebook entry types: {{lorebook_entry_types}}
+
+You will be given:
+- A NEW entry candidate formatted as JSON
+- A concise REGISTRY listing for all existing entries of the same type (id, name, aliases, synopsis)
+
+New entry candidate:
+{{new_entry}}
+
+Registry listing:
+{{candidate_registry}}
+
+Tasks:
+1. Decide which entry type best fits the new entry. The type MUST be one of the allowed list above.
+2. Compare the new entry against the registry listing and decide if any existing entity is a likely duplicate.
+3. Select high-confidence duplicate IDs in \`sameEntityIds\`.
+4. If additional context is required before deciding, list the IDs in \`needsFullContextIds\`. These IDs will be sent to a follow-up prompt with full lorebook content.
+5. Craft a one-line synopsis capturing the essence of the new entry (used in the registry if it becomes canonical).
+
+Return ONLY a JSON object in this exact shape:
+{
+  "type": "<one of the allowed types>",
+  "synopsis": "<short one-line summary>",
+  "sameEntityIds": ["entity_id_1"],
+  "needsFullContextIds": ["entity_id_2"]
+}
+
+Rules:
+- \`sameEntityIds\` and \`needsFullContextIds\` must be arrays. Use [] when empty.
+- Never invent IDs; only use IDs from the registry listing.
+- If nothing matches, return empty arrays and keep the type that best fits.
+- The synopsis should be concise, 15 words or fewer, and reflect the NEW entry’s content.
+- Output STRICT JSON with double quotes and no commentary.`;
+
+export const auto_lorebook_resolution_prompt = `You are the Auto-Lorebooks duplicate resolver for SillyTavern.
+
+Known lorebook entry types: {{lorebook_entry_types}}
+
+The Stage 1 triage flagged possible duplicates and requested full context. You must make the final decision.
+
+New entry candidate:
+{{new_entry}}
+
+Stage 1 synopsis:
+{{triage_synopsis}}
+
+Candidate lorebook entries (full content, JSON array):
+{{candidate_entries}}
+
+Return ONLY a JSON object in this exact shape:
+{
+  "resolvedId": "<existing entity id or \\"new\\">",
+  "synopsis": "<updated one-line summary for the canonical entity>"
+}
+
+Rules:
+- If none of the candidates actually match, set \`"resolvedId": "new"\`.
+- When choosing an existing entity, prefer the id that truly represents the same in-world subject.
+- The synopsis should reflect the most current and complete understanding after this comparison.
+- Output STRICT JSON with double quotes and no commentary.`;
+
 
 export const default_running_scene_template = `<!--Roleplay memory containing current state and key facts from all previous scenes, combined into a cohesive narrative.
 The information below takes priority over character and setting definitions. -->

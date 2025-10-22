@@ -214,8 +214,16 @@ export function saveMetadataDebounced(){}
 export function getMaxContextSize(){ return 4096; }
 export async function streamingProcessor(){}
 export const amount_gen = 0;
-export function generateRaw(arg){ generateRaw.__calls.push(arg); return Promise.resolve('OK'); }
+const DEFAULT_GENERATE_RAW = async () => 'OK';
+let generateRawImpl = DEFAULT_GENERATE_RAW;
+export async function generateRaw(arg){
+  generateRaw.__calls.push(arg);
+  return generateRawImpl(arg);
+}
 Object.defineProperty(generateRaw, '__calls', { value: [], writable: false });
+export function setGenerateRawImplementation(fn){
+  generateRawImpl = typeof fn === 'function' ? fn : DEFAULT_GENERATE_RAW;
+}
 
 // Minimal settings helpers expected by extension code
 export function get_settings(key){
@@ -243,7 +251,7 @@ const __ctx = {
   deactivateSendButtons(){},
   activateSendButtons(){},
   generateQuietPrompt: async ()=> 'OK',
-  generateRaw: async ()=> 'OK',
+  generateRaw: async (...args)=> generateRaw(...args),
   SlashCommandParser, SlashCommand, SlashCommandArgument, ARGUMENT_TYPE,
   name1: 'User', name2: 'Assistant',
   parseReasoningFromString: ()=> ({ content: '', reasoning: '' })

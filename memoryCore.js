@@ -19,9 +19,9 @@ import {
     extension_prompt_types,
     debounce,
     debounce_timeout,
-    default_scene_template,
     SUBSYSTEM,
 } from './index.js';
+import { default_scene_template } from './defaultPrompts.js';
 import { get_running_summary_injection } from './runningSceneSummary.js';
 
 // INJECTION RECORDING FOR LOGS

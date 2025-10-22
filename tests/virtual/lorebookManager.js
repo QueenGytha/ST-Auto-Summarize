@@ -98,6 +98,61 @@ async function ensureRegistryEntriesForLorebook(lorebookName /*: string */) /*: 
     }
 }
 
+async function ensureRegistryEntryRecord(lorebookName /*: string */, type /*: string */) /*: Promise<{ data: any, entry: any } | null> */ {
+    await ensureRegistryEntriesForLorebook(lorebookName);
+    const data = await loadWorldInfo(lorebookName);
+    if (!data) {
+        error?.(`Failed to load lorebook data while ensuring registry entry: ${lorebookName}`);
+        return null;
+    }
+    if (!data.entries) data.entries = {};
+    const registryComment = `${REGISTRY_PREFIX}${type}`;
+    let entry = Object.values(data.entries).find(e => e && e.comment === registryComment);
+    if (!entry) {
+        entry = createWorldInfoEntry(lorebookName, data);
+        if (!entry) return null;
+        entry.comment = registryComment;
+    }
+    const ensuredEntry /*: any */ = entry;
+    ensuredEntry.key = Array.isArray(ensuredEntry.key) ? ensuredEntry.key : [];
+    ensuredEntry.keysecondary = Array.isArray(ensuredEntry.keysecondary) ? ensuredEntry.keysecondary : [];
+    ensuredEntry.disable = true;
+    ensuredEntry.constant = false;
+    ensuredEntry.preventRecursion = true;
+    ensuredEntry.useProbability = false;
+    ensuredEntry.probability = 100;
+    ensuredEntry.tags = Array.isArray(ensuredEntry.tags) ? ensuredEntry.tags : [];
+    if (!ensuredEntry.tags.includes(REGISTRY_TAG)) {
+        ensuredEntry.tags.push(REGISTRY_TAG);
+    }
+    return { data, entry: ensuredEntry };
+}
+
+export async function updateRegistryEntryContent(
+    lorebookName /*: string */,
+    type /*: string */,
+    items /*: Array<{ id: string, name?: string, comment?: string, aliases?: Array<string>, synopsis?: string }> */
+) /*: Promise<void> */ {
+    try {
+        const ensured = await ensureRegistryEntryRecord(lorebookName, type);
+        if (!ensured) return;
+        const { data, entry } = ensured;
+        const lines = items.map(item => {
+            const name = item.name || item.comment || 'Unknown';
+            const aliases = Array.isArray(item.aliases) && item.aliases.length > 0 ? item.aliases.join('; ') : '—';
+            const synopsis = item.synopsis || '—';
+            return `- id: ${item.id} | name: ${name} | aliases: ${aliases} | synopsis: ${synopsis}`;
+        });
+        const header = `[Registry: ${type}]`;
+        const ensuredEntry /*: any */ = entry;
+        ensuredEntry.content = [header, ...lines].join('\n').trim();
+        await saveWorldInfo(lorebookName, data, true);
+        debug?.(`Updated registry entry for type "${type}"`);
+    } catch (err) {
+        error?.('Error updating registry entry content', err);
+    }
+}
+
 /**
  * Get current context information (character name, chat ID, group info)
  * @returns {Object} Context object with characterName, chatId, isGroupChat, groupName
@@ -752,5 +807,6 @@ export default {
     addLorebookEntry,
     modifyLorebookEntry,
     deleteLorebookEntry,
-    getLorebookEntries
+    getLorebookEntries,
+    updateRegistryEntryContent
 };
