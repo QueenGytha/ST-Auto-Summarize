@@ -285,7 +285,15 @@ New Information from Summary:
 Output ONLY the merged content, nothing else. Do not include explanations or meta-commentary.`,
             merge_prefill: '',
             merge_connection_profile: '',
-            merge_completion_preset: ''
+            merge_completion_preset: '',
+            triage_prompt: default_settings.auto_lorebooks_summary_triage_prompt,
+            triage_prefill: default_settings.auto_lorebooks_summary_triage_prefill,
+            triage_connection_profile: default_settings.auto_lorebooks_summary_triage_connection_profile,
+            triage_completion_preset: default_settings.auto_lorebooks_summary_triage_completion_preset,
+            resolution_prompt: default_settings.auto_lorebooks_summary_resolution_prompt,
+            resolution_prefill: default_settings.auto_lorebooks_summary_resolution_prefill,
+            resolution_connection_profile: default_settings.auto_lorebooks_summary_resolution_connection_profile,
+            resolution_completion_preset: default_settings.auto_lorebooks_summary_resolution_completion_preset
         }
     };
 

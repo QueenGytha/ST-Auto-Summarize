@@ -57,6 +57,14 @@ export const default_settings = {
     display_memories: false, // Hide per-message summary display (not used with scene-based approach)
     default_chat_enabled: true,
     use_global_toggle_state: false,
+    auto_lorebooks_summary_triage_prompt: auto_lorebook_triage_prompt,
+    auto_lorebooks_summary_triage_prefill: '',
+    auto_lorebooks_summary_triage_connection_profile: '',
+    auto_lorebooks_summary_triage_completion_preset: '',
+    auto_lorebooks_summary_resolution_prompt: auto_lorebook_resolution_prompt,
+    auto_lorebooks_summary_resolution_prefill: '',
+    auto_lorebooks_summary_resolution_connection_profile: '',
+    auto_lorebooks_summary_resolution_completion_preset: '',
 };
 
 // $FlowFixMe[prop-missing]

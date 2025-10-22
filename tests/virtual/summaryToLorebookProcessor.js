@@ -434,7 +434,7 @@ async function runResolutionStage(
     normalizedEntry /*: any */,
     triageSynopsis /*: string */,
     candidateEntries /*: Array<any> */,
-    typeList /*: string */,
+    singleType /*: string */,
     settings /*: any */
 ) /*: Promise<{ resolvedId: ?string, synopsis: string }> */ {
     if (!candidateEntries || candidateEntries.length === 0) {
@@ -446,7 +446,7 @@ async function runResolutionStage(
     }
     const payload = buildNewEntryPayload(normalizedEntry);
     const prompt = promptTemplate
-        .replace(/\{\{lorebook_entry_types\}\}/g, typeList)
+        .replace(/\{\{lorebook_entry_types\}\}/g, singleType || '')
         .replace(/\{\{new_entry\}\}/g, JSON.stringify(payload, null, 2))
         .replace(/\{\{triage_synopsis\}\}/g, triageSynopsis || '')
         .replace(/\{\{candidate_entries\}\}/g, JSON.stringify(candidateEntries, null, 2));
@@ -522,7 +522,7 @@ async function handleLorebookEntry(normalizedEntry /*: any */, ctx /*: any */) /
     if (candidateIds.length > 0) {
         const candidateEntries = buildCandidateEntriesData(candidateIds, registryState, existingEntriesMap);
         if (candidateEntries.length > 0) {
-            resolution = await runResolutionStage(normalizedEntry, triage.synopsis || '', candidateEntries, typeList, settings);
+            resolution = await runResolutionStage(normalizedEntry, triage.synopsis || '', candidateEntries, targetType, settings);
         }
     }
 
