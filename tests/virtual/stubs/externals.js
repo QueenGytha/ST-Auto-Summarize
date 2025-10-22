@@ -81,7 +81,28 @@ export async function createNewWorldInfo(name){ if (!__world.worlds[name]) { __w
 export async function deleteWorldInfo(name){ if (__world.worlds[name]) { delete __world.worlds[name]; const i = __world.world_names.indexOf(name); if (i>=0) __world.world_names.splice(i,1); return true; } return false; }
 export async function loadWorldInfo(name){ return __world.worlds[name] || null; }
 export async function saveWorldInfo(name, data){ __world.worlds[name] = data; return true; }
-export function createWorldInfoEntry(name, data){ const uid = Date.now() + Math.floor(Math.random()*1000); const entry = { uid, key: [], keysecondary: [], content: '', comment: '', probability:100, useProbability:true, disable:false }; if (!data.entries) data.entries = {}; data.entries[uid] = entry; return entry; }
+export function createWorldInfoEntry(name, data){
+  const uid = Date.now() + Math.floor(Math.random()*1000);
+  const entry = {
+    uid,
+    key: [],
+    keysecondary: [],
+    content: '',
+    comment: '',
+    probability: 100,
+    useProbability: true,
+    disable: false,
+    constant: false,
+    preventRecursion: false,
+    tags: [],
+    order: 100,
+    position: 0,
+    depth: 4,
+  };
+  if (!data.entries) data.entries = {};
+  data.entries[uid] = entry;
+  return entry;
+}
 export async function deleteWorldInfoEntry(data, uid){ if (data?.entries && data.entries[uid]) { delete data.entries[uid]; return true; } return false; }
 export const METADATA_KEY = 'auto_summarize_lorebook';
 

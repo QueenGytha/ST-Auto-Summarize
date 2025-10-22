@@ -746,6 +746,19 @@
                             </label>
                         </div>
 
+                        <div class="margin-bot-10px">
+                            <label>
+                                <span>Supported lorebook entry types:</span>
+                                <small class="displayBlock opacity50p">Applies to the {{lorebook_entry_types}} macro and registry generation. Values should be lowercase slugs.</small>
+                            </label>
+                            <div id="autolorebooks-entity-types-list" class="margin-top-5px"></div>
+                            <div class="flex-container alignitemscenter margin-top-5px" style="gap: 5px;">
+                                <input type="text" id="autolorebooks-entity-type-input" class="text_pole" placeholder="e.g. quest(entry:constant)" />
+                                <button id="autolorebooks-add-entity-type" class="menu_button">Add</button>
+                                <button id="autolorebooks-restore-entity-types" class="menu_button fa-solid fa-recycle" title="Restore default types"></button>
+                            </div>
+                        </div>
+
                         <hr>
 
                         <h4>AI-Editable Tracking Entries</h4>

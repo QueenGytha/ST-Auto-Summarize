@@ -12,6 +12,7 @@ import {
     error,
     toast,
     SUBSYSTEM,
+    extension_settings,
 } from './index.js';
 import {
     auto_generate_running_summary,
@@ -21,6 +22,7 @@ import {
     queueProcessLorebookEntry,
 } from './queueIntegration.js';
 import { clearCheckedFlagsInRange } from './autoSceneBreakDetection.js';
+import { getConfiguredEntityTypeDefinitions, formatEntityTypeListForPrompt } from './entityTypes.js';
 
 // SCENE SUMMARY PROPERTY STRUCTURE:
 // - Scene summaries are stored on the message object as:
@@ -831,15 +833,22 @@ function prepareScenePrompt(
 ) /*: string */ {
     const promptTemplate = get_settings('scene_summary_prompt');
     const prefill = get_settings('scene_summary_prefill') || "";
+    const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
+    let lorebookTypesMacro = formatEntityTypeListForPrompt(typeDefinitions);
+    if (!lorebookTypesMacro) {
+        lorebookTypesMacro = formatEntityTypeListForPrompt(getConfiguredEntityTypeDefinitions(undefined));
+    }
 
     let prompt = promptTemplate;
     if (ctx.substituteParamsExtended) {
         prompt = ctx.substituteParamsExtended(prompt, {
             message: JSON.stringify(sceneObjects, null, 2),
-            prefill
+            prefill,
+            lorebook_entry_types: lorebookTypesMacro,
         }) || prompt;
     }
     prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
+    prompt = prompt.replace(/\{\{lorebook_entry_types\}\}/g, lorebookTypesMacro);
     prompt = `${prompt}\n${prefill}`;
 
     return prompt;

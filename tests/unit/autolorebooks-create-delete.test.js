@@ -18,6 +18,7 @@ export default ({ test, expect }) => {
     const ext = await import(v('stubs/externals.js'));
     const lbm = await import(v('lorebookManager.js'));
     const tracking = await import(v('trackingEntries.js'));
+    const entityTypes = await import(v('entityTypes.js'));
     const utils = await import(v('utils.js'));
 
     // Wire modules (minimal utils)
@@ -35,6 +36,7 @@ export default ({ test, expect }) => {
     await lbm.initializeChatLorebook();
     await tracking.initializeChatTrackingEntries();
 
+
     // Should have created and attached a lorebook
     const attached = ext.chat_metadata[ext.METADATA_KEY];
     expect(typeof attached).toBe('string');
@@ -47,6 +49,16 @@ export default ({ test, expect }) => {
     const hasStats = entries.some(e => e.comment === '__character_stats');
     expect(hasGM).toBe(true);
     expect(hasStats).toBe(true);
+
+    const defs = entityTypes.getConfiguredEntityTypeDefinitions(ext.extension_settings?.autoLorebooks?.entity_types);
+    const expectedRegistries = defs.map(def => `_registry_${def.name}`);
+    expectedRegistries.forEach(name => {
+      const found = entries.find(e => e.comment === name);
+      expect(found).toBeDefined();
+      expect(found?.disable).toBe(true);
+      expect(found?.preventRecursion).toBe(true);
+      expect(Array.isArray(found?.tags) && found.tags.includes('auto_lorebooks_registry')).toBe(true);
+    });
   }, 8000);
 
   test('Auto-lorebook: deletes matching lorebook on chat_deleted (character chat)', async () => {

@@ -30,6 +30,7 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 // - NEW entities discovered OR updates to existing entities
 // - Full descriptions WITH nuance and detail
 // - Each entry needs: name, type, keywords, content
+// - Type must be chosen from: {{lorebook_entry_types}}
 // - Optional: secondaryKeys (array) for AND disambiguation of generic terms
 // - DO NOT include timeline events (that goes in summary)
 // - Only entities worth remembering for later
@@ -41,7 +42,7 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 //   "lorebooks": [
 //     {
 //       "name": "Entity Name",
-//       "type": "character|location|item|faction|concept|lore",
+//       "type": "{{lorebook_entry_types}}",
 //       "keywords": ["keyword1", "keyword2", "keyword3"],
 //       "secondaryKeys": ["disambiguation term"], // optional
 //       "content": "Detailed description with nuance"
@@ -138,6 +139,7 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 // - UPDATES to existing entities
 // - Full descriptions WITH all nuance
 // - Each entry: name, type, keywords, content
+// - Type must be chosen from: {{lorebook_entry_types}}
 // - Optional: secondaryKeys (array) for AND disambiguation of generic terms
 // - Only significant entities worth remembering
 //

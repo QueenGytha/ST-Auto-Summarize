@@ -3,7 +3,15 @@
 
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { chat_metadata, saveMetadata } from './stubs/externals.js';
-// (Removed) extension_settings import; no longer used
+// $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
+import { extension_settings } from './stubs/externals.js';
+
+import {
+    getConfiguredEntityTypeDefinitions,
+    createEntityTypeMap,
+    applyEntityTypeFlagsToEntry,
+    sanitizeEntityTypeName,
+} from './entityTypes.js';
 
 // Will be imported from index.js via barrel exports
 let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */;  // Utility functions - any type is legitimate
@@ -183,7 +191,8 @@ function normalizeEntryData(entry /*: any */) /*: any */ {
         disable: entry.disable ?? false,
         order: entry.order ?? 100,
         position: entry.position ?? 0,
-        depth: entry.depth ?? 4
+        depth: entry.depth ?? 4,
+        type: typeof entry.type === 'string' ? sanitizeEntityTypeName(entry.type) : ''
     };
 }
 
@@ -201,6 +210,9 @@ export async function processSummaryToLorebook(summary /*: any */, options /*: a
             useQueue = true,
             skipDuplicates = true
         } = options;
+
+        const entityTypeDefs = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
+        const entityTypeMap = createEntityTypeMap(entityTypeDefs);
 
         // Generate unique ID for this summary
         const summaryId = generateSummaryId(summary);
@@ -254,6 +266,14 @@ export async function processSummaryToLorebook(summary /*: any */, options /*: a
 
         for (const newEntryData of lorebookData.entries) {
             const normalizedEntry = normalizeEntryData(newEntryData);
+
+            let typeName = normalizedEntry.type || (typeof newEntryData.type === 'string' ? sanitizeEntityTypeName(newEntryData.type) : '');
+            if (!typeName) {
+                typeName = entityTypeDefs[0]?.name || 'character';
+            }
+            const typeDef = entityTypeMap.get(typeName) || null;
+            normalizedEntry.type = typeDef ? typeDef.name : typeName;
+            applyEntityTypeFlagsToEntry(normalizedEntry, typeDef);
 
             // Check if entry exists
             const existingEntry = findExistingEntry(existingEntries, normalizedEntry);
@@ -373,7 +393,17 @@ export async function processSingleLorebookEntry(entryData /*: any */, options /
         }
 
         // Normalize the entry data
+        const entityTypeDefs = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
+        const entityTypeMap = createEntityTypeMap(entityTypeDefs);
+
         const normalizedEntry = normalizeEntryData(entryData);
+        let typeName = normalizedEntry.type || (typeof entryData.type === 'string' ? sanitizeEntityTypeName(entryData.type) : '');
+        if (!typeName) {
+            typeName = entityTypeDefs[0]?.name || 'character';
+        }
+        const typeDef = entityTypeMap.get(typeName) || null;
+        normalizedEntry.type = typeDef ? typeDef.name : typeName;
+        applyEntityTypeFlagsToEntry(normalizedEntry, typeDef);
         debug(`Processing lorebook entry: ${normalizedEntry.comment}`);
 
         // Get existing entries

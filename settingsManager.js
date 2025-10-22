@@ -18,6 +18,7 @@ import {
     selected_group
 } from './index.js';
 import { DEFAULT_MERGE_PROMPTS } from './trackingEntries.js';
+import { DEFAULT_ENTITY_TYPES } from './entityTypes.js';
 
 // Settings
 const global_settings = {
@@ -51,6 +52,7 @@ function initialize_settings() {
             nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
             deleteOnChatDelete: true,
             debug_mode: true,
+            entity_types: [...DEFAULT_ENTITY_TYPES],
             queue: {
                 enabled: true,
                 use_lorebook: true,
@@ -104,6 +106,7 @@ Output ONLY the merged content, nothing else. Do not include explanations or met
             nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
             deleteOnChatDelete: true,
             debug_mode: true,
+            entity_types: [...DEFAULT_ENTITY_TYPES],
             queue: {
                 enabled: true,
                 use_lorebook: true,

@@ -23,6 +23,7 @@ import {
     default_scene_template,
     extension_settings,
 } from './index.js';
+import { ensureEntityTypesSetting, renderEntityTypesList } from './entityTypeSettingsUI.js';
 
 function update_save_icon_highlight() {
     // If the current settings are different than the current profile, highlight the save button
@@ -415,6 +416,9 @@ function refresh_lorebooks_settings_ui() {
         $('#autolorebooks-summary-merge-prefill').val(summaryProcessing.merge_prefill || '');
         // $FlowFixMe[cannot-resolve-name]
         $('#autolorebooks-summary-merge-prompt').val(summaryProcessing.merge_prompt || '');
+
+        ensureEntityTypesSetting();
+        renderEntityTypesList();
 
         // Populate dropdowns (async but don't block)
         update_autolorebooks_tracking_merge_connection_dropdown();

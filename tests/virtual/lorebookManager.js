@@ -20,9 +20,12 @@ import { chat_metadata, saveMetadata, getCurrentChatId, characters, this_chid, n
 import { extension_settings } from './stubs/externals.js';
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { selected_group, groups } from './stubs/externals.js';
+import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
 
 // Will be imported from index.js via barrel exports
 let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */, generateLorebookName /*: any */, getUniqueLorebookName /*: any */;  // Utility functions - any type is legitimate
+const REGISTRY_PREFIX /*: string */ = '_registry_';
+const REGISTRY_TAG /*: string */ = 'auto_lorebooks_registry';
 
 /**
  * Initialize the lorebook manager with imported utilities
@@ -37,6 +40,62 @@ export function initLorebookManager(utils /*: any */) /*: void */ {
     toast = utils.toast;
     generateLorebookName = utils.generateLorebookName;
     getUniqueLorebookName = utils.getUniqueLorebookName;
+}
+
+async function ensureRegistryEntriesForLorebook(lorebookName /*: string */) /*: Promise<void> */ {
+    try {
+        const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
+        if (!Array.isArray(typeDefinitions) || typeDefinitions.length === 0) {
+            return;
+        }
+
+        const data = await loadWorldInfo(lorebookName);
+        if (!data) {
+            error?.(`Failed to load lorebook data while initializing registries: ${lorebookName}`);
+            return;
+        }
+
+        if (!data.entries) {
+            data.entries = {};
+        }
+
+        const existingComments = new Set(
+            Object.values(data.entries)
+                .map(entry => (entry && typeof entry.comment === 'string') ? entry.comment : null)
+                .filter(Boolean)
+        );
+
+        let added = false;
+        typeDefinitions.forEach(def => {
+            const typeName = def?.name;
+            if (!typeName) return;
+            const registryComment = `${REGISTRY_PREFIX}${typeName}`;
+            if (existingComments.has(registryComment)) return;
+
+            const entry = createWorldInfoEntry(lorebookName, data);
+            if (!entry) return;
+
+            entry.comment = registryComment;
+            entry.content = `[Registry: ${typeName}]`;
+            entry.key = Array.isArray(entry.key) ? entry.key : [];
+            entry.keysecondary = Array.isArray(entry.keysecondary) ? entry.keysecondary : [];
+            entry.disable = true;
+            entry.constant = false;
+            entry.preventRecursion = true;
+            entry.tags = Array.isArray(entry.tags) ? entry.tags : [];
+            if (!entry.tags.includes(REGISTRY_TAG)) {
+                entry.tags.push(REGISTRY_TAG);
+            }
+            added = true;
+        });
+
+        if (added) {
+            await saveWorldInfo(lorebookName, data, true);
+            debug?.(`Initialized registry entries for lorebook: ${lorebookName}`);
+        }
+    } catch (err) {
+        error?.('Error creating registry entries for lorebook', err);
+    }
 }
 
 /**
@@ -292,6 +351,7 @@ export async function createChatLorebook() /*: Promise<any> */ {
         }
 
         log(`Created lorebook: ${uniqueName}`);
+        await ensureRegistryEntriesForLorebook(uniqueName);
         return uniqueName;
 
     } catch (err) {

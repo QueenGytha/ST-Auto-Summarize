@@ -30,10 +30,12 @@ import {
     refresh_memory,
     power_user,
     main_api,
+    extension_settings,
     getStringHash,
     generateRaw,
     trimToEndSentence
 } from './index.js';
+import { getConfiguredEntityTypeDefinitions, formatEntityTypeListForPrompt } from './entityTypes.js';
 
 // Summarization
 let SUMMARIZATION_DELAY_TIMEOUT = null  // the set_timeout object for the summarization delay
@@ -491,9 +493,20 @@ async function create_summary_prompt(index /*: number */) /*: Promise<string> */
     //  that should be included in the system prompt.
 
     // if nesting
+    const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
+    let lorebookTypesMacro = formatEntityTypeListForPrompt(typeDefinitions);
+    if (!lorebookTypesMacro) {
+        lorebookTypesMacro = formatEntityTypeListForPrompt(getConfiguredEntityTypeDefinitions(undefined));
+    }
+    const macroParams = {
+        message: message_text,
+        history: history_text,
+        lorebook_entry_types: lorebookTypesMacro,
+    };
+
     if (get_settings('nest_messages_in_prompt')) {
         // substitute custom macros
-        prompt = substitute_params(prompt, {"message": message_text, "history": history_text});  // substitute "message" and "history" macros
+        prompt = substitute_params(prompt, macroParams);  // substitute custom macros
 
         // then wrap it in the system prompt (if using instructOverride)
         prompt = formatInstructModeChat("", prompt, false, true, "", "", "", null)
@@ -502,7 +515,7 @@ async function create_summary_prompt(index /*: number */) /*: Promise<string> */
         prompt = system_prompt_split(prompt)
 
         // now substitute the custom macros
-        prompt = substitute_params(prompt, {"message": message_text, "history": history_text});  // substitute "message" and "history" macros
+        prompt = substitute_params(prompt, macroParams);
     }
 
     // If using instructOverride, append the assistant starting message template to the text, replacing the name with "assistant" if needed

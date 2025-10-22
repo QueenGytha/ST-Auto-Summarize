@@ -34,6 +34,13 @@ import {
     saveSettingsDebounced,
 } from './index.js';
 import { DEFAULT_MERGE_PROMPTS } from './trackingEntries.js';
+import {
+    ensureEntityTypesSetting,
+    renderEntityTypesList,
+    handleAddEntityTypeFromInput,
+    removeEntityType,
+    restoreEntityTypesToDefault,
+} from './entityTypeSettingsUI.js';
 
 // UI initialization
 async function initialize_settings_listeners() {
@@ -113,6 +120,7 @@ Available Macros:
     <li><b>{{message}}:</b> The message text.</li>
     <li><b>{{history}}:</b> The message history as configured by the "Message History" setting.</li>
     <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset (Currently: ${max_tokens}).</li>
+    <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
 </ul>
 `
         await get_user_setting_text_input('prompt', 'Edit Summary Prompt', description)
@@ -252,6 +260,7 @@ Available Macros:
     <li><b>{{message}}:</b> The scene content to summarize.</li>
     <li><b>{{history}}:</b> The message history as configured by the "Scene Message History Mode" setting.</li>
     <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset.</li>
+    <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
 </ul>
 `;
         await get_user_setting_text_input('scene_summary_prompt', 'Edit Scene Summary Prompt', description);
@@ -429,6 +438,33 @@ Available Macros:
  * Initialize event listeners for Auto-Lorebooks settings UI
  */
 function initialize_lorebooks_settings_listeners() {
+    ensureEntityTypesSetting();
+    renderEntityTypesList();
+
+    // Entity type management
+    // $FlowFixMe[cannot-resolve-name]
+    $(document).on('click', '#autolorebooks-add-entity-type', (event) => {
+        event.preventDefault();
+        handleAddEntityTypeFromInput();
+    });
+    // $FlowFixMe[cannot-resolve-name]
+    $(document).on('keypress', '#autolorebooks-entity-type-input', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            handleAddEntityTypeFromInput();
+        }
+    });
+    // $FlowFixMe[cannot-resolve-name]
+    $(document).on('click', '.autolorebooks-entity-type-remove', (event) => {
+        event.preventDefault();
+        const type = $(event.currentTarget).attr('data-type') || '';
+        removeEntityType(type);
+    });
+    // $FlowFixMe[cannot-resolve-name]
+    $(document).on('click', '#autolorebooks-restore-entity-types', (event) => {
+        event.preventDefault();
+        restoreEntityTypesToDefault();
+    });
     // Global enabled by default checkbox
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
