@@ -195,7 +195,14 @@ Available Macros:
     bind_setting('#scene_summary_enabled', 'scene_summary_enabled', 'boolean');
     bind_setting('#scene_summary_auto_name', 'scene_summary_auto_name', 'boolean');
     bind_setting('#scene_summary_auto_name_manual', 'scene_summary_auto_name_manual', 'boolean');
-    bind_setting('#scene_summary_navigator_width', 'scene_summary_navigator_width', 'number', () => {
+    bind_setting('#scene_summary_navigator_width', 'scene_summary_navigator_width', 'number', (value /*: number */) => {
+        // Enforce min/max constraints (30-500 pixels)
+        const clampedValue = Math.max(30, Math.min(500, value));
+        if (clampedValue !== value) {
+            set_settings('scene_summary_navigator_width', clampedValue);
+            refresh_settings();
+            toast('Navigator width clamped to valid range (30-500 pixels)', 'warning');
+        }
         // Re-render navigator bar with new width
         // $FlowFixMe[cannot-resolve-name]
         if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
