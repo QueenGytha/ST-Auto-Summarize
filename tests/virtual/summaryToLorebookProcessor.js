@@ -370,9 +370,35 @@ function sanitizeTriageType(rawType /*: any */) /*: string */ {
 
 function parseJsonSafe(raw /*: ?string */) /*: any */ {
     if (!raw) return null;
+
+    let cleaned = raw.trim();
+
+    // Strip markdown code fences if present
+    // Handles: ```json\n{...}\n``` or ```\n{...}\n```
+    if (cleaned.startsWith('```')) {
+        const lines = cleaned.split('\n');
+        // Remove first line (```json or ```)
+        lines.shift();
+        // Remove last line if it's just ```
+        if (lines.length > 0 && lines[lines.length - 1].trim() === '```') {
+            lines.pop();
+        }
+        cleaned = lines.join('\n').trim();
+    }
+
     try {
-        return JSON.parse(raw);
+        return JSON.parse(cleaned);
     } catch (err) {
+        // Try original string as fallback in case our cleaning broke something
+        if (cleaned !== raw.trim()) {
+            try {
+                return JSON.parse(raw.trim());
+            } catch {
+                // Both failed, log the error with original input
+                error?.('Failed to parse JSON response', err, raw);
+                return null;
+            }
+        }
         error?.('Failed to parse JSON response', err, raw);
         return null;
     }
