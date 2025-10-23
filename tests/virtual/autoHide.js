@@ -88,6 +88,8 @@ async function processBatchedCommands(ctx, indexes, command) {
         if (batchStart === null) batchStart = indexes[i];
 
         if (last !== null && indexes[i] !== last + 1) {
+            // Sequential execution required: batches must complete in order
+            // eslint-disable-next-line no-await-in-loop
             await executeCommand(ctx, command, batchStart, last);
             batchStart = indexes[i];
         }

@@ -263,6 +263,8 @@ export async function updateAllCategoryIndexes(lorebookName /*: string */) /*: P
         // Update each category index
         let allSuccess = true;
         for (const [categoryPrefix, entityNames] of Object.entries(categorized)) {
+            // Sequential execution required: category indexes must update in order
+            // eslint-disable-next-line no-await-in-loop
             const success = await updateCategoryIndexEntry(lorebookName, categoryPrefix, entityNames);
             if (!success) {
                 allSuccess = false;
@@ -377,7 +379,8 @@ export async function removeCategoryIndexes(lorebookName /*: string */) /*: Prom
         let removedCount = 0;
         for (const entry of entries) {
             if (entry.comment && entry.comment.startsWith('__index_')) {
-                // This is an index entry, remove it
+                // Sequential execution required: index entries must be deleted in order
+                // eslint-disable-next-line no-await-in-loop
                 await deleteLorebookEntry(lorebookName, entry.uid, true);
                 removedCount++;
             }

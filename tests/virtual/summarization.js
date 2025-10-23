@@ -120,12 +120,12 @@ async function summarize_messages(indexes /*: ?(number | Array<number>) */=null,
 
     // Normalize indexes
     let indexArray /*: Array<number> */;
-    if (indexes === null) {
+    if (indexes == null) {  // == catches both null and undefined
         indexArray = [Math.max(ctx.chat.length - 1, 0)];
     } else if (Array.isArray(indexes)) {
         indexArray = indexes;
     } else {
-        // $FlowFixMe[incompatible-type] - indexes is number here (not null, not array)
+        // indexes is number here (not null/undefined, not array)
         indexArray = [indexes];
     }
     if (!indexArray.length) return;
@@ -157,7 +157,7 @@ async function summarize_messages(indexes /*: ?(number | Array<number>) */=null,
     let n = 0;
 
     try {
-        for (const i of indexArray) {
+        for (const i /*: number */ of indexArray) {
             if (show_progress) progress_bar('summarize', n + 1, indexArray.length, "Summarizing");
 
             if (getStopSummarization()) {
@@ -165,9 +165,12 @@ async function summarize_messages(indexes /*: ?(number | Array<number>) */=null,
                 break;
             }
 
-            // $FlowFixMe[incompatible-type] - i is number from indexArray which is Array<number>
+            // Sequential execution required: messages must be summarized in order, respecting rate limits
+            // eslint-disable-next-line no-await-in-loop
             await summarize_message(i);
 
+            // Sequential execution required: rate limiting delay between summaries
+            // eslint-disable-next-line no-await-in-loop
             const shouldContinue = await processTimeDelay(show_progress, n, indexArray.length);
             if (!shouldContinue) break;
 
@@ -236,10 +239,14 @@ async function summarize_message(index /*: number */) /*: Promise<{success: bool
             }
 
             debug(`Summarizing message ${index}...`);
+            // Sequential execution required: retry loop must wait for each summary attempt
+            // eslint-disable-next-line no-await-in-loop
             summary = await summarize_text(prompt);
 
             // Validate the summary if error detection is enabled
             if (validationEnabled) {
+                // Sequential execution required: validation must complete before retry
+                // eslint-disable-next-line no-await-in-loop
                 const result = await validateAndRetrySummary(summary, index, message, retry_count, max_retries);
                 retry_count = result.retry_count;
 

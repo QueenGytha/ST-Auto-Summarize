@@ -255,6 +255,8 @@ async function interruptibleDelay(ms, cancellationToken = null) {
         // Wait for the chunk (or remaining time if last chunk)
         const remainingMs = ms - (i * chunkSize);
         const waitTime = Math.min(chunkSize, remainingMs);
+        // Sequential execution required: chunked delay must complete in order
+        // eslint-disable-next-line no-await-in-loop
         await delay(waitTime);
     }
 }
@@ -278,7 +280,8 @@ async function detectSceneBreakWithRetry(message, messageIndex, previousMessage 
     while (retryCount <= maxRetries) {
         try {
             debug('Attempting detection for message', messageIndex, 'attempt', retryCount + 1, '/', maxRetries + 1);
-            // Try to detect scene break with previous message context
+            // Sequential execution required: retry loop must wait for each attempt
+            // eslint-disable-next-line no-await-in-loop
             const result = await detectSceneBreak(message, messageIndex, previousMessage);
             debug('Detection successful for message', messageIndex, 'on attempt', retryCount + 1);
             return result;
@@ -307,10 +310,14 @@ async function detectSceneBreakWithRetry(message, messageIndex, previousMessage 
                 retryCount++;
                 error('***** BACKING OFF', backoffDelay, 'ms before retry', retryCount, '/', maxRetries, '*****');
                 toast(`⚠️ Error! Waiting ${backoffDelay/1000}s before retry ${retryCount}/${maxRetries} for message ${messageIndex}...`, 'warning');
+                // Sequential execution required: allow toast to display before continuing
+                // eslint-disable-next-line no-await-in-loop
                 await delay(50); // Allow toast to display
 
                 // Use interruptible delay that can be cancelled mid-wait
                 try {
+                    // Sequential execution required: exponential backoff between retries
+                    // eslint-disable-next-line no-await-in-loop
                     await interruptibleDelay(backoffDelay, cancellationToken);
                     error('***** Backoff complete, retrying message', messageIndex, '*****');
                 } catch {
@@ -547,20 +554,28 @@ async function executeScanLoop(chat, start, end, latestIndex, offset, checkWhich
 
         checkedCount++;
         toast(`Scanning for scene breaks: ${checkedCount}/${totalToCheck} (found ${detectedCount})...`, 'info');
+        // Sequential execution required: UI responsiveness delay
+        // eslint-disable-next-line no-await-in-loop
         await delay(50);
 
         try {
+            // Sequential execution required: messages must be processed in order, respecting rate limits
+            // eslint-disable-next-line no-await-in-loop
             const detected = await processScanMessage(chat, i, end, cancellationToken);
             detectedCount += detected;
         } catch (err) {
             const result = handleScanError(err, i, checkedCount, totalToCheck, detectedCount, cancellationToken, eventSource, event_types, stopHandler);
             if (result.aborted) {
                 toast(`⏹️ Scan aborted by user. Checked ${result.checkedCount}/${result.totalToCheck}, found ${result.detectedCount} scene breaks.`, 'info');
+                // Sequential execution required: allow toast to display before returning
+                // eslint-disable-next-line no-await-in-loop
                 await delay(100);
                 return null;
             }
             if (result.error) {
                 toast(`🛑 Error on message ${i} after all retries: ${result.message}. Checked ${result.checkedCount}/${result.totalToCheck}, found ${result.detectedCount} scene breaks.`, 'error');
+                // Sequential execution required: allow toast to display before returning
+                // eslint-disable-next-line no-await-in-loop
                 await delay(100);
                 return null;
             }

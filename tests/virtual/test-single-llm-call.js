@@ -23,44 +23,10 @@
 
 console.log('\n=== Single LLM Call Per Operation Test ===\n');
 
-/**
- * Type definitions (using Flow comment syntax for Node.js compatibility)
- */
-/*::
-type OperationExpectation = {
-    expectedCalls: number,
-    reason: string
-};
-
-type TestPassedResult = {
-    operation: string,
-    calls: number,
-    expected: number | string,
-    reason: string
-};
-
-type TestFailedResult = {
-    operation: string,
-    calls: number,
-    expected: number,
-    reason: string,
-    error: string,
-    fix: string
-};
-
-type TestWarningResult = {
-    operation: string,
-    calls: number,
-    expected: number,
-    reason: string,
-    message: string
-};
-*/
-
 // Track LLM calls globally
-let llmCallCount /*: number */ = 0;
-let llmCallDetails /*: Array<{callNumber: number, prompt: string, timestamp: number}> */ = [];  // eslint-disable-line sonarjs/no-unused-collection -- Used for debugging violations
-const originalGenerateRaw /*: any */ = typeof globalThis.generateRaw === 'function' ? globalThis.generateRaw : null;
+let llmCallCount = 0;
+let llmCallDetails = [];  // eslint-disable-line sonarjs/no-unused-collection -- Used for debugging violations
+const originalGenerateRaw = typeof globalThis.generateRaw === 'function' ? globalThis.generateRaw : null;
 
 /**
  * Mock generateRaw to count calls
@@ -94,7 +60,7 @@ function mockGenerateRaw(...args /*: Array<any> */) /*: Promise<string> */ {
  *   }
  * }
  */
-const OPERATION_LLM_EXPECTATIONS /*: {[key: string]: OperationExpectation} */ = {
+const OPERATION_LLM_EXPECTATIONS /*: {[string]: {expectedCalls: number, reason: string}} */ = {
     // Summarization operations
     'summarize_message': {
         expectedCalls: 1,
@@ -159,10 +125,32 @@ const OPERATION_LLM_EXPECTATIONS /*: {[key: string]: OperationExpectation} */ = 
 /**
  * Test result structure
  */
+type PassedResult = {
+    operation: string,
+    calls: number,
+    expected: number,
+    reason: string
+};
+
+type FailedResult = {
+    operation: string,
+    calls: number,
+    expected: number,
+    reason: string,
+    error: string,
+    fix: string
+};
+
+type WarningResult = {
+    operation: string,
+    message: string,
+    reason: string
+};
+
 const testResults /*: {
-    passed: Array<TestPassedResult>,
-    failed: Array<TestFailedResult>,
-    warnings: Array<TestWarningResult>
+    passed: Array<PassedResult>,
+    failed: Array<FailedResult>,
+    warnings: Array<WarningResult>
 } */ = {
     passed: [],
     failed: [],
@@ -222,12 +210,11 @@ const testResults /*: {
 /**
  * Run test suite
  */
-async function runTests() /*: Promise<void> */ {
+async function runTests() {
     console.log('📋 Testing operation LLM call counts...\n');
 
     // Mock generateRaw globally if available
     if (typeof globalThis.generateRaw === 'function') {
-        // Cast through any to override read-only property in test environment
         (globalThis /*: any */).generateRaw = mockGenerateRaw;
     }
 
@@ -247,33 +234,27 @@ async function runTests() /*: Promise<void> */ {
         // 5. Validate against expectations
 
         // For now, we just validate the expectations are defined
-        // Cast expectedSpec from mixed to our known type
-        const spec /*: OperationExpectation */ = (expectedSpec /*: any */);
-        const expectedCalls /*: number */ = spec.expectedCalls;
-        const reason /*: string */ = spec.reason;
-
-        if (expectedCalls > 1) {
+        if (expectedSpec.expectedCalls > 1) {
             testResults.failed.push({
                 operation: operationType,
-                calls: expectedCalls,
+                calls: expectedSpec.expectedCalls,
                 expected: 1,
-                reason: reason,
-                error: `❌ DESIGN VIOLATION: Operation is configured to make ${expectedCalls} LLM calls`,
+                reason: expectedSpec.reason,
+                error: `❌ DESIGN VIOLATION: Operation is configured to make ${expectedSpec.expectedCalls} LLM calls`,
                 fix: 'This operation should be split into multiple operations, one per LLM call.'
             });
         } else {
             testResults.passed.push({
                 operation: operationType,
-                calls: expectedCalls,
-                expected: expectedCalls,
-                reason: reason
+                calls: expectedSpec.expectedCalls,
+                expected: expectedSpec.expectedCalls,
+                reason: expectedSpec.reason
             });
         }
     }
 
     // Restore original generateRaw
     if (originalGenerateRaw) {
-        // Cast through any to override read-only property in test environment
         (globalThis /*: any */).generateRaw = originalGenerateRaw;
     }
 
@@ -284,7 +265,7 @@ async function runTests() /*: Promise<void> */ {
 /**
  * Print test results
  */
-function printResults() /*: void */ {
+function printResults() {
     console.log('\n' + '='.repeat(80));
     console.log('TEST RESULTS');
     console.log('='.repeat(80) + '\n');

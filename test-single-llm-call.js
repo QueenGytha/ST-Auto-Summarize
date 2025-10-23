@@ -31,7 +31,7 @@ const originalGenerateRaw = typeof globalThis.generateRaw === 'function' ? globa
 /**
  * Mock generateRaw to count calls
  */
-function mockGenerateRaw(...args) {
+function mockGenerateRaw(...args /*: Array<any> */) /*: Promise<string> */ {
     llmCallCount++;
     const callDetails = {
         callNumber: llmCallCount,
@@ -60,7 +60,7 @@ function mockGenerateRaw(...args) {
  *   }
  * }
  */
-const OPERATION_LLM_EXPECTATIONS = {
+const OPERATION_LLM_EXPECTATIONS /*: {[string]: {expectedCalls: number, reason: string}} */ = {
     // Summarization operations
     'summarize_message': {
         expectedCalls: 1,
@@ -125,7 +125,27 @@ const OPERATION_LLM_EXPECTATIONS = {
 /**
  * Test result structure
  */
-const testResults = {
+const testResults /*: {
+    passed: Array<{
+        operation: string,
+        calls: number,
+        expected: number,
+        reason: string
+    }>,
+    failed: Array<{
+        operation: string,
+        calls: number,
+        expected: number,
+        reason: string,
+        error: string,
+        fix: string
+    }>,
+    warnings: Array<{
+        operation: string,
+        message: string,
+        reason: string
+    }>
+} */ = {
     passed: [],
     failed: [],
     warnings: []
@@ -189,7 +209,7 @@ async function runTests() {
 
     // Mock generateRaw globally if available
     if (typeof globalThis.generateRaw === 'function') {
-        globalThis.generateRaw = mockGenerateRaw;
+        (globalThis /*: any */).generateRaw = mockGenerateRaw;
     }
 
     // Test each operation type
@@ -229,7 +249,7 @@ async function runTests() {
 
     // Restore original generateRaw
     if (originalGenerateRaw) {
-        globalThis.generateRaw = originalGenerateRaw;
+        (globalThis /*: any */).generateRaw = originalGenerateRaw;
     }
 
     // Print results

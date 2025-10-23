@@ -1,0 +1,34 @@
+{
+  "all": false,
+  "include": [
+    "tests/virtual/**/*.js"
+  ],
+  "exclude": [
+    "tests/virtual/stubs/**",
+    "tests/**/*.test.js",
+    "tests/**/*.spec.js",
+    "tests/run-tests.js",
+    "tests/virtual/syntax-check.js",
+    "tests/virtual/verify-flow-annotations.js",
+    "tests/virtual/test-single-llm-call.js",
+    "tests/virtual/tests.js",
+    "tests/virtual/eslint.config.js",
+    "node_modules/**"
+  ],
+  "reporter": [
+    "text",
+    "text-summary",
+    "html",
+    "lcov"
+  ],
+  "check-coverage": true,
+  "lines": 37,
+  "functions": 29,
+  "branches": 49,
+  "statements": 37,
+  "per-file": false,
+  "skip-full": false,
+  "clean": true,
+  "temp-directory": ".nyc_output",
+  "report-dir": "coverage"
+}

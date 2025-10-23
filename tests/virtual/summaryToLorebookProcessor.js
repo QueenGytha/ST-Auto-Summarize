@@ -457,38 +457,74 @@ export async function runTriageStage(
     };
 }
 
-export async function runResolutionStage(
-    normalizedEntry /*: any */,
-    triageSynopsis /*: string */,
-    candidateEntries /*: Array<any> */,
-    singleType /*: string */,
-    settings /*: any */
-) /*: Promise<{ resolvedId: ?string, synopsis: string }> */ {
+/**
+ * Checks if resolution stage should run
+ * @param {any[]} candidateEntries - Candidate entries
+ * @param {any} settings - Processing settings
+ * @returns {boolean} - Whether to run resolution
+ */
+function shouldRunResolution(candidateEntries /*: any */, settings /*: any */) /*: boolean */ {
     if (!candidateEntries || candidateEntries.length === 0) {
-        return { resolvedId: null, synopsis: triageSynopsis || '' };
+        return false;
     }
     const promptTemplate = settings?.resolution_prompt || '';
     if (!promptTemplate) {
-        return { resolvedId: null, synopsis: triageSynopsis || '' };
+        return false;
     }
+    return true;
+}
+
+/**
+ * Builds resolution prompt
+ * @param {any} normalizedEntry - Entry to resolve
+ * @param {string} triageSynopsis - Triage synopsis
+ * @param {any[]} candidateEntries - Candidate entries
+ * @param {string} singleType - Entity type
+ * @param {any} settings - Settings
+ * @returns {string} - Built prompt
+ */
+function buildResolutionPrompt(
+    normalizedEntry /*: any */,
+    triageSynopsis /*: string */,
+    candidateEntries /*: any */,
+    singleType /*: string */,
+    settings /*: any */
+) /*: string */ {
     const payload = buildNewEntryPayload(normalizedEntry);
-    const prompt = promptTemplate
+    const promptTemplate = settings?.resolution_prompt || '';
+    return promptTemplate
         .replace(/\{\{lorebook_entry_types\}\}/g, singleType || '')
         .replace(/\{\{new_entry\}\}/g, JSON.stringify(payload, null, 2))
         .replace(/\{\{triage_synopsis\}\}/g, triageSynopsis || '')
         .replace(/\{\{candidate_entries\}\}/g, JSON.stringify(candidateEntries, null, 2));
+}
 
-    const response = await runModelWithSettings(
+/**
+ * Executes resolution LLM call
+ * @param {string} prompt - Resolution prompt
+ * @param {any} settings - Settings
+ * @returns {Promise<string>} - LLM response
+ */
+async function executeResolutionLLMCall(prompt /*: string */, settings /*: any */) /*: Promise<?string> */ {
+    return await runModelWithSettings(
         prompt,
         settings?.resolution_prefill || '',
         settings?.resolution_connection_profile || '',
         settings?.resolution_completion_preset || '',
         'resolution'
     );
+}
 
+/**
+ * Parses resolution response
+ * @param {string} response - LLM response
+ * @param {string} fallbackSynopsis - Fallback synopsis
+ * @returns {{resolvedId: string|null, synopsis: string}} - Parsed result
+ */
+function parseResolutionResponse(response /*: string */, fallbackSynopsis /*: string */) /*: any */ {
     const parsed = parseJsonSafe(response);
     if (!parsed || typeof parsed !== 'object') {
-        return { resolvedId: null, synopsis: triageSynopsis || '' };
+        return { resolvedId: null, synopsis: fallbackSynopsis || '' };
     }
 
     let resolvedId = parsed.resolvedId;
@@ -503,43 +539,88 @@ export async function runResolutionStage(
 
     const synopsis = typeof parsed.synopsis === 'string' && parsed.synopsis.trim().length > 0
         ? parsed.synopsis.trim()
-        : triageSynopsis || '';
+        : fallbackSynopsis || '';
 
     return { resolvedId: resolvedId ? String(resolvedId) : null, synopsis };
 }
 
-async function handleLorebookEntry(normalizedEntry /*: any */, ctx /*: any */) /*: Promise<void> */ {
-    const {
-        lorebookName,
-        existingEntries,
-        existingEntriesMap,
-        registryState,
-        entityTypeDefs,
-        entityTypeMap,
-        settings,
-        useQueue,
-        results,
-        typesToUpdate,
-        typeList,
-    } = ctx;
+export async function runResolutionStage(
+    normalizedEntry /*: any */,
+    triageSynopsis /*: string */,
+    candidateEntries /*: Array<any> */,
+    singleType /*: string */,
+    settings /*: any */
+) /*: Promise<{ resolvedId: ?string, synopsis: string }> */ {
+    if (!shouldRunResolution(candidateEntries, settings)) {
+        return { resolvedId: null, synopsis: triageSynopsis || '' };
+    }
 
-    const registryListing = buildRegistryListing(registryState);
-    const triage = await runTriageStage(normalizedEntry, registryListing, typeList, settings);
+    const prompt = buildResolutionPrompt(normalizedEntry, triageSynopsis, candidateEntries, singleType, settings);
+    const response = await executeResolutionLLMCall(prompt, settings);
 
+    if (!response) {
+        return { resolvedId: null, synopsis: triageSynopsis || '' };
+    }
+
+    return parseResolutionResponse(response, triageSynopsis);
+}
+
+/**
+ * Resolves and applies the entity type for a normalized entry
+ * Handles type fallbacks and applies type-specific flags
+ * @param {any} normalizedEntry - The entry to resolve type for
+ * @param {any} triage - Triage result containing suggested type
+ * @param {Map<string, any>} entityTypeMap - Map of entity type definitions
+ * @param {Array<any>} entityTypeDefs - Array of all entity type definitions
+ * @returns {{targetType: string, typeDef: any}} - Resolved type name and definition
+ */
+function resolveEntryType(
+    normalizedEntry /*: any */,
+    triage /*: any */,
+    entityTypeMap /*: any */,
+    entityTypeDefs /*: any */
+) /*: any */ {
     let targetType = triage.type || normalizedEntry.type || '';
     let typeDef = targetType ? entityTypeMap.get(targetType) : null;
+
+    // Try fallback with sanitized name
     if (!typeDef && targetType) {
         const fallbackName = sanitizeEntityTypeName(targetType);
         typeDef = entityTypeMap.get(fallbackName);
         if (typeDef) targetType = typeDef.name;
     }
+
+    // Use first available type as ultimate fallback
     if (!typeDef && entityTypeDefs.length > 0) {
         typeDef = entityTypeDefs[0];
         targetType = typeDef?.name || targetType || 'character';
     }
+
+    // Apply type to entry
     normalizedEntry.type = targetType;
     applyEntityTypeFlagsToEntry(normalizedEntry, typeDef || null);
 
+    return { targetType, typeDef };
+}
+
+/**
+ * Builds candidate entry list and optionally runs resolution stage
+ * @param {any} triage - Triage result with candidate IDs
+ * @param {any} registryState - Current registry state
+ * @param {Map<number, any>} existingEntriesMap - Map of existing entries by UID
+ * @param {any} normalizedEntry - The entry being processed
+ * @param {string} targetType - The resolved type
+ * @param {any} settings - Processing settings
+ * @returns {Promise<{candidateIds: string[], resolution: any}>} - Candidates and resolution result
+ */
+async function buildCandidateListAndResolve(
+    triage /*: any */,
+    registryState /*: any */,
+    existingEntriesMap /*: any */,
+    normalizedEntry /*: any */,
+    targetType /*: string */,
+    settings /*: any */
+) /*: Promise<any> */ {
     const candidateIdSet /*: Set<string> */ = new Set();
     triage.sameEntityIds.forEach(id => candidateIdSet.add(String(id)));
     triage.needsFullContextIds.forEach(id => candidateIdSet.add(String(id)));
@@ -557,7 +638,26 @@ async function handleLorebookEntry(normalizedEntry /*: any */, ctx /*: any */) /
         resolution = { resolvedId: null, synopsis: triage.synopsis || '' };
     }
 
+    return { candidateIds, resolution };
+}
+
+/**
+ * Applies fallback logic and validates the resolved entity ID
+ * @param {any} resolution - Initial resolution result
+ * @param {string[]} candidateIds - List of candidate IDs
+ * @param {any} triage - Triage result
+ * @param {any} registryState - Current registry state
+ * @returns {{resolvedId: string|null, previousType: string|null, finalSynopsis: string}} - Final identity resolution
+ */
+function applyFallbackAndValidateIdentity(
+    resolution /*: any */,
+    candidateIds /*: any */,
+    triage /*: any */,
+    registryState /*: any */
+) /*: any */ {
     let resolvedId = resolution.resolvedId;
+
+    // Single candidate fallback: if only one candidate and no needsFullContext, use it
     if (!resolvedId && candidateIds.length === 1 && (!triage.needsFullContextIds || triage.needsFullContextIds.length === 0)) {
         const fallbackId = candidateIds[0];
         if (registryState.index?.[fallbackId]) {
@@ -565,6 +665,7 @@ async function handleLorebookEntry(normalizedEntry /*: any */, ctx /*: any */) /
         }
     }
 
+    // Validate resolved ID exists in registry
     if (resolvedId && !registryState.index?.[resolvedId]) {
         resolvedId = null;
     }
@@ -572,44 +673,86 @@ async function handleLorebookEntry(normalizedEntry /*: any */, ctx /*: any */) /
     const previousType = resolvedId ? registryState.index?.[resolvedId]?.type : null;
     const finalSynopsis = resolution.synopsis || triage.synopsis || '';
 
-    if (resolvedId) {
-        const record = registryState.index?.[resolvedId];
-        const existingEntry = record ? existingEntriesMap.get(String(record.uid)) : null;
+    return { resolvedId, previousType, finalSynopsis };
+}
 
-        if (record && existingEntry) {
-            try {
-                const mergeResult = await mergeLorebookEntry(
-                    lorebookName,
-                    existingEntry,
-                    normalizedEntry,
-                    { useQueue }
-                );
+/**
+ * Executes the merge workflow for an existing entity
+ * @param {string} resolvedId - The resolved entity ID
+ * @param {any} normalizedEntry - The entry to merge
+ * @param {string} targetType - The target entity type
+ * @param {string|null} previousType - Previous type if changed
+ * @param {string} finalSynopsis - Final synopsis text
+ * @param {any} ctx - Processing context
+ * @returns {Promise<boolean>} - True if merge succeeded, false otherwise
+ */
+async function executeMergeWorkflow(
+    resolvedId /*: string */,
+    normalizedEntry /*: any */,
+    targetType /*: string */,
+    previousType /*: ?string */,
+    finalSynopsis /*: string */,
+    ctx /*: any */
+) /*: Promise<boolean> */ {
+    const { lorebookName, existingEntriesMap, registryState, useQueue, results, typesToUpdate } = ctx;
 
-                if (mergeResult?.success) {
-                    results.merged.push({ comment: normalizedEntry.comment, uid: existingEntry.uid, id: resolvedId });
-                    updateRegistryRecord(registryState, resolvedId, {
-                        uid: existingEntry.uid,
-                        type: targetType,
-                        name: normalizedEntry.comment || existingEntry.comment || '',
-                        comment: normalizedEntry.comment || existingEntry.comment || '',
-                        aliases: ensureStringArray(normalizedEntry.keys),
-                        synopsis: finalSynopsis
-                    });
-                    ctx.registryStateDirty = true;
-                    typesToUpdate.add(targetType);
-                    if (previousType && previousType !== targetType) {
-                        typesToUpdate.add(previousType);
-                    }
-                } else {
-                    results.failed.push({ comment: normalizedEntry.comment, error: mergeResult?.message || 'Merge failed' });
-                }
-            } catch (err) {
-                error?.(`Failed to merge entry: ${normalizedEntry.comment}`, err);
-                results.failed.push({ comment: normalizedEntry.comment, error: err.message || 'Merge error' });
-            }
-            return;
-        }
+    const record = registryState.index?.[resolvedId];
+    const existingEntry = record ? existingEntriesMap.get(String(record.uid)) : null;
+
+    if (!record || !existingEntry) {
+        return false;
     }
+
+    try {
+        const mergeResult = await mergeLorebookEntry(
+            lorebookName,
+            existingEntry,
+            normalizedEntry,
+            { useQueue }
+        );
+
+        if (mergeResult?.success) {
+            results.merged.push({ comment: normalizedEntry.comment, uid: existingEntry.uid, id: resolvedId });
+            updateRegistryRecord(registryState, resolvedId, {
+                uid: existingEntry.uid,
+                type: targetType,
+                name: normalizedEntry.comment || existingEntry.comment || '',
+                comment: normalizedEntry.comment || existingEntry.comment || '',
+                aliases: ensureStringArray(normalizedEntry.keys),
+                synopsis: finalSynopsis
+            });
+            ctx.registryStateDirty = true;
+            typesToUpdate.add(targetType);
+            if (previousType && previousType !== targetType) {
+                typesToUpdate.add(previousType);
+            }
+            return true;
+        } else {
+            results.failed.push({ comment: normalizedEntry.comment, error: mergeResult?.message || 'Merge failed' });
+            return false;
+        }
+    } catch (err) {
+        error?.(`Failed to merge entry: ${normalizedEntry.comment}`, err);
+        results.failed.push({ comment: normalizedEntry.comment, error: err.message || 'Merge error' });
+        return false;
+    }
+}
+
+/**
+ * Executes the create workflow for a new entity
+ * @param {any} normalizedEntry - The entry to create
+ * @param {string} targetType - The target entity type
+ * @param {string} finalSynopsis - Final synopsis text
+ * @param {any} ctx - Processing context
+ * @returns {Promise<void>}
+ */
+async function executeCreateWorkflow(
+    normalizedEntry /*: any */,
+    targetType /*: string */,
+    finalSynopsis /*: string */,
+    ctx /*: any */
+) /*: Promise<void> */ {
+    const { lorebookName, existingEntries, existingEntriesMap, registryState, results, typesToUpdate } = ctx;
 
     try {
         const createdEntry = await addLorebookEntry(lorebookName, normalizedEntry);
@@ -637,6 +780,187 @@ async function handleLorebookEntry(normalizedEntry /*: any */, ctx /*: any */) /
     }
 }
 
+async function handleLorebookEntry(normalizedEntry /*: any */, ctx /*: any */) /*: Promise<void> */ {
+    const {
+        existingEntriesMap,
+        registryState,
+        entityTypeDefs,
+        entityTypeMap,
+        settings,
+        typeList,
+    } = ctx;
+
+    const registryListing = buildRegistryListing(registryState);
+    const triage = await runTriageStage(normalizedEntry, registryListing, typeList, settings);
+
+    const { targetType } = resolveEntryType(normalizedEntry, triage, entityTypeMap, entityTypeDefs);
+
+    const { candidateIds, resolution } = await buildCandidateListAndResolve(
+        triage,
+        registryState,
+        existingEntriesMap,
+        normalizedEntry,
+        targetType,
+        settings
+    );
+
+    const { resolvedId, previousType, finalSynopsis } = applyFallbackAndValidateIdentity(
+        resolution,
+        candidateIds,
+        triage,
+        registryState
+    );
+
+    if (resolvedId) {
+        const merged = await executeMergeWorkflow(
+            resolvedId,
+            normalizedEntry,
+            targetType,
+            previousType,
+            finalSynopsis,
+            ctx
+        );
+        if (merged) {
+            return;
+        }
+    }
+
+    await executeCreateWorkflow(normalizedEntry, targetType, finalSynopsis, ctx);
+}
+
+/**
+ * Initializes summary processing configuration
+ * @param {any} summary - Summary to process
+ * @param {any} options - Processing options
+ * @returns {{useQueue: boolean, skipDuplicates: boolean, summaryId: string, entityTypeDefs: any[], entityTypeMap: Map}} - Config
+ */
+function initializeSummaryProcessing(summary /*: any */, options /*: any */) /*: any */ {
+    const { useQueue = true, skipDuplicates = true } = options;
+    const entityTypeDefs = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
+    const entityTypeMap = createEntityTypeMap(entityTypeDefs);
+    const summaryId = generateSummaryId(summary);
+
+    return { useQueue, skipDuplicates, summaryId, entityTypeDefs, entityTypeMap };
+}
+
+/**
+ * Checks if summary should be skipped due to duplicate
+ * @param {string} summaryId - Summary ID
+ * @param {boolean} skipDuplicates - Whether to skip duplicates
+ * @returns {boolean} - True if should skip
+ */
+function shouldSkipDuplicate(summaryId /*: string */, skipDuplicates /*: boolean */) /*: boolean */ {
+    if (skipDuplicates && isSummaryProcessed(summaryId)) {
+        debug(`Summary already processed: ${summaryId}`);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Extracts and validates entities from summary
+ * @param {any} summary - Summary to extract from
+ * @returns {{valid: boolean, entries?: any[], error?: string}} - Extraction result
+ */
+function extractAndValidateEntities(summary /*: any */) /*: any */ {
+    const lorebookData = extractLorebookData(summary);
+    if (!lorebookData || !lorebookData.entries) {
+        debug('No lorebook entries found in summary');
+        return { valid: false, error: 'No lorebook data found' };
+    }
+    return { valid: true, entries: lorebookData.entries };
+}
+
+/**
+ * Loads summary processing context
+ * @param {any} config - Summary configuration
+ * @returns {Promise<any>} - Context or error
+ */
+async function loadSummaryContext(config /*: any */) /*: Promise<any> */ {
+    const lorebookName = getAttachedLorebook();
+    if (!lorebookName) {
+        error('No lorebook attached to process summary');
+        return { error: 'No lorebook attached' };
+    }
+
+    const existingEntriesRaw = await getLorebookEntries(lorebookName);
+    if (!existingEntriesRaw) {
+        error('Failed to get existing entries');
+        return { error: 'Failed to load lorebook' };
+    }
+
+    const existingEntries = existingEntriesRaw.filter(entry => !isRegistryEntry(entry));
+    const existingEntriesMap /*: Map<string, any> */ = new Map();
+    existingEntries.forEach(entry => {
+        if (entry && entry.uid !== undefined) {
+            existingEntriesMap.set(String(entry.uid), entry);
+        }
+    });
+
+    const registryState = ensureRegistryState();
+    const summarySettings = extension_settings?.autoLorebooks?.summary_processing || {};
+    const typeList = config.entityTypeDefs.map(def => def.name).filter(Boolean).join('|') || 'character';
+
+    return {
+        lorebookName,
+        existingEntries,
+        existingEntriesMap,
+        registryState,
+        summarySettings,
+        typeList
+    };
+}
+
+/**
+ * Processes batch of entries
+ * @param {any[]} entries - Entries to process
+ * @param {any} context - Processing context
+ * @param {any} config - Summary configuration
+ * @returns {Promise<void>}
+ */
+async function processBatchEntries(entries /*: any */, context /*: any */, config /*: any */) /*: Promise<void> */ {
+    for (const newEntryData of entries) {
+        const normalizedEntry = normalizeEntryData(newEntryData);
+        if (!normalizedEntry.type) {
+            const fallback = typeof newEntryData.type === 'string' ? sanitizeEntityTypeName(newEntryData.type) : '';
+            normalizedEntry.type = fallback || config.entityTypeDefs[0]?.name || 'character';
+        }
+        // Sequential execution required: lorebook entries must be processed in order
+        // eslint-disable-next-line no-await-in-loop
+        await handleLorebookEntry(normalizedEntry, context);
+    }
+}
+
+/**
+ * Finalizes summary processing
+ * @param {any} context - Processing context
+ * @param {string} summaryId - Summary ID
+ * @returns {Promise<void>}
+ */
+async function finalizeSummaryProcessing(context /*: any */, summaryId /*: string */) /*: Promise<void> */ {
+    await finalizeRegistryUpdates(context);
+    markSummaryProcessed(summaryId);
+}
+
+/**
+ * Builds summary result with user notifications
+ * @param {any} results - Processing results
+ * @param {number} totalEntries - Total entries processed
+ * @returns {any} - Result object
+ */
+function buildSummaryResult(results /*: any */, totalEntries /*: number */) /*: any */ {
+    const message = `Processed ${totalEntries} entries: ${results.created.length} created, ${results.merged.length} merged, ${results.failed.length} failed`;
+    log(message);
+
+    if (results.created.length > 0 || results.merged.length > 0) {
+        toast(message, 'success');
+    } else if (results.failed.length > 0) {
+        toast(`Failed to process ${results.failed.length} entries`, 'warning');
+    }
+
+    return { success: true, results, message };
+}
+
 /**
  * Process a single summary object - extracts lorebook entries and creates/merges them
  * @param {Object} summary - Summary object to process
@@ -645,129 +969,52 @@ async function handleLorebookEntry(normalizedEntry /*: any */, ctx /*: any */) /
  */
 export async function processSummaryToLorebook(summary /*: any */, options /*: any */ = {}) /*: Promise<any> */ {
     try {
-        const {
-            useQueue = true,
-            skipDuplicates = true
-        } = options;
+        // Initialize configuration
+        const config = initializeSummaryProcessing(summary, options);
 
-        const entityTypeDefs = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
-        const entityTypeMap = createEntityTypeMap(entityTypeDefs);
-
-        // Generate unique ID for this summary
-        const summaryId = generateSummaryId(summary);
-
-        // Check if already processed
-        if (skipDuplicates && isSummaryProcessed(summaryId)) {
-            debug(`Summary already processed: ${summaryId}`);
-            return {
-                success: true,
-                skipped: true,
-                message: 'Already processed'
-            };
+        // Check for duplicate
+        if (shouldSkipDuplicate(config.summaryId, config.skipDuplicates)) {
+            return { success: true, skipped: true, message: 'Already processed' };
         }
 
-        // Extract lorebook data
-        const lorebookData = extractLorebookData(summary);
-        if (!lorebookData || !lorebookData.entries) {
-            debug('No lorebook entries found in summary');
-            return {
-                success: false,
-                message: 'No lorebook data found'
-            };
+        // Extract and validate entities
+        const extraction = extractAndValidateEntities(summary);
+        if (!extraction.valid) {
+            return { success: false, message: extraction.error };
         }
 
-        // Get attached lorebook
-        const lorebookName = getAttachedLorebook();
-        if (!lorebookName) {
-            error('No lorebook attached to process summary');
-            return {
-                success: false,
-                message: 'No lorebook attached'
-            };
+        // Load processing context
+        const ctx = await loadSummaryContext(config);
+        if (ctx.error) {
+            return { success: false, message: ctx.error };
         }
 
-        // Get existing entries
-        const existingEntriesRaw = await getLorebookEntries(lorebookName);
-        if (!existingEntriesRaw) {
-            error('Failed to get existing entries');
-            return {
-                success: false,
-                message: 'Failed to load lorebook'
-            };
-        }
-
-        const existingEntries = existingEntriesRaw.filter(entry => !isRegistryEntry(entry));
-        const existingEntriesMap /*: Map<string, any> */ = new Map();
-        existingEntries.forEach(entry => {
-            if (entry && entry.uid !== undefined) {
-                existingEntriesMap.set(String(entry.uid), entry);
-            }
-        });
-
-        const results /*: any */ = {
-            created: [],
-            merged: [],
-            failed: []
-        };
-
-        const registryState = ensureRegistryState();
-        const summarySettings = extension_settings?.autoLorebooks?.summary_processing || {};
-        const typeList = entityTypeDefs.map(def => def.name).filter(Boolean).join('|') || 'character';
+        // Build full context
+        const results /*: any */ = { created: [], merged: [], failed: [] };
         const typesToUpdate /*: Set<string> */ = new Set();
-
         const context = {
-            lorebookName,
-            existingEntries,
-            existingEntriesMap,
-            registryState,
-            entityTypeDefs,
-            entityTypeMap,
-            settings: summarySettings,
-            useQueue,
+            lorebookName: ctx.lorebookName,
+            existingEntries: ctx.existingEntries,
+            existingEntriesMap: ctx.existingEntriesMap,
+            registryState: ctx.registryState,
+            entityTypeDefs: config.entityTypeDefs,
+            entityTypeMap: config.entityTypeMap,
+            settings: ctx.summarySettings,
+            useQueue: config.useQueue,
             results,
             typesToUpdate,
-            typeList,
+            typeList: ctx.typeList,
             registryStateDirty: false
         };
 
-        for (const newEntryData of lorebookData.entries) {
-            const normalizedEntry = normalizeEntryData(newEntryData);
-            if (!normalizedEntry.type) {
-                const fallback = typeof newEntryData.type === 'string' ? sanitizeEntityTypeName(newEntryData.type) : '';
-                normalizedEntry.type = fallback || entityTypeDefs[0]?.name || 'character';
-            }
-            await handleLorebookEntry(normalizedEntry, context);
-        }
+        // Process batch
+        await processBatchEntries(extraction.entries, context, config);
 
-        if (typesToUpdate.size > 0 && typeof updateRegistryEntryContent === 'function') {
-            for (const type of typesToUpdate) {
-                const items = buildRegistryItemsForType(registryState, type);
-                await updateRegistryEntryContent(lorebookName, type, items);
-            }
-        }
+        // Finalize
+        await finalizeSummaryProcessing(context, config.summaryId);
 
-        if (context.registryStateDirty) {
-            saveMetadata();
-        }
-
-        // Mark summary as processed
-        markSummaryProcessed(summaryId);
-
-        // Generate result message
-        const message = `Processed ${lorebookData.entries.length} entries: ${results.created.length} created, ${results.merged.length} merged, ${results.failed.length} failed`;
-        log(message);
-
-        if (results.created.length > 0 || results.merged.length > 0) {
-            toast(message, 'success');
-        } else if (results.failed.length > 0) {
-            toast(`Failed to process ${results.failed.length} entries`, 'warning');
-        }
-
-        return {
-            success: true,
-            results,
-            message
-        };
+        // Build result
+        return buildSummaryResult(results, extraction.entries.length);
 
     } catch (err) {
         error('Error processing summary to lorebook', err);
@@ -776,6 +1023,168 @@ export async function processSummaryToLorebook(summary /*: any */, options /*: a
             message: err.message
         };
     }
+}
+
+/**
+ * Validates entry input data
+ * @param {any} entryData - Entry data to validate
+ * @returns {{valid: boolean, error?: string}} - Validation result
+ */
+function validateEntryInput(entryData /*: any */) /*: any */ {
+    if (!entryData) {
+        return { valid: false, error: 'No entry data provided' };
+    }
+    return { valid: true };
+}
+
+/**
+ * Loads processing configuration including entity types and lorebook name
+ * @param {any} _options - Processing options (reserved for future use)
+ * @returns {{lorebookName: string|null, entityTypeDefs: any[], entityTypeMap: Map<string, any>}} - Configuration
+ */
+function loadProcessingConfig(_options /*: any */ = {}) /*: any */ {
+    const lorebookName = getAttachedLorebook();
+    if (!lorebookName) {
+        error('No lorebook attached to process entry');
+        return { lorebookName: null, entityTypeDefs: [], entityTypeMap: new Map() };
+    }
+
+    const entityTypeDefs = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
+    const entityTypeMap = createEntityTypeMap(entityTypeDefs);
+
+    return { lorebookName, entityTypeDefs, entityTypeMap };
+}
+
+/**
+ * Normalizes and types the entry data
+ * @param {any} entryData - Raw entry data
+ * @param {any[]} entityTypeDefs - Entity type definitions
+ * @param {Map<string, any>} entityTypeMap - Entity type map
+ * @returns {any} - Normalized entry
+ */
+function normalizeAndTypeEntry(entryData /*: any */, entityTypeDefs /*: any */, entityTypeMap /*: any */) /*: any */ {
+    const normalizedEntry = normalizeEntryData(entryData);
+    let typeName = normalizedEntry.type || (typeof entryData.type === 'string' ? sanitizeEntityTypeName(entryData.type) : '');
+    if (!typeName) {
+        typeName = entityTypeDefs[0]?.name || 'character';
+    }
+    const initialTypeDef = entityTypeMap.get(typeName) || null;
+    normalizedEntry.type = initialTypeDef ? initialTypeDef.name : typeName;
+    applyEntityTypeFlagsToEntry(normalizedEntry, initialTypeDef);
+    debug(`Processing lorebook entry: ${normalizedEntry.comment}`);
+    return normalizedEntry;
+}
+
+/**
+ * Builds the processing context object
+ * @param {string} lorebookName - Name of the lorebook
+ * @param {any} normalizedEntry - Normalized entry
+ * @param {any[]} existingEntries - Existing entries
+ * @param {Map<string, any>} existingEntriesMap - Map of existing entries
+ * @param {any} registryState - Registry state
+ * @param {any[]} entityTypeDefs - Entity type definitions
+ * @param {Map<string, any>} entityTypeMap - Entity type map
+ * @param {boolean} useQueue - Whether to use queue
+ * @returns {any} - Processing context
+ */
+function buildProcessingContext(
+    lorebookName /*: string */,
+    normalizedEntry /*: any */,
+    existingEntries /*: any */,
+    existingEntriesMap /*: any */,
+    registryState /*: any */,
+    entityTypeDefs /*: any */,
+    entityTypeMap /*: any */,
+    useQueue /*: boolean */
+) /*: any */ {
+    const summarySettings = extension_settings?.autoLorebooks?.summary_processing || {};
+    const typesToUpdate /*: Set<string> */ = new Set();
+    const typeList = entityTypeDefs.map(def => def.name).filter(Boolean).join('|') || 'character';
+    const results /*: any */ = { created: [], merged: [], failed: [] };
+
+    return {
+        lorebookName,
+        existingEntries,
+        existingEntriesMap,
+        registryState,
+        entityTypeDefs,
+        entityTypeMap,
+        settings: summarySettings,
+        useQueue,
+        results,
+        typesToUpdate,
+        typeList,
+        registryStateDirty: false
+    };
+}
+
+/**
+ * Finalizes registry updates after processing
+ * @param {any} context - Processing context
+ * @returns {Promise<void>}
+ */
+async function finalizeRegistryUpdates(context /*: any */) /*: Promise<void> */ {
+    const { lorebookName, typesToUpdate, registryState } = context;
+
+    if (typesToUpdate.size > 0 && typeof updateRegistryEntryContent === 'function') {
+        for (const type of typesToUpdate) {
+            const items = buildRegistryItemsForType(registryState, type);
+            // Sequential execution required: registry entries must update in order
+            // eslint-disable-next-line no-await-in-loop
+            await updateRegistryEntryContent(lorebookName, type, items);
+        }
+    }
+
+    if (context.registryStateDirty) {
+        saveMetadata();
+    }
+}
+
+/**
+ * Builds the processing result from context
+ * @param {any} context - Processing context
+ * @param {any} normalizedEntry - Normalized entry
+ * @returns {any} - Processing result
+ */
+function buildProcessingResult(context /*: any */, normalizedEntry /*: any */) /*: any */ {
+    const { results } = context;
+
+    if (results.merged.length > 0) {
+        const merged = results.merged[0];
+        return {
+            success: true,
+            action: 'merged',
+            comment: normalizedEntry.comment,
+            uid: merged.uid,
+            id: merged.id
+        };
+    }
+
+    if (results.created.length > 0) {
+        const created = results.created[0];
+        return {
+            success: true,
+            action: 'created',
+            comment: normalizedEntry.comment,
+            uid: created.uid,
+            id: created.id
+        };
+    }
+
+    if (results.failed.length > 0) {
+        const failure = results.failed[0];
+        return {
+            success: false,
+            message: failure.error || 'Failed to process entry',
+            comment: normalizedEntry.comment
+        };
+    }
+
+    return {
+        success: true,
+        action: 'skipped',
+        comment: normalizedEntry.comment
+    };
 }
 
 /**
@@ -788,45 +1197,26 @@ export async function processSingleLorebookEntry(entryData /*: any */, options /
     try {
         const { useQueue = false } = options;
 
-        if (!entryData) {
-            return {
-                success: false,
-                message: 'No entry data provided'
-            };
+        // Validate input
+        const validation = validateEntryInput(entryData);
+        if (!validation.valid) {
+            return { success: false, message: validation.error };
         }
 
-        // Get attached lorebook
-        const lorebookName = getAttachedLorebook();
-        if (!lorebookName) {
-            error('No lorebook attached to process entry');
-            return {
-                success: false,
-                message: 'No lorebook attached'
-            };
+        // Load configuration
+        const config = loadProcessingConfig(options);
+        if (!config.lorebookName) {
+            return { success: false, message: 'No lorebook attached' };
         }
 
-        // Normalize the entry data
-        const entityTypeDefs = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
-        const entityTypeMap = createEntityTypeMap(entityTypeDefs);
-
-        const normalizedEntry = normalizeEntryData(entryData);
-        let typeName = normalizedEntry.type || (typeof entryData.type === 'string' ? sanitizeEntityTypeName(entryData.type) : '');
-        if (!typeName) {
-            typeName = entityTypeDefs[0]?.name || 'character';
-        }
-        const initialTypeDef = entityTypeMap.get(typeName) || null;
-        normalizedEntry.type = initialTypeDef ? initialTypeDef.name : typeName;
-        applyEntityTypeFlagsToEntry(normalizedEntry, initialTypeDef);
-        debug(`Processing lorebook entry: ${normalizedEntry.comment}`);
+        // Normalize entry
+        const normalizedEntry = normalizeAndTypeEntry(entryData, config.entityTypeDefs, config.entityTypeMap);
 
         // Get existing entries
-        const existingEntriesRaw = await getLorebookEntries(lorebookName);
+        const existingEntriesRaw = await getLorebookEntries(config.lorebookName);
         if (!existingEntriesRaw) {
             error('Failed to get existing entries');
-            return {
-                success: false,
-                message: 'Failed to load lorebook'
-            };
+            return { success: false, message: 'Failed to load lorebook' };
         }
 
         const existingEntries = existingEntriesRaw.filter(entry => !isRegistryEntry(entry));
@@ -838,76 +1228,27 @@ export async function processSingleLorebookEntry(entryData /*: any */, options /
         });
 
         const registryState = ensureRegistryState();
-        const summarySettings = extension_settings?.autoLorebooks?.summary_processing || {};
-        const typesToUpdate /*: Set<string> */ = new Set();
-        const typeList = entityTypeDefs.map(def => def.name).filter(Boolean).join('|') || 'character';
 
-        const results /*: any */ = { created: [], merged: [], failed: [] };
-
-        const context = {
-            lorebookName,
+        // Build context
+        const context = buildProcessingContext(
+            config.lorebookName,
+            normalizedEntry,
             existingEntries,
             existingEntriesMap,
             registryState,
-            entityTypeDefs,
-            entityTypeMap,
-            settings: summarySettings,
-            useQueue,
-            results,
-            typesToUpdate,
-            typeList,
-            registryStateDirty: false
-        };
+            config.entityTypeDefs,
+            config.entityTypeMap,
+            useQueue
+        );
 
+        // Process entry
         await handleLorebookEntry(normalizedEntry, context);
 
-        if (typesToUpdate.size > 0 && typeof updateRegistryEntryContent === 'function') {
-            for (const type of typesToUpdate) {
-                const items = buildRegistryItemsForType(registryState, type);
-                await updateRegistryEntryContent(lorebookName, type, items);
-            }
-        }
+        // Finalize updates
+        await finalizeRegistryUpdates(context);
 
-        if (context.registryStateDirty) {
-            saveMetadata();
-        }
-
-        if (results.merged.length > 0) {
-            const merged = results.merged[0];
-            return {
-                success: true,
-                action: 'merged',
-                comment: normalizedEntry.comment,
-                uid: merged.uid,
-                id: merged.id
-            };
-        }
-
-        if (results.created.length > 0) {
-            const created = results.created[0];
-            return {
-                success: true,
-                action: 'created',
-                comment: normalizedEntry.comment,
-                uid: created.uid,
-                id: created.id
-            };
-        }
-
-        if (results.failed.length > 0) {
-            const failure = results.failed[0];
-            return {
-                success: false,
-                message: failure.error || 'Failed to process entry',
-                comment: normalizedEntry.comment
-            };
-        }
-
-        return {
-            success: true,
-            action: 'skipped',
-            comment: normalizedEntry.comment
-        };
+        // Build result
+        return buildProcessingResult(context, normalizedEntry);
 
     } catch (err) {
         error('Error processing single lorebook entry', err);
@@ -945,6 +1286,8 @@ export async function processSummariesToLorebook(summaries /*: any */, options /
         };
 
         for (const summary of summaries) {
+            // Sequential execution required: summaries must be processed in order
+            // eslint-disable-next-line no-await-in-loop
             const result = await processSummaryToLorebook(summary, options);
 
             if (result.skipped) {

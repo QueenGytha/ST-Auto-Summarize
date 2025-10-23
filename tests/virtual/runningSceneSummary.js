@@ -360,13 +360,11 @@ async function generate_running_scene_summary(skipQueue /*: boolean */ = false) 
 }
 
 /**
- * Combine current running summary with a specific scene summary
- * Creates a new version by merging them
- * @param {number} scene_index - Chat message index of the scene to combine
- * @returns {Promise<string|null>} Generated summary or null on failure
+ * Validates combine request and extracts scene data
+ * @param {number} scene_index - Scene index
+ * @returns {Object|null} Scene data or null if invalid
  */
-// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
-async function combine_scene_with_running_summary(scene_index /*: number */) /*: Promise<?string> */ {
+function validateCombineRequest(scene_index /*: number */) /*: ?Object */ {
     if (!get_settings('running_scene_summary_enabled')) {
         debug(SUBSYSTEM.RUNNING, 'Running scene summary disabled, skipping combination');
         return null;
@@ -389,14 +387,18 @@ async function combine_scene_with_running_summary(scene_index /*: number */) /*:
 
     const scene_name = get_data(message, 'scene_break_name') || `Scene #${scene_index}`;
 
-    debug(SUBSYSTEM.RUNNING, `Combining running summary with scene at index ${scene_index} (${scene_name})`);
+    return { message, scene_summary, scene_name };
+}
 
-    // Extract only the 'summary' field from the JSON (exclude 'lorebooks')
-    // Scene summaries are JSON with { "summary": "...", "lorebooks": [...] }
-    // For combining, we only want the timeline summary, not the lorebook entries
+/**
+ * Extracts summary text from JSON scene summary
+ * @param {string} scene_summary - Scene summary (may be JSON)
+ * @returns {string} Extracted summary text
+ */
+function extractSummaryFromJSON(scene_summary /*: string */) /*: string */ {
     let summary_text = scene_summary;
 
-    // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+    // Strip markdown code fences if present
     let json_to_parse = scene_summary.trim();
     const code_fence_match = json_to_parse.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
     if (code_fence_match) {
@@ -411,35 +413,35 @@ async function combine_scene_with_running_summary(scene_index /*: number */) /*:
                 summary_text = parsed.summary;
                 debug(SUBSYSTEM.RUNNING, `Extracted summary field from JSON (${summary_text.length} chars, excluding lorebooks)`);
             } else {
-                // Valid JSON but no 'summary' property - use empty string
                 summary_text = "";
                 debug(SUBSYSTEM.RUNNING, `Scene summary is JSON but missing 'summary' property, using empty string`);
             }
         }
     } catch (err) {
-        // Not JSON or parsing failed - use the whole text as-is
         debug(SUBSYSTEM.RUNNING, `Scene summary is not JSON, using as-is: ${err.message}`);
     }
 
-    // Get current running summary
-    const current_summary = get_current_running_summary_content();
+    return summary_text;
+}
 
-    // Build scene summaries text (just this one scene's summary, without lorebooks)
-    const scene_summaries_text = `[${scene_name}]\n${summary_text}`;
-
-    // Build prompt
+/**
+ * Builds combine prompt with macros replaced
+ * @param {string} current_summary - Current running summary
+ * @param {string} scene_summaries_text - Scene summaries text
+ * @returns {string} Built prompt
+ */
+function buildCombinePrompt(current_summary /*: string */, scene_summaries_text /*: string */) /*: string */ {
     let prompt = get_settings('running_scene_summary_prompt') || running_scene_summary_prompt;
 
     // Replace macros
     prompt = prompt.replace(/\{\{current_running_summary\}\}/g, current_summary || "");
     prompt = prompt.replace(/\{\{scene_summaries\}\}/g, scene_summaries_text);
 
-    // Handle Handlebars conditionals manually (simplified)
+    // Handle Handlebars conditionals
     if (current_summary) {
         prompt = prompt.replace(/\{\{#if current_running_summary\}\}/g, '');
         prompt = prompt.replace(/\{\{\/if\}\}/g, '');
     } else {
-        // Remove the conditional block if no current summary
         prompt = prompt.replace(/\{\{#if current_running_summary\}\}[\s\S]*?\{\{\/if\}\}/g, '');
     }
 
@@ -449,12 +451,20 @@ async function combine_scene_with_running_summary(scene_index /*: number */) /*:
         prompt = `${prompt}\n${prefill}`;
     }
 
-    // Save current preset/profile
+    return prompt;
+}
+
+/**
+ * Executes LLM call with preset switching
+ * @param {string} prompt - Prompt to send
+ * @param {string} scene_name - Scene name for logging
+ * @returns {Promise<string>} Generated summary
+ */
+async function executeCombineLLMCall(prompt /*: string */, scene_name /*: string */) /*: Promise<string> */ {
     const current_preset = await get_current_preset();
     const current_profile = await get_current_connection_profile();
 
     try {
-        // Set running summary preset/profile if configured
         const running_preset = get_settings('running_scene_summary_completion_preset');
         const running_profile = get_settings('running_scene_summary_connection_profile');
 
@@ -467,50 +477,80 @@ async function combine_scene_with_running_summary(scene_index /*: number */) /*:
 
         debug(SUBSYSTEM.RUNNING, `Sending prompt to LLM to combine with ${scene_name}`);
 
-        // Generate summary
         const result = await summarize_text(prompt);
 
         debug(SUBSYSTEM.RUNNING, `Combined running summary with scene (${result.length} chars)`);
 
-        // Add new version
-        const prev_version = get_running_summary(get_current_running_summary_version());
-        const scene_count = prev_version ? prev_version.scene_count + 1 : 1;
-        const exclude_count = get_settings('running_scene_summary_exclude_latest') || 0;
+        return result;
 
-        // Track scene indexes: prev is from previous version's new_scene_index, or 0 if first
-        const prev_scene_idx = prev_version ? prev_version.new_scene_index : 0;
-        const new_scene_idx = scene_index;
+    } finally {
+        await set_preset(current_preset);
+        await set_connection_profile(current_profile);
+    }
+}
 
-        const version = add_running_summary_version(result, scene_count, exclude_count, prev_scene_idx, new_scene_idx);
+/**
+ * Stores running summary version and handles lorebook processing
+ * @param {string} result - Generated summary
+ * @param {number} scene_index - Scene index
+ * @param {string} scene_name - Scene name
+ * @param {string} scene_summary - Original scene summary
+ * @returns {number} Version number
+ */
+function storeRunningSummary(result /*: string */, scene_index /*: number */, scene_name /*: string */, scene_summary /*: string */) /*: number */ {
+    const prev_version = get_running_summary(get_current_running_summary_version());
+    const scene_count = prev_version ? prev_version.scene_count + 1 : 1;
+    const exclude_count = get_settings('running_scene_summary_exclude_latest') || 0;
 
-        log(SUBSYSTEM.RUNNING, `Created running summary version ${version} (${prev_scene_idx} > ${new_scene_idx})`);
+    const prev_scene_idx = prev_version ? prev_version.new_scene_index : 0;
+    const new_scene_idx = scene_index;
 
-        // Extract and queue lorebook entries if Auto-Lorebooks is enabled
-        const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_processing_enabled');
-        if (autoLorebooksEnabled && scene_summary) {
-            try {
-                // Parse the original scene summary JSON for lorebooks
-                // Lorebook processing is intentionally disabled during running summary combination.
-                // Lorebooks are extracted and queued per-scene in generateSceneSummary().
-                debug(SUBSYSTEM.RUNNING, 'Skipping lorebook processing during running summary; handled per scene summary');
-            } catch {
-                // Keep previous try/catch structure; nothing to do here as we no longer parse JSON
-                debug(SUBSYSTEM.RUNNING, 'Skipping lorebook processing during running summary');
-            }
-        }
+    const version = add_running_summary_version(result, scene_count, exclude_count, prev_scene_idx, new_scene_idx);
 
-        toast(`Running summary updated with ${scene_name} (v${version})`, 'success');
+    log(SUBSYSTEM.RUNNING, `Created running summary version ${version} (${prev_scene_idx} > ${new_scene_idx})`);
 
+    // Lorebook processing is intentionally disabled during running summary combination
+    const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_processing_enabled');
+    if (autoLorebooksEnabled && scene_summary) {
+        debug(SUBSYSTEM.RUNNING, 'Skipping lorebook processing during running summary; handled per scene summary');
+    }
+
+    toast(`Running summary updated with ${scene_name} (v${version})`, 'success');
+
+    return version;
+}
+
+/**
+ * Combine current running summary with a specific scene summary
+ * Creates a new version by merging them
+ * @param {number} scene_index - Chat message index of the scene to combine
+ * @returns {Promise<string|null>} Generated summary or null on failure
+ */
+// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
+async function combine_scene_with_running_summary(scene_index /*: number */) /*: Promise<?string> */ {
+    const sceneData = validateCombineRequest(scene_index);
+    if (!sceneData) {
+        return null;
+    }
+
+    const { scene_summary, scene_name } = sceneData;
+
+    debug(SUBSYSTEM.RUNNING, `Combining running summary with scene at index ${scene_index} (${scene_name})`);
+
+    const summary_text = extractSummaryFromJSON(scene_summary);
+    const current_summary = get_current_running_summary_content();
+    const scene_summaries_text = `[${scene_name}]\n${summary_text}`;
+
+    const prompt = buildCombinePrompt(current_summary, scene_summaries_text);
+
+    try {
+        const result = await executeCombineLLMCall(prompt, scene_name);
+        storeRunningSummary(result, scene_index, scene_name, scene_summary);
         return result;
 
     } catch (err) {
         error(SUBSYSTEM.RUNNING, 'Failed to combine scene with running summary:', err);
-        // Re-throw to let queue retry logic handle it (don't return null)
         throw err;
-    } finally {
-        // Restore original preset/profile
-        await set_preset(current_preset);
-        await set_connection_profile(current_profile);
     }
 }
 

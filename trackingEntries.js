@@ -510,18 +510,24 @@ export async function processTrackingUpdates(message /*: any */) /*: Promise<boo
 
         // Process GM notes updates
         for (const update of updates.gm_notes) {
-            // Try to queue the operation, fallback to direct execution if queue disabled
+            // Sequential execution required: tracking entry updates must process in order
+            // eslint-disable-next-line no-await-in-loop
             const queued = queueMergeGMNotes ? await queueMergeGMNotes(lorebookName, update.content) : null;
             if (!queued) {
+                // Sequential execution required: fallback to direct execution
+                // eslint-disable-next-line no-await-in-loop
                 await processEntryUpdate(lorebookName, 'gm_notes', update.content);
             }
         }
 
         // Process character stats updates
         for (const update of updates.character_stats) {
-            // Try to queue the operation, fallback to direct execution if queue disabled
+            // Sequential execution required: tracking entry updates must process in order
+            // eslint-disable-next-line no-await-in-loop
             const queued = queueMergeCharacterStats ? await queueMergeCharacterStats(lorebookName, update.content) : null;
             if (!queued) {
+                // Sequential execution required: fallback to direct execution
+                // eslint-disable-next-line no-await-in-loop
                 await processEntryUpdate(lorebookName, 'character_stats', update.content);
             }
         }

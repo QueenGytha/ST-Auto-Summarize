@@ -20,6 +20,9 @@ import {
     SUBSYSTEM
 } from './index.js';
 
+// Constants
+const NAVBAR_ID = 'scene-summary-navigator-bar';
+
 let queueUIContainer = null;
 let isInitialized = false;
 
@@ -52,12 +55,12 @@ export function initQueueUI() {
 function createQueueUI() {
     // Find or create the shared navbar (used by both extensions)
     // $FlowFixMe[cannot-resolve-name]
-    let $navbar = $('#scene-summary-navigator-bar');
+    let $navbar = $(`#${NAVBAR_ID}`);
 
     if (!$navbar.length) {
         debug(SUBSYSTEM.QUEUE, 'Creating shared navbar');
         // $FlowFixMe[cannot-resolve-name]
-        $navbar = $('<div id="scene-summary-navigator-bar" style="width: 175px; position: relative;"></div>');
+        $navbar = $(`<div id="${NAVBAR_ID}" style="width: 175px; position: relative;"></div>`);
         // Insert after the send button area
         // $FlowFixMe[cannot-resolve-name]
         $('#sheld').after($navbar);
@@ -181,7 +184,7 @@ function bindQueueControlEvents() {
     // $FlowFixMe[missing-this-annot]
     $(document).on('click', '#queue_navbar_toggle', function () {
         // $FlowFixMe[cannot-resolve-name]
-        const $navbar = $('#scene-summary-navigator-bar');
+        const $navbar = $(`#${NAVBAR_ID}`);
         // $FlowFixMe[cannot-resolve-name]
         const $button = $(this);
 
@@ -207,7 +210,7 @@ function bindQueueControlEvents() {
     const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
     if (navbarVisible === 'false') {
         // $FlowFixMe[cannot-resolve-name]
-        const $navbar = $('#scene-summary-navigator-bar');
+        const $navbar = $(`#${NAVBAR_ID}`);
         // $FlowFixMe[cannot-resolve-name]
         const $button = $('#queue_navbar_toggle');
         $navbar.hide(); // Hide entire navbar
@@ -233,7 +236,7 @@ function updateQueueDisplay() {
     const enabled = get_settings('operation_queue_display_enabled') !== false; // Default to true
 
     // $FlowFixMe[cannot-resolve-name]
-    const $navbar = $('#scene-summary-navigator-bar');
+    const $navbar = $(`#${NAVBAR_ID}`);
     // $FlowFixMe[cannot-resolve-name]
     const $button = $('#queue_navbar_toggle');
 
@@ -471,7 +474,7 @@ export function updateQueueUIVisibility() {
     const enabled = get_settings('operation_queue_display_enabled') !== false;
 
     // $FlowFixMe[cannot-resolve-name]
-    const $navbar = $('#scene-summary-navigator-bar');
+    const $navbar = $(`#${NAVBAR_ID}`);
     // $FlowFixMe[cannot-resolve-name]
     const $button = $('#queue_navbar_toggle');
 

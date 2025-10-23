@@ -849,16 +849,21 @@ function startQueueProcessor() {
             if (!operation.started_at) {
                 operation.started_at = Date.now();
             }
+            // Sequential execution required: queue must be saved before executing operation
+            // eslint-disable-next-line no-await-in-loop
             await saveQueue();
 
             try {
+                // Sequential execution required: operations must execute one at a time in order
+                // eslint-disable-next-line no-await-in-loop
                 await executeOperation(operation);
             } catch {
                 // Error already handled in executeOperation
                 // Continue processing other operations
             }
 
-            // Delay between operations to avoid rate limiting (5 seconds)
+            // Sequential execution required: rate limiting delay between operations
+            // eslint-disable-next-line no-await-in-loop
             await new Promise(resolve => setTimeout(resolve, 5000));
         }
     })();

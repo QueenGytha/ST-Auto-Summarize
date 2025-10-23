@@ -149,6 +149,136 @@ export async function testGetEntries(lorebookName) {
 }
 
 /**
+ * Setup and validate lorebook for testing
+ * @param {string} lorebookName - Lorebook name or null
+ * @returns {string|null} Validated lorebook name
+ */
+function setupTestLorebook(lorebookName /*: ?string */) /*: ?string */ {
+    if (!lorebookName) {
+        lorebookName = getAttachedLorebook();
+        if (!lorebookName) {
+            error("No lorebook specified and no lorebook attached to current chat");
+            toast("Cannot run tests: No lorebook available", "error");
+            return null;
+        }
+        log(`Using attached lorebook: ${lorebookName}`);
+    }
+    return lorebookName;
+}
+
+/**
+ * Run add and count verification tests
+ * @param {string} lorebookName - Lorebook name
+ * @param {number} initialCount - Initial entry count
+ * @returns {Promise<Object|null>} Test result with testUid
+ */
+async function runTestAddAndCount(lorebookName /*: string */, initialCount /*: number */) /*: Promise<?Object> */ {
+    log("\n--- Test 2: Add New Entry ---");
+    const newEntry = await testAddEntry(lorebookName);
+    if (!newEntry) {
+        error("Failed to add entry, aborting tests");
+        return null;
+    }
+    const testUid = newEntry.uid;
+
+    log("\n--- Test 3: Verify Entry Addition ---");
+    const entriesAfterAdd = await testGetEntries(lorebookName);
+    if (entriesAfterAdd === null || entriesAfterAdd.length !== initialCount + 1) {
+        error(`Expected ${initialCount + 1} entries, got ${entriesAfterAdd?.length || 0}`);
+        error("Entry count verification failed");
+    } else {
+        log(`✓ Entry count verification passed: ${entriesAfterAdd.length} entries`);
+    }
+
+    return { testUid };
+}
+
+/**
+ * Run modify and verification tests
+ * @param {string} lorebookName - Lorebook name
+ * @param {string} testUid - Entry UID to modify
+ * @returns {Promise<void>}
+ */
+async function runTestModifyAndVerify(lorebookName /*: string */, testUid /*: string */) /*: Promise<void> */ {
+    log("\n--- Test 4: Modify Entry ---");
+    const modifyResult = await testModifyEntry(lorebookName, testUid);
+    if (!modifyResult) {
+        error("Failed to modify entry");
+    }
+
+    log("\n--- Test 5: Verify Entry Modification ---");
+    const entriesAfterModify = await testGetEntries(lorebookName);
+    if (entriesAfterModify) {
+        const modifiedEntry = entriesAfterModify.find(e => e.uid === testUid);
+        if (modifiedEntry) {
+            log("Modified entry found:", {
+                uid: modifiedEntry.uid,
+                comment: modifiedEntry.comment,
+                keys: modifiedEntry.key,
+                constant: modifiedEntry.constant
+            });
+            if (modifiedEntry.comment === 'Modified Test Entry' && modifiedEntry.constant === true) {
+                log("✓ Modification verification passed");
+            } else {
+                error("✗ Modification verification failed: values don't match");
+            }
+        } else {
+            error("✗ Modified entry not found");
+        }
+    }
+}
+
+/**
+ * Run delete and verification tests
+ * @param {string} lorebookName - Lorebook name
+ * @param {string} testUid - Entry UID to delete
+ * @param {number} initialCount - Expected final count
+ * @returns {Promise<number>} Final entry count
+ */
+async function runTestDeleteAndVerify(lorebookName /*: string */, testUid /*: string */, initialCount /*: number */) /*: Promise<number> */ {
+    log("\n--- Test 6: Delete Entry ---");
+    const deleteResult = await testDeleteEntry(lorebookName, testUid);
+    if (!deleteResult) {
+        error("Failed to delete entry");
+    }
+
+    log("\n--- Test 7: Verify Entry Deletion ---");
+    const finalEntries = await testGetEntries(lorebookName);
+    if (finalEntries === null || finalEntries.length !== initialCount) {
+        error(`Expected ${initialCount} entries after deletion, got ${finalEntries?.length || 0}`);
+        error("Entry deletion verification failed");
+    } else {
+        log(`✓ Entry deletion verification passed: ${finalEntries.length} entries`);
+    }
+
+    return finalEntries?.length || 0;
+}
+
+/**
+ * Print test summary and return success status
+ * @param {number} initialCount - Initial entry count
+ * @param {number} finalCount - Final entry count
+ * @returns {boolean} Whether test passed
+ */
+function printTestSummary(initialCount /*: number */, finalCount /*: number */) /*: boolean */ {
+    log("\n======================================");
+    log("=== TEST SUITE COMPLETE ===");
+    log("======================================");
+    log(`Initial entries: ${initialCount}`);
+    log(`Final entries: ${finalCount}`);
+
+    if (finalCount === initialCount) {
+        log("✓ ALL TESTS PASSED: Lorebook restored to initial state");
+        toast("All lorebook entry tests passed!", "success");
+        return true;
+    } else {
+        error("⚠ TESTS COMPLETED WITH WARNINGS: Entry count mismatch");
+        toast("Tests completed with warnings", "warning");
+        return false;
+    }
+}
+
+/**
  * Run all tests in sequence
  * This creates an entry, modifies it, lists entries, then deletes the test entry
  * @param {string} lorebookName - Name of the lorebook to test with (defaults to current chat's lorebook)
@@ -159,18 +289,11 @@ export async function runAllTests(lorebookName = null) {
         log("=== RUNNING ALL LOREBOOK ENTRY TESTS ===");
         log("======================================");
 
-        // If no lorebook name provided, use the attached one
+        lorebookName = setupTestLorebook(lorebookName);
         if (!lorebookName) {
-            lorebookName = getAttachedLorebook();
-            if (!lorebookName) {
-                error("No lorebook specified and no lorebook attached to current chat");
-                toast("Cannot run tests: No lorebook available", "error");
-                return false;
-            }
-            log(`Using attached lorebook: ${lorebookName}`);
+            return false;
         }
 
-        // Test 1: Get initial entries count
         log("\n--- Test 1: Get Initial Entries ---");
         const initialEntries = await testGetEntries(lorebookName);
         if (initialEntries === null) {
@@ -179,87 +302,17 @@ export async function runAllTests(lorebookName = null) {
         }
         const initialCount = initialEntries.length;
 
-        // Test 2: Add a new entry
-        log("\n--- Test 2: Add New Entry ---");
-        const newEntry = await testAddEntry(lorebookName);
-        if (!newEntry) {
-            error("Failed to add entry, aborting tests");
+        const addResult = await runTestAddAndCount(lorebookName, initialCount);
+        if (!addResult) {
             return false;
         }
-        const testUid = newEntry.uid;
+        const { testUid } = addResult;
 
-        // Test 3: Get entries again to verify addition
-        log("\n--- Test 3: Verify Entry Addition ---");
-        const entriesAfterAdd = await testGetEntries(lorebookName);
-        if (entriesAfterAdd === null || entriesAfterAdd.length !== initialCount + 1) {
-            error(`Expected ${initialCount + 1} entries, got ${entriesAfterAdd?.length || 0}`);
-            error("Entry count verification failed");
-        } else {
-            log(`✓ Entry count verification passed: ${entriesAfterAdd.length} entries`);
-        }
+        await runTestModifyAndVerify(lorebookName, testUid);
 
-        // Test 4: Modify the entry
-        log("\n--- Test 4: Modify Entry ---");
-        const modifyResult = await testModifyEntry(lorebookName, testUid);
-        if (!modifyResult) {
-            error("Failed to modify entry");
-        }
+        const finalCount = await runTestDeleteAndVerify(lorebookName, testUid, initialCount);
 
-        // Test 5: Get entries to verify modification
-        log("\n--- Test 5: Verify Entry Modification ---");
-        const entriesAfterModify = await testGetEntries(lorebookName);
-        if (entriesAfterModify) {
-            const modifiedEntry = entriesAfterModify.find(e => e.uid === testUid);
-            if (modifiedEntry) {
-                log("Modified entry found:", {
-                    uid: modifiedEntry.uid,
-                    comment: modifiedEntry.comment,
-                    keys: modifiedEntry.key,
-                    constant: modifiedEntry.constant
-                });
-                if (modifiedEntry.comment === 'Modified Test Entry' && modifiedEntry.constant === true) {
-                    log("✓ Modification verification passed");
-                } else {
-                    error("✗ Modification verification failed: values don't match");
-                }
-            } else {
-                error("✗ Modified entry not found");
-            }
-        }
-
-        // Test 6: Delete the entry
-        log("\n--- Test 6: Delete Entry ---");
-        const deleteResult = await testDeleteEntry(lorebookName, testUid);
-        if (!deleteResult) {
-            error("Failed to delete entry");
-        }
-
-        // Test 7: Get entries to verify deletion
-        log("\n--- Test 7: Verify Entry Deletion ---");
-        const finalEntries = await testGetEntries(lorebookName);
-        if (finalEntries === null || finalEntries.length !== initialCount) {
-            error(`Expected ${initialCount} entries after deletion, got ${finalEntries?.length || 0}`);
-            error("Entry deletion verification failed");
-        } else {
-            log(`✓ Entry deletion verification passed: ${finalEntries.length} entries`);
-        }
-
-        // Summary
-        log("\n======================================");
-        log("=== TEST SUITE COMPLETE ===");
-        log("======================================");
-        log(`Initial entries: ${initialCount}`);
-        log(`Final entries: ${finalEntries?.length || 0}`);
-
-        if (finalEntries?.length === initialCount) {
-            log("✓ ALL TESTS PASSED: Lorebook restored to initial state");
-            toast("All lorebook entry tests passed!", "success");
-            return true;
-        } else {
-            error("⚠ TESTS COMPLETED WITH WARNINGS: Entry count mismatch");
-            toast("Tests completed with warnings", "warning");
-            return false;
-        }
+        return printTestSummary(initialCount, finalCount);
 
     } catch (err) {
         error("✗ TEST SUITE FAILED with exception:", err);

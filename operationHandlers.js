@@ -211,7 +211,7 @@ export function registerAllOperationHandlers() {
         const { lorebookName, entryUid, existingContent, newContent, newKeys, newSecondaryKeys } = operation.params;
         const entryComment = operation.metadata?.entry_comment || entryUid;
         debug(SUBSYSTEM.QUEUE, `Executing MERGE_LOREBOOK_ENTRY for: ${entryComment}`);
-        const result = await mergeLorebookEntryByUid({
+        return await mergeLorebookEntryByUid({
             lorebookName,
             entryUid,
             existingContent,
@@ -219,7 +219,6 @@ export function registerAllOperationHandlers() {
             newKeys,
             newSecondaryKeys
         });
-        return result;
     });
 
     // TRIAGE_LOREBOOK_ENTRY - First stage of lorebook processing pipeline
@@ -347,8 +346,12 @@ export function registerAllOperationHandlers() {
         return { success: true, resolutionResult };
     });
 
-    // CREATE_LOREBOOK_ENTRY - Third stage - create new entry or merge with existing
-    registerOperationHandler(OperationType.CREATE_LOREBOOK_ENTRY, async (operation) => {
+    /**
+     * Prepares context for entry creation/merge
+     * @param {any} operation - Operation with params
+     * @returns {Promise<any>} - Context object
+     */
+    async function prepareEntryContext(operation /*: any */) /*: Promise<any> */ {
         const { entryId, action, resolvedId } = operation.params;
         const entryData = getEntryData(entryId);
         const triageResult = getTriageResult(entryId);
@@ -373,82 +376,116 @@ export function registerAllOperationHandlers() {
         const finalType = triageResult?.type || entryData.type || 'character';
         const finalSynopsis = resolutionResult?.synopsis || triageResult?.synopsis || '';
 
-        let entityId = null;
-        let entityUid = null;
-        let actionPerformed = action;
+        return {
+            entryId, action, resolvedId, entryData, lorebookName,
+            registryState, finalType, finalSynopsis,
+            getLorebookEntries, addLorebookEntry, mergeLorebookEntry,
+            updateRegistryRecord, assignEntityId, ensureStringArray
+        };
+    }
 
-        if (action === 'merge' && resolvedId) {
-            // Merge with existing entry
-            const existingEntriesRaw = await getLorebookEntries(lorebookName);
-            const record = registryState.index?.[resolvedId];
-            const existingEntry = record ? existingEntriesRaw?.find(e => e.uid === record.uid) : null;
+    /**
+     * Executes merge action
+     * @param {any} context - Entry context
+     * @returns {Promise<any>} - Merge result
+     */
+    async function executeMergeAction(context /*: any */) /*: Promise<any> */ {
+        const { resolvedId, entryData, lorebookName, registryState, finalType, finalSynopsis,
+                getLorebookEntries, mergeLorebookEntry, updateRegistryRecord, ensureStringArray, entryId } = context;
 
-            if (record && existingEntry) {
-                const mergeResult = await mergeLorebookEntry(lorebookName, existingEntry, entryData, { useQueue: false });
+        const existingEntriesRaw = await getLorebookEntries(lorebookName);
+        const record = registryState.index?.[resolvedId];
+        const existingEntry = record ? existingEntriesRaw?.find(e => e.uid === record.uid) : null;
 
-                if (!mergeResult?.success) {
-                    throw new Error(mergeResult?.message || 'Merge failed');
-                }
-
-                entityId = resolvedId;
-                entityUid = existingEntry.uid;
-                actionPerformed = 'merged';
-
-                // Update registry record
-                updateRegistryRecord(registryState, resolvedId, {
-                    uid: existingEntry.uid,
-                    type: finalType,
-                    name: entryData.comment || existingEntry.comment || '',
-                    comment: entryData.comment || existingEntry.comment || '',
-                    aliases: ensureStringArray(entryData.keys),
-                    synopsis: finalSynopsis
-                });
-
-                debug(SUBSYSTEM.QUEUE, `✓ Merged entry ${entryId} into ${resolvedId}`);
-            } else {
-                // Fallback to create if merge target not found
-                actionPerformed = 'create';
-            }
+        if (!record || !existingEntry) {
+            return { success: false, fallbackToCreate: true };
         }
 
-        if (action === 'create' || actionPerformed === 'create') {
-            // Create new entry
-            const createdEntry = await addLorebookEntry(lorebookName, entryData);
+        const mergeResult = await mergeLorebookEntry(lorebookName, existingEntry, entryData, { useQueue: false });
 
-            if (!createdEntry) {
-                throw new Error('Failed to create lorebook entry');
-            }
-
-            entityId = assignEntityId(registryState, finalType);
-            entityUid = createdEntry.uid;
-            actionPerformed = 'created';
-
-            // Add to registry
-            updateRegistryRecord(registryState, entityId, {
-                uid: createdEntry.uid,
-                type: finalType,
-                name: entryData.comment || createdEntry.comment || '',
-                comment: entryData.comment || createdEntry.comment || '',
-                aliases: ensureStringArray(entryData.keys),
-                synopsis: finalSynopsis
-            });
-
-            debug(SUBSYSTEM.QUEUE, `✓ Created entry ${entryId} as ${entityId}`);
+        if (!mergeResult?.success) {
+            throw new Error(mergeResult?.message || 'Merge failed');
         }
 
-        if (!entityId || !entityUid) {
+        updateRegistryRecord(registryState, resolvedId, {
+            uid: existingEntry.uid,
+            type: finalType,
+            name: entryData.comment || existingEntry.comment || '',
+            comment: entryData.comment || existingEntry.comment || '',
+            aliases: ensureStringArray(entryData.keys),
+            synopsis: finalSynopsis
+        });
+
+        debug(SUBSYSTEM.QUEUE, `✓ Merged entry ${entryId} into ${resolvedId}`);
+
+        return { success: true, entityId: resolvedId, entityUid: existingEntry.uid, action: 'merged' };
+    }
+
+    /**
+     * Executes create action
+     * @param {any} context - Entry context
+     * @returns {Promise<any>} - Create result
+     */
+    async function executeCreateAction(context /*: any */) /*: Promise<any> */ {
+        const { entryData, lorebookName, registryState, finalType, finalSynopsis,
+                addLorebookEntry, updateRegistryRecord, assignEntityId, ensureStringArray, entryId } = context;
+
+        const createdEntry = await addLorebookEntry(lorebookName, entryData);
+
+        if (!createdEntry) {
+            throw new Error('Failed to create lorebook entry');
+        }
+
+        const entityId = assignEntityId(registryState, finalType);
+
+        updateRegistryRecord(registryState, entityId, {
+            uid: createdEntry.uid,
+            type: finalType,
+            name: entryData.comment || createdEntry.comment || '',
+            comment: entryData.comment || createdEntry.comment || '',
+            aliases: ensureStringArray(entryData.keys),
+            synopsis: finalSynopsis
+        });
+
+        debug(SUBSYSTEM.QUEUE, `✓ Created entry ${entryId} as ${entityId}`);
+
+        return { success: true, entityId, entityUid: createdEntry.uid, action: 'created' };
+    }
+
+    /**
+     * Handles CREATE_LOREBOOK_ENTRY operation
+     * @param {any} operation - Operation to handle
+     * @returns {Promise<any>} - Operation result
+     */
+    async function handleCreateLorebookEntry(operation /*: any */) /*: Promise<any> */ {
+        const context = await prepareEntryContext(operation);
+
+        let result;
+        if (context.action === 'merge' && context.resolvedId) {
+            result = await executeMergeAction(context);
+            if (result.fallbackToCreate) {
+                result = await executeCreateAction(context);
+            }
+        } else {
+            result = await executeCreateAction(context);
+        }
+
+        if (!result.success || !result.entityId || !result.entityUid) {
             throw new Error('Failed to create or merge entry');
         }
 
         // Enqueue registry update
         await enqueueOperation(
             OperationType.UPDATE_LOREBOOK_REGISTRY,
-            { entryId, entityType: finalType, entityId, action: actionPerformed },
-            { metadata: { entry_comment: entryData.comment } }
+            { entryId: context.entryId, entityType: context.finalType, entityId: result.entityId, action: result.action },
+            { metadata: { entry_comment: context.entryData.comment } }
         );
 
-        return { success: true, entityId, entityUid, action: actionPerformed };
-    });
+        return { success: true, entityId: result.entityId, entityUid: result.entityUid, action: result.action };
+    }
+
+    // CREATE_LOREBOOK_ENTRY - Third stage - create new entry or merge with existing
+    registerOperationHandler(OperationType.CREATE_LOREBOOK_ENTRY, handleCreateLorebookEntry);
 
     // UPDATE_LOREBOOK_REGISTRY - Fourth stage - update registry entry content
     registerOperationHandler(OperationType.UPDATE_LOREBOOK_REGISTRY, async (operation) => {

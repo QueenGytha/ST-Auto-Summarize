@@ -608,6 +608,87 @@ export async function addLorebookEntry(lorebookName /*: string */, entryData /*:
 }
 
 /**
+ * Validates modification parameters
+ * @param {string} lorebookName - Lorebook name
+ * @param {string} uid - Entry UID
+ * @returns {boolean} Whether parameters are valid
+ */
+function validateModifyParams(lorebookName /*: string */, uid /*: string */) /*: boolean */ {
+    if (!lorebookName) {
+        error("Cannot modify entry: lorebook name is empty");
+        return false;
+    }
+
+    if (uid === undefined || uid == null) {
+        error("Cannot modify entry: UID is required");
+        return false;
+    }
+
+    if (!world_names || !world_names.includes(lorebookName)) {
+        error(`Cannot modify entry: lorebook "${lorebookName}" does not exist`);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Loads lorebook and verifies entry exists
+ * @param {string} lorebookName - Lorebook name
+ * @param {string} uid - Entry UID
+ * @returns {Promise<Object|null>} Lorebook data and entry, or null if not found
+ */
+async function loadLorebookAndEntry(lorebookName /*: string */, uid /*: string */) /*: Promise<?Object> */ {
+    const data = await loadWorldInfo(lorebookName);
+    if (!data) {
+        error(`Failed to load lorebook data for: ${lorebookName}`);
+        return null;
+    }
+
+    if (!data.entries || !data.entries[uid]) {
+        error(`Entry with UID ${uid} does not exist in lorebook: ${lorebookName}`);
+        return null;
+    }
+
+    return { data, entry: data.entries[uid] };
+}
+
+/**
+ * Applies update fields to entry
+ * @param {Object} entry - Entry to update
+ * @param {Object} updates - Update fields
+ */
+function applyEntryUpdates(entry /*: Object */, updates /*: any */) /*: void */ {
+    if (updates.keys && Array.isArray(updates.keys)) {
+        entry.key = updates.keys;
+    }
+    if (updates.secondaryKeys && Array.isArray(updates.secondaryKeys)) {
+        entry.keysecondary = updates.secondaryKeys;
+    }
+    if (updates.content !== undefined) {
+        entry.content = String(updates.content);
+    }
+    if (updates.comment !== undefined) {
+        entry.comment = String(updates.comment);
+    }
+    if (typeof updates.constant === 'boolean') {
+        entry.constant = updates.constant;
+    }
+    if (typeof updates.disable === 'boolean') {
+        entry.disable = updates.disable;
+    }
+    if (typeof updates.order === 'number') {
+        entry.order = updates.order;
+    }
+    if (typeof updates.position === 'number') {
+        entry.position = updates.position;
+    }
+    if (typeof updates.depth === 'number') {
+        entry.depth = updates.depth;
+    }
+}
+
+/**
  * Modify an existing lorebook entry
  * @param {string} lorebookName - Name of the lorebook
  * @param {number} uid - UID of the entry to modify
@@ -616,69 +697,21 @@ export async function addLorebookEntry(lorebookName /*: string */, entryData /*:
  */
 export async function modifyLorebookEntry(lorebookName /*: string */, uid /*: string */, updates /*: any */ = {}) /*: Promise<any> */ {
     try {
-        if (!lorebookName) {
-            error("Cannot modify entry: lorebook name is empty");
-            return false;
-        }
-
-        if (uid === undefined || uid == null) {
-            error("Cannot modify entry: UID is required");
-            return false;
-        }
-
-        // Verify lorebook exists
-        if (!world_names || !world_names.includes(lorebookName)) {
-            error(`Cannot modify entry: lorebook "${lorebookName}" does not exist`);
+        if (!validateModifyParams(lorebookName, uid)) {
             return false;
         }
 
         debug(`Modifying entry UID ${uid} in lorebook: ${lorebookName}`, updates);
 
-        // Load lorebook data
-        const data = await loadWorldInfo(lorebookName);
-        if (!data) {
-            error(`Failed to load lorebook data for: ${lorebookName}`);
+        const lorebookData = await loadLorebookAndEntry(lorebookName, uid);
+        if (!lorebookData) {
             return false;
         }
 
-        // Check if entry exists
-        if (!data.entries || !data.entries[uid]) {
-            error(`Entry with UID ${uid} does not exist in lorebook: ${lorebookName}`);
-            return false;
-        }
+        const { data, entry } = lorebookData;
 
-        const entry = data.entries[uid];
+        applyEntryUpdates(entry, updates);
 
-        // Apply updates
-        if (updates.keys && Array.isArray(updates.keys)) {
-            entry.key = updates.keys;
-        }
-        if (updates.secondaryKeys && Array.isArray(updates.secondaryKeys)) {
-            entry.keysecondary = updates.secondaryKeys;
-        }
-        if (updates.content !== undefined) {
-            entry.content = String(updates.content);
-        }
-        if (updates.comment !== undefined) {
-            entry.comment = String(updates.comment);
-        }
-        if (typeof updates.constant === 'boolean') {
-            entry.constant = updates.constant;
-        }
-        if (typeof updates.disable === 'boolean') {
-            entry.disable = updates.disable;
-        }
-        if (typeof updates.order === 'number') {
-            entry.order = updates.order;
-        }
-        if (typeof updates.position === 'number') {
-            entry.position = updates.position;
-        }
-        if (typeof updates.depth === 'number') {
-            entry.depth = updates.depth;
-        }
-
-        // Save the lorebook
         await saveWorldInfo(lorebookName, data, true);
 
         log(`Modified entry UID ${uid} in lorebook "${lorebookName}"`);

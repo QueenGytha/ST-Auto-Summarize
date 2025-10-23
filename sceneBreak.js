@@ -991,6 +991,8 @@ async function extractAndQueueLorebookEntries(
 
             // Queue each unique entry individually
             for (const entry of uniqueEntries) {
+                // Sequential execution required: entries must be queued in order
+                // eslint-disable-next-line no-await-in-loop
                 const opId = await queueProcessLorebookEntry(entry, messageIndex, summaryHash);
                 if (opId) {
                     debug(SUBSYSTEM.SCENE, `Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);

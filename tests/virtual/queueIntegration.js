@@ -207,45 +207,64 @@ export async function queueCombineSceneWithRunning(index /*: number */, options 
 }
 
 /**
- * Queue processing of a single lorebook entry using multi-operation pipeline
- * @param {Object} entryData - Lorebook entry data {name, type, keywords, content}
- * @param {number} messageIndex - Message index this entry came from
- * @param {?string} summaryHash - Hash of the summary version that produced this entry
- * @param {Object} options - Queue options
- * @returns {Promise<string|null>} Operation ID or null if queue disabled
+ * Validates queue status
+ * @returns {boolean} - Whether queue is enabled
  */
-export async function queueProcessLorebookEntry(entryData /*: Object */, messageIndex /*: number */, summaryHash /*: ?string */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
+function validateQueueStatus() /*: boolean */ {
     if (!isQueueEnabled()) {
         debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue lorebook entry processing');
-        return null;
+        return false;
     }
+    return true;
+}
 
-    const entryName = entryData.name || entryData.comment || 'Unknown';
-    const lowerName = String(entryName).toLowerCase().trim();
-    debug(SUBSYSTEM.QUEUE, `Queueing lorebook entry (new pipeline): ${entryName} from message ${messageIndex}`);
+/**
+ * Extracts and normalizes entry name
+ * @param {any} entryData - Entry data
+ * @returns {string} - Normalized entry name
+ */
+function extractEntryName(entryData /*: any */) /*: string */ {
+    return String(entryData.name || entryData.comment || 'Unknown').toLowerCase().trim();
+}
 
-    // De-duplicate: if there is already a pending or in-progress operation for the same entry
-    // Check for TRIAGE_LOREBOOK_ENTRY operations (the new pipeline starts with triage)
-    let ops /*: Array<any> */ = [];
+/**
+ * Cancels operations superseded by newer summary versions
+ * @param {string} lowerName - Normalized entry name
+ * @param {number} messageIndex - Message index
+ * @param {string|null} summaryHash - Current summary hash
+ * @returns {Promise<void>}
+ */
+async function cancelSupersededOperations(lowerName /*: string */, messageIndex /*: number */, summaryHash /*: ?string */) /*: Promise<void> */ {
+    if (!summaryHash) return;
+
     try {
-        ops = getAllOperations();
-
-        // Cancel pending triage operations for this message/entry produced by older summary versions
-        if (summaryHash) {
-            for (const op of ops) {
-                if (op.type !== OperationType.TRIAGE_LOREBOOK_ENTRY) continue;
-                if (op.status !== OperationStatus.PENDING) continue;
-                const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
-                if (metaName !== lowerName) continue;
-                if (op?.metadata?.message_index !== messageIndex) continue;
-                const opHash = op.metadata?.summary_hash || null;
-                if (opHash && opHash === summaryHash) continue;
-                await updateOperationStatus(op.id, OperationStatus.CANCELLED, 'Replaced by newer summary version');
-            }
+        const ops = getAllOperations();
+        for (const op of ops) {
+            if (op.type !== OperationType.TRIAGE_LOREBOOK_ENTRY) continue;
+            if (op.status !== OperationStatus.PENDING) continue;
+            const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
+            if (metaName !== lowerName) continue;
+            if (op?.metadata?.message_index !== messageIndex) continue;
+            const opHash = op.metadata?.summary_hash || null;
+            if (opHash && opHash === summaryHash) continue;
+            // Sequential execution required: operations must be updated in order
+            // eslint-disable-next-line no-await-in-loop
+            await updateOperationStatus(op.id, OperationStatus.CANCELLED, 'Replaced by newer summary version');
         }
+    } catch { /* best effort dedup */ }
+}
 
-        // Check for duplicates - look for any active triage operations for the same entry
-        const hasDuplicate = ops.some(op => {
+/**
+ * Checks for active duplicate operations
+ * @param {string} lowerName - Normalized entry name
+ * @param {number} messageIndex - Message index
+ * @param {string|null} summaryHash - Current summary hash
+ * @returns {boolean} - Whether duplicate exists
+ */
+function hasActiveDuplicate(lowerName /*: string */, messageIndex /*: number */, summaryHash /*: ?string */) /*: boolean */ {
+    try {
+        const ops = getAllOperations();
+        return ops.some(op => {
             const status = op.status;
             const active = status === 'pending' || status === 'in_progress';
             if (!active) return false;
@@ -261,47 +280,93 @@ export async function queueProcessLorebookEntry(entryData /*: Object */, message
 
             return false;
         });
+    } catch {
+        return false;
+    }
+}
 
-        if (hasDuplicate) {
-            debug(SUBSYSTEM.QUEUE, `Skipping duplicate lorebook op for: ${entryName}`);
-            return null;
-        }
-    } catch { /* best effort dedup */ }
-
-    // Import pending ops helpers and processor functions
+/**
+ * Prepares triage context
+ * @param {any} entryData - Entry data
+ * @returns {Promise<any>} - Context object
+ */
+async function prepareTriageContext(entryData /*: any */) /*: Promise<any> */ {
     const { generateEntryId, createPendingEntry } = await import('./lorebookPendingOps.js');
     const { ensureRegistryState, buildRegistryListing, normalizeEntryData } = await import('./summaryToLorebookProcessor.js');
     const { getConfiguredEntityTypeDefinitions } = await import('./entityTypes.js');
 
-    // Generate unique entry ID
     const entryId = generateEntryId();
-
-    // Normalize and store entry data in pending ops
     const normalizedEntry = normalizeEntryData(entryData);
     createPendingEntry(entryId, normalizedEntry);
 
-    // Build registry listing and type list for triage
     const registryState = ensureRegistryState();
     const registryListing = buildRegistryListing(registryState);
     const entityTypeDefs = getConfiguredEntityTypeDefinitions(get_settings('autoLorebooks')?.entity_types);
     const typeList = entityTypeDefs.map(def => def.name).filter(Boolean).join('|') || 'character';
 
-    // Enqueue TRIAGE operation (first stage of pipeline)
+    return { entryId, normalizedEntry, registryListing, typeList };
+}
+
+/**
+ * Enqueues triage operation
+ * @param {any} context - Triage context
+ * @param {string} entryName - Entry name
+ * @param {number} messageIndex - Message index
+ * @param {string|null} summaryHash - Summary hash
+ * @param {any} options - Queueing options
+ * @returns {Promise<string|null>} - Operation ID
+ */
+async function enqueueTriageOperation(
+    context /*: any */,
+    entryName /*: string */,
+    messageIndex /*: number */,
+    summaryHash /*: ?string */,
+    options /*: any */
+) /*: Promise<?string> */ {
     return await enqueueOperation(
         OperationType.TRIAGE_LOREBOOK_ENTRY,
-        { entryId, entryData: normalizedEntry, registryListing, typeList },
+        { entryId: context.entryId, entryData: context.normalizedEntry, registryListing: context.registryListing, typeList: context.typeList },
         {
             priority: options.priority ?? 0,
             dependencies: options.dependencies ?? [],
             metadata: {
                 entry_name: entryName,
-                entry_comment: normalizedEntry.comment,
+                entry_comment: context.normalizedEntry.comment,
                 message_index: messageIndex,
                 summary_hash: summaryHash || null,
                 ...options.metadata
             }
         }
     );
+}
+
+/**
+ * Queue processing of a single lorebook entry using multi-operation pipeline
+ * @param {Object} entryData - Lorebook entry data {name, type, keywords, content}
+ * @param {number} messageIndex - Message index this entry came from
+ * @param {?string} summaryHash - Hash of the summary version that produced this entry
+ * @param {Object} options - Queue options
+ * @returns {Promise<string|null>} Operation ID or null if queue disabled
+ */
+export async function queueProcessLorebookEntry(entryData /*: Object */, messageIndex /*: number */, summaryHash /*: ?string */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
+    if (!validateQueueStatus()) {
+        return null;
+    }
+
+    const entryName = entryData.name || entryData.comment || 'Unknown';
+    const lowerName = extractEntryName(entryData);
+    debug(SUBSYSTEM.QUEUE, `Queueing lorebook entry (new pipeline): ${entryName} from message ${messageIndex}`);
+
+    await cancelSupersededOperations(lowerName, messageIndex, summaryHash);
+
+    if (hasActiveDuplicate(lowerName, messageIndex, summaryHash)) {
+        debug(SUBSYSTEM.QUEUE, `Skipping duplicate lorebook op for: ${entryName}`);
+        return null;
+    }
+
+    const context = await prepareTriageContext(entryData);
+
+    return await enqueueTriageOperation(context, entryName, messageIndex, summaryHash, options);
 }
 
 export default {

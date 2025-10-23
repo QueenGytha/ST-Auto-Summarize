@@ -120,10 +120,10 @@ export default [
             }],
 
             // COMPLEXITY ANALYSIS (critical for AI-generated code)
-            'complexity': ['warn', { max: 20 }],    // Warn on functions with complexity > 20
+            'complexity': ['error', { max: 20 }],    // Error on functions with complexity > 20
 
             // SONARJS CODE QUALITY RULES (only using rules available in v3.0.5)
-            'sonarjs/cognitive-complexity': ['warn', 30],  // Warn on high cognitive complexity
+            'sonarjs/cognitive-complexity': ['error', 30],  // Error on high cognitive complexity
             'sonarjs/no-all-duplicated-branches': 'error',  // Catch if/else with same code
             'sonarjs/no-collection-size-mischeck': 'error', // Catch .length === 0 bugs
             'sonarjs/no-duplicate-string': ['warn', {      // Warn on repeated strings

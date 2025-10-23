@@ -357,85 +357,126 @@ async function update_running_scene_summary_connection_profile_dropdown() {
 }
 
 /**
+ * Loads lorebooks settings
+ * @returns {any} - Settings object
+ */
+function loadLorebooksSettings() /*: any */ {
+    // $FlowFixMe[prop-missing]
+    return extension_settings.autoLorebooks || {};
+}
+
+/**
+ * Refreshes global settings UI
+ * @param {any} settings - Settings object
+ */
+function refreshGlobalSettingsUI(settings /*: any */) /*: void */ {
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-enabled-by-default').prop('checked', settings.enabledByDefault ?? true);
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-delete-on-chat-delete').prop('checked', settings.deleteOnChatDelete ?? true);
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-name-template').val(settings.nameTemplate || 'z-AutoLB - {{char}} - {{chat}}');
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-debug-mode').prop('checked', settings.debug_mode ?? true);
+}
+
+/**
+ * Refreshes queue settings UI
+ * @param {any} queueSettings - Queue settings object
+ */
+function refreshQueueSettingsUI(queueSettings /*: any */ = {}) /*: void */ {
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-queue-enabled').prop('checked', queueSettings.enabled !== false);
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-queue-use-lorebook').prop('checked', queueSettings.use_lorebook !== false);
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-queue-display-enabled').prop('checked', queueSettings.display_enabled !== false);
+}
+
+/**
+ * Refreshes tracking settings UI
+ * @param {any} tracking - Tracking settings object
+ */
+function refreshTrackingSettingsUI(tracking /*: any */ = {}) /*: void */ {
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-tracking-enabled').prop('checked', tracking.enabled ?? true);
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-tracking-intercept-send').prop('checked', tracking.intercept_send_button ?? true);
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-tracking-auto-create').prop('checked', tracking.auto_create ?? true);
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-tracking-remove-syntax').prop('checked', tracking.remove_from_message ?? true);
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-tracking-syntax-gm-notes').val(tracking.syntax_gm_notes || '<-- gm_notes: {{content}} -->');
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-tracking-syntax-character-stats').val(tracking.syntax_character_stats || '<-- character_stats: {{content}} -->');
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-tracking-merge-prefill').val(tracking.merge_prefill || '');
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-tracking-merge-prompt-gm-notes').val(tracking.merge_prompt_gm_notes || '');
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-tracking-merge-prompt-character-stats').val(tracking.merge_prompt_character_stats || '');
+}
+
+/**
+ * Refreshes summary processing settings UI
+ * @param {any} summaryProcessing - Summary processing settings object
+ */
+function refreshSummaryProcessingUI(summaryProcessing /*: any */ = {}) /*: void */ {
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-summary-processing-enabled').prop('checked', summaryProcessing.enabled ?? true);
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-summary-skip-duplicates').prop('checked', summaryProcessing.skip_duplicates ?? true);
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-summary-merge-prefill').val(summaryProcessing.merge_prefill || '');
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-summary-merge-prompt').val(summaryProcessing.merge_prompt || '');
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-summary-triage-prefill').val(summaryProcessing.triage_prefill || '');
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-summary-triage-prompt').val(summaryProcessing.triage_prompt || '');
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-summary-resolution-prefill').val(summaryProcessing.resolution_prefill || '');
+    // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-summary-resolution-prompt').val(summaryProcessing.resolution_prompt || '');
+}
+
+/**
+ * Refreshes entity types UI
+ */
+function refreshEntityTypesUI() /*: void */ {
+    ensureEntityTypesSetting();
+    renderEntityTypesList();
+}
+
+/**
+ * Refreshes connection dropdowns
+ */
+function refreshConnectionDropdowns() /*: void */ {
+    update_autolorebooks_tracking_merge_connection_dropdown();
+    update_autolorebooks_tracking_merge_preset_dropdown();
+    update_autolorebooks_summary_merge_connection_dropdown();
+    update_autolorebooks_summary_merge_preset_dropdown();
+    update_autolorebooks_summary_triage_connection_dropdown();
+    update_autolorebooks_summary_triage_preset_dropdown();
+    update_autolorebooks_summary_resolution_connection_dropdown();
+    update_autolorebooks_summary_resolution_preset_dropdown();
+}
+
+/**
  * Refresh Auto-Lorebooks settings UI
  * Loads values from extension_settings.autoLorebooks into UI elements
  */
 function refresh_lorebooks_settings_ui() {
     try {
-        // Load global settings from extension_settings.autoLorebooks
-        // $FlowFixMe[prop-missing]
-        const lorebooksSettings = extension_settings.autoLorebooks || {};
+        const settings = loadLorebooksSettings();
 
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-enabled-by-default').prop('checked', lorebooksSettings.enabledByDefault ?? true);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-delete-on-chat-delete').prop('checked', lorebooksSettings.deleteOnChatDelete ?? true);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-name-template').val(lorebooksSettings.nameTemplate || 'z-AutoLB - {{char}} - {{chat}}');
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-debug-mode').prop('checked', lorebooksSettings.debug_mode ?? true);
-
-        // Load queue settings
-        const queueSettings = lorebooksSettings.queue || {};
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-queue-enabled').prop('checked', queueSettings.enabled !== false);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-queue-use-lorebook').prop('checked', queueSettings.use_lorebook !== false);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-queue-display-enabled').prop('checked', queueSettings.display_enabled !== false);
-
-        // Load tracking settings
-        const tracking = lorebooksSettings.tracking || {};
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-enabled').prop('checked', tracking.enabled ?? true);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-intercept-send').prop('checked', tracking.intercept_send_button ?? true);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-auto-create').prop('checked', tracking.auto_create ?? true);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-remove-syntax').prop('checked', tracking.remove_from_message ?? true);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-syntax-gm-notes').val(tracking.syntax_gm_notes || '<-- gm_notes: {{content}} -->');
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-syntax-character-stats').val(tracking.syntax_character_stats || '<-- character_stats: {{content}} -->');
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-merge-prefill').val(tracking.merge_prefill || '');
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-merge-prompt-gm-notes').val(tracking.merge_prompt_gm_notes || '');
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-merge-prompt-character-stats').val(tracking.merge_prompt_character_stats || '');
-
-        // Load summary processing settings
-        const summaryProcessing = lorebooksSettings.summary_processing || {};
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-processing-enabled').prop('checked', summaryProcessing.enabled ?? true);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-skip-duplicates').prop('checked', summaryProcessing.skip_duplicates ?? true);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-merge-prefill').val(summaryProcessing.merge_prefill || '');
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-merge-prompt').val(summaryProcessing.merge_prompt || '');
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-triage-prefill').val(summaryProcessing.triage_prefill || '');
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-triage-prompt').val(summaryProcessing.triage_prompt || '');
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-resolution-prefill').val(summaryProcessing.resolution_prefill || '');
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-resolution-prompt').val(summaryProcessing.resolution_prompt || '');
-
-        ensureEntityTypesSetting();
-        renderEntityTypesList();
-
-        // Populate dropdowns (async but don't block)
-        update_autolorebooks_tracking_merge_connection_dropdown();
-        update_autolorebooks_tracking_merge_preset_dropdown();
-        update_autolorebooks_summary_merge_connection_dropdown();
-        update_autolorebooks_summary_merge_preset_dropdown();
-        update_autolorebooks_summary_triage_connection_dropdown();
-        update_autolorebooks_summary_triage_preset_dropdown();
-        update_autolorebooks_summary_resolution_connection_dropdown();
-        update_autolorebooks_summary_resolution_preset_dropdown();
+        refreshGlobalSettingsUI(settings);
+        refreshQueueSettingsUI(settings.queue);
+        refreshTrackingSettingsUI(settings.tracking);
+        refreshSummaryProcessingUI(settings.summary_processing);
+        refreshEntityTypesUI();
+        refreshConnectionDropdowns();
 
         debug("Auto-Lorebooks settings UI refreshed");
 
