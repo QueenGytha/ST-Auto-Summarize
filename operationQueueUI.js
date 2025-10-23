@@ -22,6 +22,8 @@ import {
 
 // Constants
 const NAVBAR_ID = 'scene-summary-navigator-bar';
+const ICON_CHEVRON_LEFT = 'fa-chevron-left';
+const ICON_CHEVRON_RIGHT = 'fa-chevron-right';
 
 let queueUIContainer = null;
 let isInitialized = false;
@@ -103,7 +105,7 @@ function createQueueUI() {
     // This button is NOT a child of the navbar - it's fixed to viewport
     // $FlowFixMe[cannot-resolve-name]
     const $navbarToggle = $(`
-        <button id="queue_navbar_toggle" class="menu_button fa-solid fa-chevron-left"
+        <button id="queue_navbar_toggle" class="menu_button fa-solid ${ICON_CHEVRON_LEFT}"
             title="Hide Queue Navbar"
             style="position: fixed; top: 50vh; left: 200px; transform: translateY(-50%); padding: 0.8em 0.5em; font-size: 1.2em; z-index: 1000002; background: rgba(30,30,40,0.95); border: 1px solid var(--SmartThemeBlurTintColor); border-radius: 0 8px 8px 0;"></button>
     `);
@@ -191,14 +193,14 @@ function bindQueueControlEvents() {
         if ($navbar.is(':visible')) {
             // Hide ENTIRE navbar, keep button visible
             $navbar.hide();
-            $button.removeClass('fa-chevron-left').addClass('fa-chevron-right');
+            $button.removeClass(ICON_CHEVRON_LEFT).addClass(ICON_CHEVRON_RIGHT);
             $button.attr('title', 'Show Queue Navbar');
             $button.css('left', '0'); // Move button to left edge when navbar hidden
             localStorage.setItem('operation_queue_navbar_visible', 'false');
         } else {
             // Show navbar
             $navbar.show();
-            $button.removeClass('fa-chevron-right').addClass('fa-chevron-left');
+            $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
             $button.attr('title', 'Hide Queue Navbar');
             $button.css('left', '200px'); // Move button back to navbar edge when shown
             localStorage.setItem('operation_queue_navbar_visible', 'true');
@@ -214,7 +216,7 @@ function bindQueueControlEvents() {
         // $FlowFixMe[cannot-resolve-name]
         const $button = $('#queue_navbar_toggle');
         $navbar.hide(); // Hide entire navbar
-        $button.removeClass('fa-chevron-left').addClass('fa-chevron-right');
+        $button.removeClass(ICON_CHEVRON_LEFT).addClass(ICON_CHEVRON_RIGHT);
         $button.attr('title', 'Show Queue Navbar');
         $button.css('left', '0'); // Button at left edge when collapsed
     }
@@ -254,12 +256,16 @@ function updateQueueDisplay() {
     // $FlowFixMe[cannot-resolve-name]
     const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
     if (navbarVisible !== 'false') {
-        // Navbar visible
+        // Navbar visible - sync button state
         $navbar.show();
+        $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
+        $button.attr('title', 'Hide Queue Navbar');
         $button.css('left', '200px');
     } else {
-        // Navbar hidden
+        // Navbar hidden - sync button state
         $navbar.hide();
+        $button.removeClass(ICON_CHEVRON_LEFT).addClass(ICON_CHEVRON_RIGHT);
+        $button.attr('title', 'Show Queue Navbar');
         $button.css('left', '0');
     }
 
@@ -490,12 +496,16 @@ export function updateQueueUIVisibility() {
         // $FlowFixMe[cannot-resolve-name]
         const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
         if (navbarVisible !== 'false') {
-            // Navbar visible
+            // Navbar visible - sync button state
             $navbar.show();
+            $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
+            $button.attr('title', 'Hide Queue Navbar');
             $button.css('left', '200px');
         } else {
-            // Navbar hidden
+            // Navbar hidden - sync button state
             $navbar.hide();
+            $button.removeClass(ICON_CHEVRON_LEFT).addClass(ICON_CHEVRON_RIGHT);
+            $button.attr('title', 'Show Queue Navbar');
             $button.css('left', '0');
         }
     }
