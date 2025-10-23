@@ -125,32 +125,26 @@ const OPERATION_LLM_EXPECTATIONS /*: {[string]: {expectedCalls: number, reason: 
 /**
  * Test result structure
  */
-type PassedResult = {
-    operation: string,
-    calls: number,
-    expected: number,
-    reason: string
-};
-
-type FailedResult = {
-    operation: string,
-    calls: number,
-    expected: number,
-    reason: string,
-    error: string,
-    fix: string
-};
-
-type WarningResult = {
-    operation: string,
-    message: string,
-    reason: string
-};
-
 const testResults /*: {
-    passed: Array<PassedResult>,
-    failed: Array<FailedResult>,
-    warnings: Array<WarningResult>
+    passed: Array<{
+        operation: string,
+        calls: number,
+        expected: number,
+        reason: string
+    }>,
+    failed: Array<{
+        operation: string,
+        calls: number,
+        expected: number,
+        reason: string,
+        error: string,
+        fix: string
+    }>,
+    warnings: Array<{
+        operation: string,
+        message: string,
+        reason: string
+    }>
 } */ = {
     passed: [],
     failed: [],
