@@ -23,34 +23,43 @@
 
 console.log('\n=== Single LLM Call Per Operation Test ===\n');
 
-// Type definitions
-type LLMExpectation = {
+/**
+ * Type definitions (using Flow comment syntax for Node.js compatibility)
+ */
+/*::
+type OperationExpectation = {
     expectedCalls: number,
-    reason: string,
-    ...
+    reason: string
 };
 
-type TestResultPassed = {
+type TestPassedResult = {
     operation: string,
     calls: number,
-    expected: number,
-    reason: string,
-    ...
+    expected: number | string,
+    reason: string
 };
 
-type TestResultFailed = {
+type TestFailedResult = {
     operation: string,
     calls: number,
     expected: number,
     reason: string,
     error: string,
-    fix: string,
-    ...
+    fix: string
 };
+
+type TestWarningResult = {
+    operation: string,
+    calls: number,
+    expected: number,
+    reason: string,
+    message: string
+};
+*/
 
 // Track LLM calls globally
 let llmCallCount /*: number */ = 0;
-let llmCallDetails /*: Array<any> */ = [];  // eslint-disable-line sonarjs/no-unused-collection -- Used for debugging violations
+let llmCallDetails /*: Array<{callNumber: number, prompt: string, timestamp: number}> */ = [];  // eslint-disable-line sonarjs/no-unused-collection -- Used for debugging violations
 const originalGenerateRaw /*: any */ = typeof globalThis.generateRaw === 'function' ? globalThis.generateRaw : null;
 
 /**
@@ -85,7 +94,7 @@ function mockGenerateRaw(...args /*: Array<any> */) /*: Promise<string> */ {
  *   }
  * }
  */
-const OPERATION_LLM_EXPECTATIONS /*: {[string]: LLMExpectation} */ = {
+const OPERATION_LLM_EXPECTATIONS /*: {[key: string]: OperationExpectation} */ = {
     // Summarization operations
     'summarize_message': {
         expectedCalls: 1,
@@ -150,7 +159,11 @@ const OPERATION_LLM_EXPECTATIONS /*: {[string]: LLMExpectation} */ = {
 /**
  * Test result structure
  */
-const testResults /*: {passed: Array<TestResultPassed>, failed: Array<TestResultFailed>, warnings: Array<any>} */ = {
+const testResults /*: {
+    passed: Array<TestPassedResult>,
+    failed: Array<TestFailedResult>,
+    warnings: Array<TestWarningResult>
+} */ = {
     passed: [],
     failed: [],
     warnings: []
@@ -209,20 +222,17 @@ const testResults /*: {passed: Array<TestResultPassed>, failed: Array<TestResult
 /**
  * Run test suite
  */
-async function runTests() {
+async function runTests() /*: Promise<void> */ {
     console.log('📋 Testing operation LLM call counts...\n');
 
     // Mock generateRaw globally if available
     if (typeof globalThis.generateRaw === 'function') {
-        // $FlowFixMe[cannot-write] - Intentional mock for testing
-        globalThis.generateRaw = mockGenerateRaw;
+        // Cast through any to override read-only property in test environment
+        (globalThis /*: any */).generateRaw = mockGenerateRaw;
     }
 
     // Test each operation type
     for (const [operationType, expectedSpec] of Object.entries(OPERATION_LLM_EXPECTATIONS)) {
-        // Cast expectedSpec to proper type since Object.entries loses type info
-        const spec /*: LLMExpectation */ = (expectedSpec /*: any */);
-
         // Reset counters
         llmCallCount = 0;
         llmCallDetails = [];
@@ -237,29 +247,34 @@ async function runTests() {
         // 5. Validate against expectations
 
         // For now, we just validate the expectations are defined
-        if (spec.expectedCalls > 1) {
+        // Cast expectedSpec from mixed to our known type
+        const spec /*: OperationExpectation */ = (expectedSpec /*: any */);
+        const expectedCalls /*: number */ = spec.expectedCalls;
+        const reason /*: string */ = spec.reason;
+
+        if (expectedCalls > 1) {
             testResults.failed.push({
                 operation: operationType,
-                calls: spec.expectedCalls,
+                calls: expectedCalls,
                 expected: 1,
-                reason: spec.reason,
-                error: `❌ DESIGN VIOLATION: Operation is configured to make ${spec.expectedCalls} LLM calls`,
+                reason: reason,
+                error: `❌ DESIGN VIOLATION: Operation is configured to make ${expectedCalls} LLM calls`,
                 fix: 'This operation should be split into multiple operations, one per LLM call.'
             });
         } else {
             testResults.passed.push({
                 operation: operationType,
-                calls: spec.expectedCalls,
-                expected: spec.expectedCalls,
-                reason: spec.reason
+                calls: expectedCalls,
+                expected: expectedCalls,
+                reason: reason
             });
         }
     }
 
     // Restore original generateRaw
     if (originalGenerateRaw) {
-        // $FlowFixMe[cannot-write] - Restoring original after mock
-        globalThis.generateRaw = originalGenerateRaw;
+        // Cast through any to override read-only property in test environment
+        (globalThis /*: any */).generateRaw = originalGenerateRaw;
     }
 
     // Print results
@@ -269,7 +284,7 @@ async function runTests() {
 /**
  * Print test results
  */
-function printResults() {
+function printResults() /*: void */ {
     console.log('\n' + '='.repeat(80));
     console.log('TEST RESULTS');
     console.log('='.repeat(80) + '\n');

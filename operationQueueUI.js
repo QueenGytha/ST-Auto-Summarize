@@ -79,11 +79,8 @@ function createQueueUI() {
         <div id="shared_operation_queue_ui" style="margin-top: 1em; padding-top: 1em; border-top: 1px solid var(--SmartThemeBlurTintColor);">
             <div class="queue-header" style="margin-bottom: 0.5em;">
                 <div id="queue_toggle_visibility" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3em; cursor: pointer;" title="Collapse/Expand">
-                    <h4 style="margin: 0; font-size: 1em;">Operations</h4>
+                    <h4 style="margin: 0; font-size: 1em;">Operations <span id="queue_count">(0)</span></h4>
                     <i class="fa-solid fa-chevron-up" style="padding: 0.2em 0.5em;"></i>
-                </div>
-                <div style="font-size: 0.8em; opacity: 0.7; margin-bottom: 0.3em;">
-                    <span id="queue_stats"></span>
                 </div>
             </div>
             <div id="queue_list_container" class="queue-list" style="max-height: 200px; overflow-y: auto;">
@@ -96,17 +93,21 @@ function createQueueUI() {
         </div>
     `);
 
-    // Create navbar toggle button (positioned on the right side)
+    // Insert queue container at top of navbar
+    $navbar.prepend($queueContainer);
+
+    // Create navbar collapse/expand toggle button (fixed position at middle-right of navbar)
+    // This button is NOT a child of the navbar - it's fixed to viewport
     // $FlowFixMe[cannot-resolve-name]
     const $navbarToggle = $(`
         <button id="queue_navbar_toggle" class="menu_button fa-solid fa-chevron-left"
-            title="Show/Hide Operations Queue"
-            style="position: absolute; top: 0; right: -30px; padding: 0.5em; z-index: 1000001; background: rgba(30,30,40,0.95); border: 1px solid var(--SmartThemeBlurTintColor);"></button>
+            title="Hide Queue Navbar"
+            style="position: fixed; top: 50vh; left: 200px; transform: translateY(-50%); padding: 0.8em 0.5em; font-size: 1.2em; z-index: 1000002; background: rgba(30,30,40,0.95); border: 1px solid var(--SmartThemeBlurTintColor); border-radius: 0 8px 8px 0;"></button>
     `);
 
-    // Insert at top of navbar (above any other content)
-    $navbar.prepend($queueContainer);
-    $navbar.append($navbarToggle);
+    // Append button to body (not navbar) so it stays visible when navbar is hidden
+    // $FlowFixMe[cannot-resolve-name]
+    $('body').append($navbarToggle);
 
     // Bind event handlers
     bindQueueControlEvents();
@@ -175,26 +176,28 @@ function bindQueueControlEvents() {
         await removeOperation(operationId);
     });
 
-    // Navbar toggle (show/hide entire queue)
+    // Navbar toggle (show/hide ENTIRE navbar)
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('click', '#queue_navbar_toggle', function () {
         // $FlowFixMe[cannot-resolve-name]
-        const $queue = $('#shared_operation_queue_ui');
+        const $navbar = $('#scene-summary-navigator-bar');
         // $FlowFixMe[cannot-resolve-name]
         const $button = $(this);
 
-        if ($queue.is(':visible')) {
-            // Hide queue
-            $queue.hide();
+        if ($navbar.is(':visible')) {
+            // Hide ENTIRE navbar, keep button visible
+            $navbar.hide();
             $button.removeClass('fa-chevron-left').addClass('fa-chevron-right');
-            $button.attr('title', 'Show Operations Queue');
+            $button.attr('title', 'Show Queue Navbar');
+            $button.css('left', '0'); // Move button to left edge when navbar hidden
             localStorage.setItem('operation_queue_navbar_visible', 'false');
         } else {
-            // Show queue
-            $queue.show();
+            // Show navbar
+            $navbar.show();
             $button.removeClass('fa-chevron-right').addClass('fa-chevron-left');
-            $button.attr('title', 'Hide Operations Queue');
+            $button.attr('title', 'Hide Queue Navbar');
+            $button.css('left', '200px'); // Move button back to navbar edge when shown
             localStorage.setItem('operation_queue_navbar_visible', 'true');
         }
     });
@@ -204,12 +207,13 @@ function bindQueueControlEvents() {
     const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
     if (navbarVisible === 'false') {
         // $FlowFixMe[cannot-resolve-name]
-        const $queue = $('#shared_operation_queue_ui');
+        const $navbar = $('#scene-summary-navigator-bar');
         // $FlowFixMe[cannot-resolve-name]
         const $button = $('#queue_navbar_toggle');
-        $queue.hide();
+        $navbar.hide(); // Hide entire navbar
         $button.removeClass('fa-chevron-left').addClass('fa-chevron-right');
-        $button.attr('title', 'Show Operations Queue');
+        $button.attr('title', 'Show Queue Navbar');
+        $button.css('left', '0'); // Button at left edge when collapsed
     }
 }
 
@@ -229,36 +233,39 @@ function updateQueueDisplay() {
     const enabled = get_settings('operation_queue_display_enabled') !== false; // Default to true
 
     // $FlowFixMe[cannot-resolve-name]
-    const $toggleButton = $('#queue_navbar_toggle');
+    const $navbar = $('#scene-summary-navigator-bar');
+    // $FlowFixMe[cannot-resolve-name]
+    const $button = $('#queue_navbar_toggle');
 
     if (!enabled) {
-        // Setting disabled: hide both queue and toggle button
-        // $FlowFixMe[incompatible-use]
-        queueUIContainer.hide();
-        $toggleButton.hide();
+        // Setting disabled: hide both navbar and button
+        $navbar.hide();
+        $button.hide();
         return;
     }
 
-    // Setting enabled: show toggle button, queue visibility controlled by user
-    $toggleButton.show();
+    // Setting enabled: show button, navbar visibility controlled by user
+    $button.show();
 
     // Check user's toggle preference (default to visible)
     // $FlowFixMe[cannot-resolve-name]
     const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
     if (navbarVisible !== 'false') {
-        // $FlowFixMe[incompatible-use]
-        queueUIContainer.show();
+        // Navbar visible
+        $navbar.show();
+        $button.css('left', '200px');
+    } else {
+        // Navbar hidden
+        $navbar.hide();
+        $button.css('left', '0');
     }
 
-    // Update stats
+    // Update count in header
     const stats = getQueueStats();
     // $FlowFixMe[cannot-resolve-name]
-    const $stats = $('#queue_stats');
-    const parts = [];
-    if (stats.pending > 0) parts.push(`${stats.pending} pending`);
-    if (stats.in_progress > 0) parts.push(`${stats.in_progress} running`);
-    if (stats.failed > 0) parts.push(`${stats.failed} failed`);
-    $stats.text(parts.length > 0 ? parts.join(', ') : 'No operations');
+    const $count = $('#queue_count');
+    const totalCount = stats.pending + stats.in_progress + stats.failed;
+    $count.text(`(${totalCount})`);
 
     // Update pause/resume button
     // $FlowFixMe[cannot-resolve-name]
@@ -464,23 +471,29 @@ export function updateQueueUIVisibility() {
     const enabled = get_settings('operation_queue_display_enabled') !== false;
 
     // $FlowFixMe[cannot-resolve-name]
-    const $toggleButton = $('#queue_navbar_toggle');
+    const $navbar = $('#scene-summary-navigator-bar');
+    // $FlowFixMe[cannot-resolve-name]
+    const $button = $('#queue_navbar_toggle');
 
     if (!enabled) {
-        // Setting disabled: hide both queue and toggle button
-        // $FlowFixMe[incompatible-use]
-        queueUIContainer.hide();
-        $toggleButton.hide();
+        // Setting disabled: hide both navbar and button
+        $navbar.hide();
+        $button.hide();
     } else {
-        // Setting enabled: show toggle button, queue visibility controlled by user
-        $toggleButton.show();
+        // Setting enabled: show button, navbar visibility controlled by user
+        $button.show();
 
         // Check user's toggle preference (default to visible)
         // $FlowFixMe[cannot-resolve-name]
         const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
         if (navbarVisible !== 'false') {
-            // $FlowFixMe[incompatible-use]
-            queueUIContainer.show();
+            // Navbar visible
+            $navbar.show();
+            $button.css('left', '200px');
+        } else {
+            // Navbar hidden
+            $navbar.hide();
+            $button.css('left', '0');
         }
     }
 }
