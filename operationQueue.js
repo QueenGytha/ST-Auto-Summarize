@@ -774,28 +774,29 @@ async function executeOperation(operation /*: Operation */) /*: Promise<any> */ 
         error(SUBSYSTEM.QUEUE, `Failed ${operation.type}:`, operation.id, err);
         const errText = (err && err.message) ? String(err.message) : String(err);
 
-        // Do not retry on non-transient client errors
-        const nonRetryable = /bad request|invalid request|unsupported|unauthorized|forbidden/i.test(errText);
+        // Since SillyTavern strips error details, we can't detect rate limits specifically.
+        // "Bad Request" could be a rate limit, so we retry on ALL errors with exponential backoff.
+        // Only fail on truly non-retryable errors (auth failures, etc.)
 
-        // Cap retries to avoid infinite loops
-        const MAX_RETRIES = 3;
+        // Only these errors are truly non-retryable (very conservative list)
+        const nonRetryable = /unauthorized|forbidden|authentication.?required|invalid.?api.?key/i.test(errText);
 
-        if (nonRetryable || operation.retries >= MAX_RETRIES) {
+        if (nonRetryable) {
             await updateOperationStatus(operation.id, OperationStatus.FAILED, errText);
-            // Remove failed operation to unblock queue; surface error to user
             await removeOperation(operation.id);
-            toast(`Queue operation failed (${operation.type}): ${errText}`, 'warning');
+            toast(`Queue operation failed (${operation.type}): ${errText}`, 'error');
             return null;
         }
 
-        // Retry with exponential backoff
+        // Retry with exponential backoff on ALL other errors (including "Bad Request" which may be rate limits)
+        // No retry cap - keep retrying indefinitely until it succeeds
         operation.retries++;
         const backoffDelay = Math.min(10 * Math.pow(2, operation.retries - 1) * 1000, 300000);
         await updateOperationStatus(operation.id, OperationStatus.PENDING, `Retry ${operation.retries} after ${backoffDelay/1000}s: ${errText}`);
-        log(SUBSYSTEM.QUEUE, `⚠️ Operation failed! Waiting ${backoffDelay/1000}s before retry ${operation.retries}`);
+        log(SUBSYSTEM.QUEUE, `⚠️ Operation failed (likely rate limit)! Waiting ${backoffDelay/1000}s before retry ${operation.retries}`);
         await saveQueue();
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
-        debug(SUBSYSTEM.QUEUE, `Retrying ${operation.type} after backoff...`);
+        debug(SUBSYSTEM.QUEUE, `Retrying ${operation.type} after backoff (retry ${operation.retries})...`);
         return await executeOperation(operation);
     }
 }
