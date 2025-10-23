@@ -1,4 +1,5 @@
 // @flow
+/* global localStorage */
 import {
     get_settings,
     getContext,
@@ -54,6 +55,14 @@ function createRunningSceneSummaryNavbar() {
         $navbar = $('<div id="scene-summary-navigator-bar"></div>');
         // $FlowFixMe[cannot-resolve-name]
         $('#sheld').after($navbar);
+
+        // Respect user's navbar visibility preference from localStorage
+        // $FlowFixMe[cannot-resolve-name]
+        const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
+        if (navbarVisible === 'false') {
+            $navbar.hide();
+        }
+
         log(SUBSYSTEM.RUNNING, 'Created scene navigator bar for running summary controls');
     }
 
