@@ -359,7 +359,7 @@ function renderOperation(operation) {
     const typeName = formatOperationType(operation.type);
 
     // Format params for display
-    const paramsText = formatOperationParams(operation.type, operation.params);
+    const paramsText = formatOperationParams(operation.type, operation.params, operation.metadata);
 
     // Calculate duration if completed
     let durationText = '';
@@ -417,17 +417,47 @@ function formatOperationType(type) {
         [OperationType.GENERATE_RUNNING_SUMMARY]: 'Running Summary',
         [OperationType.COMBINE_SCENE_WITH_RUNNING]: 'Combine Scene',
         // $FlowFixMe[prop-missing] [invalid-computed-prop]
-        [OperationType.GENERATE_COMBINED_SUMMARY]: 'Combined Summary'
+        [OperationType.GENERATE_COMBINED_SUMMARY]: 'Combined Summary',
+        [OperationType.PROCESS_LOREBOOK_ENTRY]: 'Lorebook',
+        [OperationType.TRIAGE_LOREBOOK_ENTRY]: 'Lorebook',
+        [OperationType.RESOLVE_LOREBOOK_ENTRY]: 'Lorebook',
+        [OperationType.CREATE_LOREBOOK_ENTRY]: 'Lorebook',
+        [OperationType.MERGE_LOREBOOK_ENTRY]: 'Lorebook',
+        [OperationType.UPDATE_LOREBOOK_REGISTRY]: 'Lorebook'
     };
 
     return names[type] || type;
 }
 
 /**
+ * Format lorebook operation params as <type>-<name>
+ */
+// $FlowFixMe[missing-local-annot]
+function formatLorebookOperationParams(params, metadata) {
+    const entryType = params.entryData?.type || metadata?.entry_type || 'entry';
+    const entryName = metadata?.entry_comment || params.entryData?.comment || params.entryData?.name || 'Unknown';
+    return `${entryType}-${entryName}`;
+}
+
+/**
+ * Format message operation params as Message #N
+ */
+// $FlowFixMe[missing-local-annot]
+function formatMessageOperationParams(params) {
+    if (params.index !== undefined) {
+        return `Message #${params.index}`;
+    }
+    if (params.indexes && params.indexes.length) {
+        return `Messages #${params.indexes[0]}-${params.indexes[params.indexes.length - 1]}`;
+    }
+    return '';
+}
+
+/**
  * Format operation params for display
  */
 // $FlowFixMe[missing-local-annot]
-function formatOperationParams(type, params) {
+function formatOperationParams(type, params, metadata) {
     switch (type) {
         case OperationType.SUMMARIZE_MESSAGE:
         case OperationType.VALIDATE_SUMMARY:
@@ -435,13 +465,7 @@ function formatOperationParams(type, params) {
         case OperationType.GENERATE_SCENE_SUMMARY:
         case OperationType.GENERATE_SCENE_NAME:
         case OperationType.COMBINE_SCENE_WITH_RUNNING:
-            if (params.index !== undefined) {
-                return `Message #${params.index}`;
-            }
-            if (params.indexes && params.indexes.length) {
-                return `Messages #${params.indexes[0]}-${params.indexes[params.indexes.length - 1]}`;
-            }
-            return '';
+            return formatMessageOperationParams(params);
 
         case OperationType.GENERATE_RUNNING_SUMMARY:
             // falls through
@@ -449,6 +473,14 @@ function formatOperationParams(type, params) {
         // eslint-disable-next-line no-fallthrough
         case OperationType.GENERATE_COMBINED_SUMMARY:
             return 'All messages';
+
+        case OperationType.PROCESS_LOREBOOK_ENTRY:
+        case OperationType.TRIAGE_LOREBOOK_ENTRY:
+        case OperationType.RESOLVE_LOREBOOK_ENTRY:
+        case OperationType.CREATE_LOREBOOK_ENTRY:
+        case OperationType.MERGE_LOREBOOK_ENTRY:
+        case OperationType.UPDATE_LOREBOOK_REGISTRY:
+            return formatLorebookOperationParams(params, metadata);
 
         default:
             return JSON.stringify(params);
