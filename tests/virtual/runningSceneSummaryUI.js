@@ -1,4 +1,5 @@
 // @flow
+/* global localStorage */
 import {
     get_settings,
     getContext,
@@ -54,10 +55,20 @@ function createRunningSceneSummaryNavbar() {
         $navbar = $('<div id="scene-summary-navigator-bar"></div>');
         // $FlowFixMe[cannot-resolve-name]
         $('#sheld').after($navbar);
+
         log(SUBSYSTEM.RUNNING, 'Created scene navigator bar for running summary controls');
     }
 
     $navbar.append(html);
+
+    // ALWAYS respect user's navbar visibility preference from localStorage
+    // This must run every time, not just on creation, because the navbar
+    // might already exist from Queue UI or previous initialization
+    // $FlowFixMe[cannot-resolve-name]
+    const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
+    if (navbarVisible === 'false') {
+        $navbar.hide();
+    }
 
     // Bind event handlers
     // $FlowFixMe[cannot-resolve-name]
@@ -150,6 +161,16 @@ function updateRunningSceneSummaryNavbar() {
         updateVersionSelector();
     } else {
         $controls.hide();
+    }
+
+    // ALWAYS respect user's navbar visibility preference from localStorage
+    // Even when showing controls, the navbar itself might need to be hidden
+    // $FlowFixMe[cannot-resolve-name]
+    const $navbar = $('#scene-summary-navigator-bar');
+    // $FlowFixMe[cannot-resolve-name]
+    const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
+    if (navbarVisible === 'false') {
+        $navbar.hide();
     }
 
     debug(SUBSYSTEM.UI, `Running scene summary controls ${show ? 'shown' : 'hidden'}`);
