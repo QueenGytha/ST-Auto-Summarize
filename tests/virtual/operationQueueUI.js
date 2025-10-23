@@ -430,6 +430,30 @@ function formatOperationType(type) {
 }
 
 /**
+ * Format lorebook operation params as <type>-<name>
+ */
+// $FlowFixMe[missing-local-annot]
+function formatLorebookOperationParams(params, metadata) {
+    const entryType = params.entryData?.type || metadata?.entry_type || 'entry';
+    const entryName = metadata?.entry_comment || params.entryData?.comment || params.entryData?.name || 'Unknown';
+    return `${entryType}-${entryName}`;
+}
+
+/**
+ * Format message operation params as Message #N
+ */
+// $FlowFixMe[missing-local-annot]
+function formatMessageOperationParams(params) {
+    if (params.index !== undefined) {
+        return `Message #${params.index}`;
+    }
+    if (params.indexes && params.indexes.length) {
+        return `Messages #${params.indexes[0]}-${params.indexes[params.indexes.length - 1]}`;
+    }
+    return '';
+}
+
+/**
  * Format operation params for display
  */
 // $FlowFixMe[missing-local-annot]
@@ -441,13 +465,7 @@ function formatOperationParams(type, params, metadata) {
         case OperationType.GENERATE_SCENE_SUMMARY:
         case OperationType.GENERATE_SCENE_NAME:
         case OperationType.COMBINE_SCENE_WITH_RUNNING:
-            if (params.index !== undefined) {
-                return `Message #${params.index}`;
-            }
-            if (params.indexes && params.indexes.length) {
-                return `Messages #${params.indexes[0]}-${params.indexes[params.indexes.length - 1]}`;
-            }
-            return '';
+            return formatMessageOperationParams(params);
 
         case OperationType.GENERATE_RUNNING_SUMMARY:
             // falls through
@@ -461,12 +479,8 @@ function formatOperationParams(type, params, metadata) {
         case OperationType.RESOLVE_LOREBOOK_ENTRY:
         case OperationType.CREATE_LOREBOOK_ENTRY:
         case OperationType.MERGE_LOREBOOK_ENTRY:
-        case OperationType.UPDATE_LOREBOOK_REGISTRY: {
-            // Format as <type>-<name>
-            const entryType = params.entryData?.type || metadata?.entry_type || 'entry';
-            const entryName = metadata?.entry_comment || params.entryData?.comment || params.entryData?.name || 'Unknown';
-            return `${entryType}-${entryName}`;
-        }
+        case OperationType.UPDATE_LOREBOOK_REGISTRY:
+            return formatLorebookOperationParams(params, metadata);
 
         default:
             return JSON.stringify(params);
