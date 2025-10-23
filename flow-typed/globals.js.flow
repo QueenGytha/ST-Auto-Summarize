@@ -8,6 +8,7 @@ declare var $: any;
 declare var document: any;
 declare var window: any;
 declare var console: any;
+declare var localStorage: any;
 
 // DOM/JS globals
 declare function structuredClone(value: any): any;
@@ -27,6 +28,7 @@ declare var POPUP_TYPE: any;
 declare var Popup: any;
 declare var chat: any;
 declare var toastr: any;
+declare var generateRaw: any;
 
 // SillyTavern Message Type (based on actual message structure in script.js)
 // extra is optional for backwards compatibility with old chat files

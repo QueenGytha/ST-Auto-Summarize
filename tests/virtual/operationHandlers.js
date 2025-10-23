@@ -31,6 +31,15 @@ import {
     mergeLorebookEntryByUid,
 } from './lorebookEntryMerger.js';
 import {
+    getEntryData,
+    getTriageResult,
+    getResolutionResult,
+    setTriageResult,
+    setResolutionResult,
+    markStageInProgress,
+    completePendingEntry,
+} from './lorebookPendingOps.js';
+import {
     getContext,
     get_data,
     set_data,
@@ -188,10 +197,16 @@ export function registerAllOperationHandlers() {
 
         debug(SUBSYSTEM.QUEUE, `Executing PROCESS_LOREBOOK_ENTRY for: ${entryData.name || entryData.comment || 'Unknown'}`);
         const result = await processSingleLorebookEntry(entryData, { useQueue: true });
+
+        // If processing failed, throw error to trigger queue retry logic
+        if (!result.success) {
+            throw new Error(result.message || 'Failed to process lorebook entry');
+        }
+
         return result;
     });
 
-    // Merge lorebook entry
+    // Merge lorebook entry (standalone operation)
     registerOperationHandler(OperationType.MERGE_LOREBOOK_ENTRY, async (operation) => {
         const { lorebookName, entryUid, existingContent, newContent, newKeys, newSecondaryKeys } = operation.params;
         const entryComment = operation.metadata?.entry_comment || entryUid;
@@ -205,6 +220,271 @@ export function registerAllOperationHandlers() {
             newSecondaryKeys
         });
         return result;
+    });
+
+    // TRIAGE_LOREBOOK_ENTRY - First stage of lorebook processing pipeline
+    registerOperationHandler(OperationType.TRIAGE_LOREBOOK_ENTRY, async (operation) => {
+        const { entryId, entryData, registryListing, typeList } = operation.params;
+        debug(SUBSYSTEM.QUEUE, `Executing TRIAGE_LOREBOOK_ENTRY for: ${entryData.comment || 'Unknown'}`);
+
+        // Import the triage function (dynamic import to avoid circular dependencies)
+        const { runTriageStage } = await import('./summaryToLorebookProcessor.js');
+        const settings = get_settings('autoLorebooks')?.summary_processing || {};
+
+        // Run triage
+        const triageResult = await runTriageStage(entryData, registryListing, typeList, settings);
+
+        // Store triage result in pending ops
+        setTriageResult(entryId, triageResult);
+        markStageInProgress(entryId, 'triage_complete');
+
+        debug(SUBSYSTEM.QUEUE, `✓ Triage complete for ${entryId}: type=${triageResult.type}, sameIds=${triageResult.sameEntityIds.length}, needsIds=${triageResult.needsFullContextIds.length}`);
+
+        // Enqueue next operation based on triage result
+        if (triageResult.needsFullContextIds && triageResult.needsFullContextIds.length > 0) {
+            // Need resolution
+            await enqueueOperation(
+                OperationType.RESOLVE_LOREBOOK_ENTRY,
+                { entryId },
+                { metadata: { entry_comment: entryData.comment } }
+            );
+        } else if (triageResult.sameEntityIds.length === 1) {
+            // Exact match found - merge
+            const resolvedId = triageResult.sameEntityIds[0];
+            setResolutionResult(entryId, { resolvedId, synopsis: triageResult.synopsis });
+            markStageInProgress(entryId, 'resolution_complete');
+
+            await enqueueOperation(
+                OperationType.CREATE_LOREBOOK_ENTRY,
+                { entryId, action: 'merge', resolvedId },
+                { metadata: { entry_comment: entryData.comment } }
+            );
+        } else {
+            // No match - create new
+            await enqueueOperation(
+                OperationType.CREATE_LOREBOOK_ENTRY,
+                { entryId, action: 'create' },
+                { metadata: { entry_comment: entryData.comment } }
+            );
+        }
+
+        return { success: true, triageResult };
+    });
+
+    // RESOLVE_LOREBOOK_ENTRY - Second stage (conditional) - get full context for uncertain matches
+    registerOperationHandler(OperationType.RESOLVE_LOREBOOK_ENTRY, async (operation) => {
+        const { entryId } = operation.params;
+        const entryData = getEntryData(entryId);
+        const triageResult = getTriageResult(entryId);
+
+        if (!entryData || !triageResult) {
+            throw new Error(`Missing pending data for entry ${entryId}`);
+        }
+
+        debug(SUBSYSTEM.QUEUE, `Executing RESOLVE_LOREBOOK_ENTRY for: ${entryData.comment || 'Unknown'}`);
+
+        // Import resolution function
+        const { runResolutionStage, buildCandidateEntriesData } = await import('./summaryToLorebookProcessor.js');
+        const { getAttachedLorebook, getLorebookEntries } = await import('./lorebookManager.js');
+        const { ensureRegistryState } = await import('./summaryToLorebookProcessor.js');
+
+        const settings = get_settings('autoLorebooks')?.summary_processing || {};
+        const lorebookName = getAttachedLorebook();
+
+        if (!lorebookName) {
+            throw new Error('No lorebook attached');
+        }
+
+        // Get existing entries to build candidate data
+        const existingEntriesRaw = await getLorebookEntries(lorebookName);
+        const existingEntriesMap /*: Map<string, any> */ = new Map();
+        existingEntriesRaw?.forEach(entry => {
+            if (entry && entry.uid !== undefined) {
+                existingEntriesMap.set(String(entry.uid), entry);
+            }
+        });
+
+        const registryState = ensureRegistryState();
+        const candidateIds = Array.from(new Set([
+            ...triageResult.sameEntityIds,
+            ...triageResult.needsFullContextIds
+        ]));
+
+        const candidateEntries = buildCandidateEntriesData(candidateIds, registryState, existingEntriesMap);
+
+        // Run resolution
+        const resolutionResult = await runResolutionStage(
+            entryData,
+            triageResult.synopsis,
+            candidateEntries,
+            triageResult.type,
+            settings
+        );
+
+        // Store resolution result
+        setResolutionResult(entryId, resolutionResult);
+        markStageInProgress(entryId, 'resolution_complete');
+
+        debug(SUBSYSTEM.QUEUE, `✓ Resolution complete for ${entryId}: resolvedId=${resolutionResult.resolvedId || 'new'}`);
+
+        // Enqueue next operation
+        if (resolutionResult.resolvedId) {
+            // Match found - merge
+            await enqueueOperation(
+                OperationType.CREATE_LOREBOOK_ENTRY,
+                { entryId, action: 'merge', resolvedId: resolutionResult.resolvedId },
+                { metadata: { entry_comment: entryData.comment } }
+            );
+        } else {
+            // No match - create new
+            await enqueueOperation(
+                OperationType.CREATE_LOREBOOK_ENTRY,
+                { entryId, action: 'create' },
+                { metadata: { entry_comment: entryData.comment } }
+            );
+        }
+
+        return { success: true, resolutionResult };
+    });
+
+    // CREATE_LOREBOOK_ENTRY - Third stage - create new entry or merge with existing
+    registerOperationHandler(OperationType.CREATE_LOREBOOK_ENTRY, async (operation) => {
+        const { entryId, action, resolvedId } = operation.params;
+        const entryData = getEntryData(entryId);
+        const triageResult = getTriageResult(entryId);
+        const resolutionResult = getResolutionResult(entryId);
+
+        if (!entryData) {
+            throw new Error(`Missing entry data for ${entryId}`);
+        }
+
+        debug(SUBSYSTEM.QUEUE, `Executing CREATE_LOREBOOK_ENTRY (${action}) for: ${entryData.comment || 'Unknown'}`);
+
+        const { getAttachedLorebook, getLorebookEntries, addLorebookEntry } = await import('./lorebookManager.js');
+        const { mergeLorebookEntry } = await import('./lorebookEntryMerger.js');
+        const { ensureRegistryState, updateRegistryRecord, assignEntityId, ensureStringArray } = await import('./summaryToLorebookProcessor.js');
+
+        const lorebookName = getAttachedLorebook();
+        if (!lorebookName) {
+            throw new Error('No lorebook attached');
+        }
+
+        const registryState = ensureRegistryState();
+        const finalType = triageResult?.type || entryData.type || 'character';
+        const finalSynopsis = resolutionResult?.synopsis || triageResult?.synopsis || '';
+
+        let entityId = null;
+        let entityUid = null;
+        let actionPerformed = action;
+
+        if (action === 'merge' && resolvedId) {
+            // Merge with existing entry
+            const existingEntriesRaw = await getLorebookEntries(lorebookName);
+            const record = registryState.index?.[resolvedId];
+            const existingEntry = record ? existingEntriesRaw?.find(e => e.uid === record.uid) : null;
+
+            if (record && existingEntry) {
+                const mergeResult = await mergeLorebookEntry(lorebookName, existingEntry, entryData, { useQueue: false });
+
+                if (!mergeResult?.success) {
+                    throw new Error(mergeResult?.message || 'Merge failed');
+                }
+
+                entityId = resolvedId;
+                entityUid = existingEntry.uid;
+                actionPerformed = 'merged';
+
+                // Update registry record
+                updateRegistryRecord(registryState, resolvedId, {
+                    uid: existingEntry.uid,
+                    type: finalType,
+                    name: entryData.comment || existingEntry.comment || '',
+                    comment: entryData.comment || existingEntry.comment || '',
+                    aliases: ensureStringArray(entryData.keys),
+                    synopsis: finalSynopsis
+                });
+
+                debug(SUBSYSTEM.QUEUE, `✓ Merged entry ${entryId} into ${resolvedId}`);
+            } else {
+                // Fallback to create if merge target not found
+                actionPerformed = 'create';
+            }
+        }
+
+        if (action === 'create' || actionPerformed === 'create') {
+            // Create new entry
+            const createdEntry = await addLorebookEntry(lorebookName, entryData);
+
+            if (!createdEntry) {
+                throw new Error('Failed to create lorebook entry');
+            }
+
+            entityId = assignEntityId(registryState, finalType);
+            entityUid = createdEntry.uid;
+            actionPerformed = 'created';
+
+            // Add to registry
+            updateRegistryRecord(registryState, entityId, {
+                uid: createdEntry.uid,
+                type: finalType,
+                name: entryData.comment || createdEntry.comment || '',
+                comment: entryData.comment || createdEntry.comment || '',
+                aliases: ensureStringArray(entryData.keys),
+                synopsis: finalSynopsis
+            });
+
+            debug(SUBSYSTEM.QUEUE, `✓ Created entry ${entryId} as ${entityId}`);
+        }
+
+        if (!entityId || !entityUid) {
+            throw new Error('Failed to create or merge entry');
+        }
+
+        // Enqueue registry update
+        await enqueueOperation(
+            OperationType.UPDATE_LOREBOOK_REGISTRY,
+            { entryId, entityType: finalType, entityId, action: actionPerformed },
+            { metadata: { entry_comment: entryData.comment } }
+        );
+
+        return { success: true, entityId, entityUid, action: actionPerformed };
+    });
+
+    // UPDATE_LOREBOOK_REGISTRY - Fourth stage - update registry entry content
+    registerOperationHandler(OperationType.UPDATE_LOREBOOK_REGISTRY, async (operation) => {
+        const { entryId, entityType, entityId, action } = operation.params;
+        const entryData = getEntryData(entryId);
+
+        debug(SUBSYSTEM.QUEUE, `Executing UPDATE_LOREBOOK_REGISTRY for type=${entityType}, id=${entityId}`);
+
+        const { getAttachedLorebook, updateRegistryEntryContent } = await import('./lorebookManager.js');
+        const { buildRegistryItemsForType, ensureRegistryState } = await import('./summaryToLorebookProcessor.js');
+        const { saveMetadata } = await import('../../../../script.js');
+
+        const lorebookName = getAttachedLorebook();
+        if (!lorebookName) {
+            throw new Error('No lorebook attached');
+        }
+
+        const registryState = ensureRegistryState();
+        const items = buildRegistryItemsForType(registryState, entityType);
+
+        // Update registry content
+        await updateRegistryEntryContent(lorebookName, entityType, items);
+
+        // Save metadata
+        saveMetadata();
+
+        debug(SUBSYSTEM.QUEUE, `✓ Updated registry for type ${entityType}`);
+
+        // Complete pending entry (cleanup)
+        completePendingEntry(entryId);
+
+        // Show success toast
+        const comment = entryData?.comment || 'Entry';
+        toast(`✓ Lorebook ${action}: ${comment}`, 'success');
+
+        return { success: true };
     });
 
     log(SUBSYSTEM.QUEUE, 'Registered all operation handlers');

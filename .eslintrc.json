@@ -5,6 +5,12 @@
   "plugins": [
     "import"
   ],
+  "env": {
+    "browser": true
+  },
+  "globals": {
+    "localStorage": "readonly"
+  },
   "rules": {
     "import/named": "error",
     "import/no-unresolved": ["error", {

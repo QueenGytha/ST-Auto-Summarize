@@ -42,14 +42,20 @@ export const OperationType /*: { [key: string]: OperationTypeType } */ = /*:: ( 
     GENERATE_RUNNING_SUMMARY: 'generate_running_summary',
     COMBINE_SCENE_WITH_RUNNING: 'combine_scene_with_running',
     GENERATE_COMBINED_SUMMARY: 'generate_combined_summary',
+    // Legacy monolithic operation (deprecated, kept for backward compat)
     PROCESS_LOREBOOK_ENTRY: 'process_lorebook_entry',
+    // New multi-stage lorebook operations
+    TRIAGE_LOREBOOK_ENTRY: 'triage_lorebook_entry',
+    RESOLVE_LOREBOOK_ENTRY: 'resolve_lorebook_entry',
+    CREATE_LOREBOOK_ENTRY: 'create_lorebook_entry',
     MERGE_LOREBOOK_ENTRY: 'merge_lorebook_entry',
+    UPDATE_LOREBOOK_REGISTRY: 'update_lorebook_registry',
 } /*:: : { [key: string]: OperationTypeType }) */;
 
 // Flow type definitions
 /*::
 type OperationStatusType = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
-type OperationTypeType = 'summarize_message' | 'validate_summary' | 'detect_scene_break' | 'generate_scene_summary' | 'generate_scene_name' | 'generate_running_summary' | 'combine_scene_with_running' | 'generate_combined_summary' | 'process_lorebook_entry' | 'merge_lorebook_entry';
+type OperationTypeType = 'summarize_message' | 'validate_summary' | 'detect_scene_break' | 'generate_scene_summary' | 'generate_scene_name' | 'generate_running_summary' | 'combine_scene_with_running' | 'generate_combined_summary' | 'process_lorebook_entry' | 'triage_lorebook_entry' | 'resolve_lorebook_entry' | 'create_lorebook_entry' | 'merge_lorebook_entry' | 'update_lorebook_registry';
 
 type Operation = {
     id: string,
