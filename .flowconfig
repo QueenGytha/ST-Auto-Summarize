@@ -12,6 +12,8 @@
 # Ignore Flow's bundled react lib (not used here; causes MixedElement error on Windows)
 .*/react\.js$
 .*/React\.js$
+# Ignore Node.js-only test files
+<PROJECT_ROOT>/test-single-llm-call\.js
 
 [untyped]
 # Don't type-check these files' SOURCE, but use libdefs if available

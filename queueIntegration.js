@@ -207,7 +207,7 @@ export async function queueCombineSceneWithRunning(index /*: number */, options 
 }
 
 /**
- * Queue processing of a single lorebook entry
+ * Queue processing of a single lorebook entry using multi-operation pipeline
  * @param {Object} entryData - Lorebook entry data {name, type, keywords, content}
  * @param {number} messageIndex - Message index this entry came from
  * @param {?string} summaryHash - Hash of the summary version that produced this entry
@@ -222,49 +222,41 @@ export async function queueProcessLorebookEntry(entryData /*: Object */, message
 
     const entryName = entryData.name || entryData.comment || 'Unknown';
     const lowerName = String(entryName).toLowerCase().trim();
-    debug(SUBSYSTEM.QUEUE, `Queueing lorebook entry: ${entryName} from message ${messageIndex}`);
+    debug(SUBSYSTEM.QUEUE, `Queueing lorebook entry (new pipeline): ${entryName} from message ${messageIndex}`);
 
     // De-duplicate: if there is already a pending or in-progress operation for the same entry
-    // (either PROCESS_LOREBOOK_ENTRY or MERGE_LOREBOOK_ENTRY), skip enqueuing again.
+    // Check for TRIAGE_LOREBOOK_ENTRY operations (the new pipeline starts with triage)
     let ops /*: Array<any> */ = [];
     try {
         ops = getAllOperations();
 
-        // Cancel pending operations for this message/entry produced by older summary versions
+        // Cancel pending triage operations for this message/entry produced by older summary versions
         if (summaryHash) {
             for (const op of ops) {
-                if (op.type !== OperationType.PROCESS_LOREBOOK_ENTRY) continue;
+                if (op.type !== OperationType.TRIAGE_LOREBOOK_ENTRY) continue;
                 if (op.status !== OperationStatus.PENDING) continue;
                 const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
                 if (metaName !== lowerName) continue;
                 if (op?.metadata?.message_index !== messageIndex) continue;
-                const opHash = op.params?.summaryHash || op.metadata?.summary_hash || null;
+                const opHash = op.metadata?.summary_hash || null;
                 if (opHash && opHash === summaryHash) continue;
                 await updateOperationStatus(op.id, OperationStatus.CANCELLED, 'Replaced by newer summary version');
             }
         }
 
+        // Check for duplicates - look for any active triage operations for the same entry
         const hasDuplicate = ops.some(op => {
             const status = op.status;
             const active = status === 'pending' || status === 'in_progress';
             if (!active) return false;
 
-            if (op.type === OperationType.PROCESS_LOREBOOK_ENTRY) {
+            if (op.type === OperationType.TRIAGE_LOREBOOK_ENTRY) {
                 const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
                 const sameMsg = op?.metadata?.message_index === messageIndex;
                 if (!sameMsg || metaName !== lowerName) return false;
-                const opHash = op.params?.summaryHash || op.metadata?.summary_hash || null;
+                const opHash = op.metadata?.summary_hash || null;
                 if (summaryHash && opHash && opHash !== summaryHash) return false;
                 return true;
-            }
-
-            if (op.type === OperationType.MERGE_LOREBOOK_ENTRY) {
-                const metaName = String(op?.metadata?.entry_comment || '').toLowerCase().trim();
-                if (summaryHash) {
-                    const opHash = op.params?.summaryHash || op.metadata?.summary_hash || null;
-                    if (opHash && opHash !== summaryHash) return false;
-                }
-                return metaName === lowerName; // merge ops are per entry UID; name match is sufficient
             }
 
             return false;
@@ -276,14 +268,34 @@ export async function queueProcessLorebookEntry(entryData /*: Object */, message
         }
     } catch { /* best effort dedup */ }
 
+    // Import pending ops helpers and processor functions
+    const { generateEntryId, createPendingEntry } = await import('./lorebookPendingOps.js');
+    const { ensureRegistryState, buildRegistryListing, normalizeEntryData } = await import('./summaryToLorebookProcessor.js');
+    const { getConfiguredEntityTypeDefinitions } = await import('./entityTypes.js');
+
+    // Generate unique entry ID
+    const entryId = generateEntryId();
+
+    // Normalize and store entry data in pending ops
+    const normalizedEntry = normalizeEntryData(entryData);
+    createPendingEntry(entryId, normalizedEntry);
+
+    // Build registry listing and type list for triage
+    const registryState = ensureRegistryState();
+    const registryListing = buildRegistryListing(registryState);
+    const entityTypeDefs = getConfiguredEntityTypeDefinitions(get_settings('autoLorebooks')?.entity_types);
+    const typeList = entityTypeDefs.map(def => def.name).filter(Boolean).join('|') || 'character';
+
+    // Enqueue TRIAGE operation (first stage of pipeline)
     return await enqueueOperation(
-        OperationType.PROCESS_LOREBOOK_ENTRY,
-        { entryData, messageIndex, summaryHash },
+        OperationType.TRIAGE_LOREBOOK_ENTRY,
+        { entryId, entryData: normalizedEntry, registryListing, typeList },
         {
             priority: options.priority ?? 0,
             dependencies: options.dependencies ?? [],
             metadata: {
                 entry_name: entryName,
+                entry_comment: normalizedEntry.comment,
                 message_index: messageIndex,
                 summary_hash: summaryHash || null,
                 ...options.metadata

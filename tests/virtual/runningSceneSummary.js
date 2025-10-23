@@ -350,7 +350,8 @@ async function generate_running_scene_summary(skipQueue /*: boolean */ = false) 
 
     } catch (err) {
         error(SUBSYSTEM.RUNNING, 'Failed to generate running scene summary:', err);
-        return null;
+        // Re-throw to let queue retry logic handle it (don't return null)
+        throw err;
     } finally {
         // Restore original preset/profile
         await set_preset(current_preset);
@@ -504,7 +505,8 @@ async function combine_scene_with_running_summary(scene_index /*: number */) /*:
 
     } catch (err) {
         error(SUBSYSTEM.RUNNING, 'Failed to combine scene with running summary:', err);
-        return null;
+        // Re-throw to let queue retry logic handle it (don't return null)
+        throw err;
     } finally {
         // Restore original preset/profile
         await set_preset(current_preset);

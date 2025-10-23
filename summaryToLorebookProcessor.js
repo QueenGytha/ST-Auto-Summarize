@@ -161,7 +161,7 @@ function extractLorebookData(summary /*: any */) /*: any */ {
  * @param {Object} entry - Entry data
  * @returns {Object} Normalized entry
  */
-function normalizeEntryData(entry /*: any */) /*: any */ {
+export function normalizeEntryData(entry /*: any */) /*: any */ {
     return {
         comment: entry.comment || entry.name || '',
         content: entry.content || entry.description || '',
@@ -184,7 +184,7 @@ function isRegistryEntry(entry /*: any */) /*: boolean */ {
     return typeof comment === 'string' && comment.startsWith(REGISTRY_PREFIX);
 }
 
-function ensureRegistryState() /*: any */ {
+export function ensureRegistryState() /*: any */ {
     const metadata /*: any */ = chat_metadata;
     if (!metadata.auto_lorebooks || typeof metadata.auto_lorebooks !== 'object') {
         metadata.auto_lorebooks = {};
@@ -207,7 +207,7 @@ function buildTypePrefix(type /*: string */) /*: string */ {
     return base.padEnd(4, 'x');
 }
 
-function assignEntityId(state /*: any */, type /*: string */) /*: string */ {
+export function assignEntityId(state /*: any */, type /*: string */) /*: string */ {
     const counters = state.counters || {};
     const current = Number(counters[type]) || 0;
     const next = current + 1;
@@ -216,14 +216,14 @@ function assignEntityId(state /*: any */, type /*: string */) /*: string */ {
     return `${prefix}_${String(next).padStart(4, '0')}`;
 }
 
-function ensureStringArray(value /*: any */) /*: Array<string> */ {
+export function ensureStringArray(value /*: any */) /*: Array<string> */ {
     if (Array.isArray(value)) {
         return value.map(v => String(v)).filter(Boolean);
     }
     return [];
 }
 
-function updateRegistryRecord(state /*: any */, id /*: string */, updates /*: any */) /*: void */ {
+export function updateRegistryRecord(state /*: any */, id /*: string */, updates /*: any */) /*: void */ {
     if (!state.index[id]) {
         state.index[id] = {};
     }
@@ -236,7 +236,7 @@ function updateRegistryRecord(state /*: any */, id /*: string */, updates /*: an
     if (updates.aliases !== undefined) record.aliases = ensureStringArray(updates.aliases);
 }
 
-function buildRegistryListing(state /*: any */) /*: string */ {
+export function buildRegistryListing(state /*: any */) /*: string */ {
     const grouped /*: { [key: string]: Array<any> } */ = {};
     Object.entries(state.index || {}).forEach(([id, record]) => {
         if (!record) return;
@@ -268,7 +268,7 @@ function buildRegistryListing(state /*: any */) /*: string */ {
     return sections.join('\n').trim();
 }
 
-function buildRegistryItemsForType(state /*: any */, type /*: string */) /*: Array<any> */ {
+export function buildRegistryItemsForType(state /*: any */, type /*: string */) /*: Array<any> */ {
     const items = [];
     Object.entries(state.index || {}).forEach(([id, record]) => {
         if (!record) return;
@@ -285,7 +285,7 @@ function buildRegistryItemsForType(state /*: any */, type /*: string */) /*: Arr
     return items;
 }
 
-function buildCandidateEntriesData(candidateIds /*: Array<string> */, registryState /*: any */, existingEntriesMap /*: Map<string, any> */) /*: Array<any> */ {
+export function buildCandidateEntriesData(candidateIds /*: Array<string> */, registryState /*: any */, existingEntriesMap /*: Map<string, any> */) /*: Array<any> */ {
     const data = [];
     candidateIds.forEach(id => {
         const record = registryState.index?.[id];
@@ -350,7 +350,8 @@ async function runModelWithSettings(
         return null;
     } catch (err) {
         error?.(`Error during Auto-Lorebooks ${label}`, err);
-        return null;
+        // Re-throw to let queue retry logic handle it (don't return null)
+        throw err;
     } finally {
         if (completionPreset && currentPreset && window.setPreset) {
             await window.setPreset(currentPreset);
@@ -394,7 +395,7 @@ function parseJsonSafe(raw /*: ?string */) /*: any */ {
             try {
                 return JSON.parse(raw.trim());
             } catch {
-                // Both failed, log the error with original input
+                // Both failed, log the original error with original input
                 error?.('Failed to parse JSON response', err, raw);
                 return null;
             }
@@ -404,7 +405,7 @@ function parseJsonSafe(raw /*: ?string */) /*: any */ {
     }
 }
 
-async function runTriageStage(
+export async function runTriageStage(
     normalizedEntry /*: any */,
     registryListing /*: string */,
     typeList /*: string */,
@@ -456,7 +457,7 @@ async function runTriageStage(
     };
 }
 
-async function runResolutionStage(
+export async function runResolutionStage(
     normalizedEntry /*: any */,
     triageSynopsis /*: string */,
     candidateEntries /*: Array<any> */,
