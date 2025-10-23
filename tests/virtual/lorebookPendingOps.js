@@ -3,19 +3,7 @@
 
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { chat_metadata, saveMetadata } from './stubs/externals.js';
-
-// Will be imported from index.js via barrel exports
-let debug /*: any */, log /*: any */, error /*: any */;
-
-/**
- * Initialize the pending operations manager
- */
-// $FlowFixMe[signature-verification-failure]
-export function initLorebookPendingOps(utils /*: any */) /*: void */ {
-    debug = utils.debug;
-    log = utils.log;
-    error = utils.error;
-}
+import { debug, log, error } from './index.js';
 
 /**
  * Ensure pending ops structure exists in metadata
@@ -222,7 +210,6 @@ export function getResolutionResult(entryId /*: string */) /*: any */ {
 }
 
 export default {
-    initLorebookPendingOps,
     generateEntryId,
     getPendingEntry,
     createPendingEntry,
