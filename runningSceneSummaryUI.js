@@ -221,10 +221,10 @@ function updateVersionSelector() {
     // Add versions (newest first)
     const sortedVersions = validVersions.slice().sort((a, b) => b.version - a.version);
     sortedVersions.forEach(v => {
-        // Format: v0 (0 > 3), v1 (3 > 7), etc.
+        // Format: Summary: v0 (0 > 3), Summary: v1 (3 > 7), etc.
         const prev_idx = v.prev_scene_index ?? 0;
         const new_idx = v.new_scene_index ?? 0;
-        const label = `v${v.version} (${prev_idx} > ${new_idx})`;
+        const label = `Summary: v${v.version} (${prev_idx} > ${new_idx})`;
         $selector.append(`<option value="${v.version}">${label}</option>`);
     });
 
