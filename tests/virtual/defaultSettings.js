@@ -85,7 +85,7 @@ Object.assign(default_settings, {
     scene_summary_auto_name: true, // Auto-generate scene name when auto-generating scene summary (if not already set)
     scene_summary_auto_name_manual: true, // Auto-generate scene name when manually generating scene summary (if not already set)
     scene_summary_navigator_toggle: true, // Show scene navigator bar with scene links and operations
-    scene_summary_navigator_width: 240, // Width of scene navigator bar in pixels (default: 240px)
+    scene_summary_navigator_width: 240, // Width of scene navigator bar in pixels (default: 240px, double the original 48px)
     scene_summary_navigator_font_size: 12, // Font size for scene navigator links in pixels (default: 12px)
     scene_summary_default_collapsed: true, // New scene summaries start collapsed by default (only showing scene name)
 
