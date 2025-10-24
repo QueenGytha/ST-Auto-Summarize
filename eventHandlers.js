@@ -399,10 +399,11 @@ Object.entries(event_types).forEach(([key, type]) => {
         const categoryIndexes = await import('./categoryIndexes.js');
         const lorebookEntryMerger = await import('./lorebookEntryMerger.js');
         const summaryToLorebookProcessor = await import('./summaryToLorebookProcessor.js');
+        const connectionSettingsManager = await import('./connectionSettingsManager.js');
 
         // Initialize lorebooks modules
         lorebookManager.initLorebookManager(lorebookUtils);
-        trackingEntries.initTrackingEntries(lorebookUtils, lorebookManager);
+        trackingEntries.initTrackingEntries(lorebookUtils, lorebookManager, null, connectionSettingsManager);
         sendButtonInterceptor.initSendButtonInterceptor(lorebookUtils, trackingEntries);
         categoryIndexes.initCategoryIndexes(lorebookUtils, lorebookManager, { get_settings });
 
@@ -413,7 +414,7 @@ Object.entries(event_types).forEach(([key, type]) => {
             lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, null);
         }
 
-        summaryToLorebookProcessor.initSummaryToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger);
+        summaryToLorebookProcessor.initSummaryToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger, connectionSettingsManager);
 
         // Initialize tracking settings
         trackingEntries.initializeTrackingSettings();

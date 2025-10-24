@@ -13,6 +13,10 @@ import {
     toast,
     SUBSYSTEM,
     extension_settings,
+    get_connection_profile_api,
+    getPresetManager,
+    set_connection_profile,
+    get_current_connection_profile,
 } from './index.js';
 import {
     auto_generate_running_summary,
@@ -684,10 +688,7 @@ export function renderAllSceneBreaks(
  * @param {function} get_data - Function to get data from message
  * @param {function} set_data - Function to set data on message
  * @param {object} ctx - SillyTavern context
- * @param {string|null} profile - Connection profile to use (optional)
- * @param {string|null} preset - Completion preset to use (optional)
- * @param {string|null} current_profile - Current profile to restore after generation (optional)
- * @param {string|null} current_preset - Current preset to restore after generation (optional)
+ * @param {object|null} _savedProfiles - Saved profile/preset info from switchToSceneProfile() (optional, unused but kept for signature consistency)
  * @returns {Promise<string|null>} - The generated scene name, or null if generation failed
  */
 // $FlowFixMe[missing-local-annot] - Function signature is correct
@@ -697,10 +698,7 @@ async function autoGenerateSceneNameFromSummary(
     get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
     set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
     ctx /*: STContext */,
-    profile /*: ?string */ = null,
-    preset /*: ?string */ = null,
-    current_profile /*: ?string */ = null,
-    current_preset /*: ?string */ = null
+    _savedProfiles /*: ?{savedProfile: ?string, api: ?string, presetManager: ?any, savedPreset: ?any} */  // any is appropriate for PresetManager
 ) /*: Promise<?string> */ {
     const existingSceneName = get_data(message, SCENE_BREAK_NAME_KEY);
 
@@ -721,14 +719,6 @@ ${summary}
 
 Respond with ONLY the scene name, nothing else. Make it concise and descriptive, like a chapter title.`;
 
-        // Switch to scene summary profile/preset if set (reuse same settings)
-        if (profile) {
-            await ctx.set_connection_profile?.(profile);
-        }
-        if (preset) {
-            await ctx.set_preset?.(preset);
-        }
-
         // Block input if setting is enabled
         if (get_settings('block_chat')) {
             ctx.deactivateSendButtons();
@@ -739,14 +729,6 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
         // Re-enable input if it was blocked
         if (get_settings('block_chat')) {
             ctx.activateSendButtons();
-        }
-
-        // Restore previous profile/preset
-        if (profile && current_profile) {
-            await ctx.set_connection_profile?.(current_profile);
-        }
-        if (preset && current_preset) {
-            await ctx.set_preset?.(current_preset);
         }
 
         // Clean up the scene name (remove quotes, trim, limit length)
@@ -856,39 +838,74 @@ function prepareScenePrompt(
 
 // Helper: Switch to scene summary profile/preset
 // $FlowFixMe[missing-local-annot] - Function signature is correct
-async function switchToSceneProfile(ctx /*: STContext */) /*: Promise<{profile: ?string, preset: ?string, current_profile: any, current_preset: any}> */ {
-    const profile = get_settings('scene_summary_connection_profile');
-    const preset = get_settings('scene_summary_completion_preset');
-    const current_profile = await ctx.get_current_connection_profile?.();
-    const current_preset = await ctx.get_current_preset?.();
+export async function switchToSceneProfile(_ctx /*: STContext */) /*: Promise<?{savedProfile: ?string, api: ?string, presetManager: ?any, savedPreset: ?any}> */ {
+    const preset_name = get_settings('scene_summary_completion_preset');
+    const profile_name = get_settings('scene_summary_connection_profile');
 
-    if (profile) {
-        debug(SUBSYSTEM.SCENE, "Switching to connection profile:", profile);
-        await ctx.set_connection_profile?.(profile);
-    }
-    if (preset) {
-        debug(SUBSYSTEM.SCENE, "Switching to preset:", preset);
-        await ctx.set_preset?.(preset);
+    debug(SUBSYSTEM.SCENE, `Scene settings: profile='${profile_name}', preset='${preset_name}'`);
+
+    // Save current connection profile
+    const savedProfile = await get_current_connection_profile();
+
+    // Switch to configured connection profile if specified
+    if (profile_name) {
+        await set_connection_profile(profile_name);
+        debug(SUBSYSTEM.SCENE, `Switched connection profile to: ${profile_name}`);
     }
 
-    return { profile, preset, current_profile, current_preset };
+    // Get API type for the configured connection profile
+    const api = await get_connection_profile_api(profile_name);
+    if (!api) {
+        debug(SUBSYSTEM.SCENE, 'No API found for connection profile, using defaults');
+        return { savedProfile, api: undefined, presetManager: undefined, savedPreset: undefined };
+    }
+
+    // Get PresetManager for that API
+    const presetManager = getPresetManager(api);
+    if (!presetManager) {
+        debug(SUBSYSTEM.SCENE, `No PresetManager found for API: ${api}`);
+        return { savedProfile, api, presetManager: undefined, savedPreset: undefined };
+    }
+
+    // Save current preset for this API
+    const savedPreset = presetManager.getSelectedPreset();
+
+    // Switch to configured preset if specified
+    if (preset_name) {
+        const presetValue = presetManager.findPreset(preset_name);
+        if (presetValue) {
+            debug(SUBSYSTEM.SCENE, `Switching ${api} preset to: ${preset_name}`);
+            presetManager.selectPreset(presetValue);
+        } else {
+            debug(SUBSYSTEM.SCENE, `Preset '${preset_name}' not found for API ${api}`);
+        }
+    }
+
+    return { savedProfile, api, presetManager, savedPreset };
 }
 
 // Helper: Restore previous profile/preset
 // $FlowFixMe[missing-local-annot] - Function signature is correct
 async function restoreProfile(
     ctx /*: STContext */,
-    savedProfiles /*: {profile: ?string, preset: ?string, current_profile: any, current_preset: any} */  // any for current profile/preset is appropriate
+    saved /*: ?{savedProfile: ?string, api: ?string, presetManager: ?any, savedPreset: ?any} */  // any is appropriate for PresetManager
 ) /*: Promise<void> */ {
-    const { profile, preset, current_profile, current_preset } = savedProfiles;
+    if (!saved) return;
 
-    if (profile) {
-        debug(SUBSYSTEM.SCENE, "Restoring previous connection profile:", current_profile);
-        await ctx.set_connection_profile?.(current_profile);
+    // Restore preset if it was changed
+    const presetManager = saved.presetManager;
+    const savedPreset = saved.savedPreset;
+    const api = saved.api;
+    if (presetManager && savedPreset && api) {
+        debug(SUBSYSTEM.SCENE, `Restoring ${api} preset to original`);
+        presetManager.selectPreset(savedPreset);
     }
-    if (preset) {
-        debug(SUBSYSTEM.SCENE, "Restoring previous preset:", current_preset);
-        await ctx.set_preset?.(current_preset);
+
+    // Restore connection profile if it was changed
+    const savedProfile = saved.savedProfile;
+    if (savedProfile) {
+        await set_connection_profile(savedProfile);
+        debug(SUBSYSTEM.SCENE, `Restored connection profile to: ${savedProfile}`);
     }
 }
 
@@ -1051,8 +1068,7 @@ export async function generateSceneSummary(
         debug(SUBSYSTEM.SCENE, "Waiting 5 seconds before generating scene name...");
         await new Promise(resolve => setTimeout(resolve, 5000));
 
-        const { profile, preset, current_profile, current_preset } = savedProfiles;
-        await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, profile, preset, current_profile, current_preset);
+        await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, savedProfiles);
     }
 
     // Save and render

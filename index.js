@@ -22,11 +22,11 @@ import { runRegexScript } from '../../../../scripts/extensions/regex/engine.js'
 import { getContext, getApiUrl, extension_settings } from '../../../extensions.js';
 // $FlowFixMe[cannot-resolve-module]
 import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from '../../../utils.js';
-import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, setSendButtonState, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata } from '../../../../script.js';
+import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, setSendButtonState, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata } from '../../../../script.js';
 
 export {
     // Exports from imported SillyTavern modules
-    formatInstructModeChat, getPresetManager, is_group_generating, selected_group, openGroupId, groups, loadMovingUIState, renderStoryString, power_user, dragElement, debounce_timeout, MacrosParser, commonEnumProviders, getRegexScripts, runRegexScript, getContext, getApiUrl, extension_settings, getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition, animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, setSendButtonState, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata
+    formatInstructModeChat, getPresetManager, is_group_generating, selected_group, openGroupId, groups, loadMovingUIState, renderStoryString, power_user, dragElement, debounce_timeout, MacrosParser, commonEnumProviders, getRegexScripts, runRegexScript, getContext, getApiUrl, extension_settings, getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition, animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, setSendButtonState, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata
 };
 
 // Barrel file. Implictly imports before exporting
@@ -52,6 +52,7 @@ export * from './messageData.js';
 export * from './popout.js';
 export * from './buttonBindings.js';
 export * from './connectionProfiles.js';
+export * from './connectionSettingsManager.js';
 export * from './promptUtils.js';
 export * from './summarization.js';
 export * from './summaryValidation.js';

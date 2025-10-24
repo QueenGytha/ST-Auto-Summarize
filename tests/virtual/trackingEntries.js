@@ -10,6 +10,7 @@ import { generateRaw } from './stubs/externals.js';
 let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */;  // Utility functions - any type is legitimate
 let getAttachedLorebook /*: any */, lorebookExists /*: any */, handleMissingLorebook /*: any */, addLorebookEntry /*: any */, modifyLorebookEntry /*: any */, getLorebookEntries /*: any */;  // Lorebook functions - any type is legitimate
 let queueMergeGMNotes /*: any */, queueMergeCharacterStats /*: any */;  // Queue functions - any type is legitimate
+let withConnectionSettings /*: any */;  // Connection settings management - any type is legitimate
 
 /**
  * Configuration for tracking entry types
@@ -77,7 +78,7 @@ Output only the merged content, nothing else.`
 /**
  * Initialize the tracking entries module
  */
-export function initTrackingEntries(utils /*: any */, lorebookManager /*: any */, queueIntegrationModule /*: any */) /*: void */ {
+export function initTrackingEntries(utils /*: any */, lorebookManager /*: any */, queueIntegrationModule /*: any */, connectionSettingsManager /*: any */) /*: void */ {
     log = utils.log;
     debug = utils.debug;
     error = utils.error;
@@ -88,6 +89,11 @@ export function initTrackingEntries(utils /*: any */, lorebookManager /*: any */
     addLorebookEntry = lorebookManager.addLorebookEntry;
     modifyLorebookEntry = lorebookManager.modifyLorebookEntry;
     getLorebookEntries = lorebookManager.getLorebookEntries;
+
+    // Import connection settings management
+    if (connectionSettingsManager) {
+        withConnectionSettings = connectionSettingsManager.withConnectionSettings;
+    }
 
     // Import queue integration functions if available
     if (queueIntegrationModule) {
@@ -318,46 +324,29 @@ async function mergeUpdateWithAI(entryType /*: string */, currentContent /*: str
         const completionPreset = getTrackingSetting('merge_completion_preset', '');
         const prefill = getTrackingSetting('merge_prefill', '');
 
-        // Save current preset/profile
-        const currentPreset = window.getPresetManager?.()?.selected_preset;
-        const currentProfile = window.connection_profile;
-
-        try {
-            // Set tracking preset/profile if configured
-            if (completionPreset && window.setPreset) {
-                await window.setPreset(completionPreset);
+        // Use centralized connection settings management
+        const result = await withConnectionSettings(
+            connectionProfile,
+            completionPreset,
+            async () => {
+                // Call AI with new object-based signature
+                // $FlowFixMe[incompatible-call] - generateRaw signature
+                return await generateRaw({
+                    prompt: prompt,
+                    instructOverride: false,
+                    quietToLoud: false,
+                    prefill: prefill
+                });
             }
-            if (connectionProfile && window.setConnectionProfile) {
-                await window.setConnectionProfile(connectionProfile);
-            }
+        );
 
-            // Call AI with new object-based signature
-            // $FlowFixMe[incompatible-call] - generateRaw signature
-            const result = await generateRaw({
-                prompt: prompt,
-                api: '',
-                instructOverride: false,
-                quietToLoud: false,
-                prefill: prefill
-            });
-
-            if (!result || typeof result !== 'string') {
-                error("AI merge returned invalid result");
-                return null;
-            }
-
-            debug(`Successfully merged ${entryType} (${result.length} chars)`);
-            return result.trim();
-
-        } finally {
-            // Restore original preset/profile
-            if (completionPreset && currentPreset && window.setPreset) {
-                await window.setPreset(currentPreset);
-            }
-            if (connectionProfile && currentProfile && window.setConnectionProfile) {
-                await window.setConnectionProfile(currentProfile);
-            }
+        if (!result || typeof result !== 'string') {
+            error("AI merge returned invalid result");
+            return null;
         }
+
+        debug(`Successfully merged ${entryType} (${result.length} chars)`);
+        return result.trim();
 
     } catch (err) {
         error("Error merging update with AI", err);

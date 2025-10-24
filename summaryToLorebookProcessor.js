@@ -20,6 +20,7 @@ let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */;  // Ut
 let getAttachedLorebook /*: any */, getLorebookEntries /*: any */, addLorebookEntry /*: any */;  // Lorebook functions - any type is legitimate
 let mergeLorebookEntry /*: any */;  // Entry merger function - any type is legitimate
 let updateRegistryEntryContent /*: any */;
+let withConnectionSettings /*: any */;  // Connection settings management - any type is legitimate
 
 const REGISTRY_PREFIX /*: string */ = '_registry_';
 
@@ -29,7 +30,7 @@ const REGISTRY_PREFIX /*: string */ = '_registry_';
  * Initialize the summary-to-lorebook processor module
  */
 // $FlowFixMe[signature-verification-failure]
-export function initSummaryToLorebookProcessor(utils /*: any */, lorebookManagerModule /*: any */, entryMergerModule /*: any */) /*: void */ {
+export function initSummaryToLorebookProcessor(utils /*: any */, lorebookManagerModule /*: any */, entryMergerModule /*: any */, connectionSettingsManager /*: any */) /*: void */ {
     // All parameters are any type - objects with various properties - legitimate use of any
     log = utils.log;
     debug = utils.debug;
@@ -47,6 +48,11 @@ export function initSummaryToLorebookProcessor(utils /*: any */, lorebookManager
     // Import entry merger function
     if (entryMergerModule) {
         mergeLorebookEntry = entryMergerModule.mergeLorebookEntry;
+    }
+
+    // Import connection settings management
+    if (connectionSettingsManager) {
+        withConnectionSettings = connectionSettingsManager.withConnectionSettings;
     }
 }
 
@@ -325,39 +331,32 @@ async function runModelWithSettings(
     completionPreset /*: string */,
     label /*: string */
 ) /*: Promise<?string> */ {
-    const manager = window.getPresetManager?.();
-    const currentPreset = manager?.selected_preset;
-    const currentProfile = window.connection_profile;
     try {
-        if (completionPreset && window.setPreset) {
-            await window.setPreset(completionPreset);
-        }
-        if (connectionProfile && window.setConnectionProfile) {
-            await window.setConnectionProfile(connectionProfile);
-        }
-        const response = await generateRaw({
-            prompt,
-            instructOverride: false,
-            quietToLoud: false,
-            prefill: prefill || ''
-        });
+        // Use centralized connection settings management
+        const response = await withConnectionSettings(
+            connectionProfile,
+            completionPreset,
+            async () => {
+                return await generateRaw({
+                    prompt,
+                    instructOverride: false,
+                    quietToLoud: false,
+                    prefill: prefill || ''
+                });
+            }
+        );
+
         if (typeof response === 'string') {
             debug?.(`Auto-Lorebooks ${label} response length: ${response.length}`);
             return response.trim();
         }
+
         error?.(`Auto-Lorebooks ${label} returned non-string response`);
         return null;
     } catch (err) {
         error?.(`Error during Auto-Lorebooks ${label}`, err);
         // Re-throw to let queue retry logic handle it (don't return null)
         throw err;
-    } finally {
-        if (completionPreset && currentPreset && window.setPreset) {
-            await window.setPreset(currentPreset);
-        }
-        if (connectionProfile && window.setConnectionProfile) {
-            await window.setConnectionProfile(currentProfile);
-        }
     }
 }
 

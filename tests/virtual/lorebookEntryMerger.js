@@ -123,7 +123,6 @@ async function callAIForMerge(existingContent /*: string */, newContent /*: stri
         // $FlowFixMe[incompatible-call] - generateRaw signature
         const mergedContent = await generateRaw({
             prompt: prompt,
-            api: '',
             instructOverride: false,
             quietToLoud: false
         });

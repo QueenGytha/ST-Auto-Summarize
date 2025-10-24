@@ -27,7 +27,7 @@ export default ({ test, expect }) => {
       generateLorebookName: utils.generateLorebookName,
       getUniqueLorebookName: utils.getUniqueLorebookName,
     });
-    tracking.initTrackingEntries({ log(){}, debug(){}, error(){}, toast(){} }, lbm, null);
+    tracking.initTrackingEntries({ log(){}, debug(){}, error(){}, toast(){} }, lbm, null, null);
 
     // Sanity
     expect(ext.chat_metadata[ext.METADATA_KEY]).toBe(undefined);

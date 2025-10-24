@@ -55,7 +55,8 @@ export default ({ test, expect }) => {
     proc.initSummaryToLorebookProcessor(
       { log(){}, debug(){}, error(){}, toast(){}, get_settings(){ return ext.extension_settings.autoLorebooks.summary_processing; } },
       lbm,
-      entryMerger
+      entryMerger,
+      { withConnectionSettings: async (prof, preset, fn) => await fn() }  // Stub: just run the function
     );
 
     return { ext, proc, lbm, entryMerger };
@@ -70,7 +71,8 @@ export default ({ test, expect }) => {
     proc.initSummaryToLorebookProcessor(
       { log(){}, debug(){}, error(){}, toast(){}, get_settings(){ return true; } },
       { getAttachedLorebook: () => 'lb', getLorebookEntries: async () => [], addLorebookEntry: async () => ({ uid: 1 }) },
-      { mergeLorebookEntry: async () => ({ success: true }) }
+      { mergeLorebookEntry: async () => ({ success: true }) },
+      { withConnectionSettings: async (prof, preset, fn) => await fn() }  // Stub
     );
 
     // Register merge handler to avoid retries
@@ -141,7 +143,8 @@ export default ({ test, expect }) => {
         getLorebookEntries: async () => ([{ uid: 7, comment: 'Test', key: [], keysecondary: [], content: 'prev' }]),
         addLorebookEntry: async () => ({ uid: 1 })
       },
-      { mergeLorebookEntry: async () => { called = true; return ({ success: true }); } }
+      { mergeLorebookEntry: async () => { called = true; return ({ success: true }); } },
+      { withConnectionSettings: async (prof, preset, fn) => await fn() }  // Stub
     );
     const entry = { name: 'Test', content: 'abc', keywords: ['a'] };
     await proc.processSingleLorebookEntry(entry, { useQueue: false });

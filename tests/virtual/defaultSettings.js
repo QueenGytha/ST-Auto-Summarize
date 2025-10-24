@@ -29,6 +29,7 @@ export const default_settings = {
     show_prefill: false,
     completion_preset: "",
     connection_profile: "",
+    scene_summary_connection_profile: "",
     auto_summarize: true,
     summarization_delay: 1,
     summarization_time_delay: 0,

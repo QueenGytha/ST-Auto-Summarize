@@ -11,6 +11,8 @@ import {
     get_settings,
     SUBSYSTEM,
     setSendButtonState,
+    getCurrentConnectionSettings,
+    switchConnectionSettings
 } from './index.js';
 
 import {
@@ -57,6 +59,11 @@ export const OperationType /*: { [key: string]: OperationTypeType } */ = /*:: ( 
 type OperationStatusType = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
 type OperationTypeType = 'summarize_message' | 'validate_summary' | 'detect_scene_break' | 'generate_scene_summary' | 'generate_scene_name' | 'generate_running_summary' | 'combine_scene_with_running' | 'generate_combined_summary' | 'process_lorebook_entry' | 'triage_lorebook_entry' | 'resolve_lorebook_entry' | 'create_lorebook_entry' | 'merge_lorebook_entry' | 'update_lorebook_registry';
 
+type ConnectionSettings = {
+    +connectionProfile?: string,  // undefined = "same as current" (readonly for Flow variance)
+    +completionPreset?: string,   // undefined = "same as current" (readonly for Flow variance)
+};
+
 type Operation = {
     id: string,
     type: OperationTypeType,
@@ -71,6 +78,8 @@ type Operation = {
     dependencies: Array<string>,
     metadata: any,
     queueVersion: number,
+    executionSettings?: ConnectionSettings,  // Settings to use when executing
+    restoreSettings?: ConnectionSettings,     // Settings to restore after execution
     ...
 };
 
@@ -462,7 +471,9 @@ export async function enqueueOperation(type /*: OperationTypeType */, params /*:
         priority: options.priority ?? 0,
         dependencies: options.dependencies ?? [],
         metadata: options.metadata ?? {},
-        queueVersion: queueVersion  // Stamp with current version
+        queueVersion: queueVersion,  // Stamp with current version
+        executionSettings: options.executionSettings,  // Connection settings to use during execution
+        restoreSettings: options.restoreSettings        // Connection settings to restore after execution
     } /*:: : Operation) */;
 
     // $FlowFixMe[incompatible-use] [incompatible-type]
@@ -755,6 +766,7 @@ export function registerOperationHandler(operationType /*: string */, handler /*
  * Execute an operation
  */
 // $FlowFixMe[recursive-definition] - Function signature is correct but Flow needs annotation
+// eslint-disable-next-line complexity
 async function executeOperation(operation /*: Operation */) /*: Promise<any> */ {
     // returns any because different operations return different result types - legitimate use of any
     const handler = operationHandlers.get(operation.type);
@@ -766,7 +778,39 @@ async function executeOperation(operation /*: Operation */) /*: Promise<any> */ 
     debug(SUBSYSTEM.QUEUE, `Executing ${operation.type}:`, operation.id);
     await updateOperationStatus(operation.id, OperationStatus.IN_PROGRESS);
 
+    // Capture current settings before any switching (only if functions available and execution settings specified)
+    let originalSettings = null;
+    let presetBeforeProfileSwitch = null;
+
     try {
+        // Handle execution settings switching
+        if (operation.executionSettings && getCurrentConnectionSettings && switchConnectionSettings) {
+            // Capture original settings so we can restore later
+            originalSettings = await getCurrentConnectionSettings();
+            const executionSettings /*: ?ConnectionSettings */ = operation.executionSettings;  // Flow type cast
+            const connectionProfile /*: ?string */ = executionSettings?.connectionProfile;
+            const completionPreset /*: ?string */ = executionSettings?.completionPreset;
+
+            // If changing profile, capture current preset FIRST (before profile switch)
+            if (connectionProfile) {
+                presetBeforeProfileSwitch = originalSettings?.completionPreset;
+                debug(SUBSYSTEM.QUEUE, `Switching to execution profile: ${connectionProfile}`);
+                await switchConnectionSettings(connectionProfile, undefined);
+            }
+
+            // If preset specified, switch to it (overrides profile's default)
+            // If preset NOT specified but we switched profiles, restore the captured preset
+            if (completionPreset) {
+                debug(SUBSYSTEM.QUEUE, `Switching to execution preset: ${completionPreset}`);
+                await switchConnectionSettings(undefined, completionPreset);
+            } else if (connectionProfile && presetBeforeProfileSwitch) {
+                // Edge case: Only profile changed, preset is "same as current"
+                // Must explicitly restore it because profile switch auto-loads default
+                debug(SUBSYSTEM.QUEUE, `Restoring preset after profile switch: ${presetBeforeProfileSwitch}`);
+                await switchConnectionSettings(undefined, presetBeforeProfileSwitch);
+            }
+        }
+
         const result = await handler(operation);
         await updateOperationStatus(operation.id, OperationStatus.COMPLETED);
         debug(SUBSYSTEM.QUEUE, `Completed ${operation.type}:`, operation.id);
@@ -804,6 +848,43 @@ async function executeOperation(operation /*: Operation */) /*: Promise<any> */ 
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
         debug(SUBSYSTEM.QUEUE, `Retrying ${operation.type} after backoff (retry ${operation.retries})...`);
         return await executeOperation(operation);
+    } finally {
+        // CRITICAL: If we switched to execution settings, we MUST restore (whether operation succeeded or failed)
+        // Wrap in try-catch to prevent errors from breaking operation flow
+        try {
+            if (operation.executionSettings && getCurrentConnectionSettings && switchConnectionSettings) {
+                // Determine what settings to restore to
+                const targetSettings /*: ?ConnectionSettings */ = operation.restoreSettings || originalSettings;
+                if (!targetSettings) return; // No settings to restore
+
+                const connectionProfile /*: ?string */ = targetSettings?.connectionProfile;
+                const completionPreset /*: ?string */ = targetSettings?.completionPreset;
+                let presetBeforeRestoreProfileSwitch = null;
+
+                // If changing profile, capture current preset FIRST (before profile switch)
+                if (connectionProfile) {
+                    const currentSettings = await getCurrentConnectionSettings();
+                    presetBeforeRestoreProfileSwitch = currentSettings?.completionPreset;
+                    debug(SUBSYSTEM.QUEUE, `Restoring to profile: ${connectionProfile}`);
+                    await switchConnectionSettings(connectionProfile, undefined);
+                }
+
+                // If preset specified, switch to it (overrides profile's default)
+                // If preset NOT specified but we switched profiles, restore the captured preset
+                if (completionPreset) {
+                    debug(SUBSYSTEM.QUEUE, `Restoring to preset: ${completionPreset}`);
+                    await switchConnectionSettings(undefined, completionPreset);
+                } else if (connectionProfile && presetBeforeRestoreProfileSwitch) {
+                    // Edge case: Only profile changed, preset is "same as current"
+                    // Must explicitly restore it because profile switch auto-loads default
+                    debug(SUBSYSTEM.QUEUE, `Restoring preset after profile switch: ${presetBeforeRestoreProfileSwitch}`);
+                    await switchConnectionSettings(undefined, presetBeforeRestoreProfileSwitch);
+                }
+            }
+        } catch (err) {
+            // Log but don't throw - restoration errors shouldn't break operation processing
+            debug(SUBSYSTEM.QUEUE, `Failed to restore connection settings: ${String(err)}`);
+        }
     }
 }
 
