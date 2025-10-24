@@ -103,11 +103,14 @@ function createQueueUI() {
 
     // Create navbar collapse/expand toggle button (fixed position at middle-right of navbar)
     // This button is NOT a child of the navbar - it's fixed to viewport
+    // Position is calculated dynamically based on navbar width
+    // $FlowFixMe[cannot-resolve-name]
+    const navbarWidth = $navbar.outerWidth() || 175;
     // $FlowFixMe[cannot-resolve-name]
     const $navbarToggle = $(`
         <button id="queue_navbar_toggle" class="menu_button fa-solid ${ICON_CHEVRON_LEFT}"
             title="Hide Queue Navbar"
-            style="position: fixed; top: 50vh; left: 200px; transform: translateY(-50%); padding: 0.8em 0.5em; font-size: 1.2em; z-index: 1000002; background: rgba(30,30,40,0.95); border: 1px solid var(--SmartThemeBlurTintColor); border-radius: 0 8px 8px 0;"></button>
+            style="position: fixed; top: 50vh; left: ${navbarWidth}px; transform: translateY(-50%); padding: 0.8em 0.5em; font-size: 1.2em; z-index: 1000002; background: rgba(30,30,40,0.95); border: 1px solid var(--SmartThemeBlurTintColor); border-radius: 0 8px 8px 0;"></button>
     `);
 
     // Append button to body (not navbar) so it stays visible when navbar is hidden
@@ -202,7 +205,10 @@ function bindQueueControlEvents() {
             $navbar.show();
             $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
             $button.attr('title', 'Hide Queue Navbar');
-            $button.css('left', '200px'); // Move button back to navbar edge when shown
+            // Calculate button position based on actual navbar width
+            // $FlowFixMe[cannot-resolve-name]
+            const navbarWidth = $navbar.outerWidth() || 175;
+            $button.css('left', `${navbarWidth}px`); // Move button to navbar edge when shown
             localStorage.setItem('operation_queue_navbar_visible', 'true');
         }
     });
@@ -260,7 +266,10 @@ function updateQueueDisplay() {
         $navbar.show();
         $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
         $button.attr('title', 'Hide Queue Navbar');
-        $button.css('left', '200px');
+        // Calculate button position based on actual navbar width
+        // $FlowFixMe[cannot-resolve-name]
+        const navbarWidth = $navbar.outerWidth() || 175;
+        $button.css('left', `${navbarWidth}px`);
     } else {
         // Navbar hidden - sync button state
         $navbar.hide();
@@ -418,12 +427,12 @@ function formatOperationType(type) {
         [OperationType.COMBINE_SCENE_WITH_RUNNING]: 'Combine Scene',
         // $FlowFixMe[prop-missing] [invalid-computed-prop]
         [OperationType.GENERATE_COMBINED_SUMMARY]: 'Combined Summary',
-        [OperationType.PROCESS_LOREBOOK_ENTRY]: 'Lorebook',
-        [OperationType.TRIAGE_LOREBOOK_ENTRY]: 'Lorebook',
-        [OperationType.RESOLVE_LOREBOOK_ENTRY]: 'Lorebook',
-        [OperationType.CREATE_LOREBOOK_ENTRY]: 'Lorebook',
-        [OperationType.MERGE_LOREBOOK_ENTRY]: 'Lorebook',
-        [OperationType.UPDATE_LOREBOOK_REGISTRY]: 'Lorebook'
+        [OperationType.PROCESS_LOREBOOK_ENTRY]: 'Lorebook - Process',
+        [OperationType.TRIAGE_LOREBOOK_ENTRY]: 'Lorebook - Triage',
+        [OperationType.RESOLVE_LOREBOOK_ENTRY]: 'Lorebook - Resolve',
+        [OperationType.CREATE_LOREBOOK_ENTRY]: 'Lorebook - Create',
+        [OperationType.MERGE_LOREBOOK_ENTRY]: 'Lorebook - Merge',
+        [OperationType.UPDATE_LOREBOOK_REGISTRY]: 'Lorebook - Registry'
     };
 
     return names[type] || type;
@@ -532,7 +541,10 @@ export function updateQueueUIVisibility() {
             $navbar.show();
             $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
             $button.attr('title', 'Hide Queue Navbar');
-            $button.css('left', '200px');
+            // Calculate button position based on actual navbar width
+            // $FlowFixMe[cannot-resolve-name]
+            const navbarWidth = $navbar.outerWidth() || 175;
+            $button.css('left', `${navbarWidth}px`);
         } else {
             // Navbar hidden - sync button state
             $navbar.hide();
