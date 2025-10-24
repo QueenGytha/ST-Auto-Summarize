@@ -27,7 +27,7 @@ export default ({ test, expect } /*: any */) => {
         return mod;
     }
 
-    test('runTriageStage: warns and returns early when triage_prompt is missing', async () => {
+    test('runTriageStage: throws error when triage_prompt is missing', async () => {
         const mod = await initModule();
 
         const normalizedEntry = {
@@ -38,16 +38,20 @@ export default ({ test, expect } /*: any */) => {
         };
 
         const emptySettings = {};
-        const result = await mod.runTriageStage(normalizedEntry, 'Registry listing', 'character|location', emptySettings);
 
-        // Should return early with empty results
-        expect(result.type).toBe('character');
-        expect(result.synopsis).toBe('');
-        expect(result.sameEntityIds.length).toBe(0);
-        expect(result.needsFullContextIds.length).toBe(0);
+        let threwError = false;
+        try {
+            await mod.runTriageStage(normalizedEntry, 'Registry listing', 'character|location', emptySettings);
+        } catch (err) {
+            threwError = true;
+            expect(err.message.includes('triage_prompt')).toBeTruthy();
+            expect(err.message.includes('Test Entry')).toBeTruthy();
+        }
+
+        expect(threwError).toBe(true);
     });
 
-    test('runTriageStage: warns when settings object has no triage_prompt property', async () => {
+    test('runTriageStage: throws when settings object has no triage_prompt property', async () => {
         const mod = await initModule();
 
         const normalizedEntry = {
@@ -64,15 +68,17 @@ export default ({ test, expect } /*: any */) => {
             // Missing triage_prompt
         };
 
-        const result = await mod.runTriageStage(normalizedEntry, 'Registry listing', 'character|location', settingsWithoutPrompt);
+        let threwError = false;
+        try {
+            await mod.runTriageStage(normalizedEntry, 'Registry listing', 'character|location', settingsWithoutPrompt);
+        } catch (err) {
+            threwError = true;
+        }
 
-        expect(result.type).toBe('character');
-        expect(result.synopsis).toBe('');
-        expect(result.sameEntityIds.length).toBe(0);
-        expect(result.needsFullContextIds.length).toBe(0);
+        expect(threwError).toBe(true);
     });
 
-    test('runTriageStage: warns when triage_prompt is empty string', async () => {
+    test('runTriageStage: throws when triage_prompt is empty string', async () => {
         const mod = await initModule();
 
         const normalizedEntry = {
@@ -89,15 +95,17 @@ export default ({ test, expect } /*: any */) => {
             triage_completion_preset: ''
         };
 
-        const result = await mod.runTriageStage(normalizedEntry, 'Registry listing', 'character|location', settingsWithEmptyPrompt);
+        let threwError = false;
+        try {
+            await mod.runTriageStage(normalizedEntry, 'Registry listing', 'character|location', settingsWithEmptyPrompt);
+        } catch (err) {
+            threwError = true;
+        }
 
-        expect(result.type).toBe('character');
-        expect(result.synopsis).toBe('');
-        expect(result.sameEntityIds.length).toBe(0);
-        expect(result.needsFullContextIds.length).toBe(0);
+        expect(threwError).toBe(true);
     });
 
-    test('runResolutionStage: skips when resolution_prompt is missing', async () => {
+    test('runResolutionStage: throws when resolution_prompt is missing and candidates exist', async () => {
         const mod = await initModule();
 
         const normalizedEntry = {
@@ -124,17 +132,21 @@ export default ({ test, expect } /*: any */) => {
             resolution_completion_preset: ''
         };
 
-        const result = await mod.runResolutionStage(
-            normalizedEntry,
-            'Test synopsis',
-            candidateEntries,
-            'character',
-            settingsWithoutResolutionPrompt
-        );
+        let threwError = false;
+        try {
+            await mod.runResolutionStage(
+                normalizedEntry,
+                'Test synopsis',
+                candidateEntries,
+                'character',
+                settingsWithoutResolutionPrompt
+            );
+        } catch (err) {
+            threwError = true;
+            expect(err.message.includes('resolution_prompt')).toBeTruthy();
+        }
 
-        // Should return early with fallback values
-        expect(result.resolvedId).toBe(null);
-        expect(result.synopsis).toBe('Test synopsis');
+        expect(threwError).toBe(true);
     });
 
     test('normalizeEntryData: handles entry with missing fields', async () => {

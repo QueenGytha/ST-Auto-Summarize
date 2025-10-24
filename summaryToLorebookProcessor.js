@@ -406,21 +406,16 @@ function parseJsonSafe(raw /*: ?string */) /*: any */ {
 }
 
 /**
- * Logs warning and returns fallback result when triage prompt is missing
+ * Logs warning and throws error when triage prompt is missing
  * @param {any} normalizedEntry - The entry being processed
- * @returns {object} - Empty triage result
+ * @throws {Error} - Always throws to fail the operation
  */
-function handleMissingTriagePrompt(normalizedEntry /*: any */) /*: any */ {
+function handleMissingTriagePrompt(normalizedEntry /*: any */) /*: void */ {
     const entryName = normalizedEntry?.comment || normalizedEntry?.name || 'Unknown';
-    error(`CRITICAL: Triage prompt is missing! Skipping LLM triage for entry: ${entryName}`);
+    error(`CRITICAL: Triage prompt is missing! Cannot process entry: ${entryName}`);
     error('Settings check - triage_prompt is missing or empty');
-    toast(`Auto-Lorebooks: Triage prompt missing! Entry "${entryName}" created without duplicate detection.`, 'warning');
-    return {
-        type: normalizedEntry.type || '',
-        synopsis: '',
-        sameEntityIds: [],
-        needsFullContextIds: []
-    };
+    toast(`Auto-Lorebooks: Triage prompt missing! Cannot process lorebook entries. Check extension settings.`, 'error');
+    throw new Error(`Auto-Lorebooks configuration error: triage_prompt is required but missing. Cannot process entry: ${entryName}`);
 }
 
 export async function runTriageStage(
@@ -431,7 +426,10 @@ export async function runTriageStage(
 ) /*: Promise<{ type: string, synopsis: string, sameEntityIds: Array<string>, needsFullContextIds: Array<string> }> */ {
     const promptTemplate = settings?.triage_prompt || '';
     if (!promptTemplate) {
-        return handleMissingTriagePrompt(normalizedEntry);
+        handleMissingTriagePrompt(normalizedEntry);
+        // Flow doesn't understand throw above never returns
+        // $FlowFixMe[incompatible-return] - This code is unreachable because handleMissingTriagePrompt always throws
+        return { type: '', synopsis: '', sameEntityIds: [], needsFullContextIds: [] };
     }
     const payload = buildNewEntryPayload(normalizedEntry);
     const prompt = promptTemplate
@@ -482,10 +480,10 @@ function shouldRunResolution(candidateEntries /*: any */, settings /*: any */) /
     }
     const promptTemplate = settings?.resolution_prompt || '';
     if (!promptTemplate) {
-        error(`CRITICAL: Resolution prompt is missing! Skipping LLM resolution for ${candidateEntries.length} candidate(s).`);
-        error('Settings object:', settings);
-        toast(`Auto-Lorebooks: Resolution prompt missing! Skipping duplicate resolution for ${candidateEntries.length} candidate(s).`, 'warning');
-        return false;
+        error(`CRITICAL: Resolution prompt is missing! Cannot resolve ${candidateEntries.length} duplicate candidate(s).`);
+        error('Settings check - resolution_prompt is missing or empty');
+        toast(`Auto-Lorebooks: Resolution prompt missing! Cannot process lorebook entries with potential duplicates. Check extension settings.`, 'error');
+        throw new Error(`Auto-Lorebooks configuration error: resolution_prompt is required when duplicate candidates exist, but it is missing. Found ${candidateEntries.length} candidate(s) that need resolution.`);
     }
     return true;
 }
