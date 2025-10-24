@@ -45,6 +45,7 @@ import {
     set_data,
     saveChatDebounced,
     get_settings,
+    extension_settings,
     debug,
     log,
     toast,
@@ -228,7 +229,7 @@ export function registerAllOperationHandlers() {
 
         // Import the triage function (dynamic import to avoid circular dependencies)
         const { runTriageStage } = await import('./summaryToLorebookProcessor.js');
-        const settings = get_settings('autoLorebooks')?.summary_processing || {};
+        const settings = extension_settings.autoLorebooks?.summary_processing || {};
 
         // Run triage
         const triageResult = await runTriageStage(entryData, registryListing, typeList, settings);
@@ -287,7 +288,7 @@ export function registerAllOperationHandlers() {
         const { getAttachedLorebook, getLorebookEntries } = await import('./lorebookManager.js');
         const { ensureRegistryState } = await import('./summaryToLorebookProcessor.js');
 
-        const settings = get_settings('autoLorebooks')?.summary_processing || {};
+        const settings = extension_settings.autoLorebooks?.summary_processing || {};
         const lorebookName = getAttachedLorebook();
 
         if (!lorebookName) {
