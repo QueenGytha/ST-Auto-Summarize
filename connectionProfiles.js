@@ -13,11 +13,16 @@ function check_connection_profiles_active() {
         // If not found and we haven't retried yet, schedule a retry after 2 seconds
         if (!connection_profiles_active) {
             setTimeout(() => {
+                // Guard against test environment where jQuery might not be fully available
+                // $FlowFixMe[cannot-resolve-name]
+                if (typeof $ !== 'function' || typeof $.fn === 'undefined') return;
+
                 // $FlowFixMe[incompatible-type]
                 connection_profiles_active = undefined; // Reset to force re-check
                 // Try to refresh the UI if connection profiles are now available
                 // $FlowFixMe[cannot-resolve-name]
-                if ($('#sys-settings-button').find('#connection_profiles').length > 0) {
+                const elem = $('#sys-settings-button');
+                if (elem && typeof elem.find === 'function' && elem.find('#connection_profiles').length > 0) {
                     // Connection profiles are now available, refresh the settings UI
                     import('./profileUI.js').then(module => {
                         if (module.refresh_settings) {
@@ -95,10 +100,10 @@ async function set_connection_profile(name /*: ?string */) /*: Promise<void> */ 
     // Set the connection profile
     if (!check_connection_profiles_active()) return;  // if the extension isn't active, return
     if (!name) return;  // if no name provided, return
-    if (name === await get_current_connection_profile()) return;  // If already using the current preset, return
-    if (!await check_connection_profile_valid()) return;  // don't set an invalid preset
+    if (name === await get_current_connection_profile()) return;  // If already using the current profile, return
+    if (!await verify_connection_profile(name)) return;  // don't set an invalid profile
 
-    // Set the completion preset
+    // Set the connection profile
     debug(`Setting connection profile to "${name}"`)
     if (get_settings('debug_mode')) {
         // $FlowFixMe[cannot-resolve-name]
@@ -106,6 +111,9 @@ async function set_connection_profile(name /*: ?string */) /*: Promise<void> */ 
     }
     const ctx = getContext();
     await ctx.executeSlashCommandsWithOptions(`/profile ${name}`)
+
+    // Wait a moment for the profile to fully apply
+    await new Promise(resolve => setTimeout(resolve, 100));
 }
 // $FlowFixMe[signature-verification-failure]
 async function get_connection_profiles() {

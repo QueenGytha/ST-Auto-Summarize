@@ -21,7 +21,8 @@ function expect(val) {
     toEqual: (x) => { const a = JSON.stringify(val); const b = JSON.stringify(x); if (a !== b) throw new Error(`Expected ${a} toEqual ${b}`); },
     toBeDefined: () => { if (val === undefined) throw new Error('Expected value to be defined'); },
     toBeTruthy: () => { if (!val) throw new Error('Expected value to be truthy'); },
-    toBeType: (t) => { if (typeof val !== t) throw new Error(`Expected typeof ${typeof val} to be ${t}`); }
+    toBeType: (t) => { if (typeof val !== t) throw new Error(`Expected typeof ${typeof val} to be ${t}`); },
+    toContain: (x) => { if (!Array.isArray(val) || !val.includes(x)) throw new Error(`Expected array to contain ${x}, got ${JSON.stringify(val)}`); }
   };
 }
 

@@ -11,10 +11,10 @@ import {
     get_data,
     summarize_text,
     saveChatDebounced,
-    get_current_preset,
-    set_preset,
-    get_current_connection_profile,
+    get_connection_profile_api,
+    getPresetManager,
     set_connection_profile,
+    get_current_connection_profile,
 } from './index.js';
 import { running_scene_summary_prompt } from './defaultPrompts.js';
 // Lorebook processing for running summary has been disabled; no queue integration needed here.
@@ -208,6 +208,89 @@ function collect_scene_summary_indexes_for_running() {
 }
 
 /**
+ * Extract summary text from a scene summary, handling JSON format
+ * @param {string} scene_summary - Raw scene summary (may be JSON)
+ * @returns {string} Extracted summary text
+ */
+function extractSummaryText(scene_summary /*: string */) /*: string */ {
+    let summary_text = scene_summary;
+
+    // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+    let json_to_parse = scene_summary.trim();
+    const code_fence_match = json_to_parse.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+    if (code_fence_match) {
+        json_to_parse = code_fence_match[1].trim();
+    }
+
+    try {
+        const parsed = JSON.parse(json_to_parse);
+        if (parsed && typeof parsed === 'object') {
+            if (parsed.summary) {
+                summary_text = parsed.summary;
+            } else {
+                // Valid JSON but no 'summary' property - use empty string
+                summary_text = "";
+            }
+        }
+    } catch {
+        // Not JSON or parsing failed - use the whole text as-is
+    }
+
+    return summary_text;
+}
+
+/**
+ * Build formatted text from scene summaries
+ * @param {Array<number>} indexes - Message indexes containing scene summaries
+ * @param {Array<Object>} chat - Chat messages
+ * @returns {string} Formatted scene summaries text
+ */
+function buildSceneSummariesText(indexes /*: Array<number> */, chat /*: Array<any> */) /*: string */ {
+    return indexes.map((idx, i) => {
+        const msg = chat[idx];
+        const scene_summary = get_data(msg, 'scene_summary_memory') || "";
+        const name = get_data(msg, 'scene_break_name') || `Scene ${i + 1}`;
+        const summary_text = extractSummaryText(scene_summary);
+        return `[Scene ${i + 1}: ${name}]\n${summary_text}`;
+    }).join('\n\n');
+}
+
+/**
+ * Replace macros and Handlebars conditionals in prompt
+ * @param {string} prompt - Template prompt
+ * @param {string|null} current_summary - Current running summary or null
+ * @param {string} scene_summaries_text - Formatted scene summaries
+ * @param {string|null} prefill - Optional prefill text
+ * @returns {string} Processed prompt
+ */
+function processPromptMacros(
+    prompt /*: string */,
+    current_summary /*: ?string */,
+    scene_summaries_text /*: string */,
+    prefill /*: ?string */
+) /*: string */ {
+    // Replace macros
+    let processed = prompt.replace(/\{\{current_running_summary\}\}/g, current_summary || "");
+    processed = processed.replace(/\{\{scene_summaries\}\}/g, scene_summaries_text);
+
+    // Handle Handlebars conditionals manually (simplified)
+    if (current_summary) {
+        processed = processed.replace(/\{\{#if current_running_summary\}\}/g, '');
+        processed = processed.replace(/\{\{\/if\}\}/g, '');
+    } else {
+        // Remove the conditional block if no current summary
+        processed = processed.replace(/\{\{#if current_running_summary\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+    }
+
+    // Add prefill if configured
+    if (prefill) {
+        processed = `${processed}\n${prefill}`;
+    }
+
+    return processed;
+}
+
+/**
  * Generate running scene summary by combining individual scene summaries
  * @returns {Promise<string|null>} Generated summary or null on failure
  */
@@ -258,82 +341,54 @@ async function generate_running_scene_summary(skipQueue /*: boolean */ = false) 
     debug(SUBSYSTEM.RUNNING, `Found ${indexes.length} scene summaries (excluding latest ${exclude_count})`);
 
     // Build scene summaries text (extract only 'summary' field, exclude 'lorebooks')
-    const scene_summaries_text = indexes.map((idx, i) => {
-        const msg = chat[idx];
-        const scene_summary = get_data(msg, 'scene_summary_memory') || "";
-        const name = get_data(msg, 'scene_break_name') || `Scene ${i + 1}`;
-
-        // Extract only the 'summary' field from the JSON (exclude 'lorebooks')
-        let summary_text = scene_summary;
-
-        // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
-        let json_to_parse = scene_summary.trim();
-        const code_fence_match = json_to_parse.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-        if (code_fence_match) {
-            json_to_parse = code_fence_match[1].trim();
-        }
-
-        try {
-            const parsed = JSON.parse(json_to_parse);
-            if (parsed && typeof parsed === 'object') {
-                if (parsed.summary) {
-                    summary_text = parsed.summary;
-                } else {
-                    // Valid JSON but no 'summary' property - use empty string
-                    summary_text = "";
-                }
-            }
-        } catch {
-            // Not JSON or parsing failed - use the whole text as-is
-        }
-
-        return `[Scene ${i + 1}: ${name}]\n${summary_text}`;
-    }).join('\n\n');
+    const scene_summaries_text = buildSceneSummariesText(indexes, chat);
 
     // Get current running summary if exists
     const current_summary = get_current_running_summary_content();
 
-    // Build prompt
-    let prompt = get_settings('running_scene_summary_prompt') || running_scene_summary_prompt;
-
-    // Replace macros
-    prompt = prompt.replace(/\{\{current_running_summary\}\}/g, current_summary || "");
-    prompt = prompt.replace(/\{\{scene_summaries\}\}/g, scene_summaries_text);
-
-    // Handle Handlebars conditionals manually (simplified)
-    if (current_summary) {
-        prompt = prompt.replace(/\{\{#if current_running_summary\}\}/g, '');
-        prompt = prompt.replace(/\{\{\/if\}\}/g, '');
-    } else {
-        // Remove the conditional block if no current summary
-        prompt = prompt.replace(/\{\{#if current_running_summary\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-    }
-
-    // Add prefill if configured
+    // Build prompt with macro replacement
+    const template = get_settings('running_scene_summary_prompt') || running_scene_summary_prompt;
     const prefill = get_settings('running_scene_summary_prefill');
-    if (prefill) {
-        prompt = `${prompt}\n${prefill}`;
+    const prompt = processPromptMacros(template, current_summary, scene_summaries_text, prefill);
+
+    // Get API from connection profile and switch preset
+    const running_preset = get_settings('running_scene_summary_completion_preset');
+    const running_profile = get_settings('running_scene_summary_connection_profile');
+
+    // Save current connection profile
+    const savedProfile = await get_current_connection_profile();
+
+    // Switch to configured connection profile if specified
+    if (running_profile) {
+        await set_connection_profile(running_profile);
+        debug(SUBSYSTEM.RUNNING, `Switched connection profile to: ${running_profile}`);
     }
 
-    // Save current preset/profile
-    const current_preset = await get_current_preset();
-    const current_profile = await get_current_connection_profile();
+    const api = await get_connection_profile_api(running_profile);
+    let savedPreset = null;
+    let presetManager = null;
+
+    if (api) {
+        presetManager = getPresetManager(api);
+        if (presetManager) {
+            savedPreset = presetManager.getSelectedPreset();
+
+            if (running_preset) {
+                const presetValue = presetManager.findPreset(running_preset);
+                if (presetValue) {
+                    debug(SUBSYSTEM.RUNNING, `Switching ${api} preset to: ${running_preset}`);
+                    presetManager.selectPreset(presetValue);
+                } else {
+                    debug(SUBSYSTEM.RUNNING, `Preset '${running_preset}' not found for API ${api}`);
+                }
+            }
+        }
+    }
 
     try {
-        // Set running summary preset/profile if configured
-        const running_preset = get_settings('running_scene_summary_completion_preset');
-        const running_profile = get_settings('running_scene_summary_connection_profile');
-
-        if (running_preset) {
-            await set_preset(running_preset);
-        }
-        if (running_profile) {
-            await set_connection_profile(running_profile);
-        }
-
         debug(SUBSYSTEM.RUNNING, 'Sending running scene summary prompt to LLM');
 
-        // Generate summary
+        // Generate summary using the configured API
         const result = await summarize_text(prompt);
 
         debug(SUBSYSTEM.RUNNING, `Generated running summary (${result.length} chars)`);
@@ -353,9 +408,17 @@ async function generate_running_scene_summary(skipQueue /*: boolean */ = false) 
         // Re-throw to let queue retry logic handle it (don't return null)
         throw err;
     } finally {
-        // Restore original preset/profile
-        await set_preset(current_preset);
-        await set_connection_profile(current_profile);
+        // Restore original preset for this API
+        if (presetManager && savedPreset) {
+            debug(SUBSYSTEM.RUNNING, `Restoring ${api || 'unknown'} preset to original`);
+            presetManager.selectPreset(savedPreset);
+        }
+
+        // Restore connection profile if it was changed
+        if (savedProfile) {
+            await set_connection_profile(savedProfile);
+            debug(SUBSYSTEM.RUNNING, `Restored connection profile to: ${savedProfile}`);
+        }
     }
 }
 
@@ -461,20 +524,41 @@ function buildCombinePrompt(current_summary /*: string */, scene_summaries_text 
  * @returns {Promise<string>} Generated summary
  */
 async function executeCombineLLMCall(prompt /*: string */, scene_name /*: string */) /*: Promise<string> */ {
-    const current_preset = await get_current_preset();
-    const current_profile = await get_current_connection_profile();
+    // Get API from connection profile and switch preset
+    const running_preset = get_settings('running_scene_summary_completion_preset');
+    const running_profile = get_settings('running_scene_summary_connection_profile');
+
+    // Save current connection profile
+    const savedProfile = await get_current_connection_profile();
+
+    // Switch to configured connection profile if specified
+    if (running_profile) {
+        await set_connection_profile(running_profile);
+        debug(SUBSYSTEM.RUNNING, `Switched connection profile to: ${running_profile}`);
+    }
+
+    const api = await get_connection_profile_api(running_profile);
+    let savedPreset = null;
+    let presetManager = null;
+
+    if (api) {
+        presetManager = getPresetManager(api);
+        if (presetManager) {
+            savedPreset = presetManager.getSelectedPreset();
+
+            if (running_preset) {
+                const presetValue = presetManager.findPreset(running_preset);
+                if (presetValue) {
+                    debug(SUBSYSTEM.RUNNING, `Switching ${api} preset to: ${running_preset}`);
+                    presetManager.selectPreset(presetValue);
+                } else {
+                    debug(SUBSYSTEM.RUNNING, `Preset '${running_preset}' not found for API ${api}`);
+                }
+            }
+        }
+    }
 
     try {
-        const running_preset = get_settings('running_scene_summary_completion_preset');
-        const running_profile = get_settings('running_scene_summary_connection_profile');
-
-        if (running_preset) {
-            await set_preset(running_preset);
-        }
-        if (running_profile) {
-            await set_connection_profile(running_profile);
-        }
-
         debug(SUBSYSTEM.RUNNING, `Sending prompt to LLM to combine with ${scene_name}`);
 
         const result = await summarize_text(prompt);
@@ -484,8 +568,17 @@ async function executeCombineLLMCall(prompt /*: string */, scene_name /*: string
         return result;
 
     } finally {
-        await set_preset(current_preset);
-        await set_connection_profile(current_profile);
+        // Restore original preset for this API
+        if (presetManager && savedPreset) {
+            debug(SUBSYSTEM.RUNNING, `Restoring ${api || 'unknown'} preset to original`);
+            presetManager.selectPreset(savedPreset);
+        }
+
+        // Restore connection profile if it was changed
+        if (savedProfile) {
+            await set_connection_profile(savedProfile);
+            debug(SUBSYSTEM.RUNNING, `Restored connection profile to: ${savedProfile}`);
+        }
     }
 }
 

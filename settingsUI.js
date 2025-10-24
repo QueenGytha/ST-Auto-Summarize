@@ -280,6 +280,10 @@ Available Macros:
     bind_setting('#scene_summary_context_limit', 'scene_summary_context_limit', 'number');
     bind_setting('input[name="scene_summary_context_type"]', 'scene_summary_context_type', 'text');
 
+    // Scene summary preset and connection profile
+    bind_setting('#scene_summary_completion_preset', 'scene_summary_completion_preset', 'text');
+    bind_setting('#scene_summary_connection_profile', 'scene_summary_connection_profile', 'text');
+
     // --- Running Scene Summary Settings ---
     bind_setting('#running_scene_summary_enabled', 'running_scene_summary_enabled', 'boolean', refresh_memory);
     bind_setting('#running_scene_summary_auto_generate', 'running_scene_summary_auto_generate', 'boolean');

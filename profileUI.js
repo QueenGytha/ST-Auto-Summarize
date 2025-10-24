@@ -115,6 +115,22 @@ async function update_scene_summary_preset_dropdown() {
     $preset_select.off('click').on('click', () => update_scene_summary_preset_dropdown());
 }
 
+async function update_scene_summary_connection_profile_dropdown() {
+    // $FlowFixMe[cannot-resolve-name]
+    const $connection_select = $('#scene_summary_connection_profile');
+    const summary_connection = get_settings('scene_summary_connection_profile');
+    const connection_options = await get_connection_profiles();
+    $connection_select.empty();
+    $connection_select.append(`<option value="">Same as Current</option>`);
+    if (connection_options && Array.isArray(connection_options)) {
+        for (const option of connection_options) {
+            $connection_select.append(`<option value="${option}">${option}</option>`);
+        }
+    }
+    $connection_select.val(summary_connection);
+    $connection_select.off('click').on('click', () => update_scene_summary_connection_profile_dropdown());
+}
+
 async function update_auto_scene_break_preset_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
     const $preset_select = $('#auto_scene_break_completion_preset');
@@ -224,6 +240,7 @@ function updateAllDropdowns() {
 
     update_preset_dropdown();
     update_scene_summary_preset_dropdown();
+    update_scene_summary_connection_profile_dropdown();
     update_auto_scene_break_preset_dropdown();
     update_auto_scene_break_connection_profile_dropdown();
     update_running_scene_summary_preset_dropdown();
@@ -645,6 +662,7 @@ export {
     refresh_settings,
     update_error_detection_preset_dropdown,
     update_scene_summary_preset_dropdown,
+    update_scene_summary_connection_profile_dropdown,
     update_auto_scene_break_preset_dropdown,
     update_auto_scene_break_connection_profile_dropdown,
     update_running_scene_summary_preset_dropdown,

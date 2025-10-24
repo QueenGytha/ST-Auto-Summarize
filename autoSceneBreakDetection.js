@@ -13,6 +13,10 @@ import {
     saveChatDebounced,
     toggleSceneBreak,
     generateSceneSummary,
+    get_connection_profile_api,
+    getPresetManager,
+    set_connection_profile,
+    get_current_connection_profile,
 } from './index.js';
 
 // Module-level cancellation token for the current scan
@@ -109,34 +113,64 @@ function parseSceneBreakResponse(response, messageIndex) {
     }
 }
 
-// Helper: Switch to detection profile/preset
+// Helper: Switch to detection profile/preset using PresetManager API
 // $FlowFixMe[missing-local-annot]
 async function switchToDetectionSettings(ctx, profile, preset) {
-    const current_profile = await ctx.get_current_connection_profile?.();
-    const current_preset = await ctx.get_current_preset?.();
+    // Save current connection profile
+    const savedProfile = await get_current_connection_profile();
 
+    // Switch to configured connection profile if specified
     if (profile) {
-        debug('Switching to connection profile:', profile);
-        await ctx.set_connection_profile?.(profile);
-    }
-    if (preset) {
-        debug('Switching to preset:', preset);
-        await ctx.set_preset?.(preset);
+        await set_connection_profile(profile);
+        debug(`Switched connection profile to: ${profile}`);
     }
 
-    return { current_profile, current_preset };
+    // Get API from connection profile
+    const api = await get_connection_profile_api(profile);
+    if (!api) {
+        debug('No API found for connection profile, using defaults');
+        return { savedProfile };
+    }
+
+    // Get PresetManager for that API
+    const presetManager = getPresetManager(api);
+    if (!presetManager) {
+        debug(`No PresetManager found for API: ${api}`);
+        return { savedProfile };
+    }
+
+    // Save current preset for this API
+    const savedPreset = presetManager.getSelectedPreset();
+
+    // Switch to configured preset if specified
+    if (preset) {
+        const presetValue = presetManager.findPreset(preset);
+        if (presetValue) {
+            debug(`Switching ${api} preset to: ${preset}`);
+            presetManager.selectPreset(presetValue);
+        } else {
+            debug(`Preset '${preset}' not found for API ${api}`);
+        }
+    }
+
+    return { savedProfile, api, presetManager, savedPreset };
 }
 
-// Helper: Restore previous profile/preset
+// Helper: Restore previous profile/preset using PresetManager API
 // $FlowFixMe[missing-local-annot]
-async function restoreSettings(ctx, profile, preset, previous) {
-    if (profile) {
-        debug('Restoring previous connection profile:', previous.current_profile);
-        await ctx.set_connection_profile?.(previous.current_profile);
+async function restoreSettings(ctx, saved) {
+    if (!saved) return;
+
+    // Restore preset if it was changed
+    if (saved.presetManager && saved.savedPreset) {
+        debug(`Restoring ${saved.api} preset to original`);
+        saved.presetManager.selectPreset(saved.savedPreset);
     }
-    if (preset) {
-        debug('Restoring previous preset:', previous.current_preset);
-        await ctx.set_preset?.(previous.current_preset);
+
+    // Restore connection profile if it was changed
+    if (saved.savedProfile) {
+        await set_connection_profile(saved.savedProfile);
+        debug(`Restored connection profile to: ${saved.savedProfile}`);
     }
 }
 
@@ -189,20 +223,20 @@ async function detectSceneBreak(
         const prompt = buildDetectionPrompt(ctx, promptTemplate, message, previousMessage, prefill);
 
         // Switch to detection profile/preset and save current
-        const previous = await switchToDetectionSettings(ctx, profile, preset);
+        const saved = await switchToDetectionSettings(ctx, profile, preset);
 
         // Block input if setting is enabled
         const shouldBlock = get_settings('block_chat');
         if (shouldBlock) ctx.deactivateSendButtons();
 
-        // Call LLM
+        // Call LLM using the configured API
         debug('Sending prompt to AI for message', messageIndex);
         const response = await summarize_text(prompt);
         debug('AI raw response for message', messageIndex, ':', response);
 
         // Re-enable input and restore settings
         if (shouldBlock) ctx.activateSendButtons();
-        await restoreSettings(ctx, profile, preset, previous);
+        await restoreSettings(ctx, saved);
 
         // Parse response
         const { isSceneBreak, rationale } = parseSceneBreakResponse(response, messageIndex);

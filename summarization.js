@@ -20,10 +20,6 @@ import {
     substitute_conditionals,
     substitute_params,
     system_prompt_split,
-    get_current_preset,
-    set_preset,
-    get_current_connection_profile,
-    set_connection_profile,
     getContext,
     scrollChatToBottom,
     validate_summary,
@@ -33,7 +29,11 @@ import {
     extension_settings,
     getStringHash,
     generateRaw,
-    trimToEndSentence
+    trimToEndSentence,
+    get_connection_profile_api,
+    getPresetManager,
+    set_connection_profile,
+    get_current_connection_profile
 } from './index.js';
 import { getConfiguredEntityTypeDefinitions, formatEntityTypeListForPrompt } from './entityTypes.js';
 
@@ -54,23 +54,67 @@ function setStopSummarization(val /*: boolean */) /*: void */ {
 setStopSummarization(false);
 
 // Helper: Switch to summarization profile/preset
-async function switchToSummarizationProfile() {
+// $FlowFixMe[missing-local-annot]
+async function switchToSummarizationProfile() /*: Promise<?{savedProfile: ?string, api: ?string, presetManager: ?any, savedPreset: ?any}> */ {
     const summary_preset = get_settings('completion_preset');
-    const current_preset = await get_current_preset();
     const summary_profile = get_settings('connection_profile');
-    const current_profile = await get_current_connection_profile();
 
-    await set_connection_profile(summary_profile);
-    await set_preset(summary_preset);
+    // Save current connection profile
+    const savedProfile = await get_current_connection_profile();
 
-    return { current_profile, current_preset };
+    // Switch to configured connection profile if specified
+    if (summary_profile) {
+        await set_connection_profile(summary_profile);
+        debug(`Switched connection profile to: ${summary_profile}`);
+    }
+
+    // Get API type for the configured connection profile
+    const api = await get_connection_profile_api(summary_profile);
+    if (!api) {
+        debug('No API found for connection profile, using defaults');
+        return { savedProfile, api: undefined, presetManager: undefined, savedPreset: undefined };
+    }
+
+    // Get PresetManager for that API
+    const presetManager = getPresetManager(api);
+    if (!presetManager) {
+        debug(`No PresetManager found for API: ${api}`);
+        return { savedProfile, api, presetManager: undefined, savedPreset: undefined };
+    }
+
+    // Save current preset for this API
+    const savedPreset = presetManager.getSelectedPreset();
+
+    // Switch to configured preset if specified
+    if (summary_preset) {
+        const presetValue = presetManager.findPreset(summary_preset);
+        if (presetValue) {
+            debug(`Switching ${api} preset to: ${summary_preset}`);
+            presetManager.selectPreset(presetValue);
+        } else {
+            debug(`Preset '${summary_preset}' not found for API ${api}`);
+        }
+    }
+
+    return { savedProfile, api, presetManager, savedPreset };
 }
 
 // Helper: Restore original profile/preset
 // $FlowFixMe[missing-local-annot]
 async function restoreOriginalProfile(saved) {
-    await set_connection_profile(saved.current_profile);
-    await set_preset(saved.current_preset);
+    if (!saved) return;
+
+    // Restore preset if it was changed
+    if (saved.presetManager && saved.savedPreset) {
+        debug(`Restoring ${saved.api} preset to original`);
+        saved.presetManager.selectPreset(saved.savedPreset);
+    }
+
+    // Restore connection profile if it was changed
+    if (saved.savedProfile) {
+        await set_connection_profile(saved.savedProfile);
+        debug(`Restored connection profile to: ${saved.savedProfile}`);
+    }
 }
 
 // Helper: Process time delay between summarizations
@@ -337,6 +381,7 @@ async function summarize_text(prompt /*: string */) /*: Promise<string> */ {
             return __override;
         }
     }
+
     // get size of text
     const token_size = count_tokens(prompt);
 
@@ -614,6 +659,7 @@ export {
     create_summary_prompt,
     stop_summarization,
     collect_messages_to_auto_summarize,
+    switchToSummarizationProfile,
     auto_summarize_chat,
     summarize_text,
     get_message_history,
