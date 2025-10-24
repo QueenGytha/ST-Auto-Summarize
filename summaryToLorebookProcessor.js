@@ -337,7 +337,6 @@ async function runModelWithSettings(
         }
         const response = await generateRaw({
             prompt,
-            api: '',
             instructOverride: false,
             quietToLoud: false,
             prefill: prefill || ''

@@ -335,7 +335,6 @@ async function mergeUpdateWithAI(entryType /*: string */, currentContent /*: str
             // $FlowFixMe[incompatible-call] - generateRaw signature
             const result = await generateRaw({
                 prompt: prompt,
-                api: '',
                 instructOverride: false,
                 quietToLoud: false,
                 prefill: prefill

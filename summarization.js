@@ -388,7 +388,6 @@ async function summarize_text(prompt /*: string */) /*: Promise<string> */ {
             // $FlowFixMe[extra-arg]
             result = await generateRaw({
                 prompt: prompt,
-                api: '',
                 instructOverride: true,
                 quietToLoud: false,
                 // $FlowFixMe[incompatible-type] - system_prompt can be false or string, passing as-is

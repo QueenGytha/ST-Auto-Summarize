@@ -349,7 +349,7 @@ function defineBuiltInTests() {
     const arg = calls[calls.length - 1];
     expect(typeof arg).toBe('object');
     expect(!!arg && typeof arg.prompt === 'string').toBe(true);
-    expect(arg.api).toBe('');
+    expect(arg.api).toBe(undefined);
     expect(arg.instructOverride).toBe(false);
   });
 }
