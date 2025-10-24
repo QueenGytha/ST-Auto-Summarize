@@ -22,6 +22,7 @@ import {
 
 // Constants
 const NAVBAR_ID = 'scene-summary-navigator-bar';
+const NAVBAR_TOGGLE_ID = 'queue_navbar_toggle';
 const ICON_CHEVRON_LEFT = 'fa-chevron-left';
 const ICON_CHEVRON_RIGHT = 'fa-chevron-right';
 
@@ -108,7 +109,7 @@ function createQueueUI() {
     const navbarWidth = $navbar.outerWidth() || 175;
     // $FlowFixMe[cannot-resolve-name]
     const $navbarToggle = $(`
-        <button id="queue_navbar_toggle" class="menu_button fa-solid ${ICON_CHEVRON_LEFT}"
+        <button id="${NAVBAR_TOGGLE_ID}" class="menu_button fa-solid ${ICON_CHEVRON_LEFT}"
             title="Hide Queue Navbar"
             style="position: fixed; top: 50vh; left: ${navbarWidth}px; transform: translateY(-50%); padding: 0.8em 0.5em; font-size: 1.2em; z-index: 1000002; background: rgba(30,30,40,0.95); border: 1px solid var(--SmartThemeBlurTintColor); border-radius: 0 8px 8px 0;"></button>
     `);
@@ -187,7 +188,7 @@ function bindQueueControlEvents() {
     // Navbar toggle (show/hide ENTIRE navbar)
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
-    $(document).on('click', '#queue_navbar_toggle', function () {
+    $(document).on('click', `#${NAVBAR_TOGGLE_ID}`, function () {
         // $FlowFixMe[cannot-resolve-name]
         const $navbar = $(`#${NAVBAR_ID}`);
         // $FlowFixMe[cannot-resolve-name]
@@ -220,7 +221,7 @@ function bindQueueControlEvents() {
         // $FlowFixMe[cannot-resolve-name]
         const $navbar = $(`#${NAVBAR_ID}`);
         // $FlowFixMe[cannot-resolve-name]
-        const $button = $('#queue_navbar_toggle');
+        const $button = $(`#${NAVBAR_TOGGLE_ID}`);
         $navbar.hide(); // Hide entire navbar
         $button.removeClass(ICON_CHEVRON_LEFT).addClass(ICON_CHEVRON_RIGHT);
         $button.attr('title', 'Show Queue Navbar');
@@ -246,7 +247,7 @@ function updateQueueDisplay() {
     // $FlowFixMe[cannot-resolve-name]
     const $navbar = $(`#${NAVBAR_ID}`);
     // $FlowFixMe[cannot-resolve-name]
-    const $button = $('#queue_navbar_toggle');
+    const $button = $(`#${NAVBAR_TOGGLE_ID}`);
 
     if (!enabled) {
         // Setting disabled: hide both navbar and button
@@ -523,7 +524,7 @@ export function updateQueueUIVisibility() {
     // $FlowFixMe[cannot-resolve-name]
     const $navbar = $(`#${NAVBAR_ID}`);
     // $FlowFixMe[cannot-resolve-name]
-    const $button = $('#queue_navbar_toggle');
+    const $button = $(`#${NAVBAR_TOGGLE_ID}`);
 
     if (!enabled) {
         // Setting disabled: hide both navbar and button
@@ -555,8 +556,33 @@ export function updateQueueUIVisibility() {
     }
 }
 
+/**
+ * Update navbar toggle button position to match navbar width
+ * Call this when navbar width changes dynamically
+ */
+function updateNavbarToggleButtonPosition() {
+    // $FlowFixMe[cannot-resolve-name]
+    const $navbar = $(`#${NAVBAR_ID}`);
+    // $FlowFixMe[cannot-resolve-name]
+    const $button = $(`#${NAVBAR_TOGGLE_ID}`);
+
+    // Only update if navbar is visible and button exists
+    if (!$navbar.length || !$button.length) return;
+    if (!$navbar.is(':visible')) return;
+
+    // Calculate button position based on current navbar width
+    // $FlowFixMe[cannot-resolve-name]
+    const navbarWidth = $navbar.outerWidth() || 175;
+    $button.css('left', `${navbarWidth}px`);
+}
+
 export default {
     initQueueUI,
     updateQueueDisplay,
-    updateQueueUIVisibility
+    updateQueueUIVisibility,
+    updateNavbarToggleButtonPosition
 };
+
+// Export to window for external access
+// $FlowFixMe[cannot-resolve-name]
+window.updateNavbarToggleButtonPosition = updateNavbarToggleButtonPosition;

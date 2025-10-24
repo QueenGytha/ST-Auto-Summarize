@@ -206,6 +206,9 @@ Available Macros:
         // Re-render navigator bar with new width
         // $FlowFixMe[cannot-resolve-name]
         if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
+        // Update navbar toggle button position to match new width
+        // $FlowFixMe[cannot-resolve-name]
+        if (window.updateNavbarToggleButtonPosition) window.updateNavbarToggleButtonPosition();
     });
     bind_setting('#scene_summary_navigator_font_size', 'scene_summary_navigator_font_size', 'number', () => {
         // Re-render navigator bar with new font size

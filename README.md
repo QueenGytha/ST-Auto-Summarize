@@ -137,7 +137,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 - **Enable Scene Summaries:** Turn on scene-level summarization and injection.
 - **Auto-generate Scene Names (Auto-Detection):** Automatically generate brief scene names (like chapter titles) when auto-generating scene summaries (e.g., during scene break detection), if no name is already set.
 - **Auto-generate Scene Names (Manual):** Automatically generate brief scene names (like chapter titles) when manually generating scene summaries via the Generate button, if no name is already set.
-- **Navigator Bar Width:** Customize the width of the scene navigator bar in pixels (default: 96px).
+- **Navigator Bar Width:** Customize the width of the scene navigator bar in pixels (default: 240px).
 - **Navigator Font Size:** Customize the font size for scene names in the navigator bar in pixels (default: 12px).
 - **Edit Scene Prompt:** Customize the prompt used for scene summaries.
 - **Scene Completion Preset/Prefill/Context Limit:** Control how scene summaries are generated and injected.

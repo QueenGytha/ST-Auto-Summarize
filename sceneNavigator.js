@@ -3,7 +3,7 @@ import { get_settings, set_settings, getContext, get_data, SCENE_BREAK_KEY, SCEN
 
 export function renderSceneNavigatorBar() {
     const show = get_settings('scene_summary_navigator_toggle');
-    const width = get_settings('scene_summary_navigator_width') ?? 96;
+    const width = get_settings('scene_summary_navigator_width') ?? 240;
     const fontSize = get_settings('scene_summary_navigator_font_size') ?? 12;
 
     // In headless/test environments the jQuery stub may be minimal. If required
@@ -32,6 +32,13 @@ export function renderSceneNavigatorBar() {
 
     // Apply width setting
     $bar.css('width', `${width}px`);
+
+    // Update navbar toggle button position after applying width
+    // $FlowFixMe[cannot-resolve-name]
+    if (window.updateNavbarToggleButtonPosition) {
+        // $FlowFixMe[cannot-resolve-name]
+        window.updateNavbarToggleButtonPosition();
+    }
 
     // Hide/show entire navbar based on toggle setting
     if (!show) {
