@@ -142,6 +142,11 @@ function add_running_summary_version(
     saveChatDebounced();
     debug(SUBSYSTEM.RUNNING, `Created running summary version ${new_version} (${prev_scene_index} > ${new_scene_index})`);
 
+    // Update the UI dropdown to reflect the new version
+    if (typeof window.updateVersionSelector === 'function') {
+        window.updateVersionSelector();
+    }
+
     return new_version;
 }
 
