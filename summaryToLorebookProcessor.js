@@ -21,6 +21,7 @@ let getAttachedLorebook /*: any */, getLorebookEntries /*: any */, addLorebookEn
 let mergeLorebookEntry /*: any */;  // Entry merger function - any type is legitimate
 let updateRegistryEntryContent /*: any */;
 let withConnectionSettings /*: any */;  // Connection settings management - any type is legitimate
+let get_settings /*: any */, set_settings /*: any */;  // Profile settings functions - any type is legitimate
 
 const REGISTRY_PREFIX /*: string */ = '_registry_';
 
@@ -30,12 +31,14 @@ const REGISTRY_PREFIX /*: string */ = '_registry_';
  * Initialize the summary-to-lorebook processor module
  */
 // $FlowFixMe[signature-verification-failure]
-export function initSummaryToLorebookProcessor(utils /*: any */, lorebookManagerModule /*: any */, entryMergerModule /*: any */, connectionSettingsManager /*: any */) /*: void */ {
+export function initSummaryToLorebookProcessor(utils /*: any */, lorebookManagerModule /*: any */, entryMergerModule /*: any */, connectionSettingsManager /*: any */, settingsManager /*: any */) /*: void */ {
     // All parameters are any type - objects with various properties - legitimate use of any
     log = utils.log;
     debug = utils.debug;
     error = utils.error;
     toast = utils.toast;
+    get_settings = settingsManager.get_settings;
+    set_settings = settingsManager.set_settings;
 
     // Import lorebook manager functions
     if (lorebookManagerModule) {
@@ -51,8 +54,53 @@ export function initSummaryToLorebookProcessor(utils /*: any */, lorebookManager
     }
 
     // Import connection settings management
+    console.log('[summaryToLorebookProcessor INIT] connectionSettingsManager:', connectionSettingsManager);
+    console.log('[summaryToLorebookProcessor INIT] connectionSettingsManager keys:', Object.keys(connectionSettingsManager || {}));
+
     if (connectionSettingsManager) {
         withConnectionSettings = connectionSettingsManager.withConnectionSettings;
+        console.log('[summaryToLorebookProcessor INIT] withConnectionSettings after assignment:', withConnectionSettings);
+        console.log('[summaryToLorebookProcessor INIT] typeof withConnectionSettings:', typeof withConnectionSettings);
+
+        if (!withConnectionSettings || typeof withConnectionSettings !== 'function') {
+            error?.('Failed to import withConnectionSettings from connectionSettingsManager', {
+                hasManager: !!connectionSettingsManager,
+                exports: Object.keys(connectionSettingsManager || {}),
+                withConnectionSettings: typeof withConnectionSettings
+            });
+        } else {
+            console.log('[summaryToLorebookProcessor INIT] ✓ Successfully imported withConnectionSettings');
+            debug?.('[summaryToLorebookProcessor] Successfully imported withConnectionSettings');
+        }
+    } else {
+        console.error('[summaryToLorebookProcessor INIT] connectionSettingsManager is undefined/null!');
+    }
+}
+
+/**
+ * Get summary processing settings (with defaults)
+ */
+function getSummaryProcessingSetting(key /*: string */, defaultValue /*: any */ = null) /*: any */ {
+    try {
+        // ALL summary processing settings are per-profile
+        const settingKey = `auto_lorebooks_summary_${key}`;
+        return get_settings(settingKey) ?? defaultValue;
+    } catch (err) {
+        error("Error getting summary processing setting", err);
+        return defaultValue;
+    }
+}
+
+/**
+ * Set summary processing setting
+ */
+function setSummaryProcessingSetting(key /*: string */, value /*: any */) /*: void */ {
+    try {
+        // ALL summary processing settings are per-profile
+        const settingKey = `auto_lorebooks_summary_${key}`;
+        set_settings(settingKey, value);
+    } catch (err) {
+        error("Error setting summary processing setting", err);
     }
 }
 
@@ -332,6 +380,22 @@ async function runModelWithSettings(
     label /*: string */
 ) /*: Promise<?string> */ {
     try {
+        console.log('[runModelWithSettings] Called with label:', label);
+        console.log('[runModelWithSettings] withConnectionSettings:', withConnectionSettings);
+        console.log('[runModelWithSettings] typeof withConnectionSettings:', typeof withConnectionSettings);
+
+        // Validate that withConnectionSettings is available
+        if (!withConnectionSettings || typeof withConnectionSettings !== 'function') {
+            const errorMsg = 'withConnectionSettings is not available. Module may not be initialized properly.';
+            console.error('[runModelWithSettings] ERROR:', errorMsg);
+            console.error('[runModelWithSettings] Stack trace:', new Error().stack);
+            error?.(errorMsg, {
+                typeofWithConnectionSettings: typeof withConnectionSettings,
+                initialized: !!withConnectionSettings
+            });
+            throw new Error(errorMsg);
+        }
+
         // Use centralized connection settings management
         const response = await withConnectionSettings(
             connectionProfile,
@@ -910,24 +974,36 @@ async function loadSummaryContext(config /*: any */) /*: Promise<any> */ {
     });
 
     const registryState = ensureRegistryState();
-    const summarySettings = extension_settings?.autoLorebooks?.summary_processing || {};
+
+    // Build summarySettings from per-profile settings
+    const summarySettings = {
+        merge_connection_profile: getSummaryProcessingSetting('merge_connection_profile', ''),
+        merge_completion_preset: getSummaryProcessingSetting('merge_completion_preset', ''),
+        merge_prefill: getSummaryProcessingSetting('merge_prefill', ''),
+        merge_prompt: getSummaryProcessingSetting('merge_prompt', ''),
+        triage_connection_profile: getSummaryProcessingSetting('triage_connection_profile', ''),
+        triage_completion_preset: getSummaryProcessingSetting('triage_completion_preset', ''),
+        triage_prefill: getSummaryProcessingSetting('triage_prefill', ''),
+        triage_prompt: getSummaryProcessingSetting('triage_prompt', ''),
+        resolution_connection_profile: getSummaryProcessingSetting('resolution_connection_profile', ''),
+        resolution_completion_preset: getSummaryProcessingSetting('resolution_completion_preset', ''),
+        resolution_prefill: getSummaryProcessingSetting('resolution_prefill', ''),
+        resolution_prompt: getSummaryProcessingSetting('resolution_prompt', ''),
+        skip_duplicates: getSummaryProcessingSetting('skip_duplicates', true),
+        enabled: getSummaryProcessingSetting('enabled', false),
+    };
+
     const typeList = config.entityTypeDefs.map(def => def.name).filter(Boolean).join('|') || 'character';
 
     // Validate critical settings are loaded
     if (!summarySettings.triage_prompt) {
-        error('CRITICAL: Auto-Lorebooks triage_prompt not found in extension_settings.autoLorebooks.summary_processing');
-        error('extension_settings path check:', {
-            hasAutoLorebooks: !!extension_settings?.autoLorebooks,
-            hasSummaryProcessing: !!extension_settings?.autoLorebooks?.summary_processing,
-            summaryProcessingKeys: extension_settings?.autoLorebooks?.summary_processing ? Object.keys(extension_settings.autoLorebooks.summary_processing) : [],
-            triagePromptType: typeof summarySettings.triage_prompt,
-            triagePromptLength: summarySettings.triage_prompt?.length || 0
-        });
-        error('Full summary_processing object:', summarySettings);
+        error('CRITICAL: Auto-Lorebooks triage_prompt not found in profile settings');
+        error('Triage prompt type:', typeof summarySettings.triage_prompt);
+        error('Triage prompt length:', summarySettings.triage_prompt?.length || 0);
         toast('Auto-Lorebooks: Critical configuration error - triage prompt not loaded! Check browser console for details.', 'error');
     }
     if (!summarySettings.resolution_prompt) {
-        error('CRITICAL: Auto-Lorebooks resolution_prompt not found in extension_settings.autoLorebooks.summary_processing');
+        error('CRITICAL: Auto-Lorebooks resolution_prompt not found in profile settings');
         error('Resolution prompt type:', typeof summarySettings.resolution_prompt);
         error('Resolution prompt length:', summarySettings.resolution_prompt?.length || 0);
         toast('Auto-Lorebooks: Critical configuration error - resolution prompt not loaded! Check browser console for details.', 'error');

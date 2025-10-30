@@ -26,9 +26,18 @@ import {
 } from './runningSceneSummary.js';
 import {
     processSingleLorebookEntry,
+    runTriageStage,
+    runResolutionStage,
+    buildCandidateEntriesData,
+    ensureRegistryState,
+    updateRegistryRecord,
+    assignEntityId,
+    ensureStringArray,
+    buildRegistryItemsForType,
 } from './summaryToLorebookProcessor.js';
 import {
     mergeLorebookEntryByUid,
+    mergeLorebookEntry,
 } from './lorebookEntryMerger.js';
 import {
     getEntryData,
@@ -39,6 +48,12 @@ import {
     markStageInProgress,
     completePendingEntry,
 } from './lorebookPendingOps.js';
+import {
+    getAttachedLorebook,
+    getLorebookEntries,
+    addLorebookEntry,
+    updateRegistryEntryContent,
+} from './lorebookManager.js';
 import {
     getContext,
     get_data,
@@ -51,6 +66,8 @@ import {
     toast,
     SUBSYSTEM,
 } from './index.js';
+// $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
+import { saveMetadata } from '../../../../script.js';
 
 /**
  * Helper to get message div
@@ -227,9 +244,23 @@ export function registerAllOperationHandlers() {
         const { entryId, entryData, registryListing, typeList } = operation.params;
         debug(SUBSYSTEM.QUEUE, `Executing TRIAGE_LOREBOOK_ENTRY for: ${entryData.comment || 'Unknown'}`);
 
-        // Import the triage function (dynamic import to avoid circular dependencies)
-        const { runTriageStage } = await import('./summaryToLorebookProcessor.js');
-        const settings = extension_settings.autoLorebooks?.summary_processing || {};
+        // Build settings from profile
+        const settings = {
+            merge_connection_profile: get_settings('auto_lorebooks_summary_merge_connection_profile') || '',
+            merge_completion_preset: get_settings('auto_lorebooks_summary_merge_completion_preset') || '',
+            merge_prefill: get_settings('auto_lorebooks_summary_merge_prefill') || '',
+            merge_prompt: get_settings('auto_lorebooks_summary_merge_prompt') || '',
+            triage_connection_profile: get_settings('auto_lorebooks_summary_triage_connection_profile') || '',
+            triage_completion_preset: get_settings('auto_lorebooks_summary_triage_completion_preset') || '',
+            triage_prefill: get_settings('auto_lorebooks_summary_triage_prefill') || '',
+            triage_prompt: get_settings('auto_lorebooks_summary_triage_prompt') || '',
+            resolution_connection_profile: get_settings('auto_lorebooks_summary_resolution_connection_profile') || '',
+            resolution_completion_preset: get_settings('auto_lorebooks_summary_resolution_completion_preset') || '',
+            resolution_prefill: get_settings('auto_lorebooks_summary_resolution_prefill') || '',
+            resolution_prompt: get_settings('auto_lorebooks_summary_resolution_prompt') || '',
+            skip_duplicates: get_settings('auto_lorebooks_summary_skip_duplicates') ?? true,
+            enabled: get_settings('auto_lorebooks_summary_enabled') ?? false,
+        };
 
         // Run triage
         const triageResult = await runTriageStage(entryData, registryListing, typeList, settings);
@@ -283,12 +314,24 @@ export function registerAllOperationHandlers() {
 
         debug(SUBSYSTEM.QUEUE, `Executing RESOLVE_LOREBOOK_ENTRY for: ${entryData.comment || 'Unknown'}`);
 
-        // Import resolution function
-        const { runResolutionStage, buildCandidateEntriesData } = await import('./summaryToLorebookProcessor.js');
-        const { getAttachedLorebook, getLorebookEntries } = await import('./lorebookManager.js');
-        const { ensureRegistryState } = await import('./summaryToLorebookProcessor.js');
+        // Build settings from profile
+        const settings = {
+            merge_connection_profile: get_settings('auto_lorebooks_summary_merge_connection_profile') || '',
+            merge_completion_preset: get_settings('auto_lorebooks_summary_merge_completion_preset') || '',
+            merge_prefill: get_settings('auto_lorebooks_summary_merge_prefill') || '',
+            merge_prompt: get_settings('auto_lorebooks_summary_merge_prompt') || '',
+            triage_connection_profile: get_settings('auto_lorebooks_summary_triage_connection_profile') || '',
+            triage_completion_preset: get_settings('auto_lorebooks_summary_triage_completion_preset') || '',
+            triage_prefill: get_settings('auto_lorebooks_summary_triage_prefill') || '',
+            triage_prompt: get_settings('auto_lorebooks_summary_triage_prompt') || '',
+            resolution_connection_profile: get_settings('auto_lorebooks_summary_resolution_connection_profile') || '',
+            resolution_completion_preset: get_settings('auto_lorebooks_summary_resolution_completion_preset') || '',
+            resolution_prefill: get_settings('auto_lorebooks_summary_resolution_prefill') || '',
+            resolution_prompt: get_settings('auto_lorebooks_summary_resolution_prompt') || '',
+            skip_duplicates: get_settings('auto_lorebooks_summary_skip_duplicates') ?? true,
+            enabled: get_settings('auto_lorebooks_summary_enabled') ?? false,
+        };
 
-        const settings = extension_settings.autoLorebooks?.summary_processing || {};
         const lorebookName = getAttachedLorebook();
 
         if (!lorebookName) {
@@ -363,10 +406,6 @@ export function registerAllOperationHandlers() {
         }
 
         debug(SUBSYSTEM.QUEUE, `Executing CREATE_LOREBOOK_ENTRY (${action}) for: ${entryData.comment || 'Unknown'}`);
-
-        const { getAttachedLorebook, getLorebookEntries, addLorebookEntry } = await import('./lorebookManager.js');
-        const { mergeLorebookEntry } = await import('./lorebookEntryMerger.js');
-        const { ensureRegistryState, updateRegistryRecord, assignEntityId, ensureStringArray } = await import('./summaryToLorebookProcessor.js');
 
         const lorebookName = getAttachedLorebook();
         if (!lorebookName) {
@@ -494,10 +533,6 @@ export function registerAllOperationHandlers() {
         const entryData = getEntryData(entryId);
 
         debug(SUBSYSTEM.QUEUE, `Executing UPDATE_LOREBOOK_REGISTRY for type=${entityType}, id=${entityId}`);
-
-        const { getAttachedLorebook, updateRegistryEntryContent } = await import('./lorebookManager.js');
-        const { buildRegistryItemsForType, ensureRegistryState } = await import('./summaryToLorebookProcessor.js');
-        const { saveMetadata } = await import('../../../../script.js');
 
         const lorebookName = getAttachedLorebook();
         if (!lorebookName) {

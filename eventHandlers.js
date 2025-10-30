@@ -6,6 +6,7 @@ import {
     getContext,
     chat_enabled,
     get_settings,
+    set_settings,
     refresh_memory,
     auto_load_profile,
     scrollChatToBottom,
@@ -282,8 +283,10 @@ async function on_chat_event(event /*: ?string */=null, data /*: any */=null) /*
 // Entry point
 // $FlowFixMe[signature-verification-failure]
 let memoryEditInterface;
-// $FlowFixMe[cannot-resolve-name]
-jQuery(async function () {
+
+// Initialization function that runs when module loads
+async function initializeExtension() {
+    console.log('[EVENT HANDLERS] initializeExtension() called');
     log(`Loading extension...`)
 
     // Read version from manifest.json
@@ -376,23 +379,24 @@ Object.entries(event_types).forEach(([key, type]) => {
     const queueSetting = get_settings('operation_queue_enabled');
     log('[Queue] Checking queue initialization - setting value:', queueSetting);
 
+    // Initialize operation queue early (but don't register handlers yet)
     if (queueSetting !== false) {
         log('[Queue] Initializing operation queue...');
         operationQueueModule = await import('./operationQueue.js');
         const { initQueueUI } = await import('./operationQueueUI.js');
-        const { registerAllOperationHandlers } = await import('./operationHandlers.js');
 
         await operationQueueModule.initOperationQueue();
-        registerAllOperationHandlers();
         initQueueUI();
-        log('[Queue] ✓ Operation queue initialized with handlers');
+        log('[Queue] ✓ Operation queue initialized (handlers will be registered after module init)');
     } else {
         log('[Queue] Queue disabled by setting, skipping initialization');
     }
 
     // Initialize Auto-Lorebooks functionality
+    console.log('[EVENT HANDLERS] About to initialize Auto-Lorebooks functionality...');
     log('[Lorebooks] Initializing Auto-Lorebooks functionality...');
     try {
+        console.log('[EVENT HANDLERS] Importing modules...');
         const lorebookManager = await import('./lorebookManager.js');
         const trackingEntries = await import('./trackingEntries.js');
         const sendButtonInterceptor = await import('./sendButtonInterceptor.js');
@@ -400,21 +404,30 @@ Object.entries(event_types).forEach(([key, type]) => {
         const lorebookEntryMerger = await import('./lorebookEntryMerger.js');
         const summaryToLorebookProcessor = await import('./summaryToLorebookProcessor.js');
         const connectionSettingsManager = await import('./connectionSettingsManager.js');
+        console.log('[EVENT HANDLERS] All modules imported successfully');
 
         // Initialize lorebooks modules
+        console.log('[EVENT HANDLERS] Initializing lorebookManager...');
         lorebookManager.initLorebookManager(lorebookUtils);
-        trackingEntries.initTrackingEntries(lorebookUtils, lorebookManager, null, connectionSettingsManager);
+        console.log('[EVENT HANDLERS] Initializing trackingEntries...');
+        trackingEntries.initTrackingEntries(lorebookUtils, lorebookManager, null, connectionSettingsManager, { get_settings, set_settings });
+        console.log('[EVENT HANDLERS] Initializing sendButtonInterceptor...');
         sendButtonInterceptor.initSendButtonInterceptor(lorebookUtils, trackingEntries);
+        console.log('[EVENT HANDLERS] Initializing categoryIndexes...');
         categoryIndexes.initCategoryIndexes(lorebookUtils, lorebookManager, { get_settings });
 
         // Initialize with operation queue if enabled
+        console.log('[EVENT HANDLERS] Initializing lorebookEntryMerger...');
         if (queueSetting !== false && operationQueueModule) {
             lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, operationQueueModule);
         } else {
             lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, null);
         }
 
-        summaryToLorebookProcessor.initSummaryToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger, connectionSettingsManager);
+        console.log('[EVENT HANDLERS] About to init summaryToLorebookProcessor with connectionSettingsManager:', connectionSettingsManager);
+        console.log('[EVENT HANDLERS] connectionSettingsManager.withConnectionSettings:', connectionSettingsManager?.withConnectionSettings);
+        summaryToLorebookProcessor.initSummaryToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger, connectionSettingsManager, { get_settings, set_settings });
+        console.log('[EVENT HANDLERS] ✓ summaryToLorebookProcessor initialized');
 
         // Initialize tracking settings
         trackingEntries.initializeTrackingSettings();
@@ -429,6 +442,21 @@ Object.entries(event_types).forEach(([key, type]) => {
     } catch (err) {
         log('[Lorebooks] Failed to initialize Auto-Lorebooks:', err);
     }
+
+    // Register operation handlers AFTER all modules are initialized
+    if (queueSetting !== false && operationQueueModule) {
+        log('[Queue] Registering operation handlers...');
+        const { registerAllOperationHandlers } = await import('./operationHandlers.js');
+        registerAllOperationHandlers();
+        log('[Queue] ✓ Operation handlers registered');
+    }
+}
+
+// Call initialization immediately when module loads
+console.log('[EVENT HANDLERS] Module loaded, calling initializeExtension()...');
+initializeExtension().catch(err => {
+    console.error('[EVENT HANDLERS] Failed to initialize extension:', err);
+    console.error('[EVENT HANDLERS] Stack trace:', err.stack);
 });
 
 export {

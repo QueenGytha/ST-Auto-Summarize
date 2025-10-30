@@ -16,11 +16,11 @@ import {
 import { DEFAULT_MERGE_PROMPTS } from './trackingEntries.js';
 
 export const default_settings = {
-    // Error detection settings
+    // --- Error Detection Settings ---
     error_detection_enabled: false,
     message_summary_error_detection_enabled: true,
 
-    // summarization settings
+    // --- Summarization Settings ---
     prompt: default_prompt,
     scene_summary_prompt,
     message_summary_error_detection_prompt,
@@ -58,18 +58,6 @@ export const default_settings = {
     display_memories: false, // Hide per-message summary display (not used with scene-based approach)
     default_chat_enabled: true,
     use_global_toggle_state: false,
-    auto_lorebooks_summary_triage_prompt: auto_lorebook_triage_prompt,
-    auto_lorebooks_summary_triage_prefill: '',
-    auto_lorebooks_summary_triage_connection_profile: '',
-    auto_lorebooks_summary_triage_completion_preset: '',
-    auto_lorebooks_summary_resolution_prompt: auto_lorebook_resolution_prompt,
-    auto_lorebooks_summary_resolution_prefill: '',
-    auto_lorebooks_summary_resolution_connection_profile: '',
-    auto_lorebooks_summary_resolution_completion_preset: '',
-};
-
-// $FlowFixMe[prop-missing]
-Object.assign(default_settings, {
     // --- Scene Summary Settings ---
     scene_summary_enabled: true,
     scene_summary_prefill: "",
@@ -140,9 +128,9 @@ Object.assign(default_settings, {
 
     // --- Auto-Lorebooks Tracking Entries Settings ---
     auto_lorebooks_tracking_enabled: true, // Enable AI-editable tracking entries (GM Notes, Character Stats)
-    auto_lorebooks_tracking_intercept_send: true, // Intercept send button to process tracking syntax
+    auto_lorebooks_tracking_intercept_send_button: true, // Intercept send button to process tracking syntax
     auto_lorebooks_tracking_auto_create: true, // Auto-create tracking entries on chat load
-    auto_lorebooks_tracking_remove_syntax: true, // Remove tracking syntax from message after processing
+    auto_lorebooks_tracking_remove_from_message: true, // Remove tracking syntax from message after processing
     auto_lorebooks_tracking_syntax_gm_notes: '<-- gm_notes: {{content}} -->', // Syntax pattern for GM notes
     auto_lorebooks_tracking_syntax_character_stats: '<-- character_stats: {{content}} -->', // Syntax pattern for character stats
     auto_lorebooks_tracking_merge_prefill: '', // Prefill for merge prompts
@@ -152,9 +140,8 @@ Object.assign(default_settings, {
     auto_lorebooks_tracking_merge_completion_preset: '', // Completion preset for merging
 
     // --- Auto-Lorebooks Summary Processing Settings ---
-    auto_lorebooks_summary_processing_enabled: true, // Enable extracting entities from summaries to lorebook
+    auto_lorebooks_summary_enabled: true, // Enable extracting entities from summaries to lorebook
     auto_lorebooks_summary_skip_duplicates: true, // Skip entities that already exist in lorebook
-    auto_lorebooks_summary_use_queue: true, // Use operation queue for summary processing
     auto_lorebooks_summary_merge_prompt: `You are updating a lorebook entry. You have the existing entry content and new information from a summary.
 
 Your task:
@@ -186,4 +173,4 @@ Output ONLY the merged content, nothing else. Do not include explanations or met
     auto_lorebooks_summary_resolution_completion_preset: '',
 
     // (Removed) Auto-Lorebooks Keyword Generation Settings – keywords now come from summary JSON
-});
+};

@@ -574,143 +574,88 @@ function initialize_lorebooks_settings_listeners() {
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-tracking-enabled', function() {
         const value = $(this).prop('checked');
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.tracking.enabled = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_tracking_enabled', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-tracking-intercept-send', function() {
         const value = $(this).prop('checked');
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.tracking.intercept_send_button = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_tracking_intercept_send_button', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-tracking-auto-create', function() {
         const value = $(this).prop('checked');
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.tracking.auto_create = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_tracking_auto_create', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-tracking-remove-syntax', function() {
         const value = $(this).prop('checked');
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.tracking.remove_from_message = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_tracking_remove_from_message', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-tracking-syntax-gm-notes', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.tracking.syntax_gm_notes = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_tracking_syntax_gm_notes', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-tracking-syntax-character-stats', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.tracking.syntax_character_stats = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_tracking_syntax_character_stats', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-tracking-merge-connection', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.tracking.merge_connection_profile = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_tracking_merge_connection_profile', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-tracking-merge-preset', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.tracking.merge_completion_preset = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_tracking_merge_completion_preset', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-tracking-merge-prefill', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.tracking.merge_prefill = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_tracking_merge_prefill', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-tracking-merge-prompt-gm-notes', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.tracking.merge_prompt_gm_notes = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_tracking_merge_prompt_gm_notes', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-tracking-merge-prompt-character-stats', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.tracking) extension_settings.autoLorebooks.tracking = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.tracking.merge_prompt_character_stats = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_tracking_merge_prompt_character_stats', value);
+        save_profile();
     });
 
     // Restore default buttons for merge prompts
@@ -739,182 +684,112 @@ function initialize_lorebooks_settings_listeners() {
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-summary-processing-enabled', function() {
         const value = $(this).prop('checked');
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.enabled = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_enabled', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-summary-skip-duplicates', function() {
         const value = $(this).prop('checked');
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.skip_duplicates = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_skip_duplicates', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-summary-merge-connection', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.merge_connection_profile = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_merge_connection_profile', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-summary-merge-preset', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.merge_completion_preset = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_merge_completion_preset', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-summary-merge-prefill', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.merge_prefill = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_merge_prefill', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-summary-merge-prompt', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.merge_prompt = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_merge_prompt', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-summary-triage-connection', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.triage_connection_profile = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_triage_connection_profile', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-summary-triage-preset', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.triage_completion_preset = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_triage_completion_preset', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-summary-triage-prefill', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.triage_prefill = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_triage_prefill', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-summary-triage-prompt', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.triage_prompt = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_triage_prompt', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-summary-resolution-connection', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.resolution_connection_profile = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_resolution_connection_profile', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-summary-resolution-preset', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.resolution_completion_preset = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_resolution_completion_preset', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-summary-resolution-prefill', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.resolution_prefill = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_resolution_prefill', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-summary-resolution-prompt', function() {
         const value = $(this).val();
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.summary_processing) extension_settings.autoLorebooks.summary_processing = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.summary_processing.resolution_prompt = value;
-        saveSettingsDebounced();
+        set_settings('auto_lorebooks_summary_resolution_prompt', value);
+        save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]

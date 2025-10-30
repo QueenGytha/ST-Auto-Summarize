@@ -11,6 +11,7 @@ let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */;  // Ut
 let getAttachedLorebook /*: any */, lorebookExists /*: any */, handleMissingLorebook /*: any */, addLorebookEntry /*: any */, modifyLorebookEntry /*: any */, getLorebookEntries /*: any */;  // Lorebook functions - any type is legitimate
 let queueMergeGMNotes /*: any */, queueMergeCharacterStats /*: any */;  // Queue functions - any type is legitimate
 let withConnectionSettings /*: any */;  // Connection settings management - any type is legitimate
+let get_settings /*: any */, set_settings /*: any */;  // Profile settings functions - any type is legitimate
 
 /**
  * Configuration for tracking entry types
@@ -78,7 +79,7 @@ Output only the merged content, nothing else.`
 /**
  * Initialize the tracking entries module
  */
-export function initTrackingEntries(utils /*: any */, lorebookManager /*: any */, queueIntegrationModule /*: any */, connectionSettingsManager /*: any */) /*: void */ {
+export function initTrackingEntries(utils /*: any */, lorebookManager /*: any */, queueIntegrationModule /*: any */, connectionSettingsManager /*: any */, settingsManager /*: any */) /*: void */ {
     log = utils.log;
     debug = utils.debug;
     error = utils.error;
@@ -89,6 +90,8 @@ export function initTrackingEntries(utils /*: any */, lorebookManager /*: any */
     addLorebookEntry = lorebookManager.addLorebookEntry;
     modifyLorebookEntry = lorebookManager.modifyLorebookEntry;
     getLorebookEntries = lorebookManager.getLorebookEntries;
+    get_settings = settingsManager.get_settings;
+    set_settings = settingsManager.set_settings;
 
     // Import connection settings management
     if (connectionSettingsManager) {
@@ -107,8 +110,9 @@ export function initTrackingEntries(utils /*: any */, lorebookManager /*: any */
  */
 function getTrackingSetting(key /*: string */, defaultValue /*: any */ = null) /*: any */ {
     try {
-        const settings = extension_settings?.autoLorebooks?.tracking || {};
-        return settings[key] ?? defaultValue;
+        // ALL tracking settings are per-profile
+        const settingKey = `auto_lorebooks_tracking_${key}`;
+        return get_settings(settingKey) ?? defaultValue;
     } catch (err) {
         error("Error getting tracking setting", err);
         return defaultValue;
@@ -120,14 +124,9 @@ function getTrackingSetting(key /*: string */, defaultValue /*: any */ = null) /
  */
 function setTrackingSetting(key /*: string */, value /*: any */) /*: void */ {
     try {
-        if (!extension_settings.autoLorebooks) {
-            extension_settings.autoLorebooks = ({} /*: any */);
-        }
-        if (!extension_settings.autoLorebooks.tracking) {
-            extension_settings.autoLorebooks.tracking = ({} /*: any */);
-        }
-        // $FlowFixMe[prop-missing] - Dynamic property assignment to tracking settings
-        extension_settings.autoLorebooks.tracking[key] = value;
+        // ALL tracking settings are per-profile
+        const settingKey = `auto_lorebooks_tracking_${key}`;
+        set_settings(settingKey, value);
     } catch (err) {
         error("Error setting tracking setting", err);
     }
