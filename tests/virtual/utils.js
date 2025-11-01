@@ -14,7 +14,7 @@ import {
 } from './index.js';
 
 // Consistent prefix for ALL extension logs - easily searchable
-const LOG_PREFIX = '[Gytha][AutoSummarize]';
+const LOG_PREFIX = '[AutoSummarize]';
 
 // Subsystem prefixes for filtering specific functionality
 const SUBSYSTEM = {
@@ -75,7 +75,7 @@ const toast_debounced = debounce(toast, 500);
 /**
  * IMPORTANT: All extension code MUST use the centralized logging functions (log, debug, error)
  * instead of raw console.log/error/debug calls. This ensures:
- * 1. ALL logs have the [Gytha][AutoSummarize] prefix for easy filtering
+ * 1. ALL logs have the [AutoSummarize] prefix for easy filtering
  * 2. Debug logs can be toggled via the debug_mode setting
  * 3. Error logs automatically show toast notifications to the user
  * 4. Consistent formatting across the entire extension

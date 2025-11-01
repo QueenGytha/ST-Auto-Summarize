@@ -32,7 +32,7 @@ import {
     extension_settings,
     saveSettingsDebounced,
 } from './index.js';
-import { default_scene_template, auto_lorebook_triage_prompt, auto_lorebook_resolution_prompt } from './defaultPrompts.js';
+import { default_scene_template, auto_lorebook_entry_lookup_prompt, auto_lorebook_entry_deduplicate_prompt } from './defaultPrompts.js';
 import { DEFAULT_MERGE_PROMPTS } from './trackingEntries.js';
 import {
     ensureEntityTypesSetting,
@@ -517,6 +517,18 @@ function initialize_lorebooks_settings_listeners() {
         saveSettingsDebounced();
     });
 
+    // Auto-reorder alphabetically checkbox
+    // $FlowFixMe[cannot-resolve-name]
+    // $FlowFixMe[missing-this-annot]
+    $(document).on('change', '#autolorebooks-auto-reorder-alphabetically', function() {
+        const value = $(this).prop('checked');
+        // $FlowFixMe[prop-missing]
+        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+        // $FlowFixMe[prop-missing]
+        extension_settings.autoLorebooks.autoReorderAlphabetically = value;
+        saveSettingsDebounced();
+    });
+
     // Debug mode checkbox
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
@@ -732,7 +744,7 @@ function initialize_lorebooks_settings_listeners() {
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-summary-triage-connection', function() {
         const value = $(this).val();
-        set_settings('auto_lorebooks_summary_triage_connection_profile', value);
+        set_settings('auto_lorebooks_summary_lorebook_entry_lookup_connection_profile', value);
         save_profile();
     });
 
@@ -740,7 +752,7 @@ function initialize_lorebooks_settings_listeners() {
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-summary-triage-preset', function() {
         const value = $(this).val();
-        set_settings('auto_lorebooks_summary_triage_completion_preset', value);
+        set_settings('auto_lorebooks_summary_lorebook_entry_lookup_completion_preset', value);
         save_profile();
     });
 
@@ -748,7 +760,7 @@ function initialize_lorebooks_settings_listeners() {
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-summary-triage-prefill', function() {
         const value = $(this).val();
-        set_settings('auto_lorebooks_summary_triage_prefill', value);
+        set_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill', value);
         save_profile();
     });
 
@@ -756,39 +768,39 @@ function initialize_lorebooks_settings_listeners() {
     // $FlowFixMe[missing-this-annot]
     $(document).on('input', '#autolorebooks-summary-triage-prompt', function() {
         const value = $(this).val();
-        set_settings('auto_lorebooks_summary_triage_prompt', value);
+        set_settings('auto_lorebooks_summary_lorebook_entry_lookup_prompt', value);
         save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-summary-resolution-connection', function() {
+    $(document).on('change', '#autolorebooks-summary-entry-deduplicate-connection', function() {
         const value = $(this).val();
-        set_settings('auto_lorebooks_summary_resolution_connection_profile', value);
+        set_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_connection_profile', value);
         save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-summary-resolution-preset', function() {
+    $(document).on('change', '#autolorebooks-summary-entry-deduplicate-preset', function() {
         const value = $(this).val();
-        set_settings('auto_lorebooks_summary_resolution_completion_preset', value);
+        set_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset', value);
         save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
-    $(document).on('input', '#autolorebooks-summary-resolution-prefill', function() {
+    $(document).on('input', '#autolorebooks-summary-entry-deduplicate-prefill', function() {
         const value = $(this).val();
-        set_settings('auto_lorebooks_summary_resolution_prefill', value);
+        set_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill', value);
         save_profile();
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
-    $(document).on('input', '#autolorebooks-summary-resolution-prompt', function() {
+    $(document).on('input', '#autolorebooks-summary-entry-deduplicate-prompt', function() {
         const value = $(this).val();
-        set_settings('auto_lorebooks_summary_resolution_prompt', value);
+        set_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt', value);
         save_profile();
     });
 
@@ -796,20 +808,20 @@ function initialize_lorebooks_settings_listeners() {
     // $FlowFixMe[missing-this-annot]
     $(document).on('click', '#restore-summary-triage-prompt', function() {
         // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-triage-prompt').val(auto_lorebook_triage_prompt);
+        $('#autolorebooks-summary-lorebook-entry-lookup-prompt').val(auto_lorebook_entry_lookup_prompt);
         // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-triage-prompt').trigger('input');
-        toast('Triage prompt restored to default', 'success');
+        $('#autolorebooks-summary-lorebook-entry-lookup-prompt').trigger('input');
+        toast('Lorebook Entry Lookup prompt restored to default', 'success');
     });
 
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
-    $(document).on('click', '#restore-summary-resolution-prompt', function() {
+    $(document).on('click', '#restore-summary-entry-deduplicate-prompt', function() {
         // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-resolution-prompt').val(auto_lorebook_resolution_prompt);
+        $('#autolorebooks-summary-entry-deduplicate-prompt').val(auto_lorebook_entry_deduplicate_prompt);
         // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-summary-resolution-prompt').trigger('input');
-        toast('Resolution prompt restored to default', 'success');
+        $('#autolorebooks-summary-entry-deduplicate-prompt').trigger('input');
+        toast('LorebookEntryDeduplicate prompt restored to default', 'success');
     });
 
     debug("Auto-Lorebooks settings event listeners initialized");

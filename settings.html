@@ -736,6 +736,13 @@
                         </div>
 
                         <div class="margin-bot-10px">
+                            <label class="checkbox_label" for="autolorebooks-auto-reorder-alphabetically">
+                                <input type="checkbox" id="autolorebooks-auto-reorder-alphabetically" />
+                                <span>Auto-reorder entries alphabetically when created or renamed</span>
+                            </label>
+                        </div>
+
+                        <div class="margin-bot-10px">
                             <label for="autolorebooks-name-template">
                                 <span>Lorebook naming template:</span>
                                 <small class="displayBlock opacity50p">Available variables: {{char}}, {{chat}}</small>
@@ -964,74 +971,74 @@
                                 <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                             </div>
                             <div class="inline-drawer-content">
-                                <h5 class="margin-top-0">Stage 1 – Registry Triage</h5>
+                                <h5 class="margin-top-0">Stage 1 – Registry Lorebook Entry Lookup</h5>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-triage-connection">
+                                    <label for="autolorebooks-summary-lorebook-entry-lookup-connection">
                                         <span>Connection Profile:</span>
                                         <small class="displayBlock opacity50p">API profile to use when screening new entries (empty = use main API)</small>
                                     </label>
-                                    <select id="autolorebooks-summary-triage-connection" class="text_pole">
+                                    <select id="autolorebooks-summary-lorebook-entry-lookup-connection" class="text_pole">
                                         <option value="">Main API</option>
                                     </select>
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-triage-preset">
+                                    <label for="autolorebooks-summary-lorebook-entry-lookup-preset">
                                         <span>Completion Preset:</span>
                                         <small class="displayBlock opacity50p">Preset for triage calls (empty = use default)</small>
                                     </label>
-                                    <select id="autolorebooks-summary-triage-preset" class="text_pole">
+                                    <select id="autolorebooks-summary-lorebook-entry-lookup-preset" class="text_pole">
                                         <option value="">Default</option>
                                     </select>
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-triage-prefill">
+                                    <label for="autolorebooks-summary-lorebook-entry-lookup-prefill">
                                         <span>Prefill (Claude models):</span>
                                         <small class="displayBlock opacity50p">Optional text to prefill AI responses during triage</small>
                                     </label>
-                                    <input type="text" id="autolorebooks-summary-triage-prefill" class="text_pole" placeholder="" />
+                                    <input type="text" id="autolorebooks-summary-lorebook-entry-lookup-prefill" class="text_pole" placeholder="" />
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-triage-prompt" class="flex-container alignitemscenter justifyspacebetween">
-                                        <span>Triage prompt:</span>
+                                    <label for="autolorebooks-summary-lorebook-entry-lookup-prompt" class="flex-container alignitemscenter justifyspacebetween">
+                                        <span>Lorebook Entry Lookup prompt:</span>
                                         <button id="restore-summary-triage-prompt" class="menu_button fa-solid fa-recycle" title="Restore default triage prompt"></button>
                                     </label>
                                     <small class="displayBlock opacity50p">Use macros: {{lorebook_entry_types}}, {{new_entry}}, {{candidate_registry}}</small>
-                                    <textarea id="autolorebooks-summary-triage-prompt" class="text_pole textarea_compact" rows="10"></textarea>
+                                    <textarea id="autolorebooks-summary-lorebook-entry-lookup-prompt" class="text_pole textarea_compact" rows="10"></textarea>
                                 </div>
 
-                                <h5>Stage 2 – Full Resolution</h5>
+                                <h5>Stage 2 – Full LorebookEntryDeduplicate</h5>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-resolution-connection">
+                                    <label for="autolorebooks-summary-entry-deduplicate-connection">
                                         <span>Connection Profile:</span>
                                         <small class="displayBlock opacity50p">API profile when comparing full entries (empty = use main API)</small>
                                     </label>
-                                    <select id="autolorebooks-summary-resolution-connection" class="text_pole">
+                                    <select id="autolorebooks-summary-entry-deduplicate-connection" class="text_pole">
                                         <option value="">Main API</option>
                                     </select>
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-resolution-preset">
+                                    <label for="autolorebooks-summary-entry-deduplicate-preset">
                                         <span>Completion Preset:</span>
                                         <small class="displayBlock opacity50p">Preset for the follow-up comparison call (empty = use default)</small>
                                     </label>
-                                    <select id="autolorebooks-summary-resolution-preset" class="text_pole">
+                                    <select id="autolorebooks-summary-entry-deduplicate-preset" class="text_pole">
                                         <option value="">Default</option>
                                     </select>
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-resolution-prefill">
+                                    <label for="autolorebooks-summary-entry-deduplicate-prefill">
                                         <span>Prefill (Claude models):</span>
                                         <small class="displayBlock opacity50p">Optional text to prefill the comparison response</small>
                                     </label>
-                                    <input type="text" id="autolorebooks-summary-resolution-prefill" class="text_pole" placeholder="" />
+                                    <input type="text" id="autolorebooks-summary-entry-deduplicate-prefill" class="text_pole" placeholder="" />
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-resolution-prompt" class="flex-container alignitemscenter justifyspacebetween">
-                                        <span>Resolution prompt:</span>
-                                        <button id="restore-summary-resolution-prompt" class="menu_button fa-solid fa-recycle" title="Restore default resolution prompt"></button>
+                                    <label for="autolorebooks-summary-entry-deduplicate-prompt" class="flex-container alignitemscenter justifyspacebetween">
+                                        <span>LorebookEntryDeduplicate prompt:</span>
+                                        <button id="restore-summary-entry-deduplicate-prompt" class="menu_button fa-solid fa-recycle" title="Restore default LorebookEntryDeduplicate prompt"></button>
                                     </label>
                                     <small class="displayBlock opacity50p">Use macros: {{lorebook_entry_types}}, {{new_entry}}, {{triage_synopsis}}, {{candidate_entries}}</small>
-                                    <textarea id="autolorebooks-summary-resolution-prompt" class="text_pole textarea_compact" rows="10"></textarea>
+                                    <textarea id="autolorebooks-summary-entry-deduplicate-prompt" class="text_pole textarea_compact" rows="10"></textarea>
                                 </div>
                             </div>
                         </div>

@@ -26,8 +26,8 @@ import {
 } from './runningSceneSummary.js';
 import {
     processSingleLorebookEntry,
-    runTriageStage,
-    runResolutionStage,
+    runLorebookEntryLookupStage,
+    runLorebookEntryDeduplicateStage,
     buildCandidateEntriesData,
     ensureRegistryState,
     updateRegistryRecord,
@@ -41,10 +41,10 @@ import {
 } from './lorebookEntryMerger.js';
 import {
     getEntryData,
-    getTriageResult,
-    getResolutionResult,
-    setTriageResult,
-    setResolutionResult,
+    getLorebookEntryLookupResult,
+    getLorebookEntryDeduplicateResult,
+    setLorebookEntryLookupResult,
+    setLorebookEntryDeduplicateResult,
     markStageInProgress,
     completePendingEntry,
 } from './lorebookPendingOps.js';
@@ -53,6 +53,7 @@ import {
     getLorebookEntries,
     addLorebookEntry,
     updateRegistryEntryContent,
+    reorderLorebookEntriesAlphabetically,
 } from './lorebookManager.js';
 import {
     getContext,
@@ -239,10 +240,10 @@ export function registerAllOperationHandlers() {
         });
     });
 
-    // TRIAGE_LOREBOOK_ENTRY - First stage of lorebook processing pipeline
-    registerOperationHandler(OperationType.TRIAGE_LOREBOOK_ENTRY, async (operation) => {
+    // LOREBOOK_ENTRY_LOOKUP - First stage of lorebook processing pipeline
+    registerOperationHandler(OperationType.LOREBOOK_ENTRY_LOOKUP, async (operation) => {
         const { entryId, entryData, registryListing, typeList } = operation.params;
-        debug(SUBSYSTEM.QUEUE, `Executing TRIAGE_LOREBOOK_ENTRY for: ${entryData.comment || 'Unknown'}`);
+        debug(SUBSYSTEM.QUEUE, `Executing LOREBOOK_ENTRY_LOOKUP for: ${entryData.comment || 'Unknown'}`);
 
         // Build settings from profile
         const settings = {
@@ -250,40 +251,40 @@ export function registerAllOperationHandlers() {
             merge_completion_preset: get_settings('auto_lorebooks_summary_merge_completion_preset') || '',
             merge_prefill: get_settings('auto_lorebooks_summary_merge_prefill') || '',
             merge_prompt: get_settings('auto_lorebooks_summary_merge_prompt') || '',
-            triage_connection_profile: get_settings('auto_lorebooks_summary_triage_connection_profile') || '',
-            triage_completion_preset: get_settings('auto_lorebooks_summary_triage_completion_preset') || '',
-            triage_prefill: get_settings('auto_lorebooks_summary_triage_prefill') || '',
-            triage_prompt: get_settings('auto_lorebooks_summary_triage_prompt') || '',
-            resolution_connection_profile: get_settings('auto_lorebooks_summary_resolution_connection_profile') || '',
-            resolution_completion_preset: get_settings('auto_lorebooks_summary_resolution_completion_preset') || '',
-            resolution_prefill: get_settings('auto_lorebooks_summary_resolution_prefill') || '',
-            resolution_prompt: get_settings('auto_lorebooks_summary_resolution_prompt') || '',
+            lorebook_entry_lookup_connection_profile: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_connection_profile') || '',
+            lorebook_entry_lookup_completion_preset: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_completion_preset') || '',
+            lorebook_entry_lookup_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '',
+            lorebook_entry_lookup_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prompt') || '',
+            lorebook_entry_deduplicate_connection_profile: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_connection_profile') || '',
+            lorebook_entry_deduplicate_completion_preset: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset') || '',
+            lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '',
+            lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '',
             skip_duplicates: get_settings('auto_lorebooks_summary_skip_duplicates') ?? true,
             enabled: get_settings('auto_lorebooks_summary_enabled') ?? false,
         };
 
-        // Run triage
-        const triageResult = await runTriageStage(entryData, registryListing, typeList, settings);
+        // Run lorebook entry lookup
+        const lorebookEntryLookupResult = await runLorebookEntryLookupStage(entryData, registryListing, typeList, settings);
 
-        // Store triage result in pending ops
-        setTriageResult(entryId, triageResult);
-        markStageInProgress(entryId, 'triage_complete');
+        // Store lorebook entry lookup result in pending ops
+        setLorebookEntryLookupResult(entryId, lorebookEntryLookupResult);
+        markStageInProgress(entryId, 'lorebook_entry_lookup_complete');
 
-        debug(SUBSYSTEM.QUEUE, `✓ Triage complete for ${entryId}: type=${triageResult.type}, sameIds=${triageResult.sameEntityIds.length}, needsIds=${triageResult.needsFullContextIds.length}`);
+        debug(SUBSYSTEM.QUEUE, `✓ Lorebook Entry Lookup complete for ${entryId}: type=${lorebookEntryLookupResult.type}, sameIds=${lorebookEntryLookupResult.sameEntityIds.length}, needsIds=${lorebookEntryLookupResult.needsFullContextIds.length}`);
 
-        // Enqueue next operation based on triage result
-        if (triageResult.needsFullContextIds && triageResult.needsFullContextIds.length > 0) {
-            // Need resolution
+        // Enqueue next operation based on lorebook entry lookup result
+        if (lorebookEntryLookupResult.needsFullContextIds && lorebookEntryLookupResult.needsFullContextIds.length > 0) {
+            // Need lorebook entry deduplication
             await enqueueOperation(
                 OperationType.RESOLVE_LOREBOOK_ENTRY,
                 { entryId },
                 { metadata: { entry_comment: entryData.comment } }
             );
-        } else if (triageResult.sameEntityIds.length === 1) {
+        } else if (lorebookEntryLookupResult.sameEntityIds.length === 1) {
             // Exact match found - merge
-            const resolvedId = triageResult.sameEntityIds[0];
-            setResolutionResult(entryId, { resolvedId, synopsis: triageResult.synopsis });
-            markStageInProgress(entryId, 'resolution_complete');
+            const resolvedId = lorebookEntryLookupResult.sameEntityIds[0];
+            setLorebookEntryDeduplicateResult(entryId, { resolvedId, synopsis: lorebookEntryLookupResult.synopsis });
+            markStageInProgress(entryId, 'lorebook_entry_deduplicate_complete');
 
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
@@ -299,16 +300,16 @@ export function registerAllOperationHandlers() {
             );
         }
 
-        return { success: true, triageResult };
+        return { success: true, lorebookEntryLookupResult };
     });
 
     // RESOLVE_LOREBOOK_ENTRY - Second stage (conditional) - get full context for uncertain matches
     registerOperationHandler(OperationType.RESOLVE_LOREBOOK_ENTRY, async (operation) => {
         const { entryId } = operation.params;
         const entryData = getEntryData(entryId);
-        const triageResult = getTriageResult(entryId);
+        const lorebookEntryLookupResult = getLorebookEntryLookupResult(entryId);
 
-        if (!entryData || !triageResult) {
+        if (!entryData || !lorebookEntryLookupResult) {
             throw new Error(`Missing pending data for entry ${entryId}`);
         }
 
@@ -320,14 +321,14 @@ export function registerAllOperationHandlers() {
             merge_completion_preset: get_settings('auto_lorebooks_summary_merge_completion_preset') || '',
             merge_prefill: get_settings('auto_lorebooks_summary_merge_prefill') || '',
             merge_prompt: get_settings('auto_lorebooks_summary_merge_prompt') || '',
-            triage_connection_profile: get_settings('auto_lorebooks_summary_triage_connection_profile') || '',
-            triage_completion_preset: get_settings('auto_lorebooks_summary_triage_completion_preset') || '',
-            triage_prefill: get_settings('auto_lorebooks_summary_triage_prefill') || '',
-            triage_prompt: get_settings('auto_lorebooks_summary_triage_prompt') || '',
-            resolution_connection_profile: get_settings('auto_lorebooks_summary_resolution_connection_profile') || '',
-            resolution_completion_preset: get_settings('auto_lorebooks_summary_resolution_completion_preset') || '',
-            resolution_prefill: get_settings('auto_lorebooks_summary_resolution_prefill') || '',
-            resolution_prompt: get_settings('auto_lorebooks_summary_resolution_prompt') || '',
+            lorebook_entry_lookup_connection_profile: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_connection_profile') || '',
+            lorebook_entry_lookup_completion_preset: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_completion_preset') || '',
+            lorebook_entry_lookup_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '',
+            lorebook_entry_lookup_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prompt') || '',
+            lorebook_entry_deduplicate_connection_profile: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_connection_profile') || '',
+            lorebook_entry_deduplicate_completion_preset: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset') || '',
+            lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '',
+            lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '',
             skip_duplicates: get_settings('auto_lorebooks_summary_skip_duplicates') ?? true,
             enabled: get_settings('auto_lorebooks_summary_enabled') ?? false,
         };
@@ -349,33 +350,33 @@ export function registerAllOperationHandlers() {
 
         const registryState = ensureRegistryState();
         const candidateIds = Array.from(new Set([
-            ...triageResult.sameEntityIds,
-            ...triageResult.needsFullContextIds
+            ...lorebookEntryLookupResult.sameEntityIds,
+            ...lorebookEntryLookupResult.needsFullContextIds
         ]));
 
         const candidateEntries = buildCandidateEntriesData(candidateIds, registryState, existingEntriesMap);
 
-        // Run resolution
-        const resolutionResult = await runResolutionStage(
+        // Run lorebook entry deduplication
+        const lorebookEntryDeduplicateResult = await runLorebookEntryDeduplicateStage(
             entryData,
-            triageResult.synopsis,
+            lorebookEntryLookupResult.synopsis,
             candidateEntries,
-            triageResult.type,
+            lorebookEntryLookupResult.type,
             settings
         );
 
-        // Store resolution result
-        setResolutionResult(entryId, resolutionResult);
-        markStageInProgress(entryId, 'resolution_complete');
+        // Store lorebook entry deduplicate result
+        setLorebookEntryDeduplicateResult(entryId, lorebookEntryDeduplicateResult);
+        markStageInProgress(entryId, 'lorebook_entry_deduplicate_complete');
 
-        debug(SUBSYSTEM.QUEUE, `✓ Resolution complete for ${entryId}: resolvedId=${resolutionResult.resolvedId || 'new'}`);
+        debug(SUBSYSTEM.QUEUE, `✓ LorebookEntryDeduplicate complete for ${entryId}: resolvedId=${lorebookEntryDeduplicateResult.resolvedId || 'new'}`);
 
         // Enqueue next operation
-        if (resolutionResult.resolvedId) {
+        if (lorebookEntryDeduplicateResult.resolvedId) {
             // Match found - merge
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
-                { entryId, action: 'merge', resolvedId: resolutionResult.resolvedId },
+                { entryId, action: 'merge', resolvedId: lorebookEntryDeduplicateResult.resolvedId },
                 { metadata: { entry_comment: entryData.comment } }
             );
         } else {
@@ -387,7 +388,7 @@ export function registerAllOperationHandlers() {
             );
         }
 
-        return { success: true, resolutionResult };
+        return { success: true, lorebookEntryDeduplicateResult };
     });
 
     /**
@@ -398,8 +399,8 @@ export function registerAllOperationHandlers() {
     async function prepareEntryContext(operation /*: any */) /*: Promise<any> */ {
         const { entryId, action, resolvedId } = operation.params;
         const entryData = getEntryData(entryId);
-        const triageResult = getTriageResult(entryId);
-        const resolutionResult = getResolutionResult(entryId);
+        const lorebookEntryLookupResult = getLorebookEntryLookupResult(entryId);
+        const lorebookEntryDeduplicateResult = getLorebookEntryDeduplicateResult(entryId);
 
         if (!entryData) {
             throw new Error(`Missing entry data for ${entryId}`);
@@ -413,8 +414,8 @@ export function registerAllOperationHandlers() {
         }
 
         const registryState = ensureRegistryState();
-        const finalType = triageResult?.type || entryData.type || 'character';
-        const finalSynopsis = resolutionResult?.synopsis || triageResult?.synopsis || '';
+        const finalType = lorebookEntryLookupResult?.type || entryData.type || 'character';
+        const finalSynopsis = lorebookEntryDeduplicateResult?.synopsis || lorebookEntryLookupResult?.synopsis || '';
 
         return {
             entryId, action, resolvedId, entryData, lorebookName,
@@ -549,6 +550,9 @@ export function registerAllOperationHandlers() {
         saveMetadata();
 
         debug(SUBSYSTEM.QUEUE, `✓ Updated registry for type ${entityType}`);
+
+        // Reorder entries alphabetically after successful create/merge
+        await reorderLorebookEntriesAlphabetically(lorebookName);
 
         // Complete pending entry (cleanup)
         completePendingEntry(entryId);

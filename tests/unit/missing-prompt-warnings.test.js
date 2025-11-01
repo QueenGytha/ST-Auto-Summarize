@@ -27,7 +27,7 @@ export default ({ test, expect } /*: any */) => {
         return mod;
     }
 
-    test('runTriageStage: throws error when triage_prompt is missing', async () => {
+    test('runLorebookEntryLookupStage: throws error when lorebook_entry_lookup_prompt is missing', async () => {
         const mod = await initModule();
 
         const normalizedEntry = {
@@ -41,17 +41,17 @@ export default ({ test, expect } /*: any */) => {
 
         let threwError = false;
         try {
-            await mod.runTriageStage(normalizedEntry, 'Registry listing', 'character|location', emptySettings);
+            await mod.runLorebookEntryLookupStage(normalizedEntry, 'Registry listing', 'character|location', emptySettings);
         } catch (err) {
             threwError = true;
-            expect(err.message.includes('triage_prompt')).toBeTruthy();
+            expect(err.message.includes('lorebook_entry_lookup_prompt')).toBeTruthy();
             expect(err.message.includes('Test Entry')).toBeTruthy();
         }
 
         expect(threwError).toBe(true);
     });
 
-    test('runTriageStage: throws when settings object has no triage_prompt property', async () => {
+    test('runLorebookEntryLookupStage: throws when settings object has no lorebook_entry_lookup_prompt property', async () => {
         const mod = await initModule();
 
         const normalizedEntry = {
@@ -62,15 +62,15 @@ export default ({ test, expect } /*: any */) => {
         };
 
         const settingsWithoutPrompt = {
-            triage_prefill: '',
-            triage_connection_profile: '',
-            triage_completion_preset: ''
-            // Missing triage_prompt
+            lorebook_entry_lookup_prefill: '',
+            lorebook_entry_lookup_connection_profile: '',
+            lorebook_entry_lookup_completion_preset: ''
+            // Missing lorebook_entry_lookup_prompt
         };
 
         let threwError = false;
         try {
-            await mod.runTriageStage(normalizedEntry, 'Registry listing', 'character|location', settingsWithoutPrompt);
+            await mod.runLorebookEntryLookupStage(normalizedEntry, 'Registry listing', 'character|location', settingsWithoutPrompt);
         } catch (err) {
             threwError = true;
         }
@@ -78,7 +78,7 @@ export default ({ test, expect } /*: any */) => {
         expect(threwError).toBe(true);
     });
 
-    test('runTriageStage: throws when triage_prompt is empty string', async () => {
+    test('runLorebookEntryLookupStage: throws when lorebook_entry_lookup_prompt is empty string', async () => {
         const mod = await initModule();
 
         const normalizedEntry = {
@@ -89,15 +89,15 @@ export default ({ test, expect } /*: any */) => {
         };
 
         const settingsWithEmptyPrompt = {
-            triage_prompt: '',  // Empty string
-            triage_prefill: '',
-            triage_connection_profile: '',
-            triage_completion_preset: ''
+            lorebook_entry_lookup_prompt: '',  // Empty string
+            lorebook_entry_lookup_prefill: '',
+            lorebook_entry_lookup_connection_profile: '',
+            lorebook_entry_lookup_completion_preset: ''
         };
 
         let threwError = false;
         try {
-            await mod.runTriageStage(normalizedEntry, 'Registry listing', 'character|location', settingsWithEmptyPrompt);
+            await mod.runLorebookEntryLookupStage(normalizedEntry, 'Registry listing', 'character|location', settingsWithEmptyPrompt);
         } catch (err) {
             threwError = true;
         }
@@ -105,7 +105,7 @@ export default ({ test, expect } /*: any */) => {
         expect(threwError).toBe(true);
     });
 
-    test('runResolutionStage: throws when resolution_prompt is missing and candidates exist', async () => {
+    test('runLorebookEntryDeduplicateStage: throws when lorebook_entry_deduplicate_prompt is missing and candidates exist', async () => {
         const mod = await initModule();
 
         const normalizedEntry = {
@@ -125,25 +125,25 @@ export default ({ test, expect } /*: any */) => {
             }
         ];
 
-        const settingsWithoutResolutionPrompt = {
-            // Missing resolution_prompt
-            resolution_prefill: '',
-            resolution_connection_profile: '',
-            resolution_completion_preset: ''
+        const settingsWithoutLorebookEntryDeduplicatePrompt = {
+            // Missing lorebook_entry_deduplicate_prompt
+            lorebook_entry_deduplicate_prefill: '',
+            lorebook_entry_deduplicate_connection_profile: '',
+            lorebook_entry_deduplicate_completion_preset: ''
         };
 
         let threwError = false;
         try {
-            await mod.runResolutionStage(
+            await mod.runLorebookEntryDeduplicateStage(
                 normalizedEntry,
                 'Test synopsis',
                 candidateEntries,
                 'character',
-                settingsWithoutResolutionPrompt
+                settingsWithoutLorebookEntryDeduplicatePrompt
             );
         } catch (err) {
             threwError = true;
-            expect(err.message.includes('resolution_prompt')).toBeTruthy();
+            expect(err.message.includes('lorebook_entry_deduplicate_prompt')).toBeTruthy();
         }
 
         expect(threwError).toBe(true);
@@ -178,7 +178,7 @@ export default ({ test, expect } /*: any */) => {
 
         const normalized = mod.normalizeEntryData(entryWithKeywords);
 
-        expect(normalized.comment).toBe('Test Entity');
+        expect(normalized.comment).toBe('character-Test Entity');
         expect(normalized.content).toBe('Test content');
         expect(normalized.keys).toEqual(['keyword1', 'keyword2']);
         expect(normalized.type).toBe('character');
@@ -247,14 +247,14 @@ export default ({ test, expect } /*: any */) => {
                 'char_0001': {
                     type: 'character',
                     name: 'Alice',
-                    comment: 'Alice',
+                    comment: 'character-Alice',
                     aliases: ['alice', 'warrior'],
                     synopsis: 'Skilled warrior'
                 },
                 'loca_0001': {
                     type: 'location',
                     name: 'Tavern',
-                    comment: 'Rusty Nail Tavern',
+                    comment: 'location-Rusty Nail Tavern',
                     aliases: ['tavern', 'inn'],
                     synopsis: 'Local gathering place'
                 }

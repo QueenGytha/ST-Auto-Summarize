@@ -63,7 +63,7 @@ This all happens automatically in the background, requiring no manual interventi
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    STAGE 2: TRIAGE (AI)                              │
+│                    STAGE 2: LOREBOOK ENTRY LOOKUP (AI)                              │
 │                                                                       │
 │  AI analyzes:                                                        │
 │  • What type of entity is this? (character/location/etc.)            │
@@ -79,7 +79,7 @@ This all happens automatically in the background, requiring no manual interventi
 │    "type": "character",                                              │
 │    "synopsis": "Brief description",                                  │
 │    "sameEntityIds": ["char_0001"],    ← Definite matches             │
-│    "needsFullContextIds": ["char_005"] ← Uncertain, needs resolution │
+│    "needsFullContextIds": ["char_005"] ← Uncertain, needs LorebookEntryDeduplicate │
 │  }                                                                    │
 └──────────────────────┬──────────────────────────────────────────────┘
                        │
@@ -96,9 +96,9 @@ This all happens automatically in the background, requiring no manual interventi
   or uncertain?                 and certain?
         │                               │
         ▼                               ▼
-┌────────────────┐              Skip Resolution
+┌────────────────┐              Skip LorebookEntryDeduplicate
 │  STAGE 3:      │                     │
-│  RESOLUTION    │                     │
+│  LorebookEntryDeduplicate    │                     │
 │  (AI)          │                     │
 │                │                     │
 │ With full      │                     │
@@ -166,7 +166,7 @@ This all happens automatically in the background, requiring no manual interventi
 │  - id: char_0002 | name: Bob | aliases: ... | synopsis: ...          │
 │  - id: char_0042 | name: Carol | aliases: ... | synopsis: ...        │
 │                                                                       │
-│  Purpose: Next triage stage uses this for quick matching             │
+│  Purpose: Next lorebook entry lookup stage uses this for quick matching             │
 └──────────────────────┬──────────────────────────────────────────────┘
                        │
                        ▼
@@ -195,7 +195,7 @@ This all happens automatically in the background, requiring no manual interventi
 
 ## The Three AI Stages Explained
 
-### Stage 2: Triage (Lightweight Matching)
+### Stage 2: Lorebook Entry Lookup (Lightweight Matching)
 
 **Purpose**: Quick scan to find potential duplicates without loading full entry details.
 
@@ -217,12 +217,12 @@ Registry snippet:
   - char_0001 | Alice | aliases: Alice Smith | synopsis: Local trader
   - char_0005 | Alicia | aliases: The Mysterious One | synopsis: Unknown woman
 
-Triage decision:
+Lorebook Entry Lookup decision:
   - char_0001: DEFINITE match (same name, similar role)
   - char_0005: UNCERTAIN (similar name, but different context)
 ```
 
-### Stage 3: Resolution (Full Context Analysis)
+### Stage 3: LorebookEntryDeduplicate (Full Context Analysis)
 
 **Purpose**: For uncertain cases, analyze full entry details to make final decision.
 
@@ -231,7 +231,7 @@ Triage decision:
 - AI compares full details: "Is this the same person or a different character?"
 - Returns definitive answer
 
-**Only runs when**: Triage found uncertain matches
+**Only runs when**: Lorebook Entry Lookup found uncertain matches
 
 **Example**:
 ```
@@ -243,7 +243,7 @@ Full candidate: {
   aliases: ["The Mysterious One", "Hooded Figure"]
 }
 
-Resolution decision: SAME entity (description matches perfectly)
+LorebookEntryDeduplicate decision: SAME entity (description matches perfectly)
 ```
 
 ### Stage 4: Merge (Intelligent Combination)
@@ -314,18 +314,18 @@ System detects syntax → Extracts update → Merges with existing stats entry
 
 ## Key Design Decisions
 
-### Why Three Stages? (Triage → Resolution → Merge)
+### Why Three Stages? (Lorebook Entry Lookup → LorebookEntryDeduplicate → Merge)
 
 **Token efficiency**: Don't load full entry details unless needed.
 
-**Accuracy**: Lightweight triage catches 90% of cases, resolution handles edge cases.
+**Accuracy**: Lightweight lorebook entry lookup catches 90% of cases, LorebookEntryDeduplicate handles edge cases.
 
 **Example**:
 - 100 existing characters in registry
 - New entry: "Alice"
-- Triage scans all 100 (lightweight)
+- Lorebook Entry Lookup scans all 100 (lightweight)
 - Only loads full details for 2 uncertain matches
-- Resolution analyzes just those 2
+- LorebookEntryDeduplicate analyzes just those 2
 
 ### Why AI-Powered Merging?
 
@@ -381,15 +381,15 @@ AI: "You push open the heavy oak door. The Rusty Tankard is packed tonight.
 3. Two entries queued
 
 **Entry: The Rusty Tankard**
-- Triage: No existing locations match → Type: location
-- Resolution: Skipped (no matches)
+- Lorebook Entry Lookup: No existing locations match → Type: location
+- LorebookEntryDeduplicate: Skipped (no matches)
 - Create: New entry `loca_0001`
 - Registry: Added to location registry
 - Category Index: "[Locations: The Rusty Tankard]"
 
 **Entry: Marcus**
-- Triage: No existing characters match → Type: character
-- Resolution: Skipped
+- Lorebook Entry Lookup: No existing characters match → Type: character
+- LorebookEntryDeduplicate: Skipped
 - Create: New entry `char_0001`
 - Registry: Added to character registry
 - Category Index: "[Characters: Marcus]"
@@ -417,7 +417,7 @@ AI: "You draw your sword and charge the three bandits!
 - Entity: "Bandit Group" (character/creature)
 
 **Entry: Bandit Group**
-- Triage: No matches → Type: character
+- Lorebook Entry Lookup: No matches → Type: character
 - Create: New entry `char_0002`
 - Category Index: "[Characters: Marcus, Bandit Group]"
 
@@ -435,8 +435,8 @@ AI: "Marcus vaults over the bar, grabbing a club. 'I've got your back!' he shout
   - "A veteran soldier who owns The Rusty Tankard"
 
 **Entry: Marcus**
-- Triage: MATCH found → char_0001
-- Resolution: Skipped (definite match)
+- Lorebook Entry Lookup: MATCH found → char_0001
+- LorebookEntryDeduplicate: Skipped (definite match)
 - Merge:
   - Existing: "Marcus, the bartender"
   - New: "A veteran soldier who owns The Rusty Tankard"
@@ -497,8 +497,8 @@ All processing happens through a persistent queue:
 
 ### LLM Call Efficiency
 Each operation makes ≤1 LLM call:
-- **Triage**: 1 call
-- **Resolution**: 1 call (if needed)
+- **Lorebook Entry Lookup**: 1 call
+- **LorebookEntryDeduplicate**: 1 call (if needed)
 - **Merge**: 1 call
 
 **Why**: If operation fails, queue retries entire operation. Multiple LLM calls = wasted tokens on retry.
@@ -506,8 +506,8 @@ Each operation makes ≤1 LLM call:
 ### Settings-Driven
 All prompts and behavior configurable:
 - Entity type definitions
-- Triage prompt template
-- Resolution prompt template
+- Lorebook Entry Lookup prompt template
+- LorebookEntryDeduplicate prompt template
 - Merge prompt template
 - Category names
 - Tracking syntax patterns

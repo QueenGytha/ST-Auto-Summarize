@@ -956,7 +956,7 @@ async function saveSceneSummary(
     refresh_memory();
 
     // Extract and queue lorebook entries if Auto-Lorebooks is enabled
-    const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_processing_enabled');
+    const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_enabled');
     if (autoLorebooksEnabled && summary) {
         await extractAndQueueLorebookEntries(summary, messageIndex);
     }

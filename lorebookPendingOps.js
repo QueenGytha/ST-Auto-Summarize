@@ -48,7 +48,7 @@ export function createPendingEntry(entryId /*: string */, entryData /*: any */) 
     const pending = ensurePendingOps();
 
     pending[entryId] = {
-        stage: 'triage',
+        stage: 'lorebook_entry_lookup',
         timestamp: Date.now(),
         entryData: {
             comment: entryData.comment || '',
@@ -87,33 +87,33 @@ export function updatePendingEntry(entryId /*: string */, updates /*: any */) /*
 }
 
 /**
- * Set triage result for entry
+ * Set lorebook entry lookup result for entry
  * @param {string} entryId - Entry ID
- * @param {Object} triageResult - Triage result
+ * @param {Object} lorebookEntryLookupResult - Lorebook Entry Lookup result
  */
-export function setTriageResult(entryId /*: string */, triageResult /*: any */) /*: void */ {
+export function setLorebookEntryLookupResult(entryId /*: string */, lorebookEntryLookupResult /*: any */) /*: void */ {
     updatePendingEntry(entryId, {
-        stage: 'triage_complete',
-        triageResult: {
-            type: triageResult.type || '',
-            synopsis: triageResult.synopsis || '',
-            sameEntityIds: Array.isArray(triageResult.sameEntityIds) ? triageResult.sameEntityIds : [],
-            needsFullContextIds: Array.isArray(triageResult.needsFullContextIds) ? triageResult.needsFullContextIds : []
+        stage: 'lorebook_entry_lookup_complete',
+        lorebookEntryLookupResult: {
+            type: lorebookEntryLookupResult.type || '',
+            synopsis: lorebookEntryLookupResult.synopsis || '',
+            sameEntityIds: Array.isArray(lorebookEntryLookupResult.sameEntityIds) ? lorebookEntryLookupResult.sameEntityIds : [],
+            needsFullContextIds: Array.isArray(lorebookEntryLookupResult.needsFullContextIds) ? lorebookEntryLookupResult.needsFullContextIds : []
         }
     });
 }
 
 /**
- * Set resolution result for entry
+ * Set lorebook entry deduplicate result for entry
  * @param {string} entryId - Entry ID
- * @param {Object} resolutionResult - Resolution result
+ * @param {Object} lorebookEntryDeduplicateResult - LorebookEntryDeduplicate result
  */
-export function setResolutionResult(entryId /*: string */, resolutionResult /*: any */) /*: void */ {
+export function setLorebookEntryDeduplicateResult(entryId /*: string */, lorebookEntryDeduplicateResult /*: any */) /*: void */ {
     updatePendingEntry(entryId, {
-        stage: 'resolution_complete',
-        resolutionResult: {
-            resolvedId: resolutionResult.resolvedId || null,
-            synopsis: resolutionResult.synopsis || ''
+        stage: 'lorebook_entry_deduplicate_complete',
+        lorebookEntryDeduplicateResult: {
+            resolvedId: lorebookEntryDeduplicateResult.resolvedId || null,
+            synopsis: lorebookEntryDeduplicateResult.synopsis || ''
         }
     });
 }
@@ -190,23 +190,23 @@ export function getEntryData(entryId /*: string */) /*: any */ {
 }
 
 /**
- * Get triage result from pending entry
+ * Get lorebook entry lookup result from pending entry
  * @param {string} entryId - Entry ID
- * @returns {Object|null} Triage result or null
+ * @returns {Object|null} Lorebook Entry Lookup result or null
  */
-export function getTriageResult(entryId /*: string */) /*: any */ {
+export function getLorebookEntryLookupResult(entryId /*: string */) /*: any */ {
     const pending = getPendingEntry(entryId);
-    return pending ? pending.triageResult : null;
+    return pending ? pending.lorebookEntryLookupResult : null;
 }
 
 /**
- * Get resolution result from pending entry
+ * Get lorebook entry deduplicate result from pending entry
  * @param {string} entryId - Entry ID
- * @returns {Object|null} Resolution result or null
+ * @returns {Object|null} LorebookEntryDeduplicate result or null
  */
-export function getResolutionResult(entryId /*: string */) /*: any */ {
+export function getLorebookEntryDeduplicateResult(entryId /*: string */) /*: any */ {
     const pending = getPendingEntry(entryId);
-    return pending ? pending.resolutionResult : null;
+    return pending ? pending.lorebookEntryDeduplicateResult : null;
 }
 
 export default {
@@ -214,13 +214,13 @@ export default {
     getPendingEntry,
     createPendingEntry,
     updatePendingEntry,
-    setTriageResult,
-    setResolutionResult,
+    setLorebookEntryLookupResult,
+    setLorebookEntryDeduplicateResult,
     markStageInProgress,
     completePendingEntry,
     getAllPendingEntries,
     cleanupStalePendingEntries,
     getEntryData,
-    getTriageResult,
-    getResolutionResult
+    getLorebookEntryLookupResult,
+    getLorebookEntryDeduplicateResult
 };

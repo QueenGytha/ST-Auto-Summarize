@@ -36,14 +36,14 @@ export default ({ test, expect }) => {
       merge_prefill: defaults.auto_lorebooks_summary_merge_prefill,
       merge_connection_profile: defaults.auto_lorebooks_summary_merge_connection_profile,
       merge_completion_preset: defaults.auto_lorebooks_summary_merge_completion_preset,
-      triage_prompt: defaults.auto_lorebooks_summary_triage_prompt,
-      triage_prefill: defaults.auto_lorebooks_summary_triage_prefill,
-      triage_connection_profile: defaults.auto_lorebooks_summary_triage_connection_profile,
-      triage_completion_preset: defaults.auto_lorebooks_summary_triage_completion_preset,
-      resolution_prompt: defaults.auto_lorebooks_summary_resolution_prompt,
-      resolution_prefill: defaults.auto_lorebooks_summary_resolution_prefill,
-      resolution_connection_profile: defaults.auto_lorebooks_summary_resolution_connection_profile,
-      resolution_completion_preset: defaults.auto_lorebooks_summary_resolution_completion_preset,
+      lorebook_entry_lookup_prompt: defaults.auto_lorebooks_summary_lorebook_entry_lookup_prompt,
+      lorebook_entry_lookup_prefill: defaults.auto_lorebooks_summary_lorebook_entry_lookup_prefill,
+      lorebook_entry_lookup_connection_profile: defaults.auto_lorebooks_summary_lorebook_entry_lookup_connection_profile,
+      lorebook_entry_lookup_completion_preset: defaults.auto_lorebooks_summary_lorebook_entry_lookup_completion_preset,
+      lorebook_entry_deduplicate_prompt: defaults.auto_lorebooks_summary_lorebook_entry_deduplicate_prompt,
+      lorebook_entry_deduplicate_prefill: defaults.auto_lorebooks_summary_lorebook_entry_deduplicate_prefill,
+      lorebook_entry_deduplicate_connection_profile: defaults.auto_lorebooks_summary_lorebook_entry_deduplicate_connection_profile,
+      lorebook_entry_deduplicate_completion_preset: defaults.auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset,
       use_queue: false,
       skip_duplicates: false,
     });
@@ -103,14 +103,14 @@ export default ({ test, expect }) => {
     if (!ext.extension_settings.autoLorebooks) ext.extension_settings.autoLorebooks = {};
     if (!ext.extension_settings.autoLorebooks.summary_processing) ext.extension_settings.autoLorebooks.summary_processing = {};
     Object.assign(ext.extension_settings.autoLorebooks.summary_processing, {
-      triage_prompt: '{{new_entry}}',
-      triage_prefill: '',
-      triage_connection_profile: '',
-      triage_completion_preset: '',
-      resolution_prompt: '{{candidate_entries}}',
-      resolution_prefill: '',
-      resolution_connection_profile: '',
-      resolution_completion_preset: ''
+      lorebook_entry_lookup_prompt: '{{new_entry}}',
+      lorebook_entry_lookup_prefill: '',
+      lorebook_entry_lookup_connection_profile: '',
+      lorebook_entry_lookup_completion_preset: '',
+      lorebook_entry_deduplicate_prompt: '{{candidate_entries}}',
+      lorebook_entry_deduplicate_prefill: '',
+      lorebook_entry_deduplicate_connection_profile: '',
+      lorebook_entry_deduplicate_completion_preset: ''
     });
 
     // Seed registry state with existing entity id
@@ -121,7 +121,7 @@ export default ({ test, expect }) => {
           uid: 7,
           type: 'character',
           name: 'Test',
-          comment: 'Test',
+          comment: 'character-Test',
           synopsis: 'old',
           aliases: []
         }
@@ -140,7 +140,7 @@ export default ({ test, expect }) => {
       { log(){}, debug(){}, error(){}, toast(){}, get_settings(){ return true; } },
       {
         getAttachedLorebook: () => 'lb',
-        getLorebookEntries: async () => ([{ uid: 7, comment: 'Test', key: [], keysecondary: [], content: 'prev' }]),
+        getLorebookEntries: async () => ([{ uid: 7, comment: 'character-Test', key: [], keysecondary: [], content: 'prev' }]),
         addLorebookEntry: async () => ({ uid: 1 })
       },
       { mergeLorebookEntry: async () => { called = true; return ({ success: true }); } },
@@ -170,7 +170,7 @@ export default ({ test, expect }) => {
     ext.chat_metadata.auto_lorebooks = {
       registry: {
         index: {
-          char_0001: { uid: existing.uid, type: 'character', name: 'Test', comment: 'Test', synopsis: 'old synopsis', aliases: ['test'] }
+          char_0001: { uid: existing.uid, type: 'character', name: 'Test', comment: 'character-Test', synopsis: 'old synopsis', aliases: ['test'] }
         },
         counters: { character: 1 }
       }
@@ -227,7 +227,7 @@ export default ({ test, expect }) => {
     expect(index.char_0001.synopsis).toBe('fresh synopsis');
 
     const stored = await ext.loadWorldInfo(lorebookName);
-    const newEntry = Object.values(stored.entries).find(e => e.comment === 'Nova');
+    const newEntry = Object.values(stored.entries).find(e => e.comment === 'character-Nova');
     expect(newEntry?.content).toBe('New character');
 
     ext.setGenerateRawImplementation(null);
@@ -251,7 +251,7 @@ export default ({ test, expect }) => {
     ext.chat_metadata.auto_lorebooks = {
       registry: {
         index: {
-          char_0001: { uid: existing.uid, type: 'character', name: 'Test', comment: 'Test', synopsis: 'old synopsis', aliases: ['test'] }
+          char_0001: { uid: existing.uid, type: 'character', name: 'Test', comment: 'character-Test', synopsis: 'old synopsis', aliases: ['test'] }
         },
         counters: { character: 1 }
       }
@@ -275,7 +275,7 @@ export default ({ test, expect }) => {
     expect(index.char_0002.synopsis).toBe('brand new synopsis');
 
     const stored = await ext.loadWorldInfo(lorebookName);
-    const newEntry = Object.values(stored.entries).find(e => e.comment === 'Nova');
+    const newEntry = Object.values(stored.entries).find(e => e.comment === 'character-Nova');
     expect(newEntry?.content).toBe('New character');
 
     ext.setGenerateRawImplementation(null);
@@ -299,7 +299,7 @@ export default ({ test, expect }) => {
     ext.chat_metadata.auto_lorebooks = {
       registry: {
         index: {
-          char_0001: { uid: existing.uid, type: 'character', name: 'Test', comment: 'Test', synopsis: 'old synopsis', aliases: ['test'] }
+          char_0001: { uid: existing.uid, type: 'character', name: 'Test', comment: 'character-Test', synopsis: 'old synopsis', aliases: ['test'] }
         },
         counters: { character: 1 }
       }
@@ -332,7 +332,7 @@ export default ({ test, expect }) => {
     expect(index.char_0002.synopsis).toBe('fresh synopsis');
 
     const stored = await ext.loadWorldInfo(lorebookName);
-    const newEntry = Object.values(stored.entries).find(e => e.comment === 'Nova');
+    const newEntry = Object.values(stored.entries).find(e => e.comment === 'character-Nova');
     expect(newEntry?.content).toBe('New character');
 
     ext.setGenerateRawImplementation(null);

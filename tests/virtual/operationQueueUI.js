@@ -82,15 +82,15 @@ function createQueueUI() {
     // Create shared queue container
     // $FlowFixMe[cannot-resolve-name]
     $queueContainer = $(`
-        <div id="shared_operation_queue_ui" style="margin-top: 1em; padding-top: 1em; border-top: 1px solid var(--SmartThemeBlurTintColor);">
-            <div class="queue-header" style="margin-bottom: 0.5em;">
-                <div id="queue_toggle_visibility" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3em; cursor: pointer;" title="Collapse/Expand">
-                    <h4 style="margin: 0; font-size: 1em;">Operations <span id="queue_count">(0)</span></h4>
-                    <i class="fa-solid fa-chevron-up" style="padding: 0.2em 0.5em;"></i>
+        <div id="shared_operation_queue_ui">
+            <div class="queue-header">
+                <div id="queue_toggle_visibility" title="Collapse/Expand">
+                    <h4>Operations <span id="queue_count">(0)</span></h4>
+                    <i class="fa-solid fa-chevron-up"></i>
                 </div>
             </div>
-            <div id="queue_list_container" class="queue-list" style="max-height: 200px; overflow-y: auto;">
-                <div class="queue-controls" style="display: flex; flex-direction: column; gap: 0.3em; margin-bottom: 0.5em;">
+            <div id="queue_list_container" class="queue-list">
+                <div class="queue-controls">
                     <button id="queue_toggle_pause" class="menu_button fa-solid fa-pause" title="Pause/Resume queue"></button>
                     <button id="queue_clear_all" class="menu_button fa-solid fa-trash" title="Clear all"></button>
                 </div>
@@ -123,7 +123,70 @@ function createQueueUI() {
 
     queueUIContainer = $queueContainer;
 
+    // Initialize dynamic height calculation
+    updateQueueHeight();
+
     debug(SUBSYSTEM.QUEUE, 'Queue UI created');
+}
+
+/**
+ * Update queue container height dynamically based on viewport and content
+ */
+function updateQueueHeight() {
+    // $FlowFixMe[cannot-resolve-name]
+    const $queueUI = $('#shared_operation_queue_ui');
+    // $FlowFixMe[cannot-resolve-name]
+    const $queueList = $('#queue_list_container');
+
+    if (!$queueUI.length || !$queueList.length) {
+        return;
+    }
+
+    // Check if queue is collapsed
+    // $FlowFixMe[cannot-resolve-name]
+    if ($queueUI.hasClass('queue-collapsed')) {
+        return;
+    }
+
+    // Get viewport height
+    // $FlowFixMe[cannot-resolve-name]
+    const viewportHeight = $(window).height() || 800;
+
+    // Get queue container's position from top of viewport
+    const queueTop = $queueUI.offset()?.top || 60;
+
+    // Reserve space for:
+    // - Bottom margin/padding (20px)
+    // - Other navbar elements below queue (estimate based on presence)
+    // $FlowFixMe[cannot-resolve-name]
+    const navbarBottomContent = $('#scene-summary-navigator-bar').find('.running-summary-controls, .scene-nav-link').length > 0 ? 150 : 50;
+
+    // Calculate available height for queue
+    const availableHeight = viewportHeight - queueTop - navbarBottomContent;
+
+    // Set constraints
+    const minHeight = 100; // Minimum height when queue has items
+    const maxHeight = Math.max(minHeight, availableHeight);
+
+    // Get the queue header height
+    // $FlowFixMe[cannot-resolve-name]
+    const headerHeight = $queueUI.find('.queue-header').outerHeight() || 50;
+
+    // Calculate height for the list container
+    const listMaxHeight = maxHeight - headerHeight - 20; // 20px for padding/margin
+
+    // Update the queue UI max-height
+    $queueUI.css('max-height', `${maxHeight}px`);
+
+    // Update the list container max-height if needed (let CSS flexbox handle most of it)
+    // Only set if we need to override the CSS
+    if (listMaxHeight < 200) {
+        $queueList.css('max-height', `${listMaxHeight}px`);
+    } else {
+        $queueList.css('max-height', ''); // Clear inline style, let CSS take over
+    }
+
+    debug(SUBSYSTEM.QUEUE, `Queue height updated: maxHeight=${maxHeight}px, listMaxHeight=${listMaxHeight}px`);
 }
 
 /**
@@ -163,6 +226,8 @@ function bindQueueControlEvents() {
     // $FlowFixMe[missing-this-annot]
     $(document).on('click', '#queue_toggle_visibility', function () {
         // $FlowFixMe[cannot-resolve-name]
+        const $queueUI = $('#shared_operation_queue_ui');
+        // $FlowFixMe[cannot-resolve-name]
         const $list = $('#queue_list_container');
         // $FlowFixMe[cannot-resolve-name]
         const $icon = $(this).find('i');
@@ -170,9 +235,14 @@ function bindQueueControlEvents() {
         if ($list.is(':visible')) {
             $list.slideUp(200);
             $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            $queueUI.addClass('queue-collapsed');
         } else {
-            $list.slideDown(200);
+            $list.slideDown(200, () => {
+                // After expanding, recalculate height
+                updateQueueHeight();
+            });
             $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            $queueUI.removeClass('queue-collapsed');
         }
     });
 
@@ -227,6 +297,18 @@ function bindQueueControlEvents() {
         $button.attr('title', 'Show Queue Navbar');
         $button.css('left', '0'); // Button at left edge when collapsed
     }
+
+    // Add window resize listener
+    // $FlowFixMe[cannot-resolve-name]
+    let resizeTimeout;
+    // $FlowFixMe[cannot-resolve-name]
+    $(window).on('resize', function() {
+        // Debounce resize events
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            updateQueueHeight();
+        }, 150);
+    });
 }
 
 /**
@@ -339,6 +421,12 @@ function renderOperationsList() {
 
     const $operations = sorted.map(op => renderOperation(op));
     $list.html($operations);
+
+    // Update queue height after rendering operations
+    // Use setTimeout to ensure DOM has updated
+    setTimeout(() => {
+        updateQueueHeight();
+    }, 0);
 }
 
 /**
@@ -381,7 +469,7 @@ function renderOperation(operation) {
     // Error message if failed
     let errorText = '';
     if (operation.status === OperationStatus.FAILED && operation.error) {
-        errorText = `<div style="font-size: 0.8em; color: #f44336; margin-top: 0.2em;">${operation.error}</div>`;
+        errorText = `<div class="queue-operation-error">${operation.error}</div>`;
     }
 
     // Retry info
@@ -398,16 +486,16 @@ function renderOperation(operation) {
 
     // $FlowFixMe[cannot-resolve-name]
     return $(`
-        <div class="queue-operation" style="background: ${bgColor}; padding: 0.4em; margin-bottom: 0.3em; border-radius: 4px; font-size: 0.8em;">
-            <div style="display: flex; align-items: flex-start; gap: 0.4em; margin-bottom: 0.2em;">
-                <div style="flex-shrink: 0; margin-top: 0.1em;">${icon}</div>
-                <div style="flex: 1; min-width: 0;">
-                    <div style="font-weight: 500; font-size: 0.9em;">${typeName} ${retryText}</div>
-                    ${paramsText ? `<div style="opacity: 0.7; font-size: 0.85em; margin-top: 0.1em;">${paramsText}</div>` : ''}
+        <div class="queue-operation" style="background: ${bgColor};">
+            <div class="queue-operation-header">
+                <div class="queue-operation-icon">${icon}</div>
+                <div class="queue-operation-content">
+                    <div class="queue-operation-type">${typeName} ${retryText}</div>
+                    ${paramsText ? `<div class="queue-operation-params">${paramsText}</div>` : ''}
                 </div>
                 ${removeButton}
             </div>
-            ${durationText ? `<div style="opacity: 0.6; font-size: 0.8em; margin-left: 1.5em;">${durationText}</div>` : ''}
+            ${durationText ? `<div class="queue-operation-duration">${durationText}</div>` : ''}
             ${errorText}
         </div>
     `);
@@ -429,8 +517,8 @@ function formatOperationType(type) {
         // $FlowFixMe[prop-missing] [invalid-computed-prop]
         [OperationType.GENERATE_COMBINED_SUMMARY]: 'Combined Summary',
         [OperationType.PROCESS_LOREBOOK_ENTRY]: 'Lorebook - Process',
-        [OperationType.TRIAGE_LOREBOOK_ENTRY]: 'Lorebook - Triage',
-        [OperationType.RESOLVE_LOREBOOK_ENTRY]: 'Lorebook - Resolve',
+        [OperationType.LOREBOOK_ENTRY_LOOKUP]: 'Lorebook - Lookup',
+        [OperationType.RESOLVE_LOREBOOK_ENTRY]: 'Lorebook - Dedupe',
         [OperationType.CREATE_LOREBOOK_ENTRY]: 'Lorebook - Create',
         [OperationType.MERGE_LOREBOOK_ENTRY]: 'Lorebook - Merge',
         [OperationType.UPDATE_LOREBOOK_REGISTRY]: 'Lorebook - Registry'
@@ -446,6 +534,12 @@ function formatOperationType(type) {
 function formatLorebookOperationParams(params, metadata) {
     const entryType = params.entryData?.type || metadata?.entry_type || 'entry';
     const entryName = metadata?.entry_comment || params.entryData?.comment || params.entryData?.name || 'Unknown';
+
+    // Check if name already has type prefix to avoid duplication (e.g., "location-Apartment")
+    if (entryName.startsWith(`${entryType}-`)) {
+        return entryName;
+    }
+
     return `${entryType}-${entryName}`;
 }
 
@@ -485,7 +579,7 @@ function formatOperationParams(type, params, metadata) {
             return 'All messages';
 
         case OperationType.PROCESS_LOREBOOK_ENTRY:
-        case OperationType.TRIAGE_LOREBOOK_ENTRY:
+        case OperationType.LOREBOOK_ENTRY_LOOKUP:
         case OperationType.RESOLVE_LOREBOOK_ENTRY:
         case OperationType.CREATE_LOREBOOK_ENTRY:
         case OperationType.MERGE_LOREBOOK_ENTRY:

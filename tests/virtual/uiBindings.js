@@ -68,8 +68,10 @@ function bind_setting(selector /*: string */, key /*: string */, type /*: ?strin
         // update the setting
         set_settings(key, value)
 
-        // auto-save to current profile
-        save_profile();
+        // auto-save to current profile (but NOT when switching profiles)
+        if (key !== 'profile') {
+            save_profile();
+        }
 
         // trigger callback if provided, passing the new value
         if (callback !== null) {

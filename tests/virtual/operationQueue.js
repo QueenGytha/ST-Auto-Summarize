@@ -47,7 +47,7 @@ export const OperationType /*: { [key: string]: OperationTypeType } */ = /*:: ( 
     // Legacy monolithic operation (deprecated, kept for backward compat)
     PROCESS_LOREBOOK_ENTRY: 'process_lorebook_entry',
     // New multi-stage lorebook operations
-    TRIAGE_LOREBOOK_ENTRY: 'triage_lorebook_entry',
+    LOREBOOK_ENTRY_LOOKUP: 'lorebook_entry_lookup',
     RESOLVE_LOREBOOK_ENTRY: 'resolve_lorebook_entry',
     CREATE_LOREBOOK_ENTRY: 'create_lorebook_entry',
     MERGE_LOREBOOK_ENTRY: 'merge_lorebook_entry',
@@ -57,7 +57,7 @@ export const OperationType /*: { [key: string]: OperationTypeType } */ = /*:: ( 
 // Flow type definitions
 /*::
 type OperationStatusType = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
-type OperationTypeType = 'summarize_message' | 'validate_summary' | 'detect_scene_break' | 'generate_scene_summary' | 'generate_scene_name' | 'generate_running_summary' | 'combine_scene_with_running' | 'generate_combined_summary' | 'process_lorebook_entry' | 'triage_lorebook_entry' | 'resolve_lorebook_entry' | 'create_lorebook_entry' | 'merge_lorebook_entry' | 'update_lorebook_registry';
+type OperationTypeType = 'summarize_message' | 'validate_summary' | 'detect_scene_break' | 'generate_scene_summary' | 'generate_scene_name' | 'generate_running_summary' | 'combine_scene_with_running' | 'generate_combined_summary' | 'process_lorebook_entry' | 'lorebook_entry_lookup' | 'resolve_lorebook_entry' | 'create_lorebook_entry' | 'merge_lorebook_entry' | 'update_lorebook_registry';
 
 type ConnectionSettings = {
     +connectionProfile?: string,  // undefined = "same as current" (readonly for Flow variance)
@@ -920,6 +920,7 @@ function startQueueProcessor() {
                 debug(SUBSYSTEM.QUEUE, 'No operations to process, stopping processor');
                 setSendButtonState(false);
                 queueProcessor = null;
+                notifyUIUpdate();
                 return;
             }
 

@@ -92,6 +92,8 @@ async function ensureRegistryEntriesForLorebook(lorebookName /*: string */) /*: 
         if (added) {
             await saveWorldInfo(lorebookName, data, true);
             debug?.(`Initialized registry entries for lorebook: ${lorebookName}`);
+            // Reorder alphabetically after creating registry entries
+            await reorderLorebookEntriesAlphabetically(lorebookName);
         }
     } catch (err) {
         error?.('Error creating registry entries for lorebook', err);
@@ -406,6 +408,15 @@ export async function createChatLorebook() /*: Promise<any> */ {
         }
 
         log(`Created lorebook: ${uniqueName}`);
+
+        // Clear cached registry BEFORE creating stub entries to prevent stale data
+        // This ensures the registry starts fresh, matching the new empty lorebook state
+        if (chat_metadata?.auto_lorebooks?.registry) {
+            chat_metadata.auto_lorebooks.registry = { index: {}, counters: {} };
+            debug(`Cleared cached registry for new lorebook: ${uniqueName}`);
+        }
+
+        // Create stub registry entries in the lorebook (disabled entries for each type)
         await ensureRegistryEntriesForLorebook(uniqueName);
         return uniqueName;
 
@@ -599,6 +610,10 @@ export async function addLorebookEntry(lorebookName /*: string */, entryData /*:
         await saveWorldInfo(lorebookName, data, true);
 
         log(`Added entry to lorebook "${lorebookName}": UID ${newEntry.uid}`);
+
+        // Reorder entries alphabetically after creation
+        await reorderLorebookEntriesAlphabetically(lorebookName);
+
         return newEntry;
 
     } catch (err) {
@@ -715,6 +730,12 @@ export async function modifyLorebookEntry(lorebookName /*: string */, uid /*: st
         await saveWorldInfo(lorebookName, data, true);
 
         log(`Modified entry UID ${uid} in lorebook "${lorebookName}"`);
+
+        // Reorder entries alphabetically if comment field was changed
+        if (updates.comment !== undefined) {
+            await reorderLorebookEntriesAlphabetically(lorebookName);
+        }
+
         return true;
 
     } catch (err) {
@@ -823,6 +844,73 @@ export async function getLorebookEntries(lorebookName /*: string */) /*: Promise
     }
 }
 
+/**
+ * Reorder all entries in a lorebook alphabetically by comment field
+ * @param {string} lorebookName - Name of the lorebook
+ * @returns {Promise<boolean>} Success
+ */
+export async function reorderLorebookEntriesAlphabetically(lorebookName /*: string */) /*: Promise<boolean> */ {
+    try {
+        // Check if auto-reorder is enabled
+        if (!extension_settings?.autoLorebooks?.autoReorderAlphabetically) {
+            debug("Auto-reorder is disabled, skipping alphabetical reordering");
+            return false;
+        }
+
+        if (!lorebookName) {
+            error("Cannot reorder entries: lorebook name is empty");
+            return false;
+        }
+
+        // Verify lorebook exists
+        if (!world_names || !world_names.includes(lorebookName)) {
+            error(`Cannot reorder entries: lorebook "${lorebookName}" does not exist`);
+            return false;
+        }
+
+        debug(`Reordering entries alphabetically in lorebook: ${lorebookName}`);
+
+        // Load lorebook data
+        const data = await loadWorldInfo(lorebookName);
+        if (!data) {
+            error(`Failed to load lorebook data for: ${lorebookName}`);
+            return false;
+        }
+
+        if (!data.entries || Object.keys(data.entries).length === 0) {
+            debug("No entries to reorder");
+            return true;
+        }
+
+        // Convert entries object to array
+        const entriesArray = Object.values(data.entries);
+
+        // Sort alphabetically by comment field (case-insensitive)
+        entriesArray.sort((a, b) => {
+            const nameA = (a.comment || '').toLowerCase();
+            const nameB = (b.comment || '').toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
+        // Assign descending order values starting from 1000
+        let orderValue = 1000;
+        for (const entry of entriesArray) {
+            entry.order = orderValue;
+            orderValue--;
+        }
+
+        // Save the lorebook
+        await saveWorldInfo(lorebookName, data, true);
+
+        log(`Reordered ${entriesArray.length} entries alphabetically in lorebook "${lorebookName}"`);
+        return true;
+
+    } catch (err) {
+        error("Error reordering lorebook entries alphabetically", err);
+        return false;
+    }
+}
+
 export default {
     initLorebookManager,
     getCurrentContext,
@@ -841,5 +929,6 @@ export default {
     modifyLorebookEntry,
     deleteLorebookEntry,
     getLorebookEntries,
-    updateRegistryEntryContent
+    updateRegistryEntryContent,
+    reorderLorebookEntriesAlphabetically
 };

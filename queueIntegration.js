@@ -240,7 +240,7 @@ async function cancelSupersededOperations(lowerName /*: string */, messageIndex 
     try {
         const ops = getAllOperations();
         for (const op of ops) {
-            if (op.type !== OperationType.TRIAGE_LOREBOOK_ENTRY) continue;
+            if (op.type !== OperationType.LOREBOOK_ENTRY_LOOKUP) continue;
             if (op.status !== OperationStatus.PENDING) continue;
             const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
             if (metaName !== lowerName) continue;
@@ -269,7 +269,7 @@ function hasActiveDuplicate(lowerName /*: string */, messageIndex /*: number */,
             const active = status === 'pending' || status === 'in_progress';
             if (!active) return false;
 
-            if (op.type === OperationType.TRIAGE_LOREBOOK_ENTRY) {
+            if (op.type === OperationType.LOREBOOK_ENTRY_LOOKUP) {
                 const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
                 const sameMsg = op?.metadata?.message_index === messageIndex;
                 if (!sameMsg || metaName !== lowerName) return false;
@@ -286,11 +286,11 @@ function hasActiveDuplicate(lowerName /*: string */, messageIndex /*: number */,
 }
 
 /**
- * Prepares triage context
+ * Prepares lorebook entry lookup context
  * @param {any} entryData - Entry data
  * @returns {Promise<any>} - Context object
  */
-async function prepareTriageContext(entryData /*: any */) /*: Promise<any> */ {
+async function prepareLorebookEntryLookupContext(entryData /*: any */) /*: Promise<any> */ {
     const { generateEntryId, createPendingEntry } = await import('./lorebookPendingOps.js');
     const { ensureRegistryState, buildRegistryListing, normalizeEntryData } = await import('./summaryToLorebookProcessor.js');
     const { getConfiguredEntityTypeDefinitions } = await import('./entityTypes.js');
@@ -308,15 +308,15 @@ async function prepareTriageContext(entryData /*: any */) /*: Promise<any> */ {
 }
 
 /**
- * Enqueues triage operation
- * @param {any} context - Triage context
+ * Enqueues lorebook entry lookup operation
+ * @param {any} context - Lorebook entry lookup context
  * @param {string} entryName - Entry name
  * @param {number} messageIndex - Message index
  * @param {string|null} summaryHash - Summary hash
  * @param {any} options - Queueing options
  * @returns {Promise<string|null>} - Operation ID
  */
-async function enqueueTriageOperation(
+async function enqueueLorebookEntryLookupOperation(
     context /*: any */,
     entryName /*: string */,
     messageIndex /*: number */,
@@ -324,7 +324,7 @@ async function enqueueTriageOperation(
     options /*: any */
 ) /*: Promise<?string> */ {
     return await enqueueOperation(
-        OperationType.TRIAGE_LOREBOOK_ENTRY,
+        OperationType.LOREBOOK_ENTRY_LOOKUP,
         { entryId: context.entryId, entryData: context.normalizedEntry, registryListing: context.registryListing, typeList: context.typeList },
         {
             priority: options.priority ?? 0,
@@ -364,9 +364,9 @@ export async function queueProcessLorebookEntry(entryData /*: Object */, message
         return null;
     }
 
-    const context = await prepareTriageContext(entryData);
+    const context = await prepareLorebookEntryLookupContext(entryData);
 
-    return await enqueueTriageOperation(context, entryName, messageIndex, summaryHash, options);
+    return await enqueueLorebookEntryLookupOperation(context, entryName, messageIndex, summaryHash, options);
 }
 
 export default {

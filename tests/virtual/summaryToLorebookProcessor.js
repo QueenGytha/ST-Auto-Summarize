@@ -21,6 +21,7 @@ let getAttachedLorebook /*: any */, getLorebookEntries /*: any */, addLorebookEn
 let mergeLorebookEntry /*: any */;  // Entry merger function - any type is legitimate
 let updateRegistryEntryContent /*: any */;
 let withConnectionSettings /*: any */;  // Connection settings management - any type is legitimate
+let get_settings /*: any */, set_settings /*: any */;  // Profile settings functions - any type is legitimate
 
 const REGISTRY_PREFIX /*: string */ = '_registry_';
 
@@ -30,12 +31,14 @@ const REGISTRY_PREFIX /*: string */ = '_registry_';
  * Initialize the summary-to-lorebook processor module
  */
 // $FlowFixMe[signature-verification-failure]
-export function initSummaryToLorebookProcessor(utils /*: any */, lorebookManagerModule /*: any */, entryMergerModule /*: any */, connectionSettingsManager /*: any */) /*: void */ {
+export function initSummaryToLorebookProcessor(utils /*: any */, lorebookManagerModule /*: any */, entryMergerModule /*: any */, connectionSettingsManager /*: any */, settingsManager /*: any */) /*: void */ {
     // All parameters are any type - objects with various properties - legitimate use of any
     log = utils.log;
     debug = utils.debug;
     error = utils.error;
     toast = utils.toast;
+    get_settings = settingsManager.get_settings;
+    set_settings = settingsManager.set_settings;
 
     // Import lorebook manager functions
     if (lorebookManagerModule) {
@@ -51,8 +54,53 @@ export function initSummaryToLorebookProcessor(utils /*: any */, lorebookManager
     }
 
     // Import connection settings management
+    console.log('[summaryToLorebookProcessor INIT] connectionSettingsManager:', connectionSettingsManager);
+    console.log('[summaryToLorebookProcessor INIT] connectionSettingsManager keys:', Object.keys(connectionSettingsManager || {}));
+
     if (connectionSettingsManager) {
         withConnectionSettings = connectionSettingsManager.withConnectionSettings;
+        console.log('[summaryToLorebookProcessor INIT] withConnectionSettings after assignment:', withConnectionSettings);
+        console.log('[summaryToLorebookProcessor INIT] typeof withConnectionSettings:', typeof withConnectionSettings);
+
+        if (!withConnectionSettings || typeof withConnectionSettings !== 'function') {
+            error?.('Failed to import withConnectionSettings from connectionSettingsManager', {
+                hasManager: !!connectionSettingsManager,
+                exports: Object.keys(connectionSettingsManager || {}),
+                withConnectionSettings: typeof withConnectionSettings
+            });
+        } else {
+            console.log('[summaryToLorebookProcessor INIT] ✓ Successfully imported withConnectionSettings');
+            debug?.('[summaryToLorebookProcessor] Successfully imported withConnectionSettings');
+        }
+    } else {
+        console.error('[summaryToLorebookProcessor INIT] connectionSettingsManager is undefined/null!');
+    }
+}
+
+/**
+ * Get summary processing settings (with defaults)
+ */
+function getSummaryProcessingSetting(key /*: string */, defaultValue /*: any */ = null) /*: any */ {
+    try {
+        // ALL summary processing settings are per-profile
+        const settingKey = `auto_lorebooks_summary_${key}`;
+        return get_settings(settingKey) ?? defaultValue;
+    } catch (err) {
+        error("Error getting summary processing setting", err);
+        return defaultValue;
+    }
+}
+
+/**
+ * Set summary processing setting
+ */
+function setSummaryProcessingSetting(key /*: string */, value /*: any */) /*: void */ {
+    try {
+        // ALL summary processing settings are per-profile
+        const settingKey = `auto_lorebooks_summary_${key}`;
+        set_settings(settingKey, value);
+    } catch (err) {
+        error("Error setting summary processing setting", err);
     }
 }
 
@@ -163,13 +211,40 @@ function extractLorebookData(summary /*: any */) /*: any */ {
  * @returns {Object|null} Matching entry or null
  */
 /**
+ * Build entry name with type prefix
+ * @param {Object} entry - Entry data
+ * @returns {string} Entry name with type prefix
+ */
+function buildEntryName(entry /*: any */) /*: string */ {
+    const baseName = entry.comment || entry.name || '';
+    const type = entry.type;
+
+    // Skip prefix for special entries (registry and system entries)
+    if (baseName.startsWith('_registry_') || baseName.startsWith('__')) {
+        return baseName;
+    }
+
+    // Add type prefix if type exists and name exists
+    if (type && baseName) {
+        const sanitizedType = sanitizeEntityTypeName(type);
+        // Check if name already has type prefix to avoid duplication
+        if (baseName.startsWith(`${sanitizedType}-`)) {
+            return baseName;
+        }
+        return `${sanitizedType}-${baseName}`;
+    }
+
+    return baseName;
+}
+
+/**
  * Normalize entry data structure
  * @param {Object} entry - Entry data
  * @returns {Object} Normalized entry
  */
 export function normalizeEntryData(entry /*: any */) /*: any */ {
     return {
-        comment: entry.comment || entry.name || '',
+        comment: buildEntryName(entry),
         content: entry.content || entry.description || '',
         // Accept "keywords" (from prompt JSON), "keys" (internal), or "key" (WI format)
         keys: entry.keys || entry.keywords || entry.key || [],
@@ -332,6 +407,22 @@ async function runModelWithSettings(
     label /*: string */
 ) /*: Promise<?string> */ {
     try {
+        console.log('[runModelWithSettings] Called with label:', label);
+        console.log('[runModelWithSettings] withConnectionSettings:', withConnectionSettings);
+        console.log('[runModelWithSettings] typeof withConnectionSettings:', typeof withConnectionSettings);
+
+        // Validate that withConnectionSettings is available
+        if (!withConnectionSettings || typeof withConnectionSettings !== 'function') {
+            const errorMsg = 'withConnectionSettings is not available. Module may not be initialized properly.';
+            console.error('[runModelWithSettings] ERROR:', errorMsg);
+            console.error('[runModelWithSettings] Stack trace:', new Error().stack);
+            error?.(errorMsg, {
+                typeofWithConnectionSettings: typeof withConnectionSettings,
+                initialized: !!withConnectionSettings
+            });
+            throw new Error(errorMsg);
+        }
+
         // Use centralized connection settings management
         const response = await withConnectionSettings(
             connectionProfile,
@@ -360,7 +451,7 @@ async function runModelWithSettings(
     }
 }
 
-function sanitizeTriageType(rawType /*: any */) /*: string */ {
+function sanitizeLorebookEntryLookupType(rawType /*: any */) /*: string */ {
     if (!rawType || typeof rawType !== 'string') return '';
     const normalized = normalizeEntityTypeDefinition(rawType);
     const parsed = parseEntityTypeDefinition(normalized);
@@ -404,29 +495,29 @@ function parseJsonSafe(raw /*: ?string */) /*: any */ {
 }
 
 /**
- * Logs warning and throws error when triage prompt is missing
+ * Logs warning and throws error when lorebook entry lookup prompt is missing
  * @param {any} normalizedEntry - The entry being processed
  * @throws {Error} - Always throws to fail the operation
  */
-function handleMissingTriagePrompt(normalizedEntry /*: any */) /*: void */ {
+function handleMissingLorebookEntryLookupPrompt(normalizedEntry /*: any */) /*: void */ {
     const entryName = normalizedEntry?.comment || normalizedEntry?.name || 'Unknown';
-    error(`CRITICAL: Triage prompt is missing! Cannot process entry: ${entryName}`);
-    error('Settings check - triage_prompt is missing or empty');
-    toast(`Auto-Lorebooks: Triage prompt missing! Cannot process lorebook entries. Check extension settings.`, 'error');
-    throw new Error(`Auto-Lorebooks configuration error: triage_prompt is required but missing. Cannot process entry: ${entryName}`);
+    error(`CRITICAL: Lorebook Entry Lookup prompt is missing! Cannot process entry: ${entryName}`);
+    error('Settings check - lorebook_entry_lookup_prompt is missing or empty');
+    toast(`Auto-Lorebooks: Lorebook Entry Lookup prompt missing! Cannot process lorebook entries. Check extension settings.`, 'error');
+    throw new Error(`Auto-Lorebooks configuration error: lorebook_entry_lookup_prompt is required but missing. Cannot process entry: ${entryName}`);
 }
 
-export async function runTriageStage(
+export async function runLorebookEntryLookupStage(
     normalizedEntry /*: any */,
     registryListing /*: string */,
     typeList /*: string */,
     settings /*: any */
 ) /*: Promise<{ type: string, synopsis: string, sameEntityIds: Array<string>, needsFullContextIds: Array<string> }> */ {
-    const promptTemplate = settings?.triage_prompt || '';
+    const promptTemplate = settings?.lorebook_entry_lookup_prompt || '';
     if (!promptTemplate) {
-        handleMissingTriagePrompt(normalizedEntry);
+        handleMissingLorebookEntryLookupPrompt(normalizedEntry);
         // Flow doesn't understand throw above never returns
-        // $FlowFixMe[incompatible-return] - This code is unreachable because handleMissingTriagePrompt always throws
+        // $FlowFixMe[incompatible-return] - This code is unreachable because handleMissingLorebookEntryLookupPrompt always throws
         return { type: '', synopsis: '', sameEntityIds: [], needsFullContextIds: [] };
     }
     const payload = buildNewEntryPayload(normalizedEntry);
@@ -437,10 +528,10 @@ export async function runTriageStage(
 
     const response = await runModelWithSettings(
         prompt,
-        settings?.triage_prefill || '',
-        settings?.triage_connection_profile || '',
-        settings?.triage_completion_preset || '',
-        'triage'
+        settings?.lorebook_entry_lookup_prefill || '',
+        settings?.lorebook_entry_lookup_connection_profile || '',
+        settings?.lorebook_entry_lookup_completion_preset || '',
+        'lorebook_entry_lookup'
     );
 
     const parsed = parseJsonSafe(response);
@@ -453,7 +544,7 @@ export async function runTriageStage(
         };
     }
 
-    const type = sanitizeTriageType(parsed.type) || normalizedEntry.type || '';
+    const type = sanitizeLorebookEntryLookupType(parsed.type) || normalizedEntry.type || '';
     const sameIds = ensureStringArray(parsed.sameEntityIds).map(id => String(id));
     const needsIds = ensureStringArray(parsed.needsFullContextIds).map(id => String(id));
     const synopsis = typeof parsed.synopsis === 'string' ? parsed.synopsis.trim() : '';
@@ -467,73 +558,73 @@ export async function runTriageStage(
 }
 
 /**
- * Checks if resolution stage should run
+ * Checks if lorebook entry deduplicate stage should run
  * @param {any[]} candidateEntries - Candidate entries
  * @param {any} settings - Processing settings
- * @returns {boolean} - Whether to run resolution
+ * @returns {boolean} - Whether to run lorebook entry deduplicate
  */
-function shouldRunResolution(candidateEntries /*: any */, settings /*: any */) /*: boolean */ {
+function shouldRunLorebookEntryDeduplicate(candidateEntries /*: any */, settings /*: any */) /*: boolean */ {
     if (!candidateEntries || candidateEntries.length === 0) {
         return false;
     }
-    const promptTemplate = settings?.resolution_prompt || '';
+    const promptTemplate = settings?.lorebook_entry_deduplicate_prompt || '';
     if (!promptTemplate) {
-        error(`CRITICAL: Resolution prompt is missing! Cannot resolve ${candidateEntries.length} duplicate candidate(s).`);
-        error('Settings check - resolution_prompt is missing or empty');
-        toast(`Auto-Lorebooks: Resolution prompt missing! Cannot process lorebook entries with potential duplicates. Check extension settings.`, 'error');
-        throw new Error(`Auto-Lorebooks configuration error: resolution_prompt is required when duplicate candidates exist, but it is missing. Found ${candidateEntries.length} candidate(s) that need resolution.`);
+        error(`CRITICAL: LorebookEntryDeduplicate prompt is missing! Cannot resolve ${candidateEntries.length} duplicate candidate(s).`);
+        error('Settings check - lorebook_entry_deduplicate_prompt is missing or empty');
+        toast(`Auto-Lorebooks: LorebookEntryDeduplicate prompt missing! Cannot process lorebook entries with potential duplicates. Check extension settings.`, 'error');
+        throw new Error(`Auto-Lorebooks configuration error: lorebook_entry_deduplicate_prompt is required when duplicate candidates exist, but it is missing. Found ${candidateEntries.length} candidate(s) that need deduplication.`);
     }
     return true;
 }
 
 /**
- * Builds resolution prompt
+ * Builds lorebook entry deduplicate prompt
  * @param {any} normalizedEntry - Entry to resolve
- * @param {string} triageSynopsis - Triage synopsis
+ * @param {string} lorebookEntryLookupSynopsis - Lorebook Entry Lookup synopsis
  * @param {any[]} candidateEntries - Candidate entries
  * @param {string} singleType - Entity type
  * @param {any} settings - Settings
  * @returns {string} - Built prompt
  */
-function buildResolutionPrompt(
+function buildLorebookEntryDeduplicatePrompt(
     normalizedEntry /*: any */,
-    triageSynopsis /*: string */,
+    lorebookEntryLookupSynopsis /*: string */,
     candidateEntries /*: any */,
     singleType /*: string */,
     settings /*: any */
 ) /*: string */ {
     const payload = buildNewEntryPayload(normalizedEntry);
-    const promptTemplate = settings?.resolution_prompt || '';
+    const promptTemplate = settings?.lorebook_entry_deduplicate_prompt || '';
     return promptTemplate
         .replace(/\{\{lorebook_entry_types\}\}/g, singleType || '')
         .replace(/\{\{new_entry\}\}/g, JSON.stringify(payload, null, 2))
-        .replace(/\{\{triage_synopsis\}\}/g, triageSynopsis || '')
+        .replace(/\{\{lorebook_entry_lookup_synopsis\}\}/g, lorebookEntryLookupSynopsis || '')
         .replace(/\{\{candidate_entries\}\}/g, JSON.stringify(candidateEntries, null, 2));
 }
 
 /**
- * Executes resolution LLM call
- * @param {string} prompt - Resolution prompt
+ * Executes lorebook entry deduplicate LLM call
+ * @param {string} prompt - LorebookEntryDeduplicate prompt
  * @param {any} settings - Settings
  * @returns {Promise<string>} - LLM response
  */
-async function executeResolutionLLMCall(prompt /*: string */, settings /*: any */) /*: Promise<?string> */ {
+async function executeLorebookEntryDeduplicateLLMCall(prompt /*: string */, settings /*: any */) /*: Promise<?string> */ {
     return await runModelWithSettings(
         prompt,
-        settings?.resolution_prefill || '',
-        settings?.resolution_connection_profile || '',
-        settings?.resolution_completion_preset || '',
-        'resolution'
+        settings?.lorebook_entry_deduplicate_prefill || '',
+        settings?.lorebook_entry_deduplicate_connection_profile || '',
+        settings?.lorebook_entry_deduplicate_completion_preset || '',
+        'lorebookEntryDeduplicate'
     );
 }
 
 /**
- * Parses resolution response
+ * Parses lorebook entry deduplicate response
  * @param {string} response - LLM response
  * @param {string} fallbackSynopsis - Fallback synopsis
  * @returns {{resolvedId: string|null, synopsis: string}} - Parsed result
  */
-function parseResolutionResponse(response /*: string */, fallbackSynopsis /*: string */) /*: any */ {
+function parseLorebookEntryDeduplicateResponse(response /*: string */, fallbackSynopsis /*: string */) /*: any */ {
     const parsed = parseJsonSafe(response);
     if (!parsed || typeof parsed !== 'object') {
         return { resolvedId: null, synopsis: fallbackSynopsis || '' };
@@ -556,43 +647,43 @@ function parseResolutionResponse(response /*: string */, fallbackSynopsis /*: st
     return { resolvedId: resolvedId ? String(resolvedId) : null, synopsis };
 }
 
-export async function runResolutionStage(
+export async function runLorebookEntryDeduplicateStage(
     normalizedEntry /*: any */,
-    triageSynopsis /*: string */,
+    lorebookEntryLookupSynopsis /*: string */,
     candidateEntries /*: Array<any> */,
     singleType /*: string */,
     settings /*: any */
 ) /*: Promise<{ resolvedId: ?string, synopsis: string }> */ {
-    if (!shouldRunResolution(candidateEntries, settings)) {
-        return { resolvedId: null, synopsis: triageSynopsis || '' };
+    if (!shouldRunLorebookEntryDeduplicate(candidateEntries, settings)) {
+        return { resolvedId: null, synopsis: lorebookEntryLookupSynopsis || '' };
     }
 
-    const prompt = buildResolutionPrompt(normalizedEntry, triageSynopsis, candidateEntries, singleType, settings);
-    const response = await executeResolutionLLMCall(prompt, settings);
+    const prompt = buildLorebookEntryDeduplicatePrompt(normalizedEntry, lorebookEntryLookupSynopsis, candidateEntries, singleType, settings);
+    const response = await executeLorebookEntryDeduplicateLLMCall(prompt, settings);
 
     if (!response) {
-        return { resolvedId: null, synopsis: triageSynopsis || '' };
+        return { resolvedId: null, synopsis: lorebookEntryLookupSynopsis || '' };
     }
 
-    return parseResolutionResponse(response, triageSynopsis);
+    return parseLorebookEntryDeduplicateResponse(response, lorebookEntryLookupSynopsis);
 }
 
 /**
  * Resolves and applies the entity type for a normalized entry
  * Handles type fallbacks and applies type-specific flags
  * @param {any} normalizedEntry - The entry to resolve type for
- * @param {any} triage - Triage result containing suggested type
+ * @param {any} lorebookEntryLookup - Lorebook Entry Lookup result containing suggested type
  * @param {Map<string, any>} entityTypeMap - Map of entity type definitions
  * @param {Array<any>} entityTypeDefs - Array of all entity type definitions
  * @returns {{targetType: string, typeDef: any}} - Resolved type name and definition
  */
 function resolveEntryType(
     normalizedEntry /*: any */,
-    triage /*: any */,
+    lorebookEntryLookup /*: any */,
     entityTypeMap /*: any */,
     entityTypeDefs /*: any */
 ) /*: any */ {
-    let targetType = triage.type || normalizedEntry.type || '';
+    let targetType = lorebookEntryLookup.type || normalizedEntry.type || '';
     let typeDef = targetType ? entityTypeMap.get(targetType) : null;
 
     // Try fallback with sanitized name
@@ -616,17 +707,17 @@ function resolveEntryType(
 }
 
 /**
- * Builds candidate entry list and optionally runs resolution stage
- * @param {any} triage - Triage result with candidate IDs
+ * Builds candidate entry list and optionally runs lorebook entry deduplicate stage
+ * @param {any} lorebookEntryLookup - Lorebook Entry Lookup result with candidate IDs
  * @param {any} registryState - Current registry state
  * @param {Map<number, any>} existingEntriesMap - Map of existing entries by UID
  * @param {any} normalizedEntry - The entry being processed
  * @param {string} targetType - The resolved type
  * @param {any} settings - Processing settings
- * @returns {Promise<{candidateIds: string[], resolution: any}>} - Candidates and resolution result
+ * @returns {Promise<{candidateIds: string[], lorebookEntryDeduplicate: any}>} - Candidates and deduplication result
  */
 async function buildCandidateListAndResolve(
-    triage /*: any */,
+    lorebookEntryLookup /*: any */,
     registryState /*: any */,
     existingEntriesMap /*: any */,
     normalizedEntry /*: any */,
@@ -634,43 +725,43 @@ async function buildCandidateListAndResolve(
     settings /*: any */
 ) /*: Promise<any> */ {
     const candidateIdSet /*: Set<string> */ = new Set();
-    triage.sameEntityIds.forEach(id => candidateIdSet.add(String(id)));
-    triage.needsFullContextIds.forEach(id => candidateIdSet.add(String(id)));
+    lorebookEntryLookup.sameEntityIds.forEach(id => candidateIdSet.add(String(id)));
+    lorebookEntryLookup.needsFullContextIds.forEach(id => candidateIdSet.add(String(id)));
     const candidateIds = Array.from(candidateIdSet).filter(id => registryState.index?.[id]);
 
-    let resolution = null;
+    let lorebookEntryDeduplicate = null;
     if (candidateIds.length > 0) {
         const candidateEntries = buildCandidateEntriesData(candidateIds, registryState, existingEntriesMap);
         if (candidateEntries.length > 0) {
-            resolution = await runResolutionStage(normalizedEntry, triage.synopsis || '', candidateEntries, targetType, settings);
+            lorebookEntryDeduplicate = await runLorebookEntryDeduplicateStage(normalizedEntry, lorebookEntryLookup.synopsis || '', candidateEntries, targetType, settings);
         }
     }
 
-    if (!resolution) {
-        resolution = { resolvedId: null, synopsis: triage.synopsis || '' };
+    if (!lorebookEntryDeduplicate) {
+        lorebookEntryDeduplicate = { resolvedId: null, synopsis: lorebookEntryLookup.synopsis || '' };
     }
 
-    return { candidateIds, resolution };
+    return { candidateIds, lorebookEntryDeduplicate };
 }
 
 /**
  * Applies fallback logic and validates the resolved entity ID
- * @param {any} resolution - Initial resolution result
+ * @param {any} lorebookEntryDeduplicate - Initial deduplication result
  * @param {string[]} candidateIds - List of candidate IDs
- * @param {any} triage - Triage result
+ * @param {any} lorebookEntryLookup - Lorebook Entry Lookup result
  * @param {any} registryState - Current registry state
  * @returns {{resolvedId: string|null, previousType: string|null, finalSynopsis: string}} - Final identity resolution
  */
 function applyFallbackAndValidateIdentity(
-    resolution /*: any */,
+    lorebookEntryDeduplicate /*: any */,
     candidateIds /*: any */,
-    triage /*: any */,
+    lorebookEntryLookup /*: any */,
     registryState /*: any */
 ) /*: any */ {
-    let resolvedId = resolution.resolvedId;
+    let resolvedId = lorebookEntryDeduplicate.resolvedId;
 
     // Single candidate fallback: if only one candidate and no needsFullContext, use it
-    if (!resolvedId && candidateIds.length === 1 && (!triage.needsFullContextIds || triage.needsFullContextIds.length === 0)) {
+    if (!resolvedId && candidateIds.length === 1 && (!lorebookEntryLookup.needsFullContextIds || lorebookEntryLookup.needsFullContextIds.length === 0)) {
         const fallbackId = candidateIds[0];
         if (registryState.index?.[fallbackId]) {
             resolvedId = fallbackId;
@@ -683,7 +774,7 @@ function applyFallbackAndValidateIdentity(
     }
 
     const previousType = resolvedId ? registryState.index?.[resolvedId]?.type : null;
-    const finalSynopsis = resolution.synopsis || triage.synopsis || '';
+    const finalSynopsis = lorebookEntryDeduplicate.synopsis || lorebookEntryLookup.synopsis || '';
 
     return { resolvedId, previousType, finalSynopsis };
 }
@@ -803,12 +894,12 @@ async function handleLorebookEntry(normalizedEntry /*: any */, ctx /*: any */) /
     } = ctx;
 
     const registryListing = buildRegistryListing(registryState);
-    const triage = await runTriageStage(normalizedEntry, registryListing, typeList, settings);
+    const lorebookEntryLookup = await runLorebookEntryLookupStage(normalizedEntry, registryListing, typeList, settings);
 
-    const { targetType } = resolveEntryType(normalizedEntry, triage, entityTypeMap, entityTypeDefs);
+    const { targetType } = resolveEntryType(normalizedEntry, lorebookEntryLookup, entityTypeMap, entityTypeDefs);
 
-    const { candidateIds, resolution } = await buildCandidateListAndResolve(
-        triage,
+    const { candidateIds, lorebookEntryDeduplicate } = await buildCandidateListAndResolve(
+        lorebookEntryLookup,
         registryState,
         existingEntriesMap,
         normalizedEntry,
@@ -817,9 +908,9 @@ async function handleLorebookEntry(normalizedEntry /*: any */, ctx /*: any */) /
     );
 
     const { resolvedId, previousType, finalSynopsis } = applyFallbackAndValidateIdentity(
-        resolution,
+        lorebookEntryDeduplicate,
         candidateIds,
-        triage,
+        lorebookEntryLookup,
         registryState
     );
 
@@ -910,27 +1001,39 @@ async function loadSummaryContext(config /*: any */) /*: Promise<any> */ {
     });
 
     const registryState = ensureRegistryState();
-    const summarySettings = extension_settings?.autoLorebooks?.summary_processing || {};
+
+    // Build summarySettings from per-profile settings
+    const summarySettings = {
+        merge_connection_profile: getSummaryProcessingSetting('merge_connection_profile', ''),
+        merge_completion_preset: getSummaryProcessingSetting('merge_completion_preset', ''),
+        merge_prefill: getSummaryProcessingSetting('merge_prefill', ''),
+        merge_prompt: getSummaryProcessingSetting('merge_prompt', ''),
+        lorebook_entry_lookup_connection_profile: getSummaryProcessingSetting('lorebook_entry_lookup_connection_profile', ''),
+        lorebook_entry_lookup_completion_preset: getSummaryProcessingSetting('lorebook_entry_lookup_completion_preset', ''),
+        lorebook_entry_lookup_prefill: getSummaryProcessingSetting('lorebook_entry_lookup_prefill', ''),
+        lorebook_entry_lookup_prompt: getSummaryProcessingSetting('lorebook_entry_lookup_prompt', ''),
+        lorebook_entry_deduplicate_connection_profile: getSummaryProcessingSetting('lorebook_entry_deduplicate_connection_profile', ''),
+        lorebook_entry_deduplicate_completion_preset: getSummaryProcessingSetting('lorebook_entry_deduplicate_completion_preset', ''),
+        lorebook_entry_deduplicate_prefill: getSummaryProcessingSetting('lorebook_entry_deduplicate_prefill', ''),
+        lorebook_entry_deduplicate_prompt: getSummaryProcessingSetting('lorebook_entry_deduplicate_prompt', ''),
+        skip_duplicates: getSummaryProcessingSetting('skip_duplicates', true),
+        enabled: getSummaryProcessingSetting('enabled', false),
+    };
+
     const typeList = config.entityTypeDefs.map(def => def.name).filter(Boolean).join('|') || 'character';
 
     // Validate critical settings are loaded
-    if (!summarySettings.triage_prompt) {
-        error('CRITICAL: Auto-Lorebooks triage_prompt not found in extension_settings.autoLorebooks.summary_processing');
-        error('extension_settings path check:', {
-            hasAutoLorebooks: !!extension_settings?.autoLorebooks,
-            hasSummaryProcessing: !!extension_settings?.autoLorebooks?.summary_processing,
-            summaryProcessingKeys: extension_settings?.autoLorebooks?.summary_processing ? Object.keys(extension_settings.autoLorebooks.summary_processing) : [],
-            triagePromptType: typeof summarySettings.triage_prompt,
-            triagePromptLength: summarySettings.triage_prompt?.length || 0
-        });
-        error('Full summary_processing object:', summarySettings);
-        toast('Auto-Lorebooks: Critical configuration error - triage prompt not loaded! Check browser console for details.', 'error');
+    if (!summarySettings.lorebook_entry_lookup_prompt) {
+        error('CRITICAL: Auto-Lorebooks lorebook_entry_lookup_prompt not found in profile settings');
+        error('Lorebook Entry Lookup prompt type:', typeof summarySettings.lorebook_entry_lookup_prompt);
+        error('Lorebook Entry Lookup prompt length:', summarySettings.lorebook_entry_lookup_prompt?.length || 0);
+        toast('Auto-Lorebooks: Critical configuration error - lorebook entry lookup prompt not loaded! Check browser console for details.', 'error');
     }
-    if (!summarySettings.resolution_prompt) {
-        error('CRITICAL: Auto-Lorebooks resolution_prompt not found in extension_settings.autoLorebooks.summary_processing');
-        error('Resolution prompt type:', typeof summarySettings.resolution_prompt);
-        error('Resolution prompt length:', summarySettings.resolution_prompt?.length || 0);
-        toast('Auto-Lorebooks: Critical configuration error - resolution prompt not loaded! Check browser console for details.', 'error');
+    if (!summarySettings.lorebook_entry_deduplicate_prompt) {
+        error('CRITICAL: Auto-Lorebooks lorebook_entry_deduplicate_prompt not found in profile settings');
+        error('LorebookEntryDeduplicate prompt type:', typeof summarySettings.lorebook_entry_deduplicate_prompt);
+        error('LorebookEntryDeduplicate prompt length:', summarySettings.lorebook_entry_deduplicate_prompt?.length || 0);
+        toast('Auto-Lorebooks: Critical configuration error - lorebook entry deduplicate prompt not loaded! Check browser console for details.', 'error');
     }
 
     return {

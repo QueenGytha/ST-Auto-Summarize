@@ -16,7 +16,7 @@ export default ({ test, expect }) => {
 
     console.log = originalLog;
 
-    expect(capturedArgs[0]).toBe('[Gytha][AutoSummarize]');
+    expect(capturedArgs[0]).toBe('[AutoSummarize]');
     expect(capturedArgs[1]).toBe('[Test]');
     expect(capturedArgs[2]).toBe('message');
   });
@@ -33,7 +33,7 @@ export default ({ test, expect }) => {
     console.log = originalLog;
 
     expect(capturedArgs.length).toBe(6); // prefix + subsystem + 4 args
-    expect(capturedArgs[0]).toBe('[Gytha][AutoSummarize]');
+    expect(capturedArgs[0]).toBe('[AutoSummarize]');
     expect(capturedArgs[1]).toBe('[Core]');
     expect(capturedArgs[5].key).toBe('value');
   });
@@ -69,7 +69,7 @@ export default ({ test, expect }) => {
 
     console.log = originalLog;
 
-    expect(capturedArgs[0]).toBe('[Gytha][AutoSummarize]');
+    expect(capturedArgs[0]).toBe('[AutoSummarize]');
     expect(capturedArgs[1]).toBe('[DEBUG]');
     expect(capturedArgs[2]).toBe('[Memory]');
     expect(capturedArgs[3]).toBe('debug message');
@@ -86,7 +86,7 @@ export default ({ test, expect }) => {
 
     console.error = originalError;
 
-    expect(capturedArgs[0]).toBe('[Gytha][AutoSummarize]');
+    expect(capturedArgs[0]).toBe('[AutoSummarize]');
     expect(capturedArgs[1]).toBe('[ERROR]');
     expect(capturedArgs[2]).toBe('[Validation]');
     expect(capturedArgs[3]).toBe('error occurred');
@@ -103,7 +103,7 @@ export default ({ test, expect }) => {
 
     console.error = originalError;
 
-    expect(capturedArgs[0]).toBe('[Gytha][AutoSummarize]');
+    expect(capturedArgs[0]).toBe('[AutoSummarize]');
     expect(capturedArgs[1]).toBe('[ERROR]');
     expect(capturedArgs[2]).toBe('Simple error message');
   });

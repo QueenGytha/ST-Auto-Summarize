@@ -425,3 +425,109 @@ dialog:has(#auto_summarize_memory_state_interface) {
     color: #fff;
     text-decoration: underline solid;
 }
+
+/* Operations Queue Styles */
+#shared_operation_queue_ui {
+    margin-top: 1em;
+    padding-top: 1em;
+    border-top: 1px solid var(--SmartThemeBlurTintColor);
+    display: flex;
+    flex-direction: column;
+    min-height: 100px;
+    max-height: calc(100vh - 120px); /* Dynamic max height based on viewport */
+}
+
+.queue-header {
+    margin-bottom: 0.5em;
+    flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+#queue_toggle_visibility {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3em;
+    cursor: pointer;
+}
+
+#queue_toggle_visibility h4 {
+    margin: 0;
+    font-size: 1em;
+}
+
+#queue_toggle_visibility i {
+    padding: 0.2em 0.5em;
+}
+
+.queue-list {
+    flex: 1 1 auto; /* Allow list to grow and shrink */
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 50px;
+}
+
+.queue-controls {
+    display: flex;
+    flex-direction: row;
+    gap: 0.3em;
+    margin-bottom: 0.5em;
+    flex-shrink: 0;
+}
+
+.queue-operation {
+    padding: 0.4em;
+    margin-bottom: 0.3em;
+    border-radius: 4px;
+    font-size: 0.8em;
+}
+
+.queue-operation-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4em;
+    margin-bottom: 0.2em;
+}
+
+.queue-operation-icon {
+    flex-shrink: 0;
+    margin-top: 0.1em;
+}
+
+.queue-operation-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.queue-operation-type {
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.queue-operation-params {
+    opacity: 0.7;
+    font-size: 0.85em;
+    margin-top: 0.1em;
+}
+
+.queue-operation-duration {
+    opacity: 0.6;
+    font-size: 0.8em;
+    margin-left: 1.5em;
+}
+
+.queue-operation-error {
+    color: #ff6b6b;
+    font-size: 0.85em;
+    margin-top: 0.3em;
+    margin-left: 1.5em;
+}
+
+/* Queue collapsed state */
+#shared_operation_queue_ui.queue-collapsed .queue-list {
+    display: none;
+}
+
+#shared_operation_queue_ui.queue-collapsed {
+    min-height: auto;
+    max-height: none;
+}

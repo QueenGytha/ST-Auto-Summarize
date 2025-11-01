@@ -392,6 +392,8 @@ function refreshGlobalSettingsUI(settings /*: any */) /*: void */ {
     // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-delete-on-chat-delete').prop('checked', settings.deleteOnChatDelete ?? true);
     // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-auto-reorder-alphabetically').prop('checked', settings.autoReorderAlphabetically ?? true);
+    // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-name-template').val(settings.nameTemplate || 'z-AutoLB - {{char}} - {{chat}}');
     // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-debug-mode').prop('checked', settings.debug_mode ?? true);
@@ -450,13 +452,13 @@ function refreshSummaryProcessingUI() /*: void */ {
     // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-summary-merge-prompt').val(get_settings('auto_lorebooks_summary_merge_prompt') || '');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-triage-prefill').val(get_settings('auto_lorebooks_summary_triage_prefill') || '');
+    $('#autolorebooks-summary-lorebook-entry-lookup-prefill').val(get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-triage-prompt').val(get_settings('auto_lorebooks_summary_triage_prompt') || '');
+    $('#autolorebooks-summary-lorebook-entry-lookup-prompt').val(get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prompt') || '');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-resolution-prefill').val(get_settings('auto_lorebooks_summary_resolution_prefill') || '');
+    $('#autolorebooks-summary-entry-deduplicate-prefill').val(get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-resolution-prompt').val(get_settings('auto_lorebooks_summary_resolution_prompt') || '');
+    $('#autolorebooks-summary-entry-deduplicate-prompt').val(get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '');
 }
 
 /**
@@ -477,8 +479,8 @@ function refreshConnectionDropdowns() /*: void */ {
     update_autolorebooks_summary_merge_preset_dropdown();
     update_autolorebooks_summary_triage_connection_dropdown();
     update_autolorebooks_summary_triage_preset_dropdown();
-    update_autolorebooks_summary_resolution_connection_dropdown();
-    update_autolorebooks_summary_resolution_preset_dropdown();
+    update_autolorebooks_summary_lorebook_entry_deduplicate_connection_dropdown();
+    update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dropdown();
 }
 
 /**
@@ -586,8 +588,8 @@ async function update_autolorebooks_summary_merge_preset_dropdown() {
  */
 async function update_autolorebooks_summary_triage_connection_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
-    const $connection_select = $('#autolorebooks-summary-triage-connection');
-    const currentValue = get_settings('auto_lorebooks_summary_triage_connection_profile') || '';
+    const $connection_select = $('#autolorebooks-summary-lorebook-entry-lookup-connection');
+    const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_connection_profile') || '';
     const connection_options = await get_connection_profiles();
     $connection_select.empty();
     $connection_select.append(`<option value="">Same as Current</option>`);
@@ -605,8 +607,8 @@ async function update_autolorebooks_summary_triage_connection_dropdown() {
  */
 async function update_autolorebooks_summary_triage_preset_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
-    const $preset_select = $('#autolorebooks-summary-triage-preset');
-    const currentValue = get_settings('auto_lorebooks_summary_triage_completion_preset') || '';
+    const $preset_select = $('#autolorebooks-summary-lorebook-entry-lookup-preset');
+    const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_completion_preset') || '';
     const preset_options = await get_presets();
     $preset_select.empty();
     $preset_select.append(`<option value="">Same as Current</option>`);
@@ -618,12 +620,12 @@ async function update_autolorebooks_summary_triage_preset_dropdown() {
 }
 
 /**
- * Update Auto-Lorebooks summary resolution connection profile dropdown
+ * Update Auto-Lorebooks summary lorebook entry deduplicate connection profile dropdown
  */
-async function update_autolorebooks_summary_resolution_connection_dropdown() {
+async function update_autolorebooks_summary_lorebook_entry_deduplicate_connection_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
-    const $connection_select = $('#autolorebooks-summary-resolution-connection');
-    const currentValue = get_settings('auto_lorebooks_summary_resolution_connection_profile') || '';
+    const $connection_select = $('#autolorebooks-summary-entry-deduplicate-connection');
+    const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_connection_profile') || '';
     const connection_options = await get_connection_profiles();
     $connection_select.empty();
     $connection_select.append(`<option value="">Same as Current</option>`);
@@ -633,16 +635,16 @@ async function update_autolorebooks_summary_resolution_connection_dropdown() {
         }
     }
     $connection_select.val(currentValue);
-    $connection_select.off('click').on('click', () => update_autolorebooks_summary_resolution_connection_dropdown());
+    $connection_select.off('click').on('click', () => update_autolorebooks_summary_lorebook_entry_deduplicate_connection_dropdown());
 }
 
 /**
- * Update Auto-Lorebooks summary resolution preset dropdown
+ * Update Auto-Lorebooks summary lorebook entry deduplicate preset dropdown
  */
-async function update_autolorebooks_summary_resolution_preset_dropdown() {
+async function update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
-    const $preset_select = $('#autolorebooks-summary-resolution-preset');
-    const currentValue = get_settings('auto_lorebooks_summary_resolution_completion_preset') || '';
+    const $preset_select = $('#autolorebooks-summary-entry-deduplicate-preset');
+    const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset') || '';
     const preset_options = await get_presets();
     $preset_select.empty();
     $preset_select.append(`<option value="">Same as Current</option>`);
@@ -650,7 +652,7 @@ async function update_autolorebooks_summary_resolution_preset_dropdown() {
         $preset_select.append(`<option value="${option}">${option}</option>`);
     }
     $preset_select.val(currentValue);
-    $preset_select.off('click').on('click', () => update_autolorebooks_summary_resolution_preset_dropdown());
+    $preset_select.off('click').on('click', () => update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dropdown());
 }
 
 export {

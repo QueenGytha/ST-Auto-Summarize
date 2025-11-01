@@ -13,7 +13,7 @@ export default ({ test, expect }) => {
 
     const entry = { name: 'TestEntry', content: 'Some content', keywords: [] };
     const res = await proc.processSingleLorebookEntry(entry, { useQueue: false });
-    // Should fail because triage_prompt is missing
+    // Should fail because lorebook_entry_lookup_prompt is missing
     expect(res.success).toBe(false);
   });
 };

@@ -392,6 +392,8 @@ function refreshGlobalSettingsUI(settings /*: any */) /*: void */ {
     // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-delete-on-chat-delete').prop('checked', settings.deleteOnChatDelete ?? true);
     // $FlowFixMe[cannot-resolve-name]
+    $('#autolorebooks-auto-reorder-alphabetically').prop('checked', settings.autoReorderAlphabetically ?? true);
+    // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-name-template').val(settings.nameTemplate || 'z-AutoLB - {{char}} - {{chat}}');
     // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-debug-mode').prop('checked', settings.debug_mode ?? true);
@@ -414,48 +416,49 @@ function refreshQueueSettingsUI(queueSettings /*: any */ = {}) /*: void */ {
  * Refreshes tracking settings UI
  * @param {any} tracking - Tracking settings object
  */
-function refreshTrackingSettingsUI(tracking /*: any */ = {}) /*: void */ {
+function refreshTrackingSettingsUI() /*: void */ {
+    // All tracking settings are now per-profile, read from profile settings
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-enabled').prop('checked', tracking.enabled ?? true);
+    $('#autolorebooks-tracking-enabled').prop('checked', get_settings('auto_lorebooks_tracking_enabled') ?? true);
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-intercept-send').prop('checked', tracking.intercept_send_button ?? true);
+    $('#autolorebooks-tracking-intercept-send').prop('checked', get_settings('auto_lorebooks_tracking_intercept_send_button') ?? true);
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-auto-create').prop('checked', tracking.auto_create ?? true);
+    $('#autolorebooks-tracking-auto-create').prop('checked', get_settings('auto_lorebooks_tracking_auto_create') ?? true);
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-remove-syntax').prop('checked', tracking.remove_from_message ?? true);
+    $('#autolorebooks-tracking-remove-syntax').prop('checked', get_settings('auto_lorebooks_tracking_remove_from_message') ?? true);
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-syntax-gm-notes').val(tracking.syntax_gm_notes || '<-- gm_notes: {{content}} -->');
+    $('#autolorebooks-tracking-syntax-gm-notes').val(get_settings('auto_lorebooks_tracking_syntax_gm_notes') || '<-- gm_notes: {{content}} -->');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-syntax-character-stats').val(tracking.syntax_character_stats || '<-- character_stats: {{content}} -->');
+    $('#autolorebooks-tracking-syntax-character-stats').val(get_settings('auto_lorebooks_tracking_syntax_character_stats') || '<-- character_stats: {{content}} -->');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-merge-prefill').val(tracking.merge_prefill || '');
+    $('#autolorebooks-tracking-merge-prefill').val(get_settings('auto_lorebooks_tracking_merge_prefill') || '');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-merge-prompt-gm-notes').val(tracking.merge_prompt_gm_notes || '');
+    $('#autolorebooks-tracking-merge-prompt-gm-notes').val(get_settings('auto_lorebooks_tracking_merge_prompt_gm_notes') || '');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-merge-prompt-character-stats').val(tracking.merge_prompt_character_stats || '');
+    $('#autolorebooks-tracking-merge-prompt-character-stats').val(get_settings('auto_lorebooks_tracking_merge_prompt_character_stats') || '');
 }
 
 /**
  * Refreshes summary processing settings UI
- * @param {any} summaryProcessing - Summary processing settings object
  */
-function refreshSummaryProcessingUI(summaryProcessing /*: any */ = {}) /*: void */ {
+function refreshSummaryProcessingUI() /*: void */ {
+    // All summary processing settings are now per-profile, read from profile settings
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-processing-enabled').prop('checked', summaryProcessing.enabled ?? true);
+    $('#autolorebooks-summary-processing-enabled').prop('checked', get_settings('auto_lorebooks_summary_enabled') ?? true);
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-skip-duplicates').prop('checked', summaryProcessing.skip_duplicates ?? true);
+    $('#autolorebooks-summary-skip-duplicates').prop('checked', get_settings('auto_lorebooks_summary_skip_duplicates') ?? true);
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-merge-prefill').val(summaryProcessing.merge_prefill || '');
+    $('#autolorebooks-summary-merge-prefill').val(get_settings('auto_lorebooks_summary_merge_prefill') || '');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-merge-prompt').val(summaryProcessing.merge_prompt || '');
+    $('#autolorebooks-summary-merge-prompt').val(get_settings('auto_lorebooks_summary_merge_prompt') || '');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-triage-prefill').val(summaryProcessing.triage_prefill || '');
+    $('#autolorebooks-summary-lorebook-entry-lookup-prefill').val(get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-triage-prompt').val(summaryProcessing.triage_prompt || '');
+    $('#autolorebooks-summary-lorebook-entry-lookup-prompt').val(get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prompt') || '');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-resolution-prefill').val(summaryProcessing.resolution_prefill || '');
+    $('#autolorebooks-summary-entry-deduplicate-prefill').val(get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '');
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-resolution-prompt').val(summaryProcessing.resolution_prompt || '');
+    $('#autolorebooks-summary-entry-deduplicate-prompt').val(get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '');
 }
 
 /**
@@ -476,8 +479,8 @@ function refreshConnectionDropdowns() /*: void */ {
     update_autolorebooks_summary_merge_preset_dropdown();
     update_autolorebooks_summary_triage_connection_dropdown();
     update_autolorebooks_summary_triage_preset_dropdown();
-    update_autolorebooks_summary_resolution_connection_dropdown();
-    update_autolorebooks_summary_resolution_preset_dropdown();
+    update_autolorebooks_summary_lorebook_entry_deduplicate_connection_dropdown();
+    update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dropdown();
 }
 
 /**
@@ -486,12 +489,18 @@ function refreshConnectionDropdowns() /*: void */ {
  */
 function refresh_lorebooks_settings_ui() {
     try {
+        // Load global settings (not per-profile)
         const settings = loadLorebooksSettings();
 
+        // Refresh global settings UI
         refreshGlobalSettingsUI(settings);
         refreshQueueSettingsUI(settings.queue);
-        refreshTrackingSettingsUI(settings.tracking);
-        refreshSummaryProcessingUI(settings.summary_processing);
+
+        // Refresh per-profile settings UI (tracking and summary processing)
+        // These functions now read directly from profile via get_settings()
+        refreshTrackingSettingsUI();
+        refreshSummaryProcessingUI();
+
         refreshEntityTypesUI();
         refreshConnectionDropdowns();
 
@@ -508,8 +517,7 @@ function refresh_lorebooks_settings_ui() {
 async function update_autolorebooks_tracking_merge_connection_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
     const $connection_select = $('#autolorebooks-tracking-merge-connection');
-    // $FlowFixMe[prop-missing]
-    const currentValue = extension_settings.autoLorebooks?.tracking?.merge_connection_profile || '';
+    const currentValue = get_settings('auto_lorebooks_tracking_merge_connection_profile') || '';
     const connection_options = await get_connection_profiles();
     $connection_select.empty();
     $connection_select.append(`<option value="">Same as Current</option>`);
@@ -528,8 +536,7 @@ async function update_autolorebooks_tracking_merge_connection_dropdown() {
 async function update_autolorebooks_tracking_merge_preset_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
     const $preset_select = $('#autolorebooks-tracking-merge-preset');
-    // $FlowFixMe[prop-missing]
-    const currentValue = extension_settings.autoLorebooks?.tracking?.merge_completion_preset || '';
+    const currentValue = get_settings('auto_lorebooks_tracking_merge_completion_preset') || '';
     const preset_options = await get_presets();
     $preset_select.empty();
     $preset_select.append(`<option value="">Same as Current</option>`);
@@ -546,8 +553,7 @@ async function update_autolorebooks_tracking_merge_preset_dropdown() {
 async function update_autolorebooks_summary_merge_connection_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
     const $connection_select = $('#autolorebooks-summary-merge-connection');
-    // $FlowFixMe[prop-missing]
-    const currentValue = extension_settings.autoLorebooks?.summary_processing?.merge_connection_profile || '';
+    const currentValue = get_settings('auto_lorebooks_summary_merge_connection_profile') || '';
     const connection_options = await get_connection_profiles();
     $connection_select.empty();
     $connection_select.append(`<option value="">Same as Current</option>`);
@@ -566,8 +572,7 @@ async function update_autolorebooks_summary_merge_connection_dropdown() {
 async function update_autolorebooks_summary_merge_preset_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
     const $preset_select = $('#autolorebooks-summary-merge-preset');
-    // $FlowFixMe[prop-missing]
-    const currentValue = extension_settings.autoLorebooks?.summary_processing?.merge_completion_preset || '';
+    const currentValue = get_settings('auto_lorebooks_summary_merge_completion_preset') || '';
     const preset_options = await get_presets();
     $preset_select.empty();
     $preset_select.append(`<option value="">Same as Current</option>`);
@@ -583,9 +588,8 @@ async function update_autolorebooks_summary_merge_preset_dropdown() {
  */
 async function update_autolorebooks_summary_triage_connection_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
-    const $connection_select = $('#autolorebooks-summary-triage-connection');
-    // $FlowFixMe[prop-missing]
-    const currentValue = extension_settings.autoLorebooks?.summary_processing?.triage_connection_profile || '';
+    const $connection_select = $('#autolorebooks-summary-lorebook-entry-lookup-connection');
+    const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_connection_profile') || '';
     const connection_options = await get_connection_profiles();
     $connection_select.empty();
     $connection_select.append(`<option value="">Same as Current</option>`);
@@ -603,9 +607,8 @@ async function update_autolorebooks_summary_triage_connection_dropdown() {
  */
 async function update_autolorebooks_summary_triage_preset_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
-    const $preset_select = $('#autolorebooks-summary-triage-preset');
-    // $FlowFixMe[prop-missing]
-    const currentValue = extension_settings.autoLorebooks?.summary_processing?.triage_completion_preset || '';
+    const $preset_select = $('#autolorebooks-summary-lorebook-entry-lookup-preset');
+    const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_completion_preset') || '';
     const preset_options = await get_presets();
     $preset_select.empty();
     $preset_select.append(`<option value="">Same as Current</option>`);
@@ -617,13 +620,12 @@ async function update_autolorebooks_summary_triage_preset_dropdown() {
 }
 
 /**
- * Update Auto-Lorebooks summary resolution connection profile dropdown
+ * Update Auto-Lorebooks summary lorebook entry deduplicate connection profile dropdown
  */
-async function update_autolorebooks_summary_resolution_connection_dropdown() {
+async function update_autolorebooks_summary_lorebook_entry_deduplicate_connection_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
-    const $connection_select = $('#autolorebooks-summary-resolution-connection');
-    // $FlowFixMe[prop-missing]
-    const currentValue = extension_settings.autoLorebooks?.summary_processing?.resolution_connection_profile || '';
+    const $connection_select = $('#autolorebooks-summary-entry-deduplicate-connection');
+    const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_connection_profile') || '';
     const connection_options = await get_connection_profiles();
     $connection_select.empty();
     $connection_select.append(`<option value="">Same as Current</option>`);
@@ -633,17 +635,16 @@ async function update_autolorebooks_summary_resolution_connection_dropdown() {
         }
     }
     $connection_select.val(currentValue);
-    $connection_select.off('click').on('click', () => update_autolorebooks_summary_resolution_connection_dropdown());
+    $connection_select.off('click').on('click', () => update_autolorebooks_summary_lorebook_entry_deduplicate_connection_dropdown());
 }
 
 /**
- * Update Auto-Lorebooks summary resolution preset dropdown
+ * Update Auto-Lorebooks summary lorebook entry deduplicate preset dropdown
  */
-async function update_autolorebooks_summary_resolution_preset_dropdown() {
+async function update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dropdown() {
     // $FlowFixMe[cannot-resolve-name]
-    const $preset_select = $('#autolorebooks-summary-resolution-preset');
-    // $FlowFixMe[prop-missing]
-    const currentValue = extension_settings.autoLorebooks?.summary_processing?.resolution_completion_preset || '';
+    const $preset_select = $('#autolorebooks-summary-entry-deduplicate-preset');
+    const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset') || '';
     const preset_options = await get_presets();
     $preset_select.empty();
     $preset_select.append(`<option value="">Same as Current</option>`);
@@ -651,7 +652,7 @@ async function update_autolorebooks_summary_resolution_preset_dropdown() {
         $preset_select.append(`<option value="${option}">${option}</option>`);
     }
     $preset_select.val(currentValue);
-    $preset_select.off('click').on('click', () => update_autolorebooks_summary_resolution_preset_dropdown());
+    $preset_select.off('click').on('click', () => update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dropdown());
 }
 
 export {
