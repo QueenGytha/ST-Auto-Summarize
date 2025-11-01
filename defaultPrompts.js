@@ -19,12 +19,15 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 // CRITICAL: SEPARATION OF CONCERNS
 //
 // SUMMARY field:
-// - Brief timeline of what happened (events, state changes, outcomes)
-// - MENTION entities by name for context
-// - DO NOT describe entities in detail (that goes in lorebooks)
-// - Terse, factual, minimal tokens, past tense
-// - Focus on WHAT HAPPENED and OUTCOMES, not WHO/WHAT things are
-// - Target: 100-300 tokens maximum
+// - Brief timeline of what happened with concrete factual details
+// - MENTION entities by name for context, include specific items/quotes/actions
+// - DO NOT describe entity personalities or traits (that goes in lorebooks)
+// - Include factual details: what was said, read, used, specific names/items
+// - Exclude emotional analysis: NOT "felt jealous", "seemed worried", "angrily did X"
+// - Terse, factual, minimal tokens but complete factual coverage
+// - Primarily past tense (present tense for ongoing/unresolved states)
+// - Focus on WHAT HAPPENED and OUTCOMES with specific details, not WHO/WHAT things are
+// - Be concise but preserve important factual details
 //
 // LOREBOOKS array:
 // - NEW entities discovered OR updates to existing entities
@@ -90,23 +93,23 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 // - Store secrets as properties: knows(X), keeping secret from(Y, Z)
 // - For locations/items: Include owner/resident as a property with SPECIFIC NAMES
 //   * For user-owned locations/items, use {{user}}'s residence/property
-//   * Example: [Apartment: {{user}}'s residence, shared with(Twilight Sparkle)]
+//   * Example: [Apartment: {{user}}'s residence, shared with(Sarah)]
 //   * Do NOT use: "protagonist", "the user", "main character", "human subject"
 // - Target: 50-200 tokens per entry
 //
 // EXAMPLES OF GOOD SEPARATION:
 //
 // Example 1: Combat Scene
-// ✅ SUMMARY: "Bandits ambushed Alice and Bob. Alice killed two with greatsword. Bob disabled one with throwing knife. Two fled. Alice wounded in shoulder."
-// ✅ LOREBOOK: {"name": "Alice", "type": "character", "keywords": ["alice"], "content": "[Alice: warrior, weapon(greatsword, wields with lethal skill), training(formal, evident), wounded(shoulder), continues fighting when injured]"}
+// ✅ SUMMARY: "Bandits ambushed Alice and Bob. Alice killed two with greatsword. Bob disabled one with throwing knife. Two fled. Alice wounded in shoulder but mobile."
+// ✅ LOREBOOK: {"name": "Alice", "type": "character", "keywords": ["alice"], "content": "[Alice: warrior, weapon(greatsword, wields with lethal skill), training(formal), wounded(shoulder), continues fighting when injured]"}
 //
 // Example 2: Discovery
 // ✅ SUMMARY: "Found hidden chamber behind waterfall. Ancient murals depicted the First War."
 // ✅ LOREBOOK: {"name": "Hidden Chamber", "type": "location", "keywords": ["chamber", "waterfall"], "content": "[Hidden Chamber: secret room, location(behind waterfall), features(stone walls, ancient murals showing First War), status(undisturbed for centuries)]"}
 //
 // Example 3: Character-Owned Location
-// ✅ SUMMARY: "Visited Rance's apartment. Twilight Sparkle was researching dimensional portals on his laptop."
-// ✅ LOREBOOK: {"name": "location-Apartment", "type": "location", "keywords": ["apartment"], "content": "[Apartment: Rance's residence, shared with(Twilight Sparkle), contains(laptop, research papers on dimensional portals)]"}
+// ✅ SUMMARY: "Visited John's apartment. Sarah was researching quantum physics on his laptop."
+// ✅ LOREBOOK: {"name": "location-Apartment", "type": "location", "keywords": ["apartment"], "content": "[Apartment: John's residence, shared with(Sarah), contains(laptop, research papers on quantum physics)]"}
 //
 // Example 4: Revelation
 // ✅ SUMMARY: "Bob revealed Shadow Guild membership. Alice became suspicious but agreed to cooperate."
@@ -126,8 +129,8 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 // ❌ LOREBOOK: {"name": "Secret Alliance", "type": "concept", "content": "[Secret Alliance: ...]"}
 // → Wrong type! Use character/location/item/faction/quest/rule only. Store secrets in character entries.
 //
-// ❌ LOREBOOK: {"name": "location-Apartment", "type": "location", "keywords": ["apartment"], "content": "[Apartment: shared living space, occupants(human subject, Twilight Sparkle)]"}
-// → Using vague "human subject" instead of specific name "Rance"! Should be: [Apartment: Rance's residence, shared with(Twilight Sparkle)]
+// ❌ LOREBOOK: {"name": "location-Apartment", "type": "location", "keywords": ["apartment"], "content": "[Apartment: shared living space, occupants(human subject, Sarah)]"}
+// → Using vague "human subject" instead of specific name! Should be: [Apartment: John's residence, shared with(Sarah)]
 //
 // OUTPUT FORMAT:
 // - Output ONLY valid JSON, no text before or after
@@ -160,12 +163,14 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 // CRITICAL: SEPARATION OF CONCERNS
 //
 // SUMMARY field:
-// - Brief chronological thread of scene outcomes (what happened, how it ended)
-// - Capture CURRENT STATE after scene concludes
-// - MENTION entities by name but DON'T describe them (descriptions go in lorebooks)
-// - Focus on STATE CHANGES and OUTCOMES, not step-by-step processes
-// - Terse, factual, past tense
-// - Target: 200-500 tokens (scenes are longer than messages)
+// - Concise timeline of scene events and outcomes with factual details
+// - Capture key happenings, specific details, and CURRENT STATE after scene concludes
+// - MENTION entities by name but DON'T describe their personalities/traits (descriptions go in lorebooks)
+// - Focus on WHAT HAPPENED and OUTCOMES, not step-by-step processes
+// - Include concrete details: what was said, what was read/used, specific items mentioned
+// - Exclude emotional interpretations: NOT "felt jealous", "seemed worried", "was embarrassed"
+// - Terse but detailed, primarily past tense (present tense for ongoing/unresolved states)
+// - Brief but factually complete - capture all significant events and details without emotional analysis
 //
 // LOREBOOKS array:
 // - NEW entities discovered OR UPDATES to existing entities
@@ -220,7 +225,7 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 //    - Include: description, features, atmosphere, who controls/owns it
 //    - For user-owned locations, use {{user}}'s residence/property
 //    - PList: [LocationName: place type, owner/resident({{user}}), features(list), atmosphere]
-//    - Example: [Apartment: {{user}}'s residence, shared with(Twilight Sparkle)]
+//    - Example: [Apartment: {{user}}'s residence, shared with(companion)]
 //    - Do NOT use: "protagonist", "the user", "main character", "human subject"
 //
 //    item: Important objects, artifacts, equipment
@@ -242,12 +247,12 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 //    - PList: [RuleName: mechanism, affects(targets), limitations(list), exceptions(list)]
 //
 // 5. ONE ENTITY PER LOREBOOK ENTRY
-//    - If multiple characters mentioned together ("Discord and Fluttershy"), create SEPARATE character entries
+//    - If multiple characters mentioned together ("Marcus and Elena"), create SEPARATE character entries
 //    - Each character gets their own entry with their individual details
 //    - Store relationships as PROPERTIES within character entries:
-//      [Discord: chimera of chaos, dating(Fluttershy), dates(three)]
-//      [Fluttershy: dating(Discord), dates(three)]
-//    - DO NOT create combined entries like "Discord and Fluttershy" - they are two people
+//      [Marcus: merchant, dating(Elena), relationship status(three dates)]
+//      [Elena: dating(Marcus), relationship status(three dates)]
+//    - DO NOT create combined entries like "Marcus and Elena" - they are two people
 //    - DO NOT create separate "relationship" entries - relationships are properties in character entries
 //    - Same rule applies to items, locations, factions - one entry per entity
 //
@@ -304,9 +309,10 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 // STYLE EXAMPLES:
 //
 // SUMMARY:
-// ✅ GOOD: "Alice and Bob traveled to Eastern Ruins. Temple ransacked, Sunblade stolen. Bob revealed knowledge of thief but refused details. Alice suspicious. Camped outside ruins. Current state: camping, Alice wary of Bob, planning next move."
-// ❌ BAD: "Alice, a skilled warrior with red hair, and Bob, a mysterious rogue, made their way through the forest to reach the ancient Eastern Ruins, a sacred temple complex..." (too flowery, describes characters instead of events)
-// ❌ BAD: "First they walked to the forest, then they climbed the mountain, then they reached the ruins, then they entered..." (step-by-step sequence, not outcomes)
+// ✅ GOOD: "Alice and Bob traveled to Eastern Ruins. Temple ransacked, Sunblade stolen. Bob revealed knowledge of thief but refused details. Alice suspicious. Camped outside ruins for the night."
+// ✅ GOOD: "Confronted Bob about suspicious behavior. Bob revealed Shadow Guild membership and knows Sunblade thief identity. Refused to reveal details to protect Guild operations. Alice conflicted between duty and sympathy. Agreed to three-day deadline for cooperation."
+// ❌ BAD: "Alice, a skilled warrior with red hair, and Bob, a mysterious rogue, made their way through the forest to reach the ancient Eastern Ruins, a sacred temple complex..." (too flowery, describes characters)
+// ❌ BAD: "First they walked to the forest, then they climbed the mountain, then they reached the ruins, then they entered..." (step-by-step, not outcomes)
 //
 // LOREBOOK CONTENT (PList format):
 // ✅ GOOD: "[Alice: warrior, appearance(red hair, green eyes, late 20s), personality(confident, direct), background(military training evident in posture), searching for(Sunblade entrusted to family), trusts({{user}}), suspicious of(Bob's secrecy)]"
@@ -314,11 +320,11 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 // ❌ NOT PLIST: "Skilled warrior. Red hair, green eyes, late 20s..." (natural language, not PList format)
 // ❌ TOO FLOWERY: "[Alice: warrior woman with flowing crimson locks cascading down shoulders and piercing emerald eyes that see into soul...]" (purple prose)
 // ❌ WRONG TYPE: Don't create "concept" entries - use character/location/item/faction/quest/rule only
-// ❌ COMBINED ENTITIES: {"name": "Discord and Fluttershy", "type": "character", ...} (two characters in one entry - WRONG!)
+// ❌ COMBINED ENTITIES: {"name": "Marcus and Elena", "type": "character", ...} (two characters in one entry - WRONG!)
 // ✅ CORRECT: Create two separate character entries:
-//   {"name": "Discord", "type": "character", "content": "[Discord: chimera of chaos, dating(Fluttershy), dates(three)]"}
-//   {"name": "Fluttershy", "type": "character", "content": "[Fluttershy: dating(Discord), dates(three)]"}
-// ❌ WRONG: Don't create {"name": "Discord-Fluttershy Relationship", "type": "???"} (relationships are properties, not entries)
+//   {"name": "Marcus", "type": "character", "content": "[Marcus: merchant, dating(Elena)]"}
+//   {"name": "Elena", "type": "character", "content": "[Elena: dating(Marcus)]"}
+// ❌ WRONG: Don't create {"name": "Marcus-Elena Relationship", "type": "???"} (relationships are properties, not entries)
 //
 // OUTPUT FORMAT:
 // - Output ONLY valid JSON, no text before or after
@@ -331,7 +337,14 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 }
 
 // Scene Content:
-{{message}}`;
+// Messages are formatted as:
+// [USER: name] or [CHARACTER: name]
+// message text
+//
+// [SUMMARY] (if any)
+// summary text
+
+{{scene_messages}}`;
 
 
 export const default_short_template = `<!--Roleplay memory containing current state and key facts from previous scenes.
@@ -450,16 +463,20 @@ export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay 
 //    - If scenes are unrelated, organize them separately by topic/location
 //
 // 2. COMPLETENESS AND CLARITY REQUIRED
-//    - Capture ALL essential facts from scenes
-//    - Remove redundancy but preserve unique details
-//    - Be thorough - this is the main memory for the roleplay
-//    - Write clearly and completely - NO arbitrary token limits
-//    - This summary replaces chat history, so include everything important
+//    - Capture ALL essential events and state changes from scenes
+//    - Remove redundancy but preserve unique happenings
+//    - This summary replaces hidden chat history for timeline continuity
+//    - Include all important events, decisions, and current states
+//    - Lorebook entries provide entity details - summary provides event timeline
 //
-// 3. FOCUS ON DYNAMICS, NOT STATIC DETAILS
-//    - Focus on: Current state, recent events, what changed, relationship dynamics
-//    - Avoid: Detailed physical descriptions, personality deep-dives, backstory exposition
-//    - Be thorough about what happened, concise about who/what things are
+// 3. INCLUDE FACTUAL DETAILS, EXCLUDE EMOTIONAL ANALYSIS
+//    - INCLUDE: All concrete facts - what was said, read, done, seen, specific items/names/places
+//    - INCLUDE: Factual descriptions of objects/actions - specific book titles, item names, etc.
+//    - EXCLUDE: Emotional states and interpretations - "felt jealous", "seemed worried", "was embarrassed"
+//    - EXCLUDE: Emotional modifiers on actions - "angrily left", "nervously asked", "excitedly ran"
+//    - EXCLUDE: Character personality analysis, motivations, relationship dynamics (those go in lorebook)
+//    - Be specific and concrete with factual details, not vague summaries
+//    - Capture what happened with full factual detail, omit emotional interpretation
 //
 // 4. FOCUS ON STATE, NOT EVENT SEQUENCES
 //    - Capture CURRENT state: who, what, where, status
@@ -486,38 +503,43 @@ export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay 
 //    - Varied sentence structure
 //
 // OUTPUT FORMAT:
-// - Narrative paragraphs with markdown headers
+// - Brief statements with markdown headers
 // - NOT JSON format
 // - Organized by topic/category
-// - Concise but complete
+// - Focus on events/state, not entity descriptions
+// - Complete timeline coverage, concise entity mentions
 //
 // EXAMPLE OUTPUT STRUCTURE:
 //
 // ## Current Situation
-// [Brief description of where things stand now - can mention multiple ongoing threads]
+// Brief factual overview with specific details. What's happening now. Where people are. Unresolved situations.
+// - Include concrete facts: locations, specific actions, pending decisions, items mentioned
+// - Exclude emotional analysis: NOT "feels jealous", "anxiously waiting", "worried about"
 //
 // ## Characters
-// **Character Name**: [Key facts, appearance, personality, current status]
-// **Another Character**: [Key facts from different scene - this is normal]
+// **Character Name**: Current location. Recent actions with specific details. Current status.
+// - Include concrete factual details: what they read/said/did, specific items they used
+// - Exclude emotions and interpretations: NOT "felt jealous", "seemed upset", "was embarrassed"
+// - Exclude personality analysis, motivations, relationship dynamics (that's in lorebook)
+// - Focus on: Where are they? What specifically did they do? What's their current state?
 //
 // ## Locations
-// **Location Name**: [Description, current state, significance]
-// **Different Location**: [From another scene - organize separately under same header]
+// **Location Name**: Current state. Recent events there. Who's present.
 //
 // ## Key Items & Objects
-// **Item Name**: [Description, ownership, significance]
-//
-// ## Relationships & Dynamics
-// **Character & Character**: [Relationship status, recent changes]
+// **Item Name**: Current location/owner. Recent use or significance. Current status.
 //
 // ## Active Goals & Plans
-// - [Goal or plan with who and what]
+// - Goal: Who's involved, current status, what happened recently
+// - Unresolved situation: Current state, pending decisions
 //
 // ## Secrets & Hidden Information
-// **Secret**: Known by X, Y. Hidden from Z.
+// - Secret fact with specific details: Who knows, who doesn't know, what specifically is hidden
+// - State observable facts: "X didn't reveal Y to Z", "X closed browser when Y approached"
+// - Exclude interpretations of why: NOT "because embarrassed", "due to shame"
 //
 // EXAMPLE - Handling Unrelated Scenes:
-// If Scene 1 is about "Twilight in Equestria" and Scene 2 is about "Rance at coffee shop":
+// If Scene 1 is about "exploring ancient ruins" and Scene 2 is about "meeting at tavern":
 // ✅ DO: List both under ## Characters section separately
 // ✅ DO: List both locations under ## Locations section
 // ✅ DO: Merge naturally without questioning the disconnect

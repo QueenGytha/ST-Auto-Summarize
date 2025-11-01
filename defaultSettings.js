@@ -70,6 +70,7 @@ export const default_settings = {
     scene_summary_completion_preset: "",
     scene_summary_history_mode: "both",
     scene_summary_message_types: "both", // "user", "character", "both" - which message types to include
+    scene_summary_exclude_last_user_message: true, // Exclude last message if from user (often contains scene directions)
     scene_summary_template: default_scene_template,
     scene_summary_auto_name: true, // Auto-generate scene name when auto-generating scene summary (if not already set)
     scene_summary_auto_name_manual: true, // Auto-generate scene name when manually generating scene summary (if not already set)

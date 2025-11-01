@@ -195,6 +195,7 @@ Available Macros:
     bind_setting('#scene_summary_enabled', 'scene_summary_enabled', 'boolean');
     bind_setting('#scene_summary_auto_name', 'scene_summary_auto_name', 'boolean');
     bind_setting('#scene_summary_auto_name_manual', 'scene_summary_auto_name_manual', 'boolean');
+    bind_setting('#scene_summary_exclude_last_user_message', 'scene_summary_exclude_last_user_message', 'boolean');
     bind_setting('#scene_summary_navigator_width', 'scene_summary_navigator_width', 'number', (value /*: number */) => {
         // Enforce min/max constraints (30-500 pixels)
         const clampedValue = Math.max(30, Math.min(500, value));

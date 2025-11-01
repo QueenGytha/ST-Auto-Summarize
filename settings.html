@@ -307,9 +307,14 @@
                             <input id="scene_summary_default_collapsed" type="checkbox" />
                             <span>Collapse New Scenes by Default</span>
                         </label>
+                        <label class="checkbox_label" title="Exclude the last message from scene summaries if it's from the user (scene breaks on user messages often contain only scene directions rather than roleplay content).">
+                            <input id="scene_summary_exclude_last_user_message" type="checkbox" />
+                            <span>Exclude Last User Message from Scenes</span>
+                        </label>
                         <div class="flex-container justifyspacebetween alignitemscenter">
                             <button id="edit_scene_summary_prompt" class="menu_button flex1" title="Edit the scene summary prompt"><span>Edit Scene Prompt</span></button>
                         </div>
+                        <small class="displayBlock opacity50p">Available macros: {{scene_messages}}, {{lorebook_entry_types}}, {{char}}, {{user}}</small>
                         <input id="scene_summary_prompt" type="hidden" />
                         <input id="scene_summary_default_prompt" type="hidden" value="[Default scene summary prompt here]" />
                         <table>

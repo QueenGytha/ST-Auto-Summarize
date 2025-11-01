@@ -786,9 +786,14 @@ function collectSceneObjects(
 ) /*: Array<Object> */ {
     const mode = get_settings('scene_summary_history_mode') || "both";
     const messageTypes = get_settings('scene_summary_message_types') || "both";
+    const excludeLastUserMessage = get_settings('scene_summary_exclude_last_user_message') ?? true;
     const sceneObjects = [];
 
-    for (let i = startIdx; i <= endIdx; i++) {
+    // If enabled and last message is from user, exclude it (scene breaks on user messages often contain only scene directions)
+    const lastMsg = chat[endIdx];
+    const effectiveEndIdx = (excludeLastUserMessage && lastMsg && lastMsg.is_user) ? endIdx - 1 : endIdx;
+
+    for (let i = startIdx; i <= effectiveEndIdx; i++) {
         const msg = chat[i];
         if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
             const includeMessage = (messageTypes === "both") ||
@@ -821,14 +826,28 @@ function prepareScenePrompt(
         lorebookTypesMacro = formatEntityTypeListForPrompt(getConfiguredEntityTypeDefinitions(undefined));
     }
 
+    // Format scene messages with speaker labels to prevent substituteParamsExtended from stripping them
+    const formattedMessages = sceneObjects.map(obj => {
+        if (obj.type === 'message') {
+            const role = obj.is_user ? 'USER' : 'CHARACTER';
+            return `[${role}: ${obj.name}]\n${obj.text}`;
+        } else if (obj.type === 'summary') {
+            return `[SUMMARY]\n${obj.summary}`;
+        }
+        return '';
+    }).filter(m => m).join('\n\n');
+
     let prompt = promptTemplate;
     if (ctx.substituteParamsExtended) {
         prompt = ctx.substituteParamsExtended(prompt, {
-            message: JSON.stringify(sceneObjects, null, 2),
+            scene_messages: formattedMessages,
+            message: JSON.stringify(sceneObjects, null, 2), // Keep for backward compatibility
             prefill,
             lorebook_entry_types: lorebookTypesMacro,
         }) || prompt;
     }
+    // Fallback replacements
+    prompt = prompt.replace(/\{\{scene_messages\}\}/g, formattedMessages);
     prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
     prompt = prompt.replace(/\{\{lorebook_entry_types\}\}/g, lorebookTypesMacro);
     prompt = `${prompt}\n${prefill}`;
