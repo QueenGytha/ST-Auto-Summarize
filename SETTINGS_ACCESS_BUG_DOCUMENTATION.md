@@ -146,7 +146,7 @@ function getSummaryProcessingSetting(key, defaultValue = null) {
 
 ---
 
-### 2. `summaryToLorebookProcessor.js` (needs fixing)
+### 2. `summaryToLorebookProcessor.js` (FIXED)
 
 **Location:** Line 1245 in `buildProcessingContext()` function
 
@@ -155,8 +155,9 @@ function getSummaryProcessingSetting(key, defaultValue = null) {
 const summarySettings = extension_settings?.autoLorebooks?.summary_processing || {};
 ```
 
-**SHOULD BE (CORRECT):**
+**AFTER (CORRECT):**
 ```javascript
+// Build summary settings object using profile-aware getter
 const summarySettings = {
     merge_connection_profile: getSummaryProcessingSetting('merge_connection_profile', ''),
     merge_completion_preset: getSummaryProcessingSetting('merge_completion_preset', ''),
@@ -175,7 +176,27 @@ const summarySettings = {
 };
 ```
 
-**Note:** The main code path (`loadSummaryContext()` at lines 1016-1031) already uses the correct pattern. Only the legacy `buildProcessingContext()` function has this bug.
+**Note:** The main code path (`loadSummaryContext()` at lines 1016-1031) already used the correct pattern. The `buildProcessingContext()` function is now also fixed.
+
+---
+
+### 3. `runningSceneSummary.js` (FIXED)
+
+**Location:** Line 611 in `combine_scene_with_running_summary()` function
+
+**Problem:** Incorrect setting key name
+
+**BEFORE (WRONG):**
+```javascript
+const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_processing_enabled');
+```
+
+**AFTER (CORRECT):**
+```javascript
+const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_enabled');
+```
+
+**Explanation:** The setting key name was `auto_lorebooks_summary_processing_enabled`, but the actual setting defined in `defaultSettings.js:144` is `auto_lorebooks_summary_enabled`. This caused the setting to always return `undefined`, preventing the conditional check from working correctly.
 
 ---
 
@@ -346,8 +367,11 @@ When reviewing code that accesses settings:
 
 **Files Fixed:**
 - ✅ `lorebookEntryMerger.js` - Fixed `getSummaryProcessingSetting()` and all `getSetting` references
+- ✅ `summaryToLorebookProcessor.js` - Fixed `buildProcessingContext()` to use profile-aware settings (Line 1245)
+- ✅ `runningSceneSummary.js` - Fixed incorrect setting key name from `auto_lorebooks_summary_processing_enabled` to `auto_lorebooks_summary_enabled` (Line 611)
+- ✅ `tests/virtual/summaryToLorebookProcessor.js` - Fixed to match main file
+- ✅ `tests/virtual/runningSceneSummary.js` - Fixed to match main file
 
-**Files Still Need Fixing:**
-- ⚠️ `summaryToLorebookProcessor.js` - Line 1245 in `buildProcessingContext()`
+**All Known Issues Resolved:** ✅
 
 **Prevention:** Always check if a setting is per-profile (has `tracking_*` or `summary_*` prefix) and use the appropriate access method.

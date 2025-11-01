@@ -1242,7 +1242,23 @@ function buildProcessingContext(
     entityTypeMap /*: any */,
     useQueue /*: boolean */
 ) /*: any */ {
-    const summarySettings = extension_settings?.autoLorebooks?.summary_processing || {};
+    // Build summary settings object using profile-aware getter
+    const summarySettings = {
+        merge_connection_profile: getSummaryProcessingSetting('merge_connection_profile', ''),
+        merge_completion_preset: getSummaryProcessingSetting('merge_completion_preset', ''),
+        merge_prefill: getSummaryProcessingSetting('merge_prefill', ''),
+        merge_prompt: getSummaryProcessingSetting('merge_prompt', ''),
+        lorebook_entry_lookup_connection_profile: getSummaryProcessingSetting('lorebook_entry_lookup_connection_profile', ''),
+        lorebook_entry_lookup_completion_preset: getSummaryProcessingSetting('lorebook_entry_lookup_completion_preset', ''),
+        lorebook_entry_lookup_prefill: getSummaryProcessingSetting('lorebook_entry_lookup_prefill', ''),
+        lorebook_entry_lookup_prompt: getSummaryProcessingSetting('lorebook_entry_lookup_prompt', ''),
+        lorebook_entry_deduplicate_connection_profile: getSummaryProcessingSetting('lorebook_entry_deduplicate_connection_profile', ''),
+        lorebook_entry_deduplicate_completion_preset: getSummaryProcessingSetting('lorebook_entry_deduplicate_completion_preset', ''),
+        lorebook_entry_deduplicate_prefill: getSummaryProcessingSetting('lorebook_entry_deduplicate_prefill', ''),
+        lorebook_entry_deduplicate_prompt: getSummaryProcessingSetting('lorebook_entry_deduplicate_prompt', ''),
+        skip_duplicates: getSummaryProcessingSetting('skip_duplicates', true),
+        enabled: getSummaryProcessingSetting('enabled', false),
+    };
     const typesToUpdate /*: Set<string> */ = new Set();
     const typeList = entityTypeDefs.map(def => def.name).filter(Boolean).join('|') || 'character';
     const results /*: any */ = { created: [], merged: [], failed: [] };

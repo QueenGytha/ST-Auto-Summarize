@@ -75,8 +75,9 @@ Output ONLY the merged content, nothing else. Do not include explanations or met
 function getSummaryProcessingSetting(key /*: string */, defaultValue /*: any */ = null) /*: any */ {
     // defaultValue and return value are any type - can be various types - legitimate use of any
     try {
-        const settings = extension_settings?.autoLorebooks?.summary_processing || {};
-        return settings[key] ?? defaultValue;
+        // ALL summary processing settings are per-profile
+        const settingKey = `auto_lorebooks_summary_${key}`;
+        return get_settings(settingKey) ?? defaultValue;
     } catch (err) {
         error("Error getting summary processing setting", err);
         return defaultValue;

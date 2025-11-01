@@ -608,7 +608,7 @@ function storeRunningSummary(result /*: string */, scene_index /*: number */, sc
     log(SUBSYSTEM.RUNNING, `Created running summary version ${version} (${prev_scene_idx} > ${new_scene_idx})`);
 
     // Lorebook processing is intentionally disabled during running summary combination
-    const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_processing_enabled');
+    const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_enabled');
     if (autoLorebooksEnabled && scene_summary) {
         debug(SUBSYSTEM.RUNNING, 'Skipping lorebook processing during running summary; handled per scene summary');
     }
