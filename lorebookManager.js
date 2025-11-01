@@ -79,8 +79,10 @@ async function ensureRegistryEntriesForLorebook(lorebookName /*: string */) /*: 
             entry.content = `[Registry: ${typeName}]`;
             entry.key = Array.isArray(entry.key) ? entry.key : [];
             entry.keysecondary = Array.isArray(entry.keysecondary) ? entry.keysecondary : [];
-            entry.disable = true;
-            entry.constant = false;
+            // Set constant and disable based on type definition flags
+            const hasConstantFlag = def?.entryFlags && Array.isArray(def.entryFlags) && def.entryFlags.includes('constant');
+            entry.constant = hasConstantFlag ? true : false;
+            entry.disable = hasConstantFlag ? false : true;
             entry.preventRecursion = true;
             entry.tags = Array.isArray(entry.tags) ? entry.tags : [];
             if (!entry.tags.includes(REGISTRY_TAG)) {
@@ -118,8 +120,12 @@ async function ensureRegistryEntryRecord(lorebookName /*: string */, type /*: st
     const ensuredEntry /*: any */ = entry;
     ensuredEntry.key = Array.isArray(ensuredEntry.key) ? ensuredEntry.key : [];
     ensuredEntry.keysecondary = Array.isArray(ensuredEntry.keysecondary) ? ensuredEntry.keysecondary : [];
-    ensuredEntry.disable = true;
-    ensuredEntry.constant = false;
+    // Get type definition to check for constant flag
+    const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.auto_summarize?.entity_types);
+    const typeDef = typeDefinitions.find(def => def?.name === type);
+    const hasConstantFlag = typeDef?.entryFlags && Array.isArray(typeDef.entryFlags) && typeDef.entryFlags.includes('constant');
+    ensuredEntry.constant = hasConstantFlag ? true : false;
+    ensuredEntry.disable = hasConstantFlag ? false : true;
     ensuredEntry.preventRecursion = true;
     ensuredEntry.useProbability = false;
     ensuredEntry.probability = 100;

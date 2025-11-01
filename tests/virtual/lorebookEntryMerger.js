@@ -8,7 +8,7 @@ import { generateRaw } from './stubs/externals.js';
 
 // Will be imported from index.js via barrel exports
 let log /*: any */, debug /*: any */, error /*: any */;  // Logging functions - any type is legitimate
-let modifyLorebookEntry /*: any */, getLorebookEntries /*: any */;  // Lorebook functions - any type is legitimate
+let modifyLorebookEntry /*: any */, getLorebookEntries /*: any */, reorderLorebookEntriesAlphabetically /*: any */;  // Lorebook functions - any type is legitimate
 let getSetting /*: any */;  // Settings function - any type is legitimate
 let enqueueOperation /*: any */, OperationType /*: any */;  // Queue functions - any type is legitimate
 
@@ -26,6 +26,7 @@ export function initLorebookEntryMerger(utils /*: any */, lorebookManagerModule 
     if (lorebookManagerModule) {
         modifyLorebookEntry = lorebookManagerModule.modifyLorebookEntry;
         getLorebookEntries = lorebookManagerModule.getLorebookEntries;
+        reorderLorebookEntriesAlphabetically = lorebookManagerModule.reorderLorebookEntriesAlphabetically;
     }
 
     // Import settings manager
@@ -86,9 +87,10 @@ function getSummaryProcessingSetting(key /*: string */, defaultValue /*: any */ 
  * Create merge prompt by substituting variables
  * @param {string} existingContent - Current entry content
  * @param {string} newContent - New content from summary
+ * @param {string} entryName - Current entry name/comment
  * @returns {string} Formatted prompt
  */
-function createMergePrompt(existingContent /*: string */, newContent /*: string */) /*: string */ {
+function createMergePrompt(existingContent /*: string */, newContent /*: string */, entryName /*: string */ = '') /*: string */ {
     const template = getSummaryProcessingSetting('merge_prompt') || getDefaultMergePrompt();
     const prefill = getSummaryProcessingSetting('merge_prefill') || '';
 
@@ -96,7 +98,8 @@ function createMergePrompt(existingContent /*: string */, newContent /*: string 
         .replace(/\{\{existing_content\}\}/g, existingContent || '')
         .replace(/\{\{current_content\}\}/g, existingContent || '') // Alternate name
         .replace(/\{\{new_content\}\}/g, newContent || '')
-        .replace(/\{\{new_update\}\}/g, newContent || ''); // Alternate name
+        .replace(/\{\{new_update\}\}/g, newContent || '') // Alternate name
+        .replace(/\{\{entry_name\}\}/g, entryName || ''); // Entry name for name resolution
 
     // Add prefill if configured
     if (prefill) {
@@ -110,29 +113,50 @@ function createMergePrompt(existingContent /*: string */, newContent /*: string 
  * Call AI to merge entry content
  * @param {string} existingContent - Current entry content
  * @param {string} newContent - New content from summary
- * @returns {Promise<string>} Merged content
+ * @param {string} entryName - Current entry name/comment
+ * @returns {Promise<Object>} Object with mergedContent and optional canonicalName
  */
-async function callAIForMerge(existingContent /*: string */, newContent /*: string */) /*: Promise<string> */ {
+async function callAIForMerge(existingContent /*: string */, newContent /*: string */, entryName /*: string */ = '') /*: Promise<any> */ {
     try {
-        const prompt = createMergePrompt(existingContent, newContent);
+        const prompt = createMergePrompt(existingContent, newContent, entryName);
 
         debug('Calling AI for entry merge...');
         debug('Prompt:', prompt.substring(0, 200) + '...');
 
         // Call the AI with new object-based signature
         // $FlowFixMe[incompatible-call] - generateRaw signature
-        const mergedContent = await generateRaw({
+        const response = await generateRaw({
             prompt: prompt,
             instructOverride: false,
             quietToLoud: false
         });
 
-        if (!mergedContent || mergedContent.trim().length === 0) {
+        if (!response || response.trim().length === 0) {
             throw new Error('AI returned empty response');
         }
 
-        debug('AI merge completed successfully');
-        return mergedContent.trim();
+        const trimmedResponse = response.trim();
+
+        // Try to parse as JSON first (FORMAT 2 - with name resolution)
+        try {
+            const parsed = JSON.parse(trimmedResponse);
+            if (parsed.mergedContent) {
+                debug('AI merge completed with name resolution');
+                return {
+                    mergedContent: parsed.mergedContent,
+                    canonicalName: parsed.canonicalName || null
+                };
+            }
+        } catch (jsonErr) {
+            // Not JSON or malformed - treat as plain text (FORMAT 1 - backward compatible)
+            debug('AI merge completed (plain text format)');
+        }
+
+        // FORMAT 1: Plain text response (backward compatible)
+        return {
+            mergedContent: trimmedResponse,
+            canonicalName: null
+        };
 
     } catch (err) {
         error('Failed to call AI for merge', err);
@@ -211,16 +235,49 @@ export async function executeMerge(lorebookName /*: string */, existingEntry /*:
     try {
         debug(`Executing merge for entry: ${existingEntry.comment}`);
 
-        // Call AI to merge content
-        const mergedContent = await callAIForMerge(
+        // Call AI to merge content (now returns object with mergedContent and optional canonicalName)
+        const mergeResult = await callAIForMerge(
             existingEntry.content || '',
-            newEntryData.content || ''
+            newEntryData.content || '',
+            existingEntry.comment || ''
         );
 
         // Prepare updates
         const updates /*: any */ = {
-            content: mergedContent
+            content: mergeResult.mergedContent
         };
+
+        // Handle name resolution if AI suggested a canonical name
+        let finalCanonicalName = null;
+        if (mergeResult.canonicalName && mergeResult.canonicalName.trim()) {
+            finalCanonicalName = mergeResult.canonicalName.trim();
+            const currentComment = existingEntry.comment || '';
+
+            // Extract the type prefix (e.g., "character-" from "character-amelia's sister")
+            const typeMatch = currentComment.match(/^([^-]+)-/);
+            const typePrefix = typeMatch ? typeMatch[1] + '-' : '';
+
+            // Build new comment with canonical name
+            const newComment = typePrefix + finalCanonicalName;
+
+            // Only update if the name actually changed
+            if (newComment !== currentComment) {
+                updates.comment = newComment;
+
+                // Extract old stub name (without type prefix) to add as keyword
+                const oldStubName = currentComment.replace(/^[^-]+-/, '').toLowerCase();
+
+                debug(`Name resolution: "${currentComment}" -> "${newComment}"`);
+                debug(`Adding old stub "${oldStubName}" to keywords`);
+
+                // Add old stub name to keys if not already present
+                const existingKeys = existingEntry.key || [];
+                if (oldStubName && !existingKeys.includes(oldStubName)) {
+                    // We'll add it when merging keys below
+                    newEntryData.keys = [...(newEntryData.keys || []), oldStubName];
+                }
+            }
+        }
 
         // Merge keys if new ones provided
         if (newEntryData.keys && newEntryData.keys.length > 0) {
@@ -253,10 +310,17 @@ export async function executeMerge(lorebookName /*: string */, existingEntry /*:
 
         log(`Successfully merged entry: ${existingEntry.comment}`);
 
+        // If entry was renamed, trigger alphabetical reordering
+        if (finalCanonicalName && reorderLorebookEntriesAlphabetically) {
+            debug(`Entry was renamed, triggering alphabetical reordering for lorebook: ${lorebookName}`);
+            await reorderLorebookEntriesAlphabetically(lorebookName);
+        }
+
         return {
             success: true,
             message: 'Entry merged successfully',
-            mergedContent
+            mergedContent: mergeResult.mergedContent,
+            canonicalName: finalCanonicalName
         };
 
     } catch (err) {

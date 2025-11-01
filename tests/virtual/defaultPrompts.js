@@ -89,10 +89,9 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 // - Include relationships and context as properties
 // - Store secrets as properties: knows(X), keeping secret from(Y, Z)
 // - For locations/items: Include owner/resident as a property with SPECIFIC NAMES
-//   * Extract the actual character name from the message (check "name" field for is_user: true)
-//   * NEVER use placeholder terms: "protagonist", "the user", "main character", "human subject", "the player", "{{user}}"
-//   * Example: If messages show name: "John", use [Apartment: John's residence, shared with(Twilight Sparkle)]
-//   * NOT: [Apartment: protagonist's residence] or [Apartment: shared living space, occupants(human subject)]
+//   * For user-owned locations/items, use {{user}}'s residence/property
+//   * Example: [Apartment: {{user}}'s residence, shared with(Twilight Sparkle)]
+//   * Do NOT use: "protagonist", "the user", "main character", "human subject"
 // - Target: 50-200 tokens per entry
 //
 // EXAMPLES OF GOOD SEPARATION:
@@ -219,10 +218,10 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 //
 //    location: Significant places worth remembering
 //    - Include: description, features, atmosphere, who controls/owns it
-//    - Use SPECIFIC NAMES for owners/residents extracted from scene messages
-//    - NEVER use: "protagonist", "the user", "main character", "human subject", "the player", "{{user}}"
-//    - PList: [LocationName: place type, owner/resident(specific name), features(list), atmosphere]
-//    - Example: [Apartment: John's residence, shared with(Twilight Sparkle), contains(laptop)]
+//    - For user-owned locations, use {{user}}'s residence/property
+//    - PList: [LocationName: place type, owner/resident({{user}}), features(list), atmosphere]
+//    - Example: [Apartment: {{user}}'s residence, shared with(Twilight Sparkle)]
+//    - Do NOT use: "protagonist", "the user", "main character", "human subject"
 //
 //    item: Important objects, artifacts, equipment
 //    - Include: description, capabilities, current owner, significance

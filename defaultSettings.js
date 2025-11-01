@@ -145,6 +145,8 @@ export const default_settings = {
     auto_lorebooks_summary_skip_duplicates: true, // Skip entities that already exist in lorebook
     auto_lorebooks_summary_merge_prompt: `You are updating a lorebook entry. You have the existing entry content and new information from a summary.
 
+Current Entry Name: {{entry_name}}
+
 Your task:
 1. Compare the existing content with the new information
 2. Merge them intelligently:
@@ -153,6 +155,10 @@ Your task:
    - Remove details that are contradicted or no longer relevant
    - Preserve important existing information
    - Maintain consistent formatting and tone
+3. CRITICAL: Check if the entry name needs updating:
+   - If the current name is a VAGUE/RELATIONAL reference (examples: "amelia's sister", "the bartender", "mysterious woman", "the shopkeeper", "victoria's friend")
+   - AND either the existing content OR new content reveals an ACTUAL PROPER NAME
+   - YOU MUST use FORMAT 2 with the proper name as canonicalName
 
 Existing Entry Content:
 {{existing_content}}
@@ -160,7 +166,28 @@ Existing Entry Content:
 New Information from Summary:
 {{new_content}}
 
-Output ONLY the merged content, nothing else. Do not include explanations or meta-commentary.`,
+OUTPUT INSTRUCTIONS:
+
+FORMAT 1 (Plain text - use ONLY when NO proper name is available):
+Just output the merged content as plain text.
+
+FORMAT 2 (JSON - use when renaming is needed):
+{
+  "mergedContent": "the merged lorebook entry content here",
+  "canonicalName": "ProperName"
+}
+
+WHEN TO USE FORMAT 2:
+- Current name is relational/vague (possessive forms, job titles, family relations, descriptions)
+- You have access to a proper name (first name, full name, character name)
+- Example: Current="character-Amelia's Sister" + Content has "Victoria" → canonicalName: "Victoria Thornbrook"
+
+RULES FOR canonicalName:
+- Use the full proper name if available (e.g., "Victoria Thornbrook")
+- NO type prefixes (use "Victoria Thornbrook" not "character-Victoria Thornbrook")
+- If only first name known, use just that (e.g., "Victoria")
+
+If the current name is ALREADY a proper name (like "Victoria", "John Smith"), use FORMAT 1.`,
     auto_lorebooks_summary_merge_prefill: '', // Prefill for summary merge prompts
     auto_lorebooks_summary_merge_connection_profile: '', // Connection profile for summary merging
     auto_lorebooks_summary_merge_completion_preset: '', // Completion preset for summary merging

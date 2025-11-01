@@ -249,7 +249,7 @@ export function normalizeEntryData(entry /*: any */) /*: any */ {
         // Accept "keywords" (from prompt JSON), "keys" (internal), or "key" (WI format)
         keys: entry.keys || entry.keywords || entry.key || [],
         secondaryKeys: entry.secondaryKeys || entry.keysecondary || [],
-        constant: entry.constant ?? false,
+        constant: entry.constant,
         disable: entry.disable ?? false,
         order: entry.order ?? 100,
         position: entry.position ?? 0,
@@ -815,12 +815,22 @@ async function executeMergeWorkflow(
         );
 
         if (mergeResult?.success) {
-            results.merged.push({ comment: normalizedEntry.comment, uid: existingEntry.uid, id: resolvedId });
+            // Determine final comment/name after potential name resolution
+            let finalComment = normalizedEntry.comment || existingEntry.comment || '';
+
+            // If AI suggested a canonical name during merge, use it
+            if (mergeResult.canonicalName && mergeResult.canonicalName.trim()) {
+                const typeMatch = finalComment.match(/^([^-]+)-/);
+                const typePrefix = typeMatch ? typeMatch[1] + '-' : '';
+                finalComment = typePrefix + mergeResult.canonicalName.trim();
+            }
+
+            results.merged.push({ comment: finalComment, uid: existingEntry.uid, id: resolvedId });
             updateRegistryRecord(registryState, resolvedId, {
                 uid: existingEntry.uid,
                 type: targetType,
-                name: normalizedEntry.comment || existingEntry.comment || '',
-                comment: normalizedEntry.comment || existingEntry.comment || '',
+                name: finalComment,
+                comment: finalComment,
                 aliases: ensureStringArray(normalizedEntry.keys),
                 synopsis: finalSynopsis
             });

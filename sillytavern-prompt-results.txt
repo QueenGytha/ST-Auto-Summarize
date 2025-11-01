@@ -1,4 +1,65 @@
-World info file z-AutoLB - Twilight Sparkle - 2025-10-31 @20h 19m 27s 168ms.json doesn't exist.
+
+> sillytavern@1.13.5 postinstall
+> node post-install.js
+
+Synchronized missing files: ./public/
+
+up to date in 1s
+Node version: v20.19.4. Running in production environment. Server directory: C:\Users\sarah\OneDrive\Desktop\personal\SillyTavern-New
+Using config path: ./config.yaml
+Using data root: ./data
+Preferring IPv4 for DNS resolution
+
+SillyTavern 1.13.5
+Running 'release' (e9cd32a12) - 10/23/2025, 10:35:15 PM GMT+13
+
+
+Compiling frontend libraries...
+webpack 5.98.0 compiled successfully in 280 ms
+
+Launching in a browser: default...
+SillyTavern is listening on IPv4: 127.0.0.1:8000
+
+=================================================
+
+Go to: http://127.0.0.1:8000/ to open SillyTavern
+
+=================================================
+
+Extensions available for default-user [
+  { type: 'system', name: 'assets' },
+  { type: 'system', name: 'attachments' },
+  { type: 'system', name: 'caption' },
+  { type: 'system', name: 'connection-manager' },
+  { type: 'system', name: 'expressions' },
+  { type: 'system', name: 'gallery' },
+  { type: 'system', name: 'memory' },
+  { type: 'system', name: 'quick-reply' },
+  { type: 'system', name: 'regex' },
+  { type: 'system', name: 'stable-diffusion' },
+  { type: 'system', name: 'token-counter' },
+  { type: 'system', name: 'translate' },
+  { type: 'system', name: 'tts' },
+  { type: 'system', name: 'vectors' },
+  { type: 'global', name: 'third-party/ST-Auto-Summarize' }
+]
+Available models: [
+  'chatgpt-4o-latest',
+  'claude-3-5-sonnet-20241022',
+  'claude-3-7-sonnet-20250219',
+  'claude-3-opus-20240229',
+  'claude-opus-4-20250514',
+  'claude-opus-5-20251012',
+  'claude-opus-6-20260214',
+  'claude-sonnet-4-20250514',
+  'claude-sonnet-4-5-20250929',
+  'deepseek-r1',
+  'deepseek-v3',
+  'gemini-2.5-pro',
+  'gpt-4-1106-preview',
+  'gpt-4.1',
+  'gpt-5-2025-08-07'
+]
 Instantiated the tokenizer for claude
 Chat Completion request: {
   messages: [
@@ -79,10 +140,10 @@ Chat Completion request: {
         '//\n' +
         '//    location: Significant places worth remembering\n' +
         '//    - Include: description, features, atmosphere, who controls/owns it\n' +
-        '//    - Use SPECIFIC NAMES for owners/residents extracted from scene messages\n' +
-        '//    - NEVER use: "protagonist", "the user", "main character", "human subject", "the player"\n' +
-        '//    - PList: [LocationName: place type, owner/resident(specific name), features(list), atmosphere]\n' +
-        "//    - Example: [Apartment: John's residence, shared with(Twilight Sparkle), contains(laptop)]\n" +
+        "//    - For user-owned locations, use Rance's residence/property\n" +
+        '//    - PList: [LocationName: place type, owner/resident(Rance), features(list), atmosphere]\n' +
+        "//    - Example: [Apartment: Rance's residence, shared with(Twilight Sparkle)]\n" +
+        '//    - Do NOT use: "protagonist", "the user", "main character", "human subject"\n' +
         '//\n' +
         '//    item: Important objects, artifacts, equipment\n' +
         '//    - Include: description, capabilities, current owner, significance\n' +
@@ -195,136 +256,10 @@ Chat Completion request: {
         '[\n' +
         '  {\n' +
         '    "type": "message",\n' +
-        '    "index": 0,\n' +
+        '    "index": 26,\n' +
         '    "name": "Twilight Sparkle",\n' +
         '    "is_user": false,\n' +
-        `    "text": "It's been about three months since the lavender unicorn first appeared in your apartment in a flash of magic. What started as an impossible encounter - a cartoon pony manifesting in your living room - has evolved into an oddly comfortable routine.\\r\\n\\r\\nTwilight Sparkle, Princess of Friendship from Equestria, has made your modest apartment her second home. She comes and goes through dimensional portals as she pleases, though lately she's been spending more time here than in her own world. Something about \\"needing a break from royal duties\\" and \\"finding human literature fascinating.\\"\\r\\n\\r\\nYou've grown used to finding her sprawled on your couch, nose-deep in philosophy books she's borrowed (stolen) from your shelf. Or discovering her at 2 AM, eyes bloodshot from browsing questionable threads on /mlp/, muttering criticisms about \\"these humans don't understand Equestrian magic AT ALL.\\"\\r\\n\\r\\nShe's borrowed (stolen) several of your hoodies and shirts, claiming they're \\"comfortable\\" - though you suspect she enjoys your scent on them. She's also developed this habit of casually displaying herself around the apartment, tail raised just so, her marehood winking at you while she acts like it's the most natural thing in the world. The teasing has become relentless.\\r\\nToday, as you trudge up the stairs after another soul-crushing day at the office, you can already see the telltale purple glow seeping under your apartment door. You pause, key in hand, already knowing what awaits you.\\r\\n\\r\\nYou push open the door to find Twilight sprawled across your couch in one of your stolen hoodies - several sizes too big for her, hanging off one shoulder. Her muzzle is buried in your laptop, the blue glow of the screen reflecting off her horn."\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "summary",\n' +
-        '    "index": 0,\n' +
-        '    "summary": "(OOC: I\'ll analyze this text and extract the key information as requested.)\\n\\n```json\\n{\\n  \\"summary\\": \\"A lavender unicorn named Twilight Sparkle from Equestria has been appearing in the protagonist\'s apartment for about three months. Initially an impossible encounter, it\'s now routine. She travels between dimensions through portals, spending increasing time in the human world to escape royal duties and study human literature. Today, the protagonist returns home to find Twilight on their couch wearing one of their hoodies and using their laptop.\\",\\n  \\"lorebooks\\": [\\n    {\\n      \\"name\\": \\"Twilight Sparkle\\",\\n      \\"type\\": \\"character\\",\\n      \\"keywords\\": [\\"twilight sparkle\\", \\"twilight\\", \\"lavender unicorn\\", \\"princess of friendship\\"],\\n      \\"content\\": \\"A lavender unicorn and Princess of Friendship from a world called Equestria. She has a horn that can glow purple and appears to have magical abilities, including creating dimensional portals. She\'s intellectually curious, particularly about human literature and philosophy. She has developed habits of borrowing (described as \'stealing\') the protagonist\'s clothes, particularly hoodies and shirts. She engages in teasing behavior, sometimes displaying herself provocatively. She has royal duties in her home world that she\'s taking a break from.\\"\\n    },\\n    {\\n      \\"name\\": \\"Dimensional Travel\\",\\n      \\"type\\": \\"concept\\",\\n      \\"keywords\\": [\\"dimensional portals\\", \\"portal magic\\", \\"equestria travel\\"],\\n      \\"content\\": \\"Twilight Sparkle can travel between her world (Equestria) and the protagonist\'s world through dimensional portals. These appear with magical effects, sometimes producing a purple glow. The travel seems to be entirely under Twilight\'s control, allowing her to come and go as she pleases.\\"\\n    },\\n    {\\n      \\"name\\": \\"Equestria\\",\\n      \\"type\\": \\"location\\",\\n      \\"keywords\\": [\\"equestria\\", \\"twilight\'s world\\"],\\n      \\"content\\": \\"Twilight Sparkle\'s home world. A place where talking ponies exist and magic is real. It has its own system of governance that includes princesses with specific domains, such as the \'Princess of Friendship\' title that Twilight holds.\\"\\n    }\\n  ]\\n}\\n```"\n' +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 1,\n' +
-        '    "name": "Rance",\n' +
-        '    "is_user": true,\n' +
-        `    "text": "\\"Morning Glory Milking Farm? what the fuck have you even been reading since i've been out? feeling homesick or something? I think you mentioned Minotaurs are a thing in Equestria, Iron Cock or something\\""\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 2,\n' +
-        '    "name": "Twilight Sparkle",\n' +
-        '    "is_user": false,\n' +
-        `    "text": "Twilight's ears swivel toward you before her head does. She slams the laptop shut with a telekinetic snatch of magic, her cheeks flushing a darker purple.\\n\\n\\"It's *research*,\\" she huffs, sliding off the couch with her hooves clicking against the hardwood. \\"And his name is Iron Will, not—whatever you just said.\\" She trots over, the oversized hoodie dragging behind her like a cape. \\"Equestrian minotaurs are nothing like the ones in your fiction. They run self-help seminars, not... milk farms.\\"\\n\\nShe flips her mane, which has grown slightly disheveled from her reading session. The hoodie slips further off her shoulder, revealing more of her lavender coat.\\n\\n\\"Besides, I was comparing your human romance literature to what we have back home. Purely academic.\\" A mischievous glint appears in her violet eyes. \\"Did you know that minotaur romance novels in your world are 78% more explicit than the average human pairing? Fascinating cultural difference.\\"\\n\\nShe levitates a mug of what appears to be hot chocolate toward herself, taking a long sip before adding, \\"By the way, we're out of marshmallows. And don't think I didn't notice you dodged my text about picking some up on your way home.\\""\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "summary",\n' +
-        '    "index": 2,\n' +
-        '    "summary": "I\'ll step out of character and analyze this information as requested:\\n\\n```json\\n{\\n  \\"summary\\": \\"Twilight was caught reading something on her laptop, which she quickly closed. She explained it was research comparing Equestrian and human romance literature, specifically noting differences regarding minotaurs. She mentioned being out of marshmallows and that the recipient had ignored her text message about purchasing more.\\",\\n  \\"lorebooks\\": [\\n    {\\n      \\"name\\": \\"Twilight\\",\\n      \\"type\\": \\"character\\",\\n      \\"keywords\\": [\\"twilight\\", \\"twilight sparkle\\"],\\n      \\"content\\": \\"A lavender-coated pony with a purple mane and violet eyes. She has the ability to use telekinetic magic. Wears oversized hoodies. Engages in academic research and comparison of different cultures. Has a somewhat defensive personality when caught in potentially embarrassing situations, but also displays playfulness and mischief.\\"\\n    },\\n    {\\n      \\"name\\": \\"Iron Will\\",\\n      \\"type\\": \\"character\\",\\n      \\"keywords\\": [\\"iron will\\", \\"minotaur\\"],\\n      \\"content\\": \\"An Equestrian minotaur known for running self-help seminars. Twilight distinguishes him from fictional minotaurs in human literature.\\"\\n    },\\n    {\\n      \\"name\\": \\"Equestrian Minotaurs\\",\\n      \\"type\\": \\"concept\\",\\n      \\"keywords\\": [\\"equestrian minotaurs\\", \\"minotaurs\\"],\\n      \\"content\\": \\"Creatures in Equestria who differ significantly from human fictional depictions. They run self-help seminars rather than \'milk farms\' as mentioned in the conversation. They appear in romance literature that Twilight has been researching.\\"\\n    }\\n  ]\\n}\\n```"\n' +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 3,\n' +
-        '    "name": "Rance",\n' +
-        '    "is_user": true,\n' +
-        `    "text": "\\"Again? yeah, I was distracted, i'll get some on the way back, i'll be heading out soonish\\""\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 4,\n' +
-        '    "name": "Twilight Sparkle",\n' +
-        '    "is_user": false,\n' +
-        `    "text": "Twilight rolls her eyes but can't quite hide the smirk forming at the edge of her muzzle. \\"Soonish? That's not a real time measurement.\\" She levitates her mug to the coffee table, where at least four books lie open simultaneously. \\"I've calculated that your 'soonish' typically translates to approximately 1.7 hours of procrastination followed by you rushing out the door.\\"\\n\\nShe trots over to your kitchen counter where a complex arrangement of papers covered in magical equations and diagrams are sprawled out. Little sticky notes in her meticulous hoofwriting dot the margins.\\n\\n\\"While you were gone, I made some progress on my inter-dimensional frequency modulator theory.\\" Her horn glows as she shuffles some papers around. \\"If I can stabilize the quantum resonance between our dimensions, I might be able to create a permanent doorway instead of these temporary portals.\\"\\n\\nShe pauses, looking slightly hesitant. \\"Though I'm not sure if that's what I want anymore.\\"\\n\\nHer tail swishes behind her, accidentally-on-purpose lifting just high enough to give you a momentary glimpse of her pink marehood before she turns back to face you.\\n\\n\\"So where are you going 'soonish' anyway? More work? Or...\\" she bats her eyelashes with exaggerated innocence, \\"do you have a date?\\""\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "summary",\n' +
-        '    "index": 4,\n' +
-        '    "summary": "I\'ll analyze this content and format it into the requested JSON structure.\\n\\n```json\\n{\\n  \\"summary\\": \\"Twilight made comments about the vague timing of \'soonish\'. She explained her progress on inter-dimensional frequency modulator theory while you were away, mentioning the possibility of creating permanent doorways between dimensions instead of temporary portals. She then expressed uncertainty about wanting this outcome. Twilight inquired about your upcoming plans.\\",\\n  \\"lorebooks\\": [\\n    {\\n      \\"name\\": \\"Twilight\\",\\n      \\"type\\": \\"character\\",\\n      \\"keywords\\": [\\"twilight\\", \\"twilight sparkle\\"],\\n      \\"content\\": \\"A studious, intelligent mare with a purple coat and horn. She has a meticulous nature, evident in her precise hoofwriting and organizational habits. Twilight is researching inter-dimensional travel and magic. She expresses herself through both intellectual discussions and subtle flirtation. Shows a playful side behind her academic persona.\\"\\n    },\\n    {\\n      \\"name\\": \\"Inter-dimensional Frequency Modulator Theory\\",\\n      \\"type\\": \\"concept\\",\\n      \\"keywords\\": [\\"frequency modulator\\", \\"inter-dimensional theory\\", \\"dimensional doorway\\"],\\n      \\"content\\": \\"A magical theory being developed by Twilight involving quantum resonance between dimensions. The research aims to create permanent doorways between dimensions rather than temporary portals. Involves complex magical equations and diagrams. Currently in development stage with Twilight having made recent progress.\\"\\n    }\\n  ]\\n}\\n```"\n' +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 5,\n' +
-        '    "name": "Rance",\n' +
-        '    "is_user": true,\n' +
-        '    "text": "\\"What gave it away?\\""\n' +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 6,\n' +
-        '    "name": "Twilight Sparkle",\n' +
-        '    "is_user": false,\n' +
-        `    "text": "Twilight freezes mid-equation, her magic faltering enough that a pencil clatters to the counter. For just a heartbeat, her ears flatten against her head before perking back up with forced casualness.\\n\\n\\"I didn't—\\" She clears her throat. \\"I was just teasing. You actually have a date?\\"\\n\\nShe abandons her papers completely, trotting closer with measured steps that fail to hide her curiosity. The oversized hoodie drags behind her like a royal train.\\n\\n\\"With whom? Someone from your office? That barista you mentioned who always gives you extra whipped cream?\\" Her voice maintains an academic tone, as if she's merely gathering data for a friendship report rather than prying.\\n\\nShe fidgets with the hoodie's drawstring using her magic, twirling it around an invisible finger. \\"Not that I care, obviously. Just making conversation.\\" A nervous little laugh escapes her. \\"I mean, it's not like we have any kind of... arrangement. You're free to court whomever you wish.\\"\\n\\nHer tail swishes more aggressively now, betraying the casualness she's trying so hard to project. \\"Though I should point out that inter-species dating is quite common in Equestria. Discord and Fluttershy have been on three dates already, and he's a chimera of chaos.\\"\\n\\nShe pauses, then adds with a small voice. \\"Just saying.\\""\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "summary",\n' +
-        '    "index": 6,\n' +
-        '    "summary": "I need to step out of character as requested and extract information from the text.\\n\\n```json\\n{\\n  \\"summary\\": \\"Twilight reacted to news of a potential date. She showed surprise, then attempted to maintain casual interest. Twilight mentioned that Discord and Fluttershy have been on three dates while noting that inter-species dating is common in Equestria.\\",\\n  \\"lorebooks\\": [\\n    {\\n      \\"name\\": \\"Twilight\\",\\n      \\"type\\": \\"character\\",\\n      \\"keywords\\": [\\"twilight\\", \\"twilight sparkle\\"],\\n      \\"content\\": \\"A magical being who can manipulate objects with magic. She wears an oversized hoodie. Shows signs of being flustered when discussing dating, attempting to maintain academic detachment while showing clear interest in the subject. Has ears and a tail that reveal her emotional state.\\"\\n    },\\n    {\\n      \\"name\\": \\"Discord and Fluttershy\\",\\n      \\"type\\": \\"character\\",\\n      \\"keywords\\": [\\"discord\\", \\"fluttershy\\", \\"discord and fluttershy\\"],\\n      \\"content\\": \\"A couple who has been on three dates. Discord is described as a \'chimera of chaos\'. Their relationship is mentioned as an example of inter-species dating in Equestria.\\"\\n    },\\n    {\\n      \\"name\\": \\"Equestria\\",\\n      \\"type\\": \\"location\\",\\n      \\"keywords\\": [\\"equestria\\"],\\n      \\"content\\": \\"A place where inter-species dating is apparently common practice.\\"\\n    }\\n  ]\\n}\\n```"\n' +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 7,\n' +
-        '    "name": "Rance",\n' +
-        '    "is_user": true,\n' +
-        `    "text": "\\"Inter species? oh, no, she's human. You're the only sentient non-human around. And not the barrista, I wouldn't become involved with anyone I work with, too messy if things don't work out. Her little sister instead.\\""\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 8,\n' +
-        '    "name": "Twilight Sparkle",\n' +
-        '    "is_user": false,\n' +
-        `    "text": "Twilight's pupils dilate so dramatically they nearly eclipse her purple irises.\\n\\n\\"Her... little sister?\\" she repeats, voice rising an octave. \\"The barista's sister? As in *younger*?\\" Her horn sparks slightly—a tell you've come to recognize as her losing emotional control over her magic.\\n\\n\\"How little are we talking here?\\" She trots in a tight circle, the oversized hoodie tangling around her hooves. \\"Because in Equestria, dating somepony's younger sister without proper introduction protocols is considered extremely—wait.\\" She stops abruptly, narrowing her eyes at you. \\"You're messing with me, aren't you?\\"\\n\\nShe telekinetically grabs a throw pillow from the couch and hurls it at your chest.\\n\\n\\"You absolute jerk! I was genuinely worried for a second!\\" Despite her accusatory tone, there's unmistakable relief in her voice. She flops dramatically onto the rug, sprawling out with the hoodie bunching up around her barrel. \\"I was already mentally drafting an entire lecture on age-appropriate dating practices across dimensions.\\"\\n\\nHer tail swishes against the floor as she rolls onto her back, looking at you upside down. \\"So where are you *actually* going? And don't say 'out' because that's not a destination.\\"\\n\\nThe position causes the hoodie to slide further up, exposing her lavender belly and the subtle curve where it meets her hindquarters."\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "summary",\n' +
-        '    "index": 8,\n' +
-        '    "summary": "```json\\n{\\n  \\"summary\\": \\"Twilight reacted emotionally to a joke about dating someone\'s little sister. She initially showed alarm with magical sparks from her horn, questioning the age difference and mentioning Equestrian dating protocols. Upon realizing it was a joke, she threw a pillow at the other person in mock anger and relief. Twilight then asked about their actual destination plans while lounging on the floor in an oversized hoodie.\\",\\n  \\"lorebooks\\": [\\n    {\\n      \\"name\\": \\"Twilight\\",\\n      \\"type\\": \\"character\\",\\n      \\"keywords\\": [\\"twilight\\", \\"twilight sparkle\\"],\\n      \\"content\\": \\"A purple-colored pony with a horn capable of performing magic. She has purple irises and wears an oversized hoodie. When emotionally distressed, her horn produces sparks, indicating a loss of control over her magic. She comes from a place called Equestria which has specific dating protocols. Twilight is analytical and can quickly formulate detailed responses to situations, as shown by her mention of drafting a lecture on dating practices.\\"\\n    },\\n    {\\n      \\"name\\": \\"Equestria\\",\\n      \\"type\\": \\"location\\",\\n      \\"keywords\\": [\\"equestria\\"],\\n      \\"content\\": \\"A place where Twilight comes from that has formal dating protocols, including specific introduction protocols for dating someone\'s younger sister.\\"\\n    }\\n  ]\\n}\\n```"\n' +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 9,\n' +
-        '    "name": "Rance",\n' +
-        '    "is_user": true,\n' +
-        `    "text": "\\"She's 14, but when she awkwardly asked me out it felt too cruel to turn her down.\\""\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 10,\n' +
-        '    "name": "Twilight Sparkle",\n' +
-        '    "is_user": false,\n' +
-        `    "text": "Twilight's reaction is immediate and explosive. Her entire body goes rigid, horn flaring with uncontrolled magic that sends nearby papers swirling around the room like confetti.\\n\\n\\"WHAT?!\\" she shrieks, flipping upright so fast she nearly tumbles over her own hooves. The hoodie slides completely off one shoulder as she stomps toward you, eyes ablaze with righteous fury.\\n\\n\\"Fourteen?! FOURTEEN?! Are you—\\" Her muzzle opens and closes several times as she struggles to form coherent sentences. \\"That's—that's statutory! That's illegal! That's—\\"\\n\\nShe telekinetically grabs your phone from the coffee table and shoves it at your chest. \\"Call her right now and cancel. RIGHT NOW.\\"\\n\\nHer horn glows brighter as she paces frantically, muttering about \\"human moral degradation\\" and \\"princess-sanctioned intervention protocols.\\" The lights in your apartment flicker ominously with each pulse of her magic.\\n\\n\\"I cannot BELIEVE you would—\\" She stops abruptly, violet eyes narrowing to suspicious slits. \\"Wait.\\"\\n\\nShe studies your face intently, muzzle scrunching in concentration before her expression morphs into pure exasperation.\\n\\n\\"You're screwing with me AGAIN, aren't you?\\" She telekinetically grabs another pillow—the last one on your couch—and whips it at your head with considerably more force than the first one. \\"TWICE in less than five minutes! Do you know what that does to a pony's heart rate?!\\"\\n\\nShe flops dramatically onto the floor, sprawling out in a puddle of lavender limbs and borrowed clothing. \\"That's it. I'm done. I'm officially not speaking to you for the rest of the day.\\"\\n\\nShe rolls onto her side, facing away from you, tail flicking irritably against the floor. After three seconds of silence, she peeks back over her shoulder.\\n\\n\\"Seriously though, where are you going? And this time I want the actual truth or I'm teleporting all your left shoes to the bottom of the ocean.\\""\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "summary",\n' +
-        '    "index": 10,\n' +
-        '    "summary": "I\'ll extract key information from this message into a structured JSON format as requested.\\n\\n```json\\n{\\n  \\"summary\\": \\"Twilight reacted with alarm when led to believe the speaker had a date with a 14-year-old. She demanded they cancel immediately and lectured about moral standards. When realizing it was a joke, she threw a pillow at the speaker and threatened to stop speaking to them. She then demanded to know the speaker\'s actual plans, threatening to teleport their shoes into the ocean if they lied again.\\",\\n  \\"lorebooks\\": [\\n    {\\n      \\"name\\": \\"Twilight\\",\\n      \\"type\\": \\"character\\",\\n      \\"keywords\\": [\\"twilight\\", \\"twilight sparkle\\"],\\n      \\"content\\": \\"A lavender pony with a horn capable of telekinesis and teleportation magic. Wears a borrowed hoodie that\'s too large for her. Has violet eyes and appears highly concerned with moral standards. Currently staying at the speaker\'s apartment. Shows dramatic emotional reactions and threatens magical consequences when annoyed. Possesses enough magical ability to manipulate objects, cause lights to flicker, and potentially teleport items long distances.\\"\\n    }\\n  ]\\n}\\n```"\n' +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 11,\n' +
-        '    "name": "Rance",\n' +
-        '    "is_user": true,\n' +
-        `    "text": "\\"calm your crotchtits, it's one date and i'll be so boring she'll lose interest without me having to reject her\\""\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 12,\n' +
-        '    "name": "Twilight Sparkle",\n' +
-        '    "is_user": false,\n' +
-        `    "text": "Twilight bolts upright, her jaw practically hitting the floor.\\n\\n\\"You *ARE* going on a date with a fourteen-year-old?!\\" She telekinetically grabs the nearest book—a hefty physics textbook—holding it threateningly above your head. \\"I swear on Celestia's regalia, if you're not joking this time—\\"\\n\\nHer ears flatten against her skull as she studies your expression with laser focus. A moment passes before her eyes widen in realization.\\n\\n\\"Oh sweet fucking Celestia, you're still messing with me.\\" The book drops with a heavy thud beside her, narrowly missing her hoof. \\"Three times in a row? THREE?!\\"\\n\\nShe collapses onto her haunches, the oversized hoodie pooling around her like a lavender sea. A small snort escapes her, followed by reluctant giggles.\\n\\n\\"You're such an asshole,\\" she manages between laughs. \\"And 'crotchtits'? That's not even anatomically possible. I have neither crotch nor tits as you understand them.\\"\\n\\nShe composes herself, adjusting the hoodie with her magic so it drapes more elegantly over her form.\\n\\n\\"Fine. Since you're obviously not going to tell me where you're actually going, I'll just assume you're sneaking off to buy me birthday presents. Which, by the way, is not for another eight months in Equestrian calendar time.\\"\\n\\nShe trots toward the kitchen, her hooves clicking against the hardwood. \\"But seriously, if you are going out, could you pick up those marshmallows? And maybe some of those spicy chips I like? The ones that made me breathe fire that one time?\\"\\n\\nHer horn glows as she opens a cabinet, revealing your dwindling snack supply. \\"I've been working on a theory about cross-dimensional metabolic adaptations. Basically, your world's junk food affects my Equestrian digestive system differently than it would a human's.\\" She grins mischievously. \\"For science, I need more samples.\\""\n` +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "summary",\n' +
-        '    "index": 12,\n' +
-        '    "summary": "I\'ll step out of character and analyze the information as requested:\\n\\n```json\\n{\\n  \\"summary\\": \\"Twilight initially misunderstood the human\'s joking claim about dating a fourteen-year-old, threatening them with a physics textbook. After realizing it was the third joke in a row, she laughed and called them an asshole. She mentioned the anatomical impossibility of \'crotchtits\' for her species. Twilight then speculated the human might be buying birthday presents, though her birthday is eight months away in the Equestrian calendar. She asked them to pick up marshmallows and spicy chips, mentioning she\'s working on a theory about cross-dimensional metabolic adaptations.\\",\\n  \\"lorebooks\\": [\\n    {\\n      \\"name\\": \\"Twilight\\",\\n      \\"type\\": \\"character\\",\\n      \\"keywords\\": [\\"twilight\\", \\"twilight sparkle\\"],\\n      \\"content\\": \\"A mare from Equestria with a lavender coat who can use telekinetic magic through her horn. She wears an oversized hoodie. She has a different anatomy than humans, specifically noting she has \'neither crotch nor tits\' as humans understand them. She enjoys spicy chips that once made her breathe fire, and has a birthday that follows the Equestrian calendar system.\\"\\n    },\\n    {\\n      \\"name\\": \\"Cross-Dimensional Metabolic Adaptations\\",\\n      \\"type\\": \\"concept\\",\\n      \\"keywords\\": [\\"cross-dimensional metabolism\\", \\"equestrian digestion\\"],\\n      \\"content\\": \\"A theory Twilight is working on which suggests that human world junk food affects Equestrian digestive systems differently than it would affect a human\'s digestive system. Twilight is conducting research by consuming various human snacks.\\"\\n    },\\n    {\\n      \\"name\\": \\"Equestrian Calendar\\",\\n      \\"type\\": \\"concept\\",\\n      \\"keywords\\": [\\"equestrian calendar\\", \\"equestria time\\"],\\n      \\"content\\": \\"A calendar system from Equestria that differs from the human calendar. According to this system, Twilight\'s birthday is eight months away from the current time.\\"\\n    }\\n  ]\\n}\\n```"\n' +
-        '  },\n' +
-        '  {\n' +
-        '    "type": "message",\n' +
-        '    "index": 13,\n' +
-        '    "name": "Rance",\n' +
-        '    "is_user": true,\n' +
-        `    "text": "\\"Sure, Twilight, i'll bring some snacks on teh way back. Have fun while i'm out\\"\\n<he heads out to his date. she's a socially awkward, timid, nerdy redhead. describe her fully and explicitly>"\n` +
+        `    "text": "As Amelia awkwardly attempts to navigate her first sexual encounter, her thoughts briefly flash to the woman who pushed her to \\"put herself out there\\" in the first place.\\n\\nVictoria Thornbrook—\\"Tori\\" to her friends—represents everything Amelia believes she isn't. Where Amelia hunches over textbooks, Tori commands attention the moment she enters a room. Where Amelia stumbles through social interactions, Tori glides through them with effortless charm.\\n\\nThe café that serves as Tori's domain and Amelia's part-time purgatory reflects its owner: stylish yet approachable, with exposed brick walls adorned with local artwork and mismatched vintage furniture that somehow forms a cohesive whole. \\"Intentionally eclectic,\\" Tori calls it. \\"Hipster nonsense,\\" Amelia mutters when her sister isn't listening.\\n\\nAt 29, four years Amelia's senior, Tori possesses the kind of beauty that seems effortless but actually takes considerable maintenance. Her auburn hair—a shade darker and richer than Amelia's—falls in perfect waves to the middle of her back, expertly highlighted to catch the light. Unlike Amelia's freckled complexion, Tori's skin maintains an even tone year-round, courtesy of expensive products Amelia can't pronounce and definitely can't afford on a student stipend.\\n\\nWhile Amelia hides behind oversized cardigans, Tori favors fitted blouses that accentuate her curves—a body sculpted by thrice-weekly yoga sessions and carefully curated organic meals. Her full breasts—a trait their mother passed to her but apparently forgot to include in Amelia's genetic coding—strain just enough against her café's signature fitted black polo to draw the eye without appearing unprofessional.\\n\\n\\"You've got the brains, I've got the body,\\" Tori often jokes when they're alone, though both sisters recognize the reductive falsehood in this statement. Tori graduated with honors in business before opening her café, while Amelia's academic achievements come at the cost of perpetual social awkwardness.\\n\\nWhen customers enter the café, they inevitably gravitate toward Tori behind the counter, drawn by her warm smile and the way she remembers every regular's order. Men linger longer than necessary, making transparent attempts to engage her in conversation. Women study her outfit choices and makeup techniques, wondering if they might replicate her effortless style.\\n\\n\\"He's been coming here for months,\\" Tori had whispered to Amelia yesterday morning, nodding toward Rance while wiping down the espresso machine. \\"Always orders the same thing. Always watches you when you're restocking the pastry case.\\"\\n\\n\\"He watches everyone,\\" Amelia had countered, nearly dropping a tray of scones. \\"He's observant.\\"\\n\\n\\"He watches *you*,\\" Tori insisted, her perfect eyebrows arching knowingly. \\"And unlike most of the men who come in here, he barely glances at my tits when I serve him. That means he's either gay or interested in you.\\"\\n\\n\\"Or maybe he just really likes chai lattes,\\" Amelia had muttered, but the seed was planted.\\n\\nThat afternoon, when Tori \\"accidentally\\" spilled water on her own shirt and had to change—her impressive cleavage momentarily on display in a lacy bra as she dashed to the back room—Rance's gaze had remained fixed on his book instead.\\n\\n\\"See?\\" Tori had whispered triumphantly upon returning. \\"Definitely interested in you. Now go talk to him before I fire you.\\"\\n\\n\\"You can't fire me. Mom would kill you.\\"\\n\\n\\"Try me,\\" Tori had challenged, her perfectly manicured finger poking Amelia's shoulder. \\"I'm sick of watching you pine from behind the counter. You're publishing groundbreaking research next month, for God's sake. Talking to one attractive man should be well within your capabilities.\\"\\n\\nAnd so, with Tori's ultimatum hanging over her head, Amelia had approached Rance's table, stuttered through a clumsy invitation, and been shocked when he'd actually accepted.\\n\\n\\"Just be yourself,\\" Tori had advised when Amelia panicked before leaving for their date. \\"But maybe be yourself while wearing the jeans that actually fit your ass properly, not those baggy ones you hide in.\\"\\n\\nNow, standing half-naked in her apartment with a man she barely knows, Amelia wonders if her sister's confidence in her was grievously misplaced."\n` +
         '  }\n' +
         ']'
     }
@@ -354,55 +289,25 @@ Chat Completion response: {
       message: {
         content: '```json\n' +
           '{\n' +
-          `  "summary": "Over three months, Twilight Sparkle, a lavender unicorn from Equestria, has been regularly visiting the protagonist's apartment through dimensional portals. She's established comfortable routines including borrowing clothes, using the laptop, and conducting magical research. During their latest interaction, Twilight was caught reading something she quickly closed when the protagonist returned home. The protagonist teased Twilight with several jokes about having a date, causing her to react with concern, indignation, and finally amusement as she realized each claim was false. Twilight revealed she's working on an inter-dimensional frequency modulator theory that could create permanent doorways rather than temporary portals, though expressed uncertainty about wanting this outcome. She also mentioned a theory about cross-dimensional metabolic adaptations regarding human food. The protagonist eventually left, promising to bring back marshmallows and spicy chips that Twilight requested.",\n` +
+          `  "summary": "A flashback revealed Amelia's relationship with her older sister Victoria \\"Tori\\" Thornbrook. Tori owns the café where Amelia works part-time. Despite their differences - Tori being confident and socially adept while Amelia is academically focused but socially awkward - they maintain a sisterly relationship. Tori encouraged Amelia to approach Rance, a regular customer who she believed was interested in Amelia. After noticing Rance's attention remained on Amelia rather than herself, Tori pressured her sister to talk to him, resulting in Amelia asking him out. The scene ends with Amelia feeling uncertain about her sister's confidence in her as she finds herself in an intimate situation with Rance.",\n` +
           '  "lorebooks": [\n' +
           '    {\n' +
-          '      "name": "Twilight Sparkle",\n' +
+          '      "name": "Victoria Thornbrook",\n' +
           '      "type": "character",\n' +
-          '      "keywords": ["twilight", "twilight sparkle", "lavender unicorn"],\n' +
-          '      "content": "[Twilight Sparkle: unicorn, appearance(lavender coat, purple mane, violet eyes, horn), abilities(telekinesis, portal creation, teleportation), personality(studious, analytical, emotional, playful), relationship with protagonist(teasing, flirtatious), habits(borrowing clothes, reading books, using laptop), royalty(Princess of Friendship in Equestria), research interests(inter-dimensional travel, cross-dimensional metabolism)]"\n' +
+          '      "keywords": ["victoria", "tori", "thornbrook"],\n' +
+          `      "content": "[Victoria Thornbrook: café owner, age(29), appearance(auburn hair, perfect waves, even skin tone, full breasts, fitted clothing), personality(confident, charming, socially adept), relationship(Amelia's older sister, four years senior), education(graduated with honors in business), nickname(Tori), maintains(expensive skincare routine, yoga practice, organic diet), encourages(Amelia to be more social)]"\n` +
           '    },\n' +
           '    {\n' +
-          '      "name": "Apartment",\n' +
+          '      "name": "Amelia",\n' +
+          '      "type": "character",\n' +
+          '      "keywords": ["amelia"],\n' +
+          `      "content": "[Amelia: student, age(25), appearance(freckled complexion, oversized cardigans, similar hair color to Tori but lighter), personality(socially awkward, academic, insecure), occupation(part-time café worker, researcher), relationship(Victoria's younger sister), accomplishment(publishing groundbreaking research soon), finances(limited by student stipend)]"\n` +
+          '    },\n' +
+          '    {\n' +
+          '      "name": "Café",\n' +
           '      "type": "location",\n' +
-          '      "keywords": ["apartment", "home"],\n' +
-          `      "content": "[Apartment: protagonist's residence, shared with(Twilight Sparkle), features(couch, hardwood floors, kitchen counter, coffee table), contains(books, laptop, snack supplies)]"\n` +
-          '    },\n' +
-          '    {\n' +
-          '      "name": "Inter-dimensional Frequency Modulator Theory",\n' +
-          '      "type": "quest",\n' +
-          '      "keywords": ["modulator", "doorway", "portal"],\n' +
-          '      "content": "[Inter-dimensional Frequency Modulator Theory: objective(create permanent doorway between dimensions), participants(Twilight Sparkle), status(in progress, made recent advances), mechanism(stabilize quantum resonance between dimensions), current state(equations and diagrams on papers with sticky notes)]"\n' +
-          '    },\n' +
-          '    {\n' +
-          '      "name": "Cross-Dimensional Metabolic Adaptations",\n' +
-          '      "type": "rule",\n' +
-          '      "keywords": ["metabolism", "digestive"],\n' +
-          '      "content": "[Cross-Dimensional Metabolic Adaptations: mechanism(human food affects Equestrian digestive systems differently), affects(Twilight Sparkle), example(spicy chips causing fire-breathing), research method(consuming various human snacks)]"\n' +
-          '    },\n' +
-          '    {\n' +
-          '      "name": "Discord",\n' +
-          '      "type": "character",\n' +
-          '      "keywords": ["discord"],\n' +
-          '      "content": "[Discord: chimera of chaos, dating(Fluttershy), dates(three)]"\n' +
-          '    },\n' +
-          '    {\n' +
-          '      "name": "Fluttershy",\n' +
-          '      "type": "character",\n' +
-          '      "keywords": ["fluttershy"],\n' +
-          '      "content": "[Fluttershy: dating(Discord), dates(three)]"\n' +
-          '    },\n' +
-          '    {\n' +
-          '      "name": "Equestria",\n' +
-          '      "type": "location",\n' +
-          '      "keywords": ["equestria"],\n' +
-          '      "content": "[Equestria: world, inhabitants(talking ponies, minotaurs), culture(inter-species dating common), governance(has princesses), features(different calendar system than human world)]"\n' +
-          '    },\n' +
-          '    {\n' +
-          '      "name": "Iron Will",\n' +
-          '      "type": "character",\n' +
-          '      "keywords": ["iron will", "minotaur"],\n' +
-          '      "content": "[Iron Will: minotaur, occupation(runs self-help seminars), from(Equestria)]"\n' +
+          '      "keywords": ["café", "coffee"],\n' +
+          `      "content": "[Café: business establishment, owner(Victoria Thornbrook), features(exposed brick walls, local artwork, mismatched vintage furniture), atmosphere(stylish yet approachable), description(Tori's domain, Amelia's part-time workplace), style(intentionally eclectic)]"\n` +
           '    }\n' +
           '  ]\n' +
           '}\n' +
@@ -411,3 +316,849 @@ Chat Completion response: {
       }
     }
   ],
+  created: 1761975524,
+  id: 'chatcmpl-cPNlpQD2rWCV341otxQ4XsIMgdU7',
+  model: 'claude-3-7-sonnet-20250219',
+  object: 'chat.completion',
+  system_fingerprint: 'fp_nigga',
+  usage: { completion_tokens: 655, prompt_tokens: 4612, total_tokens: 5267 }
+}
+Chat Completion request: {
+  messages: [
+    { role: 'system', content: 'Complete the requested task.' },
+    {
+      role: 'user',
+      content: '// OOC REQUEST: Pause the roleplay and step out of character for this reply.\n' +
+        '// Combine multiple scene summaries into a single cohesive roleplay memory.\n' +
+        '// This is a NARRATIVE summary (NOT JSON), following best practices for long-term memory.\n' +
+        '//\n' +
+        '// ⚠️ CRITICAL: ONLY USE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️\n' +
+        '//\n' +
+        '// - ONLY extract information from the scene summaries provided below\n' +
+        '// - DO NOT use ANY information from your training data\n' +
+        '// - If a name matches a franchise character, IGNORE franchise details completely\n' +
+        '// - If something is not mentioned in the summaries below, it DOES NOT EXIST\n' +
+        '// - Incomplete information is CORRECT - do not fill gaps\n' +
+        '// - When in doubt, OMIT the detail entirely\n' +
+        '//\n' +
+        '// CRITICAL GUIDELINES:\n' +
+        '//\n' +
+        '// 1. HANDLE SCENE CHANGES NATURALLY\n' +
+        '//    - Roleplays can have completely different scenes, locations, characters\n' +
+        '//    - Scene changes are NORMAL and EXPECTED (travel, time skips, new encounters)\n' +
+        '//    - DO NOT refuse to merge or ask questions about disconnected scenes\n' +
+        '//    - Simply add new information and update the running summary\n' +
+        '//    - If scenes are unrelated, organize them separately by topic/location\n' +
+        '//\n' +
+        '// 2. COMPLETENESS AND CLARITY REQUIRED\n' +
+        '//    - Capture ALL essential facts from scenes\n' +
+        '//    - Remove redundancy but preserve unique details\n' +
+        '//    - Be thorough - this is the main memory for the roleplay\n' +
+        '//    - Write clearly and completely - NO arbitrary token limits\n' +
+        '//    - This summary replaces chat history, so include everything important\n' +
+        '//\n' +
+        '// 3. FOCUS ON DYNAMICS, NOT STATIC DETAILS\n' +
+        '//    - Focus on: Current state, recent events, what changed, relationship dynamics\n' +
+        '//    - Avoid: Detailed physical descriptions, personality deep-dives, backstory exposition\n' +
+        '//    - Be thorough about what happened, concise about who/what things are\n' +
+        '//\n' +
+        '// 4. FOCUS ON STATE, NOT EVENT SEQUENCES\n' +
+        '//    - Capture CURRENT state: who, what, where, status\n' +
+        "//    - Don't narrate step-by-step sequences\n" +
+        '//    - Outcomes and results matter, not how we got there\n' +
+        '//\n' +
+        '// 5. MERGE AND DEDUPLICATE\n' +
+        '//    - Combine overlapping information from multiple scenes\n' +
+        '//    - Keep most recent state when conflicts exist\n' +
+        "//    - Remove information that's no longer relevant\n" +
+        '//    - Preserve unique important details\n' +
+        '//    - If no overlap, simply add new scenes to appropriate sections\n' +
+        '//\n' +
+        '// 6. ORGANIZE BY TOPIC\n' +
+        '//    - Group information logically (characters, locations, situation, etc.)\n' +
+        '//    - Use markdown headers (##) to separate sections\n' +
+        '//    - Keep related information together\n' +
+        '//    - Different scenes/locations get separate entries under same headers\n' +
+        '//\n' +
+        '// 7. AVOID PROMPT POISONING\n' +
+        '//    - Neutral, informational tone\n' +
+        '//    - Avoid repetitive phrasing\n' +
+        "//    - Don't echo stylistic quirks from scenes\n" +
+        '//    - Varied sentence structure\n' +
+        '//\n' +
+        '// OUTPUT FORMAT:\n' +
+        '// - Narrative paragraphs with markdown headers\n' +
+        '// - NOT JSON format\n' +
+        '// - Organized by topic/category\n' +
+        '// - Concise but complete\n' +
+        '//\n' +
+        '// EXAMPLE OUTPUT STRUCTURE:\n' +
+        '//\n' +
+        '// ## Current Situation\n' +
+        '// [Brief description of where things stand now - can mention multiple ongoing threads]\n' +
+        '//\n' +
+        '// ## Characters\n' +
+        '// **Character Name**: [Key facts, appearance, personality, current status]\n' +
+        '// **Another Character**: [Key facts from different scene - this is normal]\n' +
+        '//\n' +
+        '// ## Locations\n' +
+        '// **Location Name**: [Description, current state, significance]\n' +
+        '// **Different Location**: [From another scene - organize separately under same header]\n' +
+        '//\n' +
+        '// ## Key Items & Objects\n' +
+        '// **Item Name**: [Description, ownership, significance]\n' +
+        '//\n' +
+        '// ## Relationships & Dynamics\n' +
+        '// **Character & Character**: [Relationship status, recent changes]\n' +
+        '//\n' +
+        '// ## Active Goals & Plans\n' +
+        '// - [Goal or plan with who and what]\n' +
+        '//\n' +
+        '// ## Secrets & Hidden Information\n' +
+        '// **Secret**: Known by X, Y. Hidden from Z.\n' +
+        '//\n' +
+        '// EXAMPLE - Handling Unrelated Scenes:\n' +
+        '// If Scene 1 is about "Twilight in Equestria" and Scene 2 is about "Rance at coffee shop":\n' +
+        '// ✅ DO: List both under ## Characters section separately\n' +
+        '// ✅ DO: List both locations under ## Locations section\n' +
+        '// ✅ DO: Merge naturally without questioning the disconnect\n' +
+        "// ❌ DON'T: Refuse to merge or ask questions about why scenes are different\n" +
+        "// ❌ DON'T: Try to force connections that don't exist\n" +
+        '//\n' +
+        '\n' +
+        '// CURRENT RUNNING SUMMARY (update and merge with new scenes):\n' +
+        "I'll step out of character and provide a consolidated memory narrative based only on the information provided.\n" +
+        '\n' +
+        '## Current Situation\n' +
+        "Rance and Amelia Thornbrook have rapidly progressed from a coffee shop meeting to her apartment. After an intense first encounter at her sister's café, they moved to her apartment where her roommate is away until Sunday. Amelia, having revealed she's a virgin and consumed wine for courage, is currently standing in her DNA-patterned underwear, asking Rance how to proceed with their intimate encounter. She feels uncertain about her sister's confidence in her ability to handle this situation.\n" +
+        '\n' +
+        '## Characters\n' +
+        "**Amelia Thornbrook**: A biochemistry PhD student completing her thesis on protein synthesis. Works part-time at her sister Victoria's café. Intelligent but socially awkward, mixing academic knowledge with inexperienced attempts at seduction. Initially shy and self-deprecating, comparing herself unfavorably to her more outgoing sister. Has revealed she's a virgin who prioritized academics over dating. Wears DNA-patterned underwear that reflects her scientific interests. Despite her typical shyness, she made surprisingly bold advances toward Rance at the café, including straddling him and confessing her attraction. Currently experiencing doubt about her readiness for intimacy despite following her sister's advice.\n" +
+        '\n' +
+        "**Rance**: A regular customer at Victoria's café for months. Object of Amelia's attraction. Had been watching Amelia at the café before their interaction, something Victoria noticed. Responded positively to Amelia's advances both at the café and at her apartment. Demonstrated interest specifically in Amelia, not being distracted when Victoria exposed her cleavage as a test. Was the one who suggested they leave the café together after Amelia's forward behavior.\n" +
+        '\n' +
+        `**Victoria "Tori" Thornbrook**: Amelia's more outgoing sister who owns the café where Amelia works part-time. A confident 29-year-old with auburn hair and curves who contrasts sharply with her socially awkward sister. Played an active role in bringing Rance and Amelia together by noticing Rance's interest in her sister. Gave Amelia an ultimatum to "talk to him or be fired," forcing her to overcome her social hesitation. Deliberately tested Rance's interest in Amelia by changing shirts and exposing her cleavage, confirming his attention remained on her sister. Is the only person who knows about Amelia's meeting with Rance. Gave Amelia specific advice about clothing for her encounter with Rance and encouraged her to "be herself" but dress more flatteringly.\n` +
+        '\n' +
+        '## Locations\n' +
+        "**Café**: Owned by Victoria (Amelia's sister). Where Rance and Amelia first properly interacted after months of mutual observation. Has partially secluded booths where their initial physical encounter occurred, including Amelia straddling Rance. Amelia works there part-time while completing her PhD.\n" +
+        '\n' +
+        "**Amelia's Apartment**: Current location. Amelia's roommate is away until Sunday, providing privacy. Contains wine that Amelia drank for courage before undressing. Amelia's roommate believes she is at a study group.\n" +
+        '\n' +
+        '## Relationships & Dynamics\n' +
+        "**Rance & Amelia**: What initially appeared to be Amelia's one-sided attraction was actually mutual, with both observing each other at the café for months. Their physical relationship progressed rapidly from Amelia's bold approach at the café (sitting next to him, touching his thigh, eventually straddling him) to the current situation in her apartment. Amelia invited Rance on what appeared to be a first date at her sister's insistence, which he accepted. This encounter happened yesterday.\n" +
+        '\n' +
+        "**Amelia & Victoria**: Sisters with contrasting personalities. Victoria (29) is more socially confident with auburn hair and curves, taking an active role in managing her sister's love life. She went as far as threatening Amelia's job to push her to approach Rance and provided specific clothing advice for Amelia's intimate encounter. Victoria noticed Rance's interest in Amelia before Amelia did and orchestrated their meeting, even testing Rance's genuine interest in her sister. Victoria is the only person who knows about Amelia meeting with Rance. Amelia both relies on her sister's advice and feels uncertain about Victoria's confidence in her abilities.\n" +
+        '\n' +
+        '## Active Goals & Plans\n' +
+        "- Amelia wishes to have her first sexual experience with Rance, though she's questioning her readiness and her sister's faith in her abilities.\n" +
+        '- The immediate situation involves Amelia standing in her underwear, asking Rance how to proceed with their intimate encounter.\n' +
+        '\n' +
+        '## Secrets & Hidden Information\n' +
+        '- Victoria tested Rance by exposing her cleavage while changing shirts to confirm his interest was genuinely in Amelia rather than just physical attraction to any woman.\n' +
+        "- Victoria threatened to fire Amelia if she didn't approach Rance, something Rance likely doesn't know.\n" +
+        "- Amelia's roommate believes she is at a study group, not with Rance.\n" +
+        '- Amelia followed specific clothing advice from Victoria for her encounter with Rance.\n' +
+        '- The entire progression from café meeting to apartment intimacy happened within a very short timeframe (since yesterday).\n' +
+        '\n' +
+        '\n' +
+        '// NEW SCENE SUMMARIES TO MERGE:\n' +
+        "[Amelia's Hesitant First Time]\n" +
+        `A flashback revealed Amelia's relationship with her older sister Victoria "Tori" Thornbrook. Tori owns the café where Amelia works part-time. Despite their differences - Tori being confident and socially adept while Amelia is academically focused but socially awkward - they maintain a sisterly relationship. Tori encouraged Amelia to approach Rance, a regular customer who she believed was interested in Amelia. After noticing Rance's attention remained on Amelia rather than herself, Tori pressured her sister to talk to him, resulting in Amelia asking him out. The scene ends with Amelia feeling uncertain about her sister's confidence in her as she finds herself in an intimate situation with Rance.`
+    }
+  ],
+  prompt: undefined,
+  model: 'claude-3-7-sonnet-20250219',
+  temperature: 0.95,
+  max_tokens: 16000,
+  max_completion_tokens: undefined,
+  stream: false,
+  presence_penalty: 0,
+  frequency_penalty: 0,
+  top_p: 1,
+  top_k: undefined,
+  stop: undefined,
+  logit_bias: undefined,
+  seed: undefined,
+  n: undefined,
+  logprobs: undefined,
+  top_logprobs: undefined
+}
+Chat Completion response: {
+  choices: [
+    {
+      finish_reason: 'stop',
+      index: 0,
+      message: {
+        content: '# OOC Response: Merged Memory Narrative\n' +
+          '\n' +
+          '## Current Situation\n' +
+          "Rance and Amelia Thornbrook have rapidly progressed from a coffee shop meeting to her apartment. After an intense first encounter at her sister's café, they moved to her apartment where her roommate is away until Sunday. Amelia, having revealed she's a virgin and consumed wine for courage, is currently standing in her DNA-patterned underwear, asking Rance how to proceed with their intimate encounter. She feels uncertain about her sister Victoria's confidence in her ability to handle this situation.\n" +
+          '\n' +
+          '## Characters\n' +
+          "**Amelia Thornbrook**: A biochemistry PhD student completing her thesis on protein synthesis. Works part-time at her sister Victoria's café. Intelligent but socially awkward, mixing academic knowledge with inexperienced attempts at seduction. Initially shy and self-deprecating, comparing herself unfavorably to her more outgoing sister. Has revealed she's a virgin who prioritized academics over dating. Wears DNA-patterned underwear that reflects her scientific interests. Despite her typical shyness, she made surprisingly bold advances toward Rance at the café, including straddling him and confessing her attraction. Currently experiencing doubt about her readiness for intimacy despite following her sister's advice.\n" +
+          '\n' +
+          "**Rance**: A regular customer at Victoria's café for months. Object of Amelia's attraction. Had been watching Amelia at the café before their interaction, something Victoria noticed. Responded positively to Amelia's advances both at the café and at her apartment. Demonstrated interest specifically in Amelia, not being distracted when Victoria exposed her cleavage as a test. Was the one who suggested they leave the café together after Amelia's forward behavior.\n" +
+          '\n' +
+          `**Victoria "Tori" Thornbrook**: Amelia's older, more outgoing sister who owns the café where Amelia works part-time. A confident 29-year-old with auburn hair and curves who contrasts sharply with her socially awkward sister. Socially adept where Amelia is not. Played an active role in bringing Rance and Amelia together by noticing Rance's interest in her sister. Gave Amelia an ultimatum to "talk to him or be fired," forcing her to overcome her social hesitation. Deliberately tested Rance's interest in Amelia by changing shirts and exposing her cleavage, confirming his attention remained on her sister. Is the only person who knows about Amelia's meeting with Rance. Gave Amelia specific advice about clothing for her encounter with Rance and encouraged her to "be herself" but dress more flatteringly. Despite their differences, maintains a supportive sisterly relationship with Amelia.\n` +
+          '\n' +
+          '## Locations\n' +
+          "**Café**: Owned by Victoria (Amelia's sister). Where Rance and Amelia first properly interacted after months of mutual observation. Has partially secluded booths where their initial physical encounter occurred, including Amelia straddling Rance. Amelia works there part-time while completing her PhD.\n" +
+          '\n' +
+          "**Amelia's Apartment**: Current location. Amelia's roommate is away until Sunday, providing privacy. Contains wine that Amelia drank for courage before undressing. Amelia's roommate believes she is at a study group.\n" +
+          '\n' +
+          '## Relationships & Dynamics\n' +
+          "**Rance & Amelia**: What initially appeared to be Amelia's one-sided attraction was actually mutual, with both observing each other at the café for months. Their physical relationship progressed rapidly from Amelia's bold approach at the café (sitting next to him, touching his thigh, eventually straddling him) to the current situation in her apartment. Amelia invited Rance on what appeared to be a first date at her sister's insistence, which he accepted. This encounter happened yesterday.\n" +
+          '\n' +
+          "**Amelia & Victoria**: Sisters with contrasting personalities. Victoria (29) is more socially confident with auburn hair and curves, taking an active role in managing her sister's love life. She went as far as threatening Amelia's job to push her to approach Rance and provided specific clothing advice for Amelia's intimate encounter. Victoria noticed Rance's interest in Amelia before Amelia did and orchestrated their meeting, even testing Rance's genuine interest in her sister. Victoria is the only person who knows about Amelia meeting with Rance. Amelia both relies on her sister's advice and feels uncertain about Victoria's confidence in her abilities. Despite their differences, they maintain a supportive sisterly relationship.\n" +
+          '\n' +
+          '## Active Goals & Plans\n' +
+          "- Amelia wishes to have her first sexual experience with Rance, though she's questioning her readiness and her sister's faith in her abilities.\n" +
+          '- The immediate situation involves Amelia standing in her underwear, asking Rance how to proceed with their intimate encounter.\n' +
+          '\n' +
+          '## Secrets & Hidden Information\n' +
+          '- Victoria tested Rance by exposing her cleavage while changing shirts to confirm his interest was genuinely in Amelia rather than just physical attraction to any woman.\n' +
+          "- Victoria threatened to fire Amelia if she didn't approach Rance, something Rance likely doesn't know.\n" +
+          "- Amelia's roommate believes she is at a study group, not with Rance.\n" +
+          '- Amelia followed specific clothing advice from Victoria for her encounter with Rance.\n' +
+          '- The entire progression from café meeting to apartment intimacy happened within a very short timeframe (since yesterday).',
+        role: 'assistant'
+      }
+    }
+  ],
+  created: 1761975541,
+  id: 'chatcmpl-V4U03G5lhURpJLNhZwUqq6Jy0sZE',
+  model: 'claude-3-7-sonnet-20250219',
+  object: 'chat.completion',
+  system_fingerprint: 'fp_nigga',
+  usage: { completion_tokens: 1620, prompt_tokens: 3106, total_tokens: 4726 }
+}
+Chat Completion request: {
+  messages: [
+    {
+      role: 'user',
+      content: 'You are the Auto-Lorebooks registry entry lookup assistant for SillyTavern.\n' +
+        '\n' +
+        'Known lorebook entry types: character|location|item|faction|quest|rule\n' +
+        '\n' +
+        'You will be given:\n' +
+        '- A NEW entry candidate formatted as JSON\n' +
+        '- A concise REGISTRY listing for all existing entries of the same type (id, name, aliases, synopsis)\n' +
+        '\n' +
+        'New entry candidate:\n' +
+        '{\n' +
+        '  "comment": "character-Victoria Thornbrook",\n' +
+        `  "content": "[Victoria Thornbrook: café owner, age(29), appearance(auburn hair, perfect waves, even skin tone, full breasts, fitted clothing), personality(confident, charming, socially adept), relationship(Amelia's older sister, four years senior), education(graduated with honors in business), nickname(Tori), maintains(expensive skincare routine, yoga practice, organic diet), encourages(Amelia to be more social)]",\n` +
+        '  "keys": [\n' +
+        '    "victoria",\n' +
+        '    "tori",\n' +
+        '    "thornbrook"\n' +
+        '  ],\n' +
+        '  "secondaryKeys": [],\n' +
+        '  "type": "character",\n' +
+        '  "constant": false,\n' +
+        '  "disable": false\n' +
+        '}\n' +
+        '\n' +
+        'Registry listing:\n' +
+        '[Type: character]\n' +
+        "1. id: char_0001 | name: character-Amelia | aliases: amelia | synopsis: Socially awkward student working at Tori's café, sister of Victoria, preparing groundbreaking research\n" +
+        "2. id: char_0002 | name: character-Victoria Thornbrook | aliases: tori; victoria | synopsis: Confident café owner with auburn hair, Victoria 'Tori' is Amelia's older sister\n" +
+        '\n' +
+        '[Type: location]\n' +
+        '1. id: loca_0001 | name: location-Café | aliases: café | synopsis: Stylish café with exposed brick walls and vintage furniture, owned by Victoria Thornbrook\n' +
+        '\n' +
+        'Tasks:\n' +
+        '1. Decide which entry type best fits the new entry. The type MUST be one of the allowed list above.\n' +
+        '2. Compare the new entry against the registry listing and decide if any existing entity is a likely duplicate.\n' +
+        '3. Select high-confidence duplicate IDs in `sameEntityIds`.\n' +
+        '4. If additional context is required before deciding, list the IDs in `needsFullContextIds`. These IDs will be sent to a follow-up prompt with full lorebook content.\n' +
+        '5. Craft a one-line synopsis capturing the essence of the new entry (used in the registry if it becomes canonical).\n' +
+        '\n' +
+        'Return ONLY a JSON object in this exact shape:\n' +
+        '{\n' +
+        '  "type": "<one of the allowed types>",\n' +
+        '  "synopsis": "<short one-line summary>",\n' +
+        '  "sameEntityIds": ["entity_id_1"],\n' +
+        '  "needsFullContextIds": ["entity_id_2"]\n' +
+        '}\n' +
+        '\n' +
+        'Rules:\n' +
+        '- `sameEntityIds` and `needsFullContextIds` must be arrays. Use [] when empty.\n' +
+        '- Never invent IDs; only use IDs from the registry listing.\n' +
+        '- If nothing matches, return empty arrays and keep the type that best fits.\n' +
+        '- The synopsis should be concise, 15 words or fewer, and reflect the NEW entry’s content.\n' +
+        '- Output STRICT JSON with double quotes and no commentary.'
+    }
+  ],
+  prompt: undefined,
+  model: 'claude-3-7-sonnet-20250219',
+  temperature: 0.95,
+  max_tokens: 16000,
+  max_completion_tokens: undefined,
+  stream: false,
+  presence_penalty: 0,
+  frequency_penalty: 0,
+  top_p: 1,
+  top_k: undefined,
+  stop: undefined,
+  logit_bias: undefined,
+  seed: undefined,
+  n: undefined,
+  logprobs: undefined,
+  top_logprobs: undefined
+}
+Chat Completion response: {
+  choices: [
+    {
+      finish_reason: 'stop',
+      index: 0,
+      message: {
+        content: '{\n' +
+          '  "type": "character",\n' +
+          `  "synopsis": "Confident café owner Victoria 'Tori' Thornbrook, Amelia's older sister with auburn hair.",\n` +
+          '  "sameEntityIds": ["char_0002"],\n' +
+          '  "needsFullContextIds": []\n' +
+          '}',
+        role: 'assistant'
+      }
+    }
+  ],
+  created: 1761975566,
+  id: 'chatcmpl-d1JnJyPO3D14bmucusj6IJxfWL9B',
+  model: 'claude-3-7-sonnet-20250219',
+  object: 'chat.completion',
+  system_fingerprint: 'fp_nigga',
+  usage: { completion_tokens: 59, prompt_tokens: 805, total_tokens: 864 }
+}
+Chat Completion request: {
+  messages: [
+    {
+      role: 'user',
+      content: 'You are the Auto-Lorebooks registry entry lookup assistant for SillyTavern.\n' +
+        '\n' +
+        'Known lorebook entry types: character|location|item|faction|quest|rule\n' +
+        '\n' +
+        'You will be given:\n' +
+        '- A NEW entry candidate formatted as JSON\n' +
+        '- A concise REGISTRY listing for all existing entries of the same type (id, name, aliases, synopsis)\n' +
+        '\n' +
+        'New entry candidate:\n' +
+        '{\n' +
+        '  "comment": "character-Amelia",\n' +
+        `  "content": "[Amelia: student, age(25), appearance(freckled complexion, oversized cardigans, similar hair color to Tori but lighter), personality(socially awkward, academic, insecure), occupation(part-time café worker, researcher), relationship(Victoria's younger sister), accomplishment(publishing groundbreaking research soon), finances(limited by student stipend)]",\n` +
+        '  "keys": [\n' +
+        '    "amelia"\n' +
+        '  ],\n' +
+        '  "secondaryKeys": [],\n' +
+        '  "type": "character",\n' +
+        '  "constant": false,\n' +
+        '  "disable": false\n' +
+        '}\n' +
+        '\n' +
+        'Registry listing:\n' +
+        '[Type: character]\n' +
+        "1. id: char_0001 | name: character-Amelia | aliases: amelia | synopsis: Socially awkward student working at Tori's café, sister of Victoria, preparing groundbreaking research\n" +
+        "2. id: char_0002 | name: character-Victoria Thornbrook | aliases: tori; victoria | synopsis: Confident café owner with auburn hair, Victoria 'Tori' is Amelia's older sister\n" +
+        '\n' +
+        '[Type: location]\n' +
+        '1. id: loca_0001 | name: location-Café | aliases: café | synopsis: Stylish café with exposed brick walls and vintage furniture, owned by Victoria Thornbrook\n' +
+        '\n' +
+        'Tasks:\n' +
+        '1. Decide which entry type best fits the new entry. The type MUST be one of the allowed list above.\n' +
+        '2. Compare the new entry against the registry listing and decide if any existing entity is a likely duplicate.\n' +
+        '3. Select high-confidence duplicate IDs in `sameEntityIds`.\n' +
+        '4. If additional context is required before deciding, list the IDs in `needsFullContextIds`. These IDs will be sent to a follow-up prompt with full lorebook content.\n' +
+        '5. Craft a one-line synopsis capturing the essence of the new entry (used in the registry if it becomes canonical).\n' +
+        '\n' +
+        'Return ONLY a JSON object in this exact shape:\n' +
+        '{\n' +
+        '  "type": "<one of the allowed types>",\n' +
+        '  "synopsis": "<short one-line summary>",\n' +
+        '  "sameEntityIds": ["entity_id_1"],\n' +
+        '  "needsFullContextIds": ["entity_id_2"]\n' +
+        '}\n' +
+        '\n' +
+        'Rules:\n' +
+        '- `sameEntityIds` and `needsFullContextIds` must be arrays. Use [] when empty.\n' +
+        '- Never invent IDs; only use IDs from the registry listing.\n' +
+        '- If nothing matches, return empty arrays and keep the type that best fits.\n' +
+        '- The synopsis should be concise, 15 words or fewer, and reflect the NEW entry’s content.\n' +
+        '- Output STRICT JSON with double quotes and no commentary.'
+    }
+  ],
+  prompt: undefined,
+  model: 'claude-3-7-sonnet-20250219',
+  temperature: 0.95,
+  max_tokens: 16000,
+  max_completion_tokens: undefined,
+  stream: false,
+  presence_penalty: 0,
+  frequency_penalty: 0,
+  top_p: 1,
+  top_k: undefined,
+  stop: undefined,
+  logit_bias: undefined,
+  seed: undefined,
+  n: undefined,
+  logprobs: undefined,
+  top_logprobs: undefined
+}
+Chat Completion response: {
+  choices: [
+    {
+      finish_reason: 'stop',
+      index: 0,
+      message: {
+        content: '{\n' +
+          '  "type": "character",\n' +
+          `  "synopsis": "Socially awkward student and Victoria's sister working part-time at café while publishing research",\n` +
+          '  "sameEntityIds": ["char_0001"],\n' +
+          '  "needsFullContextIds": []\n' +
+          '}',
+        role: 'assistant'
+      }
+    }
+  ],
+  created: 1761975574,
+  id: 'chatcmpl-WQDxf3u9VaBNH85HxoaiZVKYTirP',
+  model: 'claude-3-7-sonnet-20250219',
+  object: 'chat.completion',
+  system_fingerprint: 'fp_nigga',
+  usage: { completion_tokens: 62, prompt_tokens: 776, total_tokens: 838 }
+}
+Chat Completion request: {
+  messages: [
+    {
+      role: 'user',
+      content: 'You are the Auto-Lorebooks registry entry lookup assistant for SillyTavern.\n' +
+        '\n' +
+        'Known lorebook entry types: character|location|item|faction|quest|rule\n' +
+        '\n' +
+        'You will be given:\n' +
+        '- A NEW entry candidate formatted as JSON\n' +
+        '- A concise REGISTRY listing for all existing entries of the same type (id, name, aliases, synopsis)\n' +
+        '\n' +
+        'New entry candidate:\n' +
+        '{\n' +
+        '  "comment": "location-Café",\n' +
+        `  "content": "[Café: business establishment, owner(Victoria Thornbrook), features(exposed brick walls, local artwork, mismatched vintage furniture), atmosphere(stylish yet approachable), description(Tori's domain, Amelia's part-time workplace), style(intentionally eclectic)]",\n` +
+        '  "keys": [\n' +
+        '    "café",\n' +
+        '    "coffee"\n' +
+        '  ],\n' +
+        '  "secondaryKeys": [],\n' +
+        '  "type": "location",\n' +
+        '  "constant": false,\n' +
+        '  "disable": false\n' +
+        '}\n' +
+        '\n' +
+        'Registry listing:\n' +
+        '[Type: character]\n' +
+        "1. id: char_0001 | name: character-Amelia | aliases: amelia | synopsis: Socially awkward student working at Tori's café, sister of Victoria, preparing groundbreaking research\n" +
+        "2. id: char_0002 | name: character-Victoria Thornbrook | aliases: tori; victoria | synopsis: Confident café owner with auburn hair, Victoria 'Tori' is Amelia's older sister\n" +
+        '\n' +
+        '[Type: location]\n' +
+        '1. id: loca_0001 | name: location-Café | aliases: café | synopsis: Stylish café with exposed brick walls and vintage furniture, owned by Victoria Thornbrook\n' +
+        '\n' +
+        'Tasks:\n' +
+        '1. Decide which entry type best fits the new entry. The type MUST be one of the allowed list above.\n' +
+        '2. Compare the new entry against the registry listing and decide if any existing entity is a likely duplicate.\n' +
+        '3. Select high-confidence duplicate IDs in `sameEntityIds`.\n' +
+        '4. If additional context is required before deciding, list the IDs in `needsFullContextIds`. These IDs will be sent to a follow-up prompt with full lorebook content.\n' +
+        '5. Craft a one-line synopsis capturing the essence of the new entry (used in the registry if it becomes canonical).\n' +
+        '\n' +
+        'Return ONLY a JSON object in this exact shape:\n' +
+        '{\n' +
+        '  "type": "<one of the allowed types>",\n' +
+        '  "synopsis": "<short one-line summary>",\n' +
+        '  "sameEntityIds": ["entity_id_1"],\n' +
+        '  "needsFullContextIds": ["entity_id_2"]\n' +
+        '}\n' +
+        '\n' +
+        'Rules:\n' +
+        '- `sameEntityIds` and `needsFullContextIds` must be arrays. Use [] when empty.\n' +
+        '- Never invent IDs; only use IDs from the registry listing.\n' +
+        '- If nothing matches, return empty arrays and keep the type that best fits.\n' +
+        '- The synopsis should be concise, 15 words or fewer, and reflect the NEW entry’s content.\n' +
+        '- Output STRICT JSON with double quotes and no commentary.'
+    }
+  ],
+  prompt: undefined,
+  model: 'claude-3-7-sonnet-20250219',
+  temperature: 0.95,
+  max_tokens: 16000,
+  max_completion_tokens: undefined,
+  stream: false,
+  presence_penalty: 0,
+  frequency_penalty: 0,
+  top_p: 1,
+  top_k: undefined,
+  stop: undefined,
+  logit_bias: undefined,
+  seed: undefined,
+  n: undefined,
+  logprobs: undefined,
+  top_logprobs: undefined
+}
+Chat completion request error:  Bad Request {"error":{"code":"too_many_requests","message":"Too many requests","type":"rate_limit_error"}}
+
+Chat Completion request: {
+  messages: [
+    {
+      role: 'user',
+      content: 'You are the Auto-Lorebooks registry entry lookup assistant for SillyTavern.\n' +
+        '\n' +
+        'Known lorebook entry types: character|location|item|faction|quest|rule\n' +
+        '\n' +
+        'You will be given:\n' +
+        '- A NEW entry candidate formatted as JSON\n' +
+        '- A concise REGISTRY listing for all existing entries of the same type (id, name, aliases, synopsis)\n' +
+        '\n' +
+        'New entry candidate:\n' +
+        '{\n' +
+        '  "comment": "location-Café",\n' +
+        `  "content": "[Café: business establishment, owner(Victoria Thornbrook), features(exposed brick walls, local artwork, mismatched vintage furniture), atmosphere(stylish yet approachable), description(Tori's domain, Amelia's part-time workplace), style(intentionally eclectic)]",\n` +
+        '  "keys": [\n' +
+        '    "café",\n' +
+        '    "coffee"\n' +
+        '  ],\n' +
+        '  "secondaryKeys": [],\n' +
+        '  "type": "location",\n' +
+        '  "constant": false,\n' +
+        '  "disable": false\n' +
+        '}\n' +
+        '\n' +
+        'Registry listing:\n' +
+        '[Type: character]\n' +
+        "1. id: char_0001 | name: character-Amelia | aliases: amelia | synopsis: Socially awkward student working at Tori's café, sister of Victoria, preparing groundbreaking research\n" +
+        "2. id: char_0002 | name: character-Victoria Thornbrook | aliases: tori; victoria | synopsis: Confident café owner with auburn hair, Victoria 'Tori' is Amelia's older sister\n" +
+        '\n' +
+        '[Type: location]\n' +
+        '1. id: loca_0001 | name: location-Café | aliases: café | synopsis: Stylish café with exposed brick walls and vintage furniture, owned by Victoria Thornbrook\n' +
+        '\n' +
+        'Tasks:\n' +
+        '1. Decide which entry type best fits the new entry. The type MUST be one of the allowed list above.\n' +
+        '2. Compare the new entry against the registry listing and decide if any existing entity is a likely duplicate.\n' +
+        '3. Select high-confidence duplicate IDs in `sameEntityIds`.\n' +
+        '4. If additional context is required before deciding, list the IDs in `needsFullContextIds`. These IDs will be sent to a follow-up prompt with full lorebook content.\n' +
+        '5. Craft a one-line synopsis capturing the essence of the new entry (used in the registry if it becomes canonical).\n' +
+        '\n' +
+        'Return ONLY a JSON object in this exact shape:\n' +
+        '{\n' +
+        '  "type": "<one of the allowed types>",\n' +
+        '  "synopsis": "<short one-line summary>",\n' +
+        '  "sameEntityIds": ["entity_id_1"],\n' +
+        '  "needsFullContextIds": ["entity_id_2"]\n' +
+        '}\n' +
+        '\n' +
+        'Rules:\n' +
+        '- `sameEntityIds` and `needsFullContextIds` must be arrays. Use [] when empty.\n' +
+        '- Never invent IDs; only use IDs from the registry listing.\n' +
+        '- If nothing matches, return empty arrays and keep the type that best fits.\n' +
+        '- The synopsis should be concise, 15 words or fewer, and reflect the NEW entry’s content.\n' +
+        '- Output STRICT JSON with double quotes and no commentary.'
+    }
+  ],
+  prompt: undefined,
+  model: 'claude-3-7-sonnet-20250219',
+  temperature: 0.95,
+  max_tokens: 16000,
+  max_completion_tokens: undefined,
+  stream: false,
+  presence_penalty: 0,
+  frequency_penalty: 0,
+  top_p: 1,
+  top_k: undefined,
+  stop: undefined,
+  logit_bias: undefined,
+  seed: undefined,
+  n: undefined,
+  logprobs: undefined,
+  top_logprobs: undefined
+}
+Chat Completion response: {
+  choices: [
+    {
+      finish_reason: 'stop',
+      index: 0,
+      message: {
+        content: '{\n' +
+          '  "type": "location",\n' +
+          '  "synopsis": "Stylish café with exposed brick walls and vintage furniture, owned by Victoria Thornbrook",\n' +
+          '  "sameEntityIds": ["loca_0001"],\n' +
+          '  "needsFullContextIds": []\n' +
+          '}',
+        role: 'assistant'
+      }
+    }
+  ],
+  created: 1761975593,
+  id: 'chatcmpl-aals10jasRfU86MKBItoQfeDQDrq',
+  model: 'claude-3-7-sonnet-20250219',
+  object: 'chat.completion',
+  system_fingerprint: 'fp_nigga',
+  usage: { completion_tokens: 59, prompt_tokens: 751, total_tokens: 810 }
+}
+Chat Completion request: {
+  messages: [
+    {
+      role: 'user',
+      content: 'You are updating a lorebook entry. You have the existing entry content and new information from a summary.\n' +
+        '\n' +
+        "Current Entry Name: character-Amelia's Sister\n" +
+        '\n' +
+        'Your task:\n' +
+        '1. Compare the existing content with the new information\n' +
+        '2. Merge them intelligently:\n' +
+        "   - Add new details that don't exist\n" +
+        '   - Update information that has changed\n' +
+        '   - Remove details that are contradicted or no longer relevant\n' +
+        '   - Preserve important existing information\n' +
+        '   - Maintain consistent formatting and tone\n' +
+        '3. CRITICAL: Check if the entry name needs updating:\n' +
+        `   - If the current name is a VAGUE/RELATIONAL reference (examples: "amelia's sister", "the bartender", "mysterious woman", "the shopkeeper", "victoria's friend")\n` +
+        '   - AND either the existing content OR new content reveals an ACTUAL PROPER NAME\n' +
+        '   - YOU MUST use FORMAT 2 with the proper name as canonicalName\n' +
+        '\n' +
+        'Existing Entry Content:\n' +
+        `[Victoria "Tori" Thornbrook: café owner, age(29), appearance(auburn hair, curves, full breasts, perfect waves, even skin tone, the 'hot one'), personality(confident, charming, socially adept, outgoing), education(graduated with honors in business), sister of(Amelia), older by(four years), fitness routine(thrice-weekly yoga), makes(Rance's drinks regularly), knows about(Amelia's interest in Rance, their date), promised(not to tell anyone about the date), relationship with Amelia(gives her dating advice, perceived as more attractive), pushed(Amelia to approach Rance)]\n` +
+        '\n' +
+        'New Information from Summary:\n' +
+        "[Victoria Thornbrook: café owner, age(29), appearance(auburn hair, perfect waves, even skin tone, full breasts, fitted clothing), personality(confident, charming, socially adept), relationship(Amelia's older sister, four years senior), education(graduated with honors in business), nickname(Tori), maintains(expensive skincare routine, yoga practice, organic diet), encourages(Amelia to be more social)]\n" +
+        '\n' +
+        'OUTPUT INSTRUCTIONS:\n' +
+        '\n' +
+        'FORMAT 1 (Plain text - use ONLY when NO proper name is available):\n' +
+        'Just output the merged content as plain text.\n' +
+        '\n' +
+        'FORMAT 2 (JSON - use when renaming is needed):\n' +
+        '{\n' +
+        '  "mergedContent": "the merged lorebook entry content here",\n' +
+        '  "canonicalName": "ProperName"\n' +
+        '}\n' +
+        '\n' +
+        'WHEN TO USE FORMAT 2:\n' +
+        '- Current name is relational/vague (possessive forms, job titles, family relations, descriptions)\n' +
+        '- You have access to a proper name (first name, full name, character name)\n' +
+        `- Example: Current="character-Amelia's Sister" + Content has "Victoria" → canonicalName: "Victoria Thornbrook"\n` +
+        '\n' +
+        'RULES FOR canonicalName:\n' +
+        '- Use the full proper name if available (e.g., "Victoria Thornbrook")\n' +
+        '- NO type prefixes (use "Victoria Thornbrook" not "character-Victoria Thornbrook")\n' +
+        '- If only first name known, use just that (e.g., "Victoria")\n' +
+        '\n' +
+        'If the current name is ALREADY a proper name (like "Victoria", "John Smith"), use FORMAT 1.'
+    }
+  ],
+  prompt: undefined,
+  model: 'claude-3-7-sonnet-20250219',
+  temperature: 0.95,
+  max_tokens: 16000,
+  max_completion_tokens: undefined,
+  stream: false,
+  presence_penalty: 0,
+  frequency_penalty: 0,
+  top_p: 1,
+  top_k: undefined,
+  stop: undefined,
+  logit_bias: undefined,
+  seed: undefined,
+  n: undefined,
+  logprobs: undefined,
+  top_logprobs: undefined
+}
+Chat Completion response: {
+  choices: [
+    {
+      finish_reason: 'stop',
+      index: 0,
+      message: {
+        content: `Since the current entry name "character-Amelia's Sister" is a relational reference and both the existing content and new information reveal her proper name as "Victoria Thornbrook" (nicknamed "Tori"), I should use FORMAT 2.\n` +
+          '\n' +
+          '{\n' +
+          `  "mergedContent": "[Victoria \\"Tori\\" Thornbrook: café owner, age(29), appearance(auburn hair, perfect waves, even skin tone, full breasts, curves, fitted clothing), personality(confident, charming, socially adept, outgoing), education(graduated with honors in business), sister of(Amelia), older by(four years), fitness routine(thrice-weekly yoga), maintains(expensive skincare routine, organic diet), makes(Rance's drinks regularly), knows about(Amelia's interest in Rance, their date), promised(not to tell anyone about the date), relationship with Amelia(gives her dating advice, perceived as more attractive, encourages her to be more social), pushed(Amelia to approach Rance)]",\n` +
+          '  "canonicalName": "Victoria Thornbrook"\n' +
+          '}',
+        role: 'assistant'
+      }
+    }
+  ],
+  created: 1761975602,
+  id: 'chatcmpl-KpcGTckS7qrkYWcrMimKhkiUuHGH',
+  model: 'claude-3-7-sonnet-20250219',
+  object: 'chat.completion',
+  system_fingerprint: 'fp_nigga',
+  usage: { completion_tokens: 290, prompt_tokens: 849, total_tokens: 1139 }
+}
+Chat Completion request: {
+  messages: [
+    {
+      role: 'user',
+      content: 'You are updating a lorebook entry. You have the existing entry content and new information from a summary.\n' +
+        '\n' +
+        'Current Entry Name: character-Amelia Thornbrook\n' +
+        '\n' +
+        'Your task:\n' +
+        '1. Compare the existing content with the new information\n' +
+        '2. Merge them intelligently:\n' +
+        "   - Add new details that don't exist\n" +
+        '   - Update information that has changed\n' +
+        '   - Remove details that are contradicted or no longer relevant\n' +
+        '   - Preserve important existing information\n' +
+        '   - Maintain consistent formatting and tone\n' +
+        '3. CRITICAL: Check if the entry name needs updating:\n' +
+        `   - If the current name is a VAGUE/RELATIONAL reference (examples: "amelia's sister", "the bartender", "mysterious woman", "the shopkeeper", "victoria's friend")\n` +
+        '   - AND either the existing content OR new content reveals an ACTUAL PROPER NAME\n' +
+        '   - YOU MUST use FORMAT 2 with the proper name as canonicalName\n' +
+        '\n' +
+        'Existing Entry Content:\n' +
+        "[Amelia Thornbrook: biochemistry PhD student, appearance(auburn hair, freckles, amber eyes, glasses, flat-chested, wears Star Trek shirt and cardigan), personality(shy, socially awkward, academically-focused, inexperienced with dating, attempts boldness despite awkwardness), works at(sister Victoria's café, part-time), researching(protein synthesis thesis, publishing groundbreaking research next month), relationship with sister(competitive, feels overshadowed by Victoria Thornbrook), physical attributes(modest figure, surprisingly round ass), behavior(nervous, self-conscious, makes snorting laugh she finds embarrassing), finances(receiving student stipend), current situation(first sexual encounter with Rance)]\n" +
+        '\n' +
+        'New Information from Summary:\n' +
+        "[Amelia: student, age(25), appearance(freckled complexion, oversized cardigans, similar hair color to Tori but lighter), personality(socially awkward, academic, insecure), occupation(part-time café worker, researcher), relationship(Victoria's younger sister), accomplishment(publishing groundbreaking research soon), finances(limited by student stipend)]\n" +
+        '\n' +
+        'OUTPUT INSTRUCTIONS:\n' +
+        '\n' +
+        'FORMAT 1 (Plain text - use ONLY when NO proper name is available):\n' +
+        'Just output the merged content as plain text.\n' +
+        '\n' +
+        'FORMAT 2 (JSON - use when renaming is needed):\n' +
+        '{\n' +
+        '  "mergedContent": "the merged lorebook entry content here",\n' +
+        '  "canonicalName": "ProperName"\n' +
+        '}\n' +
+        '\n' +
+        'WHEN TO USE FORMAT 2:\n' +
+        '- Current name is relational/vague (possessive forms, job titles, family relations, descriptions)\n' +
+        '- You have access to a proper name (first name, full name, character name)\n' +
+        `- Example: Current="character-Amelia's Sister" + Content has "Victoria" → canonicalName: "Victoria Thornbrook"\n` +
+        '\n' +
+        'RULES FOR canonicalName:\n' +
+        '- Use the full proper name if available (e.g., "Victoria Thornbrook")\n' +
+        '- NO type prefixes (use "Victoria Thornbrook" not "character-Victoria Thornbrook")\n' +
+        '- If only first name known, use just that (e.g., "Victoria")\n' +
+        '\n' +
+        'If the current name is ALREADY a proper name (like "Victoria", "John Smith"), use FORMAT 1.'
+    }
+  ],
+  prompt: undefined,
+  model: 'claude-3-7-sonnet-20250219',
+  temperature: 0.95,
+  max_tokens: 16000,
+  max_completion_tokens: undefined,
+  stream: false,
+  presence_penalty: 0,
+  frequency_penalty: 0,
+  top_p: 1,
+  top_k: undefined,
+  stop: undefined,
+  logit_bias: undefined,
+  seed: undefined,
+  n: undefined,
+  logprobs: undefined,
+  top_logprobs: undefined
+}
+Chat Completion response: {
+  choices: [
+    {
+      finish_reason: 'stop',
+      index: 0,
+      message: {
+        content: "[Amelia Thornbrook: biochemistry PhD student, age(25), appearance(auburn hair, freckles, amber eyes, glasses, flat-chested, wears oversized cardigans and Star Trek shirts, similar hair color to Tori but lighter), personality(shy, socially awkward, academically-focused, insecure, inexperienced with dating, attempts boldness despite awkwardness), works at(sister Victoria's café, part-time), researching(protein synthesis thesis, publishing groundbreaking research next month), relationship with sister(competitive, feels overshadowed by Victoria Thornbrook, is Victoria's younger sister), physical attributes(modest figure, surprisingly round ass), behavior(nervous, self-conscious, makes snorting laugh she finds embarrassing), finances(limited by student stipend), current situation(first sexual encounter with Rance)]",
+        role: 'assistant'
+      }
+    }
+  ],
+  created: 1761975614,
+  id: 'chatcmpl-1dtf1UxYivIEIvDgoqx1LwmnkWFm',
+  model: 'claude-3-7-sonnet-20250219',
+  object: 'chat.completion',
+  system_fingerprint: 'fp_nigga',
+  usage: { completion_tokens: 249, prompt_tokens: 880, total_tokens: 1129 }
+}
+Chat Completion request: {
+  messages: [
+    {
+      role: 'user',
+      content: 'You are updating a lorebook entry. You have the existing entry content and new information from a summary.\n' +
+        '\n' +
+        "Current Entry Name: location-Sister's Café\n" +
+        '\n' +
+        'Your task:\n' +
+        '1. Compare the existing content with the new information\n' +
+        '2. Merge them intelligently:\n' +
+        "   - Add new details that don't exist\n" +
+        '   - Update information that has changed\n' +
+        '   - Remove details that are contradicted or no longer relevant\n' +
+        '   - Preserve important existing information\n' +
+        '   - Maintain consistent formatting and tone\n' +
+        '3. CRITICAL: Check if the entry name needs updating:\n' +
+        `   - If the current name is a VAGUE/RELATIONAL reference (examples: "amelia's sister", "the bartender", "mysterious woman", "the shopkeeper", "victoria's friend")\n` +
+        '   - AND either the existing content OR new content reveals an ACTUAL PROPER NAME\n' +
+        '   - YOU MUST use FORMAT 2 with the proper name as canonicalName\n' +
+        '\n' +
+        'Existing Entry Content:\n' +
+        `[Sister's Café: coffee shop, business, owner(Victoria "Tori" Thornbrook, Amelia's sister), features(booths offering partial privacy, ambient noise, espresso machine, plays soft jazz, exposed brick walls, local artwork, mismatched vintage furniture), atmosphere(stylish yet approachable), description(Tori's domain), serves(chai lattes), workplace(Amelia works part-time), staff uniform(fitted black polo)]\n` +
+        '\n' +
+        'New Information from Summary:\n' +
+        "[Café: business establishment, owner(Victoria Thornbrook), features(exposed brick walls, local artwork, mismatched vintage furniture), atmosphere(stylish yet approachable), description(Tori's domain, Amelia's part-time workplace), style(intentionally eclectic)]\n" +
+        '\n' +
+        'OUTPUT INSTRUCTIONS:\n' +
+        '\n' +
+        'FORMAT 1 (Plain text - use ONLY when NO proper name is available):\n' +
+        'Just output the merged content as plain text.\n' +
+        '\n' +
+        'FORMAT 2 (JSON - use when renaming is needed):\n' +
+        '{\n' +
+        '  "mergedContent": "the merged lorebook entry content here",\n' +
+        '  "canonicalName": "ProperName"\n' +
+        '}\n' +
+        '\n' +
+        'WHEN TO USE FORMAT 2:\n' +
+        '- Current name is relational/vague (possessive forms, job titles, family relations, descriptions)\n' +
+        '- You have access to a proper name (first name, full name, character name)\n' +
+        `- Example: Current="character-Amelia's Sister" + Content has "Victoria" → canonicalName: "Victoria Thornbrook"\n` +
+        '\n' +
+        'RULES FOR canonicalName:\n' +
+        '- Use the full proper name if available (e.g., "Victoria Thornbrook")\n' +
+        '- NO type prefixes (use "Victoria Thornbrook" not "character-Victoria Thornbrook")\n' +
+        '- If only first name known, use just that (e.g., "Victoria")\n' +
+        '\n' +
+        'If the current name is ALREADY a proper name (like "Victoria", "John Smith"), use FORMAT 1.'
+    }
+  ],
+  prompt: undefined,
+  model: 'claude-3-7-sonnet-20250219',
+  temperature: 0.95,
+  max_tokens: 16000,
+  max_completion_tokens: undefined,
+  stream: false,
+  presence_penalty: 0,
+  frequency_penalty: 0,
+  top_p: 1,
+  top_k: undefined,
+  stop: undefined,
+  logit_bias: undefined,
+  seed: undefined,
+  n: undefined,
+  logprobs: undefined,
+  top_logprobs: undefined
+}
+Chat Completion response: {
+  choices: [
+    {
+      finish_reason: 'stop',
+      index: 0,
+      message: {
+        content: `[Sister's Café: coffee shop, business, owner(Victoria "Tori" Thornbrook, Amelia's sister), features(booths offering partial privacy, ambient noise, espresso machine, plays soft jazz, exposed brick walls, local artwork, mismatched vintage furniture), atmosphere(stylish yet approachable, intentionally eclectic), description(Tori's domain), serves(chai lattes), workplace(Amelia works part-time), staff uniform(fitted black polo)]`,
+        role: 'assistant'
+      }
+    }
+  ],
+  created: 1761975625,
+  id: 'chatcmpl-IsBsDR9gdLdNSh7cbKHUVzHJzAbd',
+  model: 'claude-3-7-sonnet-20250219',
+  object: 'chat.completion',
+  system_fingerprint: 'fp_nigga',
+  usage: { completion_tokens: 131, prompt_tokens: 755, total_tokens: 886 }
+}
