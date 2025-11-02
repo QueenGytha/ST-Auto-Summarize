@@ -405,6 +405,12 @@ dialog:has(#auto_summarize_memory_state_interface) {
     text-decoration: underline solid;
 }
 
+/* Queue Navbar Toggle Button */
+#queue_navbar_toggle {
+    width: 16px;
+    padding: 0.8em 0.15em;
+}
+
 /* Operations Queue Styles */
 #shared_operation_queue_ui {
     margin-top: 1em;

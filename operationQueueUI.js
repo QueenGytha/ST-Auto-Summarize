@@ -111,7 +111,7 @@ function createQueueUI() {
     const $navbarToggle = $(`
         <button id="${NAVBAR_TOGGLE_ID}" class="menu_button fa-solid ${ICON_CHEVRON_LEFT}"
             title="Hide Queue Navbar"
-            style="position: fixed; top: 50vh; left: ${navbarWidth}px; transform: translateY(-50%); padding: 0.8em 0.5em; font-size: 1.2em; z-index: 1000002; background: rgba(30,30,40,0.95); border: 1px solid var(--SmartThemeBlurTintColor); border-radius: 0 8px 8px 0;"></button>
+            style="position: fixed; top: 50vh; left: ${navbarWidth}px; transform: translateY(-50%); font-size: 1.2em; z-index: 1000002; background: rgba(30,30,40,0.95); border: 1px solid var(--SmartThemeBlurTintColor); border-radius: 0 8px 8px 0;"></button>
     `);
 
     // Append button to body (not navbar) so it stays visible when navbar is hidden
