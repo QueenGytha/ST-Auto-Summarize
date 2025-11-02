@@ -118,6 +118,12 @@ function createQueueUI() {
     // $FlowFixMe[cannot-resolve-name]
     $('body').append($navbarToggle);
 
+    // Respect Scene Navigator Bar visibility on initial load
+    const sceneNavbarVisible = get_settings('scene_summary_navigator_toggle');
+    if (!sceneNavbarVisible) {
+        $navbarToggle.hide();
+    }
+
     // Bind event handlers
     bindQueueControlEvents();
 

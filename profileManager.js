@@ -12,8 +12,7 @@ import {
     MODULE_NAME_FANCY,
     get_current_character_identifier,
     get_current_chat_identifier,
-    check_preset_valid,
-    update_save_icon_highlight
+    check_preset_valid
 } from './index.js';
 
 
@@ -77,9 +76,6 @@ function save_profile(profile /*: ?string */ =null) /*: void */ {
 
     // check preset validity
     check_preset_valid()
-
-    // update the button highlight
-    update_save_icon_highlight();
 }
 // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 function load_profile(profile /*: ?string */ =null) /*: void */ {

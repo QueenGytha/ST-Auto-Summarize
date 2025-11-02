@@ -60,7 +60,6 @@ async function initialize_settings_listeners() {
 
     // Trigger profile changes
     bind_setting('#profile', 'profile', 'text', () => load_profile(), false);
-    bind_function('#save_profile', () => save_profile(), false);
     bind_function('#restore_profile', () => load_profile(), false);
     bind_function('#rename_profile', () => rename_profile(), false)
     bind_function('#new_profile', new_profile, false);

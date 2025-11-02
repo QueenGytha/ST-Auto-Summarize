@@ -908,6 +908,73 @@ async function restoreProfile(
     }
 }
 
+// Helper: Extract and validate JSON from AI response
+// Strips code fences, explanatory text, and validates JSON structure
+// $FlowFixMe[missing-local-annot] - Function signature is correct
+function extractAndValidateJson(rawResponse /*: string */) /*: string */ {
+    let cleaned = rawResponse.trim();
+
+    // Try to find and extract JSON from code fences first
+    const codeFenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+    if (codeFenceMatch) {
+        cleaned = codeFenceMatch[1].trim();
+        debug(SUBSYSTEM.SCENE, "Extracted JSON from code fences");
+    }
+
+    // If still doesn't look like JSON, try to find the first { or [
+    if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
+        const jsonStartMatch = cleaned.match(/[{[]/);
+        if (jsonStartMatch) {
+            const jsonStart = cleaned.indexOf(jsonStartMatch[0]);
+            cleaned = cleaned.substring(jsonStart);
+            debug(SUBSYSTEM.SCENE, "Stripped explanatory text before JSON");
+        }
+    }
+
+    // If still doesn't look like JSON, try to find last } or ]
+    if (!cleaned.endsWith('}') && !cleaned.endsWith(']')) {
+        const lastBrace = cleaned.lastIndexOf('}');
+        const lastBracket = cleaned.lastIndexOf(']');
+        const lastJsonChar = Math.max(lastBrace, lastBracket);
+        if (lastJsonChar > 0) {
+            cleaned = cleaned.substring(0, lastJsonChar + 1);
+            debug(SUBSYSTEM.SCENE, "Stripped text after JSON");
+        }
+    }
+
+    // Validate it's actually JSON and has expected structure
+    try {
+        const parsed = JSON.parse(cleaned);
+
+        // Scene summaries should have a "summary" field (and optionally "lorebooks")
+        if (typeof parsed === 'object' && parsed !== null) {
+            if (!('summary' in parsed)) {
+                throw new Error("JSON missing required 'summary' field");
+            }
+
+            // Check if summary is empty or just placeholder text
+            const summaryText = parsed.summary?.trim() || '';
+            if (summaryText === '' || summaryText === '...' || summaryText === 'TODO') {
+                throw new Error("AI returned empty or placeholder summary");
+            }
+
+            // Check if it's just the template structure with no content
+            if (summaryText.length < 10) {
+                throw new Error("AI returned suspiciously short summary (less than 10 chars)");
+            }
+
+            debug(SUBSYSTEM.SCENE, "JSON validated successfully");
+            return cleaned;
+        } else {
+            throw new Error("JSON is not an object");
+        }
+    } catch (parseErr) {
+        error(SUBSYSTEM.SCENE, "Failed to parse or validate JSON:", parseErr);
+        error(SUBSYSTEM.SCENE, "Attempted to parse:", cleaned.substring(0, 200));
+        throw new Error(`Invalid JSON from AI: ${parseErr.message}`);
+    }
+}
+
 // Helper: Generate summary with error handling
 // $FlowFixMe[missing-local-annot] - Function signature is correct
 async function executeSceneSummaryGeneration(
@@ -920,8 +987,14 @@ async function executeSceneSummaryGeneration(
             ctx.deactivateSendButtons();
         }
         debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
-        summary = await summarize_text(prompt);
-        debug(SUBSYSTEM.SCENE, "AI response:", summary);
+        const rawResponse = await summarize_text(prompt);
+        debug(SUBSYSTEM.SCENE, "AI response:", rawResponse);
+
+        // Extract and validate JSON immediately
+        summary = extractAndValidateJson(rawResponse);
+        if (summary !== rawResponse) {
+            debug(SUBSYSTEM.SCENE, "Cleaned summary:", summary);
+        }
     } catch (err) {
         summary = "Error generating summary: " + (err?.message || err);
         error(SUBSYSTEM.SCENE, "Error generating summary:", err);
@@ -967,6 +1040,7 @@ async function saveSceneSummary(
 }
 
 // Helper: Extract lorebooks from summary JSON and queue each as individual operation
+// Note: Summary should already be clean JSON from executeSceneSummaryGeneration()
 // $FlowFixMe[missing-local-annot] - Function signature is correct
 async function extractAndQueueLorebookEntries(
     summary /*: string */,
@@ -977,16 +1051,8 @@ async function extractAndQueueLorebookEntries(
         const summaryHash = computeSummaryHash(summary);
         debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Summary hash: ${summaryHash}`);
 
-        // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
-        let jsonText = summary.trim();
-        const codeFenceMatch = jsonText.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-        if (codeFenceMatch) {
-            jsonText = codeFenceMatch[1].trim();
-            debug(SUBSYSTEM.SCENE, `Stripped code fences from scene summary at index ${messageIndex}`);
-        }
-
-        // Try to parse as JSON
-        const parsed = JSON.parse(jsonText);
+        // Parse JSON (should already be clean from generation)
+        const parsed = JSON.parse(summary);
 
         // Check for 'lorebooks' array (standard format)
         if (parsed.lorebooks && Array.isArray(parsed.lorebooks)) {

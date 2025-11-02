@@ -17,23 +17,12 @@ import {
     get_character_profile,
     get_chat_profile,
     get_settings_element,
-    detect_settings_difference,
     getContext,
     extension_settings,
 } from './index.js';
 import { default_short_template, default_scene_template } from './defaultPrompts.js';
 import { ensureEntityTypesSetting, renderEntityTypesList } from './entityTypeSettingsUI.js';
 
-function update_save_icon_highlight() {
-    // If the current settings are different than the current profile, highlight the save button
-    if (detect_settings_difference()) {
-        // $FlowFixMe[cannot-resolve-name]
-        $('#save_profile').addClass('button_highlight');
-    } else {
-        // $FlowFixMe[cannot-resolve-name]
-        $('#save_profile').removeClass('button_highlight');
-    }
-}
 function update_profile_section() {
     const context = getContext()
 
@@ -310,7 +299,6 @@ function refresh_settings() {
     updateAllDropdowns();
     validateAndFixSettings();
 
-    update_save_icon_highlight();
     update_profile_section();
 
     // Iterate through the settings map and set each element to the current setting value
@@ -588,7 +576,6 @@ async function update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dr
 }
 
 export {
-    update_save_icon_highlight,
     update_profile_section,
     update_preset_dropdown,
     update_connection_profile_dropdown,

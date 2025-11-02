@@ -43,6 +43,9 @@ export function renderSceneNavigatorBar() {
     // Hide/show entire navbar based on toggle setting
     if (!show) {
         $bar.hide();
+        // Also hide the queue navbar toggle button when navbar is hidden
+        // $FlowFixMe[cannot-resolve-name]
+        $('#queue_navbar_toggle').hide();
         return;
     }
     const ctx = getContext();
@@ -96,6 +99,10 @@ export function renderSceneNavigatorBar() {
     }
 
     $bar.show();
+
+    // Show the queue navbar toggle button when navbar is shown
+    // $FlowFixMe[cannot-resolve-name]
+    $('#queue_navbar_toggle').show();
 
     // Update running summary controls after rendering
     // $FlowFixMe[cannot-resolve-name]
