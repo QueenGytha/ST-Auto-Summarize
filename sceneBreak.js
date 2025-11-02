@@ -472,12 +472,11 @@ export function renderSceneBreak(
         const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
         const ctx = getContext();
 
-        const mode = get_settings('scene_summary_history_mode') || "both";
         const messageTypes = get_settings('scene_summary_message_types') || "both";
         const sceneObjects = [];
         for (let i = startIdx; i <= endIdx; i++) {
             const msg = chat[i];
-            if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
+            if (msg.mes && msg.mes.trim() !== "") {
                 // Filter by message type
                 const includeMessage = (messageTypes === "both") ||
                                      (messageTypes === "user" && msg.is_user) ||
@@ -485,10 +484,6 @@ export function renderSceneBreak(
                 if (includeMessage) {
                     sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
                 }
-            }
-            if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
-                // $FlowFixMe[incompatible-type]
-                sceneObjects.push({ type: "summary", index: i, summary: get_memory(msg) });
             }
         }
 
@@ -610,10 +605,10 @@ export function renderSceneBreak(
 }
 
 /**
- * Collects all messages and/or summaries for a scene, regardless of exclusion/hidden status.
+ * Collects all messages for a scene, regardless of exclusion/hidden status.
  * @param {number} startIdx - Start index of the scene (inclusive)
  * @param {number} endIdx - End index of the scene (inclusive)
- * @param {string} mode - "messages", "summaries", or "both"
+ * @param {string} mode - Ignored (kept for compatibility, always uses messages)
  * @param {object} ctx - Context object
  * @returns {string} - Concatenated scene content
  */
@@ -629,12 +624,7 @@ export function collectSceneContent(
     const result = [];
     for (let i = startIdx; i <= endIdx; i++) {
         const msg = chat[i];
-        if (mode === "messages" || mode === "both") {
-            result.push(msg.mes);
-        }
-        if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
-            result.push(get_memory(msg));
-        }
+        result.push(msg.mes);
     }
     return result.join('\n');
 }
@@ -784,28 +774,18 @@ function collectSceneObjects(
     endIdx /*: number */,
     chat /*: Array<STMessage> */
 ) /*: Array<Object> */ {
-    const mode = get_settings('scene_summary_history_mode') || "both";
     const messageTypes = get_settings('scene_summary_message_types') || "both";
-    const excludeLastUserMessage = get_settings('scene_summary_exclude_last_user_message') ?? true;
     const sceneObjects = [];
 
-    // If enabled and last message is from user, exclude it (scene breaks on user messages often contain only scene directions)
-    const lastMsg = chat[endIdx];
-    const effectiveEndIdx = (excludeLastUserMessage && lastMsg && lastMsg.is_user) ? endIdx - 1 : endIdx;
-
-    for (let i = startIdx; i <= effectiveEndIdx; i++) {
+    for (let i = startIdx; i <= endIdx; i++) {
         const msg = chat[i];
-        if ((mode === "messages" || mode === "both") && msg.mes && msg.mes.trim() !== "") {
+        if (msg.mes && msg.mes.trim() !== "") {
             const includeMessage = (messageTypes === "both") ||
                                  (messageTypes === "user" && msg.is_user) ||
                                  (messageTypes === "character" && !msg.is_user);
             if (includeMessage) {
                 sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
             }
-        }
-        if ((mode === "summaries" || mode === "both") && get_memory(msg)) {
-            // $FlowFixMe[incompatible-type]
-            sceneObjects.push({ type: "summary", index: i, summary: get_memory(msg) });
         }
     }
 
@@ -976,8 +956,13 @@ async function saveSceneSummary(
 
     // Extract and queue lorebook entries if Auto-Lorebooks is enabled
     const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_enabled');
+    debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] auto_lorebooks_summary_enabled = ${autoLorebooksEnabled}, has summary = ${!!summary}`);
     if (autoLorebooksEnabled && summary) {
+        debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Calling extractAndQueueLorebookEntries for message ${messageIndex}...`);
         await extractAndQueueLorebookEntries(summary, messageIndex);
+        debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] extractAndQueueLorebookEntries completed for message ${messageIndex}`);
+    } else {
+        debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Skipping lorebook extraction - enabled: ${autoLorebooksEnabled}, has summary: ${!!summary}`);
     }
 }
 
@@ -987,8 +972,10 @@ async function extractAndQueueLorebookEntries(
     summary /*: string */,
     messageIndex /*: number */
 ) /*: Promise<void> */ {
+    debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Starting for message ${messageIndex}`);
     try {
         const summaryHash = computeSummaryHash(summary);
+        debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Summary hash: ${summaryHash}`);
 
         // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
         let jsonText = summary.trim();
@@ -1026,16 +1013,21 @@ async function extractAndQueueLorebookEntries(
             debug(SUBSYSTEM.SCENE, `After deduplication: ${uniqueEntries.length} unique entries (removed ${parsed.lorebooks.length - uniqueEntries.length} duplicates)`);
 
             // Queue each unique entry individually
+            debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Queueing ${uniqueEntries.length} unique entries...`);
             for (const entry of uniqueEntries) {
                 // Sequential execution required: entries must be queued in order
                 // eslint-disable-next-line no-await-in-loop
+                debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Calling queueProcessLorebookEntry for: ${entry.name || entry.comment}`);
                 const opId = await queueProcessLorebookEntry(entry, messageIndex, summaryHash);
                 if (opId) {
-                    debug(SUBSYSTEM.SCENE, `Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);
+                    debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✓ Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);
+                } else {
+                    debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✗ Failed to queue lorebook entry: ${entry.name || entry.comment} (returned null/undefined)`);
                 }
             }
+            debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Finished queueing all entries`);
         } else {
-            debug(SUBSYSTEM.SCENE, `No lorebooks array found in scene summary at index ${messageIndex}`);
+            debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] No lorebooks array found in scene summary at index ${messageIndex}`);
         }
     } catch (err) {
         // Not JSON or parsing failed - skip lorebook processing

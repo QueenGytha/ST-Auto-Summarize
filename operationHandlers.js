@@ -7,9 +7,6 @@ import {
     enqueueOperation,
 } from './operationQueue.js';
 import {
-    summarize_message,
-} from './summarization.js';
-import {
     validate_summary,
 } from './summaryValidation.js';
 import {
@@ -83,13 +80,6 @@ function get_message_div(index) {
  * Register all operation handlers
  */
 export function registerAllOperationHandlers() {
-    // Summarize message
-    registerOperationHandler(OperationType.SUMMARIZE_MESSAGE, async (operation) => {
-        const { index } = operation.params;
-        debug(SUBSYSTEM.QUEUE, `Executing SUMMARIZE_MESSAGE for index ${index}`);
-        return await summarize_message(index);
-    });
-
     // Validate summary
     registerOperationHandler(OperationType.VALIDATE_SUMMARY, async (operation) => {
         const { summary, type } = operation.params;
@@ -243,7 +233,8 @@ export function registerAllOperationHandlers() {
     // LOREBOOK_ENTRY_LOOKUP - First stage of lorebook processing pipeline
     registerOperationHandler(OperationType.LOREBOOK_ENTRY_LOOKUP, async (operation) => {
         const { entryId, entryData, registryListing, typeList } = operation.params;
-        debug(SUBSYSTEM.QUEUE, `Executing LOREBOOK_ENTRY_LOOKUP for: ${entryData.comment || 'Unknown'}`);
+        debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] ⚙️ Starting for: ${entryData.comment || 'Unknown'}, entryId: ${entryId}`);
+        debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Operation ID: ${operation.id}, Status: ${operation.status}`);
 
         // Build settings from profile
         const settings = {
@@ -263,7 +254,10 @@ export function registerAllOperationHandlers() {
             enabled: get_settings('auto_lorebooks_summary_enabled') ?? false,
         };
 
+        debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Settings - enabled: ${settings.enabled}, skip_duplicates: ${settings.skip_duplicates}`);
+
         // Run lorebook entry lookup
+        debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Running lookup stage...`);
         const lorebookEntryLookupResult = await runLorebookEntryLookupStage(entryData, registryListing, typeList, settings);
 
         // Store lorebook entry lookup result in pending ops

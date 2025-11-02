@@ -17,7 +17,6 @@ import {
     scrollChatToBottom,
     selected_group
 } from './index.js';
-import { DEFAULT_MERGE_PROMPTS } from './trackingEntries.js';
 import { DEFAULT_ENTITY_TYPES } from './entityTypes.js';
 
 // Settings

@@ -26,8 +26,6 @@ import { get_running_summary_injection } from './runningSceneSummary.js';
 
 // INJECTION RECORDING FOR LOGS
 // $FlowFixMe[signature-verification-failure]
-let last_message_summary_injection = "";
-// $FlowFixMe[signature-verification-failure]
 let last_scene_injection = "";
 
 // SUMMARY PROPERTY STRUCTURE:
@@ -102,10 +100,7 @@ function update_message_inclusion_flags() {
     debug("Updating message inclusion flags")
 
     const injection_threshold = get_settings('summary_injection_threshold')
-    const exclude_messages = get_settings('exclude_messages_after_threshold')
-    const keep_last_user_message = get_settings('keep_last_user_message')
     const first_to_inject = chat.length - injection_threshold
-    let last_user_message_identified = false
 
     // iterate through the chat in reverse order and mark the messages that should be included as single message summaries
     let message_summary_limit_reached = false;
@@ -116,14 +111,7 @@ function update_message_inclusion_flags() {
         const message = chat[i];
 
         // Mark whether the message is lagging behind the exclusion threshold (even if no summary)
-        let lagging = i >= first_to_inject
-
-        // If needed, mark the most recent user message as lagging
-        if (exclude_messages && keep_last_user_message && !last_user_message_identified && message.is_user) {
-            last_user_message_identified = true
-            lagging = true
-            debug(`Marked most recent user message as lagging: ${i}`)
-        }
+        const lagging = i >= first_to_inject
         set_data(message, 'lagging', lagging)
 
         // check for any of the exclusion criteria
@@ -312,9 +300,6 @@ async function refresh_memory() {
     // Update the UI according to the current state of the chat memories
     update_message_inclusion_flags()  // update the inclusion flags for all messages
 
-    // Get message summaries for logging/debugging (not injected)
-    const message_summary_injection = get_message_summary_injection();
-
     // --- Scene Summary Injection ---
     let scene_injection = "";
 
@@ -333,7 +318,6 @@ async function refresh_memory() {
     }
 
     // Store for later logging
-    last_message_summary_injection = message_summary_injection;
     last_scene_injection = scene_injection;
 
     // Only inject scene summaries (message summaries are NOT injected)
@@ -347,15 +331,11 @@ const refresh_memory_debounced = debounce(refresh_memory, debounce_timeout.relax
 
 export {
     check_message_exclusion,
-    update_message_inclusion_flags,
     collect_chat_messages,
-    concatenate_summary,
     concatenate_summaries,
-    get_message_summary_injection,
     refresh_memory,
     refresh_memory_debounced,
     collect_scene_summary_indexes,
-    last_message_summary_injection,
     last_scene_injection,
     get_scene_memory_injection
 };

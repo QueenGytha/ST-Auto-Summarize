@@ -3,9 +3,6 @@ import {
     MODULE_NAME,
     get_settings,
     saveChatDebounced,
-    debug,
-    refresh_memory,
-    chat_enabled,
     getContext
 } from './index.js';
 
@@ -132,37 +129,6 @@ function get_previous_swipe_memory(message /*: STMessage */, key /*: string */) 
     return message?.swipe_info?.[message.swipe_id-1]?.extra?.[MODULE_NAME]?.[key];
 }
 // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
-function forget_message_toggle(indexes /*: ?(number | Array<number>) */=null, value /*: ?boolean */=null) /*: void */ {
-    // Toggle the "forget" status of a message
-    const context = getContext();
-
-    let indexArray /*: Array<number> */;
-    if (indexes === null) {  // Default to the last message, min 0
-        indexArray = [Math.max(context.chat.length-1, 0)];
-    } else if (!Array.isArray(indexes)) {  // only one index given
-        // $FlowFixMe[incompatible-type] - indexes is number here (not null, not array)
-        indexArray = [indexes];
-    } else {
-        indexArray = indexes;
-    }
-
-    // $FlowFixMe[missing-local-annot] - Inner function types are inferred correctly
-    function set(index /*: number */, value /*: boolean */) /*: void */ {
-        const message = context.chat[index]
-        set_data(message, 'exclude', value);
-        debug(`Set message ${index} exclude status: ${String(value)}`);
-    }
-
-    // $FlowFixMe[missing-local-annot] - Inner function types are inferred correctly
-    function check(index /*: number */) /*: boolean */ {
-        return get_data(context.chat[index], 'exclude')
-    }
-
-    // $FlowFixMe[incompatible-type] - indexArray is guaranteed to be Array<number> by the if/else above
-    toggle_memory_value(indexArray, value, check, set)
-    refresh_memory()
-}
-// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 function get_character_key(message /*: STMessage */) /*: string */ {
     // get the unique identifier of the character that sent a message
     return message.original_avatar || ''
@@ -172,30 +138,13 @@ function get_character_key(message /*: STMessage */) /*: string */ {
 // This has to match the manifest.json "generate_interceptor" key
 // $FlowFixMe[prop-missing] - globalThis extension is correct
 globalThis.memory_intercept_messages = function (
-    chat /*: Array<any> */,  // Array of messages that can be modified - using any is appropriate here
+    _chat /*: Array<any> */,  // Unused parameter (indicated by underscore) - any is appropriate
     _contextSize /*: any */,  // Unused parameter (indicated by underscore) - any is appropriate
     _abort /*: any */,        // Unused parameter (indicated by underscore) - any is appropriate
-    type /*: string */
+    _type /*: string */       // Unused parameter (indicated by underscore)
 ) /*: void */ {
-    if (!chat_enabled()) return;   // if memory disabled, do nothing
-    if (!get_settings('exclude_messages_after_threshold')) return  // if not excluding any messages, do nothing
-    refresh_memory()
-
-    let start = chat.length-1
-    if (type === 'continue') start--  // if a continue, keep the most recent message
-
-    // symbol is used to prevent accidentally leaking modifications to permanent chat.
-    const IGNORE_SYMBOL = getContext().symbols.ignore
-
-    // Remove any messages that have summaries injected
-    for (let i=start; i >= 0; i--) {
-        delete chat[i].extra.ignore_formatting
-        const message = chat[i]
-        const lagging = get_data(message, 'lagging')  // The message should be kept
-        // $FlowFixMe[cannot-resolve-name]
-        chat[i] = structuredClone(chat[i])  // keep changes temporary for this generation
-        chat[i].extra[IGNORE_SYMBOL] = !lagging
-    }
+    // Message exclusion feature removed - this function now does nothing
+    return;
 };
 
 export {
@@ -206,6 +155,5 @@ export {
     clear_memory,
     toggle_memory_value,
     get_previous_swipe_memory,
-    forget_message_toggle,
     get_character_key
 };

@@ -98,11 +98,6 @@ function update_message_visuals(i /*: number */, style /*: boolean */=true, text
         memory_div.prepend($(`<span class="${summary_reasoning_class}" title="${reasoning}">[Reasoning] </span>`))
     }
     message_element.after(memory_div);
-
-    // add a click event to the memory div to edit the memory
-    memory_div.on('click', function () {
-        open_edit_memory_input(i);
-    })
 }
 function update_all_message_visuals() {
     // update the message visuals of each visible message, styled according to the inclusion criteria
@@ -113,62 +108,10 @@ function update_all_message_visuals() {
         update_message_visuals(i, true);
     }
 }
-// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
-function open_edit_memory_input(index /*: number */) /*: void */ {
-    // Allow the user to edit a message summary
-    const message = getContext().chat[index];
-    let memory = get_memory(message)
-    memory = memory?.trim() ?? '';  // get the current memory text
-
-    const $message_div = get_message_div(index);  // top level div for this message
-    // $FlowFixMe[incompatible-use]
-    const $message_text_div = $message_div.find('.mes_text')  // holds message text
-    // $FlowFixMe[incompatible-use]
-    const $memory_div = $message_div.find(`div.${summary_div_class}`);  // div holding the memory text
-
-    // Hide the memory div and add the textarea after the main message text
-    // $FlowFixMe[cannot-resolve-name]
-    const $textarea = $(`<textarea class="${css_message_div} ${css_edit_textarea}" rows="1"></textarea>`);
-    $memory_div.hide();
-    $message_text_div.after($textarea);
-    $textarea.focus();  // focus on the textarea
-    $textarea.val(memory);  // set the textarea value to the memory text (this is done after focus to keep the cursor at the end)
-    $textarea.height($textarea[0].scrollHeight-10);  // set the height of the textarea to fit the text
-
-    function confirm_edit() {
-        const new_memory = $textarea.val();
-        if (new_memory === memory) {  // no change
-            cancel_edit()
-            return;
-        }
-        edit_memory(message, new_memory)
-        $textarea.remove();  // remove the textarea
-        $memory_div.show();  // show the memory div
-        refresh_memory();
-    }
-
-    function cancel_edit() {
-        $textarea.remove();  // remove the textarea
-        $memory_div.show();  // show the memory div
-    }
-
-    // save when the textarea loses focus, or when enter is pressed
-    $textarea.on('blur', confirm_edit);
-    $textarea.on('keydown', function (event) {
-        if (event.key === 'Enter') {  // confirm edit
-            event.preventDefault();
-            confirm_edit();
-        } else if (event.key === 'Escape') {  // cancel edit
-            event.preventDefault();
-            cancel_edit();
-        }
-    })
-}
 
 export {
     get_message_div,
     get_summary_style_class,
     update_message_visuals,
-    update_all_message_visuals,
-    open_edit_memory_input
+    update_all_message_visuals
 };

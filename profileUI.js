@@ -295,9 +295,6 @@ function updateConditionalSettings() {
         // $FlowFixMe[cannot-resolve-name]
         toastr.warning("To include message history, you must use the {{history}} macro in the prompt.");
     }
-
-    const excluding_messages = get_settings('exclude_messages_after_threshold');
-    get_settings_element('keep_last_user_message')?.prop('disabled', !excluding_messages);
 }
 
 function refresh_settings() {
@@ -413,32 +410,6 @@ function refreshQueueSettingsUI(queueSettings /*: any */ = {}) /*: void */ {
 }
 
 /**
- * Refreshes tracking settings UI
- * @param {any} tracking - Tracking settings object
- */
-function refreshTrackingSettingsUI() /*: void */ {
-    // All tracking settings are now per-profile, read from profile settings
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-enabled').prop('checked', get_settings('auto_lorebooks_tracking_enabled') ?? true);
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-intercept-send').prop('checked', get_settings('auto_lorebooks_tracking_intercept_send_button') ?? true);
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-auto-create').prop('checked', get_settings('auto_lorebooks_tracking_auto_create') ?? true);
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-remove-syntax').prop('checked', get_settings('auto_lorebooks_tracking_remove_from_message') ?? true);
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-syntax-gm-notes').val(get_settings('auto_lorebooks_tracking_syntax_gm_notes') || '<-- gm_notes: {{content}} -->');
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-syntax-character-stats').val(get_settings('auto_lorebooks_tracking_syntax_character_stats') || '<-- character_stats: {{content}} -->');
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-merge-prefill').val(get_settings('auto_lorebooks_tracking_merge_prefill') || '');
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-merge-prompt-gm-notes').val(get_settings('auto_lorebooks_tracking_merge_prompt_gm_notes') || '');
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-tracking-merge-prompt-character-stats').val(get_settings('auto_lorebooks_tracking_merge_prompt_character_stats') || '');
-}
-
-/**
  * Refreshes summary processing settings UI
  */
 function refreshSummaryProcessingUI() /*: void */ {
@@ -473,8 +444,6 @@ function refreshEntityTypesUI() /*: void */ {
  * Refreshes connection dropdowns
  */
 function refreshConnectionDropdowns() /*: void */ {
-    update_autolorebooks_tracking_merge_connection_dropdown();
-    update_autolorebooks_tracking_merge_preset_dropdown();
     update_autolorebooks_summary_merge_connection_dropdown();
     update_autolorebooks_summary_merge_preset_dropdown();
     update_autolorebooks_summary_triage_connection_dropdown();
@@ -496,9 +465,8 @@ function refresh_lorebooks_settings_ui() {
         refreshGlobalSettingsUI(settings);
         refreshQueueSettingsUI(settings.queue);
 
-        // Refresh per-profile settings UI (tracking and summary processing)
+        // Refresh per-profile settings UI (summary processing)
         // These functions now read directly from profile via get_settings()
-        refreshTrackingSettingsUI();
         refreshSummaryProcessingUI();
 
         refreshEntityTypesUI();
@@ -509,42 +477,6 @@ function refresh_lorebooks_settings_ui() {
     } catch (err) {
         error("Error refreshing Auto-Lorebooks settings UI", err);
     }
-}
-
-/**
- * Update Auto-Lorebooks tracking merge connection profile dropdown
- */
-async function update_autolorebooks_tracking_merge_connection_dropdown() {
-    // $FlowFixMe[cannot-resolve-name]
-    const $connection_select = $('#autolorebooks-tracking-merge-connection');
-    const currentValue = get_settings('auto_lorebooks_tracking_merge_connection_profile') || '';
-    const connection_options = await get_connection_profiles();
-    $connection_select.empty();
-    $connection_select.append(`<option value="">Same as Current</option>`);
-    if (connection_options && Array.isArray(connection_options)) {
-        for (const option of connection_options) {
-            $connection_select.append(`<option value="${option}">${option}</option>`);
-        }
-    }
-    $connection_select.val(currentValue);
-    $connection_select.off('click').on('click', () => update_autolorebooks_tracking_merge_connection_dropdown());
-}
-
-/**
- * Update Auto-Lorebooks tracking merge preset dropdown
- */
-async function update_autolorebooks_tracking_merge_preset_dropdown() {
-    // $FlowFixMe[cannot-resolve-name]
-    const $preset_select = $('#autolorebooks-tracking-merge-preset');
-    const currentValue = get_settings('auto_lorebooks_tracking_merge_completion_preset') || '';
-    const preset_options = await get_presets();
-    $preset_select.empty();
-    $preset_select.append(`<option value="">Same as Current</option>`);
-    for (const option of preset_options) {
-        $preset_select.append(`<option value="${option}">${option}</option>`);
-    }
-    $preset_select.val(currentValue);
-    $preset_select.off('click').on('click', () => update_autolorebooks_tracking_merge_preset_dropdown());
 }
 
 /**

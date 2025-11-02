@@ -10,14 +10,9 @@ import {
     refresh_memory,
     auto_load_profile,
     scrollChatToBottom,
-    auto_summarize_chat,
-    summarize_messages,
-    check_message_exclusion,
-    get_previous_swipe_memory,
     clear_memory,
     get_data,
     set_data,
-    last_message_summary_injection,
     last_scene_injection,
     load_settings_html,
     initialize_settings_listeners,
@@ -40,9 +35,6 @@ import {
     extension_settings,
     groups,
     MacrosParser,
-    MemoryEditInterface,
-    single_message_summary_macro,
-    get_message_summary_injection,
     streamingProcessor,
     initializeSceneNavigatorBar,
     renderSceneNavigatorBar,
@@ -55,13 +47,11 @@ import {
 import * as lorebookUtils from './utils.js';
 
 // Event handling
-let last_message_swiped = null  // if an index, that was the last message swiped
 let operationQueueModule = null;  // Reference to queue module for reloading
 
 // Handler functions for each event type
 async function handleChatChanged() {
     const context = getContext();
-    last_message_swiped = null;
     auto_load_profile();  // load the profile for the current chat or character
     refresh_memory();  // refresh the memory state
     if (context?.chat?.length) {
@@ -70,15 +60,12 @@ async function handleChatChanged() {
     // Auto scene break detection on chat load
     processSceneBreakOnChatLoad();
 
-    // Ensure chat lorebook exists and tracking entries are initialized
+    // Ensure chat lorebook exists
     try {
         const lorebookManager = await import('./lorebookManager.js');
         // Make sure lorebook utils are wired
         lorebookManager.initLorebookManager(lorebookUtils);
         await lorebookManager.initializeChatLorebook();
-
-        const trackingEntries = await import('./trackingEntries.js');
-        await trackingEntries.initializeChatTrackingEntries();
     } catch (err) {
         debug('[Lorebooks] Failed to initialize lorebook on chat change:', String(err));
     }
@@ -129,7 +116,6 @@ async function handleChatDeleted(deletedChatName /*: ?string */) {
 
 async function handleMessageDeleted() {
     if (!chat_enabled()) return;
-    last_message_swiped = null;
     debug("Message deleted, refreshing memory and cleaning up running summaries")
     refresh_memory();
     cleanup_invalid_running_summaries();
@@ -149,40 +135,14 @@ async function handleBeforeMessage() {
 
 async function handleUserMessage() {
     if (!chat_enabled()) return;
-    last_message_swiped = null;
-    if (!get_settings('auto_summarize')) return;
-
-    // Summarize the chat if "include_user_messages" is enabled
-    if (get_settings('include_user_messages')) {
-        debug("New user message detected, summarizing")
-        await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
-    }
     // NOTE: Auto scene break detection runs on 'char_message' after AI responds, not here
 }
 
 // $FlowFixMe[missing-local-annot]
-async function handleCharMessageSwipe(index) {
-    const context = getContext();
-    const message = context.chat[index];
-    if (!get_settings('auto_summarize_on_swipe')) return;
-    if (!check_message_exclusion(message)) return;
-    if (!get_previous_swipe_memory(message, 'memory')) return;
-    debug("re-summarizing on swipe")
-    await summarize_messages(index);  // summarize the swiped message (handles queue internally)
-    refresh_memory()
-}
-
-// $FlowFixMe[missing-local-annot]
 async function handleCharMessageNew(index) {
-    last_message_swiped = null;
-    // Auto scene break detection on new character message (runs regardless of auto_summarize setting)
+    // Auto scene break detection on new character message
     log(SUBSYSTEM.EVENT, "Triggering auto scene break detection for character message at index", index);
     await processNewMessageForSceneBreak(index);
-
-    if (!get_settings('auto_summarize')) return;
-    if (get_settings("auto_summarize_on_send")) return;
-    debug("New message detected, summarizing")
-    await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
 }
 
 // $FlowFixMe[missing-local-annot]
@@ -192,25 +152,7 @@ async function handleCharMessage(index) {
     if (!context.groupId && context.characterId === undefined) return; // no characters or group selected
     if (streamingProcessor && !streamingProcessor.isFinished) return;  // Streaming in-progress
 
-    if (last_message_swiped === index) {  // this is a swipe
-        await handleCharMessageSwipe(index);
-    } else { // not a swipe
-        await handleCharMessageNew(index);
-    }
-}
-
-// $FlowFixMe[missing-local-annot]
-async function handleMessageEdited(index) {
-    if (!chat_enabled()) return;
-    const context = getContext();
-    last_message_swiped = null;
-    if (!get_settings('auto_summarize_on_edit')) return;
-    if (!check_message_exclusion(context.chat[index])) return;
-    if (!get_data(context.chat[index], 'memory')) return;
-    debug("Message with memory edited, summarizing")
-    summarize_messages(index);  // summarize that message (no await so edit goes through, handles queue internally)
-    // TODO: I'd like to be able to refresh the memory here, but we can't await the summarization because
-    //  then the message edit textbox doesn't close until the summary is done.
+    await handleCharMessageNew(index);
 }
 
 // $FlowFixMe[missing-local-annot]
@@ -228,7 +170,6 @@ async function handleMessageSwiped(index) {
     }
 
     refresh_memory()
-    last_message_swiped = index;
 
     // make sure the chat is scrolled to the bottom because the memory will change
     scrollChatToBottom();
@@ -237,9 +178,8 @@ async function handleMessageSwiped(index) {
 async function handleMessageSent() {
     if (!chat_enabled()) return;
     if (get_settings('debug_mode')) {
-        if (last_message_summary_injection || last_scene_injection) {
-            if (last_message_summary_injection) debug(`[MEMORY INJECTION] message_summary_injection:\n${last_message_summary_injection}`);
-            if (last_scene_injection) debug(`[MEMORY INJECTION] scene_injection:\n${last_scene_injection}`);
+        if (last_scene_injection) {
+            debug(`[MEMORY INJECTION] scene_injection:\n${last_scene_injection}`);
         }
     }
 }
@@ -259,7 +199,6 @@ async function handleDefaultEvent(event) {
     'before_message': handleBeforeMessage,
     'user_message': handleUserMessage,
     'char_message': handleCharMessage,
-    'message_edited': handleMessageEdited,
     'message_swiped': handleMessageSwiped,
     'message_sent': handleMessageSent,
   };
@@ -281,8 +220,6 @@ async function on_chat_event(event /*: ?string */=null, data /*: any */=null) /*
 }
 
 // Entry point
-// $FlowFixMe[signature-verification-failure]
-let memoryEditInterface;
 
 // Initialization function that runs when module loads
 async function initializeExtension() {
@@ -298,8 +235,6 @@ async function initializeExtension() {
 
     // Load settings
     initialize_settings();
-
-    memoryEditInterface = new MemoryEditInterface()
 
     // load settings html
     await load_settings_html();
@@ -360,9 +295,6 @@ Object.entries(event_types).forEach(([key, type]) => {
     });
 });
 
-    // Global Macros
-    MacrosParser.registerMacro(single_message_summary_macro, () => get_message_summary_injection());
-
     // Export to the Global namespace so can be used in the console for debugging
     // $FlowFixMe[cannot-resolve-name]
     window.getContext = getContext;
@@ -398,8 +330,6 @@ Object.entries(event_types).forEach(([key, type]) => {
     try {
         console.log('[EVENT HANDLERS] Importing modules...');
         const lorebookManager = await import('./lorebookManager.js');
-        const trackingEntries = await import('./trackingEntries.js');
-        const sendButtonInterceptor = await import('./sendButtonInterceptor.js');
         const categoryIndexes = await import('./categoryIndexes.js');
         const lorebookEntryMerger = await import('./lorebookEntryMerger.js');
         const summaryToLorebookProcessor = await import('./summaryToLorebookProcessor.js');
@@ -409,10 +339,6 @@ Object.entries(event_types).forEach(([key, type]) => {
         // Initialize lorebooks modules
         console.log('[EVENT HANDLERS] Initializing lorebookManager...');
         lorebookManager.initLorebookManager(lorebookUtils);
-        console.log('[EVENT HANDLERS] Initializing trackingEntries...');
-        trackingEntries.initTrackingEntries(lorebookUtils, lorebookManager, null, connectionSettingsManager, { get_settings, set_settings });
-        console.log('[EVENT HANDLERS] Initializing sendButtonInterceptor...');
-        sendButtonInterceptor.initSendButtonInterceptor(lorebookUtils, trackingEntries);
         console.log('[EVENT HANDLERS] Initializing categoryIndexes...');
         categoryIndexes.initCategoryIndexes(lorebookUtils, lorebookManager, { get_settings });
 
@@ -428,15 +354,6 @@ Object.entries(event_types).forEach(([key, type]) => {
         console.log('[EVENT HANDLERS] connectionSettingsManager.withConnectionSettings:', connectionSettingsManager?.withConnectionSettings);
         summaryToLorebookProcessor.initSummaryToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger, connectionSettingsManager, { get_settings, set_settings });
         console.log('[EVENT HANDLERS] ✓ summaryToLorebookProcessor initialized');
-
-        // Initialize tracking settings
-        trackingEntries.initializeTrackingSettings();
-
-        // Enable send button interception if configured
-        const interceptEnabled = get_settings('autolorebooks')?.tracking?.intercept_send_button ?? true;
-        if (interceptEnabled) {
-            sendButtonInterceptor.enableInterception();
-        }
 
         log('[Lorebooks] ✓ Auto-Lorebooks functionality initialized');
     } catch (err) {
@@ -460,6 +377,5 @@ initializeExtension().catch(err => {
 });
 
 export {
-    on_chat_event,
-    memoryEditInterface
+    on_chat_event
 };

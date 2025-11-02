@@ -6,9 +6,6 @@ import {
     get_memory,
     check_message_exclusion,
     update_message_visuals,
-    memoryEditInterface,
-    progress_bar,
-    remove_progress_bar,
     toast,
     error,
     debug,
@@ -129,7 +126,6 @@ async function processTimeDelay(show_progress, n, indexes_length) {
     }
 
     debug(`Delaying generation by ${time_delay} seconds`);
-    if (show_progress) progress_bar('summarize', null, null, "Delaying");
 
     await new Promise((resolve) => {
         SUMMARIZATION_DELAY_TIMEOUT = setTimeout(resolve, time_delay * 1000);
@@ -142,8 +138,6 @@ async function processTimeDelay(show_progress, n, indexes_length) {
 // Helper: Cleanup after summarization
 // $FlowFixMe[missing-local-annot]
 function cleanupAfterSummarization(ctx, show_progress, indexes_length) {
-    if (show_progress) remove_progress_bar('summarize');
-
     if (getStopSummarization()) {
         setStopSummarization(false);
     } else {
@@ -155,7 +149,6 @@ function cleanupAfterSummarization(ctx, show_progress, indexes_length) {
     }
 
     refresh_memory();
-    memoryEditInterface.update_table();
 }
 
 // $FlowFixMe[signature-verification-failure] [missing-local-annot]
@@ -202,8 +195,6 @@ async function summarize_messages(indexes /*: ?(number | Array<number>) */=null,
 
     try {
         for (const i /*: number */ of indexArray) {
-            if (show_progress) progress_bar('summarize', n + 1, indexArray.length, "Summarizing");
-
             if (getStopSummarization()) {
                 log('Summarization stopped');
                 break;
@@ -260,7 +251,6 @@ async function summarize_message(index /*: number */) /*: Promise<{success: bool
 
     // Temporarily update the message summary text to indicate that it's being summarized
     update_message_visuals(index, false, "Summarizing...");
-    memoryEditInterface.update_message_visuals(index, null, false, "Summarizing...");
 
     if (index === context.chat.length - 1) {
         scrollChatToBottom();
@@ -279,7 +269,6 @@ async function summarize_message(index /*: number */) /*: Promise<{success: bool
             if (retry_count > 0) {
                 debug(`[Validation] Retry attempt ${retry_count}/${max_retries} for message ${index}`);
                 update_message_visuals(index, false, `Summarizing (retry ${retry_count}/${max_retries})...`);
-                memoryEditInterface.update_message_visuals(index, null, false, `Summarizing (retry ${retry_count}/${max_retries})...`);
             }
 
             debug(`Summarizing message ${index}...`);
@@ -362,7 +351,6 @@ async function summarize_message(index /*: number */) /*: Promise<{success: bool
 
     // update the message summary text again now with the memory, still no styling
     update_message_visuals(index, false)
-    memoryEditInterface.update_message_visuals(index, null, false)
 
     // If the most recent message, scroll to the bottom
     if (index === context.chat.length - 1) {
@@ -402,45 +390,29 @@ async function summarize_text(prompt /*: string */) /*: Promise<string> */ {
         system_prompt = "Complete the requested task."
     }
 
-    // TODO do the world info injection manually instead
-    const include_world_info = get_settings('include_world_info');
     let result;
 
     try {
-        if (include_world_info) {
-            /**
-             * Background generation based on the provided prompt.
-             * @param {string} quiet_prompt Instruction prompt for the AI
-             * @param {boolean} quietToLoud Whether the message should be sent in a foreground (loud) or background (quiet) mode
-             * @param {boolean} skipWIAN whether to skip addition of World Info and Author's Note into the prompt
-             * @param {string} quietImage Image to use for the quiet prompt
-             * @param {string} quietName Name to use for the quiet prompt (defaults to "System:")
-             * @param {number} [responseLength] Maximum response length. If unset, the global default value is used.
-             * @returns
-             */
-            result = await ctx.generateQuietPrompt(prompt, true, false, system_prompt, "assistant");
-        } else {
-            /**
-             * Generates a message using the provided prompt.
-             * @param {string} prompt Prompt to generate a message from
-             * @param {string} api API to use. Main API is used if not specified.
-             * @param {boolean} instructOverride true to override instruct mode, false to use the default value
-             * @param {boolean} quietToLoud true to generate a message in system mode, false to generate a message in character mode
-             * @param {string} [systemPrompt] System prompt to use. Only Instruct mode or OpenAI.
-             * @param {number} [responseLength] Maximum response length. If unset, the global default value is used.
-             * @returns {Promise<string>} Generated message
-             */
-            // $FlowFixMe[extra-arg]
-            result = await generateRaw({
-                prompt: prompt,
-                instructOverride: true,
-                quietToLoud: false,
-                // $FlowFixMe[incompatible-type] - system_prompt can be false or string, passing as-is
-                systemPrompt: system_prompt,
-                responseLength: null,
-                trimNames: false
-            });
-        }
+        /**
+         * Generates a message using the provided prompt.
+         * @param {string} prompt Prompt to generate a message from
+         * @param {string} api API to use. Main API is used if not specified.
+         * @param {boolean} instructOverride true to override instruct mode, false to use the default value
+         * @param {boolean} quietToLoud true to generate a message in system mode, false to generate a message in character mode
+         * @param {string} [systemPrompt] System prompt to use. Only Instruct mode or OpenAI.
+         * @param {number} [responseLength] Maximum response length. If unset, the global default value is used.
+         * @returns {Promise<string>} Generated message
+         */
+        // $FlowFixMe[extra-arg]
+        result = await generateRaw({
+            prompt: prompt,
+            instructOverride: true,
+            quietToLoud: false,
+            // $FlowFixMe[incompatible-type] - system_prompt can be false or string, passing as-is
+            systemPrompt: system_prompt,
+            responseLength: null,
+            trimNames: false
+        });
     } catch (err) {
         // SillyTavern strips error details before they reach us
         // Just re-throw for upper-level handling
@@ -654,15 +626,5 @@ async function auto_summarize_chat() {
 }
 
 export {
-    summarize_messages,
-    summarize_message,
-    create_summary_prompt,
-    stop_summarization,
-    collect_messages_to_auto_summarize,
-    switchToSummarizationProfile,
-    auto_summarize_chat,
-    summarize_text,
-    get_message_history,
-    setStopSummarization,
-    getStopSummarization
+    summarize_text, // Used by scene summaries
 };

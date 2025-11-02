@@ -153,27 +153,6 @@ By default, text is greyed to indicate that is it not injected.
     flex-wrap: wrap;
 }
 
-/* the progress bar, mimicking the width of the main chat area */
-#sheld .auto_summarize_progress_bar {
-    top: var(--topBarBlockSize);
-    width: var(--sheldWidth);
-    position: fixed;
-    z-index: 999999;
-    padding: 5px;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(5px);
-}
-
-/* the progres bar when placed in the memory edit interface */
-#auto_summarize_memory_state_interface #progress_bar .auto_summarize_progress_bar {
-    width: 100%;
-    position: absolute;
-    bottom: 0;
-}
-#auto_summarize_memory_state_interface #progress_bar {
-    position: relative;
-}
-
 /* in the group member selection, the buttons that toggle summarization */
 .auto_summarize_memory_group_member_enable {
     transition: all 0.2s ease-in-out;

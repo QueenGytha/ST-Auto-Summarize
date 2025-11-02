@@ -7,20 +7,15 @@ import {
     chat_enabled,
     toggle_chat_enabled,
     refresh_memory,
-    stop_summarization,
     get_memory,
     MODULE_NAME,
     hard_reset_settings,
     refresh_settings,
     settings_content_class,
     toggle_popout,
-    memoryEditInterface,
     collect_scene_summary_indexes,
     get_scene_memory_injection,
-    summarize_messages,
-    collect_messages_to_auto_summarize,
     display_injection_preview,
-    forget_message_toggle,
     toast,
 } from './index.js';
 
@@ -57,22 +52,6 @@ function initialize_slash_commands() {
             refresh_memory()
         },
         helpString: 'Hard reset all settings',
-    }));
-
-    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'force_exclude_memory',
-        callback: (args, index) => {
-            if (index === "") index = null  // if not provided the index is an empty string, but we need it to be null to get the default behavior
-            forget_message_toggle(index);
-        },
-        helpString: 'Toggle the ememory exclusion status of a message (default is the most recent message)',
-        unnamedArgumentList: [
-            SlashCommandArgument.fromProps({
-                description: 'Index of the message to toggle',
-                isRequired: false,
-                typeList: ARGUMENT_TYPE.NUMBER,
-            }),
-        ],
     }));
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
@@ -122,53 +101,11 @@ function initialize_slash_commands() {
     }));
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'toggle_memory_edit_interface',
-        callback: (_args) => {
-            memoryEditInterface.show()
-        },
-        helpString: 'Toggle the memory editing interface',
-    }));
-
-    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'toggle_memory_injection_preview',
         callback: (_args) => {
             display_injection_preview()
         },
         helpString: 'Toggle a preview of the current memory injection',
-    }));
-
-    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'summarize_chat',
-        helpString: 'Summarize the chat using the auto-summarization criteria, even if auto-summarization is off.',
-        callback: async (_args, _limit) => {
-            const indexes = collect_messages_to_auto_summarize()
-            await summarize_messages(indexes);
-        },
-    }));
-
-    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'summarize',
-        callback: async (args, index) => {
-            if (index === "") index = null  // if not provided the index is an empty string, but we need it to be null to get the default behavior
-            await summarize_messages(index);  // summarize the message
-            refresh_memory();
-        },
-        helpString: 'Summarize the given message index (defaults to most recent applicable message)',
-        unnamedArgumentList: [
-            SlashCommandArgument.fromProps({
-                description: 'Index of the message to summarize',
-                isRequired: false,
-                typeList: ARGUMENT_TYPE.NUMBER,
-            }),
-        ],
-    }));
-
-    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'stop_summarization',
-        callback: (_args) => {
-            stop_summarization()
-        },
-        helpString: 'Abort any summarization taking place.',
     }));
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
@@ -250,15 +187,6 @@ function initialize_slash_commands() {
         helpString: 'Clear all operations from queue',
     }));
 
-    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'queue-test',
-        callback: async () => {
-            const { enqueueOperation, OperationType } = await import('./operationQueue.js');
-            const opId = await enqueueOperation(OperationType.SUMMARIZE_MESSAGE, { index: 0 }, {});
-            return `Test operation added to queue: ${opId ?? 'null'}`;
-        },
-        helpString: 'Add a test operation to the queue (for debugging)',
-    }));
 }
 
 export {

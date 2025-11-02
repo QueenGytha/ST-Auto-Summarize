@@ -4,7 +4,6 @@ import {
     debug,
     error,
     toast,
-    get_message_history,
     get_settings,
     set_settings,
     save_profile,
@@ -15,25 +14,19 @@ import {
     export_profile,
     import_profile,
     toggle_character_profile,
-    create_summary_prompt,
     toggle_chat_profile,
     toggle_chat_enabled,
     refresh_settings,
     refresh_memory,
-    stop_summarization,
-    memoryEditInterface,
-    get_summary_preset_max_tokens,
     get_user_setting_text_input,
     display_text_modal,
     bind_setting,
     bind_function,
     reset_settings,
-    get_short_token_limit,
     extension_settings,
     saveSettingsDebounced,
 } from './index.js';
 import { default_scene_template, auto_lorebook_entry_lookup_prompt, auto_lorebook_entry_deduplicate_prompt } from './defaultPrompts.js';
-import { DEFAULT_MERGE_PROMPTS } from './trackingEntries.js';
 import {
     ensureEntityTypesSetting,
     renderEntityTypesList,
@@ -48,10 +41,6 @@ async function initialize_settings_listeners() {
 
 
     bind_setting('#error_detection_enabled', 'error_detection_enabled', 'boolean');
-    bind_setting('#message_summary_error_detection_enabled', 'message_summary_error_detection_enabled', 'boolean');
-    bind_setting('#message_summary_error_detection_retries', 'message_summary_error_detection_retries', 'number');
-    bind_setting('#message_summary_error_detection_preset', 'message_summary_error_detection_preset', 'text');
-    bind_setting('#message_summary_error_detection_prefill', 'message_summary_error_detection_prefill', 'text');
     bind_setting('#scene_summary_template', 'scene_summary_template', 'text');
 
     bind_function('#edit_scene_injection_template', async () => {
@@ -64,18 +53,6 @@ async function initialize_settings_listeners() {
             set_settings('scene_summary_template', value);
             save_profile();
         }
-    });
-
-    bind_function('#edit_message_summary_error_detection_prompt', async () => {
-        const description = `
-Configure the prompt used to verify that regular summaries meet your criteria.
-The prompt should return "VALID" for acceptable summaries and "INVALID" for unacceptable ones.
-
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{summary}}:</b> The generated summary to validate.</li>
-</ul>`;
-        await get_user_setting_text_input('message_summary_error_detection_prompt', 'Edit Message Summary Error Detection Prompt', description);
     });
 
     bind_setting('#auto_hide_message_age', 'auto_hide_message_age', 'number', refresh_memory);
@@ -105,80 +82,22 @@ Available Macros:
     bind_function('#chat_profile', () => toggle_chat_profile());
     bind_setting('#notify_on_profile_switch', 'notify_on_profile_switch', 'boolean')
 
-    bind_function('#stop_summarization', stop_summarization);
     bind_function('#revert_settings', reset_settings);
 
     bind_function('#toggle_chat_memory', () => toggle_chat_enabled(), false);
-    bind_function('#edit_memory_state', () => memoryEditInterface.show())
     bind_function("#refresh_memory", () => refresh_memory());
 
-    bind_function('#edit_summary_prompt', async () => {
-        const max_tokens = await get_summary_preset_max_tokens()
-        const description = `
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{message}}:</b> The message text.</li>
-    <li><b>{{history}}:</b> The message history as configured by the "Message History" setting.</li>
-    <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset (Currently: ${max_tokens}).</li>
-    <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
-</ul>
-`
-        await get_user_setting_text_input('prompt', 'Edit Summary Prompt', description)
-    })
-    bind_function('#preview_message_history', async () => {
-        // $FlowFixMe[cannot-resolve-name]
-        const chat = getContext().chat;
-        const history = get_message_history(chat.length-1);
-        display_text_modal("{{history}} Macro Preview (Last Message)", history);
-    })
-    bind_function('#preview_summary_prompt', async () => {
-        // $FlowFixMe[cannot-resolve-name]
-        const text = await create_summary_prompt(getContext().chat.length-1)
-        display_text_modal("Summary Prompt Preview (Last Message)", text);
-    })
-
-    bind_setting('#connection_profile', 'connection_profile', 'text')
-    bind_setting('#completion_preset', 'completion_preset', 'text')
-    bind_setting('#auto_summarize', 'auto_summarize', 'boolean');
-    bind_setting('#auto_summarize_on_edit', 'auto_summarize_on_edit', 'boolean');
-    bind_setting('#auto_summarize_on_swipe', 'auto_summarize_on_swipe', 'boolean');
-    bind_setting('#auto_summarize_batch_size', 'auto_summarize_batch_size', 'number');
-    bind_setting('#auto_summarize_message_limit', 'auto_summarize_message_limit', 'number');
-    bind_setting('#auto_summarize_progress', 'auto_summarize_progress', 'boolean');
-    bind_setting('#auto_summarize_on_send', 'auto_summarize_on_send', 'boolean');
-    bind_setting('#summarization_delay', 'summarization_delay', 'number');
-    bind_setting('#summarization_time_delay', 'summarization_time_delay', 'number')
-    bind_setting('#prefill', 'prefill', 'text')
-    bind_setting('#show_prefill', 'show_prefill', 'boolean')
-
+    // Message Filtering Settings (used by scene summaries)
     bind_setting('#include_user_messages', 'include_user_messages', 'boolean');
     bind_setting('#include_system_messages', 'include_system_messages', 'boolean');
-    bind_setting('#include_narrator_messages', 'include_narrator_messages', 'boolean')
+    bind_setting('#include_narrator_messages', 'include_narrator_messages', 'boolean');
     bind_setting('#message_length_threshold', 'message_length_threshold', 'number');
 
-    bind_setting('#include_world_info', 'include_world_info', 'boolean');
     bind_setting('#block_chat', 'block_chat', 'boolean');
-    bind_setting('#nest_messages_in_prompt', 'nest_messages_in_prompt', 'boolean')
-    bind_setting('#include_message_history', 'include_message_history', 'number');
-    bind_setting('#include_message_history_mode', 'include_message_history_mode', 'text');
-    bind_setting('#include_user_messages_in_history', 'include_user_messages_in_history', 'boolean');
-
-    bind_setting('#summary_injection_separator', 'summary_injection_separator', 'text')
+    bind_setting('#summary_injection_separator', 'summary_injection_separator', 'text');
     bind_setting('#summary_injection_threshold', 'summary_injection_threshold', 'number');
-    bind_setting('#exclude_messages_after_threshold', 'exclude_messages_after_threshold', 'boolean');
-    bind_setting('#keep_last_user_message', 'keep_last_user_message', 'boolean')
-
-    bind_setting('#message_summary_context_limit', 'message_summary_context_limit', 'number', () => {
-        // $FlowFixMe[cannot-resolve-name]
-        $('#message_summary_context_limit_display').text(get_short_token_limit());
-    });
-    bind_setting('input[name="message_summary_context_type"]', 'message_summary_context_type', 'text', () => {
-        // $FlowFixMe[cannot-resolve-name]
-        $('#message_summary_context_limit_display').text(get_short_token_limit());
-    })
 
     bind_setting('#debug_mode', 'debug_mode', 'boolean');
-    bind_setting('#display_memories', 'display_memories', 'boolean')
     bind_setting('#default_chat_enabled', 'default_chat_enabled', 'boolean');
     bind_setting('#use_global_toggle_state', 'use_global_toggle_state', 'boolean');
 
@@ -187,15 +106,10 @@ Available Macros:
     bind_setting('#operation_queue_use_lorebook', 'operation_queue_use_lorebook', 'boolean');
     bind_setting('#operation_queue_display_enabled', 'operation_queue_display_enabled', 'boolean');
 
-    // trigger the change event once to update the display at start
-    // $FlowFixMe[cannot-resolve-name]
-    $('#message_summary_context_limit').trigger('change');
-
     // --- Scene Summary Settings ---
     bind_setting('#scene_summary_enabled', 'scene_summary_enabled', 'boolean');
     bind_setting('#scene_summary_auto_name', 'scene_summary_auto_name', 'boolean');
     bind_setting('#scene_summary_auto_name_manual', 'scene_summary_auto_name_manual', 'boolean');
-    bind_setting('#scene_summary_exclude_last_user_message', 'scene_summary_exclude_last_user_message', 'boolean');
     bind_setting('#scene_summary_navigator_width', 'scene_summary_navigator_width', 'number', (value /*: number */) => {
         // Enforce min/max constraints (30-500 pixels)
         const clampedValue = Math.max(30, Math.min(500, value));
@@ -222,7 +136,6 @@ Available Macros:
     bind_setting('#scene_summary_depth', 'scene_summary_depth', 'number');
     bind_setting('#scene_summary_role', 'scene_summary_role');
     bind_setting('#scene_summary_scan', 'scene_summary_scan', 'boolean');
-    bind_setting('#scene_summary_history_mode', 'scene_summary_history_mode', 'text');
     bind_setting('#scene_summary_message_types', 'scene_summary_message_types', 'text');
 
     // Persist and display scene_summary_history_count
@@ -580,116 +493,6 @@ function initialize_lorebooks_settings_listeners() {
         // $FlowFixMe[prop-missing]
         extension_settings.autoLorebooks.queue.display_enabled = value;
         saveSettingsDebounced();
-    });
-
-    // Tracking settings
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-tracking-enabled', function() {
-        const value = $(this).prop('checked');
-        set_settings('auto_lorebooks_tracking_enabled', value);
-        save_profile();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-tracking-intercept-send', function() {
-        const value = $(this).prop('checked');
-        set_settings('auto_lorebooks_tracking_intercept_send_button', value);
-        save_profile();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-tracking-auto-create', function() {
-        const value = $(this).prop('checked');
-        set_settings('auto_lorebooks_tracking_auto_create', value);
-        save_profile();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-tracking-remove-syntax', function() {
-        const value = $(this).prop('checked');
-        set_settings('auto_lorebooks_tracking_remove_from_message', value);
-        save_profile();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('input', '#autolorebooks-tracking-syntax-gm-notes', function() {
-        const value = $(this).val();
-        set_settings('auto_lorebooks_tracking_syntax_gm_notes', value);
-        save_profile();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('input', '#autolorebooks-tracking-syntax-character-stats', function() {
-        const value = $(this).val();
-        set_settings('auto_lorebooks_tracking_syntax_character_stats', value);
-        save_profile();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-tracking-merge-connection', function() {
-        const value = $(this).val();
-        set_settings('auto_lorebooks_tracking_merge_connection_profile', value);
-        save_profile();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-tracking-merge-preset', function() {
-        const value = $(this).val();
-        set_settings('auto_lorebooks_tracking_merge_completion_preset', value);
-        save_profile();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('input', '#autolorebooks-tracking-merge-prefill', function() {
-        const value = $(this).val();
-        set_settings('auto_lorebooks_tracking_merge_prefill', value);
-        save_profile();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('input', '#autolorebooks-tracking-merge-prompt-gm-notes', function() {
-        const value = $(this).val();
-        set_settings('auto_lorebooks_tracking_merge_prompt_gm_notes', value);
-        save_profile();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('input', '#autolorebooks-tracking-merge-prompt-character-stats', function() {
-        const value = $(this).val();
-        set_settings('auto_lorebooks_tracking_merge_prompt_character_stats', value);
-        save_profile();
-    });
-
-    // Restore default buttons for merge prompts
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('click', '#restore-gm-notes-merge-prompt', function() {
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-merge-prompt-gm-notes').val(DEFAULT_MERGE_PROMPTS.gm_notes);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-merge-prompt-gm-notes').trigger('input');
-        toast('GM Notes merge prompt restored to default', 'success');
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('click', '#restore-character-stats-merge-prompt', function() {
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-merge-prompt-character-stats').val(DEFAULT_MERGE_PROMPTS.character_stats);
-        // $FlowFixMe[cannot-resolve-name]
-        $('#autolorebooks-tracking-merge-prompt-character-stats').trigger('input');
-        toast('Character Stats merge prompt restored to default', 'success');
     });
 
     // Summary processing settings

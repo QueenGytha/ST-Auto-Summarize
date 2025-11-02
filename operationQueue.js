@@ -36,7 +36,6 @@ export const OperationStatus /*: { [key: string]: OperationStatusType } */ = /*:
 
 // Operation type constants
 export const OperationType /*: { [key: string]: OperationTypeType } */ = /*:: ( */ {
-    SUMMARIZE_MESSAGE: 'summarize_message',
     VALIDATE_SUMMARY: 'validate_summary',
     DETECT_SCENE_BREAK: 'detect_scene_break',
     GENERATE_SCENE_SUMMARY: 'generate_scene_summary',

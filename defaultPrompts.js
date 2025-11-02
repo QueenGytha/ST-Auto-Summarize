@@ -95,7 +95,13 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 //   * For user-owned locations/items, use {{user}}'s residence/property
 //   * Example: [Apartment: {{user}}'s residence, shared with(Sarah)]
 //   * Do NOT use: "protagonist", "the user", "main character", "human subject"
-// - Target: 50-200 tokens per entry
+// - INCLUDE CONCRETE FACTUAL DETAILS:
+//   * Specific quotes: quoted("exact scripture text", "literature about villainy")
+//   * Specific items used: used(dagger), read(book title), wore(red cloak)
+//   * Specific actions taken: displayed(knife-fighting stance), fled(westward direction)
+//   * What they read/saw/heard: read(ancient murals depicting First War)
+//   ❌ NOT vague: "has beliefs about women", "knows things"
+//   ✅ SPECIFIC: quoted(scripture: "suffer not a woman to teach"), knows(Sunblade thief identity)
 //
 // EXAMPLES OF GOOD SEPARATION:
 //
@@ -166,9 +172,21 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 // - Concise timeline of scene events and outcomes with factual details
 // - Capture key happenings, specific details, and CURRENT STATE after scene concludes
 // - MENTION entities by name but DON'T describe their personalities/traits (descriptions go in lorebooks)
+// - NO CHARACTER DESCRIPTIONS IN SUMMARY - traits belong in lorebook entries ONLY:
+//   * NOT: "Senta, an unpartnered Companion who remained alone longer than most"
+//   * INSTEAD: "Senta followed Adam"
+//   * NOT: "Adam, a 16-year-old Holderkin male with troubling views"
+//   * INSTEAD: "Adam quoted scripture condemning female authority"
+//   * Character details are already in lorebook - summaries are for EVENTS only
 // - Focus on WHAT HAPPENED and OUTCOMES, not step-by-step processes
 // - Include concrete details: what was said, what was read/used, specific items mentioned
 // - Exclude emotional interpretations: NOT "felt jealous", "seemed worried", "was embarrassed"
+// - EXCLUDE ALL emotional/psychological/motivational content:
+//   * NOT: "felt", "seemed", "sensed", "drawn to", "interest in", "attracted to"
+//   * NOT: "conflicted about", "torn between", "despite X", "although Y"
+//   * NOT: "potential beneath", "troubled by", "concerned about", "worried that"
+//   * NOT: Any analysis of WHY - only state WHAT happened
+//   * ONLY observable facts: what was said, what was done, where they went, what they found
 // - Terse but detailed, primarily past tense (present tense for ongoing/unresolved states)
 // - Brief but factually complete - capture all significant events and details without emotional analysis
 //
@@ -214,7 +232,17 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 //    - Don't copy scene's writing style
 //    - Varied sentence structure
 //
-// 4. LOREBOOK ENTRY TYPES (use ONLY these concrete types):
+// 4. ANTI-REPETITION PATTERNS
+//    - DO NOT repeat sentence structures like "X, a [trait], did Y"
+//      * ❌ BAD: "Senta, a white Companion, followed Adam"
+//      * ✅ GOOD: "Senta followed Adam"
+//    - DO NOT repeat constructions like "Despite X, Y" or "Although X, Y"
+//      * ❌ BAD: "Despite his beliefs, he followed her"
+//      * ✅ GOOD: "He followed her"
+//    - Vary sentence patterns: "X did Y", "Y happened", "X and Y traveled to Z"
+//    - If you notice you've used same structure twice, change the third
+//
+// 5. LOREBOOK ENTRY TYPES (use ONLY these concrete types):
 //
 //    character: NPCs and recurring characters
 //    - Include: appearance, personality, capabilities, relationships, secrets they know
@@ -246,7 +274,7 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 //    - Include: how it works, limitations, who it affects, exceptions
 //    - PList: [RuleName: mechanism, affects(targets), limitations(list), exceptions(list)]
 //
-// 5. ONE ENTITY PER LOREBOOK ENTRY
+// 6. ONE ENTITY PER LOREBOOK ENTRY
 //    - If multiple characters mentioned together ("Marcus and Elena"), create SEPARATE character entries
 //    - Each character gets their own entry with their individual details
 //    - Store relationships as PROPERTIES within character entries:
@@ -258,12 +286,27 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 //
 // KEYWORDS GUIDELINES (SCENES):
 // - 2–4 keywords; all lowercase
-// - Use SIMPLE, SINGLE WORDS that will appear in chat (exact match required)
+// - Use SPECIFIC ENTITY NAMES, not generic terms
+// - Keywords should be the entity's actual name or distinctive identifiers
 // - Include canonical name and common aliases/nicknames
 // - Avoid multi-word phrases unless they're used together consistently
-// - Avoid generic terms ("place", "city", "market", etc.) and verbs
 // - Keywords trigger on exact match - keep them simple and broad
 // - If a keyword is too generic, use secondaryKeys for AND disambiguation
+//
+// AVOID GENERIC KEYWORDS (they trigger on unrelated content):
+//   ❌ BAD: "companion", "horse", "spirit", "demon" (triggers on ANY companion/horse)
+//   ❌ BAD: "boy", "youth", "male", "man" (triggers on ANY male character)
+//   ❌ BAD: "gate", "office", "building" (triggers on ANY gate/office)
+//   ✅ GOOD: "senta", "adam", "rolan", "talia" (specific character names)
+//   ✅ GOOD: "exile", "registry", "collegium" (specific location names)
+//
+// For locations with generic words, use distinctive part:
+//   "Exile's Gate" → keywords: ["exile"] NOT ["gate"]
+//   "Registry Office" → keywords: ["registry"] NOT ["office"]
+//   "Palace Complex" → keywords: ["palace"] NOT ["complex"]
+//
+// Test: Would this keyword trigger on unrelated content?
+//   If YES → too generic, use more specific entity name instead
 //
 // Examples:
 // ✅ GOOD: ["sunblade"] - triggers on any mention of sunblade
@@ -271,13 +314,34 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 // ✅ GOOD: ["alice"] - triggers when name mentioned
 // ❌ BAD: ["the brave alice", "warrior alice"] - too specific, won't trigger reliably
 //
-// SCENE EXAMPLE:
+// SCENE EXAMPLE - EMOTIONAL VS FACTUAL:
 //
 // Scene: Alice confronts Bob about his suspicious behavior. Bob reveals he's working for the Shadow Guild, opposing corrupt nobility. He knows who stole the Sunblade through Guild intelligence but can't reveal it without exposing operations. Alice is torn between duty and sympathy. They agree to work together with a three-day deadline for Bob to reveal the thief.
 //
+// ❌ BAD SUMMARY (emotional, descriptive, character analysis):
+// "Alice, a skilled and determined warrior with a strong sense of duty, confronted Bob about
+// his suspicious behavior. She felt torn between her loyalty and growing concerns about his
+// secrecy. Bob, who had been keeping secrets, seemed conflicted as he reluctantly revealed
+// his Shadow Guild membership. He admitted he knew who stole the Sunblade, though he appeared
+// troubled about sharing this information. Despite their differences and Alice's initial
+// anger, they formed an uneasy alliance based on mutual respect."
+//
+// Problems: Uses "skilled warrior" (trait in summary), "felt torn" (emotion), "seemed conflicted"
+// (emotion), "appeared troubled" (emotion), "Despite their differences" (relationship analysis),
+// "uneasy alliance based on mutual respect" (relationship interpretation)
+//
+// ✅ GOOD SUMMARY (factual, observable, event-focused):
+// "Alice confronted Bob about suspicious behavior. Bob revealed Shadow Guild membership and
+// knowledge of Sunblade thief identity. Stated cannot reveal thief without compromising Guild
+// operations. Alice agreed to three-day deadline for information. Current state: cooperation
+// agreement with three-day deadline."
+//
+// Why it's good: Only observable facts, no emotions, no character descriptions, no relationship
+// analysis. States what happened and what was said, nothing more.
+//
 // GOOD OUTPUT:
 // {
-//   "summary": "Alice confronted Bob about suspicious behavior. Bob revealed Shadow Guild membership and knowledge of Sunblade thief. Refused immediate revelation to protect Guild operations. Alice conflicted between duty and sympathy for anti-corruption cause. Agreed to cooperate with three-day deadline for thief's identity. Current state: tense alliance, Bob has three days to reveal information.",
+//   "summary": "Alice confronted Bob about suspicious behavior. Bob revealed Shadow Guild membership and knowledge of Sunblade thief identity. Stated cannot reveal thief without compromising Guild operations. Alice agreed to three-day deadline for thief's identity. Current state: cooperation agreement, Bob has three days to reveal information.",
 //   "lorebooks": [
 //     {
 //       "name": "Shadow Guild",
@@ -295,7 +359,7 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 //       "name": "Alice",
 //       "type": "character",
 //       "keywords": ["alice"],
-//       "content": "[Alice: warrior, duty(recover Sunblade), knows(Bob is Shadow Guild member), conflicted(duty vs sympathy for anti-corruption cause), relationship with Bob(tense alliance, conditional trust), agreed to(three day deadline for cooperation)]"
+//       "content": "[Alice: warrior, goal(recover Sunblade), knows(Bob is Shadow Guild member, Bob knows thief identity), agreed to(three day deadline for Bob to reveal thief)]"
 //     },
 //     {
 //       "name": "Recover Sunblade",
@@ -478,6 +542,19 @@ export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay 
 //    - Be specific and concrete with factual details, not vague summaries
 //    - Capture what happened with full factual detail, omit emotional interpretation
 //
+//    CONCRETE EXAMPLES OF FACTUAL VS EMOTIONAL:
+//      ❌ EMOTIONAL: "Alice felt conflicted about Bob's betrayal and seemed troubled by his confession"
+//      ✅ FACTUAL: "Bob revealed Shadow Guild membership to Alice"
+//
+//      ❌ EMOTIONAL: "Despite initial hostility, they formed an uneasy alliance based on growing trust"
+//      ✅ FACTUAL: "Agreed to three-day deadline for cooperation"
+//
+//      ❌ EMOTIONAL: "Senta sensed potential in Adam beneath his troubling indoctrination"
+//      ✅ FACTUAL: "Senta followed Adam from Exile's Gate to Palace grounds"
+//
+//      ❌ EMOTIONAL: "Adam, torn between beliefs and circumstances, reluctantly accepted help"
+//      ✅ FACTUAL: "Adam followed Senta to Collegium"
+//
 // 4. FOCUS ON STATE, NOT EVENT SEQUENCES
 //    - Capture CURRENT state: who, what, where, status
 //    - Don't narrate step-by-step sequences
@@ -522,6 +599,19 @@ export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay 
 // - Exclude emotions and interpretations: NOT "felt jealous", "seemed upset", "was embarrassed"
 // - Exclude personality analysis, motivations, relationship dynamics (that's in lorebook)
 // - Focus on: Where are they? What specifically did they do? What's their current state?
+//
+// CHARACTER SECTION FORMATTING EXAMPLES:
+//   ❌ BAD: "Adam, a 16-year-old Holderkin male with troubling views about women, is
+//           conflicted about accepting Senta's help despite his ingrained beliefs."
+//   ✅ GOOD: "**Adam**: Currently at Collegium courtyard. Found Registry Office closed.
+//            Confided homestead situation to Senta. Followed Senta to Collegium.
+//            Spending night on stone bench in arcade."
+//
+//   ❌ BAD: "Senta, an unpartnered Companion who sensed potential in Adam, felt drawn
+//           to help him despite his hostile attitude toward Companions."
+//   ✅ GOOD: "**Senta**: Followed Adam from Exile's Gate. Intervened when thugs
+//            confronted Adam. Led Adam to Collegium after Registry closed. Provided
+//            shelter in courtyard arcade."
 //
 // ## Locations
 // **Location Name**: Current state. Recent events there. Who's present.

@@ -22,47 +22,6 @@ function isQueueEnabled() {
 }
 
 /**
- * Queue a message summarization operation
- * @param {number} index - Message index
- * @param {object} options - Additional options (priority, dependencies, etc.)
- * @returns {Promise<string>} Operation ID
- */
-export async function queueSummarizeMessage(index /*: number */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
-    if (!isQueueEnabled()) {
-        debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue summarization');
-        return null;
-    }
-
-    return await enqueueOperation(
-        OperationType.SUMMARIZE_MESSAGE,
-        { index },
-        {
-            priority: options.priority ?? 0,
-            dependencies: options.dependencies ?? [],
-            metadata: {
-                message_index: index,
-                ...options.metadata
-            }
-        }
-    );
-}
-
-/**
- * Queue multiple message summarization operations
- * @param {Array<number>} indexes - Array of message indexes
- * @param {object} options - Additional options
- * @returns {Promise<Array<string>>} Array of operation IDs
- */
-export async function queueSummarizeMessages(indexes /*: Array<number> */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<Array<?string>> */ {
-    if (!isQueueEnabled()) {
-        debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue batch summarization');
-        return [];
-    }
-
-    return await Promise.all(indexes.map(index => queueSummarizeMessage(index, options)));
-}
-
-/**
  * Queue a summary validation operation
  * @param {string} summary - Summary text to validate
  * @param {string} type - Validation type ('regular' or 'scene')
@@ -349,29 +308,36 @@ async function enqueueLorebookEntryLookupOperation(
  * @returns {Promise<string|null>} Operation ID or null if queue disabled
  */
 export async function queueProcessLorebookEntry(entryData /*: Object */, messageIndex /*: number */, summaryHash /*: ?string */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
+    const entryName = entryData.name || entryData.comment || 'Unknown';
+    debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Called for entry: ${entryName}, messageIndex: ${messageIndex}, summaryHash: ${summaryHash || 'none'}`);
+
     if (!validateQueueStatus()) {
+        debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Queue validation failed - queue not enabled or not ready`);
         return null;
     }
 
-    const entryName = entryData.name || entryData.comment || 'Unknown';
     const lowerName = extractEntryName(entryData);
-    debug(SUBSYSTEM.QUEUE, `Queueing lorebook entry (new pipeline): ${entryName} from message ${messageIndex}`);
+    debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Extracted name: ${lowerName}, queueing lorebook entry (new pipeline): ${entryName} from message ${messageIndex}`);
 
+    debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Checking for superseded operations...`);
     await cancelSupersededOperations(lowerName, messageIndex, summaryHash);
 
+    debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Checking for active duplicates...`);
     if (hasActiveDuplicate(lowerName, messageIndex, summaryHash)) {
-        debug(SUBSYSTEM.QUEUE, `Skipping duplicate lorebook op for: ${entryName}`);
+        debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ✗ Skipping duplicate lorebook op for: ${entryName}`);
         return null;
     }
 
+    debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Preparing lookup context...`);
     const context = await prepareLorebookEntryLookupContext(entryData);
 
-    return await enqueueLorebookEntryLookupOperation(context, entryName, messageIndex, summaryHash, options);
+    debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Enqueueing LOREBOOK_ENTRY_LOOKUP operation...`);
+    const opId = await enqueueLorebookEntryLookupOperation(context, entryName, messageIndex, summaryHash, options);
+    debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ${opId ? '✓' : '✗'} Operation ${opId ? 'enqueued with ID: ' + opId : 'failed to enqueue'}`);
+    return opId;
 }
 
 export default {
-    queueSummarizeMessage,
-    queueSummarizeMessages,
     queueValidateSummary,
     queueDetectSceneBreak,
     queueDetectSceneBreaks,

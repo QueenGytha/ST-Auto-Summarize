@@ -32,7 +32,6 @@ export {
 // Barrel file. Implictly imports before exporting
 export * from './settingsUI.js';
 export * from './profileManager.js';
-export { MemoryEditInterface } from './memoryEditInterface.js';
 export * from './defaultPrompts.js';
 export * from './defaultSettings.js';
 export * from './sceneBreak.js';
@@ -44,7 +43,6 @@ export * from './slashCommands.js';
 export * from './settingsManager.js';
 export * from './messageVisuals.js';
 export * from './memoryCore.js';
-export * from './progressBar.js';
 export * from './uiBindings.js';
 export * from './characterSelect.js';
 export * from './profileUI.js';
@@ -70,7 +68,5 @@ export * from './queueIntegration.js';
 export * from './lorebookManager.js';
 export * from './lorebookEntryMerger.js';
 export * from './categoryIndexes.js';
-export * from './trackingEntries.js';
-export * from './sendButtonInterceptor.js';
 export * from './summaryToLorebookProcessor.js';
 export * from './tests.js';

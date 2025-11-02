@@ -507,7 +507,6 @@ function renderOperation(operation) {
 // $FlowFixMe[missing-local-annot]
 function formatOperationType(type) {
     const names = {
-        [OperationType.SUMMARIZE_MESSAGE]: 'Summarize',
         [OperationType.VALIDATE_SUMMARY]: 'Validate',
         [OperationType.DETECT_SCENE_BREAK]: 'Detect Scene',
         [OperationType.GENERATE_SCENE_SUMMARY]: 'Scene Summary',
@@ -563,7 +562,6 @@ function formatMessageOperationParams(params) {
 // $FlowFixMe[missing-local-annot]
 function formatOperationParams(type, params, metadata) {
     switch (type) {
-        case OperationType.SUMMARIZE_MESSAGE:
         case OperationType.VALIDATE_SUMMARY:
         case OperationType.DETECT_SCENE_BREAK:
         case OperationType.GENERATE_SCENE_SUMMARY:

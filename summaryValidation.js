@@ -13,12 +13,13 @@ import {
 
 // Helper: Get setting key for validation type
 function getValidationKey(type /*: string */, suffix /*: string */) /*: string */ {
-    const prefix = type === "regular" ? 'message_summary' : 'combined_summary';
+    // Only scene summaries are supported now (no more message summaries)
+    const prefix = 'scene_summary';
     return `${prefix}_${suffix}`;
 }
 
 // $FlowFixMe[signature-verification-failure]
-async function validate_summary(summary /*: string */, type /*: string */ = "regular") /*: Promise<boolean> */ {
+async function validate_summary(summary /*: string */, type /*: string */ = "scene") /*: Promise<boolean> */ {
     if (!get_settings('error_detection_enabled')) return true;
     if (!get_settings(getValidationKey(type, 'error_detection_enabled'))) return true;
 

@@ -16,16 +16,12 @@ const group_member_enable_button_highlight = `auto_summarize_memory_group_member
 // THe module name modifies where settings are stored, where information is stored on message objects, macros, etc.
 const MODULE_NAME = 'auto_summarize_memory';
 const MODULE_NAME_FANCY = 'ST-Auto-Summarize';
-const PROGRESS_BAR_ID = `${MODULE_NAME}_progress_bar`;
 
 // Macros for single message summary injection
 const single_message_summary_macro = `single_message_summary`;
 const generic_memories_macro = `memories`;
 
 // message button classes
-const summarize_button_class = `${MODULE_NAME}_summarize_button`
-const edit_button_class = `${MODULE_NAME}_edit_button`
-const forget_button_class = `${MODULE_NAME}_forget_button`
 const delete_button_class = `${MODULE_NAME}_delete_button`
 
 // Combined Summary Feature additions at the top
@@ -47,12 +43,8 @@ export {
     group_member_enable_button_highlight,
     MODULE_NAME,
     MODULE_NAME_FANCY,
-    PROGRESS_BAR_ID,
     single_message_summary_macro,
     generic_memories_macro,
-    summarize_button_class,
-    edit_button_class,
-    forget_button_class,
     delete_button_class,
     combined_memory_macro
 };

@@ -17,7 +17,6 @@
 
                 <div class="flex-container justifyspacebetween alignitemscenter">
                     <button id="toggle_chat_memory" class="menu_button flex2" title="Toggle whether memory is enabled for this chat specifically (overrides all settings)."><span>Toggle Memory</span></button>
-                    <button id="edit_memory_state" class="menu_button flex2" title="Edit the memories in chat."><span>Edit Memory</span></button>
                     <button id="refresh_memory" class="menu_button fa-solid fa-sync margin0" title="Just refreshes which memories are included and re-renders the memories under each message, doesn't change summaries. This is done automatically all the time, the button is here just in case."></button>
                 </div>
 
@@ -47,138 +46,6 @@
                 </div>
 
 
-                <!-- Summarization -->
-                <hr>
-                <div class="inline-drawer">
-                    <div class="inline-drawer-toggle inline-drawer-header">
-                        <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Summarization <i class="fa-solid fa-info-circle" title="Customize the prompt used to summarize a given message"></i></h4>
-                        </div>
-                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                    </div>
-                    <div class="inline-drawer-content">
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_summary_prompt" class="menu_button flex1" title="Edit the summary prompt" >Edit Summary Prompt</button>
-                            <button id="preview_summary_prompt" class="menu_button fa-solid fa-eye" title="Preview the filled-in summary prompt, using the last message as an example." ></button>
-                            <button id="stop_summarization" class="menu_button fa-solid fa-stop" title="Stop all summarization immediately."></button>
-                        </div>
-
-                        <table>
-
-                            <tr title="The connection profile to use for summaries. Note that choosing a different profile will require temporarily switching to the profile during summarization, discarding any unsaved changes to the current profile.">
-                                <td><span>Connection Profile</span></td>
-                                <td><select id="connection_profile" class="text_pole"></select></td>
-                            </tr>
-
-                            <tr title="The completion preset to use for summaries. Note that choosing a different preset will require temporarily switching to that preset during summarization, discarding any unsaved changes to the current preset. Also be aware that presets are not shared between connection APIs.">
-                                <td><span>Completion Preset</span></td>
-                                <td><select id="completion_preset" class="text_pole"></select></td>
-                            </tr>
-
-                            <tr title="Start the summarization with this prefilled text.">
-                                <td><span>Summary Prefill</span></td>
-                                <td><input id="prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
-                            </tr>
-
-                        </table>
-
-                        <label title="Include the prefill in displayed memories and injections (no effect with reasoning models)" class="checkbox_label">
-                            <input id="show_prefill" type="checkbox" />
-                            <span>Include Prefill In Memories</span>
-                        </label>
-
-                        <hr>
-
-                        <label class="checkbox_label" title="New messages will be automatically summarized if they will be included in short-term memory.">
-                            <input id="auto_summarize" type="checkbox" />
-                            <span>Auto Summarize</span>
-                        </label>
-
-                        <label class="checkbox_label" title="Auto-summarization will be triggered before a new message is sent instead of after.">
-                            <input id="auto_summarize_on_send" type="checkbox" />
-                            <span>Auto Summarize Before Generation</span>
-                        </label>
-
-                        <label title="Show the progress bar when auto-summarizing more than 1 message." class="checkbox_label">
-                            <input id="auto_summarize_progress" type="checkbox" />
-                            <span>Auto Summarize Progress Bar</span>
-                        </label>
-
-                        <label class="checkbox_label" title="Number of messages to wait before auto-summarizing a message (0 = summarize up to the most recent message, 1 = wait one message, etc.)">
-                            <input id="summarization_delay" class="text_pole widthUnset inline_setting" type="number" min="0" max="999" />
-                            <span>Auto Summarize Message Lag</span>
-                        </label>
-
-                        <label class="checkbox_label" title="Wait until this many messages before auto-summarizing them all in sequence (1 = summarize every message immediately, 2 = summarize when you have two ready, etc). Still summarizes one at a time. ">
-                            <input id="auto_summarize_batch_size" class="text_pole widthUnset inline_setting" type="number" min="1" max="999" />
-                            <span>Auto Summarize Batch Size</span>
-                        </label>
-
-                        <label class="checkbox_label" title="The maximum amount of lookback when checking for messages to summarize (-1 to disable). For example, 10 means that when auto-summarizing, the 10 most recent valid summarization targets will be checked, and those without summaries will be summarized.">
-                            <input id="auto_summarize_message_limit" class="text_pole widthUnset inline_setting" type="number" min="-1" max="999" />
-                            <span>Auto Summarize Message Limit</span>
-                        </label>
-
-                        <hr>
-
-                        <div class="flex-container justifyspacebetween">
-                            <label title="Whether to use messages and/or summaries as context for summarization. You must use {{history}} in the summary prompt. Summaries will follow configured inclusion criteria." class="checkbox_label">
-                                <span>Message History </span>
-                                <select id="include_message_history_mode" class="text_pole flex2">
-                                    <option value="none">None</option>
-                                    <option value="messages_only">Messages</option>
-                                    <option value="summaries_only">Summaries</option>
-                                    <option value="messages_and_summaries">Both</option>
-                                </select>
-                            </label>
-                            <button id="preview_message_history" class="menu_button fa-solid fa-eye interactable" title="Preview what the message history will look like"></button>
-                        </div>
-
-                        <label title="How many previous messages to include in the summarization prompt as context.">
-                            <input id="include_message_history" class="text_pole widthUnset" type="number" min="1" max="99" />
-                            <span>Number of Previous Messages</span>
-                        </label>
-
-                        <label title="When including previous messages, also include user messages." class="checkbox_label">
-                            <input id="include_user_messages_in_history" type="checkbox" />
-                            <span>Include Previous User Messages</span>
-                        </label>
-
-                        <hr>
-
-                        <label class="checkbox_label" title="Time in seconds to wait between summarizations. May be needed if you are using a external API with a rate limit.">
-                            <input id="summarization_time_delay" class="text_pole widthUnset inline_setting" type="number" min="0" max="999" />
-                            <span>Summarization Time Delay</span>
-                        </label>
-
-                        <label title="Editing a message will automatically trigger a re-summarization if it has already been summarized." class="checkbox_label">
-                            <input id="auto_summarize_on_edit" type="checkbox" />
-                            <span>Re-summarize on Edit</span>
-                        </label>
-
-                        <label title="Swiping a message will automatically trigger a re-summarization if it has already been summarized." class="checkbox_label">
-                            <input id="auto_summarize_on_swipe" type="checkbox" />
-                            <span>Re-summarize on Swipe</span>
-                        </label>
-
-                        <label title="Block chat input while summarizing." class="checkbox_label">
-                            <input id="block_chat" type="checkbox" />
-                            <span>Block Chat</span>
-                        </label>
-
-
-                        <label title="The message to summarize will be inside the system instruct template itself. In unchecked (default), the message will instead be added separately after the prompt. Some models benefit from this, but it is not recommended." class="checkbox_label">
-                            <input id="nest_messages_in_prompt" type="checkbox" />
-                            <span>Nest Message in Summary Prompt</span>
-                        </label>
-
-                        <label title="WARNING: doesn't work great. Attempts to preserve context-shifting by including all the content that is sent in regular prompts (world info, description, personas, example messages, message history, etc). If your regular prompts are static, this can allow Context Shifting to work between summarizations, but it decreases the accuracy of summarization due to all the extra stuff in the prompt. It also can't be previewed as this injection is handled by ST, not the extension." class="checkbox_label">
-                            <input id="include_world_info" type="checkbox" />
-                            <span>Include All Context Content</span>
-                        </label>
-                    </div>
-                </div>
-
 
                 <!-- General Injection Settings -->
                 <hr>
@@ -198,14 +65,6 @@
                             <input id="summary_injection_threshold" class="text_pole widthUnset" type="number" min="0" max="999" />
                             <span>Start Injecting After</span>
                         </label>
-                        <label title="Messages after the summary injection threshold above will be removed from context, leaving only the summaries." class="checkbox_label">
-                            <input id="exclude_messages_after_threshold" type="checkbox">
-                            <span>Remove Messages After Threshold</span>
-                        </label>
-                        <label title="This will keep the most recent user message in context even if it's past the exclusion threshold" class="checkbox_label">
-                            <input id="keep_last_user_message" type="checkbox">
-                            <span>Preserve Last User Message</span>
-                        </label>
                         <div class="flex-container justifyspacebetween alignitemscenter">
                             <button id="edit_scene_injection_template" class="menu_button flex1" title="Edit the scene summary injection template">Edit Scene Injection Template</button>
                             <input id="scene_summary_template" type="hidden" />
@@ -213,59 +72,35 @@
                     </div>
                 </div>
 
-
-                <!-- Message Summaries -->
+                <!-- Message Filtering -->
                 <hr>
                 <div class="inline-drawer">
                     <div class="inline-drawer-toggle inline-drawer-header">
                         <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Message Summaries <i class="fa-solid fa-info-circle" title="Controls which messages are summarized and stored in memory."></i></h4>
+                            <h4 class="margin0">Message Filtering <i class="fa-solid fa-info-circle" title="Controls which messages are included in scene summaries and other features."></i></h4>
                         </div>
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_message_summary_memory_prompt" class="menu_button flex1" title="Edit the message summary prompt"><span>Edit Message Summary Prompt</span></button>
-                        </div>
-
-                        <label title="Auto-summarize user messages and include summaries in memory." class="checkbox_label">
+                        <label title="Include user messages in scene summaries and other features." class="checkbox_label">
                             <input id="include_user_messages" type="checkbox" />
                             <span>Include User Messages</span>
                         </label>
 
-                        <label title="Auto-summarize hidden messages and include summaries in memory (messages excluded from context)." class="checkbox_label">
+                        <label title="Include hidden messages in scene summaries and other features (messages excluded from context)." class="checkbox_label">
                             <input id="include_system_messages" type="checkbox" />
                             <span>Include Hidden Messages</span>
                         </label>
 
-                        <label title="Auto-summarize system messages and include summaries in memory (e.g. messages from the /sys command)." class="checkbox_label">
+                        <label title="Include system messages in scene summaries and other features (e.g. messages from the /sys command)." class="checkbox_label">
                             <input id="include_narrator_messages" type="checkbox" />
                             <span>Include System Messages</span>
                         </label>
 
-                        <label title="The minimum token length a message has to be in order to get summarized.">
+                        <label title="The minimum token length a message has to be in order to be included.">
                             <input id="message_length_threshold" class="text_pole widthUnset inline_setting" type="number" min="0" max="999" />
                             <span>Message Length Threshold</span>
                         </label>
-
-                        <br>
-
-                        <div class="flex-container justifyspacebetween">
-                            <label title="The max amount of context that message summaries can take up (percent or number of tokens).">
-                                <input id="message_summary_context_limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
-                                <span>Context Limit (<span id="message_summary_context_limit_display"></span> tk)</span>
-                            </label>
-                            <div>
-                                <label>
-                                    <input type="radio" name="message_summary_context_type" value="percent" />
-                                    <span>%</span>
-                                </label>
-                                <label>
-                                    <input type="radio" name="message_summary_context_type" value="tokens" />
-                                    <span>tk</span>
-                                </label>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -295,6 +130,10 @@
                             <input id="scene_summary_enabled" type="checkbox" />
                             <span>Enable Scene Summaries</span>
                         </label>
+                        <label class="checkbox_label" title="Block sending messages while scene summaries are being generated.">
+                            <input id="block_chat" type="checkbox" />
+                            <span>Block Chat During Generation</span>
+                        </label>
                         <label class="checkbox_label" title="Automatically generate a brief scene name (like a chapter title) when auto-generating scene summaries (e.g., during scene break detection), if no name is already set.">
                             <input id="scene_summary_auto_name" type="checkbox" />
                             <span>Auto-generate Scene Names (Auto-Detection)</span>
@@ -306,10 +145,6 @@
                         <label class="checkbox_label" title="New scene summaries will start collapsed by default (showing only the scene name). Existing scenes keep their current state.">
                             <input id="scene_summary_default_collapsed" type="checkbox" />
                             <span>Collapse New Scenes by Default</span>
-                        </label>
-                        <label class="checkbox_label" title="Exclude the last message from scene summaries if it's from the user (scene breaks on user messages often contain only scene directions rather than roleplay content).">
-                            <input id="scene_summary_exclude_last_user_message" type="checkbox" />
-                            <span>Exclude Last User Message from Scenes</span>
                         </label>
                         <div class="flex-container justifyspacebetween alignitemscenter">
                             <button id="edit_scene_summary_prompt" class="menu_button flex1" title="Edit the scene summary prompt"><span>Edit Scene Prompt</span></button>
@@ -329,16 +164,6 @@
                             <tr>
                                 <td><span>Scene Summary Prefill</span></td>
                                 <td><input id="scene_summary_prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
-                            </tr>
-                            <tr>
-                                <td><span>Scene Message History Mode</span></td>
-                                <td>
-                                    <select id="scene_summary_history_mode" class="text_pole">
-                                        <option value="messages">Messages Only</option>
-                                        <option value="summaries">Summaries Only</option>
-                                        <option value="both">Messages and Summaries</option>
-                                    </select>
-                                </td>
                             </tr>
                             <tr>
                                 <td><span>Include Message Types</span></td>
@@ -567,30 +392,6 @@
                             <span>Enable Summary Validation</span>
                         </label>
 
-                        <!-- Regular summary validation -->
-                <label class="checkbox_label error_detection_setting" title="Enable validation for regular message summaries">
-                    <input id="message_summary_error_detection_enabled" type="checkbox" />
-                    <span>Validate Regular Summaries</span>
-                </label>
-                <div class="flex-container justifyspacebetween alignitemscenter">
-                    <button id="edit_message_summary_error_detection_prompt" class="menu_button flex1 error_detection_setting" title="Edit the validation prompt for regular message summaries"><span>Edit Message Summary Validation Prompt</span></button>
-                </div>
-
-                <table class="regular_error_detection_container">
-                    <tr>
-                        <td><span>Message Summary Validation Preset</span></td>
-                        <td><select id="message_summary_error_detection_preset" class="text_pole regular_error_detection_setting"></select></td>
-                    </tr>
-                    <tr>
-                        <td><span>Message Summary Validation Prefill</span></td>
-                        <td><input id="message_summary_error_detection_prefill" class="text_pole regular_error_detection_setting" type="text" placeholder="Start reply with..."></td>
-                    </tr>
-                    <tr>
-                        <td><span>Message Summary Max Retry Attempts</span></td>
-                        <td><input id="message_summary_error_detection_retries" class="text_pole regular_error_detection_setting" type="number" min="1" max="10" value="3"></td>
-                    </tr>
-                </table>
-
                 <!-- Scene summary validation -->
                 <label class="checkbox_label error_detection_setting" title="Enable validation for scene summaries">
                     <input id="scene_summary_error_detection_enabled" type="checkbox" />
@@ -614,9 +415,6 @@
                     </tr>
                 </table>
                 <input id="scene_summary_error_detection_prompt" type="hidden" />
-
-                        <!-- Store the prompts in hidden inputs since they're edited via the edit dialog -->
-                        <input id="message_summary_error_detection_prompt" type="hidden" />
                     </div>
                 </div>
 
@@ -772,132 +570,6 @@
                                 <input type="text" id="autolorebooks-entity-type-input" class="text_pole" placeholder="e.g. quest(entry:constant)" />
                                 <button id="autolorebooks-add-entity-type" class="menu_button">Add</button>
                                 <button id="autolorebooks-restore-entity-types" class="menu_button fa-solid fa-recycle" title="Restore default types"></button>
-                            </div>
-                        </div>
-
-                        <hr>
-
-                        <h4>AI-Editable Tracking Entries</h4>
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="autolorebooks-tracking-enabled">
-                                <input type="checkbox" id="autolorebooks-tracking-enabled" />
-                                <span>Enable tracking entries (GM Notes, Character Stats)</span>
-                            </label>
-                            <div class="margin-top-5px">
-                                <small class="opacity50p">AI can update special lorebook entries via syntax in messages</small>
-                            </div>
-                        </div>
-
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="autolorebooks-tracking-intercept-send">
-                                <input type="checkbox" id="autolorebooks-tracking-intercept-send" />
-                                <span>Process latest AI message before sending (Recommended)</span>
-                            </label>
-                            <div class="margin-top-5px">
-                                <small class="opacity50p">Intercepts send button to update lorebooks with latest AI response before generating. Ensures character stats and GM notes are current.</small>
-                            </div>
-                        </div>
-
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="autolorebooks-tracking-auto-create">
-                                <input type="checkbox" id="autolorebooks-tracking-auto-create" />
-                                <span>Auto-create tracking entries when chat loads</span>
-                            </label>
-                        </div>
-
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="autolorebooks-tracking-remove-syntax">
-                                <input type="checkbox" id="autolorebooks-tracking-remove-syntax" />
-                                <span>Remove tracking syntax from AI messages</span>
-                            </label>
-                            <div class="margin-top-5px">
-                                <small class="opacity50p">Hides update commands from user when editing messages</small>
-                            </div>
-                        </div>
-
-                        <div class="inline-drawer margin-top-10px">
-                            <div class="inline-drawer-toggle inline-drawer-header">
-                                <div class="flex-container alignitemscenter margin0">
-                                    <span>Syntax Patterns</span>
-                                </div>
-                                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                            </div>
-                            <div class="inline-drawer-content">
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-tracking-syntax-gm-notes">
-                                        <span>GM Notes syntax:</span>
-                                        <small class="displayBlock opacity50p">Use {{content}} as placeholder</small>
-                                    </label>
-                                    <input type="text" id="autolorebooks-tracking-syntax-gm-notes" class="text_pole" placeholder="<-- gm_notes: {{content}} -->" />
-                                </div>
-
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-tracking-syntax-character-stats">
-                                        <span>Character Stats syntax:</span>
-                                        <small class="displayBlock opacity50p">Use {{content}} as placeholder</small>
-                                    </label>
-                                    <input type="text" id="autolorebooks-tracking-syntax-character-stats" class="text_pole" placeholder="<-- character_stats: {{content}} -->" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="inline-drawer margin-top-10px">
-                            <div class="inline-drawer-toggle inline-drawer-header">
-                                <div class="flex-container alignitemscenter margin0">
-                                    <span>AI Merge Settings</span>
-                                </div>
-                                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                            </div>
-                            <div class="inline-drawer-content">
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-tracking-merge-connection">
-                                        <span>Connection Profile:</span>
-                                        <small class="displayBlock opacity50p">Which API to use for merging updates (empty = use main API)</small>
-                                    </label>
-                                    <select id="autolorebooks-tracking-merge-connection" class="text_pole">
-                                        <option value="">Main API</option>
-                                    </select>
-                                </div>
-
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-tracking-merge-preset">
-                                        <span>Completion Preset:</span>
-                                        <small class="displayBlock opacity50p">Preset to use for merging (empty = use default)</small>
-                                    </label>
-                                    <select id="autolorebooks-tracking-merge-preset" class="text_pole">
-                                        <option value="">Default</option>
-                                    </select>
-                                </div>
-
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-tracking-merge-prefill">
-                                        <span>Prefill (Claude models):</span>
-                                        <small class="displayBlock opacity50p">Text to prefill AI response</small>
-                                    </label>
-                                    <input type="text" id="autolorebooks-tracking-merge-prefill" class="text_pole" placeholder="" />
-                                </div>
-
-                                <div class="margin-bot-10px">
-                                    <div class="flex-container alignitemscenter justifyspacebetween margin-bot-5px">
-                                        <label for="autolorebooks-tracking-merge-prompt-gm-notes">
-                                            <span>GM Notes merge prompt:</span>
-                                            <small class="displayBlock opacity50p">Use {{current_content}} and {{new_update}}</small>
-                                        </label>
-                                        <button id="restore-gm-notes-merge-prompt" class="menu_button fa-solid fa-recycle" title="Restore default GM Notes merge prompt"></button>
-                                    </div>
-                                    <textarea id="autolorebooks-tracking-merge-prompt-gm-notes" class="text_pole textarea_compact" rows="8" placeholder="Prompt for merging GM notes..."></textarea>
-                                </div>
-
-                                <div class="margin-bot-10px">
-                                    <div class="flex-container alignitemscenter justifyspacebetween margin-bot-5px">
-                                        <label for="autolorebooks-tracking-merge-prompt-character-stats">
-                                            <span>Character Stats merge prompt:</span>
-                                            <small class="displayBlock opacity50p">Use {{current_content}} and {{new_update}}</small>
-                                        </label>
-                                        <button id="restore-character-stats-merge-prompt" class="menu_button fa-solid fa-recycle" title="Restore default Character Stats merge prompt"></button>
-                                    </div>
-                                    <textarea id="autolorebooks-tracking-merge-prompt-character-stats" class="text_pole textarea_compact" rows="8" placeholder="Prompt for merging character stats..."></textarea>
-                                </div>
                             </div>
                         </div>
 

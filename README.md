@@ -111,8 +111,6 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 
 - **Summary Injection Separator:** String used to separate summaries in context.
 - **Start Injecting After:** Number of messages before summaries start being injected.
-- **Remove Messages After Threshold:** Exclude messages from context after the injection threshold.
-- **Preserve Last User Message:** Always keep the most recent user message in context.
 
 ##### Short-term & Long-term Memory
 
