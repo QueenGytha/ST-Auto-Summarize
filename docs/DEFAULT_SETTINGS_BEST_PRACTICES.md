@@ -120,13 +120,11 @@ scene_summary_position: -1,       // Do not inject (running summary replaces)
 
 **Current:**
 ```javascript
-auto_hide_message_age: -1,        // Disabled (message-based)
 auto_hide_scene_count: -1,        // Disabled (scene-based)
 ```
 
 **Change to:**
 ```javascript
-auto_hide_message_age: -1,        // ✅ Keep disabled
 auto_hide_scene_count: 3,         // Hide messages older than last 3 scenes
 ```
 
@@ -179,25 +177,7 @@ running_scene_summary_context_limit: 15,       // ✅ Good (slightly higher for 
 3. Injection template explicitly states this priority
 4. With auto-hide, most messages are hidden, so memory is essential foundation
 
-### 7. Display Settings
-
-**Current:**
-```javascript
-display_memories: true,           // Show summaries below messages
-```
-
-**Change to:**
-```javascript
-display_memories: false,          // Hide summaries (reduce clutter)
-```
-
-**Reason:**
-- Per-message summaries not being used
-- Scene summaries shown in scene break UI (not per-message display)
-- Reduces visual clutter
-- **Optional** - user preference, not a best practice requirement
-
-### 8. Scene Summary Generation Settings
+### 7. Scene Summary Generation Settings
 
 **Current:**
 ```javascript
@@ -318,9 +298,6 @@ scene_summary_position: -1,           // was: 2
 
 // Enable scene-based auto-hide
 auto_hide_scene_count: 3,             // was: -1
-
-// Optional: Reduce clutter
-display_memories: false,              // was: true
 ```
 
 ### Settings Already Correct:

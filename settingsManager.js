@@ -48,7 +48,6 @@ function initialize_settings() {
     if (!extension_settings.autoLorebooks) {
         log("Auto-Lorebooks global settings not found. Initializing with defaults...")
         extension_settings.autoLorebooks = {
-            enabledByDefault: true,
             nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
             deleteOnChatDelete: true,
             autoReorderAlphabetically: true,
@@ -64,7 +63,6 @@ function initialize_settings() {
     } else {
         // Merge with defaults for any missing global properties
         const defaultLorebooks = {
-            enabledByDefault: true,
             nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
             deleteOnChatDelete: true,
             autoReorderAlphabetically: true,

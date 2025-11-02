@@ -218,43 +218,10 @@ export function getCurrentContext() /*: any */ {
 
 /**
  * Check if auto-lorebooks is enabled for current chat
- * @returns {boolean} True if enabled
+ * @returns {boolean} True if enabled (always true)
  */
 export function isAutoLorebooksEnabled() /*: boolean */ {
-    try {
-        // Check chat-specific setting first
-        const chatSetting = chat_metadata?.auto_lorebooks?.enabled;
-        if (chatSetting !== undefined) {
-            return chatSetting;
-        }
-
-        // Fall back to global default
-        return extension_settings?.autoLorebooks?.enabledByDefault ?? true;
-
-    } catch (err) {
-        error("Error checking if auto-lorebooks enabled", err);
-        return false;
-    }
-}
-
-/**
- * Set auto-lorebooks enabled state for current chat
- * @param {boolean} enabled - Enable or disable
- */
-export function setAutoLorebooksEnabled(enabled /*: boolean */) /*: void */ {
-    try {
-        if (!chat_metadata.auto_lorebooks) {
-            chat_metadata.auto_lorebooks = ({} /*: any */);
-        }
-
-        chat_metadata.auto_lorebooks.enabled = enabled;
-        saveMetadata();
-
-        debug(`Auto-lorebooks ${enabled ? 'enabled' : 'disabled'} for current chat`);
-
-    } catch (err) {
-        error("Error setting auto-lorebooks enabled state", err);
-    }
+    return true;
 }
 
 /**
@@ -310,11 +277,6 @@ export async function handleMissingLorebook(missingLorebookName /*: string */) /
         saveMetadata();
 
         // Check if auto-lorebooks is enabled for this chat
-        if (!isAutoLorebooksEnabled()) {
-            toast("Attached lorebook was deleted. Auto-lorebooks is disabled for this chat.", "warning");
-            return null;
-        }
-
         // Create a new lorebook to replace the deleted one
         log("Auto-lorebooks enabled: creating replacement lorebook");
         const newLorebookName = await createChatLorebook();
@@ -440,11 +402,6 @@ export async function createChatLorebook() /*: Promise<any> */ {
 export async function ensureChatLorebook() /*: Promise<boolean> */ {
     try {
         // Check if enabled
-        if (!isAutoLorebooksEnabled()) {
-            debug("Auto-lorebooks not enabled for this chat");
-            return false;
-        }
-
         // Check if already has lorebook
         const existingLorebook = getAttachedLorebook();
         if (existingLorebook) {
@@ -921,7 +878,6 @@ export default {
     initLorebookManager,
     getCurrentContext,
     isAutoLorebooksEnabled,
-    setAutoLorebooksEnabled,
     getAttachedLorebook,
     lorebookExists,
     handleMissingLorebook,

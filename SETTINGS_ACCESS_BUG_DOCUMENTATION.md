@@ -265,7 +265,7 @@ const entityTypes = extension_settings?.autoLorebooks?.entity_types;
 - `summaryToLorebookProcessor.js` - `loadSummaryContext()` function (lines 1016-1031)
 - `summaryToLorebookProcessor.js` - `getSummaryProcessingSetting()` helper (lines 83-92)
 - `trackingEntries.js` - `getTrackingSetting()` helper (lines 111-120)
-- `operationQueue.js` - Uses `get_settings('operation_queue_use_lorebook')` correctly
+- `operationQueue.js` - Uses `get_settings()` correctly for settings access
 - `lorebookEntryMerger.js` - Fixed to use correct pattern
 
 ---

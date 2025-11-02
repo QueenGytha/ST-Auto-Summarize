@@ -43,7 +43,6 @@ export const default_settings = {
     scene_summary_template: default_scene_template,
     scene_summary_auto_name: true, // Auto-generate scene name when auto-generating scene summary (if not already set)
     scene_summary_auto_name_manual: true, // Auto-generate scene name when manually generating scene summary (if not already set)
-    scene_summary_navigator_toggle: true, // Show scene navigator bar with scene links and operations
     scene_summary_navigator_width: 240, // Width of scene navigator bar in pixels (default: 240px, double the original 48px)
     scene_summary_navigator_font_size: 12, // Font size for scene navigator links in pixels (default: 12px)
     scene_summary_default_collapsed: true, // New scene summaries start collapsed by default (only showing scene name)
@@ -54,7 +53,6 @@ export const default_settings = {
     scene_summary_history_count: 1,
     scene_summary_error_detection_prefill: "",
     scene_summary_error_detection_retries: 3,
-    auto_hide_message_age: -1,
     auto_hide_scene_count: 3, // Hide messages older than last 3 scenes
 
     // --- Auto Scene Break Detection Settings ---
@@ -86,11 +84,6 @@ export const default_settings = {
     running_scene_summary_auto_generate: true, // Auto-generate when new scene summary is created
     running_scene_summary_show_navbar: true, // Show version controls in navbar
 
-    // --- Operation Queue Settings ---
-    operation_queue_enabled: true, // Enable persistent operation queue (survives restarts)
-    operation_queue_use_lorebook: true, // Store queue in lorebook entry (visible) vs chat_metadata (hidden)
-    operation_queue_display_enabled: true, // Show queue UI in navbar
-
     // --- Auto-Lorebooks Settings ---
     auto_lorebooks_enabled_by_default: true, // Enable auto-lorebooks for new chats
     auto_lorebooks_name_template: 'z-AutoLB - {{char}} - {{chat}}', // Naming template for auto-created lorebooks
@@ -98,7 +91,6 @@ export const default_settings = {
     autoReorderAlphabetically: true, // Automatically reorder lorebook entries alphabetically when created or renamed
 
     // --- Auto-Lorebooks Summary Processing Settings ---
-    auto_lorebooks_summary_enabled: true, // Enable extracting entities from summaries to lorebook
     auto_lorebooks_summary_skip_duplicates: true, // Skip entities that already exist in lorebook
     auto_lorebooks_summary_merge_prompt: `You are updating a lorebook entry. You have the existing entry content and new information from a summary.
 

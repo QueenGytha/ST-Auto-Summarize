@@ -405,10 +405,7 @@ function findAndMarkExistingSceneBreaks(chat) {
 // Helper: Try to queue scene break detections
 // $FlowFixMe[missing-local-annot]
 async function tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkWhich) {
-    const queueEnabled = get_settings('operation_queue_enabled') !== false;
-    if (!queueEnabled) return null;
-
-    log(SUBSYSTEM.SCENE, '[Queue] Operation queue enabled, queueing scene break detections instead of executing directly');
+    log(SUBSYSTEM.SCENE, '[Queue] Queueing scene break detections instead of executing directly');
 
     // Import queue integration
     const { queueDetectSceneBreaks } = await import('./queueIntegration.js');

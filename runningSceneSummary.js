@@ -309,10 +309,9 @@ async function generate_running_scene_summary(skipQueue /*: boolean */ = false) 
     const ctx = getContext();
     const chat = ctx.chat;
 
-    // Check if operation queue is enabled
-    const queueEnabled = get_settings('operation_queue_enabled') !== false;
-    if (queueEnabled && !skipQueue) {
-        debug(SUBSYSTEM.RUNNING, '[Queue] Operation queue enabled, queueing running scene summary generation');
+    // Queue running scene summary generation unless explicitly skipped
+    if (!skipQueue) {
+        debug(SUBSYSTEM.RUNNING, '[Queue] Queueing running scene summary generation');
 
         // Import queue integration
         const { queueGenerateRunningSummary } = await import('./queueIntegration.js');
@@ -329,8 +328,8 @@ async function generate_running_scene_summary(skipQueue /*: boolean */ = false) 
         debug(SUBSYSTEM.RUNNING, '[Queue] Failed to queue operation, falling back to direct execution');
     }
 
-    // Fallback to direct execution if queue disabled or queueing failed
-    debug(SUBSYSTEM.RUNNING, 'Executing running scene summary generation directly (queue disabled or unavailable)');
+    // Fallback to direct execution if queueing was skipped or failed
+    debug(SUBSYSTEM.RUNNING, 'Executing running scene summary generation directly (queue skipped or unavailable)');
 
     debug(SUBSYSTEM.RUNNING, 'Starting running scene summary generation');
 
@@ -592,10 +591,10 @@ async function executeCombineLLMCall(prompt /*: string */, scene_name /*: string
  * @param {string} result - Generated summary
  * @param {number} scene_index - Scene index
  * @param {string} scene_name - Scene name
- * @param {string} scene_summary - Original scene summary
+ * @param {string} _scene_summary - Original scene summary (unused)
  * @returns {number} Version number
  */
-function storeRunningSummary(result /*: string */, scene_index /*: number */, scene_name /*: string */, scene_summary /*: string */) /*: number */ {
+function storeRunningSummary(result /*: string */, scene_index /*: number */, scene_name /*: string */, _scene_summary /*: string */) /*: number */ {
     const prev_version = get_running_summary(get_current_running_summary_version());
     const scene_count = prev_version ? prev_version.scene_count + 1 : 1;
     const exclude_count = get_settings('running_scene_summary_exclude_latest') || 0;
@@ -608,10 +607,8 @@ function storeRunningSummary(result /*: string */, scene_index /*: number */, sc
     log(SUBSYSTEM.RUNNING, `Created running summary version ${version} (${prev_scene_idx} > ${new_scene_idx})`);
 
     // Lorebook processing is intentionally disabled during running summary combination
-    const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_enabled');
-    if (autoLorebooksEnabled && scene_summary) {
-        debug(SUBSYSTEM.RUNNING, 'Skipping lorebook processing during running summary; handled per scene summary');
-    }
+    // Lorebook extraction is handled per individual scene summary instead
+    debug(SUBSYSTEM.RUNNING, 'Skipping lorebook processing during running summary; handled per scene summary');
 
     toast(`Running summary updated with ${scene_name} (v${version})`, 'success');
 

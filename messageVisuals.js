@@ -63,8 +63,8 @@ function update_message_visuals(i /*: number */, style /*: boolean */=true, text
     // remove any existing added divs
     div_element.find(`div.${summary_div_class}`).remove();
 
-    // If setting isn't enabled, don't display memories
-    if (!get_settings('display_memories') || !chat_enabled()) {
+    // Don't display memories if chat is disabled
+    if (!chat_enabled()) {
         return;
     }
 

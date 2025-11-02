@@ -2,13 +2,11 @@
 // operationQueue.js - Persistent operation queue using shared lorebook entry storage
 
 import {
-    getContext,
     chat_metadata,
     debug,
     log,
     error,
     toast,
-    get_settings,
     SUBSYSTEM,
     setQueueBlocking,
     getCurrentConnectionSettings,
@@ -290,42 +288,29 @@ async function getQueueEntry() {
 }
 
 /**
- * Load queue from storage (lorebook or chat_metadata based on settings)
+ * Load queue from storage (always uses lorebook)
  */
 async function loadQueue() {
     try {
-        const useLorebook = get_settings('operation_queue_use_lorebook') !== false;
-        log(SUBSYSTEM.QUEUE, `Loading queue - mode: ${useLorebook ? 'LOREBOOK' : 'CHAT_METADATA'}`);
+        log(SUBSYSTEM.QUEUE, 'Loading queue from lorebook...');
 
-        if (useLorebook) {
-            log(SUBSYSTEM.QUEUE, 'Attempting to get queue entry from lorebook...');
-            // Try to load from lorebook entry
-            const queueEntry = await getQueueEntry();
+        // Load from lorebook entry
+        const queueEntry = await getQueueEntry();
 
-            if (queueEntry) {
-                log(SUBSYSTEM.QUEUE, '✓ Found existing queue entry in lorebook');
-                // Parse queue from entry content
-                try {
-                    currentQueue = JSON.parse(queueEntry.content || '{}');
-                    if (!currentQueue.queue) {
-                        currentQueue.queue = [];
-                    }
-                    if (currentQueue.version === undefined) {
-                        currentQueue.version = 1;
-                    }
-                    debug(SUBSYSTEM.QUEUE, `Loaded queue from lorebook with ${currentQueue.queue.length} operations`);
-                } catch (parseErr) {
-                    error(SUBSYSTEM.QUEUE, 'Failed to parse queue entry content:', parseErr);
-                    currentQueue = /*:: ( */ {
-                        queue: [],
-                        current_operation_id: null,
-                        paused: false,
-                        version: 1
-                    } /*:: : QueueStructure) */;
+        if (queueEntry) {
+            log(SUBSYSTEM.QUEUE, '✓ Found existing queue entry in lorebook');
+            // Parse queue from entry content
+            try {
+                currentQueue = JSON.parse(queueEntry.content || '{}');
+                if (!currentQueue.queue) {
+                    currentQueue.queue = [];
                 }
-            } else {
-                // No lorebook entry yet, use empty queue
-                debug(SUBSYSTEM.QUEUE, 'No lorebook queue entry yet, using empty queue');
+                if (currentQueue.version === undefined) {
+                    currentQueue.version = 1;
+                }
+                debug(SUBSYSTEM.QUEUE, `Loaded queue from lorebook with ${currentQueue.queue.length} operations`);
+            } catch (parseErr) {
+                error(SUBSYSTEM.QUEUE, 'Failed to parse queue entry content:', parseErr);
                 currentQueue = /*:: ( */ {
                     queue: [],
                     current_operation_id: null,
@@ -334,17 +319,14 @@ async function loadQueue() {
                 } /*:: : QueueStructure) */;
             }
         } else {
-            // Load from chat_metadata (fallback mode)
-            if (!chat_metadata.auto_summarize_operation_queue) {
-                chat_metadata.auto_summarize_operation_queue = /*:: ( */ {
-                    queue: [],
-                    current_operation_id: null,
-                    paused: false,
-                    version: 1
-                } /*:: : QueueStructure) */;
-            }
-            currentQueue = chat_metadata.auto_summarize_operation_queue;
-            debug(SUBSYSTEM.QUEUE, `Loaded queue from chat_metadata with ${currentQueue.queue.length} operations`);
+            // No lorebook entry yet, use empty queue
+            debug(SUBSYSTEM.QUEUE, 'No lorebook queue entry yet, using empty queue');
+            currentQueue = /*:: ( */ {
+                queue: [],
+                current_operation_id: null,
+                paused: false,
+                version: 1
+            } /*:: : QueueStructure) */;
         }
 
         // Clean up any stale in_progress operations (from crashes/restarts)
@@ -376,88 +358,73 @@ async function loadQueue() {
 }
 
 /**
- * Save queue to storage (lorebook or chat_metadata based on settings)
+ * Save queue to storage (always uses lorebook)
  * @param {boolean} force - If true, skip reload and force save current in-memory state
  */
 // $FlowFixMe[missing-local-annot]
 async function saveQueue(force = false) {
     try {
-        const useLorebook = get_settings('operation_queue_use_lorebook') !== false;
-
-        if (useLorebook) {
-            // Save to lorebook entry
-            const lorebookName = getAttachedLorebook();
-            if (!lorebookName) {
-                debug(SUBSYSTEM.QUEUE, 'No lorebook attached, cannot save to lorebook');
-                return;
-            }
-
-            // Ensure the queue entry exists first
-            const existingEntry = await getQueueEntry();
-            if (!existingEntry) {
-                error(SUBSYSTEM.QUEUE, 'Failed to get or create queue entry, cannot save');
-                return;
-            }
-
-            // Load the lorebook fresh to get current state
-            const worldInfo = await loadWorldInfo(lorebookName);
-            if (!worldInfo) {
-                error(SUBSYSTEM.QUEUE, 'Failed to load lorebook:', lorebookName);
-                return;
-            }
-
-            // Convert entries to array if it's an object
-            const entriesArray = Array.isArray(worldInfo.entries)
-                ? worldInfo.entries
-                : Object.values(worldInfo.entries || {});
-
-            // Find the queue entry in the freshly loaded worldInfo
-            const queueEntry = entriesArray.find(e => e.comment === QUEUE_ENTRY_NAME);
-            if (!queueEntry) {
-                error(SUBSYSTEM.QUEUE, 'Queue entry disappeared after creation, cannot save');
-                return;
-            }
-
-            // Reload from lorebook unless this is a forced save (like during clear)
-            // This prevents overwriting changes made by other extensions (e.g. Auto-Lorebooks)
-            if (!force) {
-                try {
-                    const savedQueue = JSON.parse(queueEntry.content || '{}');
-                    if (savedQueue.queue && Array.isArray(savedQueue.queue)) {
-                        // BUG FIX: Do NOT overwrite in-memory queue - was causing operations to disappear
-                        // currentQueue = savedQueue;
-                        // $FlowFixMe[incompatible-use]
-                        debug(SUBSYSTEM.QUEUE, `Keeping in-memory queue with ${currentQueue.queue.length} operations`);
-                    }
-                } catch {
-                    debug(SUBSYSTEM.QUEUE, 'Could not parse existing queue, proceeding with current in-memory queue');
-                }
-            }
-
-            // Update the entry content in the worldInfo structure
-            queueEntry.content = JSON.stringify(currentQueue, null, 2);
-
-            // Also update in the worldInfo.entries object if it's keyed by UID
-            if (!Array.isArray(worldInfo.entries) && worldInfo.entries[queueEntry.uid]) {
-                worldInfo.entries[queueEntry.uid].content = queueEntry.content;
-            }
-
-            // Save the lorebook
-            await saveWorldInfo(lorebookName, worldInfo, true);
-
-            debug(SUBSYSTEM.QUEUE, 'Saved queue to lorebook entry');
-        } else {
-            // Save to chat_metadata (fallback mode)
-            chat_metadata.auto_summarize_operation_queue = currentQueue;
-
-            // Trigger a chat save
-            const ctx = getContext();
-            if (ctx.saveChat) {
-                ctx.saveChat();
-            }
-
-            debug(SUBSYSTEM.QUEUE, 'Saved queue to chat_metadata');
+        // Save to lorebook entry
+        const lorebookName = getAttachedLorebook();
+        if (!lorebookName) {
+            debug(SUBSYSTEM.QUEUE, 'No lorebook attached, cannot save to lorebook');
+            return;
         }
+
+        // Ensure the queue entry exists first
+        const existingEntry = await getQueueEntry();
+        if (!existingEntry) {
+            error(SUBSYSTEM.QUEUE, 'Failed to get or create queue entry, cannot save');
+            return;
+        }
+
+        // Load the lorebook fresh to get current state
+        const worldInfo = await loadWorldInfo(lorebookName);
+        if (!worldInfo) {
+            error(SUBSYSTEM.QUEUE, 'Failed to load lorebook:', lorebookName);
+            return;
+        }
+
+        // Convert entries to array if it's an object
+        const entriesArray = Array.isArray(worldInfo.entries)
+            ? worldInfo.entries
+            : Object.values(worldInfo.entries || {});
+
+        // Find the queue entry in the freshly loaded worldInfo
+        const queueEntry = entriesArray.find(e => e.comment === QUEUE_ENTRY_NAME);
+        if (!queueEntry) {
+            error(SUBSYSTEM.QUEUE, 'Queue entry disappeared after creation, cannot save');
+            return;
+        }
+
+        // Reload from lorebook unless this is a forced save (like during clear)
+        // This prevents overwriting changes made by other extensions (e.g. Auto-Lorebooks)
+        if (!force) {
+            try {
+                const savedQueue = JSON.parse(queueEntry.content || '{}');
+                if (savedQueue.queue && Array.isArray(savedQueue.queue)) {
+                    // BUG FIX: Do NOT overwrite in-memory queue - was causing operations to disappear
+                    // currentQueue = savedQueue;
+                    // $FlowFixMe[incompatible-use]
+                    debug(SUBSYSTEM.QUEUE, `Keeping in-memory queue with ${currentQueue.queue.length} operations`);
+                }
+            } catch {
+                debug(SUBSYSTEM.QUEUE, 'Could not parse existing queue, proceeding with current in-memory queue');
+            }
+        }
+
+        // Update the entry content in the worldInfo structure
+        queueEntry.content = JSON.stringify(currentQueue, null, 2);
+
+        // Also update in the worldInfo.entries object if it's keyed by UID
+        if (!Array.isArray(worldInfo.entries) && worldInfo.entries[queueEntry.uid]) {
+            worldInfo.entries[queueEntry.uid].content = queueEntry.content;
+        }
+
+        // Save the lorebook
+        await saveWorldInfo(lorebookName, worldInfo, true);
+
+        debug(SUBSYSTEM.QUEUE, 'Saved queue to lorebook entry');
 
         notifyUIUpdate();
     } catch (err) {

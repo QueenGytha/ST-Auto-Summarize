@@ -373,8 +373,6 @@ function loadLorebooksSettings() /*: any */ {
  */
 function refreshGlobalSettingsUI(settings /*: any */) /*: void */ {
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-enabled-by-default').prop('checked', settings.enabledByDefault ?? true);
-    // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-delete-on-chat-delete').prop('checked', settings.deleteOnChatDelete ?? true);
     // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-auto-reorder-alphabetically').prop('checked', settings.autoReorderAlphabetically ?? true);
@@ -402,8 +400,6 @@ function refreshQueueSettingsUI(queueSettings /*: any */ = {}) /*: void */ {
  */
 function refreshSummaryProcessingUI() /*: void */ {
     // All summary processing settings are now per-profile, read from profile settings
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-summary-processing-enabled').prop('checked', get_settings('auto_lorebooks_summary_enabled') ?? true);
     // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-summary-skip-duplicates').prop('checked', get_settings('auto_lorebooks_summary_skip_duplicates') ?? true);
     // $FlowFixMe[cannot-resolve-name]

@@ -15,13 +15,6 @@ import {
 } from './index.js';
 
 /**
- * Check if queueing is enabled
- */
-function isQueueEnabled() {
-    return get_settings('operation_queue_enabled') !== false;
-}
-
-/**
  * Queue a summary validation operation
  * @param {string} summary - Summary text to validate
  * @param {string} type - Validation type ('regular' or 'scene')
@@ -29,11 +22,6 @@ function isQueueEnabled() {
  * @returns {Promise<string>} Operation ID
  */
 export async function queueValidateSummary(summary /*: string */, type /*: string */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
-    if (!isQueueEnabled()) {
-        debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue validation');
-        return null;
-    }
-
     return await enqueueOperation(
         OperationType.VALIDATE_SUMMARY,
         { summary, type },
@@ -55,11 +43,6 @@ export async function queueValidateSummary(summary /*: string */, type /*: strin
  * @returns {Promise<string>} Operation ID
  */
 export async function queueDetectSceneBreak(index /*: number */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
-    if (!isQueueEnabled()) {
-        debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue scene break detection');
-        return null;
-    }
-
     return await enqueueOperation(
         OperationType.DETECT_SCENE_BREAK,
         { index },
@@ -81,11 +64,6 @@ export async function queueDetectSceneBreak(index /*: number */, options /*: {pr
  * @returns {Promise<Array<string>>} Array of operation IDs
  */
 export async function queueDetectSceneBreaks(indexes /*: Array<number> */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<Array<?string>> */ {
-    if (!isQueueEnabled()) {
-        debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue batch scene detection');
-        return [];
-    }
-
     return await Promise.all(indexes.map(index => queueDetectSceneBreak(index, options)));
 }
 
@@ -96,11 +74,6 @@ export async function queueDetectSceneBreaks(indexes /*: Array<number> */, optio
  * @returns {Promise<string>} Operation ID
  */
 export async function queueGenerateSceneSummary(index /*: number */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
-    if (!isQueueEnabled()) {
-        debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue scene summary generation');
-        return null;
-    }
-
     return await enqueueOperation(
         OperationType.GENERATE_SCENE_SUMMARY,
         { index },
@@ -121,11 +94,6 @@ export async function queueGenerateSceneSummary(index /*: number */, options /*:
  * @returns {Promise<string>} Operation ID
  */
 export async function queueGenerateRunningSummary(options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
-    if (!isQueueEnabled()) {
-        debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue running summary generation');
-        return null;
-    }
-
     return await enqueueOperation(
         OperationType.GENERATE_RUNNING_SUMMARY,
         {},
@@ -146,11 +114,6 @@ export async function queueGenerateRunningSummary(options /*: {priority?: number
  * @returns {Promise<string>} Operation ID
  */
 export async function queueCombineSceneWithRunning(index /*: number */, options /*: {priority?: number, dependencies?: Array<string>, metadata?: Object} */ = {}) /*: Promise<?string> */ {
-    if (!isQueueEnabled()) {
-        debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue scene combination');
-        return null;
-    }
-
     return await enqueueOperation(
         OperationType.COMBINE_SCENE_WITH_RUNNING,
         { index },
@@ -170,10 +133,6 @@ export async function queueCombineSceneWithRunning(index /*: number */, options 
  * @returns {boolean} - Whether queue is enabled
  */
 function validateQueueStatus() /*: boolean */ {
-    if (!isQueueEnabled()) {
-        debug(SUBSYSTEM.QUEUE, 'Queue disabled, cannot queue lorebook entry processing');
-        return false;
-    }
     return true;
 }
 

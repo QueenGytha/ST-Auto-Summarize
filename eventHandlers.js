@@ -308,21 +308,13 @@ Object.entries(event_types).forEach(([key, type]) => {
     initializeSceneNavigatorBar();
 
     // Initialize operation queue system
-    const queueSetting = get_settings('operation_queue_enabled');
-    log('[Queue] Checking queue initialization - setting value:', queueSetting);
+    log('[Queue] Initializing operation queue...');
+    operationQueueModule = await import('./operationQueue.js');
+    const { initQueueUI } = await import('./operationQueueUI.js');
 
-    // Initialize operation queue early (but don't register handlers yet)
-    if (queueSetting !== false) {
-        log('[Queue] Initializing operation queue...');
-        operationQueueModule = await import('./operationQueue.js');
-        const { initQueueUI } = await import('./operationQueueUI.js');
-
-        await operationQueueModule.initOperationQueue();
-        initQueueUI();
-        log('[Queue] ✓ Operation queue initialized (handlers will be registered after module init)');
-    } else {
-        log('[Queue] Queue disabled by setting, skipping initialization');
-    }
+    await operationQueueModule.initOperationQueue();
+    initQueueUI();
+    log('[Queue] ✓ Operation queue initialized (handlers will be registered after module init)');
 
     // Initialize Auto-Lorebooks functionality
     console.log('[EVENT HANDLERS] About to initialize Auto-Lorebooks functionality...');
@@ -342,9 +334,9 @@ Object.entries(event_types).forEach(([key, type]) => {
         console.log('[EVENT HANDLERS] Initializing categoryIndexes...');
         categoryIndexes.initCategoryIndexes(lorebookUtils, lorebookManager, { get_settings });
 
-        // Initialize with operation queue if enabled
+        // Initialize with operation queue
         console.log('[EVENT HANDLERS] Initializing lorebookEntryMerger...');
-        if (queueSetting !== false && operationQueueModule) {
+        if (operationQueueModule) {
             lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, operationQueueModule);
         } else {
             lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, null);
@@ -361,7 +353,7 @@ Object.entries(event_types).forEach(([key, type]) => {
     }
 
     // Register operation handlers AFTER all modules are initialized
-    if (queueSetting !== false && operationQueueModule) {
+    if (operationQueueModule) {
         log('[Queue] Registering operation handlers...');
         const { registerAllOperationHandlers } = await import('./operationHandlers.js');
         registerAllOperationHandlers();

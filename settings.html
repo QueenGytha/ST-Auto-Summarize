@@ -113,10 +113,6 @@
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
-                        <label class="checkbox_label" title="Show or hide the scene summary navigator bar on the left.">
-                            <input id="scene_summary_navigator_toggle" type="checkbox" />
-                            <span>Show Scene Navigator Bar</span>
-                        </label>
                         <label title="Width of the scene navigator bar in pixels.">
                             <span>Navigator Bar Width (pixels):</span>
                             <input id="scene_summary_navigator_width" class="text_pole" type="number" min="30" max="500" step="1" />
@@ -423,11 +419,6 @@
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
-                        <label title="Automatically hide (exclude from prompts) messages older than this many messages (set -1 to disable)" class="checkbox_label">
-                            <span>Auto Hide Messages Older Than The Last</span>
-                            <input id="auto_hide_message_age" class="text_pole widthUnset inline_setting" type="number" min="-1" max="9999" />
-                            <span>Message(s) (-1 to disable)</span>
-                        </label>
                         <label title="Automatically hide all messages in scenes older than this many scenes (set -1 to disable)" class="checkbox_label">
                             <span>Auto Hide Messages Older Than The Last</span>
                             <input id="auto_hide_scene_count" class="text_pole widthUnset inline_setting" type="number" min="-1" max="999" />
@@ -451,11 +442,6 @@
                             <span>Debug Mode</span>
                         </label>
 
-                        <label title="Display summarizations below each message" class="checkbox_label">
-                            <input id="display_memories" type="checkbox" />
-                            <span>Display Memories</span>
-                        </label>
-
                         <label title="Whether memory is enabled by default for new chats." class="checkbox_label">
                             <input id="default_chat_enabled" type="checkbox" />
                             <span>Enable Memory in New Chats</span>
@@ -464,32 +450,6 @@
                         <label title="Uses a global on/off state shared between all chats with this enabled. When unchecked, turning the extension on/off only applies to active chat." class="checkbox_label">
                             <input id="use_global_toggle_state" type="checkbox" />
                             <span>Use Global Toggle State</span>
-                        </label>
-                    </div>
-                </div>
-
-                <hr>
-                <div class="inline-drawer">
-                    <div class="inline-drawer-toggle inline-drawer-header">
-                        <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Operation Queue</h4>
-                        </div>
-                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                    </div>
-                    <div class="inline-drawer-content">
-                        <label title="Enable persistent operation queue for summarization tasks. Operations survive SillyTavern restarts and are processed sequentially." class="checkbox_label">
-                            <input id="operation_queue_enabled" type="checkbox" />
-                            <span>Enable Operation Queue</span>
-                        </label>
-
-                        <label title="Store queue in a visible lorebook entry (__operation_queue). When disabled, queue is stored in hidden chat metadata instead." class="checkbox_label">
-                            <input id="operation_queue_use_lorebook" type="checkbox" />
-                            <span>Use Lorebook for Queue Storage</span>
-                        </label>
-
-                        <label title="Display the operation queue UI in the navbar showing pending/running/completed operations." class="checkbox_label">
-                            <input id="operation_queue_display_enabled" type="checkbox" />
-                            <span>Show Queue UI in Navbar</span>
                         </label>
                     </div>
                 </div>
@@ -504,28 +464,6 @@
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
-                        <h4>Current Chat</h4>
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="autolorebooks-chat-enabled">
-                                <input type="checkbox" id="autolorebooks-chat-enabled" />
-                                <span>Enable Auto-Lorebook for this chat</span>
-                            </label>
-                            <div class="margin-top-10px">
-                                <small>Current lorebook: <strong><span id="autolorebooks-current-lorebook">None</span></strong></small>
-                            </div>
-                        </div>
-
-                        <hr>
-
-                        <h4>Global Settings</h4>
-
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="autolorebooks-enabled-by-default">
-                                <input type="checkbox" id="autolorebooks-enabled-by-default" />
-                                <span>Enable by default for new chats</span>
-                            </label>
-                        </div>
-
                         <div class="margin-bot-10px">
                             <label class="checkbox_label" for="autolorebooks-delete-on-chat-delete">
                                 <input type="checkbox" id="autolorebooks-delete-on-chat-delete" />
@@ -571,16 +509,6 @@
                         <hr>
 
                         <h4>Summary-to-Lorebook Processing</h4>
-
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="autolorebooks-summary-processing-enabled">
-                                <input type="checkbox" id="autolorebooks-summary-processing-enabled" />
-                                <span>Enable summary-to-lorebook processing</span>
-                            </label>
-                            <div class="margin-top-5px">
-                                <small class="opacity50p">Process summary JSON objects to extract and create/update lorebook entries</small>
-                            </div>
-                        </div>
 
                         <div class="margin-bot-10px">
                             <label class="checkbox_label" for="autolorebooks-summary-skip-duplicates">

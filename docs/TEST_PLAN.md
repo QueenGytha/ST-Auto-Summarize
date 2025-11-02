@@ -33,8 +33,7 @@ Test Areas and Cases
   - Operations with unmet dependencies do not run until dependencies complete.
   - Between ready ops, higher priority is selected first.
 - Persistence Mode:
-  - With `operation_queue_use_lorebook = false` default, state persists in `chat_metadata`.
-  - With lorebook mode true (stub), save/load paths invoked (covered by stubs).
+  - Queue state always persists in lorebook entry `__operation_queue`.
 
 3) API Contracts
 - generateRaw is called with object argument containing: { prompt, api: '', instructOverride: false }.

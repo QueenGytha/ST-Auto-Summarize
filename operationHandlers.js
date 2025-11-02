@@ -251,10 +251,9 @@ export function registerAllOperationHandlers() {
             lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '',
             lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '',
             skip_duplicates: get_settings('auto_lorebooks_summary_skip_duplicates') ?? true,
-            enabled: get_settings('auto_lorebooks_summary_enabled') ?? false,
         };
 
-        debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Settings - enabled: ${settings.enabled}, skip_duplicates: ${settings.skip_duplicates}`);
+        debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Settings - skip_duplicates: ${settings.skip_duplicates}`);
 
         // Run lorebook entry lookup
         debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Running lookup stage...`);
@@ -324,7 +323,6 @@ export function registerAllOperationHandlers() {
             lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '',
             lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '',
             skip_duplicates: get_settings('auto_lorebooks_summary_skip_duplicates') ?? true,
-            enabled: get_settings('auto_lorebooks_summary_enabled') ?? false,
         };
 
         const lorebookName = getAttachedLorebook();

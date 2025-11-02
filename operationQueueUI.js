@@ -15,7 +15,6 @@ import {
     OperationType
 } from './operationQueue.js';
 import {
-    get_settings,
     debug,
     SUBSYSTEM
 } from './index.js';
@@ -117,12 +116,6 @@ function createQueueUI() {
     // Append button to body (not navbar) so it stays visible when navbar is hidden
     // $FlowFixMe[cannot-resolve-name]
     $('body').append($navbarToggle);
-
-    // Respect Scene Navigator Bar visibility on initial load
-    const sceneNavbarVisible = get_settings('scene_summary_navigator_toggle');
-    if (!sceneNavbarVisible) {
-        $navbarToggle.hide();
-    }
 
     // Bind event handlers
     bindQueueControlEvents();
@@ -329,22 +322,12 @@ function updateQueueDisplay() {
         }
     }
 
-    // Check if queue display is enabled in settings
-    const enabled = get_settings('operation_queue_display_enabled') !== false; // Default to true
-
     // $FlowFixMe[cannot-resolve-name]
     const $navbar = $(`#${NAVBAR_ID}`);
     // $FlowFixMe[cannot-resolve-name]
     const $button = $(`#${NAVBAR_TOGGLE_ID}`);
 
-    if (!enabled) {
-        // Setting disabled: hide both navbar and button
-        $navbar.hide();
-        $button.hide();
-        return;
-    }
-
-    // Setting enabled: show button, navbar visibility controlled by user
+    // Always show button, navbar visibility controlled by user
     $button.show();
 
     // Check user's toggle preference (default to visible)
@@ -617,40 +600,32 @@ export function updateQueueUIVisibility() {
         return;
     }
 
-    const enabled = get_settings('operation_queue_display_enabled') !== false;
-
     // $FlowFixMe[cannot-resolve-name]
     const $navbar = $(`#${NAVBAR_ID}`);
     // $FlowFixMe[cannot-resolve-name]
     const $button = $(`#${NAVBAR_TOGGLE_ID}`);
 
-    if (!enabled) {
-        // Setting disabled: hide both navbar and button
-        $navbar.hide();
-        $button.hide();
-    } else {
-        // Setting enabled: show button, navbar visibility controlled by user
-        $button.show();
+    // Always show button, navbar visibility controlled by user
+    $button.show();
 
-        // Check user's toggle preference (default to visible)
+    // Check user's toggle preference (default to visible)
+    // $FlowFixMe[cannot-resolve-name]
+    const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
+    if (navbarVisible !== 'false') {
+        // Navbar visible - sync button state
+        $navbar.show();
+        $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
+        $button.attr('title', 'Hide Queue Navbar');
+        // Calculate button position based on actual navbar width
         // $FlowFixMe[cannot-resolve-name]
-        const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
-        if (navbarVisible !== 'false') {
-            // Navbar visible - sync button state
-            $navbar.show();
-            $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
-            $button.attr('title', 'Hide Queue Navbar');
-            // Calculate button position based on actual navbar width
-            // $FlowFixMe[cannot-resolve-name]
-            const navbarWidth = $navbar.outerWidth() || 175;
-            $button.css('left', `${navbarWidth}px`);
-        } else {
-            // Navbar hidden - sync button state
-            $navbar.hide();
-            $button.removeClass(ICON_CHEVRON_LEFT).addClass(ICON_CHEVRON_RIGHT);
-            $button.attr('title', 'Show Queue Navbar');
-            $button.css('left', '0');
-        }
+        const navbarWidth = $navbar.outerWidth() || 175;
+        $button.css('left', `${navbarWidth}px`);
+    } else {
+        // Navbar hidden - sync button state
+        $navbar.hide();
+        $button.removeClass(ICON_CHEVRON_LEFT).addClass(ICON_CHEVRON_RIGHT);
+        $button.attr('title', 'Show Queue Navbar');
+        $button.css('left', '0');
     }
 }
 

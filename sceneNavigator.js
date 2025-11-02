@@ -1,8 +1,7 @@
 // @flow
-import { get_settings, set_settings, getContext, get_data, SCENE_BREAK_KEY, SCENE_BREAK_VISIBLE_KEY } from './index.js';
+import { get_settings, getContext, get_data, SCENE_BREAK_KEY, SCENE_BREAK_VISIBLE_KEY } from './index.js';
 
 export function renderSceneNavigatorBar() {
-    const show = get_settings('scene_summary_navigator_toggle');
     const width = get_settings('scene_summary_navigator_width') ?? 240;
     const fontSize = get_settings('scene_summary_navigator_font_size') ?? 12;
 
@@ -40,14 +39,6 @@ export function renderSceneNavigatorBar() {
         window.updateNavbarToggleButtonPosition();
     }
 
-    // Hide/show entire navbar based on toggle setting
-    if (!show) {
-        $bar.hide();
-        // Also hide the queue navbar toggle button when navbar is hidden
-        // $FlowFixMe[cannot-resolve-name]
-        $('#queue_navbar_toggle').hide();
-        return;
-    }
     const ctx = getContext();
     if (!ctx?.chat) return;
 
@@ -98,9 +89,8 @@ export function renderSceneNavigatorBar() {
         $bar.append($runningControls);
     }
 
+    // Always show the navbar and queue toggle button
     $bar.show();
-
-    // Show the queue navbar toggle button when navbar is shown
     // $FlowFixMe[cannot-resolve-name]
     $('#queue_navbar_toggle').show();
 
@@ -112,20 +102,8 @@ export function renderSceneNavigatorBar() {
     }
 }
 
-// Call this after chat loads, scene breaks change, or toggle changes
+// Call this after chat loads or scene breaks change
 export function initializeSceneNavigatorBar() {
-    // Set the checkbox to the saved value on load
-    const checked = get_settings('scene_summary_navigator_toggle');
-    // $FlowFixMe[cannot-resolve-name]
-    $('#scene_summary_navigator_toggle').prop('checked', !!checked);
-
-    // Toggle handler
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $('#scene_summary_navigator_toggle').off('change').on('change', function () {
-        set_settings('scene_summary_navigator_toggle', this.checked);
-        renderSceneNavigatorBar();
-    });
     // Initial render
     renderSceneNavigatorBar();
 }

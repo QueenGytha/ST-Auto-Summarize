@@ -743,10 +743,7 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
 // Helper: Try to queue scene summary generation
 // $FlowFixMe[missing-local-annot] - Function signature is correct
 async function tryQueueSceneSummary(index /*: number */) /*: Promise<boolean> */ {
-    const queueEnabled = get_settings('operation_queue_enabled') !== false;
-    if (!queueEnabled) return false;
-
-    debug(SUBSYSTEM.SCENE, `[Queue] Operation queue enabled, queueing scene summary generation for index ${index}`);
+    debug(SUBSYSTEM.SCENE, `[Queue] Queueing scene summary generation for index ${index}`);
 
     const { queueGenerateSceneSummary } = await import('./queueIntegration.js');
     const operationId = await queueGenerateSceneSummary(index);
@@ -1017,15 +1014,13 @@ async function saveSceneSummary(
     saveChatDebounced();
     refresh_memory();
 
-    // Extract and queue lorebook entries if Auto-Lorebooks is enabled
-    const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_enabled');
-    debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] auto_lorebooks_summary_enabled = ${autoLorebooksEnabled}, has summary = ${String(!!summary)}`);
-    if (autoLorebooksEnabled && summary) {
+    // Extract and queue lorebook entries
+    if (summary) {
         debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Calling extractAndQueueLorebookEntries for message ${messageIndex}...`);
         await extractAndQueueLorebookEntries(summary, messageIndex);
         debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] extractAndQueueLorebookEntries completed for message ${messageIndex}`);
     } else {
-        debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Skipping lorebook extraction - enabled: ${autoLorebooksEnabled}, has summary: ${String(!!summary)}`);
+        debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Skipping lorebook extraction - no summary available`);
     }
 }
 

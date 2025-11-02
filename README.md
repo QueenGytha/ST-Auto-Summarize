@@ -54,7 +54,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
   - Blue: Marked for long-term memory (included in short-term or long-term memory)
   - Red: Marked for long-term memory, but now out of context
   - Grey: Excluded
-- **Auto-hide**: Automatically exclude messages older than a configurable threshold.
+- **Auto-hide**: Automatically hide messages from scenes older than a configurable threshold (scene-based).
 
 ---
 
@@ -175,12 +175,11 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 
 #### Auto-Hide
 
-- **Auto Hide Messages Older Than:** Automatically exclude old messages from context.
+- **Auto Hide Messages Older Than The Last X Scene(s):** Automatically exclude messages from scenes older than the specified number of scenes. Set to -1 to disable.
 
 #### Miscellaneous
 
 - **Debug Mode:** Enable verbose logging.
-- **Display Memories:** Show/hide summaries below messages.
 - **Enable Memory in New Chats:** Default memory state for new chats.
 - **Use Global Toggle State:** Share memory enable/disable state across all chats.
 
@@ -190,7 +189,6 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 
 - `/get_memory_enabled`: Returns whether the extension is enabled in the current chat.
 - `/toggle_memory`: Toggles the extension on and off for the current chat. Same as clicking "Toggle Chat Memory" in the config. Can also provide a boolean argument to toggle the extension directly.
-- `/toggle_memory_display`: Toggles the display of summaries below each message. Same as clicking "Display Memories" in the config.
 - `/toggle_memory_popout`: Toggles the popout config menu.
 - `/toggle_memory_edit_interface`: Toggles the "Edit Memory" interface.
 - `/toggle_memory_injection_preview`: Toggles a preview of the text that will be injected.

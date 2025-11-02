@@ -18,26 +18,6 @@ function findVisibleSceneBreaks(chat) {
     return scene_break_indexes;
 }
 
-// Helper: Apply age-based hiding rules
-// $FlowFixMe[missing-local-annot]
-function applyAgeBasedHiding(chat, auto_hide_age, to_hide, to_unhide) {
-    if (auto_hide_age >= 0) {
-        const cutoff = chat.length - auto_hide_age;
-        for (let i = 0; i < chat.length; i++) {
-            if (i < cutoff) {
-                to_hide.add(i);
-            } else {
-                to_unhide.add(i);
-            }
-        }
-    } else {
-        // If disabled, unhide all
-        for (let i = 0; i < chat.length; i++) {
-            to_unhide.add(i);
-        }
-    }
-}
-
 // Helper: Apply scene-based hiding rules
 // $FlowFixMe[missing-local-annot]
 function applySceneBasedHiding(chat, auto_hide_scene_count, to_hide, to_unhide) {
@@ -103,7 +83,6 @@ async function processBatchedCommands(ctx, indexes, command) {
 
 async function auto_hide_messages_by_command() {
     const ctx = getContext();
-    const auto_hide_age = get_settings('auto_hide_message_age');
     const auto_hide_scene_count = get_settings('auto_hide_scene_count');
     const chat = ctx.chat;
 
@@ -112,8 +91,12 @@ async function auto_hide_messages_by_command() {
     // $FlowFixMe[underconstrained-implicit-instantiation]
     const to_unhide = new Set();
 
-    // Apply hiding rules
-    applyAgeBasedHiding(chat, auto_hide_age, to_hide, to_unhide);
+    // Initialize unhide set with all messages (scene-based hiding will override as needed)
+    for (let i = 0; i < chat.length; i++) {
+        to_unhide.add(i);
+    }
+
+    // Apply scene-based hiding rules
     applySceneBasedHiding(chat, auto_hide_scene_count, to_hide, to_unhide);
 
     // Convert sets to sorted arrays and execute commands

@@ -55,7 +55,6 @@ async function initialize_settings_listeners() {
         }
     });
 
-    bind_setting('#auto_hide_message_age', 'auto_hide_message_age', 'number', refresh_memory);
     bind_setting('#auto_hide_scene_count', 'auto_hide_scene_count', 'number', refresh_memory);
 
     // Trigger profile changes
@@ -98,11 +97,6 @@ async function initialize_settings_listeners() {
     bind_setting('#debug_mode', 'debug_mode', 'boolean');
     bind_setting('#default_chat_enabled', 'default_chat_enabled', 'boolean');
     bind_setting('#use_global_toggle_state', 'use_global_toggle_state', 'boolean');
-
-    // Operation Queue settings
-    bind_setting('#operation_queue_enabled', 'operation_queue_enabled', 'boolean');
-    bind_setting('#operation_queue_use_lorebook', 'operation_queue_use_lorebook', 'boolean');
-    bind_setting('#operation_queue_display_enabled', 'operation_queue_display_enabled', 'boolean');
 
     // --- Scene Summary Settings ---
     bind_setting('#scene_summary_enabled', 'scene_summary_enabled', 'boolean');
@@ -391,17 +385,6 @@ function initialize_lorebooks_settings_listeners() {
         event.preventDefault();
         restoreEntityTypesToDefault();
     });
-    // Global enabled by default checkbox
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-enabled-by-default', function() {
-        const value = $(this).prop('checked');
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.enabledByDefault = value;
-        saveSettingsDebounced();
-    });
 
     // Name template input
     // $FlowFixMe[cannot-resolve-name]
@@ -494,14 +477,6 @@ function initialize_lorebooks_settings_listeners() {
     });
 
     // Summary processing settings
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-summary-processing-enabled', function() {
-        const value = $(this).prop('checked');
-        set_settings('auto_lorebooks_summary_enabled', value);
-        save_profile();
-    });
-
     // $FlowFixMe[cannot-resolve-name]
     // $FlowFixMe[missing-this-annot]
     $(document).on('change', '#autolorebooks-summary-skip-duplicates', function() {

@@ -84,15 +84,6 @@ function initialize_slash_commands() {
     }));
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'toggle_memory_display',
-        callback: (_args) => {
-            // $FlowFixMe[cannot-resolve-name]
-            $(`.${settings_content_class} #display_memories`).click();  // toggle the memory display
-        },
-        helpString: "Toggle the \"display memories\" setting on the current profile (doesn't save the profile).",
-    }));
-
-    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'toggle_memory_popout',
         callback: (_args) => {
             toggle_popout()
