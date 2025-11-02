@@ -169,17 +169,8 @@ async function summarize_messages(indexes /*: ?(number | Array<number>) */=null,
 
     debug(`Summarizing ${indexArray.length} messages`);
 
-    // Try to queue if enabled
-    if (get_settings('operation_queue_enabled') !== false) {
-        const { queueSummarizeMessages } = await import('./queueIntegration.js');
-        // $FlowFixMe[incompatible-type] - indexArray is guaranteed to be Array<number> by type narrowing above
-        const queued = await queueSummarizeMessages(indexArray);
-        if (queued && queued.length > 0) {
-            debug(`Queued ${queued.length} summarization operations`);
-            return;
-        }
-        debug('Failed to queue operations, executing directly');
-    }
+    // Note: Message summarization is no longer queued (removed due to message threshold exclusion removal)
+    // The queue is only used for scene summaries, validation, and lorebook processing
 
     // Setup
     show_progress = show_progress && indexArray.length > 1;

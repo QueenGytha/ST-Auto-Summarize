@@ -10,7 +10,7 @@ import {
     toast,
     get_settings,
     SUBSYSTEM,
-    setSendButtonState,
+    setQueueBlocking,
     getCurrentConnectionSettings,
     switchConnectionSettings
 } from './index.js';
@@ -98,6 +98,24 @@ let queueProcessor /*: ?Promise<void> */ = null;
 let uiUpdateCallback /*: ?Function */ = null;
 let isClearing /*: boolean */ = false;  // Flag to prevent enqueuing during clear
 let queueVersion /*: number */ = 0;  // Incremented on clear to invalidate in-flight operations
+let isChatBlocked /*: boolean */ = false;  // Tracks whether chat is currently blocked by queue
+
+/**
+ * Set chat blocking state for the queue
+ * @param {boolean} blocked - Whether to block chat
+ */
+function setQueueChatBlocking(blocked /*: boolean */) {
+    if (isChatBlocked === blocked) {
+        // Already in desired state, skip
+        return;
+    }
+
+    isChatBlocked = blocked;
+    // Control button blocking state (blocks ST's activateSendButtons from working)
+    setQueueBlocking(blocked);
+    debug(SUBSYSTEM.QUEUE, `Chat ${blocked ? 'BLOCKED' : 'UNBLOCKED'} by operation queue`);
+    notifyUIUpdate();
+}
 
 /**
  * Initialize the operation queue system
@@ -123,6 +141,19 @@ export async function initOperationQueue() {
         log(SUBSYSTEM.QUEUE, '⚠ No lorebook attached yet, queue entry will be created when lorebook is available');
     }
 
+    // Restore chat blocking state based on queue contents
+    // $FlowFixMe[incompatible-use]
+    if (currentQueue && currentQueue.queue.length > 0) {
+        log(SUBSYSTEM.QUEUE, `Restoring chat block state - ${currentQueue.queue.length} operations in queue`);
+        setQueueChatBlocking(true);
+    }
+
+    // Install button and Enter key interceptors
+    log(SUBSYSTEM.QUEUE, 'Installing button and Enter key interceptors...');
+    const { installButtonInterceptor, installEnterKeyInterceptor } = await import('./index.js');
+    installButtonInterceptor();
+    installEnterKeyInterceptor();
+
     isInitialized = true;
     log(SUBSYSTEM.QUEUE, '✓ Operation queue system initialized successfully');
 }
@@ -140,6 +171,16 @@ export async function reloadQueue() {
 
     // Load queue from storage
     await loadQueue();
+
+    // Restore chat blocking state based on queue contents
+    // $FlowFixMe[incompatible-use]
+    if (currentQueue && currentQueue.queue.length > 0) {
+        log(SUBSYSTEM.QUEUE, `Restoring chat block state on reload - ${currentQueue.queue.length} operations in queue`);
+        setQueueChatBlocking(true);
+    } else {
+        // Queue is empty, ensure chat is unblocked
+        setQueueChatBlocking(false);
+    }
 
     // Start queue processor if there are pending operations and not paused
     const pending = getPendingOperations();
@@ -475,11 +516,20 @@ export async function enqueueOperation(type /*: OperationTypeType */, params /*:
         restoreSettings: options.restoreSettings        // Connection settings to restore after execution
     } /*:: : Operation) */;
 
+    // Block chat immediately if this is the first operation being added
+    // $FlowFixMe[incompatible-use]
+    const wasEmpty = currentQueue.queue.length === 0;
+
     // $FlowFixMe[incompatible-use] [incompatible-type]
     currentQueue.queue.push(operation);
     await saveQueue();
 
     debug(SUBSYSTEM.QUEUE, `Enqueued ${type} operation:`, operation.id);
+
+    // Block chat if queue was empty before this enqueue
+    if (wasEmpty) {
+        setQueueChatBlocking(true);
+    }
 
     // Auto-start processing if not paused
     // $FlowFixMe[incompatible-use]
@@ -524,6 +574,24 @@ export function getPendingOperations() {
 export function getInProgressOperations() {
     // $FlowFixMe[incompatible-use]
     return currentQueue.queue.filter(op => op.status === OperationStatus.IN_PROGRESS);
+}
+
+/**
+ * Check if queue is actively processing operations
+ * Used by send message interceptor to block sends during queue operations
+ */
+export function isQueueActive() /*: boolean */ {
+    if (!currentQueue) return false;
+    // $FlowFixMe[incompatible-use]
+    return currentQueue.queue.length > 0 || queueProcessor !== null;
+}
+
+/**
+ * Get the current chat blocking state
+ * @returns {boolean} - Whether chat is currently blocked by queue
+ */
+export function isChatBlockedByQueue() /*: boolean */ {
+    return isChatBlocked;
 }
 
 /**
@@ -591,6 +659,13 @@ export async function removeOperation(operationId /*: string */) /*: Promise<boo
     await saveQueue();
 
     debug(SUBSYSTEM.QUEUE, `Removed operation ${operationId}`);
+
+    // Unblock chat if queue is now empty
+    // $FlowFixMe[incompatible-use]
+    if (currentQueue.queue.length === 0) {
+        setQueueChatBlocking(false);
+    }
+
     return true;
 }
 
@@ -611,6 +686,12 @@ export async function clearCompletedOperations() {
         await saveQueue();
         debug(SUBSYSTEM.QUEUE, `Cleared ${removed} completed operations`);
         toast(`Cleared ${removed} completed operation(s)`, 'info');
+
+        // Unblock chat if queue is now empty
+        // $FlowFixMe[incompatible-use]
+        if (currentQueue.queue.length === 0) {
+            setQueueChatBlocking(false);
+        }
     }
 
     return removed;
@@ -645,8 +726,6 @@ export async function clearAllOperations() {
         // Wait for processor to stop (it checks paused flag on each iteration)
         await new Promise(resolve => setTimeout(resolve, 100));
         queueProcessor = null;
-        // Unlock send button since processor is stopped
-        setSendButtonState(false);
 
         // Restore paused state
         // $FlowFixMe[incompatible-use] [incompatible-type]
@@ -660,6 +739,9 @@ export async function clearAllOperations() {
     currentQueue.current_operation_id = null;
 
     await saveQueue(true);  // Force save without reload
+
+    // Unblock chat since queue is now empty
+    setQueueChatBlocking(false);
 
     // Clear the flag after a short delay to allow any in-flight enqueue attempts to be rejected
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -810,12 +892,17 @@ async function executeOperation(operation /*: Operation */) /*: Promise<any> */ 
             }
         }
 
+        debug(SUBSYSTEM.QUEUE, `[LIFECYCLE] About to call handler for ${operation.type}, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
         const result = await handler(operation);
+        debug(SUBSYSTEM.QUEUE, `[LIFECYCLE] Handler returned for ${operation.type}, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
+
         await updateOperationStatus(operation.id, OperationStatus.COMPLETED);
         debug(SUBSYSTEM.QUEUE, `Completed ${operation.type}:`, operation.id);
 
         // Auto-remove completed operations
+        debug(SUBSYSTEM.QUEUE, `[LIFECYCLE] About to remove operation ${operation.id}, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
         await removeOperation(operation.id);
+        debug(SUBSYSTEM.QUEUE, `[LIFECYCLE] After removeOperation, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
         debug(SUBSYSTEM.QUEUE, `Auto-removed completed operation:`, operation.id);
 
         return result;
@@ -897,17 +984,19 @@ function startQueueProcessor() {
     }
 
     debug(SUBSYSTEM.QUEUE, 'Starting queue processor');
-    // Lock send button for entire queue processing duration
-    setSendButtonState(true);
+    // Ensure chat is blocked for entire queue processing duration (safety fallback)
+    setQueueChatBlocking(true);
 
     // $FlowFixMe[definition-cycle]
     queueProcessor = (async () => {
         while (true) {
+            debug(SUBSYSTEM.QUEUE, `[LOOP] Start of iteration, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
+
             // Check if paused
             // $FlowFixMe[incompatible-use]
             if (currentQueue.paused) {
-                debug(SUBSYSTEM.QUEUE, 'Queue paused, stopping processor');
-                setSendButtonState(false);
+                debug(SUBSYSTEM.QUEUE, 'Queue paused, stopping processor (chat remains blocked)');
+                // Do NOT unblock chat - it stays blocked even when paused
                 queueProcessor = null;
                 return;
             }
@@ -917,11 +1006,14 @@ function startQueueProcessor() {
 
             if (!operation) {
                 debug(SUBSYSTEM.QUEUE, 'No operations to process, stopping processor');
-                setSendButtonState(false);
+                // Only unblock when queue is fully empty
+                setQueueChatBlocking(false);
                 queueProcessor = null;
                 notifyUIUpdate();
                 return;
             }
+
+            debug(SUBSYSTEM.QUEUE, `[LOOP] Found operation: ${operation.type}, id: ${operation.id}`);
 
             // Mark operation as in progress BEFORE saving
             // $FlowFixMe[incompatible-use]
@@ -934,6 +1026,7 @@ function startQueueProcessor() {
             // eslint-disable-next-line no-await-in-loop
             await saveQueue();
 
+            debug(SUBSYSTEM.QUEUE, `[LOOP] About to execute operation, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
             try {
                 // Sequential execution required: operations must execute one at a time in order
                 // eslint-disable-next-line no-await-in-loop
@@ -942,10 +1035,13 @@ function startQueueProcessor() {
                 // Error already handled in executeOperation
                 // Continue processing other operations
             }
+            debug(SUBSYSTEM.QUEUE, `[LOOP] After executeOperation, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
 
             // Sequential execution required: rate limiting delay between operations
+            debug(SUBSYSTEM.QUEUE, `[LOOP] Starting 5-second delay, queue state: blocked=${String(isChatBlocked)}`);
             // eslint-disable-next-line no-await-in-loop
             await new Promise(resolve => setTimeout(resolve, 5000));
+            debug(SUBSYSTEM.QUEUE, `[LOOP] After 5-second delay, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
         }
     })();
 }

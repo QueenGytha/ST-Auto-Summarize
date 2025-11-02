@@ -1029,13 +1029,13 @@ async function saveSceneSummary(
 
     // Extract and queue lorebook entries if Auto-Lorebooks is enabled
     const autoLorebooksEnabled = get_settings('auto_lorebooks_summary_enabled');
-    debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] auto_lorebooks_summary_enabled = ${autoLorebooksEnabled}, has summary = ${!!summary}`);
+    debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] auto_lorebooks_summary_enabled = ${autoLorebooksEnabled}, has summary = ${String(!!summary)}`);
     if (autoLorebooksEnabled && summary) {
         debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Calling extractAndQueueLorebookEntries for message ${messageIndex}...`);
         await extractAndQueueLorebookEntries(summary, messageIndex);
         debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] extractAndQueueLorebookEntries completed for message ${messageIndex}`);
     } else {
-        debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Skipping lorebook extraction - enabled: ${autoLorebooksEnabled}, has summary: ${!!summary}`);
+        debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Skipping lorebook extraction - enabled: ${autoLorebooksEnabled}, has summary: ${String(!!summary)}`);
     }
 }
 
