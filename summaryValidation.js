@@ -27,9 +27,7 @@ async function validate_summary(summary /*: string */, type /*: string */ = "sce
 
     // Ensure chat is blocked during validation
     const ctx = getContext();
-    if (get_settings('block_chat')) {
-        ctx.deactivateSendButtons();
-    }
+    ctx.deactivateSendButtons();
 
     // Get PresetManager for current main_api to handle preset switching
     // Validation uses the current connection profile, but can use a custom preset

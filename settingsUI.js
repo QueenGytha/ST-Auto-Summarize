@@ -92,7 +92,6 @@ async function initialize_settings_listeners() {
     bind_setting('#include_narrator_messages', 'include_narrator_messages', 'boolean');
     bind_setting('#message_length_threshold', 'message_length_threshold', 'number');
 
-    bind_setting('#block_chat', 'block_chat', 'boolean');
     bind_setting('#summary_injection_separator', 'summary_injection_separator', 'text');
     bind_setting('#summary_injection_threshold', 'summary_injection_threshold', 'number');
 

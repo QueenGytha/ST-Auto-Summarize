@@ -709,17 +709,11 @@ ${summary}
 
 Respond with ONLY the scene name, nothing else. Make it concise and descriptive, like a chapter title.`;
 
-        // Block input if setting is enabled
-        if (get_settings('block_chat')) {
-            ctx.deactivateSendButtons();
-        }
+        ctx.deactivateSendButtons();
 
         const sceneName = await summarize_text(sceneNamePrompt);
 
-        // Re-enable input if it was blocked
-        if (get_settings('block_chat')) {
-            ctx.activateSendButtons();
-        }
+        ctx.activateSendButtons();
 
         // Clean up the scene name (remove quotes, trim, limit length)
         let cleanSceneName = sceneName.trim()
@@ -983,9 +977,7 @@ async function executeSceneSummaryGeneration(
 ) /*: Promise<string> */ {
     let summary = "";
     try {
-        if (get_settings('block_chat')) {
-            ctx.deactivateSendButtons();
-        }
+        ctx.deactivateSendButtons();
         debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
         const rawResponse = await summarize_text(prompt);
         debug(SUBSYSTEM.SCENE, "AI response:", rawResponse);
@@ -1000,9 +992,7 @@ async function executeSceneSummaryGeneration(
         error(SUBSYSTEM.SCENE, "Error generating summary:", err);
         throw err;
     } finally {
-        if (get_settings('block_chat')) {
-            ctx.activateSendButtons();
-        }
+        ctx.activateSendButtons();
     }
     return summary;
 }

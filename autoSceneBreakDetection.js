@@ -225,9 +225,7 @@ async function detectSceneBreak(
         // Switch to detection profile/preset and save current
         const saved = await switchToDetectionSettings(ctx, profile, preset);
 
-        // Block input if setting is enabled
-        const shouldBlock = get_settings('block_chat');
-        if (shouldBlock) ctx.deactivateSendButtons();
+        ctx.deactivateSendButtons();
 
         // Call LLM using the configured API
         debug('Sending prompt to AI for message', messageIndex);
@@ -235,7 +233,7 @@ async function detectSceneBreak(
         debug('AI raw response for message', messageIndex, ':', response);
 
         // Re-enable input and restore settings
-        if (shouldBlock) ctx.activateSendButtons();
+        ctx.activateSendButtons();
         await restoreSettings(ctx, saved);
 
         // Parse response

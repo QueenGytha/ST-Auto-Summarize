@@ -18,7 +18,6 @@ export const default_settings = {
     scene_summary_prompt,
     scene_summary_error_detection_prompt,
     scene_summary_connection_profile: "",
-    block_chat: true, // Used by scene summaries to block chat during generation
     summary_injection_separator: "\n* ",
     summary_injection_threshold: 0,
     debug_mode: true,

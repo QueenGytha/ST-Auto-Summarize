@@ -144,9 +144,7 @@ function cleanupAfterSummarization(ctx, show_progress, indexes_length) {
         debug(`Messages summarized: ${indexes_length}`);
     }
 
-    if (get_settings('block_chat')) {
-        ctx.activateSendButtons();
-    }
+    ctx.activateSendButtons();
 
     refresh_memory();
 }
@@ -176,9 +174,7 @@ async function summarize_messages(indexes /*: ?(number | Array<number>) */=null,
     show_progress = show_progress && indexArray.length > 1;
     setStopSummarization(false);
 
-    if (get_settings('block_chat')) {
-        ctx.deactivateSendButtons();
-    }
+    ctx.deactivateSendButtons();
 
     const savedProfile = await switchToSummarizationProfile();
 
