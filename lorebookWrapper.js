@@ -129,16 +129,15 @@ function splitDecorators(content /*: string */) /*: { decorators: string, body: 
  */
 function wrapBody(content /*: string */, entry /*: any */) /*: ?string */ {
     const normalized = content.replace(/\r/g, '');
-    if (!normalized.trim()) {
+    const trimmed = normalized.trim();
+    if (!trimmed) {
         return null;
     }
 
-    const inner = normalized.trimEnd();
-    const name = escapeXML(entry?.comment || 'Unnamed Entry');
-    const uid = escapeXML(String(entry?.uid ?? 'unknown'));
-    const world = entry?.world ? ` world="${escapeXML(String(entry.world))}"` : '';
+    const attributes = buildAttributeList(entry);
+    const openTag = `<lorebook ${attributes.join(' ')}>`;
 
-    return `<lorebook name="${name}" uid="${uid}"${world}>\n${inner}\n</lorebook>`;
+    return `${openTag}\n${trimmed}\n</lorebook>`;
 }
 
 /**
@@ -160,4 +159,44 @@ function escapeXML(str /*: any */) /*: string */ {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&apos;');
+}
+
+/**
+ * Build the attribute list for the lorebook wrapper tag using entry metadata.
+ */
+function buildAttributeList(entry /*: any */) /*: Array<string> */ {
+    const attrs = [];
+
+    attrs.push(`name="${escapeXML(entry?.comment || 'Unnamed Entry')}"`);
+    attrs.push(`uid="${escapeXML(String(entry?.uid ?? 'unknown'))}"`);
+
+    if (entry?.world) {
+        attrs.push(`world="${escapeXML(String(entry.world))}"`);
+    }
+
+    if (typeof entry?.position === 'number') {
+        attrs.push(`position="${escapeXML(String(entry.position))}"`);
+    }
+
+    if (typeof entry?.order === 'number') {
+        attrs.push(`order="${escapeXML(String(entry.order))}"`);
+    }
+
+    if (entry?.depth !== undefined && entry.depth !== null) {
+        attrs.push(`depth="${escapeXML(String(entry.depth))}"`);
+    }
+
+    if (entry?.role !== undefined && entry.role !== null) {
+        attrs.push(`role="${escapeXML(String(entry.role))}"`);
+    }
+
+    if (Array.isArray(entry?.key) && entry.key.length) {
+        attrs.push(`keys="${escapeXML(entry.key.join('|'))}"`);
+    }
+
+    if (Array.isArray(entry?.keysecondary) && entry.keysecondary.length) {
+        attrs.push(`keys_secondary="${escapeXML(entry.keysecondary.join('|'))}"`);
+    }
+
+    return attrs;
 }
