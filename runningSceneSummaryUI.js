@@ -45,7 +45,18 @@ function createRunningSceneSummaryNavbar() {
         <select id="running_summary_version_selector" class="text_pole" style="width: 90%; font-size: 11px;">
             <option value="-1">No Running Summary</option>
         </select>
-        <button id="running_summary_edit_btn" class="menu_button fa-solid fa-edit" title="Edit running summary" style="width: 90%;"></button>
+        <button id="running_summary_edit_btn" class="menu_button" title="Edit running summary" style="
+            width: 90%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 11px;
+            text-transform: none;
+        ">
+            <i class="fa-solid fa-edit"></i>
+            <span>Edit Summary</span>
+        </button>
         <button id="running_summary_clear_all_btn" class="menu_button" title="Clear all summaries and reset scene tracking" style="
             width: 90%;
             display: flex;

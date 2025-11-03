@@ -41,6 +41,7 @@ import {
     processSceneBreakOnChatLoad,
     processNewMessageForSceneBreak,
     cleanup_invalid_running_summaries,
+    installGenerateRawInterceptor,
 } from './index.js';
 
 // Import lorebooks utilities (will be dynamically imported if enabled)
@@ -243,6 +244,10 @@ async function initializeExtension() {
 
     check_st_version()
 
+    // Install global generateRaw interceptor BEFORE anything else
+    // This ensures ALL LLM calls (including from ST core) get metadata injected
+    installGenerateRawInterceptor();
+
     // Load settings
     initialize_settings();
 
@@ -268,8 +273,41 @@ async function initializeExtension() {
     const eventSource = ctx.eventSource;
     const event_types = ctx.event_types;
     debug(`[eventHandlers] Registered event_types: ${JSON.stringify(event_types)}`);
-    eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, (id, _stuff) => {
-        on_chat_event('chat_completion_prompt_ready', id);
+    // Inject metadata into chat completion prompts for proxy logging
+    eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, async (promptData) => {
+        on_chat_event('chat_completion_prompt_ready', promptData);
+
+        try {
+            debug('[Interceptor] CHAT_COMPLETION_PROMPT_READY handler started');
+
+            // Check if injection is enabled (get_settings expects a key parameter)
+            const enabled = get_settings('first_hop_proxy_send_chat_details');
+            debug('[Interceptor] first_hop_proxy_send_chat_details:', enabled);
+
+            if (!enabled) {
+                debug('[Interceptor] Metadata injection disabled, skipping');
+                return; // Not enabled, skip
+            }
+
+            debug('[Interceptor] Metadata injection enabled, proceeding...');
+
+            // Import metadata injector
+            const { injectMetadataIntoChatArray } = await import('./metadataInjector.js');
+
+            // Process the chat array
+            if (promptData && Array.isArray(promptData.chat)) {
+                debug('[Interceptor] Processing chat array for CHAT_COMPLETION_PROMPT_READY');
+
+                // Inject metadata header
+                injectMetadataIntoChatArray(promptData.chat, { operation: 'chat' });
+
+                debug('[Interceptor] Successfully processed chat array');
+            } else {
+                debug('[Interceptor] No chat array found in promptData');
+            }
+        } catch (err) {
+            debug('[Interceptor] Error processing CHAT_COMPLETION_PROMPT_READY:', String(err));
+        }
     });
     eventSource.makeLast(event_types.CHARACTER_MESSAGE_RENDERED, (id) => on_chat_event('char_message', id));
     eventSource.on(event_types.USER_MESSAGE_RENDERED, (id) => on_chat_event('user_message', id));

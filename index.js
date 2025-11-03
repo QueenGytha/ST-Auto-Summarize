@@ -22,7 +22,7 @@ import { runRegexScript } from '../../../../scripts/extensions/regex/engine.js'
 import { getContext, getApiUrl, extension_settings } from '../../../extensions.js';
 // $FlowFixMe[cannot-resolve-module]
 import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from '../../../utils.js';
-import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata, activateSendButtons as _originalActivateSendButtons, deactivateSendButtons as _originalDeactivateSendButtons } from '../../../../script.js';
+import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, saveSettingsDebounced, generateRaw as _originalGenerateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata, activateSendButtons as _originalActivateSendButtons, deactivateSendButtons as _originalDeactivateSendButtons } from '../../../../script.js';
 
 // Track if queue is blocking (set by operationQueue.js)
 let isQueueBlocking = false;
@@ -149,9 +149,15 @@ function deactivateSendButtons() {
     _originalDeactivateSendButtons();
 }
 
+// Import wrapped generateRaw from interceptor (will be set up during init)
+import { wrappedGenerateRaw } from './generateRawInterceptor.js';
+
+// Export wrapped version as generateRaw so all extension code uses it
+export const generateRaw = wrappedGenerateRaw;
+
 export {
     // Exports from imported SillyTavern modules
-    formatInstructModeChat, getPresetManager, is_group_generating, selected_group, openGroupId, groups, loadMovingUIState, renderStoryString, power_user, dragElement, debounce_timeout, MacrosParser, commonEnumProviders, getRegexScripts, runRegexScript, getContext, getApiUrl, extension_settings, getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition, animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, saveSettingsDebounced, generateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata, activateSendButtons, deactivateSendButtons
+    formatInstructModeChat, getPresetManager, is_group_generating, selected_group, openGroupId, groups, loadMovingUIState, renderStoryString, power_user, dragElement, debounce_timeout, MacrosParser, commonEnumProviders, getRegexScripts, runRegexScript, getContext, getApiUrl, extension_settings, getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition, animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, saveSettingsDebounced, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata, activateSendButtons, deactivateSendButtons
 };
 
 // Barrel file. Implictly imports before exporting
@@ -198,6 +204,7 @@ export * from './tests.js';
 
 // Metadata injection for LLM requests
 export * from './metadataInjector.js';
+export * from './generateRawInterceptor.js';
 
 // ============================================================================
 // Enter Key Interception for Queue Operations

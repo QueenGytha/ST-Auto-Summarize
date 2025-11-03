@@ -2,7 +2,9 @@
 // summaryToLorebookProcessor.js - Extract lorebook entries from summary JSON objects and process them
 
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
-import { chat_metadata, saveMetadata, generateRaw } from '../../../../script.js';
+import { chat_metadata, saveMetadata } from '../../../../script.js';
+// Use wrapped version from our interceptor
+import { wrappedGenerateRaw as generateRaw } from './generateRawInterceptor.js';
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { extension_settings } from '../../../extensions.js';
 
@@ -14,8 +16,6 @@ import {
     normalizeEntityTypeDefinition,
     parseEntityTypeDefinition,
 } from './entityTypes.js';
-
-import { injectMetadata } from './metadataInjector.js';
 
 // Will be imported from index.js via barrel exports
 let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */;  // Utility functions - any type is legitimate
@@ -425,18 +425,14 @@ async function runModelWithSettings(
             throw new Error(errorMsg);
         }
 
-        // Inject metadata for proxy tracking
-        const promptWithMetadata = injectMetadata(prompt, {
-            operation: label // Use label as operation type (e.g., 'lorebook_entry_lookup', 'lorebookEntryDeduplicate')
-        });
-
+        // Metadata injection now handled by global generateRaw interceptor
         // Use centralized connection settings management
         const response = await withConnectionSettings(
             connectionProfile,
             completionPreset,
             async () => {
                 return await generateRaw({
-                    prompt: promptWithMetadata,
+                    prompt: prompt,
                     instructOverride: false,
                     quietToLoud: false,
                     prefill: prefill || ''

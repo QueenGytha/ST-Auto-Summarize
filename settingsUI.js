@@ -72,7 +72,6 @@ async function initialize_settings_listeners() {
     bind_function("#refresh_memory", () => refresh_memory());
 
     // First-Hop Proxy Integration Settings
-    bind_setting('#first_hop_proxy_integration_enabled', 'first_hop_proxy_integration_enabled', 'boolean');
     bind_setting('#first_hop_proxy_send_chat_details', 'first_hop_proxy_send_chat_details', 'boolean');
 
     // Message Filtering Settings (used by scene summaries)

@@ -110,6 +110,13 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
     # Extract character/chat info for organized logging
     character_chat_info = extract_character_chat_info(headers or {}, request_data)
 
+    # Log incoming request to console
+    print("=" * 80, flush=True)
+    print(f"INCOMING REQUEST [{request_id}]", flush=True)
+    print(f"Headers: {json.dumps(sanitize_headers_for_logging(headers or {}), indent=2)}", flush=True)
+    print(f"Request Data: {json.dumps(request_data, indent=2)}", flush=True)
+    print("=" * 80, flush=True)
+
     try:
         # Use request-specific config if provided, otherwise use global config
         active_config = request_config if request_config is not None else config
@@ -162,10 +169,25 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
         # Use error handler for retries
         response_data = error_handler.retry_with_backoff(make_request, context)
 
+        # Log successful response to console
+        print("=" * 80, flush=True)
+        print(f"OUTGOING RESPONSE [{request_id}] - Success", flush=True)
+        print(f"Response Data: {json.dumps(response_data, indent=2)}", flush=True)
+        print(f"Duration: {time.time() - start_time:.3f}s", flush=True)
+        print("=" * 80, flush=True)
+
         return response_data
 
     except Exception as e:
         error = e
+
+        # Log error response to console
+        print("=" * 80, flush=True)
+        print(f"OUTGOING RESPONSE [{request_id}] - ERROR", flush=True)
+        print(f"Error Type: {type(e).__name__}", flush=True)
+        print(f"Error Message: {str(e)}", flush=True)
+        print(f"Duration: {time.time() - start_time:.3f}s", flush=True)
+        print("=" * 80, flush=True)
 
         # Log to error logger if available
         if error_logger:

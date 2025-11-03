@@ -39,28 +39,26 @@ type MetadataBlock = {
 */
 
 /**
- * Get the current chat name for metadata
- * Handles both single character and group chats
- * @returns {string} Chat name (character name or group name)
+ * Get the current chat identifier for metadata
+ * Returns the full chat ID with timestamp (matches {{chat}} macro in Auto-Lorebooks)
+ * @returns {string} Chat identifier (e.g., "CharacterName - 2025-11-03@16h32m59s" or group name)
  */
 // $FlowFixMe[signature-verification-failure]
 export function getChatName() /*: string */ {
     try {
-        // Check if we're in a group chat
+        // For single character chats, getCurrentChatId() returns the full identifier with timestamp
+        // This matches what's used in Auto-Lorebooks naming: "CharacterName - YYYY-MM-DD@HHhMMmSSs"
+        const chatId = getCurrentChatId();
+        if (chatId && !selected_group) {
+            return String(chatId).trim();
+        }
+
+        // For group chats, use group name
         if (selected_group) {
             const group = groups?.find((x) => x.id === selected_group);
             if (group && group.name) {
                 return String(group.name).trim();
             }
-        }
-
-        // Single character chat
-        if (name2 && name2.trim()) {
-            return String(name2).trim();
-        }
-
-        if (this_chid !== undefined && characters && characters[this_chid]) {
-            return String(characters[this_chid].name || '').trim();
         }
 
         // Fallback
@@ -72,21 +70,6 @@ export function getChatName() /*: string */ {
 }
 
 /**
- * Get the current chat ID for metadata
- * @returns {string} Chat ID or empty string if unavailable
- */
-// $FlowFixMe[signature-verification-failure]
-export function getChatId() /*: string */ {
-    try {
-        const chatId = getCurrentChatId();
-        return chatId ? String(chatId) : '';
-    } catch (err) {
-        console.error('[Auto-Summarize:Metadata] Error getting chat ID:', err);
-        return '';
-    }
-}
-
-/**
  * Check if metadata injection is enabled in settings
  * Implicitly enabled when send_chat_details is true
  * @returns {boolean} True if enabled
@@ -94,9 +77,9 @@ export function getChatId() /*: string */ {
 // $FlowFixMe[signature-verification-failure]
 export function isMetadataInjectionEnabled() /*: boolean */ {
     try {
-        const settings = get_settings();
-        // Implicitly enabled if send chat details is enabled
-        return settings?.first_hop_proxy_send_chat_details === true;
+        // get_settings expects a key parameter
+        const enabled = get_settings('first_hop_proxy_send_chat_details');
+        return enabled === true;
     } catch (err) {
         console.error('[Auto-Summarize:Metadata] Error checking if enabled:', err);
         return false; // Default to disabled
@@ -210,5 +193,51 @@ export function stripMetadata(prompt /*: string */) /*: string */ {
     } catch (err) {
         console.error('[Auto-Summarize:Metadata] Error stripping metadata:', err);
         return prompt;
+    }
+}
+
+/**
+ * Inject metadata into the first system message of a chat array
+ * Mutates the chat array in place
+ * @param {Array} chatArray - Array of chat messages
+ * @param {Object} options - Metadata options
+ */
+// $FlowFixMe[signature-verification-failure]
+export function injectMetadataIntoChatArray(
+    chatArray /*: Array<any> */,
+    options /*: ?{operation?: string, custom?: {[string]: any}, includeTimestamp?: boolean} */ = {}
+) /*: void */ {
+    try {
+        if (!isMetadataInjectionEnabled()) {
+            return;
+        }
+
+        if (!Array.isArray(chatArray) || chatArray.length === 0) {
+            return;
+        }
+
+        // Create metadata block
+        const metadata = createMetadataBlock(options);
+        const metadataStr = formatMetadataBlock(metadata);
+
+        // Find first system message, or create one if none exists
+        let firstSystemMessage = chatArray.find(msg => msg.role === 'system');
+
+        if (firstSystemMessage) {
+            // Prepend to existing system message
+            firstSystemMessage.content = metadataStr + firstSystemMessage.content;
+            console.log('[Auto-Summarize:Interceptor] Injected metadata into existing system message');
+        } else {
+            // No system message exists, insert at beginning
+            chatArray.unshift({
+                role: 'system',
+                content: metadataStr
+            });
+            console.log('[Auto-Summarize:Interceptor] Created new system message with metadata');
+        }
+
+        console.log('[Auto-Summarize:Interceptor] Metadata:', JSON.stringify(metadata));
+    } catch (err) {
+        console.error('[Auto-Summarize:Metadata] Error injecting metadata into chat array:', err);
     }
 }

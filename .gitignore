@@ -109,3 +109,5 @@ package-lock.json
 # Development files
 TODO.txt
 console.txt
+z-*.txt
+_console*.txt
