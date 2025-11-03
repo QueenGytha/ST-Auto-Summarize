@@ -15,6 +15,8 @@ import {
     parseEntityTypeDefinition,
 } from './entityTypes.js';
 
+import { injectMetadata } from './metadataInjector.js';
+
 // Will be imported from index.js via barrel exports
 let log /*: any */, debug /*: any */, error /*: any */, toast /*: any */;  // Utility functions - any type is legitimate
 let getAttachedLorebook /*: any */, getLorebookEntries /*: any */, addLorebookEntry /*: any */;  // Lorebook functions - any type is legitimate
@@ -423,13 +425,18 @@ async function runModelWithSettings(
             throw new Error(errorMsg);
         }
 
+        // Inject metadata for proxy tracking
+        const promptWithMetadata = injectMetadata(prompt, {
+            operation: label // Use label as operation type (e.g., 'lorebook_entry_lookup', 'lorebookEntryDeduplicate')
+        });
+
         // Use centralized connection settings management
         const response = await withConnectionSettings(
             connectionProfile,
             completionPreset,
             async () => {
                 return await generateRaw({
-                    prompt,
+                    prompt: promptWithMetadata,
                     instructOverride: false,
                     quietToLoud: false,
                     prefill: prefill || ''

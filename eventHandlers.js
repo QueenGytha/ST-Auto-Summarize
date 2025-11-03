@@ -52,6 +52,18 @@ let operationQueueModule = null;  // Reference to queue module for reloading
 // Handler functions for each event type
 async function handleChatChanged() {
     const context = getContext();
+
+    // Restore connection settings if they were left in a switched state (crash recovery)
+    try {
+        const { restoreConnectionSettingsIfNeeded } = await import('./connectionSettingsManager.js');
+        const restored = await restoreConnectionSettingsIfNeeded();
+        if (restored) {
+            log(SUBSYSTEM.CORE, 'Restored connection settings after interruption');
+        }
+    } catch (err) {
+        debug('[ConnectionSettings] Failed to restore connection settings:', String(err));
+    }
+
     auto_load_profile();  // load the profile for the current chat or character
     refresh_memory();  // refresh the memory state
     if (context?.chat?.length) {
@@ -348,6 +360,16 @@ Object.entries(event_types).forEach(([key, type]) => {
         log('[Lorebooks] ✓ Auto-Lorebooks functionality initialized');
     } catch (err) {
         log('[Lorebooks] Failed to initialize Auto-Lorebooks:', err);
+    }
+
+    // Initialize metadata injection system
+    log('[Metadata] Initializing metadata injection...');
+    try {
+        const metadataInjector = await import('./metadataInjector.js');
+        metadataInjector.initMetadataInjector({ get_settings });
+        log('[Metadata] ✓ Metadata injection initialized');
+    } catch (err) {
+        log('[Metadata] Failed to initialize metadata injection:', err);
     }
 
     // Register operation handlers AFTER all modules are initialized

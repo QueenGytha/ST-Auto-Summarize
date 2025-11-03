@@ -6,9 +6,7 @@ import {
     debug,
     error,
     log,
-    SUBSYSTEM,
-    getPresetManager,
-    main_api
+    SUBSYSTEM
 } from './index.js';
 
 // Helper: Get setting key for validation type
@@ -29,71 +27,52 @@ async function validate_summary(summary /*: string */, type /*: string */ = "sce
     const ctx = getContext();
     ctx.deactivateSendButtons();
 
-    // Get PresetManager for current main_api to handle preset switching
-    // Validation uses the current connection profile, but can use a custom preset
-    const api = main_api;
-    const presetManager = api ? getPresetManager(api) : null;
-    let savedPreset = null;
-
-    if (presetManager) {
-        savedPreset = presetManager.getSelectedPreset();
-    }
-
     try {
-        // Get the error detection prompt
-        let prompt = get_settings(getValidationKey(type, 'error_detection_prompt'));
-        prompt = prompt.replace("{{summary}}", summary);
+        // Get connection profile and preset for validation
+        const validation_profile = get_settings(getValidationKey(type, 'error_detection_connection_profile'));
+        const validation_preset = get_settings(getValidationKey(type, 'error_detection_preset'));
 
-        // Switch to validation preset if configured
-        const error_preset = get_settings(getValidationKey(type, 'error_detection_preset'));
-        if (error_preset && presetManager) {
-            const presetValue = presetManager.findPreset(error_preset);
-            if (presetValue) {
-                debug(SUBSYSTEM.VALIDATION, `Switching ${api} preset to validation preset: ${error_preset}`);
-                presetManager.selectPreset(presetValue);
-            } else {
-                debug(SUBSYSTEM.VALIDATION, `Validation preset '${error_preset}' not found for API ${api}`);
+        // Execute validation with connection profile/preset switching
+        const { withConnectionSettings } = await import('./connectionSettingsManager.js');
+
+        const is_valid = await withConnectionSettings(
+            validation_profile,
+            validation_preset,
+            async () => {
+                // Get the error detection prompt
+                let prompt = get_settings(getValidationKey(type, 'error_detection_prompt'));
+                prompt = prompt.replace("{{summary}}", summary);
+
+                // Add prefill if configured
+                const prefill = get_settings(getValidationKey(type, 'error_detection_prefill'));
+                if (prefill) {
+                    debug(SUBSYSTEM.VALIDATION, `Adding prefill to validation prompt`);
+                    prompt = `${prompt}\n${prefill}`;
+                }
+
+                // Generate validation response
+                debug(SUBSYSTEM.VALIDATION, `Sending validation prompt: ${prompt.substring(0, 200)}...`);
+                const validation_result = await summarize_text(prompt);
+                debug(SUBSYSTEM.VALIDATION, `Raw validation result: ${validation_result}`);
+
+                // Clean up and check result
+                const result_upper = validation_result.trim().toUpperCase();
+                const valid = result_upper.includes("VALID") && !result_upper.includes("INVALID");
+
+                if (!valid) {
+                    log(SUBSYSTEM.VALIDATION, `Summary validation FAILED: "${result_upper}"`);
+                } else {
+                    debug(SUBSYSTEM.VALIDATION, `Summary validation passed with result: "${result_upper}"`);
+                }
+
+                return valid;
             }
-        }
-
-        // Add prefill if configured
-        const prefill = get_settings(getValidationKey(type, 'error_detection_prefill'));
-        if (prefill) {
-            debug(SUBSYSTEM.VALIDATION, `Adding prefill to validation prompt`);
-            prompt = `${prompt}\n${prefill}`;
-        }
-
-        // Generate validation response (uses current main_api)
-        debug(SUBSYSTEM.VALIDATION, `Sending validation prompt: ${prompt.substring(0, 200)}...`);
-        const validation_result = await summarize_text(prompt);
-        debug(SUBSYSTEM.VALIDATION, `Raw validation result: ${validation_result}`);
-
-        // Clean up and check result
-        const result_upper = validation_result.trim().toUpperCase();
-        const is_valid = result_upper.includes("VALID") && !result_upper.includes("INVALID");
-
-        if (!is_valid) {
-            log(SUBSYSTEM.VALIDATION, `Summary validation FAILED: "${result_upper}"`);
-        } else {
-            debug(SUBSYSTEM.VALIDATION, `Summary validation passed with result: "${result_upper}"`);
-        }
-
-        // Restore original preset
-        if (presetManager && savedPreset) {
-            debug(SUBSYSTEM.VALIDATION, `Restoring ${api} preset to original`);
-            presetManager.selectPreset(savedPreset);
-        }
+        );
 
         return is_valid;
+
     } catch (e) {
         error(SUBSYSTEM.VALIDATION, `Error during summary validation: ${e}`);
-
-        // Restore original preset
-        if (presetManager && savedPreset) {
-            debug(SUBSYSTEM.VALIDATION, `Restoring ${api} preset after error`);
-            presetManager.selectPreset(savedPreset);
-        }
-
         // If validation fails technically, assume the summary is valid
         return true;
     } finally {

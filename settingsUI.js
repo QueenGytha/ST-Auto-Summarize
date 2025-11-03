@@ -71,6 +71,10 @@ async function initialize_settings_listeners() {
     bind_function('#toggle_chat_memory', () => toggle_chat_enabled(), false);
     bind_function("#refresh_memory", () => refresh_memory());
 
+    // First-Hop Proxy Integration Settings
+    bind_setting('#first_hop_proxy_integration_enabled', 'first_hop_proxy_integration_enabled', 'boolean');
+    bind_setting('#first_hop_proxy_send_chat_details', 'first_hop_proxy_send_chat_details', 'boolean');
+
     // Message Filtering Settings (used by scene summaries)
     bind_setting('#include_user_messages', 'include_user_messages', 'boolean');
     bind_setting('#include_system_messages', 'include_system_messages', 'boolean');

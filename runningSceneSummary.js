@@ -11,11 +11,7 @@ import {
     get_data,
     summarize_text,
     saveChatDebounced,
-    saveMetadata,
-    get_connection_profile_api,
-    getPresetManager,
-    set_connection_profile,
-    get_current_connection_profile,
+    saveMetadata
 } from './index.js';
 import { running_scene_summary_prompt } from './defaultPrompts.js';
 // Lorebook processing for running summary has been disabled; no queue integration needed here.
@@ -374,47 +370,28 @@ async function generate_running_scene_summary(skipQueue /*: boolean */ = false) 
     const prefill = get_settings('running_scene_summary_prefill');
     const prompt = processPromptMacros(template, current_summary, scene_summaries_text, prefill);
 
-    // Get API from connection profile and switch preset
+    // Get connection profile and preset settings
     const running_preset = get_settings('running_scene_summary_completion_preset');
     const running_profile = get_settings('running_scene_summary_connection_profile');
 
-    // Save current connection profile
-    const savedProfile = await get_current_connection_profile();
-
-    // Switch to configured connection profile if specified
-    if (running_profile) {
-        await set_connection_profile(running_profile);
-        debug(SUBSYSTEM.RUNNING, `Switched connection profile to: ${running_profile}`);
-    }
-
-    const api = await get_connection_profile_api(running_profile);
-    let savedPreset = null;
-    let presetManager = null;
-
-    if (api) {
-        presetManager = getPresetManager(api);
-        if (presetManager) {
-            savedPreset = presetManager.getSelectedPreset();
-
-            if (running_preset) {
-                const presetValue = presetManager.findPreset(running_preset);
-                if (presetValue) {
-                    debug(SUBSYSTEM.RUNNING, `Switching ${api} preset to: ${running_preset}`);
-                    presetManager.selectPreset(presetValue);
-                } else {
-                    debug(SUBSYSTEM.RUNNING, `Preset '${running_preset}' not found for API ${api}`);
-                }
-            }
-        }
-    }
+    // Execute with connection profile/preset switching
+    const { withConnectionSettings } = await import('./connectionSettingsManager.js');
 
     try {
-        debug(SUBSYSTEM.RUNNING, 'Sending running scene summary prompt to LLM');
+        const result = await withConnectionSettings(
+            running_profile,
+            running_preset,
+            async () => {
+                debug(SUBSYSTEM.RUNNING, 'Sending running scene summary prompt to LLM');
 
-        // Generate summary using the configured API
-        const result = await summarize_text(prompt);
+                // Generate summary using the configured API
+                const summaryResult = await summarize_text(prompt);
 
-        debug(SUBSYSTEM.RUNNING, `Generated running summary (${result.length} chars)`);
+                debug(SUBSYSTEM.RUNNING, `Generated running summary (${summaryResult.length} chars)`);
+
+                return summaryResult;
+            }
+        );
 
         // Add new version - for bulk generation, track from 0 to last scene index
         const last_scene_idx = indexes.length > 0 ? indexes[indexes.length - 1] : 0;
@@ -430,18 +407,6 @@ async function generate_running_scene_summary(skipQueue /*: boolean */ = false) 
         error(SUBSYSTEM.RUNNING, 'Failed to generate running scene summary:', err);
         // Re-throw to let queue retry logic handle it (don't return null)
         throw err;
-    } finally {
-        // Restore original preset for this API
-        if (presetManager && savedPreset) {
-            debug(SUBSYSTEM.RUNNING, `Restoring ${api || 'unknown'} preset to original`);
-            presetManager.selectPreset(savedPreset);
-        }
-
-        // Restore connection profile if it was changed
-        if (savedProfile) {
-            await set_connection_profile(savedProfile);
-            debug(SUBSYSTEM.RUNNING, `Restored connection profile to: ${savedProfile}`);
-        }
     }
 }
 
@@ -542,62 +507,26 @@ function buildCombinePrompt(current_summary /*: string */, scene_summaries_text 
  * @returns {Promise<string>} Generated summary
  */
 async function executeCombineLLMCall(prompt /*: string */, scene_name /*: string */) /*: Promise<string> */ {
-    // Get API from connection profile and switch preset
+    // Get connection profile and preset settings
     const running_preset = get_settings('running_scene_summary_completion_preset');
     const running_profile = get_settings('running_scene_summary_connection_profile');
 
-    // Save current connection profile
-    const savedProfile = await get_current_connection_profile();
+    // Execute with connection profile/preset switching
+    const { withConnectionSettings } = await import('./connectionSettingsManager.js');
 
-    // Switch to configured connection profile if specified
-    if (running_profile) {
-        await set_connection_profile(running_profile);
-        debug(SUBSYSTEM.RUNNING, `Switched connection profile to: ${running_profile}`);
-    }
+    return await withConnectionSettings(
+        running_profile,
+        running_preset,
+        async () => {
+            debug(SUBSYSTEM.RUNNING, `Sending prompt to LLM to combine with ${scene_name}`);
 
-    const api = await get_connection_profile_api(running_profile);
-    let savedPreset = null;
-    let presetManager = null;
+            const result = await summarize_text(prompt);
 
-    if (api) {
-        presetManager = getPresetManager(api);
-        if (presetManager) {
-            savedPreset = presetManager.getSelectedPreset();
+            debug(SUBSYSTEM.RUNNING, `Combined running summary with scene (${result.length} chars)`);
 
-            if (running_preset) {
-                const presetValue = presetManager.findPreset(running_preset);
-                if (presetValue) {
-                    debug(SUBSYSTEM.RUNNING, `Switching ${api} preset to: ${running_preset}`);
-                    presetManager.selectPreset(presetValue);
-                } else {
-                    debug(SUBSYSTEM.RUNNING, `Preset '${running_preset}' not found for API ${api}`);
-                }
-            }
+            return result;
         }
-    }
-
-    try {
-        debug(SUBSYSTEM.RUNNING, `Sending prompt to LLM to combine with ${scene_name}`);
-
-        const result = await summarize_text(prompt);
-
-        debug(SUBSYSTEM.RUNNING, `Combined running summary with scene (${result.length} chars)`);
-
-        return result;
-
-    } finally {
-        // Restore original preset for this API
-        if (presetManager && savedPreset) {
-            debug(SUBSYSTEM.RUNNING, `Restoring ${api || 'unknown'} preset to original`);
-            presetManager.selectPreset(savedPreset);
-        }
-
-        // Restore connection profile if it was changed
-        if (savedProfile) {
-            await set_connection_profile(savedProfile);
-            debug(SUBSYSTEM.RUNNING, `Restored connection profile to: ${savedProfile}`);
-        }
-    }
+    );
 }
 
 /**

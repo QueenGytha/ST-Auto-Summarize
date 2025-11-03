@@ -196,6 +196,9 @@ export * from './categoryIndexes.js';
 export * from './summaryToLorebookProcessor.js';
 export * from './tests.js';
 
+// Metadata injection for LLM requests
+export * from './metadataInjector.js';
+
 // ============================================================================
 // Enter Key Interception for Queue Operations
 // ============================================================================

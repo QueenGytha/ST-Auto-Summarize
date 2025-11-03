@@ -12,11 +12,7 @@ import {
     error,
     toast,
     SUBSYSTEM,
-    extension_settings,
-    get_connection_profile_api,
-    getPresetManager,
-    set_connection_profile,
-    get_current_connection_profile,
+    extension_settings
 } from './index.js';
 import {
     auto_generate_running_summary,
@@ -822,76 +818,7 @@ function prepareScenePrompt(
 
 // Helper: Switch to scene summary profile/preset
 // $FlowFixMe[missing-local-annot] - Function signature is correct
-export async function switchToSceneProfile(_ctx /*: STContext */) /*: Promise<?{savedProfile: ?string, api: ?string, presetManager: ?any, savedPreset: ?any}> */ {
-    const preset_name = get_settings('scene_summary_completion_preset');
-    const profile_name = get_settings('scene_summary_connection_profile');
-
-    debug(SUBSYSTEM.SCENE, `Scene settings: profile='${profile_name}', preset='${preset_name}'`);
-
-    // Save current connection profile
-    const savedProfile = await get_current_connection_profile();
-
-    // Switch to configured connection profile if specified
-    if (profile_name) {
-        await set_connection_profile(profile_name);
-        debug(SUBSYSTEM.SCENE, `Switched connection profile to: ${profile_name}`);
-    }
-
-    // Get API type for the configured connection profile
-    const api = await get_connection_profile_api(profile_name);
-    if (!api) {
-        debug(SUBSYSTEM.SCENE, 'No API found for connection profile, using defaults');
-        return { savedProfile, api: undefined, presetManager: undefined, savedPreset: undefined };
-    }
-
-    // Get PresetManager for that API
-    const presetManager = getPresetManager(api);
-    if (!presetManager) {
-        debug(SUBSYSTEM.SCENE, `No PresetManager found for API: ${api}`);
-        return { savedProfile, api, presetManager: undefined, savedPreset: undefined };
-    }
-
-    // Save current preset for this API
-    const savedPreset = presetManager.getSelectedPreset();
-
-    // Switch to configured preset if specified
-    if (preset_name) {
-        const presetValue = presetManager.findPreset(preset_name);
-        if (presetValue) {
-            debug(SUBSYSTEM.SCENE, `Switching ${api} preset to: ${preset_name}`);
-            presetManager.selectPreset(presetValue);
-        } else {
-            debug(SUBSYSTEM.SCENE, `Preset '${preset_name}' not found for API ${api}`);
-        }
-    }
-
-    return { savedProfile, api, presetManager, savedPreset };
-}
-
-// Helper: Restore previous profile/preset
-// $FlowFixMe[missing-local-annot] - Function signature is correct
-async function restoreProfile(
-    ctx /*: STContext */,
-    saved /*: ?{savedProfile: ?string, api: ?string, presetManager: ?any, savedPreset: ?any} */  // any is appropriate for PresetManager
-) /*: Promise<void> */ {
-    if (!saved) return;
-
-    // Restore preset if it was changed
-    const presetManager = saved.presetManager;
-    const savedPreset = saved.savedPreset;
-    const api = saved.api;
-    if (presetManager && savedPreset && api) {
-        debug(SUBSYSTEM.SCENE, `Restoring ${api} preset to original`);
-        presetManager.selectPreset(savedPreset);
-    }
-
-    // Restore connection profile if it was changed
-    const savedProfile = saved.savedProfile;
-    if (savedProfile) {
-        await set_connection_profile(savedProfile);
-        debug(SUBSYSTEM.SCENE, `Restored connection profile to: ${savedProfile}`);
-    }
-}
+// Legacy switching functions removed - now using withConnectionSettings() from connectionSettingsManager.js
 
 // Helper: Extract and validate JSON from AI response
 // Strips code fences, explanatory text, and validates JSON structure
@@ -1106,17 +1033,21 @@ export async function generateSceneSummary(
     const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
     const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
-    // Prepare prompt and switch profiles
+    // Prepare prompt
     const prompt = prepareScenePrompt(sceneObjects, ctx);
-    const savedProfiles = await switchToSceneProfile(ctx);
 
-    // Generate summary
-    let summary;
-    try {
-        summary = await executeSceneSummaryGeneration(prompt, ctx);
-    } finally {
-        await restoreProfile(ctx, savedProfiles);
-    }
+    // Generate summary with connection profile/preset switching
+    const { withConnectionSettings } = await import('./connectionSettingsManager.js');
+    const profile_name = get_settings('scene_summary_connection_profile');
+    const preset_name = get_settings('scene_summary_completion_preset');
+
+    const summary = await withConnectionSettings(
+        profile_name,
+        preset_name,
+        async () => {
+            return await executeSceneSummaryGeneration(prompt, ctx);
+        }
+    );
 
     // Save and render
     await saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced, index);

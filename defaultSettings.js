@@ -146,4 +146,7 @@ If the current name is ALREADY a proper name (like "Victoria", "John Smith"), us
     auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset: '',
 
     // (Removed) Auto-Lorebooks Keyword Generation Settings – keywords now come from summary JSON
+
+    // --- First-Hop Proxy Integration Settings ---
+    first_hop_proxy_send_chat_details: false, // Send chat details in LLM requests for proxy logging
 };

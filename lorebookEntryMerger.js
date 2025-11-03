@@ -5,6 +5,7 @@
 import { extension_settings } from '../../../extensions.js';
 // $FlowFixMe[cannot-resolve-module] - SillyTavern core modules
 import { generateRaw } from '../../../../script.js';
+import { injectMetadata } from './metadataInjector.js';
 
 // Will be imported from index.js via barrel exports
 let log /*: any */, debug /*: any */, error /*: any */;  // Logging functions - any type is legitimate
@@ -128,10 +129,15 @@ async function callAIForMerge(existingContent /*: string */, newContent /*: stri
         debug('Calling AI for entry merge...');
         debug('Prompt:', prompt.substring(0, 200) + '...');
 
+        // Inject metadata for proxy tracking
+        const promptWithMetadata = injectMetadata(prompt, {
+            operation: 'lorebook_merge'
+        });
+
         // Call the AI with new object-based signature
         // $FlowFixMe[incompatible-call] - generateRaw signature
         const response = await generateRaw({
-            prompt: prompt,
+            prompt: promptWithMetadata,
             instructOverride: false,
             quietToLoud: false
         });

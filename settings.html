@@ -44,7 +44,27 @@
                     </label>
                 </div>
 
+                <!-- First-Hop Proxy Integration -->
+                <hr>
+                <div class="inline-drawer">
+                    <div class="inline-drawer-toggle inline-drawer-header">
+                        <div class="flex-container alignitemscenter margin0">
+                            <h4 class="margin0">First-Hop Proxy Integration <i class="fa-solid fa-info-circle" title="Add metadata to LLM requests for downstream proxy logging and tracking."></i></h4>
+                        </div>
+                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+                    </div>
+                    <div class="inline-drawer-content">
+                        <label title="Send chat details (chat name/ID) in LLM requests for proxy logging." class="checkbox_label">
+                            <input id="first_hop_proxy_send_chat_details" type="checkbox" />
+                            <span>Send Chat Details</span>
+                        </label>
 
+                        <div class="note-block">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span>When enabled, metadata is added to LLM requests that your proxy can parse and strip before forwarding to the LLM. This allows your proxy to log requests with chat context.</span>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- General Injection Settings -->
                 <!-- Message Filtering -->

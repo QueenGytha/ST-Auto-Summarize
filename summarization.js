@@ -28,6 +28,7 @@ import {
     generateRaw,
     trimToEndSentence,
     get_connection_profile_api,
+    injectMetadata,
     getPresetManager,
     set_connection_profile,
     get_current_connection_profile
@@ -390,9 +391,14 @@ async function summarize_text(prompt /*: string */) /*: Promise<string> */ {
          * @param {number} [responseLength] Maximum response length. If unset, the global default value is used.
          * @returns {Promise<string>} Generated message
          */
+        // Inject metadata for proxy tracking
+        const promptWithMetadata = injectMetadata(prompt, {
+            operation: 'message_summary'
+        });
+
         // $FlowFixMe[extra-arg]
         result = await generateRaw({
-            prompt: prompt,
+            prompt: promptWithMetadata,
             instructOverride: true,
             quietToLoud: false,
             // $FlowFixMe[incompatible-type] - system_prompt can be false or string, passing as-is

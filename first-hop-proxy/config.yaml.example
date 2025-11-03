@@ -1,0 +1,488 @@
+# First-Hop Proxy Configuration Example
+#
+# SECURITY WARNING: Never commit config.yaml or config-*.yaml files!
+# These files may contain API keys and are automatically ignored by git.
+#
+# Copy this file to config.yaml and customize for your setup
+
+target_proxy:
+  url: "https://your-remote-proxy.com/chat/completions"
+  timeout: 30
+  # Optional: Override API key sent to downstream proxy
+  # If provided, this will replace the Authorization header from SillyTavern
+  # Useful when you want different configs to use different API keys
+  # apikey: "your-api-key-here"
+
+# Regex replacement rules applied to outgoing messages
+regex_replacement:
+  enabled: true
+  rules:
+    # Convert special characters to Unicode escape sequences for robust handling
+    # Single quotes: ' → \u2018 and \u2019
+    - pattern: "'"
+      replacement: "\\\\u2019"
+      flags: ""
+      apply_to: "user"
+      description: "Convert apostrophe to Unicode escape (double backslash)"
+    
+    - pattern: "'"
+      replacement: "\\\\u2018"
+      flags: ""
+      apply_to: "user"
+      description: "Convert left single quote to Unicode escape (double backslash)"
+    
+    # Double quotes: " and " → \u201c and \u201d
+    - pattern: """
+      replacement: "\\\\u201c"
+      flags: ""
+      apply_to: "user"
+      description: "Convert left double quote to Unicode escape (double backslash)"
+    
+    - pattern: """
+      replacement: "\\\\u201d"
+      flags: ""
+      apply_to: "user"
+      description: "Convert right double quote to Unicode escape (double backslash)"
+    
+    # Dashes: — and – → \u2014 and \u2013
+    - pattern: "—"
+      replacement: "\\\\u2014"
+      flags: ""
+      apply_to: "user"
+      description: "Convert em dash to Unicode escape (double backslash)"
+    
+    - pattern: "–"
+      replacement: "\\\\u2013"
+      flags: ""
+      apply_to: "user"
+      description: "Convert en dash to Unicode escape (double backslash)"
+    
+    # Hyphens: - → \u002d
+    - pattern: "-"
+      replacement: "\\\\u002d"
+      flags: ""
+      apply_to: "user"
+      description: "Convert hyphen to Unicode escape (double backslash)"
+    
+    # Other special characters
+    - pattern: "/"
+      replacement: "\\\\u002f"
+      flags: ""
+      apply_to: "user"
+      description: "Convert forward slash to Unicode escape (double backslash)"
+    
+    - pattern: "`"
+      replacement: "\\\\u0060"
+      flags: ""
+      apply_to: "user"
+      description: "Convert backtick to Unicode escape (double backslash)"
+    
+    - pattern: "|"
+      replacement: "\\\\u007c"
+      flags: ""
+      apply_to: "user"
+      description: "Convert pipe to Unicode escape (double backslash)"
+    
+    - pattern: "\\["
+      replacement: "\\\\u005b"
+      flags: ""
+      apply_to: "user"
+      description: "Convert opening bracket to Unicode escape (double backslash)"
+    
+    - pattern: "\\]"
+      replacement: "\\\\u005d"
+      flags: ""
+      apply_to: "user"
+      description: "Convert closing bracket to Unicode escape (double backslash)"
+
+# Response processing rules to fix malformed Unicode in incoming responses
+response_processing:
+  enabled: true
+  rules:
+    # Fix malformed Unicode sequences from remote proxy (e.g., Google AI/Gemini)
+    # Single backslash patterns (as received from remote proxy)
+    - pattern: "\\u00e2\\u20ac\\u201d"
+      replacement: "-"
+      flags: ""
+      description: "Fix malformed em dash encoding (single backslash)"
+    
+    - pattern: "\\u00e2\\u20ac\\u201c"
+      replacement: '"'
+      flags: ""
+      description: "Fix malformed left double quote encoding (single backslash)"
+    
+    - pattern: "\\u00e2\\u20ac\\u009d"
+      replacement: '"'
+      flags: ""
+      description: "Fix malformed right double quote encoding (single backslash)"
+    
+    - pattern: "\\u00e2\\u20ac\\u0098"
+      replacement: "'"
+      flags: ""
+      description: "Fix malformed left single quote encoding (single backslash)"
+    
+    - pattern: "\\u00e2\\u20ac\\u0099"
+      replacement: "'"
+      flags: ""
+      description: "Fix malformed right single quote encoding (single backslash)"
+    
+    # Double backslash patterns (as sent in our outgoing requests)
+    - pattern: "\\\\u00e2\\\\u20ac\\\\u201d"
+      replacement: "-"
+      flags: ""
+      description: "Fix malformed em dash encoding (double backslash)"
+    
+    - pattern: "\\\\u00e2\\\\u20ac\\\\u201c"
+      replacement: '"'
+      flags: ""
+      description: "Fix malformed left double quote encoding (double backslash)"
+    
+    - pattern: "\\\\u00e2\\\\u20ac\\\\u009d"
+      replacement: '"'
+      flags: ""
+      description: "Fix malformed right double quote encoding (double backslash)"
+    
+    - pattern: "\\\\u00e2\\\\u20ac\\\\u0098"
+      replacement: "'"
+      flags: ""
+      description: "Fix malformed left single quote encoding (double backslash)"
+    
+    - pattern: "\\\\u00e2\\\\u20ac\\\\u0099"
+      replacement: "'"
+      flags: ""
+      description: "Fix malformed right single quote encoding (double backslash)"
+    
+    # Literal character fixes using YAML block scalar syntax
+    # â€" → — (em dash) - using literal block scalar
+    - pattern: |-
+        â€"
+      replacement: "—"
+      flags: ""
+      description: "Fix literal display of malformed em dash encoding (literal)"
+    
+    # Fix the actual Unicode escape sequences found in responses
+    # \u00e2\u20ac" → — (em dash) - this is the pattern we see in the logs
+    - pattern: "\\u00e2\\u20ac\""
+      replacement: "—"
+      flags: ""
+      description: "Fix Unicode escape sequence for malformed em dash"
+    
+    # Additional Unicode escape patterns that might appear
+    # \u00e2\u20ac\u2014 → — (em dash)
+    - pattern: "\\u00e2\\u20ac\\u2014"
+      replacement: "—"
+      flags: ""
+      description: "Fix Unicode escape sequence for malformed em dash (full Unicode)"
+    
+    # \u00e2\u20ac\u2013 → – (en dash)
+    - pattern: "\\u00e2\\u20ac\\u2013"
+      replacement: "–"
+      flags: ""
+      description: "Fix Unicode escape sequence for malformed en dash"
+    
+    # \u00e2\u20ac\u201c → " (left double quote)
+    - pattern: "\\u00e2\\u20ac\\u201c"
+      replacement: "\""
+      flags: ""
+      description: "Fix Unicode escape sequence for malformed left double quote"
+    
+    # \u00e2\u20ac\u201d → " (right double quote)
+    - pattern: "\\u00e2\\u20ac\\u201d"
+      replacement: "\""
+      flags: ""
+      description: "Fix Unicode escape sequence for malformed right double quote"
+    
+    # \u00e2\u20ac\u2018 → ' (left single quote)
+    - pattern: "\\u00e2\\u20ac\\u2018"
+      replacement: "'"
+      flags: ""
+      description: "Fix Unicode escape sequence for malformed left single quote"
+    
+    # \u00e2\u20ac\u2019 → ' (right single quote)
+    - pattern: "\\u00e2\\u20ac\\u2019"
+      replacement: "'"
+      flags: ""
+      description: "Fix Unicode escape sequence for malformed right single quote"
+    
+    # â€" → – (en dash) - using literal block scalar
+    - pattern: |-
+        â€"
+      replacement: "–"
+      flags: ""
+      description: "Fix literal display of malformed en dash encoding (literal)"
+    
+    # â€" → " (left double quote) - using literal block scalar
+    - pattern: |-
+        â€"
+      replacement: '"'
+      flags: ""
+      description: "Fix literal display of malformed left double quote encoding (literal)"
+    
+    # â€" → " (right double quote) - using literal block scalar
+    - pattern: |-
+        â€"
+      replacement: '"'
+      flags: ""
+      description: "Fix literal display of malformed right double quote encoding (literal)"
+    
+    # â€" → ' (left single quote) - using literal block scalar
+    - pattern: |-
+        â€"
+      replacement: "'"
+      flags: ""
+      description: "Fix literal display of malformed left single quote encoding (literal)"
+    
+    # â€" → ' (right single quote) - using literal block scalar
+    - pattern: |-
+        â€"
+      replacement: "'"
+      flags: ""
+      description: "Fix literal display of malformed right single quote encoding (literal)"
+    
+    # Convert Unicode escape sequences back to proper characters (both single and double backslash versions)
+    # Single quotes: \u2018/\u2019 or \\u2018/\\u2019 → '
+    - pattern: "\\\\u2018"
+      replacement: "'"
+      flags: ""
+      description: "Convert left single quote Unicode escape back to apostrophe (double backslash)"
+    
+    - pattern: "\\u2018"
+      replacement: "'"
+      flags: ""
+      description: "Convert left single quote Unicode escape back to apostrophe (single backslash)"
+    
+    - pattern: "\\\\u2019"
+      replacement: "'"
+      flags: ""
+      description: "Convert right single quote Unicode escape back to apostrophe (double backslash)"
+    
+    - pattern: "\\u2019"
+      replacement: "'"
+      flags: ""
+      description: "Convert right single quote Unicode escape back to apostrophe (single backslash)"
+    
+    # Double quotes: \u201c/\u201d or \\u201c/\\u201d → " and "
+    - pattern: "\\\\u201c"
+      replacement: '"'
+      flags: ""
+      description: "Convert left double quote Unicode escape back to curly quote (double backslash)"
+    
+    - pattern: "\\u201c"
+      replacement: '"'
+      flags: ""
+      description: "Convert left double quote Unicode escape back to curly quote (single backslash)"
+    
+    - pattern: "\\\\u201d"
+      replacement: '"'
+      flags: ""
+      description: "Convert right double quote Unicode escape back to curly quote (double backslash)"
+    
+    - pattern: "\\u201d"
+      replacement: '"'
+      flags: ""
+      description: "Convert right double quote Unicode escape back to curly quote (single backslash)"
+    
+    # Dashes: \u2014/\u2013 or \\u2014/\\u2013 → — and –
+    - pattern: "\\\\u2014"
+      replacement: "—"
+      flags: ""
+      description: "Convert em dash Unicode escape back to em dash (double backslash)"
+    
+    - pattern: "\\u2014"
+      replacement: "—"
+      flags: ""
+      description: "Convert em dash Unicode escape back to em dash (single backslash)"
+    
+    - pattern: "\\\\u2013"
+      replacement: "–"
+      flags: ""
+      description: "Convert en dash Unicode escape back to en dash (double backslash)"
+    
+    - pattern: "\\u2013"
+      replacement: "–"
+      flags: ""
+      description: "Convert en dash Unicode escape back to en dash (single backslash)"
+    
+    # Hyphens: \u002d or \\u002d → -
+    - pattern: "\\\\u002d"
+      replacement: "-"
+      flags: ""
+      description: "Convert hyphen Unicode escape back to hyphen (double backslash)"
+    
+    - pattern: "\\u002d"
+      replacement: "-"
+      flags: ""
+      description: "Convert hyphen Unicode escape back to hyphen (single backslash)"
+    
+    # Other special characters: \u002f, \u0060, \u007c, \u005b, \u005d → /, `, |, [, ]
+    - pattern: "\\\\u002f"
+      replacement: "/"
+      flags: ""
+      description: "Convert forward slash Unicode escape back to forward slash (double backslash)"
+    
+    - pattern: "\\u002f"
+      replacement: "/"
+      flags: ""
+      description: "Convert forward slash Unicode escape back to forward slash (single backslash)"
+    
+    - pattern: "\\\\u0060"
+      replacement: "`"
+      flags: ""
+      description: "Convert backtick Unicode escape back to backtick (double backslash)"
+    
+    - pattern: "\\u0060"
+      replacement: "`"
+      flags: ""
+      description: "Convert backtick Unicode escape back to backtick (single backslash)"
+    
+    - pattern: "\\\\u007c"
+      replacement: "|"
+      flags: ""
+      description: "Convert pipe Unicode escape back to pipe (double backslash)"
+    
+    - pattern: "\\u007c"
+      replacement: "|"
+      flags: ""
+      description: "Convert pipe Unicode escape back to pipe (single backslash)"
+    
+    - pattern: "\\\\u005b"
+      replacement: "["
+      flags: ""
+      description: "Convert opening bracket Unicode escape back to bracket (double backslash)"
+    
+    - pattern: "\\u005b"
+      replacement: "["
+      flags: ""
+      description: "Convert opening bracket Unicode escape back to bracket (single backslash)"
+    
+    - pattern: "\\\\u005d"
+      replacement: "]"
+      flags: ""
+      description: "Convert closing bracket Unicode escape back to bracket (double backslash)"
+    
+    - pattern: "\\u005d"
+      replacement: "]"
+      flags: ""
+      description: "Convert closing bracket Unicode escape back to bracket (single backslash)"
+    
+    # Convert escaped characters back to regular characters
+    - pattern: "\\\\'"
+      replacement: "'"
+      flags: ""
+      description: "Convert escaped apostrophe back to regular apostrophe"
+    
+    - pattern: '\\"'
+      replacement: '"'
+      flags: ""
+      description: "Convert escaped double quote back to regular double quote"
+    
+
+
+# Response body parsing to recategorize status codes based on error messages
+response_parsing:
+  enabled: true
+  
+  # Rules for recategorizing status codes based on response body content
+  status_recategorization:
+    enabled: true
+    rules:
+      # Google AI model overloaded errors (503 → 429)
+      - pattern: "The model is overloaded"
+        original_status: 200
+        new_status: 429
+        description: "Recategorize Google AI overload errors as rate limit"
+      
+      # Generic service unavailable errors (503 → 429)
+      - pattern: "service unavailable"
+        original_status: 200
+        new_status: 429
+        description: "Recategorize service unavailable as rate limit"
+      
+      # Model capacity errors (503 → 429)
+      - pattern: "model.*capacity"
+        original_status: 200
+        new_status: 429
+        description: "Recategorize model capacity errors as rate limit"
+      
+      # Proxy error with 503 in body (200 → 503)
+      - pattern: "HTTP 503 Service Unavailable"
+        original_status: 200
+        new_status: 503
+        description: "Recategorize proxy-wrapped 503 errors"
+      
+      # Upstream service unavailable (200 → 503)
+      - pattern: "Upstream service unavailable"
+        original_status: 200
+        new_status: 503
+        description: "Recategorize upstream service errors"
+  
+  # JSON path extraction for nested error messages
+  json_extraction:
+    enabled: true
+    paths:
+      - "error.message"
+      - "proxy_note"
+      - "choices[0].finish_reason"
+      - "choices[0].message.content"
+  
+  # Logging for status recategorization
+  logging:
+    enabled: true
+    log_recategorization: true
+    include_original_status: true
+    include_new_status: true
+    include_matched_pattern: true
+
+error_handling:
+  # HTTP status codes that should trigger retries (server errors and transient client errors)
+  retry_codes: [429, 502, 503, 504, 505, 507, 508, 511, 408, 409, 410, 423, 424, 425, 426, 428, 431, 451]
+  
+  # HTTP status codes that should fail immediately (permanent client errors)
+  fail_codes: [400, 401, 403, 405, 406, 407, 411, 412, 413, 414, 415, 416, 417, 418, 421, 422]
+  
+  # HTTP status codes that might be retryable depending on context (conditional retry)
+  conditional_retry_codes: [404, 411, 412, 413, 414, 416, 417, 418, 421, 423, 424, 425, 426, 428, 431, 451]
+  
+  # Retry settings
+  max_retries: 10
+  base_delay: 1
+  max_delay: 60
+  
+  # Conditional retry settings
+  conditional_retry_enabled: true
+  conditional_retry_max_attempts: 2
+  conditional_retry_delay_multiplier: 0.5  # Shorter delays for conditional retries
+
+  # Hard stop conditions - prevent retries for specific error patterns
+  hard_stop_conditions:
+    enabled: true
+    rules:
+      # Stop retries when downstream proxy middleware fails due to malformed messages
+      - pattern: "googleAIBlockingResponseHandler.*Cannot read properties of undefined"
+        description: "Downstream proxy middleware failure due to malformed message content"
+        user_message: "Your previous message contains characters or formatting that is breaking the downstream AI provider. Please check for special characters, unusual formatting, or try rephrasing your message. You may need to avoid certain punctuation or symbols."
+        preserve_original_response: true
+        add_user_message: true
+
+# Server configuration
+server:
+  host: "0.0.0.0"
+  port: 8765
+  debug: false
+
+# Logging configuration
+logging:
+  enabled: true
+  include_request_data: true
+  include_response_data: true
+  include_headers: true
+  include_timing: true
+
+# Error logging configuration (independent of general logging)
+error_logging:
+  enabled: true
+  include_stack_traces: true
+  include_request_context: true
+  include_timing: true
+  max_file_size_mb: 10
+  max_files: 100
