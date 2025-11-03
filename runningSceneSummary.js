@@ -378,23 +378,31 @@ async function generate_running_scene_summary(skipQueue /*: boolean */ = false) 
     const { withConnectionSettings } = await import('./connectionSettingsManager.js');
 
     try {
+        // Add new version - for bulk generation, track from 0 to last scene index
+        const last_scene_idx = indexes.length > 0 ? indexes[indexes.length - 1] : 0;
+
         const result = await withConnectionSettings(
             running_profile,
             running_preset,
             async () => {
                 debug(SUBSYSTEM.RUNNING, 'Sending running scene summary prompt to LLM');
 
-                // Generate summary using the configured API
-                const summaryResult = await summarize_text(prompt);
+                // Set operation context for ST_METADATA
+                const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+                setOperationSuffix(`-0-${last_scene_idx}`);
 
-                debug(SUBSYSTEM.RUNNING, `Generated running summary (${summaryResult.length} chars)`);
+                try {
+                    // Generate summary using the configured API
+                    const summaryResult = await summarize_text(prompt);
 
-                return summaryResult;
+                    debug(SUBSYSTEM.RUNNING, `Generated running summary (${summaryResult.length} chars)`);
+
+                    return summaryResult;
+                } finally {
+                    clearOperationSuffix();
+                }
             }
         );
-
-        // Add new version - for bulk generation, track from 0 to last scene index
-        const last_scene_idx = indexes.length > 0 ? indexes[indexes.length - 1] : 0;
         const version = add_running_summary_version(result, indexes.length, exclude_count, 0, last_scene_idx);
 
         log(SUBSYSTEM.RUNNING, `Created running scene summary version ${version} (0 > ${last_scene_idx})`);
@@ -504,9 +512,10 @@ function buildCombinePrompt(current_summary /*: string */, scene_summaries_text 
  * Executes LLM call with preset switching
  * @param {string} prompt - Prompt to send
  * @param {string} scene_name - Scene name for logging
+ * @param {number} scene_index - Scene index for context
  * @returns {Promise<string>} Generated summary
  */
-async function executeCombineLLMCall(prompt /*: string */, scene_name /*: string */) /*: Promise<string> */ {
+async function executeCombineLLMCall(prompt /*: string */, scene_name /*: string */, scene_index /*: number */) /*: Promise<string> */ {
     // Get connection profile and preset settings
     const running_preset = get_settings('running_scene_summary_completion_preset');
     const running_profile = get_settings('running_scene_summary_connection_profile');
@@ -520,11 +529,21 @@ async function executeCombineLLMCall(prompt /*: string */, scene_name /*: string
         async () => {
             debug(SUBSYSTEM.RUNNING, `Sending prompt to LLM to combine with ${scene_name}`);
 
-            const result = await summarize_text(prompt);
+            // Set operation context for ST_METADATA
+            const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+            const prev_version = get_running_summary(get_current_running_summary_version());
+            const prev_scene_idx = prev_version ? prev_version.new_scene_index : 0;
+            setOperationSuffix(`-${prev_scene_idx}-${scene_index}`);
 
-            debug(SUBSYSTEM.RUNNING, `Combined running summary with scene (${result.length} chars)`);
+            try {
+                const result = await summarize_text(prompt);
 
-            return result;
+                debug(SUBSYSTEM.RUNNING, `Combined running summary with scene (${result.length} chars)`);
+
+                return result;
+            } finally {
+                clearOperationSuffix();
+            }
         }
     );
 }
@@ -582,7 +601,7 @@ async function combine_scene_with_running_summary(scene_index /*: number */) /*:
     const prompt = buildCombinePrompt(current_summary, scene_summaries_text);
 
     try {
-        const result = await executeCombineLLMCall(prompt, scene_name);
+        const result = await executeCombineLLMCall(prompt, scene_name, scene_index);
         storeRunningSummary(result, scene_index, scene_name, scene_summary);
         return result;
 

@@ -128,14 +128,25 @@ async function callAIForMerge(existingContent /*: string */, newContent /*: stri
         debug('Calling AI for entry merge...');
         debug('Prompt:', prompt.substring(0, 200) + '...');
 
-        // Metadata injection now handled by global generateRaw interceptor
-        // Call the AI with new object-based signature
-        // $FlowFixMe[incompatible-call] - generateRaw signature
-        const response = await generateRaw({
-            prompt: prompt,
-            instructOverride: false,
-            quietToLoud: false
-        });
+        // Set operation context for ST_METADATA
+        const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+        if (entryName) {
+            setOperationSuffix(`-${entryName}`);
+        }
+
+        let response;
+        try {
+            // Metadata injection now handled by global generateRaw interceptor
+            // Call the AI with new object-based signature
+            // $FlowFixMe[incompatible-call] - generateRaw signature
+            response = await generateRaw({
+                prompt: prompt,
+                instructOverride: false,
+                quietToLoud: false
+            });
+        } finally {
+            clearOperationSuffix();
+        }
 
         if (!response || response.trim().length === 0) {
             throw new Error('AI returned empty response');
@@ -221,7 +232,7 @@ export async function mergeLorebookEntry(lorebookName /*: string */, existingEnt
                     newSecondaryKeys: newEntryData.secondaryKeys
                 },
                 {
-                    priority: 10,  // Medium-high priority - lorebook processing pipeline
+                    priority: 13,  // Third stage of lorebook pipeline - merge existing entry
                     metadata: {
                         entry_comment: existingEntry.comment
                     }

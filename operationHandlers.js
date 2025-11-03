@@ -205,7 +205,8 @@ export function registerAllOperationHandlers() {
             get_data,
             set_data,
             ctx,
-            null  // savedProfiles not needed, function handles its own profile switching
+            null,  // savedProfiles not needed, function handles its own profile switching
+            index  // Pass index for context suffix
         );
 
         return { name };
@@ -282,7 +283,7 @@ export function registerAllOperationHandlers() {
             await enqueueOperation(
                 OperationType.RESOLVE_LOREBOOK_ENTRY,
                 { entryId },
-                { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
+                { priority: 12, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
             );
         } else if (lorebookEntryLookupResult.sameEntityIds.length === 1) {
             // Exact match found - merge
@@ -293,14 +294,14 @@ export function registerAllOperationHandlers() {
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
                 { entryId, action: 'merge', resolvedId },
-                { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
+                { priority: 14, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
             );
         } else {
             // No match - create new
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
                 { entryId, action: 'create' },
-                { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
+                { priority: 14, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
             );
         }
 
@@ -387,7 +388,7 @@ export function registerAllOperationHandlers() {
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
                 { entryId, action: 'create' },
-                { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
+                { priority: 14, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
             );
         }
 
@@ -522,7 +523,7 @@ export function registerAllOperationHandlers() {
         await enqueueOperation(
             OperationType.UPDATE_LOREBOOK_REGISTRY,
             { entryId: context.entryId, entityType: context.finalType, entityId: result.entityId, action: result.action },
-            { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: context.entryData.comment } }
+            { priority: 14, queueVersion: operation.queueVersion, metadata: { entry_comment: context.entryData.comment } }
         );
 
         return { success: true, entityId: result.entityId, entityUid: result.entityUid, action: result.action };

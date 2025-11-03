@@ -302,10 +302,20 @@ async function detectSceneBreak(
 
         ctx.deactivateSendButtons();
 
-        // Call LLM using the configured API
-        debug('Sending prompt to AI for message', messageIndex);
-        const response = await summarize_text(prompt);
-        debug('AI raw response for message', messageIndex, ':', response);
+        // Set operation context for ST_METADATA
+        const { setOperationSuffix, clearOperationSuffix} = await import('./index.js');
+        const startIdx = Math.max(0, messageIndex - contextCount);
+        setOperationSuffix(`-${startIdx}-${messageIndex}`);
+
+        let response;
+        try {
+            // Call LLM using the configured API
+            debug('Sending prompt to AI for message', messageIndex);
+            response = await summarize_text(prompt);
+            debug('AI raw response for message', messageIndex, ':', response);
+        } finally {
+            clearOperationSuffix();
+        }
 
         // Re-enable input and restore settings
         ctx.activateSendButtons();

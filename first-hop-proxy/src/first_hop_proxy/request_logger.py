@@ -49,11 +49,14 @@ class RequestLogger:
 
     def _get_next_log_number(self, folder: str, operation: str) -> int:
         """
-        Get the next sequential log number for the given folder and operation.
+        Get the next sequential log number for the given folder.
+
+        Scans ALL log files regardless of operation type to maintain
+        sequential numbering across all operations.
 
         Args:
             folder: Log folder path
-            operation: Operation type (e.g., 'chat', 'lorebook')
+            operation: Operation type (not used, kept for compatibility)
 
         Returns:
             Next sequential log number (1-based)
@@ -61,9 +64,11 @@ class RequestLogger:
         if not os.path.exists(folder):
             return 1
 
-        # Find all log files matching the pattern: <number>-<operation>.log
+        # Find all log files matching the pattern: <number>-<any_operation>.log
+        # We need to scan ALL operation types to maintain sequential numbering
+        # Operation names can contain hyphens, underscores, alphanumeric chars
         max_num = 0
-        pattern = re.compile(r'^(\d+)-' + re.escape(operation) + r'\.log$')
+        pattern = re.compile(r'^(\d+)-.+\.log$')
 
         try:
             for filename in os.listdir(folder):
@@ -76,19 +81,37 @@ class RequestLogger:
 
         return max_num + 1
 
-    def _get_sequenced_filename(self, operation: str, folder: str) -> str:
+    def _get_sequenced_filename(self, operation: str, folder: str, error: Exception = None) -> str:
         """
-        Generate filename with sequential numbering and operation type.
+        Generate filename with sequential numbering, operation type, and optional error suffix.
 
         Args:
             operation: Operation type (e.g., 'chat', 'lorebook')
             folder: Log folder path to check for existing logs
+            error: Exception if request failed (determines suffix)
 
         Returns:
-            Filename in format: <number>-<operation>.log (e.g., 00001-chat.log)
+            Filename in format: <number>-<operation>[-STATUS].log
+            Examples:
+                00001-chat.log (success)
+                00002-lorebook-RATELIMIT.log (rate limited)
+                00003-summary-FAILED.log (other error)
         """
         log_number = self._get_next_log_number(folder, operation)
-        return f"{log_number:05d}-{operation}.log"
+
+        # Determine status suffix based on error type
+        status_suffix = ""
+        if error:
+            error_str = str(error).lower()
+            error_type = type(error).__name__
+
+            # Check for rate limit errors (429)
+            if "429" in error_str or "rate limit" in error_str or "quota" in error_str:
+                status_suffix = "-RATELIMIT"
+            else:
+                status_suffix = "-FAILED"
+
+        return f"{log_number:05d}-{operation}{status_suffix}.log"
 
     def _get_timestamp_filename(self, request_id: str = None) -> str:
         """Generate filename with timestamp and optional request ID (legacy/unsorted)"""
@@ -136,7 +159,7 @@ class RequestLogger:
         # Use sequenced filename if we have character_chat_info, otherwise use timestamp
         if character_chat_info:
             character, timestamp, operation = character_chat_info
-            filename = self._get_sequenced_filename(operation, folder)
+            filename = self._get_sequenced_filename(operation, folder, error=error)
         else:
             filename = self._get_timestamp_filename(request_id)
 
@@ -266,7 +289,7 @@ class RequestLogger:
         if character_chat_info:
             character, timestamp, operation = character_chat_info
             # For models requests, use 'models' as the operation type
-            filename = self._get_sequenced_filename('models', folder)
+            filename = self._get_sequenced_filename('models', folder, error=error)
         else:
             filename = self._get_timestamp_filename(request_id)
 

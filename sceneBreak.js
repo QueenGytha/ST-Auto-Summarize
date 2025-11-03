@@ -678,7 +678,8 @@ export async function autoGenerateSceneNameFromSummary(
     get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
     set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
     ctx /*: STContext */,
-    _savedProfiles /*: ?{savedProfile: ?string, api: ?string, presetManager: ?any, savedPreset: ?any} */  // any is appropriate for PresetManager
+    _savedProfiles /*: ?{savedProfile: ?string, api: ?string, presetManager: ?any, savedPreset: ?any} */,  // any is appropriate for PresetManager
+    index /*: ?number */  // Message index for context
 ) /*: Promise<?string> */ {
     const existingSceneName = get_data(message, SCENE_BREAK_NAME_KEY);
 
@@ -701,9 +702,19 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
 
         ctx.deactivateSendButtons();
 
-        const sceneName = await summarize_text(sceneNamePrompt);
+        // Set operation context for ST_METADATA
+        const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+        if (index != null) {
+            setOperationSuffix(`-${index}`);
+        }
 
-        ctx.activateSendButtons();
+        let sceneName;
+        try {
+            sceneName = await summarize_text(sceneNamePrompt);
+        } finally {
+            clearOperationSuffix();
+            ctx.activateSendButtons();
+        }
 
         // Clean up the scene name (remove quotes, trim, limit length)
         let cleanSceneName = sceneName.trim()
@@ -891,19 +902,30 @@ function extractAndValidateJson(rawResponse /*: string */) /*: string */ {
 // $FlowFixMe[missing-local-annot] - Function signature is correct
 async function executeSceneSummaryGeneration(
     prompt /*: string */,
-    ctx /*: STContext */
+    ctx /*: STContext */,
+    startIdx /*: number */,
+    endIdx /*: number */
 ) /*: Promise<string> */ {
     let summary = "";
     try {
         ctx.deactivateSendButtons();
         debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
-        const rawResponse = await summarize_text(prompt);
-        debug(SUBSYSTEM.SCENE, "AI response:", rawResponse);
 
-        // Extract and validate JSON immediately
-        summary = extractAndValidateJson(rawResponse);
-        if (summary !== rawResponse) {
-            debug(SUBSYSTEM.SCENE, "Cleaned summary:", summary);
+        // Set operation context for ST_METADATA
+        const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+        setOperationSuffix(`-${startIdx}-${endIdx}`);
+
+        try {
+            const rawResponse = await summarize_text(prompt);
+            debug(SUBSYSTEM.SCENE, "AI response:", rawResponse);
+
+            // Extract and validate JSON immediately
+            summary = extractAndValidateJson(rawResponse);
+            if (summary !== rawResponse) {
+                debug(SUBSYSTEM.SCENE, "Cleaned summary:", summary);
+            }
+        } finally {
+            clearOperationSuffix();
         }
     } catch (err) {
         summary = "Error generating summary: " + (err?.message || err);
@@ -1045,7 +1067,7 @@ export async function generateSceneSummary(
         profile_name,
         preset_name,
         async () => {
-            return await executeSceneSummaryGeneration(prompt, ctx);
+            return await executeSceneSummaryGeneration(prompt, ctx, startIdx, endIdx);
         }
     );
 

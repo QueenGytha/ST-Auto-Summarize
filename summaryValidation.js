@@ -50,10 +50,19 @@ async function validate_summary(summary /*: string */, type /*: string */ = "sce
                     prompt = `${prompt}\n${prefill}`;
                 }
 
-                // Generate validation response
-                debug(SUBSYSTEM.VALIDATION, `Sending validation prompt: ${prompt.substring(0, 200)}...`);
-                const validation_result = await summarize_text(prompt);
-                debug(SUBSYSTEM.VALIDATION, `Raw validation result: ${validation_result}`);
+                // Set operation context for ST_METADATA
+                const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+                setOperationSuffix(`-${type}`);
+
+                let validation_result;
+                try {
+                    // Generate validation response
+                    debug(SUBSYSTEM.VALIDATION, `Sending validation prompt: ${prompt.substring(0, 200)}...`);
+                    validation_result = await summarize_text(prompt);
+                    debug(SUBSYSTEM.VALIDATION, `Raw validation result: ${validation_result}`);
+                } finally {
+                    clearOperationSuffix();
+                }
 
                 // Clean up and check result
                 const result_upper = validation_result.trim().toUpperCase();

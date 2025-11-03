@@ -245,7 +245,7 @@ async function enqueueLorebookEntryLookupOperation(
         OperationType.LOREBOOK_ENTRY_LOOKUP,
         { entryId: context.entryId, entryData: context.normalizedEntry, registryListing: context.registryListing, typeList: context.typeList },
         {
-            priority: options.priority ?? 10,  // Medium-high priority - lorebook processing pipeline
+            priority: options.priority ?? 11,  // First stage of lorebook pipeline - lowest in group
             dependencies: options.dependencies ?? [],
             metadata: {
                 entry_name: entryName,

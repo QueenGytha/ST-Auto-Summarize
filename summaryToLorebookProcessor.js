@@ -406,7 +406,8 @@ async function runModelWithSettings(
     prefill /*: string */,
     connectionProfile /*: string */,
     completionPreset /*: string */,
-    label /*: string */
+    label /*: string */,
+    entryComment /*: ?string */  // Optional entry comment for context suffix
 ) /*: Promise<?string> */ {
     try {
         console.log('[runModelWithSettings] Called with label:', label);
@@ -431,12 +432,22 @@ async function runModelWithSettings(
             connectionProfile,
             completionPreset,
             async () => {
-                return await generateRaw({
-                    prompt: prompt,
-                    instructOverride: false,
-                    quietToLoud: false,
-                    prefill: prefill || ''
-                });
+                // Set operation context for ST_METADATA
+                const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+                if (entryComment) {
+                    setOperationSuffix(`-${entryComment}`);
+                }
+
+                try {
+                    return await generateRaw({
+                        prompt: prompt,
+                        instructOverride: false,
+                        quietToLoud: false,
+                        prefill: prefill || ''
+                    });
+                } finally {
+                    clearOperationSuffix();
+                }
             }
         );
 
@@ -534,7 +545,8 @@ export async function runLorebookEntryLookupStage(
         settings?.lorebook_entry_lookup_prefill || '',
         settings?.lorebook_entry_lookup_connection_profile || '',
         settings?.lorebook_entry_lookup_completion_preset || '',
-        'lorebook_entry_lookup'
+        'lorebook_entry_lookup',
+        normalizedEntry.comment  // Pass comment for context suffix
     );
 
     const parsed = parseJsonSafe(response);
@@ -609,15 +621,17 @@ function buildLorebookEntryDeduplicatePrompt(
  * Executes lorebook entry deduplicate LLM call
  * @param {string} prompt - LorebookEntryDeduplicate prompt
  * @param {any} settings - Settings
+ * @param {string} entryComment - Entry comment for context
  * @returns {Promise<string>} - LLM response
  */
-async function executeLorebookEntryDeduplicateLLMCall(prompt /*: string */, settings /*: any */) /*: Promise<?string> */ {
+async function executeLorebookEntryDeduplicateLLMCall(prompt /*: string */, settings /*: any */, entryComment /*: ?string */) /*: Promise<?string> */ {
     return await runModelWithSettings(
         prompt,
         settings?.lorebook_entry_deduplicate_prefill || '',
         settings?.lorebook_entry_deduplicate_connection_profile || '',
         settings?.lorebook_entry_deduplicate_completion_preset || '',
-        'lorebookEntryDeduplicate'
+        'lorebookEntryDeduplicate',
+        entryComment  // Pass comment for context suffix
     );
 }
 
@@ -662,7 +676,7 @@ export async function runLorebookEntryDeduplicateStage(
     }
 
     const prompt = buildLorebookEntryDeduplicatePrompt(normalizedEntry, lorebookEntryLookupSynopsis, candidateEntries, singleType, settings);
-    const response = await executeLorebookEntryDeduplicateLLMCall(prompt, settings);
+    const response = await executeLorebookEntryDeduplicateLLMCall(prompt, settings, normalizedEntry.comment);
 
     if (!response) {
         return { resolvedId: null, synopsis: lorebookEntryLookupSynopsis || '' };

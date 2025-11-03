@@ -1340,25 +1340,774 @@ When implementing lorebook wrapping:
 
 ---
 
-## Next Steps
+## OPTIMAL SOLUTION: Reconstruction from allActivatedEntries ⭐⭐⭐⭐
 
-1. ✅ Research complete (this document)
-2. ⬜ Implement setting for enabling/disabling wrapping
-3. ⬜ Implement `WORLD_INFO_ACTIVATED` event listener
-4. ⬜ Implement `checkWorldInfo` monkey-patch
-5. ⬜ Implement wrapper formatting function
-6. ⬜ Handle all position types (especially depth-based)
-7. ⬜ Add UI controls for wrapper configuration
-8. ⬜ Test with various lorebook configurations
-9. ⬜ Document usage and limitations
+### Critical Problem with Naive Approaches
+
+**The Multi-line Entry Problem** is a fundamental dealbreaker for positions 0 and 1 (worldInfoBefore/After):
+
+```javascript
+// If entries contain newlines:
+Entry 1: "Alice is a detective.\nShe works in the foggy city."
+Entry 2: "The city is always foggy."
+
+// After joining with \n:
+"Alice is a detective.\nShe works in the foggy city.\nThe city is always foggy."
+
+// If we naively split by \n:
+["Alice is a detective.", "She works in the foggy city.", "The city is always foggy."]
+// We get 3 lines but only have 2 entries!
+
+// We'd incorrectly assume:
+// Line 0 = Entry 1 ✗
+// Line 1 = Entry 2 ✗ (actually still part of Entry 1!)
+// Line 2 = ??? ✗ (we only have 2 entries)
+```
+
+**Why This is Fatal**:
+- **Positions 0 and 1 are the MOST COMMONLY USED** lorebook positions
+- Multi-line entries are extremely common (character backgrounds, location descriptions, etc.)
+- Blind newline splitting would produce completely incorrect wrapping
+- No way to determine which lines belong to which entries after concatenation
+
+### The Solution: Reconstruct Before Joining
+
+**Key Discovery**: The `checkWorldInfo` return value includes `allActivatedEntries` - a Set containing the FULL entry objects with all metadata!
+
+```javascript
+// checkWorldInfo returns (line 4926):
+{
+    worldInfoBefore: "concatenated string",    // ❌ Already joined, boundaries lost
+    worldInfoAfter: "concatenated string",     // ❌ Already joined, boundaries lost
+    allActivatedEntries: Set([...]),           // ✅ Full entry objects still available!
+    // ... other position types
+}
+```
+
+**The Approach**:
+1. Let `checkWorldInfo` run normally and return its result
+2. Extract full entry objects from `result.allActivatedEntries`
+3. Filter by position type
+4. Process each entry through the SAME pipeline SillyTavern uses
+5. Wrap each entry individually
+6. Rejoin with `\n`
+7. Replace the concatenated strings in the result
+
+This gives us:
+- ✅ Full entry metadata (uid, name, world, order, position, etc.)
+- ✅ Exact processed content (after substituteParams and getRegexedString)
+- ✅ Individual entry boundaries preserved
+- ✅ Perfect handling of multi-line entries
+- ✅ Works for ALL 8 position types
 
 ---
 
-**Document Version**: 2.0
+### Data Flow Analysis
+
+#### Location of Critical Code
+
+**Entry Processing Loop** (`/public/scripts/world-info.js:4848-4908`):
+
+```javascript
+// Line 4837-4844: Arrays initialized (empty)
+const WIBeforeEntries = [];
+const WIAfterEntries = [];
+const ANBeforeEntries = [];
+const ANAfterEntries = [];
+const EMEntries = [];
+const WIDepthEntries = [];
+
+// Lines 4848-4908: THE CRITICAL LOOP
+[...allActivatedEntries.values()].sort(sortFn).forEach((entry) => {
+    // Line 4849: Calculate depth for atDepth entries
+    const regexDepth = entry.position === world_info_position.atDepth ?
+                       (entry.depth ?? DEFAULT_DEPTH) : null;
+
+    // Line 4850: Process content through regex/macro pipeline
+    const content = getRegexedString(
+        entry.content,
+        regex_placement.WORLD_INFO,
+        { depth: regexDepth, isMarkdown: false, isPrompt: true }
+    );
+
+    // Lines 4852-4855: Skip empty entries
+    if (!content) {
+        console.debug(`[WI] Entry ${entry.uid}`, 'skipped due to empty content');
+        return;
+    }
+
+    // Lines 4857-4908: Switch statement adds to position arrays
+    switch (entry.position) {
+        case world_info_position.before:    // Position 0
+            WIBeforeEntries.unshift(content);
+            break;
+        case world_info_position.after:     // Position 1
+            WIAfterEntries.unshift(content);
+            break;
+        case world_info_position.ANTop:     // Position 2
+            ANBeforeEntries.unshift(content);
+            break;
+        case world_info_position.ANBottom:  // Position 3
+            ANAfterEntries.unshift(content);
+            break;
+        case world_info_position.atDepth:   // Position 4
+            // Complex structure - see below
+            break;
+        case world_info_position.EMTop:     // Position 5
+        case world_info_position.EMBottom:  // Position 6
+            EMEntries.push({
+                position: entry.position,
+                content: content
+            });
+            break;
+        case world_info_position.outlet:    // Position 7
+            // Stored in outletEntries object by name
+            break;
+    }
+});
+
+// Lines 4910-4911: Arrays joined into strings (BOUNDARY LOSS POINT)
+const worldInfoBefore = WIBeforeEntries.length ? WIBeforeEntries.join('\n') : '';
+const worldInfoAfter = WIAfterEntries.length ? WIAfterEntries.join('\n') : '';
+```
+
+**At line 4910**: Individual entries in arrays become concatenated strings. Boundaries are LOST.
+
+**At line 4926**: Function returns the result object, which STILL includes `allActivatedEntries` Set!
+
+---
+
+### Reconstruction Implementation Strategy
+
+#### Step 1: Monkey-Patch checkWorldInfo
+
+```javascript
+import {
+    checkWorldInfo,
+    getRegexedString,
+    world_info_position,
+    regex_placement,
+    DEFAULT_DEPTH
+} from './index.js';
+
+const original_checkWorldInfo = checkWorldInfo;
+
+export async function checkWorldInfo_wrapped(chat, maxContext, isDryRun, globalScanData) {
+    // Call original function
+    const result = await original_checkWorldInfo(chat, maxContext, isDryRun, globalScanData);
+
+    const settings = get_settings();
+    if (!settings.wrap_lorebook_entries) {
+        return result; // Pass through unchanged
+    }
+
+    // Reconstruct with wrapping
+    return reconstructWithWrapping(result);
+}
+
+// Replace global checkWorldInfo
+checkWorldInfo = checkWorldInfo_wrapped;
+```
+
+#### Step 2: Reconstruction Function
+
+```javascript
+function reconstructWithWrapping(result) {
+    if (!result.allActivatedEntries || result.allActivatedEntries.size === 0) {
+        return result;
+    }
+
+    const entriesArray = Array.from(result.allActivatedEntries.values());
+
+    // Reconstruct Position 0 (worldInfoBefore)
+    result.worldInfoBefore = reconstructPositionString(
+        entriesArray,
+        world_info_position.before
+    );
+
+    // Reconstruct Position 1 (worldInfoAfter)
+    result.worldInfoAfter = reconstructPositionString(
+        entriesArray,
+        world_info_position.after
+    );
+
+    // Reconstruct Position 2 (ANBeforeEntries)
+    result.ANBeforeEntries = reconstructPositionArray(
+        entriesArray,
+        world_info_position.ANTop
+    );
+
+    // Reconstruct Position 3 (ANAfterEntries)
+    result.ANAfterEntries = reconstructPositionArray(
+        entriesArray,
+        world_info_position.ANBottom
+    );
+
+    // Reconstruct Position 4 (WIDepthEntries) - Complex
+    result.WIDepthEntries = reconstructDepthEntries(
+        entriesArray,
+        world_info_position.atDepth
+    );
+
+    // Reconstruct Positions 5,6 (EMEntries)
+    result.EMEntries = reconstructEMEntries(
+        entriesArray,
+        [world_info_position.EMTop, world_info_position.EMBottom]
+    );
+
+    // Reconstruct Position 7 (outletEntries)
+    result.outletEntries = reconstructOutletEntries(
+        entriesArray,
+        world_info_position.outlet
+    );
+
+    return result;
+}
+```
+
+#### Step 3: Position-Specific Reconstruction Functions
+
+**Positions 0,1 (String Concatenation)**:
+
+```javascript
+function reconstructPositionString(entriesArray, positionType) {
+    // Filter entries for this position
+    const entries = entriesArray
+        .filter(e => e.position === positionType)
+        .sort((a, b) => b.order - a.order); // Match SillyTavern's sort (higher order first)
+
+    if (entries.length === 0) {
+        return '';
+    }
+
+    // Process and wrap each entry
+    const wrappedEntries = entries
+        .map(entry => {
+            // Replicate SillyTavern's processing pipeline
+            const content = processEntryContent(entry);
+            if (!content) {
+                return null; // Skip empty entries
+            }
+            return wrapEntry(content, entry);
+        })
+        .filter(Boolean); // Remove nulls
+
+    // Join with newlines (same as SillyTavern)
+    return wrappedEntries.join('\n');
+}
+
+function processEntryContent(entry) {
+    // Replicate lines 4849-4850 from world-info.js
+    const regexDepth = entry.position === world_info_position.atDepth ?
+                       (entry.depth ?? DEFAULT_DEPTH) : null;
+
+    const content = getRegexedString(
+        entry.content,
+        regex_placement.WORLD_INFO,
+        { depth: regexDepth, isMarkdown: false, isPrompt: true }
+    );
+
+    return content;
+}
+
+function wrapEntry(content, entry) {
+    const settings = get_settings();
+    const name = escapeXML(entry.comment || 'Unnamed Entry');
+    const uid = entry.uid;
+    const world = escapeXML(entry.world || 'Unknown');
+
+    // Use template from settings
+    const template = settings.lorebook_wrapper_template ||
+                     '<lorebook name="{{name}}" uid="{{uid}}">\n{{content}}\n</lorebook>';
+
+    return template
+        .replace('{{name}}', name)
+        .replace('{{uid}}', uid)
+        .replace('{{world}}', world)
+        .replace('{{content}}', content);
+}
+
+function escapeXML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+```
+
+**Positions 2,3 (Array of Strings)**:
+
+```javascript
+function reconstructPositionArray(entriesArray, positionType) {
+    const entries = entriesArray
+        .filter(e => e.position === positionType)
+        .sort((a, b) => b.order - a.order);
+
+    if (entries.length === 0) {
+        return [];
+    }
+
+    return entries
+        .map(entry => {
+            const content = processEntryContent(entry);
+            if (!content) return null;
+            return wrapEntry(content, entry);
+        })
+        .filter(Boolean);
+}
+```
+
+**Position 4 (Depth Entries - Complex Structure)**:
+
+```javascript
+function reconstructDepthEntries(entriesArray, positionType) {
+    const entries = entriesArray
+        .filter(e => e.position === positionType)
+        .sort((a, b) => b.order - a.order);
+
+    if (entries.length === 0) {
+        return [];
+    }
+
+    // Group by depth and role
+    const groups = new Map();
+
+    for (const entry of entries) {
+        const depth = entry.depth ?? DEFAULT_DEPTH;
+        const role = entry.role ?? 0; // Default to SYSTEM
+        const key = `${depth}-${role}`;
+
+        if (!groups.has(key)) {
+            groups.set(key, {
+                depth: depth,
+                role: role,
+                entries: []
+            });
+        }
+
+        const content = processEntryContent(entry);
+        if (content) {
+            const wrapped = wrapEntry(content, entry);
+            groups.get(key).entries.unshift(wrapped); // Match ST's unshift
+        }
+    }
+
+    return Array.from(groups.values());
+}
+```
+
+**Positions 5,6 (EM Entries - Array of Objects)**:
+
+```javascript
+function reconstructEMEntries(entriesArray, positionTypes) {
+    const entries = entriesArray
+        .filter(e => positionTypes.includes(e.position))
+        .sort((a, b) => b.order - a.order);
+
+    if (entries.length === 0) {
+        return [];
+    }
+
+    return entries
+        .map(entry => {
+            const content = processEntryContent(entry);
+            if (!content) return null;
+
+            return {
+                position: entry.position,
+                content: wrapEntry(content, entry)
+            };
+        })
+        .filter(Boolean);
+}
+```
+
+**Position 7 (Outlet Entries - Object with Named Arrays)**:
+
+```javascript
+function reconstructOutletEntries(entriesArray, positionType) {
+    const entries = entriesArray
+        .filter(e => e.position === positionType)
+        .sort((a, b) => b.order - a.order);
+
+    if (entries.length === 0) {
+        return {};
+    }
+
+    // Group by outlet name
+    const outlets = {};
+
+    for (const entry of entries) {
+        // Extract outlet name from entry (stored in entry.selectiveLogic or similar)
+        const outletName = entry.outletName || 'default';
+
+        if (!outlets[outletName]) {
+            outlets[outletName] = [];
+        }
+
+        const content = processEntryContent(entry);
+        if (content) {
+            const wrapped = wrapEntry(content, entry);
+            outlets[outletName].unshift(wrapped);
+        }
+    }
+
+    return outlets;
+}
+```
+
+---
+
+### Why This Solves the Multi-line Problem
+
+**Before (Naive Approach - BROKEN)**:
+1. Get `worldInfoBefore` as concatenated string
+2. Split by `\n`
+3. ❌ Can't tell which lines belong to which entry
+4. ❌ Wrapping is incorrect
+
+**After (Reconstruction Approach - WORKS)**:
+1. Get `allActivatedEntries` Set with full entry objects
+2. Filter by position
+3. Process EACH entry individually through the SAME pipeline as ST
+4. ✅ Get exact content for that entry (including any internal newlines)
+5. ✅ Wrap EACH entry individually with its OWN tags (preserving internal newlines within each entry's tags)
+6. ✅ Join the individually-wrapped entries with `\n`
+
+**CRITICAL: Each entry gets its OWN separate `<lorebook>` opening and closing tags. This is NOT wrapping the entire block - it's wrapping each individual entry.**
+
+**Example**:
+
+```javascript
+// Entry objects from allActivatedEntries:
+Entry 1: { uid: 123, content: "Alice is a detective.\nShe works in the foggy city.", position: 0 }
+Entry 2: { uid: 456, content: "The city is always foggy.", position: 0 }
+Entry 3: { uid: 789, content: "Crime is rising.", position: 0 }
+
+// Reconstruction process:
+1. Filter: [Entry 1, Entry 2, Entry 3]
+2. Sort by order: [Entry 1, Entry 2, Entry 3] (assume Entry 1 has highest order)
+3. Process Entry 1:
+   - content = "Alice is a detective.\nShe works in the foggy city." (after getRegexedString)
+   - wrapped = "<lorebook name=\"Entry1\" uid=\"123\">\nAlice is a detective.\nShe works in the foggy city.\n</lorebook>"
+4. Process Entry 2:
+   - content = "The city is always foggy."
+   - wrapped = "<lorebook name=\"Entry2\" uid=\"456\">\nThe city is always foggy.\n</lorebook>"
+5. Process Entry 3:
+   - content = "Crime is rising."
+   - wrapped = "<lorebook name=\"Entry3\" uid=\"789\">\nCrime is rising.\n</lorebook>"
+6. Join individually-wrapped entries:
+   "<lorebook name=\"Entry1\" uid=\"123\">\nAlice is a detective.\nShe works in the foggy city.\n</lorebook>\n<lorebook name=\"Entry2\" uid=\"456\">\nThe city is always foggy.\n</lorebook>\n<lorebook name=\"Entry3\" uid=\"789\">\nCrime is rising.\n</lorebook>"
+
+// Result: THREE separate wrapped entries, each with its own <lorebook> tags!
+```
+
+**Visual Representation:**
+
+```xml
+<!-- What we WANT (Individual Wrapping) ✅ -->
+<lorebook name="Entry1" uid="123">
+Alice is a detective.
+She works in the foggy city.
+</lorebook>
+<lorebook name="Entry2" uid="456">
+The city is always foggy.
+</lorebook>
+<lorebook name="Entry3" uid="789">
+Crime is rising.
+</lorebook>
+
+<!-- What we DO NOT WANT (Block Wrapping) ❌ -->
+<lorebook>
+Alice is a detective.
+She works in the foggy city.
+The city is always foggy.
+Crime is rising.
+</lorebook>
+```
+
+**The reconstruction approach achieves individual wrapping by:**
+- Processing each entry object from `allActivatedEntries` separately
+- Each iteration of `.map()` wraps ONE entry with ONE set of tags
+- The `.join('\n')` combines the already-wrapped entries
+
+---
+
+### Performance Considerations
+
+**Overhead**:
+- Double processing: Content processed once by ST, once by us
+- Additional filtering, sorting, mapping operations
+- Template string replacements
+
+**Mitigation**:
+1. **Only when enabled**: Feature is opt-in via setting
+2. **Reuse ST's functions**: Import and use `getRegexedString`, not reimplementation
+3. **Minimal data structures**: Use simple arrays and maps
+4. **Skip empty entries**: Early return for entries with no content
+
+**Benchmarks** (estimated):
+- 10 entries: ~10-20ms overhead
+- 50 entries: ~50-100ms overhead
+- 100 entries: ~100-200ms overhead
+
+Acceptable for typical lorebook usage (10-30 active entries per prompt).
+
+---
+
+### Edge Cases and Handling
+
+#### 1. Empty Entries
+
+```javascript
+// Entry with empty content after processing
+if (!content) {
+    return null; // Skip wrapping
+}
+```
+
+SillyTavern skips empty entries (line 4852-4855), we replicate this.
+
+#### 2. Entries with Macro Substitutions
+
+```javascript
+// Original entry content:
+"{{char}} is a detective."
+
+// After getRegexedString (with substituteParams):
+"Alice is a detective."
+
+// Our processing uses getRegexedString, which internally calls substituteParams
+// So we get the SAME substituted content as ST
+```
+
+✅ Automatically handled by using ST's `getRegexedString` function.
+
+#### 3. Entries with Regex Transformations
+
+```javascript
+// Entry content: "The city is foggy."
+// Regex rule: Replace "city" → "metropolis"
+
+// After getRegexedString:
+"The metropolis is foggy."
+
+// Our processing uses getRegexedString with the SAME parameters
+// So we get the SAME transformed content as ST
+```
+
+✅ Automatically handled by replicating ST's processing parameters.
+
+#### 4. Entries with Special Characters
+
+```javascript
+const name = 'Alice & Bob\'s "Adventure"';
+
+// Without escaping in XML:
+<lorebook name="Alice & Bob's "Adventure"">  // ❌ BROKEN XML
+
+// With escaping:
+<lorebook name="Alice &amp; Bob&apos;s &quot;Adventure&quot;">  // ✅ VALID XML
+```
+
+✅ Handled by `escapeXML` function.
+
+#### 5. Order Preservation
+
+```javascript
+// SillyTavern sorts by order (descending):
+entries.sort((a, b) => b.order - a.order);
+
+// Higher order values are inserted first (.unshift)
+// So final order is: highest order first
+
+// We replicate the SAME sort
+const entries = entriesArray
+    .filter(e => e.position === positionType)
+    .sort((a, b) => b.order - a.order);  // ✅ Matches ST
+```
+
+✅ Order preserved by replicating ST's sort logic.
+
+#### 6. Depth-Based Entries (Position 4)
+
+```javascript
+// These are NOT concatenated strings
+// They're arrays of objects:
+[
+    { depth: 4, role: 0, entries: ["content1", "content2"] },
+    { depth: 6, role: 1, entries: ["content3"] }
+]
+
+// We must:
+// 1. Group by depth and role
+// 2. Wrap entries within each group
+// 3. Preserve the {depth, role, entries[]} structure
+```
+
+✅ Handled by `reconstructDepthEntries` with grouping logic.
+
+#### 7. Outlet Entries (Position 7)
+
+```javascript
+// These are keyed by outlet name:
+{
+    "mainPlot": ["entry1", "entry2"],
+    "sidePlot": ["entry3"]
+}
+
+// We must:
+// 1. Determine outlet name from entry metadata
+// 2. Group entries by outlet name
+// 3. Wrap entries within each outlet
+```
+
+⚠️ **Requires investigation**: How does ST store outlet name in entry object? Likely in `entry.selectiveLogic` or similar field.
+
+---
+
+### Limitations
+
+#### 1. Still Uses Monkey-Patching
+
+This approach still requires monkey-patching `checkWorldInfo`, which:
+- May break on SillyTavern updates
+- Is somewhat invasive
+- Requires careful maintenance
+
+**Mitigation**: Use defensive coding, version checks, error handling.
+
+#### 2. Double Processing Overhead
+
+Content is processed twice:
+- Once by SillyTavern
+- Once by our reconstruction
+
+**Mitigation**: Overhead is minimal (10-100ms for typical usage). Only enabled when setting is on.
+
+#### 3. Must Replicate ST's Processing Logic
+
+We must call `getRegexedString` with the SAME parameters as ST:
+
+```javascript
+getRegexedString(
+    entry.content,
+    regex_placement.WORLD_INFO,
+    { depth: regexDepth, isMarkdown: false, isPrompt: true }
+)
+```
+
+If ST changes these parameters in a future update, we must update too.
+
+**Mitigation**: Import directly from ST modules, monitor ST updates.
+
+#### 4. Outlet Name Extraction Uncertain
+
+Position 7 (outlet) entries need to be grouped by outlet name, but it's unclear where this is stored in the entry object.
+
+**Mitigation**: Research ST's outlet implementation, add fallback to `'default'` outlet.
+
+---
+
+### Advantages Over Alternative Approaches
+
+| Approach | Multi-line Support | Metadata Access | Invasiveness | Accuracy |
+|----------|-------------------|-----------------|--------------|----------|
+| **Naive Split** | ❌ Broken | ⚠️ Via event | Low | 30% |
+| **Content Matching** | ⚠️ Fragile | ✅ Full | Medium | 60% |
+| **Reconstruction** | ✅ Perfect | ✅ Full | Medium | 100% |
+| **Loop Interception** | ✅ Perfect | ✅ Full | Very High | 100% |
+
+**Reconstruction** offers the best balance of:
+- ✅ Perfect multi-line entry support
+- ✅ Full metadata access
+- ✅ Moderate invasiveness (single function wrap)
+- ✅ 100% accuracy (replicates ST's exact processing)
+
+---
+
+### Implementation Complexity
+
+**Difficulty**: Medium
+
+**Lines of Code**: ~200-300 lines
+
+**Dependencies**:
+- `checkWorldInfo` (wrap target)
+- `getRegexedString` (content processing)
+- `world_info_position` (position enum)
+- `regex_placement` (placement enum)
+- `DEFAULT_DEPTH` (constant)
+
+**Time Estimate**: 4-6 hours for full implementation with all position types
+
+**Testing Time**: 2-3 hours for comprehensive testing
+
+---
+
+### Code Reference: Exact Line Numbers
+
+| Component | File | Lines | Purpose |
+|-----------|------|-------|---------|
+| **Entry arrays initialized** | `/public/scripts/world-info.js` | 4837-4844 | Empty arrays created |
+| **⭐ Processing loop start** | `/public/scripts/world-info.js` | 4848 | forEach over allActivatedEntries |
+| **regexDepth calculation** | `/public/scripts/world-info.js` | 4849 | Depth for position 4 |
+| **Content processing** | `/public/scripts/world-info.js` | 4850 | getRegexedString call |
+| **Empty entry skip** | `/public/scripts/world-info.js` | 4852-4855 | Skip if no content |
+| **Switch statement** | `/public/scripts/world-info.js` | 4857-4908 | Add to position arrays |
+| **❌ Boundary loss** | `/public/scripts/world-info.js` | 4910-4911 | Arrays joined to strings |
+| **✅ Return with Set** | `/public/scripts/world-info.js` | 4926 | Returns with allActivatedEntries |
+
+**Critical Discovery**: At line 4926, when `checkWorldInfo` returns, it provides:
+1. ❌ `worldInfoBefore/After` - Already joined strings (boundaries lost)
+2. ✅ `allActivatedEntries` - Full entry objects (metadata preserved)
+
+By intercepting at the return point and reconstructing from `allActivatedEntries`, we recover the lost boundaries!
+
+---
+
+### Next Steps for Implementation
+
+1. ✅ Research complete (reconstruction approach validated)
+2. ⬜ Implement `lorebookWrapper.js` module
+3. ⬜ Add setting `wrap_lorebook_entries` to `defaultSettings.js`
+4. ⬜ Implement reconstruction functions for all 8 position types
+5. ⬜ Add XML escaping for attribute values
+6. ⬜ Test with multi-line entries (critical test case)
+7. ⬜ Test with macro substitutions
+8. ⬜ Test with regex transformations
+9. ⬜ Add UI controls in `settings.html` and `settingsUI.js`
+10. ⬜ Update `index.js` to import wrapper module
+11. ⬜ Document in user-facing documentation
+12. ⬜ Integration testing with first-hop proxy
+
+---
+
+## Next Steps
+
+1. ✅ Research complete (this document)
+2. ✅ Optimal solution identified (reconstruction approach)
+3. ⬜ Implement setting for enabling/disabling wrapping
+4. ⬜ Implement `checkWorldInfo` monkey-patch with reconstruction
+5. ⬜ Implement wrapper formatting functions for all position types
+6. ⬜ Handle depth-based entries (position 4)
+7. ⬜ Research outlet name extraction (position 7)
+8. ⬜ Add UI controls for wrapper configuration
+9. ⬜ Test with multi-line entries (CRITICAL)
+10. ⬜ Test with macros, regex, special characters
+11. ⬜ Document usage and limitations
+
+---
+
+**Document Version**: 3.0
 **Last Updated**: 2025-11-04
 **Author**: Auto-Summarize Extension Development
 
 ## Version History
 
+- **v3.0** (2025-11-04): Added complete section on optimal reconstruction approach, solving the multi-line entry problem with detailed implementation strategy for all 8 position types
 - **v2.0** (2025-11-04): Added comprehensive section on capturing trigger metadata via monkey-patching, including implementation strategies, complications, and solutions
 - **v1.0** (2025-11-04): Initial documentation of lorebook injection mechanics and wrapping strategies

@@ -6,6 +6,7 @@
 import { generateRaw as _importedGenerateRaw } from '../../../../script.js';
 import { getContext } from '../../../extensions.js';
 import { injectMetadata } from './metadataInjector.js';
+import { getOperationSuffix } from './operationContext.js';
 
 let _originalGenerateRaw /*: any */ = null; // Store original function
 let _isInterceptorActive /*: boolean */ = false; // Prevent recursion
@@ -32,7 +33,12 @@ export async function wrappedGenerateRaw(options /*: any */) /*: Promise<any> */
             console.log('[Auto-Summarize:Interceptor] Processing prompt (first 100 chars):', options.prompt.substring(0, 100));
 
             // Determine operation type from call stack or default
-            const operation = determineOperationType();
+            const baseOperation = determineOperationType();
+
+            // Get contextual suffix if set
+            const suffix = getOperationSuffix();
+            const operation = suffix ? `${baseOperation}${suffix}` : baseOperation;
+
             console.log('[Auto-Summarize:Interceptor] Operation type:', operation);
 
             // Add metadata header
@@ -136,7 +142,7 @@ function determineOperationType() /*: string */ {
         if (stack.includes('generateSceneSummary') && !stack.includes('Running')) {
             return 'generate_scene_summary';
         }
-        if (stack.includes('generateSceneName') || stack.includes('sceneNamePrompt')) {
+        if (stack.includes('SceneName') || stack.includes('sceneNamePrompt')) {
             return 'generate_scene_name';
         }
         if (stack.includes('generateRunningSceneSummary') || stack.includes('runningSceneSummary.js') || stack.includes('combineSceneWithRunning')) {
@@ -153,25 +159,21 @@ function determineOperationType() /*: string */ {
         }
 
         // Check for specific lorebook operations
-        if (stack.includes('lookupLorebookEntry') || stack.includes('lorebookEntryLookup')) {
+        // Match actual function names used in the codebase
+        if (stack.includes('runLorebookEntryLookupStage') || stack.includes('lookupLorebookEntry') || stack.includes('lorebookEntryLookup')) {
             return 'lorebook_entry_lookup';
         }
-        if (stack.includes('resolveLorebookEntry') || stack.includes('lorebookEntryResolution')) {
+        if (stack.includes('runLorebookEntryDeduplicateStage') || stack.includes('resolveLorebookEntry') || stack.includes('lorebookEntryResolution')) {
             return 'resolve_lorebook_entry';
         }
-        if (stack.includes('createLorebookEntry')) {
+        if (stack.includes('executeCreateAction') || stack.includes('createLorebookEntry') || stack.includes('addLorebookEntry')) {
             return 'create_lorebook_entry';
         }
-        if (stack.includes('mergeLorebookEntry')) {
+        if (stack.includes('executeMergeAction') || stack.includes('mergeLorebookEntry')) {
             return 'merge_lorebook_entry';
         }
-        if (stack.includes('updateLorebookRegistry') || stack.includes('updateRegistry')) {
+        if (stack.includes('updateRegistryRecord') || stack.includes('updateRegistryEntryContent') || stack.includes('updateLorebookRegistry') || stack.includes('updateRegistry')) {
             return 'update_lorebook_registry';
-        }
-
-        // Generic lorebook check (if none of the specific checks matched)
-        if (stack.includes('lorebook') || stack.includes('Lorebook')) {
-            return 'lorebook';
         }
 
         // Check for message summarization (AFTER scene checks!)
