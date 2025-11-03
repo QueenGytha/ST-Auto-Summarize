@@ -3,8 +3,8 @@
 
 import { get_settings, getContext } from './index.js';
 
-const WRAPPER_OPEN = '<lorebook ';
-const WRAPPER_CLOSE = '</lorebook>';
+const WRAPPER_OPEN = '<setting_lore ';
+const WRAPPER_CLOSE = '</setting_lore>';
 
 let isListenerRegistered /*: boolean */ = false;
 
@@ -135,9 +135,9 @@ function wrapBody(content /*: string */, entry /*: any */) /*: ?string */ {
     }
 
     const attributes = buildAttributeList(entry);
-    const openTag = `<lorebook ${attributes.join(' ')}>`;
+    const openTag = `<setting_lore ${attributes.join(' ')}>`;
 
-    return `${openTag}\n${trimmed}\n</lorebook>`;
+    return `${openTag}\n${trimmed}\n</setting_lore>`;
 }
 
 /**

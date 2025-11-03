@@ -1,0 +1,6 @@
+uid – the lorebook entry’s unique numeric identifier; matches the uid field in the JSON/export and stays constant unless the entry is duplicated.
+position – placement code SillyTavern assigns (0=before prompt, 1=after, 4=depth, etc.); determines where the entry is injected in the final prompt.
+order – priority ordering within that position; higher numbers float toward the front when multiple entries share the same slot.
+depth – depth value used for recursive scanning; when present it tells ST (and us) which message depth triggered the entry.
+keys – primary activation keywords (pipe-separated in our tag); the terms that matched in chat to activate this entry.
+role – prompt role SillyTavern will send with the entry (0=system, 1=user, 2=assistant); affects how the LLM interprets the injected content.
