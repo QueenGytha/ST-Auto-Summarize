@@ -20,7 +20,8 @@ from .error_logger import ErrorLogger
 from .utils import (
     sanitize_headers_for_logging,
     process_messages_with_regex,
-    extract_character_chat_info
+    extract_character_chat_info,
+    extract_st_metadata_from_messages
 )
 from .constants import DEFAULT_MODELS
 
@@ -99,7 +100,7 @@ def load_config_for_request(config_name: str) -> Config:
     return request_config
 
 
-def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, str]] = None, request_config: Optional[Config] = None) -> Dict[str, Any]:
+def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, str]] = None, request_config: Optional[Config] = None, original_request_data: Optional[Dict[str, Any]] = None, stripped_metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Forward request to target proxy with error handling and retry logic"""
     # Generate request ID for logging
     request_id = str(uuid.uuid4())[:8]
@@ -108,13 +109,21 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
     error = None
 
     # Extract character/chat info for organized logging
-    character_chat_info = extract_character_chat_info(headers or {}, request_data)
+    # Use original_request_data if provided, otherwise use cleaned request_data
+    character_chat_info = extract_character_chat_info(headers or {}, original_request_data or request_data)
 
     # Log incoming request to console
     print("=" * 80, flush=True)
     print(f"INCOMING REQUEST [{request_id}]", flush=True)
+    if stripped_metadata:
+        print(f"ST_METADATA: {json.dumps(stripped_metadata, indent=2)}", flush=True)
+        print("--- ORIGINAL (AS RECEIVED) ---", flush=True)
+        print(f"Request Data: {json.dumps(original_request_data, indent=2)}", flush=True)
+        print("--- FORWARDED (AFTER STRIPPING) ---", flush=True)
+        print(f"Request Data: {json.dumps(request_data, indent=2)}", flush=True)
+    else:
+        print(f"Request Data: {json.dumps(request_data, indent=2)}", flush=True)
     print(f"Headers: {json.dumps(sanitize_headers_for_logging(headers or {}), indent=2)}", flush=True)
-    print(f"Request Data: {json.dumps(request_data, indent=2)}", flush=True)
     print("=" * 80, flush=True)
 
     try:
@@ -217,7 +226,9 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
                     end_time=end_time,
                     duration=duration,
                     error=error,
-                    character_chat_info=character_chat_info
+                    character_chat_info=character_chat_info,
+                    original_request_data=original_request_data,
+                    stripped_metadata=stripped_metadata
                 )
             except Exception as log_error:
                 logger.error(f"Failed to log request: {log_error}")
@@ -403,6 +414,9 @@ def chat_completions(config_path):
         if not request_data:
             return jsonify({"error": {"message": "No JSON data provided"}}), 400
 
+        # Save original request data for logging (before any modifications)
+        original_request_data = request_data.copy() if isinstance(request_data, dict) else request_data
+
         # Validate required fields
         if "messages" not in request_data:
             return jsonify({"error": {"message": "Missing required field: messages"}}), 400
@@ -416,8 +430,26 @@ def chat_completions(config_path):
                     request_data = request_data.copy()
                     request_data["messages"] = process_messages_with_regex(request_data["messages"], rules)
 
+        # Strip ST_METADATA from messages before forwarding
+        stripped_metadata = None
+        if "messages" in request_data:
+            metadata, cleaned_messages = extract_st_metadata_from_messages(request_data["messages"])
+            if metadata:
+                stripped_metadata = metadata
+                # Log that we found and stripped metadata
+                logger.info(f"Stripped ST_METADATA from request - Chat: {metadata.get('chat')}, Operation: {metadata.get('operation')}")
+                request_data = request_data.copy()
+                request_data["messages"] = cleaned_messages
+
         # Forward the request with the appropriate config
-        result = forward_request(request_data, dict(request.headers), request_config=request_config)
+        # Pass both original and cleaned data for logging
+        result = forward_request(
+            request_data,
+            dict(request.headers),
+            request_config=request_config,
+            original_request_data=original_request_data,
+            stripped_metadata=stripped_metadata
+        )
         return jsonify(result)
 
     except Exception as e:

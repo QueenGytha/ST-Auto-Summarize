@@ -2,6 +2,7 @@
 Utility functions for the seaking-proxy middleware
 """
 import re
+import json
 from typing import Dict, Any, List, Optional, Tuple
 from .constants import SENSITIVE_HEADERS
 
@@ -243,42 +244,192 @@ def process_response_with_regex(response_data: Dict[str, Any], rules: List[Dict[
     return processed_response
 
 
-def extract_character_chat_info(headers: Dict[str, Any], request_data: Dict[str, Any]) -> Optional[Tuple[str, str]]:
+def parse_st_metadata(content: str) -> Optional[Dict[str, Any]]:
     """
-    Extract character and chat information from request headers or body.
+    Parse ST_METADATA from message content.
 
-    This is a stub implementation that will be updated when the upstream format is determined.
+    Args:
+        content: Message content that may contain <ST_METADATA>...</ST_METADATA>
+
+    Returns:
+        Dictionary containing parsed metadata, or None if not found
+
+    Example:
+        <ST_METADATA>
+        {
+          "version": "1.0",
+          "chat": "Senta - 2025-11-01@20h29m24s",
+          "operation": "lorebook"
+        }
+        </ST_METADATA>
+    """
+    if not content:
+        return None
+
+    # Match ST_METADATA tags
+    pattern = r'<ST_METADATA>\s*(\{.*?\})\s*</ST_METADATA>'
+    match = re.search(pattern, content, re.DOTALL)
+
+    if not match:
+        return None
+
+    try:
+        metadata_json = match.group(1)
+        metadata = json.loads(metadata_json)
+        return metadata
+    except (json.JSONDecodeError, AttributeError) as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Failed to parse ST_METADATA: {e}")
+        return None
+
+
+def strip_st_metadata(content: str) -> str:
+    """
+    Remove ST_METADATA tags and content from a message.
+
+    Args:
+        content: Message content that may contain <ST_METADATA>...</ST_METADATA>
+
+    Returns:
+        Content with ST_METADATA removed
+    """
+    if not content:
+        return content
+
+    # Remove ST_METADATA tags and content
+    pattern = r'<ST_METADATA>.*?</ST_METADATA>\s*'
+    result = re.sub(pattern, '', content, flags=re.DOTALL)
+
+    return result.strip()
+
+
+def parse_chat_name(chat: str) -> Tuple[str, str]:
+    """
+    Parse character name and timestamp from ST chat name.
+
+    Parses from the end since timestamp format is reliable,
+    but character name may contain special characters including '-'.
+
+    Args:
+        chat: Chat name in format "Character Name - YYYY-MM-DD@HHhMMmSSs"
+
+    Returns:
+        Tuple of (character_name, timestamp)
+
+    Example:
+        "Senta - 2025-11-01@20h29m24s" -> ("Senta", "2025-11-01@20h29m24s")
+        "My - Character - 2025-11-01@20h29m24s" -> ("My - Character", "2025-11-01@20h29m24s")
+    """
+    # Find the last occurrence of " - " to split character and timestamp
+    # The timestamp format is: YYYY-MM-DD@HHhMMmSSs
+    last_sep = chat.rfind(' - ')
+
+    if last_sep == -1:
+        # No separator found, treat entire string as character name
+        return (chat, 'unknown')
+
+    character = chat[:last_sep]
+    timestamp = chat[last_sep + 3:]  # Skip the " - " separator
+
+    return (character, timestamp)
+
+
+def extract_st_metadata_from_messages(messages: List[Dict[str, Any]]) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    Extract ST_METADATA from messages and return cleaned messages.
+
+    Searches all messages for ST_METADATA, extracts it, and returns
+    messages with ST_METADATA stripped out.
+
+    Args:
+        messages: List of message dictionaries
+
+    Returns:
+        Tuple of (metadata_dict, cleaned_messages)
+    """
+    if not messages:
+        return (None, messages)
+
+    metadata = None
+    cleaned_messages = []
+
+    for message in messages:
+        content = message.get('content', '')
+        if not content:
+            cleaned_messages.append(message)
+            continue
+
+        # Try to parse metadata from this message
+        msg_metadata = parse_st_metadata(content)
+        if msg_metadata and not metadata:
+            # Store the first metadata we find
+            metadata = msg_metadata
+
+        # Strip metadata and create cleaned message
+        cleaned_content = strip_st_metadata(content)
+        cleaned_message = message.copy()
+        cleaned_message['content'] = cleaned_content
+
+        # Only include the message if it has content after stripping
+        # (don't include messages that were only metadata)
+        if cleaned_content:
+            cleaned_messages.append(cleaned_message)
+
+    return (metadata, cleaned_messages)
+
+
+def extract_character_chat_info(headers: Dict[str, Any], request_data: Dict[str, Any]) -> Optional[Tuple[str, str, str]]:
+    """
+    Extract character, chat timestamp, and operation from request.
+
+    Looks for ST_METADATA in request messages and parses the chat field
+    to extract character name and timestamp.
 
     Args:
         headers: Request headers
         request_data: Request body data
 
     Returns:
-        Tuple of (character, chat) if found, None otherwise
+        Tuple of (character, timestamp, operation) if found, None otherwise
 
-    Future Implementation Notes:
-        - Format TBD from upstream SillyTavern extension
-        - May be in custom headers (e.g., X-Character, X-Chat)
-        - May be in request body metadata
-        - May need sanitization for filesystem safety
+    Example:
+        Messages containing:
+        <ST_METADATA>
+        {
+          "version": "1.0",
+          "chat": "Senta - 2025-11-01@20h29m24s",
+          "operation": "lorebook"
+        }
+        </ST_METADATA>
+
+        Returns: ("Senta", "2025-11-01@20h29m24s", "lorebook")
     """
-    # STUB: Return None for now - will be implemented when upstream format is determined
-    # Potential locations to check:
-    # - Custom headers: headers.get('X-Character'), headers.get('X-Chat')
-    # - Request metadata: request_data.get('metadata', {}).get('character')
-    # - User agent or other standard headers
+    # Extract metadata from messages
+    messages = request_data.get('messages', [])
+    if not messages:
+        return None
 
-    # Example implementation (commented out until format is known):
-    # character = headers.get('X-Character') or request_data.get('metadata', {}).get('character')
-    # chat = headers.get('X-Chat') or request_data.get('metadata', {}).get('chat')
-    #
-    # if character and chat:
-    #     # Sanitize for filesystem safety
-    #     character = sanitize_for_filesystem(character)
-    #     chat = sanitize_for_filesystem(chat)
-    #     return (character, chat)
+    metadata, _ = extract_st_metadata_from_messages(messages)
+    if not metadata:
+        return None
 
-    return None
+    # Get chat and operation from metadata
+    chat = metadata.get('chat')
+    operation = metadata.get('operation', 'chat')
+
+    if not chat:
+        return None
+
+    # Parse character name and timestamp from chat
+    character, timestamp = parse_chat_name(chat)
+
+    # Sanitize for filesystem safety
+    character = sanitize_for_filesystem(character)
+    timestamp = sanitize_for_filesystem(timestamp)
+    operation = sanitize_for_filesystem(operation)
+
+    return (character, timestamp, operation)
 
 
 def sanitize_for_filesystem(name: str, max_length: int = 100) -> str:

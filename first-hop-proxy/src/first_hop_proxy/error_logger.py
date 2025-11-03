@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import re
 from datetime import datetime
 from typing import Dict, Any, Optional, Union, Tuple
 import logging
@@ -31,41 +32,84 @@ class ErrorLogger:
         if self.enabled:
             os.makedirs(self.base_error_folder, exist_ok=True)
 
-    def _get_error_log_folder(self, character_chat_info: Optional[Tuple[str, str]] = None) -> str:
+    def _get_error_log_folder(self, character_chat_info: Optional[Tuple[str, str, str]] = None) -> str:
         """
         Determine the error log folder path based on character/chat information.
 
         Args:
-            character_chat_info: Optional tuple of (character, chat)
+            character_chat_info: Optional tuple of (character, timestamp, operation)
 
         Returns:
             Path to the error log folder
         """
         if character_chat_info:
-            character, chat = character_chat_info
-            folder = os.path.join("logs", "characters", character, chat, "errors")
+            character, timestamp, operation = character_chat_info
+            folder = os.path.join("logs", "characters", character, timestamp, "errors")
             # Create directory structure if it doesn't exist
             os.makedirs(folder, exist_ok=True)
             return folder
         else:
             return self.base_error_folder
-    
+
+    def _get_next_error_log_number(self, folder: str, operation: str) -> int:
+        """
+        Get the next sequential error log number for the given folder and operation.
+
+        Args:
+            folder: Error log folder path
+            operation: Operation type (e.g., 'chat', 'lorebook')
+
+        Returns:
+            Next sequential log number (1-based)
+        """
+        if not os.path.exists(folder):
+            return 1
+
+        # Find all error log files matching the pattern: <number>-<operation>.log
+        max_num = 0
+        pattern = re.compile(r'^(\d+)-' + re.escape(operation) + r'\.log$')
+
+        try:
+            for filename in os.listdir(folder):
+                match = pattern.match(filename)
+                if match:
+                    num = int(match.group(1))
+                    max_num = max(max_num, num)
+        except Exception as e:
+            logger.error(f"Error scanning error log folder {folder}: {e}")
+
+        return max_num + 1
+
+    def _get_sequenced_error_filename(self, operation: str, folder: str) -> str:
+        """
+        Generate filename with sequential numbering and operation type.
+
+        Args:
+            operation: Operation type (e.g., 'chat', 'lorebook')
+            folder: Error log folder path to check for existing logs
+
+        Returns:
+            Filename in format: <number>-<operation>.log (e.g., 00001-chat.log)
+        """
+        log_number = self._get_next_error_log_number(folder, operation)
+        return f"{log_number:05d}-{operation}.log"
+
     def _get_error_filename(self, error_code: Union[int, str], timestamp: Optional[float] = None) -> str:
-        """Generate filename for error log based on error code and timestamp"""
+        """Generate filename for error log based on error code and timestamp (legacy/unsorted)"""
         if timestamp is None:
             timestamp = time.time()
-        
+
         # Convert timestamp to datetime for filename
         dt = datetime.fromtimestamp(timestamp)
         timestamp_str = dt.strftime("%Y%m%d_%H%M%S_%f")[:-3]  # Include milliseconds
-        
+
         # Sanitize error code for filename
         if isinstance(error_code, int):
             error_code_str = str(error_code)
         else:
             # For exception types, use a sanitized version
             error_code_str = str(error_code).replace(" ", "_").replace("<", "").replace(">", "").replace("'", "")
-        
+
         return f"{error_code_str}_{timestamp_str}.log"
     
     def _get_error_code(self, error: Union[Exception, Response, int]) -> Union[int, str]:
@@ -141,7 +185,7 @@ class ErrorLogger:
                   context: Optional[Dict[str, Any]] = None,
                   retry_attempt: Optional[int] = None,
                   retry_delay: Optional[float] = None,
-                  character_chat_info: Optional[Tuple[str, str]] = None) -> str:
+                  character_chat_info: Optional[Tuple[str, str, str]] = None) -> str:
         """Log an error to a separate file based on error code and timestamp
 
         Args:
@@ -149,7 +193,7 @@ class ErrorLogger:
             context: Additional context information
             retry_attempt: Retry attempt number if applicable
             retry_delay: Retry delay in seconds if applicable
-            character_chat_info: Optional tuple of (character, chat) for organized logging
+            character_chat_info: Optional tuple of (character, timestamp, operation) for organized logging
 
         Returns:
             Path to error log file if successful, empty string otherwise
@@ -171,7 +215,14 @@ class ErrorLogger:
 
         # Generate filename and folder
         folder = self._get_error_log_folder(character_chat_info)
-        filename = self._get_error_filename(error_code)
+
+        # Use sequenced filename if we have character_chat_info, otherwise use error code + timestamp
+        if character_chat_info:
+            character, timestamp, operation = character_chat_info
+            filename = self._get_sequenced_error_filename(operation, folder)
+        else:
+            filename = self._get_error_filename(error_code)
+
         filepath = os.path.join(folder, filename)
         
         # Create log content
@@ -211,7 +262,7 @@ class ErrorLogger:
     def log_retry_attempt(self, error: Union[Exception, Response],
                          attempt: int, delay: float,
                          context: Optional[Dict[str, Any]] = None,
-                         character_chat_info: Optional[Tuple[str, str]] = None) -> str:
+                         character_chat_info: Optional[Tuple[str, str, str]] = None) -> str:
         """Log a retry attempt specifically
 
         Args:
@@ -219,7 +270,7 @@ class ErrorLogger:
             attempt: Retry attempt number
             delay: Retry delay in seconds
             context: Additional context information
-            character_chat_info: Optional tuple of (character, chat) for organized logging
+            character_chat_info: Optional tuple of (character, timestamp, operation) for organized logging
 
         Returns:
             Path to error log file if successful, empty string otherwise
@@ -230,14 +281,14 @@ class ErrorLogger:
     def log_final_error(self, error: Union[Exception, Response],
                        total_attempts: int,
                        context: Optional[Dict[str, Any]] = None,
-                       character_chat_info: Optional[Tuple[str, str]] = None) -> str:
+                       character_chat_info: Optional[Tuple[str, str, str]] = None) -> str:
         """Log the final error after all retries are exhausted
 
         Args:
             error: Exception or Response representing the final error
             total_attempts: Total number of retry attempts made
             context: Additional context information
-            character_chat_info: Optional tuple of (character, chat) for organized logging
+            character_chat_info: Optional tuple of (character, timestamp, operation) for organized logging
 
         Returns:
             Path to error log file if successful, empty string otherwise
@@ -250,11 +301,11 @@ class ErrorLogger:
     
 
 
-    def _manage_file_rotation(self, character_chat_info: Optional[Tuple[str, str]] = None) -> None:
+    def _manage_file_rotation(self, character_chat_info: Optional[Tuple[str, str, str]] = None) -> None:
         """Manage file rotation based on size and count limits
 
         Args:
-            character_chat_info: Optional tuple of (character, chat) to determine which folder to rotate
+            character_chat_info: Optional tuple of (character, timestamp, operation) to determine which folder to rotate
         """
         folder = self._get_error_log_folder(character_chat_info)
 
@@ -303,11 +354,11 @@ class ErrorLogger:
         except Exception as e:
             logger.error(f"Error during file rotation: {e}")
     
-    def get_error_logs_summary(self, character_chat_info: Optional[Tuple[str, str]] = None) -> Dict[str, Any]:
+    def get_error_logs_summary(self, character_chat_info: Optional[Tuple[str, str, str]] = None) -> Dict[str, Any]:
         """Get a summary of error logs
 
         Args:
-            character_chat_info: Optional tuple of (character, chat) to get summary for specific folder
+            character_chat_info: Optional tuple of (character, timestamp, operation) to get summary for specific folder
 
         Returns:
             Dictionary with error logs summary including list of logs and metadata

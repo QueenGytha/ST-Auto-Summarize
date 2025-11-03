@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import re
 from datetime import datetime
 from typing import Dict, Any, Optional, Tuple
 import logging
@@ -27,27 +28,70 @@ class RequestLogger:
         if self.enabled:
             os.makedirs(self.base_folder, exist_ok=True)
 
-    def _get_log_folder(self, character_chat_info: Optional[Tuple[str, str]] = None) -> str:
+    def _get_log_folder(self, character_chat_info: Optional[Tuple[str, str, str]] = None) -> str:
         """
         Determine the log folder path based on character/chat information.
 
         Args:
-            character_chat_info: Optional tuple of (character, chat)
+            character_chat_info: Optional tuple of (character, timestamp, operation)
 
         Returns:
             Path to the log folder
         """
         if character_chat_info:
-            character, chat = character_chat_info
-            folder = os.path.join("logs", "characters", character, chat)
+            character, timestamp, operation = character_chat_info
+            folder = os.path.join("logs", "characters", character, timestamp)
             # Create directory structure if it doesn't exist
             os.makedirs(folder, exist_ok=True)
             return folder
         else:
             return self.base_folder
-    
+
+    def _get_next_log_number(self, folder: str, operation: str) -> int:
+        """
+        Get the next sequential log number for the given folder and operation.
+
+        Args:
+            folder: Log folder path
+            operation: Operation type (e.g., 'chat', 'lorebook')
+
+        Returns:
+            Next sequential log number (1-based)
+        """
+        if not os.path.exists(folder):
+            return 1
+
+        # Find all log files matching the pattern: <number>-<operation>.log
+        max_num = 0
+        pattern = re.compile(r'^(\d+)-' + re.escape(operation) + r'\.log$')
+
+        try:
+            for filename in os.listdir(folder):
+                match = pattern.match(filename)
+                if match:
+                    num = int(match.group(1))
+                    max_num = max(max_num, num)
+        except Exception as e:
+            logger.error(f"Error scanning log folder {folder}: {e}")
+
+        return max_num + 1
+
+    def _get_sequenced_filename(self, operation: str, folder: str) -> str:
+        """
+        Generate filename with sequential numbering and operation type.
+
+        Args:
+            operation: Operation type (e.g., 'chat', 'lorebook')
+            folder: Log folder path to check for existing logs
+
+        Returns:
+            Filename in format: <number>-<operation>.log (e.g., 00001-chat.log)
+        """
+        log_number = self._get_next_log_number(folder, operation)
+        return f"{log_number:05d}-{operation}.log"
+
     def _get_timestamp_filename(self, request_id: str = None) -> str:
-        """Generate filename with timestamp and optional request ID"""
+        """Generate filename with timestamp and optional request ID (legacy/unsorted)"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # Include milliseconds
         if request_id:
             return f"{timestamp}_{request_id}.log"
@@ -61,13 +105,15 @@ class RequestLogger:
                             headers: Dict[str, str], response_data: Any = None,
                             response_headers: Dict[str, str] = None, start_time: float = None,
                             end_time: float = None, duration: float = None, error: Exception = None,
-                            character_chat_info: Optional[Tuple[str, str]] = None) -> str:
+                            character_chat_info: Optional[Tuple[str, str, str]] = None,
+                            original_request_data: Optional[Dict[str, Any]] = None,
+                            stripped_metadata: Optional[Dict[str, Any]] = None) -> str:
         """Log a complete request/response cycle to a single file
 
         Args:
             request_id: Unique request identifier
             endpoint: API endpoint
-            request_data: Request body data
+            request_data: Request body data (after processing/stripping)
             headers: Request headers
             response_data: Response body data
             response_headers: Response headers
@@ -75,7 +121,9 @@ class RequestLogger:
             end_time: Request end timestamp
             duration: Request duration in seconds
             error: Exception if request failed
-            character_chat_info: Optional tuple of (character, chat) for organized logging
+            character_chat_info: Optional tuple of (character, timestamp, operation) for organized logging
+            original_request_data: Original request data before ST_METADATA stripping
+            stripped_metadata: The ST_METADATA that was stripped, if any
 
         Returns:
             Path to log file if successful, empty string otherwise
@@ -84,7 +132,14 @@ class RequestLogger:
             return ""
 
         folder = self._get_log_folder(character_chat_info)
-        filename = self._get_timestamp_filename(request_id)
+
+        # Use sequenced filename if we have character_chat_info, otherwise use timestamp
+        if character_chat_info:
+            character, timestamp, operation = character_chat_info
+            filename = self._get_sequenced_filename(operation, folder)
+        else:
+            filename = self._get_timestamp_filename(request_id)
+
         filepath = os.path.join(folder, filename)
         
         log_content = []
@@ -105,10 +160,27 @@ class RequestLogger:
             sanitized_headers = self._sanitize_headers(headers)
             for key, value in sanitized_headers.items():
                 log_content.append(f"{key}: {value}")
-        
+
+        # Show ST_METADATA information if it was stripped
+        if stripped_metadata:
+            log_content.append("\n" + "-" * 40)
+            log_content.append("STRIPPED ST_METADATA:")
+            log_content.append("-" * 40)
+            log_content.append(json.dumps(stripped_metadata, indent=2))
+
+        # Show original request data if different from forwarded data
+        if self.include_request_data and original_request_data and stripped_metadata:
+            log_content.append("\n" + "-" * 40)
+            log_content.append("ORIGINAL REQUEST DATA (AS RECEIVED):")
+            log_content.append("-" * 40)
+            log_content.append(json.dumps(original_request_data, indent=2))
+
         if self.include_request_data and request_data:
             log_content.append("\n" + "-" * 40)
-            log_content.append("REQUEST DATA:")
+            if stripped_metadata:
+                log_content.append("FORWARDED REQUEST DATA (AFTER STRIPPING ST_METADATA):")
+            else:
+                log_content.append("REQUEST DATA:")
             log_content.append("-" * 40)
             log_content.append(json.dumps(request_data, indent=2))
         
@@ -169,7 +241,7 @@ class RequestLogger:
     
     def log_models_request(self, request_id: str, headers: Dict[str, str],
                           response_data: Any, error: Exception = None,
-                          character_chat_info: Optional[Tuple[str, str]] = None) -> str:
+                          character_chat_info: Optional[Tuple[str, str, str]] = None) -> str:
         """Log models request as a single unified log
 
         Args:
@@ -177,7 +249,7 @@ class RequestLogger:
             headers: Request headers
             response_data: Response body data
             error: Exception if request failed
-            character_chat_info: Optional tuple of (character, chat) for organized logging
+            character_chat_info: Optional tuple of (character, timestamp, operation) for organized logging
 
         Returns:
             Path to log file if successful, empty string otherwise
@@ -186,7 +258,15 @@ class RequestLogger:
             return ""
 
         folder = self._get_log_folder(character_chat_info)
-        filename = self._get_timestamp_filename(request_id)
+
+        # Use sequenced filename if we have character_chat_info, otherwise use timestamp
+        if character_chat_info:
+            character, timestamp, operation = character_chat_info
+            # For models requests, use 'models' as the operation type
+            filename = self._get_sequenced_filename('models', folder)
+        else:
+            filename = self._get_timestamp_filename(request_id)
+
         filepath = os.path.join(folder, filename)
         
         log_content = []
