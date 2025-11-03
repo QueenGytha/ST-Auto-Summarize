@@ -301,11 +301,6 @@ function processPromptMacros(
  */
 // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 async function generate_running_scene_summary(skipQueue /*: boolean */ = false) /*: Promise<?string> */ {
-    if (!get_settings('running_scene_summary_enabled')) {
-        debug(SUBSYSTEM.RUNNING, 'Running scene summary disabled, skipping generation');
-        return null;
-    }
-
     const ctx = getContext();
     const chat = ctx.chat;
 
@@ -432,11 +427,6 @@ async function generate_running_scene_summary(skipQueue /*: boolean */ = false) 
  * @returns {Object|null} Scene data or null if invalid
  */
 function validateCombineRequest(scene_index /*: number */) /*: ?Object */ {
-    if (!get_settings('running_scene_summary_enabled')) {
-        debug(SUBSYSTEM.RUNNING, 'Running scene summary disabled, skipping combination');
-        return null;
-    }
-
     const ctx = getContext();
     const chat = ctx.chat;
     const message = chat[scene_index];
@@ -656,7 +646,6 @@ async function combine_scene_with_running_summary(scene_index /*: number */) /*:
  */
 // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 async function auto_generate_running_summary(scene_index /*: ?number */ = null) /*: Promise<void> */ {
-    if (!get_settings('running_scene_summary_enabled')) return;
     if (!get_settings('running_scene_summary_auto_generate')) return;
 
     debug(SUBSYSTEM.RUNNING, 'Auto-generating running scene summary for scene index:', scene_index);
@@ -769,10 +758,6 @@ function cleanup_invalid_running_summaries() {
  */
 // $FlowFixMe[signature-verification-failure]
 function get_running_summary_injection() {
-    if (!get_settings('running_scene_summary_enabled')) {
-        return "";
-    }
-
     const current = get_running_summary();
     if (!current || !current.content) {
         return "";

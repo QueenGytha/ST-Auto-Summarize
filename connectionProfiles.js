@@ -105,10 +105,8 @@ async function set_connection_profile(name /*: ?string */) /*: Promise<void> */ 
 
     // Set the connection profile
     debug(`Setting connection profile to "${name}"`)
-    if (get_settings('debug_mode')) {
-        // $FlowFixMe[cannot-resolve-name]
-        toastr.info(`Setting connection profile to "${name}"`);
-    }
+    // $FlowFixMe[cannot-resolve-name]
+    toastr.info(`Setting connection profile to "${name}"`);
     const ctx = getContext();
     await ctx.executeSlashCommandsWithOptions(`/profile ${name}`)
 

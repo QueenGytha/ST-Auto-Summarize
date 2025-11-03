@@ -33,7 +33,8 @@ Automatic scene break detection uses an LLM to analyze messages and determine if
 | `auto_scene_break_on_new_message` | boolean | true | Auto-check when new message arrives |
 | `auto_scene_break_generate_summary` | boolean | false | Auto-generate scene summary when scene break is detected (completes before checking next messages) |
 | `auto_scene_break_message_offset` | number | 1 | How many messages back from latest to skip (1 = skip latest, 0 = check all including latest) |
-| `auto_scene_break_check_which_messages` | string | "user" | Which messages to check: "user" (user only), "character" (AI only), "both" (all messages) |
+| `auto_scene_break_check_which_messages` | string | "both" | Which messages to check: "user" (user only), "character" (AI only), "both" (all messages) |
+| `auto_scene_break_recent_message_count` | number | 3 | How many recent messages matching the selected type to check when auto-scanning new messages (0 = scan entire history) |
 | `auto_scene_break_prompt` | string | (see below) | LLM prompt template for detection |
 | `auto_scene_break_prefill` | string | "" | Prefill to enforce true/false output (optional) |
 | `auto_scene_break_connection_profile` | string | "" | Optional API connection profile |
@@ -49,7 +50,7 @@ You are analyzing a roleplay conversation to detect scene breaks. A scene break 
 
 You will be given two messages: the previous message and the current message. Analyze whether the current message represents a scene break compared to the previous message.
 
-Previous message:
+Previous messages (oldest to newest):
 {{previous_message}}
 
 Current message:
@@ -63,6 +64,8 @@ Respond with ONLY a JSON object in this exact format:
 
 Do not include any text outside the JSON object.
 ```
+
+> **Tip:** `{{previous_message}}` and `{{previous_messages}}` both expand to the formatted list of prior messages (filtered by the "Check Which Messages" setting and limited by the recent message count).
 
 **Response Format:**
 The LLM returns a JSON object with:
@@ -126,6 +129,7 @@ async function manualSceneBreakDetection()
    - Get settings: enabled, offset, connection profile, preset
    - Get chat context and messages
    - Determine range of messages to check (startIndex to endIndex)
+   - For new message triggers, use `auto_scene_break_recent_message_count` to include the most recent matching messages of the selected type
 
 2. **Message Filtering** (`shouldCheckMessage`)
    - Check if already marked with `auto_scene_break_checked: true`
@@ -171,8 +175,8 @@ async function manualSceneBreakDetection()
 
 1. **MESSAGE_RECEIVED** / **MESSAGE_SENT**
    - Check `auto_scene_break_on_new_message` setting
-   - If enabled, call `processAutoSceneBreakDetection(latestIndex - N, latestIndex)`
-   - Where N is determined by `auto_scene_break_message_offset`
+   - If enabled, call `processAutoSceneBreakDetection(startIndex, latestIndex)`
+   - `startIndex` is derived from `auto_scene_break_recent_message_count` (limited to the selected message type) and `auto_scene_break_message_offset`
 
 2. **CHAT_CHANGED**
    - Check `auto_scene_break_on_load` setting
@@ -345,7 +349,7 @@ test('Manual scan trigger', async () => {
 ## Debugging and Troubleshooting
 
 ### Viewing Rationale in Logs
-Enable debug mode in settings to see detailed rationale for each decision:
+Debug output always includes detailed rationale for each decision:
 ```
 [AutoSummarize] [DEBUG] ✓ SCENE BREAK DETECTED for message 42
 [AutoSummarize] [DEBUG]   Rationale: Time skip indicated by 'the next morning'
@@ -369,7 +373,7 @@ This helps you understand why the LLM made each decision without digging through
 ### JSON Parsing Fallback
 If the LLM response doesn't contain valid JSON, the system falls back to simple text search:
 - Searches for "true" in response (case insensitive)
-- Logs warning about fallback in debug mode
+- Logs a warning about the fallback in the debug output
 - Rationale set to "No JSON found, fallback to text search"
 
 ## Edge Cases

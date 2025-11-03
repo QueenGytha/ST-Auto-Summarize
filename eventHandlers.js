@@ -177,10 +177,8 @@ async function handleMessageSwiped(index) {
 
 async function handleMessageSent() {
     if (!chat_enabled()) return;
-    if (get_settings('debug_mode')) {
-        if (last_scene_injection) {
-            debug(`[MEMORY INJECTION] scene_injection:\n${last_scene_injection}`);
-        }
+    if (last_scene_injection) {
+        debug(`[MEMORY INJECTION] scene_injection:\n${last_scene_injection}`);
     }
 }
 

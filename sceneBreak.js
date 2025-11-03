@@ -544,12 +544,6 @@ export function renderSceneBreak(
     // $FlowFixMe[missing-this-annot]
     $sceneBreak.find('.scene-regenerate-running').off('click').on('click', async function(e) {
         e.stopPropagation();
-        if (!get_settings('running_scene_summary_enabled')) {
-            // $FlowFixMe[cannot-resolve-name]
-            alert('Running scene summary is not enabled. Enable it in settings first.');
-            return;
-        }
-
         const sceneSummary = get_data(message, SCENE_SUMMARY_MEMORY_KEY);
         if (!sceneSummary) {
             // $FlowFixMe[cannot-resolve-name]

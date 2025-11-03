@@ -142,8 +142,7 @@ function createRunningSceneSummaryNavbar() {
  * Update the navbar visibility and content
  */
 function updateRunningSceneSummaryNavbar() {
-    const show = get_settings('running_scene_summary_enabled') &&
-                 get_settings('running_scene_summary_show_navbar');
+    const show = get_settings('running_scene_summary_show_navbar');
 
     // $FlowFixMe[cannot-resolve-name]
     const $controls = $('#scene-summary-navigator-bar .running-summary-controls');

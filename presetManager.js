@@ -25,9 +25,6 @@ async function set_preset(name /*: string */) /*: Promise<void> */ {
 
     // Set the completion preset
     debug(`Setting completion preset to ${name}`)
-    if (get_settings('debug_mode')) {
-        // commented out toast // toastr.info(`Setting completion preset to ${name}`);
-    }
     const ctx = getContext();
     await ctx.executeSlashCommandsWithOptions(`/preset ${name}`)
 }

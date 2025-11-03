@@ -383,7 +383,7 @@ If a category has too many entities (50+), consider:
 
 Ensure category indexes don't trigger child entries:
 1. Check lorebook entry has `excludeRecursion: true`
-2. Test by viewing prompt context in debug mode
+2. Test by viewing prompt context; the always-on debug logs will list injected content
 3. Verify only index entries appear, not all entities
 
 ### 4. Use Descriptive Entity Names

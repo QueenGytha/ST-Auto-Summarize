@@ -10,7 +10,6 @@ import {
     css_message_div,
     css_single_message_summary,
     css_exclude_memory,
-    css_lagging_memory,
     summary_reasoning_class,
     edit_memory,
     refresh_memory,
@@ -33,17 +32,12 @@ function get_message_div(index /*: number */) /*: any */ {
 function get_summary_style_class(message /*: STMessage */) /*: string */ {
     const include = get_data(message, 'include');
     const exclude = get_data(message, 'exclude');  // force-excluded by user
-    const lagging = get_data(message, 'lagging');  // not injected yet
 
     let style = ""
     if (include === "Summary of message(s)") {  // included as single message summary
         style = css_single_message_summary
     } else if (exclude) {  // marked as force-excluded
         style = css_exclude_memory
-    }
-
-    if (lagging) {
-        style = `${style} ${css_lagging_memory}`
     }
 
     return style

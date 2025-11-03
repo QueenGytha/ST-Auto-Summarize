@@ -19,7 +19,6 @@ These apply to ALL profiles and are accessed directly:
 ```javascript
 // CORRECT for global settings
 const nameTemplate = extension_settings?.autoLorebooks?.nameTemplate;
-const debugMode = extension_settings?.autoLorebooks?.debug_mode;
 const entityTypes = extension_settings?.autoLorebooks?.entity_types;
 ```
 
@@ -28,7 +27,6 @@ const entityTypes = extension_settings?.autoLorebooks?.entity_types;
 - `nameTemplate`
 - `deleteOnChatDelete`
 - `autoReorderAlphabetically`
-- `debug_mode`
 - `entity_types`
 - `queue.enabled`
 - `queue.use_lorebook`
@@ -237,8 +235,8 @@ const mergePrompt = getSummaryProcessingSetting('merge_prompt');
 
 **Direct access is fine:**
 ```javascript
-const debugMode = extension_settings?.autoLorebooks?.debug_mode;
 const entityTypes = extension_settings?.autoLorebooks?.entity_types;
+// Debug logging is always enabled; the former debug_mode switch has been removed.
 ```
 
 ---

@@ -40,8 +40,6 @@ function log(subsystem /*: any */, ...args /*: Array<any> */) /*: void */ {
 // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 function debug(subsystem /*: any */, ...args /*: Array<any> */) /*: void */ {
     // subsystem and args are any type for flexible logging - legitimate use of any
-    if (!get_settings('debug_mode')) return;
-
     // Always log with prefix - subsystem check not needed as both branches are identical
     console.log(LOG_PREFIX, '[DEBUG]', subsystem, ...args);
 }
@@ -76,7 +74,7 @@ const toast_debounced = debounce(toast, 500);
  * IMPORTANT: All extension code MUST use the centralized logging functions (log, debug, error)
  * instead of raw console.log/error/debug calls. This ensures:
  * 1. ALL logs have the [AutoSummarize] prefix for easy filtering
- * 2. Debug logs can be toggled via the debug_mode setting
+ * 2. Debug logs are consistently available for tracing issues
  * 3. Error logs automatically show toast notifications to the user
  * 4. Consistent formatting across the entire extension
  *

@@ -106,25 +106,13 @@ By default, text is greyed to indicate that is it not injected.
 .auto_summarize_single_message_summary {
     color: var(--auto_summarize_short);
 }
-.auto_summarize_single_message_summary.auto_summarize_lagging_memory {
-    color: rgba(from var(--auto_summarize_short) r g b / var(--auto_summarize_redundant_opacity));
-    text-shadow: none;
-}
 /* to style long-term memories. */
 .auto_summarize_long_memory {
     color: var(--auto_summarize_long);
 }
-.auto_summarize_long_memory.auto_summarize_lagging_memory {
-    color: rgba(from var(--auto_summarize_long) r g b / var(--auto_summarize_redundant_opacity));
-    text-shadow: none;
-}
 /* to style memories marked for long-term, but are past the context limit */
 .auto_summarize_old_memory {
     color: var(--auto_summarize_old);
-}
-.auto_summarize_old_memory.auto_summarize_lagging_memory {
-    color: rgba(from var(--auto_summarize_old) r g b / var(--auto_summarize_redundant_opacity));
-    text-shadow: none;
 }
 /* to style memories that are force-excluded */
 .auto_summarize_exclude_memory {

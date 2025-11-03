@@ -51,7 +51,6 @@ function initialize_settings() {
             nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
             deleteOnChatDelete: true,
             autoReorderAlphabetically: true,
-            debug_mode: true,
             entity_types: [...DEFAULT_ENTITY_TYPES],
             queue: {
                 enabled: true,
@@ -66,7 +65,6 @@ function initialize_settings() {
             nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
             deleteOnChatDelete: true,
             autoReorderAlphabetically: true,
-            debug_mode: true,
             entity_types: [...DEFAULT_ENTITY_TYPES],
             queue: {
                 enabled: true,

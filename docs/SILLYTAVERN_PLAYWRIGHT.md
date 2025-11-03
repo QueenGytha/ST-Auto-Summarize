@@ -114,8 +114,8 @@ const sceneSummary = message.swipe_info?.[swipeId]?.extra?.auto_summarize_memory
 
 ## Console Logs for Debugging
 
-**Enable Debug Mode:**
-The extension outputs detailed console logs when debug mode is enabled in settings.
+**Verbose Logging:**
+The extension always emits detailed console logs to aid debugging.
 
 **Key Log Patterns:**
 

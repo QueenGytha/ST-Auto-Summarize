@@ -19,6 +19,8 @@ import {
     get_current_connection_profile,
 } from './index.js';
 
+const DEFAULT_RECENT_MESSAGE_COUNT = 3;
+
 // Module-level cancellation token for the current scan
 // This allows us to cancel delays when user aborts
 let currentScanCancellationToken = null;
@@ -81,6 +83,71 @@ function shouldCheckMessage(
     }
 
     return true;
+}
+
+// Helper: Determine if a message matches the configured type filter
+// $FlowFixMe[missing-local-annot]
+function messageMatchesType(message, checkWhich /*: string */) /*: boolean */ {
+    if (!message) {
+        return false;
+    }
+
+    if (!message.mes || message.mes.trim() === '') {
+        return false;
+    }
+
+    if (message.extra?.type === 'system') {
+        return false;
+    }
+
+    if (checkWhich === 'user') {
+        return Boolean(message.is_user);
+    }
+
+    if (checkWhich === 'character') {
+        return !message.is_user;
+    }
+
+    return true; // 'both' or any other value defaults to all non-system messages
+}
+
+// Helper: Collect matching messages before the current index for prompt context
+// $FlowFixMe[missing-local-annot]
+function collectContextMessages(chat /*: Array<STMessage> */, index /*: number */, checkWhich /*: string */, count /*: number */) /*: Array<STMessage> */ {
+    const contextMessages = [];
+    if (!chat || chat.length === 0) {
+        return contextMessages;
+    }
+
+    const limit = count > 0 ? count : Number.POSITIVE_INFINITY;
+
+    for (let i = index - 1; i >= 0; i--) {
+        const message = chat[i];
+        if (!messageMatchesType(message, checkWhich)) {
+            continue;
+        }
+
+        contextMessages.push(message);
+        if (contextMessages.length >= limit) {
+            break;
+        }
+    }
+
+    return contextMessages.reverse();
+}
+
+// Helper: Format messages for the detection prompt
+// $FlowFixMe[missing-local-annot]
+function formatContextMessagesForPrompt(messages /*: Array<STMessage> */) /*: string */ {
+    if (!messages || messages.length === 0) {
+        return '(No previous messages available for comparison)';
+    }
+
+    return messages.map((msg, idx) => {
+        const speaker = msg.is_user ? '[USER]' : '[CHARACTER]';
+        const numbering = messages.length > 1 ? `${idx + 1}. ` : '';
+        return `${numbering}${speaker} ${msg.mes}`;
+    }).join('\n\n');
 }
 
 // Helper: Parse scene break detection response
@@ -176,12 +243,13 @@ async function restoreSettings(ctx, saved) {
 
 // Helper: Build detection prompt
 // $FlowFixMe[missing-local-annot]
-function buildDetectionPrompt(ctx, promptTemplate, message, previousMessage, prefill) {
-    const previousText = previousMessage ? previousMessage.mes : '(No previous message - this is the first message)';
+function buildDetectionPrompt(ctx, promptTemplate, message, contextMessages, prefill) {
+    const previousText = formatContextMessagesForPrompt(contextMessages);
 
     let prompt = promptTemplate;
     if (ctx.substituteParamsExtended) {
         prompt = ctx.substituteParamsExtended(prompt, {
+            previous_messages: previousText,
             previous_message: previousText,
             current_message: message.mes,
             message: message.mes,
@@ -189,6 +257,7 @@ function buildDetectionPrompt(ctx, promptTemplate, message, previousMessage, pre
         }) || prompt;
     }
 
+    prompt = prompt.replace(/\{\{previous_messages\}\}/g, previousText);
     prompt = prompt.replace(/\{\{previous_message\}\}/g, previousText);
     prompt = prompt.replace(/\{\{current_message\}\}/g, message.mes);
     prompt = prompt.replace(/\{\{message\}\}/g, message.mes);
@@ -218,9 +287,15 @@ async function detectSceneBreak(
         const prefill = get_settings('auto_scene_break_prefill') || '';
         const profile = get_settings('auto_scene_break_connection_profile');
         const preset = get_settings('auto_scene_break_completion_preset');
+        const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
+        const contextCountRaw = Number(get_settings('auto_scene_break_recent_message_count'));
+        const contextCount = Number.isFinite(contextCountRaw) ? Math.max(0, contextCountRaw) : DEFAULT_RECENT_MESSAGE_COUNT;
+
+        const chat = ctx.chat || [];
+        const contextMessages = collectContextMessages(chat, messageIndex, checkWhich, contextCount);
 
         // Build prompt
-        const prompt = buildDetectionPrompt(ctx, promptTemplate, message, previousMessage, prefill);
+        const prompt = buildDetectionPrompt(ctx, promptTemplate, message, contextMessages, prefill);
 
         // Switch to detection profile/preset and save current
         const saved = await switchToDetectionSettings(ctx, profile, preset);
@@ -647,7 +722,7 @@ export async function processAutoSceneBreakDetection(
 
     // Get settings and determine range
     const offset = Number(get_settings('auto_scene_break_message_offset')) ?? 0;
-    const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'user';
+    const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
     const latestIndex = chat.length - 1;
     const start = startIndex !== null ? startIndex : 0;
     const end = endIndex !== null ? endIndex : latestIndex;
@@ -728,18 +803,50 @@ export async function processNewMessageForSceneBreak(messageIndex /*: number */)
     // Calculate range based on offset
     // If offset = 1 and new message is at index 10, check messages 0 to 9
     // If offset = 0 and new message is at index 10, check messages 0 to 10
-    const endIndex = messageIndex - offset;
+    const ctx = getContext();
+    const chat = ctx.chat;
+
+    if (!chat || chat.length === 0) {
+        debug(SUBSYSTEM.SCENE, 'No chat messages available for scene break processing');
+        return;
+    }
+
+    const endIndexRaw = messageIndex - offset;
+    const endIndex = Math.min(endIndexRaw, chat.length - 1);
 
     if (endIndex < 0) {
         debug(SUBSYSTEM.SCENE, 'No messages to check based on offset - messageIndex:', messageIndex, 'offset:', offset);
         return;
     }
 
-    debug(SUBSYSTEM.SCENE, 'New message at index', messageIndex, ', checking up to', endIndex);
+    const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
+    const recentCountRaw = Number(get_settings('auto_scene_break_recent_message_count'));
+    const recentCount = Number.isFinite(recentCountRaw) ? Math.max(0, recentCountRaw) : DEFAULT_RECENT_MESSAGE_COUNT;
 
-    // Only process the range that might include new unchecked messages
-    // For efficiency, only check the last few messages
-    const startIndex = Math.max(0, endIndex - 5); // Check last 5 messages max
+    let startIndex = 0;
+    if (recentCount > 0) {
+        let matchedCount = 0;
+        startIndex = endIndex;
+        for (let i = endIndex; i >= 0; i--) {
+            if (messageMatchesType(chat[i], checkWhich)) {
+                matchedCount++;
+                startIndex = i;
+                if (matchedCount >= recentCount) {
+                    break;
+                }
+            }
+
+            if (i === 0) {
+                startIndex = 0;
+            }
+        }
+
+        if (matchedCount < recentCount) {
+            startIndex = 0;
+        }
+    }
+
+    debug(SUBSYSTEM.SCENE, 'New message at index', messageIndex, ', checking range', startIndex, 'to', endIndex, '(recent count:', recentCount, ', type:', checkWhich, ')');
 
     log(SUBSYSTEM.SCENE, 'Processing auto scene break detection for range', startIndex, 'to', endIndex);
     await processAutoSceneBreakDetection(startIndex, endIndex);

@@ -3,7 +3,6 @@
 const css_message_div = "auto_summarize_memory_display"
 const css_single_message_summary = "auto_summarize_single_message_summary"
 const css_exclude_memory = `auto_summarize_exclude_memory`
-const css_lagging_memory = `auto_summarize_lagging_memory`
 const summary_div_class = `auto_summarize_memory_text`  // class put on all added summary divs to identify them
 const summary_reasoning_class = 'auto_summarize_memory_reasoning'
 const css_button_separator = `auto_summarize_memory_button_separator`
@@ -32,7 +31,6 @@ export {
     css_message_div,
     css_single_message_summary,
     css_exclude_memory,
-    css_lagging_memory,
     summary_div_class,
     summary_reasoning_class,
     css_button_separator,

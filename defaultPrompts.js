@@ -481,27 +481,36 @@ Scene content:
 {{message}}`;
 
 
-export const auto_scene_break_detection_prompt = `You are analyzing a roleplay conversation to detect scene breaks. A scene break occurs when there is a significant shift in:
-- Location or setting (moving to a different place)
-- Time period (significant time skip like "later that day", "the next morning", etc.)
-- Narrative focus or POV (switching to different characters or perspective)
-- Major plot transition (end of one story arc, beginning of another)
+export const auto_scene_break_detection_prompt = `You are segmenting a roleplay transcript into scene-sized chunks (short, chapter-like story beats). Determine whether the CURRENT message begins a new scene relative to the PREVIOUS message. A scene break means the prior beat resolved and the story now shifts focus.
 
-You will be given two messages: the previous message and the current message. Analyze whether the current message represents a scene break compared to the previous message.
+Scene break if the current message clearly does at least one of:
+- Moves to a new location or setting.
+- Skips time with explicit cues ("Later...", "The next morning...", timestamps).
+- Switches primary characters or point of view to a different group.
+- Starts a new objective or major conflict after the previous one concluded.
+- Includes explicit separators or OOC markers ("---", "Scene Break", "Chapter 3", GM notes resetting play).
 
-Previous message:
+Do NOT mark a break when:
+- The current line is a reaction, continuation, or escalation of the same exchange.
+- Minor topic shifts happen within the same setting, participants, and timeframe.
+- The message is meta chatter that does not advance the narrative.
+
+Decision process:
+1. Check for explicit separators or time/scene headers and mark a break if present.
+2. Otherwise compare setting, time, cast, and objective; mark a break only if there is a clear change.
+3. If evidence is ambiguous, treat it as a continuation (status false).
+
+Previous messages (oldest to newest):
 {{previous_message}}
 
 Current message:
 {{current_message}}
 
-Respond with ONLY a JSON object in this exact format:
+Return ONLY valid JSON:
 {
   "status": true or false,
-  "rationale": "Brief 1-sentence explanation of why this is or isn't a scene break"
-}
-
-Do not include any text outside the JSON object.`;
+  "rationale": "Quote the key cue that triggered your decision"
+}`;
 
 
 export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
