@@ -40,10 +40,7 @@ export const OperationType /*: { [key: string]: OperationTypeType } */ = /*:: ( 
     GENERATE_SCENE_NAME: 'generate_scene_name',
     GENERATE_RUNNING_SUMMARY: 'generate_running_summary',
     COMBINE_SCENE_WITH_RUNNING: 'combine_scene_with_running',
-    GENERATE_COMBINED_SUMMARY: 'generate_combined_summary',
-    // Legacy monolithic operation (deprecated, kept for backward compat)
-    PROCESS_LOREBOOK_ENTRY: 'process_lorebook_entry',
-    // New multi-stage lorebook operations
+    // Multi-stage lorebook operations
     LOREBOOK_ENTRY_LOOKUP: 'lorebook_entry_lookup',
     RESOLVE_LOREBOOK_ENTRY: 'resolve_lorebook_entry',
     CREATE_LOREBOOK_ENTRY: 'create_lorebook_entry',
@@ -54,7 +51,7 @@ export const OperationType /*: { [key: string]: OperationTypeType } */ = /*:: ( 
 // Flow type definitions
 /*::
 type OperationStatusType = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
-type OperationTypeType = 'summarize_message' | 'validate_summary' | 'detect_scene_break' | 'generate_scene_summary' | 'generate_scene_name' | 'generate_running_summary' | 'combine_scene_with_running' | 'generate_combined_summary' | 'process_lorebook_entry' | 'lorebook_entry_lookup' | 'resolve_lorebook_entry' | 'create_lorebook_entry' | 'merge_lorebook_entry' | 'update_lorebook_registry';
+type OperationTypeType = 'summarize_message' | 'validate_summary' | 'detect_scene_break' | 'generate_scene_summary' | 'generate_scene_name' | 'generate_running_summary' | 'combine_scene_with_running' | 'lorebook_entry_lookup' | 'resolve_lorebook_entry' | 'create_lorebook_entry' | 'merge_lorebook_entry' | 'update_lorebook_registry';
 
 type ConnectionSettings = {
     +connectionProfile?: string,  // undefined = "same as current" (readonly for Flow variance)

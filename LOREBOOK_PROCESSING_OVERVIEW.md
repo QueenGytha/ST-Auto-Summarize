@@ -363,7 +363,7 @@ AI merge: "Alice's blonde hair shimmers. [Previously described with brown hair]"
 
 ### Setup
 - Chat started with character "Aria"
-- Lorebook auto-created: "z-AutoLB - Aria - 20250124"
+- Lorebook auto-created: "z-AutoLB-Aria - 20250124"
 - Tracking entries initialized (GM Notes, Character Stats)
 
 ### Scene 1: Introduction
@@ -445,7 +445,7 @@ AI: "Marcus vaults over the bar, grabbing a club. 'I've got your back!' he shout
 
 ### Final State
 
-**Lorebook "z-AutoLB - Aria - 20250124"**:
+**Lorebook "z-AutoLB-Aria - 20250124"**:
 
 **Always Active Entries**:
 - `[Characters: Marcus, Bandit Group]` (category index)

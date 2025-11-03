@@ -75,8 +75,8 @@ const OPERATION_LLM_EXPECTATIONS /*: {[string]: {expectedCalls: number, reason: 
         reason: 'Single scene summary generation'
     },
     'generate_scene_name': {
-        expectedCalls: 0,
-        reason: 'Currently placeholder, no LLM call'
+        expectedCalls: 1,
+        reason: 'Single scene name generation from summary'
     },
     'generate_running_summary': {
         expectedCalls: 1,
@@ -107,12 +107,6 @@ const OPERATION_LLM_EXPECTATIONS /*: {[string]: {expectedCalls: number, reason: 
     'update_lorebook_registry': {
         expectedCalls: 0,
         reason: 'No LLM call - just updates registry content'
-    },
-
-    // Legacy lorebook operation (deprecated but kept for compatibility)
-    'process_lorebook_entry': {
-        expectedCalls: 1,  // VIOLATION - should be split
-        reason: 'DEPRECATED: Contains multiple LLM calls (triage + resolution + merge). Use new pipeline instead.'
     },
 
     // Standalone merge operation

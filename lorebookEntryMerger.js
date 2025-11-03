@@ -220,7 +220,7 @@ export async function mergeLorebookEntry(lorebookName /*: string */, existingEnt
                     newSecondaryKeys: newEntryData.secondaryKeys
                 },
                 {
-                    priority: 0,
+                    priority: 10,  // Medium-high priority - lorebook processing pipeline
                     metadata: {
                         entry_comment: existingEntry.comment
                     }

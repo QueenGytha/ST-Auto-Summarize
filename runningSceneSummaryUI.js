@@ -9,6 +9,9 @@ import {
     error,
     toast,
     get_data,
+    refresh_memory,
+    renderSceneNavigatorBar,
+    clear_all_summaries_for_chat,
 } from './index.js';
 import {
     get_running_summary_versions,
@@ -43,6 +46,18 @@ function createRunningSceneSummaryNavbar() {
             <option value="-1">No Running Summary</option>
         </select>
         <button id="running_summary_edit_btn" class="menu_button fa-solid fa-edit" title="Edit running summary" style="width: 90%;"></button>
+        <button id="running_summary_clear_all_btn" class="menu_button" title="Clear all summaries and reset scene tracking" style="
+            width: 90%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 11px;
+            text-transform: none;
+        ">
+            <i class="fa-solid fa-broom"></i>
+            <span>Clear All Summaries</span>
+        </button>
     </div>
     `;
 
@@ -133,6 +148,12 @@ function createRunningSceneSummaryNavbar() {
         } catch (err) {
             error(SUBSYSTEM.RUNNING, 'Failed to edit running summary', err);
         }
+    });
+
+    // Clear all summaries handler
+    // $FlowFixMe[cannot-resolve-name]
+    $('#running_summary_clear_all_btn').on('click', async () => {
+        await handleClearAllSummariesClick();
     });
 
     debug(SUBSYSTEM.RUNNING, 'Running scene summary controls added to navigator bar');
@@ -233,6 +254,94 @@ function updateVersionSelector() {
     $('#running_summary_edit_btn').prop('disabled', false);
 
     debug(SUBSYSTEM.RUNNING, `Version selector updated: ${validVersions.length} valid versions (${versions.length - validVersions.length} filtered), current: ${currentVersion}`);
+}
+
+/**
+ * Simple pluralization helper for toast messaging
+ * @param {number} count
+ * @param {string} noun
+ */
+function formatCount(count, noun) {
+    return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
+/**
+ * Handle the "Clear All Summaries" button flow
+ */
+async function handleClearAllSummariesClick() {
+    const ctx = getContext();
+
+    const html = `
+        <div style="max-width: 420px;">
+            <h3>Clear All Summaries?</h3>
+            <p>This removes every generated summary, scene break marker, running scene summary version, and scene break scan history for the current chat.</p>
+            <p>Messages and lorebooks stay untouched.</p>
+            <p><strong>This action cannot be undone.</strong></p>
+        </div>
+    `;
+
+    try {
+        const confirmed = await ctx.callPopup?.(html, 'text', undefined, {
+            okButton: 'Clear Everything',
+            cancelButton: 'Cancel',
+            wide: true,
+        });
+
+        if (!confirmed) {
+            debug(SUBSYSTEM.RUNNING, '[Reset] Clear summaries cancelled by user');
+            return;
+        }
+
+        const result = clear_all_summaries_for_chat();
+        const anyCleared = Object.values(result).some(count => typeof count === 'number' && count > 0);
+
+        if (!anyCleared) {
+            toast('No summary data found to clear for this chat', 'info');
+            return;
+        }
+
+        refresh_memory();
+        renderSceneNavigatorBar();
+        updateRunningSceneSummaryNavbar();
+        updateVersionSelector();
+
+        const breakdown = [];
+        if (result.singleSummariesCleared) {
+            breakdown.push(formatCount(result.singleSummariesCleared, 'single-message summary'));
+        }
+        if (result.sceneSummariesCleared) {
+            breakdown.push(formatCount(result.sceneSummariesCleared, 'scene summary'));
+        }
+
+        const extras = [];
+        if (result.runningSummaryCleared) {
+            extras.push(formatCount(result.runningSummaryCleared, 'running summary version'));
+        }
+        if (result.sceneBreaksCleared) {
+            extras.push(formatCount(result.sceneBreaksCleared, 'scene break marker'));
+        }
+        if (result.checkedFlagsCleared) {
+            extras.push(formatCount(result.checkedFlagsCleared, 'checked flag'));
+        }
+        if (result.swipeSummariesCleared) {
+            extras.push(formatCount(result.swipeSummariesCleared, 'swipe record'));
+        }
+
+        let message = '';
+        if (result.messageMetadataCleared) {
+            const details = breakdown.length ? ` (${breakdown.join(', ')})` : '';
+            message = `Removed summary metadata from ${formatCount(result.messageMetadataCleared, 'message')}${details}.`;
+        }
+        if (extras.length) {
+            message += `${message ? ' ' : ''}Also cleared ${extras.join(', ')}.`;
+        }
+
+        toast(message.trim() || 'Cleared summary data.', 'success');
+        debug(SUBSYSTEM.RUNNING, '[Reset] Cleared summaries successfully', result);
+    } catch (err) {
+        error(SUBSYSTEM.RUNNING, 'Failed to clear summaries', err);
+        toast('Failed to clear summaries. Check console for details.', 'error');
+    }
 }
 
 // Make functions globally accessible for scene navigator refresh

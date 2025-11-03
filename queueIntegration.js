@@ -26,7 +26,7 @@ export async function queueValidateSummary(summary /*: string */, type /*: strin
         OperationType.VALIDATE_SUMMARY,
         { summary, type },
         {
-            priority: options.priority ?? 1, // Higher priority for validation
+            priority: options.priority ?? 5,  // Medium priority - nice-to-have enhancement
             dependencies: options.dependencies ?? [],
             metadata: {
                 validation_type: type,
@@ -47,7 +47,7 @@ export async function queueDetectSceneBreak(index /*: number */, options /*: {pr
         OperationType.DETECT_SCENE_BREAK,
         { index },
         {
-            priority: options.priority ?? 0,
+            priority: options.priority ?? -10,  // Lowest priority - detection can wait for important operations
             dependencies: options.dependencies ?? [],
             metadata: {
                 message_index: index,
@@ -98,7 +98,7 @@ export async function queueGenerateRunningSummary(options /*: {priority?: number
         OperationType.GENERATE_RUNNING_SUMMARY,
         {},
         {
-            priority: options.priority ?? 0,
+            priority: options.priority ?? 15,  // High priority - important narrative synthesis
             dependencies: options.dependencies ?? [],
             metadata: {
                 ...options.metadata
@@ -118,7 +118,7 @@ export async function queueCombineSceneWithRunning(index /*: number */, options 
         OperationType.COMBINE_SCENE_WITH_RUNNING,
         { index },
         {
-            priority: options.priority ?? 0,
+            priority: options.priority ?? 15,  // High priority - important narrative synthesis
             dependencies: options.dependencies ?? [],
             metadata: {
                 scene_index: index,
@@ -245,7 +245,7 @@ async function enqueueLorebookEntryLookupOperation(
         OperationType.LOREBOOK_ENTRY_LOOKUP,
         { entryId: context.entryId, entryData: context.normalizedEntry, registryListing: context.registryListing, typeList: context.typeList },
         {
-            priority: options.priority ?? 0,
+            priority: options.priority ?? 10,  // Medium-high priority - lorebook processing pipeline
             dependencies: options.dependencies ?? [],
             metadata: {
                 entry_name: entryName,

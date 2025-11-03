@@ -105,3 +105,7 @@ temp/
 CLAUDE.md
 ai-centralization
 package-lock.json
+
+# Development files
+TODO.txt
+console.txt

@@ -20,8 +20,9 @@ import {
     debounce,
     debounce_timeout,
     SUBSYSTEM,
+    saveChatDebounced,
 } from './index.js';
-import { get_running_summary_injection } from './runningSceneSummary.js';
+import { get_running_summary_injection, clear_running_scene_summaries } from './runningSceneSummary.js';
 
 // INJECTION RECORDING FOR LOGS
 // $FlowFixMe[signature-verification-failure]
@@ -176,6 +177,103 @@ function concatenate_summaries(indexes /*: Array<number> */) /*: string */ {
     return JSON.stringify(summaries, null, 2);
 }
 
+/**
+ * Clear all summary-related metadata for the current chat
+ * @returns {Object} Counts describing what was cleared
+ */
+function clear_all_summaries_for_chat() {
+    const ctx = getContext();
+    const chat = ctx.chat;
+
+    if (!Array.isArray(chat) || chat.length === 0) {
+        debug(SUBSYSTEM.MEMORY, 'No chat loaded while attempting to clear summaries');
+        return {
+            messageMetadataCleared: 0,
+            singleSummariesCleared: 0,
+            sceneSummariesCleared: 0,
+            sceneBreaksCleared: 0,
+            checkedFlagsCleared: 0,
+            swipeSummariesCleared: 0,
+            runningSummaryCleared: 0,
+        };
+    }
+
+    let messageMetadataCleared = 0;
+    let singleSummariesCleared = 0;
+    let sceneSummariesCleared = 0;
+    let sceneBreaksCleared = 0;
+    let checkedFlagsCleared = 0;
+    let swipeSummariesCleared = 0;
+
+    for (const message of chat) {
+        const moduleData = message?.extra?.[MODULE_NAME];
+
+        if (moduleData) {
+            messageMetadataCleared++;
+
+            if (moduleData.memory) {
+                singleSummariesCleared++;
+            }
+
+            if (
+                moduleData.scene_summary_memory ||
+                (Array.isArray(moduleData.scene_summary_versions) && moduleData.scene_summary_versions.length > 0)
+            ) {
+                sceneSummariesCleared++;
+            }
+
+            if (moduleData.scene_break) {
+                sceneBreaksCleared++;
+            }
+
+            if (moduleData.auto_scene_break_checked) {
+                checkedFlagsCleared++;
+            }
+
+            delete message.extra[MODULE_NAME];
+            if (message.extra && Object.keys(message.extra).length === 0) {
+                delete message.extra;
+            }
+        }
+
+        if (Array.isArray(message?.swipe_info)) {
+            for (const swipe of message.swipe_info) {
+                if (swipe?.extra?.[MODULE_NAME]) {
+                    delete swipe.extra[MODULE_NAME];
+                    if (swipe.extra && Object.keys(swipe.extra).length === 0) {
+                        delete swipe.extra;
+                    }
+                    swipeSummariesCleared++;
+                }
+            }
+        }
+    }
+
+    const runningSummaryCleared = clear_running_scene_summaries();
+
+    saveChatDebounced();
+
+    debug(
+        SUBSYSTEM.MEMORY,
+        `[Reset] Cleared summaries: messages=${messageMetadataCleared}, single=${singleSummariesCleared}, scenes=${sceneSummariesCleared}, sceneBreaks=${sceneBreaksCleared}, checked=${checkedFlagsCleared}, swipes=${swipeSummariesCleared}, runningVersions=${runningSummaryCleared}`
+    );
+
+    if (typeof window !== 'undefined') {
+        // Flag scene break detector to perform a full rescan on next run
+        window.autoSummarizeForceSceneBreakRescan = true;
+    }
+
+    return {
+        messageMetadataCleared,
+        singleSummariesCleared,
+        sceneSummariesCleared,
+        sceneBreaksCleared,
+        checkedFlagsCleared,
+        swipeSummariesCleared,
+        runningSummaryCleared,
+    };
+}
+
 // $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 function collect_chat_messages(include /*: string */) /*: Array<number> */ {
     // Get a list of chat message indexes identified by the given criteria
@@ -252,6 +350,7 @@ export {
     check_message_exclusion,
     collect_chat_messages,
     concatenate_summaries,
+    clear_all_summaries_for_chat,
     refresh_memory,
     refresh_memory_debounced,
     last_scene_injection

@@ -1171,115 +1171,6 @@ export async function processSummaryToLorebook(summary /*: any */, options /*: a
 }
 
 /**
- * Validates entry input data
- * @param {any} entryData - Entry data to validate
- * @returns {{valid: boolean, error?: string}} - Validation result
- */
-function validateEntryInput(entryData /*: any */) /*: any */ {
-    if (!entryData) {
-        return { valid: false, error: 'No entry data provided' };
-    }
-    return { valid: true };
-}
-
-/**
- * Loads processing configuration including entity types and lorebook name
- * @param {any} _options - Processing options (reserved for future use)
- * @returns {{lorebookName: string|null, entityTypeDefs: any[], entityTypeMap: Map<string, any>}} - Configuration
- */
-function loadProcessingConfig(_options /*: any */ = {}) /*: any */ {
-    const lorebookName = getAttachedLorebook();
-    if (!lorebookName) {
-        error('No lorebook attached to process entry');
-        return { lorebookName: null, entityTypeDefs: [], entityTypeMap: new Map() };
-    }
-
-    const entityTypeDefs = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
-    const entityTypeMap = createEntityTypeMap(entityTypeDefs);
-
-    return { lorebookName, entityTypeDefs, entityTypeMap };
-}
-
-/**
- * Normalizes and types the entry data
- * @param {any} entryData - Raw entry data
- * @param {any[]} entityTypeDefs - Entity type definitions
- * @param {Map<string, any>} entityTypeMap - Entity type map
- * @returns {any} - Normalized entry
- */
-function normalizeAndTypeEntry(entryData /*: any */, entityTypeDefs /*: any */, entityTypeMap /*: any */) /*: any */ {
-    const normalizedEntry = normalizeEntryData(entryData);
-    let typeName = normalizedEntry.type || (typeof entryData.type === 'string' ? sanitizeEntityTypeName(entryData.type) : '');
-    if (!typeName) {
-        typeName = entityTypeDefs[0]?.name || 'character';
-    }
-    const initialTypeDef = entityTypeMap.get(typeName) || null;
-    normalizedEntry.type = initialTypeDef ? initialTypeDef.name : typeName;
-    applyEntityTypeFlagsToEntry(normalizedEntry, initialTypeDef);
-    debug(`Processing lorebook entry: ${normalizedEntry.comment}`);
-    return normalizedEntry;
-}
-
-/**
- * Builds the processing context object
- * @param {string} lorebookName - Name of the lorebook
- * @param {any} normalizedEntry - Normalized entry
- * @param {any[]} existingEntries - Existing entries
- * @param {Map<string, any>} existingEntriesMap - Map of existing entries
- * @param {any} registryState - Registry state
- * @param {any[]} entityTypeDefs - Entity type definitions
- * @param {Map<string, any>} entityTypeMap - Entity type map
- * @param {boolean} useQueue - Whether to use queue
- * @returns {any} - Processing context
- */
-function buildProcessingContext(
-    lorebookName /*: string */,
-    normalizedEntry /*: any */,
-    existingEntries /*: any */,
-    existingEntriesMap /*: any */,
-    registryState /*: any */,
-    entityTypeDefs /*: any */,
-    entityTypeMap /*: any */,
-    useQueue /*: boolean */
-) /*: any */ {
-    // Build summary settings object using profile-aware getter
-    const summarySettings = {
-        merge_connection_profile: getSummaryProcessingSetting('merge_connection_profile', ''),
-        merge_completion_preset: getSummaryProcessingSetting('merge_completion_preset', ''),
-        merge_prefill: getSummaryProcessingSetting('merge_prefill', ''),
-        merge_prompt: getSummaryProcessingSetting('merge_prompt', ''),
-        lorebook_entry_lookup_connection_profile: getSummaryProcessingSetting('lorebook_entry_lookup_connection_profile', ''),
-        lorebook_entry_lookup_completion_preset: getSummaryProcessingSetting('lorebook_entry_lookup_completion_preset', ''),
-        lorebook_entry_lookup_prefill: getSummaryProcessingSetting('lorebook_entry_lookup_prefill', ''),
-        lorebook_entry_lookup_prompt: getSummaryProcessingSetting('lorebook_entry_lookup_prompt', ''),
-        lorebook_entry_deduplicate_connection_profile: getSummaryProcessingSetting('lorebook_entry_deduplicate_connection_profile', ''),
-        lorebook_entry_deduplicate_completion_preset: getSummaryProcessingSetting('lorebook_entry_deduplicate_completion_preset', ''),
-        lorebook_entry_deduplicate_prefill: getSummaryProcessingSetting('lorebook_entry_deduplicate_prefill', ''),
-        lorebook_entry_deduplicate_prompt: getSummaryProcessingSetting('lorebook_entry_deduplicate_prompt', ''),
-        skip_duplicates: getSummaryProcessingSetting('skip_duplicates', true),
-        enabled: getSummaryProcessingSetting('enabled', false),
-    };
-    const typesToUpdate /*: Set<string> */ = new Set();
-    const typeList = entityTypeDefs.map(def => def.name).filter(Boolean).join('|') || 'character';
-    const results /*: any */ = { created: [], merged: [], failed: [] };
-
-    return {
-        lorebookName,
-        existingEntries,
-        existingEntriesMap,
-        registryState,
-        entityTypeDefs,
-        entityTypeMap,
-        settings: summarySettings,
-        useQueue,
-        results,
-        typesToUpdate,
-        typeList,
-        registryStateDirty: false
-    };
-}
-
-/**
  * Finalizes registry updates after processing
  * @param {any} context - Processing context
  * @returns {Promise<void>}
@@ -1302,125 +1193,11 @@ async function finalizeRegistryUpdates(context /*: any */) /*: Promise<void> */ 
 }
 
 /**
- * Builds the processing result from context
- * @param {any} context - Processing context
- * @param {any} normalizedEntry - Normalized entry
- * @returns {any} - Processing result
- */
-function buildProcessingResult(context /*: any */, normalizedEntry /*: any */) /*: any */ {
-    const { results } = context;
-
-    if (results.merged.length > 0) {
-        const merged = results.merged[0];
-        return {
-            success: true,
-            action: 'merged',
-            comment: normalizedEntry.comment,
-            uid: merged.uid,
-            id: merged.id
-        };
-    }
-
-    if (results.created.length > 0) {
-        const created = results.created[0];
-        return {
-            success: true,
-            action: 'created',
-            comment: normalizedEntry.comment,
-            uid: created.uid,
-            id: created.id
-        };
-    }
-
-    if (results.failed.length > 0) {
-        const failure = results.failed[0];
-        return {
-            success: false,
-            message: failure.error || 'Failed to process entry',
-            comment: normalizedEntry.comment
-        };
-    }
-
-    return {
-        success: true,
-        action: 'skipped',
-        comment: normalizedEntry.comment
-    };
-}
-
-/**
  * Process a single lorebook entry - creates or merges with existing entry
  * @param {Object} entryData - Single lorebook entry data
  * @param {Object} options - Processing options
  * @returns {Promise<Object>} Processing result
  */
-export async function processSingleLorebookEntry(entryData /*: any */, options /*: any */ = {}) /*: Promise<any> */ {
-    try {
-        const { useQueue = false } = options;
-
-        // Validate input
-        const validation = validateEntryInput(entryData);
-        if (!validation.valid) {
-            return { success: false, message: validation.error };
-        }
-
-        // Load configuration
-        const config = loadProcessingConfig(options);
-        if (!config.lorebookName) {
-            return { success: false, message: 'No lorebook attached' };
-        }
-
-        // Normalize entry
-        const normalizedEntry = normalizeAndTypeEntry(entryData, config.entityTypeDefs, config.entityTypeMap);
-
-        // Get existing entries
-        const existingEntriesRaw = await getLorebookEntries(config.lorebookName);
-        if (!existingEntriesRaw) {
-            error('Failed to get existing entries');
-            return { success: false, message: 'Failed to load lorebook' };
-        }
-
-        const existingEntries = existingEntriesRaw.filter(entry => !isRegistryEntry(entry));
-        const existingEntriesMap /*: Map<string, any> */ = new Map();
-        existingEntries.forEach(entry => {
-            if (entry && entry.uid !== undefined) {
-                existingEntriesMap.set(String(entry.uid), entry);
-            }
-        });
-
-        const registryState = ensureRegistryState();
-
-        // Build context
-        const context = buildProcessingContext(
-            config.lorebookName,
-            normalizedEntry,
-            existingEntries,
-            existingEntriesMap,
-            registryState,
-            config.entityTypeDefs,
-            config.entityTypeMap,
-            useQueue
-        );
-
-        // Process entry
-        await handleLorebookEntry(normalizedEntry, context);
-
-        // Finalize updates
-        await finalizeRegistryUpdates(context);
-
-        // Build result
-        return buildProcessingResult(context, normalizedEntry);
-
-    } catch (err) {
-        error('Error processing single lorebook entry', err);
-        return {
-            success: false,
-            message: err.message,
-            comment: entryData?.comment || entryData?.name || 'Unknown'
-        };
-    }
-}
-
 /**
  * Process multiple summaries - extracts lorebook entries from each and creates/merges them
  * @param {Array<Object>} summaries - Array of summary objects
@@ -1495,7 +1272,6 @@ export function clearProcessedSummaries() /*: void */ {
 export default {
     initSummaryToLorebookProcessor,
     processSummaryToLorebook,
-    processSingleLorebookEntry,
     processSummariesToLorebook,
     clearProcessedSummaries,
     isSummaryProcessed

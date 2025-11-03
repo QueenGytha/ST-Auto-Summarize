@@ -388,7 +388,7 @@ function renderOperationsList() {
         return;
     }
 
-    // Sort: in_progress first, then pending, then failed/cancelled
+    // Sort: in_progress first, then by priority (highest first), then by creation time (oldest first)
     const sorted = [...operations].sort((a, b) => {
         const statusOrder = {
             [OperationStatus.IN_PROGRESS]: 0,
@@ -405,6 +405,12 @@ function renderOperationsList() {
             return orderA - orderB;
         }
 
+        // Sort by priority (higher first)
+        if (a.priority !== b.priority) {
+            return b.priority - a.priority;
+        }
+
+        // Sort by creation time (older first)
         return a.created_at - b.created_at;
     });
 
@@ -502,9 +508,6 @@ function formatOperationType(type) {
         [OperationType.GENERATE_SCENE_NAME]: 'Scene Name',
         [OperationType.GENERATE_RUNNING_SUMMARY]: 'Running Summary',
         [OperationType.COMBINE_SCENE_WITH_RUNNING]: 'Combine Scene',
-        // $FlowFixMe[prop-missing] [invalid-computed-prop]
-        [OperationType.GENERATE_COMBINED_SUMMARY]: 'Combined Summary',
-        [OperationType.PROCESS_LOREBOOK_ENTRY]: 'Lorebook - Process',
         [OperationType.LOREBOOK_ENTRY_LOOKUP]: 'Lorebook - Lookup',
         [OperationType.RESOLVE_LOREBOOK_ENTRY]: 'Lorebook - Dedupe',
         [OperationType.CREATE_LOREBOOK_ENTRY]: 'Lorebook - Create',
@@ -559,13 +562,8 @@ function formatOperationParams(type, params, metadata) {
             return formatMessageOperationParams(params);
 
         case OperationType.GENERATE_RUNNING_SUMMARY:
-            // falls through
-        // $FlowFixMe[prop-missing]
-        // eslint-disable-next-line no-fallthrough
-        case OperationType.GENERATE_COMBINED_SUMMARY:
             return 'All messages';
 
-        case OperationType.PROCESS_LOREBOOK_ENTRY:
         case OperationType.LOREBOOK_ENTRY_LOOKUP:
         case OperationType.RESOLVE_LOREBOOK_ENTRY:
         case OperationType.CREATE_LOREBOOK_ENTRY:

@@ -375,7 +375,7 @@ function refreshGlobalSettingsUI(settings /*: any */) /*: void */ {
     // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-auto-reorder-alphabetically').prop('checked', settings.autoReorderAlphabetically ?? true);
     // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-name-template').val(settings.nameTemplate || 'z-AutoLB - {{char}} - {{chat}}');
+    $('#autolorebooks-name-template').val(settings.nameTemplate || 'z-AutoLB-{{chat}}');
 }
 
 /**

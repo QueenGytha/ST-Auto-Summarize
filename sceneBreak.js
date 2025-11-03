@@ -676,7 +676,7 @@ export function renderAllSceneBreaks(
  * @returns {Promise<string|null>} - The generated scene name, or null if generation failed
  */
 // $FlowFixMe[missing-local-annot] - Function signature is correct
-async function autoGenerateSceneNameFromSummary(
+export async function autoGenerateSceneNameFromSummary(
     summary /*: string */,
     message /*: STMessage */,
     get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
@@ -1116,15 +1116,6 @@ export async function generateSceneSummary(
         summary = await executeSceneSummaryGeneration(prompt, ctx);
     } finally {
         await restoreProfile(ctx, savedProfiles);
-    }
-
-    // Auto-generate scene name if enabled
-    const autoGenerateSceneName = get_settings('scene_summary_auto_name') ?? true;
-    if (autoGenerateSceneName) {
-        debug(SUBSYSTEM.SCENE, "Waiting 5 seconds before generating scene name...");
-        await new Promise(resolve => setTimeout(resolve, 5000));
-
-        await autoGenerateSceneNameFromSummary(summary, message, get_data, set_data, ctx, savedProfiles);
     }
 
     // Save and render

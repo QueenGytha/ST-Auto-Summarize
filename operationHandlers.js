@@ -15,6 +15,7 @@ import {
 import {
     generateSceneSummary,
     toggleSceneBreak,
+    autoGenerateSceneNameFromSummary,
     SCENE_SUMMARY_HASH_KEY,
 } from './sceneBreak.js';
 import {
@@ -22,7 +23,6 @@ import {
     combine_scene_with_running_summary,
 } from './runningSceneSummary.js';
 import {
-    processSingleLorebookEntry,
     runLorebookEntryLookupStage,
     runLorebookEntryDeduplicateStage,
     buildCandidateEntriesData,
@@ -110,12 +110,12 @@ export function registerAllOperationHandlers() {
             if (get_settings('auto_scene_break_generate_summary')) {
                 debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_SUMMARY for message ${index}`);
 
-                // Enqueue summary generation as next operation (high priority so it runs before more detections)
+                // Enqueue summary generation as next operation (highest priority)
                 const summaryOpId = await enqueueOperation(
                     OperationType.GENERATE_SCENE_SUMMARY,
                     { index },
                     {
-                        priority: 10, // High priority - process before more detections
+                        priority: 20, // Highest priority - process before all other operations
                         metadata: {
                             scene_index: index,
                             triggered_by: 'auto_scene_break_detection'
@@ -156,16 +156,57 @@ export function registerAllOperationHandlers() {
         );
 
         toast(`✓ Scene summary generated for message ${index}`, 'success');
+
+        // Enqueue scene name generation if enabled
+        const autoGenerateSceneName = get_settings('scene_summary_auto_name') ?? true;
+        if (autoGenerateSceneName && summary) {
+            debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_NAME for index ${index}`);
+            enqueueOperation(OperationType.GENERATE_SCENE_NAME, {
+                index,
+                summary
+            }, {
+                priority: 5,  // Lower priority than summary generation
+                metadata: {
+                    message_index: index,
+                    operation_source: 'scene_summary'
+                }
+            });
+        }
+
         return { summary };
     });
 
-    // Generate scene name (handled within scene summary generation)
+    // Generate scene name from scene summary
     registerOperationHandler(OperationType.GENERATE_SCENE_NAME, async (operation) => {
-        const { index } = operation.params;
+        const { index, summary } = operation.params;
         debug(SUBSYSTEM.QUEUE, `Executing GENERATE_SCENE_NAME for index ${index}`);
-        // Scene name generation is integrated into generateSceneSummary
-        // This handler is a placeholder for future standalone implementation
-        return { name: '' };
+
+        const ctx = getContext();
+        const chat = ctx.chat;
+        const message = chat[index];
+
+        if (!message) {
+            throw new Error(`Message at index ${index} not found`);
+        }
+
+        if (!summary) {
+            debug(SUBSYSTEM.QUEUE, `No summary provided for GENERATE_SCENE_NAME at index ${index}, skipping`);
+            return { name: null };
+        }
+
+        // Wait 5 seconds before generating scene name (rate limiting)
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        const name = await autoGenerateSceneNameFromSummary(
+            summary,
+            message,
+            get_data,
+            set_data,
+            ctx,
+            null  // savedProfiles not needed, function handles its own profile switching
+        );
+
+        return { name };
     });
 
     // Generate running summary (bulk)
@@ -181,38 +222,6 @@ export function registerAllOperationHandlers() {
         debug(SUBSYSTEM.QUEUE, `Executing COMBINE_SCENE_WITH_RUNNING for index ${index}`);
         const summary = await combine_scene_with_running_summary(index);
         return { summary };
-    });
-
-    // Process single lorebook entry
-    registerOperationHandler(OperationType.PROCESS_LOREBOOK_ENTRY, async (operation) => {
-        const { entryData, messageIndex, summaryHash } = operation.params;
-
-        if (typeof messageIndex === 'number' && summaryHash) {
-            const ctx = getContext();
-            const chat = (ctx && ctx.chat) ? ctx.chat : [];
-            const message = chat[messageIndex];
-            if (message) {
-                const currentHash = get_data(message, SCENE_SUMMARY_HASH_KEY);
-                if (currentHash && currentHash !== summaryHash) {
-                    debug(SUBSYSTEM.QUEUE, `Skipping PROCESS_LOREBOOK_ENTRY for outdated summary hash (message ${messageIndex})`);
-                    return {
-                        success: true,
-                        skipped: true,
-                        reason: 'outdated_summary'
-                    };
-                }
-            }
-        }
-
-        debug(SUBSYSTEM.QUEUE, `Executing PROCESS_LOREBOOK_ENTRY for: ${entryData.name || entryData.comment || 'Unknown'}`);
-        const result = await processSingleLorebookEntry(entryData, { useQueue: true });
-
-        // If processing failed, throw error to trigger queue retry logic
-        if (!result.success) {
-            throw new Error(result.message || 'Failed to process lorebook entry');
-        }
-
-        return result;
     });
 
     // Merge lorebook entry (standalone operation)
@@ -271,7 +280,7 @@ export function registerAllOperationHandlers() {
             await enqueueOperation(
                 OperationType.RESOLVE_LOREBOOK_ENTRY,
                 { entryId },
-                { metadata: { entry_comment: entryData.comment } }
+                { priority: 10, metadata: { entry_comment: entryData.comment } }
             );
         } else if (lorebookEntryLookupResult.sameEntityIds.length === 1) {
             // Exact match found - merge
@@ -282,14 +291,14 @@ export function registerAllOperationHandlers() {
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
                 { entryId, action: 'merge', resolvedId },
-                { metadata: { entry_comment: entryData.comment } }
+                { priority: 10, metadata: { entry_comment: entryData.comment } }
             );
         } else {
             // No match - create new
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
                 { entryId, action: 'create' },
-                { metadata: { entry_comment: entryData.comment } }
+                { priority: 10, metadata: { entry_comment: entryData.comment } }
             );
         }
 
@@ -369,14 +378,14 @@ export function registerAllOperationHandlers() {
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
                 { entryId, action: 'merge', resolvedId: lorebookEntryDeduplicateResult.resolvedId },
-                { metadata: { entry_comment: entryData.comment } }
+                { priority: 10, metadata: { entry_comment: entryData.comment } }
             );
         } else {
             // No match - create new
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
                 { entryId, action: 'create' },
-                { metadata: { entry_comment: entryData.comment } }
+                { priority: 10, metadata: { entry_comment: entryData.comment } }
             );
         }
 
@@ -511,7 +520,7 @@ export function registerAllOperationHandlers() {
         await enqueueOperation(
             OperationType.UPDATE_LOREBOOK_REGISTRY,
             { entryId: context.entryId, entityType: context.finalType, entityId: result.entityId, action: result.action },
-            { metadata: { entry_comment: context.entryData.comment } }
+            { priority: 10, metadata: { entry_comment: context.entryData.comment } }
         );
 
         return { success: true, entityId: result.entityId, entityUid: result.entityUid, action: result.action };

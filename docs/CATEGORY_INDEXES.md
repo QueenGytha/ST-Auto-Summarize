@@ -149,7 +149,7 @@ Scans the entire lorebook and rebuilds all category indexes.
 (Uses attached lorebook)
 
 ```
-/autolorebooks-update-indexes z-AutoLB - Alice - chat123
+/autolorebooks-update-indexes z-AutoLB-Alice - chat123
 ```
 (Uses specific lorebook)
 
@@ -193,7 +193,7 @@ console.log(`Total entities: ${stats.total}`);
 ### Step 1: Empty Lorebook
 
 ```
-Lorebook: z-AutoLB - Alice - chat123
+Lorebook: z-AutoLB-Alice - chat123
 Entries: (none)
 ```
 

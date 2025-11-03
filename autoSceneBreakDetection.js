@@ -812,7 +812,7 @@ export async function processNewMessageForSceneBreak(messageIndex /*: number */)
     }
 
     const endIndexRaw = messageIndex - offset;
-    const endIndex = Math.min(endIndexRaw, chat.length - 1);
+    let endIndex = Math.min(endIndexRaw, chat.length - 1);
 
     if (endIndex < 0) {
         debug(SUBSYSTEM.SCENE, 'No messages to check based on offset - messageIndex:', messageIndex, 'offset:', offset);
@@ -823,33 +823,83 @@ export async function processNewMessageForSceneBreak(messageIndex /*: number */)
     const recentCountRaw = Number(get_settings('auto_scene_break_recent_message_count'));
     const recentCount = Number.isFinite(recentCountRaw) ? Math.max(0, recentCountRaw) : DEFAULT_RECENT_MESSAGE_COUNT;
 
-    let startIndex = 0;
-    if (recentCount > 0) {
+    const forceFullRescan = typeof window !== 'undefined' && window.autoSummarizeForceSceneBreakRescan === true;
+
+    let rangeStart = 0;
+    if (!forceFullRescan && recentCount > 0) {
         let matchedCount = 0;
-        startIndex = endIndex;
+        rangeStart = endIndex;
         for (let i = endIndex; i >= 0; i--) {
             if (messageMatchesType(chat[i], checkWhich)) {
                 matchedCount++;
-                startIndex = i;
+                rangeStart = i;
                 if (matchedCount >= recentCount) {
                     break;
                 }
             }
 
             if (i === 0) {
-                startIndex = 0;
+                rangeStart = 0;
             }
         }
 
         if (matchedCount < recentCount) {
-            startIndex = 0;
+            rangeStart = 0;
         }
     }
 
-    debug(SUBSYSTEM.SCENE, 'New message at index', messageIndex, ', checking range', startIndex, 'to', endIndex, '(recent count:', recentCount, ', type:', checkWhich, ')');
+    const latestIndex = chat.length - 1;
 
-    log(SUBSYSTEM.SCENE, 'Processing auto scene break detection for range', startIndex, 'to', endIndex);
-    await processAutoSceneBreakDetection(startIndex, endIndex);
+    if (!forceFullRescan) {
+        // Determine the newest message that needs checking within the window
+        const windowStart = rangeStart;
+        let targetIndex = -1;
+        for (let i = endIndex; i >= windowStart; i--) {
+            const candidate = chat[i];
+            if (shouldCheckMessage(candidate, i, latestIndex, offset, checkWhich)) {
+                targetIndex = i;
+                break;
+            }
+        }
+
+        if (targetIndex === -1) {
+            debug(
+                SUBSYSTEM.SCENE,
+                'No eligible messages to check after window evaluation (end:',
+                endIndex,
+                ', window start:',
+                windowStart,
+                ')'
+            );
+            return;
+        }
+
+        rangeStart = targetIndex;
+        endIndex = targetIndex;
+    }
+
+    debug(
+        SUBSYSTEM.SCENE,
+        'New message at index',
+        messageIndex,
+        ', checking range',
+        rangeStart,
+        'to',
+        endIndex,
+        '(recent count:',
+        forceFullRescan ? 'full-rescan' : recentCount,
+        ', type:',
+        checkWhich,
+        ')'
+    );
+
+    log(SUBSYSTEM.SCENE, 'Processing auto scene break detection for range', rangeStart, 'to', endIndex);
+    await processAutoSceneBreakDetection(rangeStart, endIndex);
+
+    if (forceFullRescan && typeof window !== 'undefined') {
+        window.autoSummarizeForceSceneBreakRescan = false;
+        debug(SUBSYSTEM.SCENE, 'Completed forced full scene break rescan after clear-all action');
+    }
 }
 
 /**

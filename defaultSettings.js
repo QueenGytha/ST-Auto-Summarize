@@ -78,7 +78,7 @@ export const default_settings = {
 
     // --- Auto-Lorebooks Settings ---
     auto_lorebooks_enabled_by_default: true, // Enable auto-lorebooks for new chats
-    auto_lorebooks_name_template: 'z-AutoLB - {{char}} - {{chat}}', // Naming template for auto-created lorebooks
+    auto_lorebooks_name_template: 'z-AutoLB-{{chat}}', // Naming template for auto-created lorebooks
     auto_lorebooks_delete_on_chat_delete: true, // Delete lorebook when chat is deleted
     autoReorderAlphabetically: true, // Automatically reorder lorebook entries alphabetically when created or renamed
 
@@ -89,17 +89,20 @@ export const default_settings = {
 Current Entry Name: {{entry_name}}
 
 Your task:
-1. Compare the existing content with the new information
-2. Merge them intelligently:
-   - Add new details that don't exist
-   - Update information that has changed
-   - Remove details that are contradicted or no longer relevant
-   - Preserve important existing information
-   - Maintain consistent formatting and tone
+1. Compare the existing content with the new information.
+2. Merge them carefully while keeping strict PList formatting:
+   - Keep ONE bracketed entry that starts with the canonical entity name.
+   - Add new details that are not already present.
+   - Update existing details that have changed.
+   - Remove information that is contradicted or no longer valid.
+   - Preserve important existing properties that remain true.
+   - Keep properties grouped logically; use parentheses for sub-details, max two nesting levels.
+   - Do NOT spin off separate trait entries; every fact stays under this entity.
 3. CRITICAL: Check if the entry name needs updating:
    - If the current name is a VAGUE/RELATIONAL reference (examples: "amelia's sister", "the bartender", "mysterious woman", "the shopkeeper", "victoria's friend")
    - AND either the existing content OR new content reveals an ACTUAL PROPER NAME
    - YOU MUST use FORMAT 2 with the proper name as canonicalName
+4. If the new information adds nothing, return the original content EXACTLY (FORMAT 1). Do not rewrite or reorder it.
 
 Existing Entry Content:
 {{existing_content}}
@@ -109,8 +112,8 @@ New Information from Summary:
 
 OUTPUT INSTRUCTIONS:
 
-FORMAT 1 (Plain text - use ONLY when NO proper name is available):
-Just output the merged content as plain text.
+FORMAT 1 (Plain text - use ONLY when NO proper name is available or no change is needed):
+Just output the merged content as plain text. It must remain valid PList.
 
 FORMAT 2 (JSON - use when renaming is needed):
 {
@@ -121,12 +124,13 @@ FORMAT 2 (JSON - use when renaming is needed):
 WHEN TO USE FORMAT 2:
 - Current name is relational/vague (possessive forms, job titles, family relations, descriptions)
 - You have access to a proper name (first name, full name, character name)
-- Example: Current="character-Amelia's Sister" + Content has "Victoria" → canonicalName: "Victoria Thornbrook"
+- Example: Current="character-Amelia's Sister" + Content has "Victoria" -> canonicalName: "Victoria Thornbrook"
 
 RULES FOR canonicalName:
 - Use the full proper name if available (e.g., "Victoria Thornbrook")
 - NO type prefixes (use "Victoria Thornbrook" not "character-Victoria Thornbrook")
 - If only first name known, use just that (e.g., "Victoria")
+- Always ensure mergedContent remains valid PList for this single entity.
 
 If the current name is ALREADY a proper name (like "Victoria", "John Smith"), use FORMAT 1.`,
     auto_lorebooks_summary_merge_prefill: '', // Prefill for summary merge prompts

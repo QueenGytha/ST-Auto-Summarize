@@ -11,6 +11,7 @@ import {
     get_data,
     summarize_text,
     saveChatDebounced,
+    saveMetadata,
     get_connection_profile_api,
     getPresetManager,
     set_connection_profile,
@@ -181,6 +182,29 @@ function delete_running_summary_version(version /*: number */) /*: void */ {
 
     saveChatDebounced();
     debug(SUBSYSTEM.RUNNING, `Deleted running summary version ${version}`);
+}
+
+/**
+ * Clear all running scene summary versions for the current chat
+ * @returns {number} Number of versions removed
+ */
+function clear_running_scene_summaries() {
+    const storage = chat_metadata.auto_summarize_running_scene_summaries;
+    const existingVersions = Array.isArray(storage?.versions) ? storage.versions.length : 0;
+    const hadState = storage && (existingVersions > 0 || (storage.current_version ?? 0) !== 0);
+
+    if (!hadState) {
+        return 0;
+    }
+
+    chat_metadata.auto_summarize_running_scene_summaries = {
+        current_version: 0,
+        versions: [],
+    };
+
+    saveMetadata();
+    debug(SUBSYSTEM.RUNNING, `Cleared ${existingVersions} running scene summary version(s)`);
+    return existingVersions;
 }
 
 /**
@@ -780,6 +804,7 @@ export {
     set_current_running_summary_version,
     add_running_summary_version,
     delete_running_summary_version,
+    clear_running_scene_summaries,
     collect_scene_summary_indexes_for_running,
     generate_running_scene_summary,
     combine_scene_with_running_summary,

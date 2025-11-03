@@ -308,7 +308,7 @@ function sanitizeNameSegment(text /*: string */) /*: string */ {
 export function generateLorebookName(template /*: string */, characterName /*: string */, chatId /*: string */) /*: string */ {
     const charSeg = sanitizeNameSegment(characterName || 'Unknown');
     const chatSeg = sanitizeNameSegment(chatId || 'Chat');
-    const tpl = template || 'z-AutoLB - {{char}} - {{chat}}';
+    const tpl = template || 'z-AutoLB-{{chat}}';
     return tpl
         .replace(/\{\{\s*char\s*\}\}/g, charSeg)
         .replace(/\{\{\s*chat\s*\}\}/g, chatSeg);

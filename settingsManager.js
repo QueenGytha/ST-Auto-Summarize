@@ -33,6 +33,21 @@ const global_settings = {
 }
 const settings_ui_map = {}  // map of settings to UI elements
 
+function getDefaultAutoLorebookSettings() {
+    // Build a fresh copy of the global Auto-Lorebooks defaults each time
+    return {
+        nameTemplate: 'z-AutoLB-{{chat}}',
+        deleteOnChatDelete: true,
+        autoReorderAlphabetically: true,
+        entity_types: [...DEFAULT_ENTITY_TYPES],
+        queue: {
+            enabled: true,
+            use_lorebook: true,
+            display_enabled: true
+        }
+    };
+}
+
 // Settings Management
 function initialize_settings() {
     if (extension_settings[MODULE_NAME] !== undefined) {  // setting already initialized
@@ -47,31 +62,11 @@ function initialize_settings() {
     // NOTE: Per-profile settings (tracking, summary_processing) are stored in profiles via default_settings
     if (!extension_settings.autoLorebooks) {
         log("Auto-Lorebooks global settings not found. Initializing with defaults...")
-        extension_settings.autoLorebooks = {
-            nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
-            deleteOnChatDelete: true,
-            autoReorderAlphabetically: true,
-            entity_types: [...DEFAULT_ENTITY_TYPES],
-            queue: {
-                enabled: true,
-                use_lorebook: true,
-                display_enabled: true
-            }
-        };
+        extension_settings.autoLorebooks = getDefaultAutoLorebookSettings();
         saveSettingsDebounced();
     } else {
         // Merge with defaults for any missing global properties
-        const defaultLorebooks = {
-            nameTemplate: 'z-AutoLB - {{char}} - {{chat}}',
-            deleteOnChatDelete: true,
-            autoReorderAlphabetically: true,
-            entity_types: [...DEFAULT_ENTITY_TYPES],
-            queue: {
-                enabled: true,
-                use_lorebook: true,
-                display_enabled: true
-            }
-        };
+        const defaultLorebooks = getDefaultAutoLorebookSettings();
 
         // Deep merge nested objects (only global settings)
         extension_settings.autoLorebooks = {
@@ -108,6 +103,8 @@ function hard_reset_settings() {
         ...default_settings,
         ...global_settings
     });
+    extension_settings.autoLorebooks = getDefaultAutoLorebookSettings();
+    saveSettingsDebounced();
 }
 function soft_reset_settings() {
     // fix any missing settings without destroying profiles
@@ -135,8 +132,8 @@ function soft_reset_settings() {
     }
 }
 function reset_settings() {
-    // Reset ONLY the currently selected profile to defaults
-    // Preserves all other profiles and global settings
+    // Reset ONLY the currently selected profile to defaults plus the global Auto-Lorebooks settings
+    // Preserves all other profiles
 
     const currentProfile = get_settings('profile');
     const profiles = get_settings('profiles');
@@ -155,6 +152,9 @@ function reset_settings() {
     profiles[currentProfile] = structuredClone(default_settings);
 
     set_settings('profiles', profiles);
+
+    // Reset global Auto-Lorebooks block to factory defaults as well
+    extension_settings.autoLorebooks = getDefaultAutoLorebookSettings();
 
     // Reload the profile to apply the reset settings
     load_profile(currentProfile);

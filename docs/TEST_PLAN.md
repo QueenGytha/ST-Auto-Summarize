@@ -41,9 +41,6 @@ Test Areas and Cases
 - extension_settings access shape for `autoLorebooks.summary_processing` is resilient.
 
 4) Lorebook Processing
-- processSingleLorebookEntry:
-  - With options.useQueue=true enqueues MERGE_LOREBOOK_ENTRY.
-  - With options.useQueue=false calls mergeLorebookEntry immediately.
 - executeMerge/mergeLorebookEntry:
   - Generates merged content via generateRaw.
   - Applies updates via modifyLorebookEntry with combined keys/secondaryKeys.
