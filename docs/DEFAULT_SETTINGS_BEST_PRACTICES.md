@@ -97,24 +97,9 @@ combined_summary_position: -1,  // Do not inject
 
 **Reason:** Combined summary is for merging per-message summaries. Not needed when using scene-based approach.
 
-### 4. Disable Individual Scene Injection
+### 4. Individual Scene Injection
 
-**Current:**
-```javascript
-scene_summary_enabled: true,      // Keep true (needed for generation)
-scene_summary_position: 2,        // Before main prompt
-```
-
-**Change to:**
-```javascript
-scene_summary_enabled: true,      // ✅ Keep true (generation)
-scene_summary_position: -1,       // Do not inject (running summary replaces)
-```
-
-**Reason:**
-- `scene_summary_enabled: true` - Still needed to generate individual scene summaries
-- `scene_summary_position: -1` - Don't inject individuals, they're source data for running summary
-- Running summary combines them following best practices (deduplication, state-focus, brevity)
+Individual scene summaries are still generated (for navigator UI, lorebook extraction, and running summary input), but they are no longer injected into the prompt. The legacy `scene_summary_enabled` and `scene_summary_position` settings have been removed; the running scene summary is now the sole injection path.
 
 ### 5. Auto-Hide by Scene Count
 
@@ -162,7 +147,7 @@ Scenes 1-3: In running + hidden (historical context)
 
 **Current:**
 ```javascript
-running_scene_summary_enabled: true,           // ✅ Correct
+running_scene_summary_enabled: true,           // ✅ Legacy (always enabled)
 running_scene_summary_exclude_latest: 1,       // ✅ Correct
 running_scene_summary_auto_generate: true,     // ✅ Correct
 running_scene_summary_position: 2,             // ✅ Correct (before main prompt)
@@ -293,9 +278,6 @@ long_term_position: -1,               // was: 2
 // Disable combined summary injection
 combined_summary_position: -1,        // was: 2
 
-// Disable individual scene injection
-scene_summary_position: -1,           // was: 2
-
 // Enable scene-based auto-hide
 auto_hide_scene_count: 3,             // was: -1
 ```
@@ -309,11 +291,8 @@ auto_summarize: false,                // ✅
 // Combined summary disabled
 combined_summary_enabled: false,      // ✅
 
-// Scene summary generation enabled
-scene_summary_enabled: true,          // ✅
-
 // Running scene summary optimal
-running_scene_summary_enabled: true,                // ✅
+running_scene_summary_enabled: true,                // ✅ Legacy (always enabled)
 running_scene_summary_exclude_latest: 1,            // ✅
 running_scene_summary_auto_generate: true,          // ✅
 running_scene_summary_position: 2,                  // ✅

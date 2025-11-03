@@ -47,30 +47,6 @@
 
 
                 <!-- General Injection Settings -->
-                <hr>
-                <div class="inline-drawer">
-                    <div class="inline-drawer-toggle inline-drawer-header">
-                        <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">General Injection Settings <i class="fa-solid fa-info-circle" title="Determines how summaries are injected into context."></i></h4>
-                        </div>
-                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                    </div>
-                    <div class="inline-drawer-content">
-                        <label title="Separator between summaries when injected into context." class="checkbox_label">
-                            <input id="summary_injection_separator" class="text_pole" type="text" placeholder="" style="width: 5em">
-                            <span>Summary Injection Separator</span>
-                        </label>
-                        <label title="The number of messages to wait before summaries start to be injected." class="checkbox_label">
-                            <input id="summary_injection_threshold" class="text_pole widthUnset" type="number" min="0" max="999" />
-                            <span>Start Injecting After</span>
-                        </label>
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_scene_injection_template" class="menu_button flex1" title="Edit the scene summary injection template">Edit Scene Injection Template</button>
-                            <input id="scene_summary_template" type="hidden" />
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Message Filtering -->
                 <hr>
                 <div class="inline-drawer">
@@ -108,7 +84,7 @@
                 <div class="inline-drawer">
                     <div class="inline-drawer-toggle inline-drawer-header">
                         <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Scene Summary <i class="fa-solid fa-info-circle" title="Summarize each scene break as a single summary, with customizable prompt and injection."></i></h4>
+                            <h4 class="margin0">Scene Summary <i class="fa-solid fa-info-circle" title="Summarize each scene break and use the results to build the running scene summary."></i></h4>
                         </div>
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
@@ -120,10 +96,6 @@
                         <label title="Font size for scene names in the navigator bar (in pixels).">
                             <span>Navigator Font Size (pixels):</span>
                             <input id="scene_summary_navigator_font_size" class="text_pole" type="number" min="8" max="24" step="1" />
-                        </label>
-                        <label class="checkbox_label" title="Enable scene-level summarization and injection.">
-                            <input id="scene_summary_enabled" type="checkbox" />
-                            <span>Enable Scene Summaries</span>
                         </label>
                         <label class="checkbox_label" title="Automatically generate a brief scene name (like a chapter title) when auto-generating scene summaries (e.g., during scene break detection), if no name is already set.">
                             <input id="scene_summary_auto_name" type="checkbox" />
@@ -175,29 +147,6 @@
                                 </td>
                             </tr>
                         </table>
-                        <label title="Where to inject the scene summary.">
-                            <select id="scene_summary_position" class="text_pole">
-                                <option value="-1">Do not inject</option>
-                                <option value="2">Before main prompt</option>
-                                <option value="0">After main prompt</option>
-                                <option value="1">In chat at depth</option>
-                            </select>
-                        </label>
-                        <label title="Depth for in-chat injection.">
-                            <input id="scene_summary_depth" class="text_pole inline_setting" type="number" min="0" max="99" />
-                            <span>Depth</span>
-                        </label>
-                        <label title="Role for in-chat injection.">
-                            <select id="scene_summary_role" class="text_pole inline_setting">
-                                <option value="0">System</option>
-                                <option value="1">User</option>
-                                <option value="2">Assistant</option>
-                            </select>
-                        </label>
-                        <label class="checkbox_label" title="Include in World Info Scanning">
-                            <input id="scene_summary_scan" type="checkbox" />
-                            <span>Include in World Info Scanning</span>
-                        </label>
                         <label title="Context limit for scene summary.">
                             <input id="scene_summary_context_limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
                             <span>Context Limit</span>
@@ -223,10 +172,6 @@
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
-                        <label class="checkbox_label" title="Enable running scene summary - combines all scene summaries into one cohesive narrative memory (recommended default).">
-                            <input id="running_scene_summary_enabled" type="checkbox" />
-                            <span>Enable Running Scene Summary (Recommended)</span>
-                        </label>
                         <label title="Number of latest scene summaries to exclude from the running summary. Default: 1 (allows you to validate the latest scene summary before it's combined).">
                             <span>Exclude Latest <span id="running_scene_summary_exclude_latest_display">1</span> Scene(s)</span>
                             <input id="running_scene_summary_exclude_latest" class="text_pole" type="range" min="0" max="5" step="1" value="1" />
@@ -335,6 +280,12 @@
                         </label>
                         <small style="display:block; margin-bottom:0.5em;">Recommended: 1 (skip latest message since you may not like it yet)</small>
 
+                        <label title="How many recent messages of the selected type to check for scene breaks when new messages arrive. Set to 0 to scan the entire history.">
+                            <span>Recent Messages to Check:</span>
+                            <input id="auto_scene_break_recent_message_count" class="text_pole" type="number" min="0" max="50" step="1" />
+                        </label>
+                        <small style="display:block; margin-bottom:0.5em;">Counts messages that match the selected message type filter.</small>
+
                         <label title="Which message types to check for scene breaks.">
                             <span>Check Which Messages:</span>
                             <select id="auto_scene_break_check_which_messages" class="text_pole">
@@ -437,11 +388,6 @@
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
-                        <label title="Fill your console with debug messages" class="checkbox_label">
-                            <input id="debug_mode" type="checkbox" />
-                            <span>Debug Mode</span>
-                        </label>
-
                         <label title="Whether memory is enabled by default for new chats." class="checkbox_label">
                             <input id="default_chat_enabled" type="checkbox" />
                             <span>Enable Memory in New Chats</span>
@@ -485,14 +431,6 @@
                             </label>
                             <input type="text" id="autolorebooks-name-template" class="text_pole" placeholder="z-AutoLB - {{char}} - {{chat}}" />
                         </div>
-
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="autolorebooks-debug-mode">
-                                <input type="checkbox" id="autolorebooks-debug-mode" />
-                                <span>Debug mode (verbose console logging)</span>
-                            </label>
-                        </div>
-
                         <div class="margin-bot-10px">
                             <label>
                                 <span>Supported lorebook entry types:</span>

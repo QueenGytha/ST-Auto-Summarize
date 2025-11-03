@@ -109,8 +109,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 
 #### Memory Injection Settings
 
-- **Summary Injection Separator:** String used to separate summaries in context.
-- **Start Injecting After:** Number of messages before summaries start being injected.
+- **Running Scene Summary Only:** The extension injects the running scene summary automatically when enabled.
 
 ##### Short-term & Long-term Memory
 
@@ -132,14 +131,12 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 
 #### Scene Summary
 
-- **Enable Scene Summaries:** Turn on scene-level summarization and injection.
 - **Auto-generate Scene Names (Auto-Detection):** Automatically generate brief scene names (like chapter titles) when auto-generating scene summaries (e.g., during scene break detection), if no name is already set.
 - **Auto-generate Scene Names (Manual):** Automatically generate brief scene names (like chapter titles) when manually generating scene summaries via the Generate button, if no name is already set.
 - **Navigator Bar Width:** Customize the width of the scene navigator bar in pixels (default: 240px).
 - **Navigator Font Size:** Customize the font size for scene names in the navigator bar in pixels (default: 12px).
 - **Edit Scene Prompt:** Customize the prompt used for scene summaries.
-- **Scene Completion Preset/Prefill/Context Limit:** Control how scene summaries are generated and injected.
-- **Scene Summary Injection Position/Depth/Role:** Where and how scene summaries are injected into the prompt.
+- **Scene Completion Preset/Prefill/Context Limit:** Control how scene summaries are generated.
 - **Scene Message History Mode/Count:** Configure which messages and how many are included as context for scene summaries.
 - **Include Message Types:** Choose whether to include user messages only, AI messages only, or both when generating scene summaries (default: both).
 - **Scene Summary Validation:** Optionally validate scene summaries using a second LLM pass.
@@ -148,7 +145,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 
 **NEW**: Combines multiple scene summaries into a single, cohesive narrative memory following best practices. **Enabled by default.**
 
-- **Enable Running Scene Summary:** Combine all scene summaries into one narrative (recommended default behavior).
+- **Running Scene Summary:** Combine all scene summaries into one narrative (always enabled).
 - **Exclude Latest N Scenes:** Wait N scenes before including in running summary (default: 1, allows validation).
 - **Auto-generate on New Scene Summaries:** Automatically regenerate when new scene summaries are created.
 - **Show Navbar Version Controls:** Display floating navbar with version selector, edit, and regenerate buttons.
@@ -179,7 +176,7 @@ https://github.com/qvink/SillyTavern-MessageSummarize/
 
 #### Miscellaneous
 
-- **Debug Mode:** Enable verbose logging.
+- **Verbose Logging:** Always enabled for easier troubleshooting.
 - **Enable Memory in New Chats:** Default memory state for new chats.
 - **Use Global Toggle State:** Share memory enable/disable state across all chats.
 

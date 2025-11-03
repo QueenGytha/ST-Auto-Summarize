@@ -20,7 +20,7 @@ import {
     getContext,
     extension_settings,
 } from './index.js';
-import { default_short_template, default_scene_template } from './defaultPrompts.js';
+import { default_short_template } from './defaultPrompts.js';
 import { ensureEntityTypesSetting, renderEntityTypesList } from './entityTypeSettingsUI.js';
 
 function update_profile_section() {
@@ -291,8 +291,6 @@ function refresh_settings() {
     debug("Refreshing settings...");
 
     // $FlowFixMe[cannot-resolve-name]
-    $('#scene_summary_template').val(get_settings('scene_summary_template') || default_scene_template);
-    // $FlowFixMe[cannot-resolve-name]
     $('#short_template').val(get_settings('short_template') || default_short_template);
 
     updateErrorDetectionSettings();
@@ -378,8 +376,6 @@ function refreshGlobalSettingsUI(settings /*: any */) /*: void */ {
     $('#autolorebooks-auto-reorder-alphabetically').prop('checked', settings.autoReorderAlphabetically ?? true);
     // $FlowFixMe[cannot-resolve-name]
     $('#autolorebooks-name-template').val(settings.nameTemplate || 'z-AutoLB - {{char}} - {{chat}}');
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-debug-mode').prop('checked', settings.debug_mode ?? true);
 }
 
 /**

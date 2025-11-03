@@ -20,7 +20,7 @@ The **Running Scene Summary** feature combines multiple individual scene summari
 
 ### Default Behavior
 
-- **Enabled by default**: `running_scene_summary_enabled: true`
+- **Always enabled**: Running scene summary is now always on (toggle removed)
 - **Auto-generates**: After each new scene summary is created
 - **Excludes latest**: By default excludes 1 latest scene to allow manual validation
 - **Replaces individual scenes**: When enabled, injects running summary instead of individual scene summaries
@@ -148,7 +148,7 @@ interface RunningSceneSummaryStorage {
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `running_scene_summary_enabled` | `true` | Enable running scene summary (recommended) |
+| `running_scene_summary_enabled` | `true` (legacy) | Legacy flag (running summary is always enabled) |
 | `running_scene_summary_exclude_latest` | `1` | Number of latest scenes to exclude (allows validation) |
 | `running_scene_summary_auto_generate` | `true` | Auto-generate when new scene summary created |
 | `running_scene_summary_show_navbar` | `true` | Show navbar version controls |
@@ -434,8 +434,8 @@ function updateVersionSelector()
 **Location**: Fixed position at `bottom: 10px, right: 10px`
 
 **Visibility**:
-- Shows when: `running_scene_summary_enabled && running_scene_summary_show_navbar`
-- Hides when: Either setting is disabled
+- Shows when: `running_scene_summary_show_navbar` is enabled (running summary is always active)
+- Hides when: Navbar controls are disabled in settings
 
 **Components**:
 
@@ -520,29 +520,22 @@ $sceneBreak.find('.scene-regenerate-running').off('click').on('click', async fun
 
 ## Integration Points
 
-### 1. Memory Injection (memoryCore.js:373-392)
+### 1. Memory Injection (memoryCore.js:270-319)
 
 **Priority system**:
 ```javascript
-// Use running scene summary if enabled (default behavior)
-if (get_settings('running_scene_summary_enabled')) {
-    scene_injection = get_running_summary_injection();
-    // Override position/depth/role/scan settings
-    scene_summary_position = get_settings('running_scene_summary_position');
-    scene_summary_depth = get_settings('running_scene_summary_depth');
-    scene_summary_scan = get_settings('running_scene_summary_scan');
-    scene_summary_role = get_settings('running_scene_summary_role');
-    debug(SUBSYSTEM.MEMORY, `Using running scene summary for injection`);
-} else if (get_settings('scene_summary_enabled')) {
-    scene_injection = get_scene_memory_injection();
-    debug(SUBSYSTEM.MEMORY, `Using individual scene summaries for injection`);
-}
+const scene_summary_position = get_settings('running_scene_summary_position');
+const scene_summary_role = get_settings('running_scene_summary_role');
+const scene_summary_depth = get_settings('running_scene_summary_depth');
+const scene_summary_scan = get_settings('running_scene_summary_scan');
+
+const scene_injection = get_running_summary_injection();
+debug(SUBSYSTEM.MEMORY, `Using running scene summary for injection (${scene_injection.length} chars)`);
 ```
 
 **Key points**:
-- Running summary takes priority when enabled
-- Falls back to individual scenes if disabled
-- Uses separate position/depth/role/scan settings
+- Running summary is the sole injection path
+- Uses dedicated position/depth/role/scan settings
 - Logged with `SUBSYSTEM.MEMORY` prefix
 
 ### 2. Scene Summary Generation (sceneBreak.js:720-721)
@@ -565,7 +558,6 @@ await auto_generate_running_summary();
 **Bindings**:
 ```javascript
 // Core settings
-bind_setting('#running_scene_summary_enabled', 'running_scene_summary_enabled', 'boolean', refresh_memory);
 bind_setting('#running_scene_summary_auto_generate', 'running_scene_summary_auto_generate', 'boolean');
 bind_setting('#running_scene_summary_show_navbar', 'running_scene_summary_show_navbar', 'boolean', () => {
     if (window.updateRunningSceneSummaryNavbar) window.updateRunningSceneSummaryNavbar();
@@ -657,8 +649,8 @@ AutoSummarize
 ### Debug vs Log vs Error
 
 ```javascript
-debug(SUBSYSTEM.RUNNING, 'Detailed debug info');  // Only shows when debug mode enabled
-log(SUBSYSTEM.RUNNING, 'Important event');         // Always shows
+debug(SUBSYSTEM.RUNNING, 'Detailed debug info');  // Always emits verbose tracing details
+log(SUBSYSTEM.RUNNING, 'Important event');         // Standard operational updates
 error(SUBSYSTEM.RUNNING, 'Error occurred', err);   // Shows + toast notification
 ```
 
@@ -684,8 +676,7 @@ error(SUBSYSTEM.RUNNING, 'Error occurred', err);   // Shows + toast notification
 3. **Verify Settings Panel**
    - Navigate to Extensions → Auto Summarize
    - Scroll to "Running Scene Summary" section
-   - Verify all controls present:
-     - "Enable Running Scene Summary (Recommended)" checkbox
+   - Verify controls present (toggle removed – feature always enabled):
      - "Exclude Latest X Scene(s)" slider
      - "Auto-generate on New Scene Summaries" checkbox
      - "Show Navbar Version Controls" checkbox
@@ -799,11 +790,6 @@ error(SUBSYSTEM.RUNNING, 'Error occurred', err);   // Shows + toast notification
 
 3. **Error Cases**
    ```
-   Test with running summary disabled:
-   - Disable "Enable Running Scene Summary"
-   - Click "Regenerate Running" button
-   - Should alert: "Running scene summary is not enabled..."
-
    Test with scene without summary:
    - Create scene break without generating summary
    - Click "Regenerate Running" button
@@ -925,15 +911,6 @@ error(SUBSYSTEM.RUNNING, 'Error occurred', err);   // Shows + toast notification
    - Should return null, no version created
    ```
 
-3. **Disable Running Summary Mid-Chat**
-   ```
-   - Have running summary generated
-   - Disable "Enable Running Scene Summary"
-   - Send message
-   - Should inject individual scene summaries instead
-   - Console: Using individual scene summaries for injection
-   ```
-
 4. **LLM Failure**
    ```
    - Disconnect API or use invalid preset
@@ -952,7 +929,7 @@ error(SUBSYSTEM.RUNNING, 'Error occurred', err);   // Shows + toast notification
 **Symptoms**: Scene summaries generate but running summary doesn't update
 
 **Checks**:
-1. Verify `running_scene_summary_enabled: true` in settings
+1. Trigger a manual regeneration once (feature is always enabled; look for new versions)
 2. Verify `running_scene_summary_auto_generate: true` in settings
 3. Check exclude_latest setting - might be excluding all scenes
 4. Check console for errors: `[AutoSummarize] [ERROR] [Running]`
@@ -963,7 +940,6 @@ error(SUBSYSTEM.RUNNING, 'Error occurred', err);   // Shows + toast notification
 // In browser console
 const ctx = SillyTavern.getContext();
 const settings = ctx.extension_settings.auto_summarize;
-console.log('Enabled:', settings.running_scene_summary_enabled);
 console.log('Auto-gen:', settings.running_scene_summary_auto_generate);
 console.log('Exclude:', settings.running_scene_summary_exclude_latest);
 ```
@@ -974,9 +950,8 @@ console.log('Exclude:', settings.running_scene_summary_exclude_latest);
 
 **Checks**:
 1. Verify `running_scene_summary_show_navbar: true` in settings
-2. Verify `running_scene_summary_enabled: true` in settings
-3. Check console for UI initialization: `[AutoSummarize] [UI] Running scene summary navbar created`
-4. Check DOM: `$('#running_scene_summary_navbar').length` should be 1
+2. Check console for UI initialization: `[AutoSummarize] [UI] Running scene summary navbar created`
+3. Check DOM: `$('#running_scene_summary_navbar').length` should be 1
 
 **Fix**:
 ```javascript
@@ -989,25 +964,15 @@ updateRunningSceneSummaryNavbar();
 
 **Symptoms**: Both running summary AND individual scenes in context
 
-**Cause**: This should never happen - running summary replaces individuals
+**Cause**: Legacy metadata or another extension injected stale scene summaries. The running summary code no longer falls back to individual scenes.
 
 **Checks**:
 1. Filter console: `[AutoSummarize] [Memory]`
-2. Should see ONLY ONE of:
-   - `Using running scene summary for injection`
-   - `Using individual scene summaries for injection`
+2. You should only see `Using running scene summary for injection` messages
 
 **Debug**:
-```javascript
-// Check injection logic
-const ctx = SillyTavern.getContext();
-const running_enabled = ctx.extension_settings.auto_summarize.running_scene_summary_enabled;
-const scene_enabled = ctx.extension_settings.auto_summarize.scene_summary_enabled;
-console.log('Running enabled:', running_enabled);
-console.log('Scene enabled:', scene_enabled);
-// If running_enabled = true, should use running summary
-// If running_enabled = false && scene_enabled = true, should use individual scenes
-```
+- Run `/log_scene_summary_injection` to print the current running summary injection payload
+- If individual scenes appear, clear legacy metadata (`chat_metadata.auto_summarize_scene_summaries`) and regenerate the running scene summary
 
 ### Version Selector Not Updating
 
@@ -1213,9 +1178,9 @@ console.log(settings.running_scene_summary_prompt);
 
 If you have existing chats using individual scene summaries and want to switch to running summary:
 
-1. **Enable Running Scene Summary**
+1. **Confirm Running Summary Controls**
    ```
-   Settings → Running Scene Summary → Enable Running Scene Summary (Recommended) ✓
+   Settings → Running Scene Summary (toggle removed – feature always enabled)
    ```
 
 2. **Generate Initial Running Summary**
@@ -1242,26 +1207,7 @@ If you have existing chats using individual scene summaries and want to switch t
 
 ### Reverting to Individual Scenes
 
-If you want to go back to individual scene summaries:
-
-1. **Disable Running Scene Summary**
-   ```
-   Settings → Running Scene Summary → Uncheck "Enable Running Scene Summary"
-   ```
-
-2. **Verify Fallback**
-   ```
-   - Send test message or click "Refresh Memory"
-   - Console should show: Using individual scene summaries for injection
-   - Scene summaries should appear as separate bullet points
-   ```
-
-3. **Keep Running Summary Data**
-   ```
-   - Running summary versions remain in chat_metadata
-   - Can re-enable at any time
-   - Navbar hidden but data preserved
-   ```
+Running scene summary can no longer be disabled. If you need a blank injection temporarily, clear the running summary versions or adjust the running summary template to output minimal content.
 
 ---
 

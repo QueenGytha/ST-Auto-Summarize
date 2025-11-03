@@ -26,7 +26,7 @@ import {
     extension_settings,
     saveSettingsDebounced,
 } from './index.js';
-import { default_scene_template, auto_lorebook_entry_lookup_prompt, auto_lorebook_entry_deduplicate_prompt } from './defaultPrompts.js';
+import { auto_lorebook_entry_lookup_prompt, auto_lorebook_entry_deduplicate_prompt } from './defaultPrompts.js';
 import {
     ensureEntityTypesSetting,
     renderEntityTypesList,
@@ -41,20 +41,6 @@ async function initialize_settings_listeners() {
 
 
     bind_setting('#error_detection_enabled', 'error_detection_enabled', 'boolean');
-    bind_setting('#scene_summary_template', 'scene_summary_template', 'text');
-
-    bind_function('#edit_scene_injection_template', async () => {
-        const description = `
-    This controls the template for scene summary injection.<br>
-    Macros: <b>{{scene_summaries}}</b> will be replaced with the scene summaries.
-        `;
-        const value = await get_user_setting_text_input('scene_summary_template', 'Edit Scene Injection Template', description, default_scene_template);
-        if (value !== undefined) {
-            set_settings('scene_summary_template', value);
-            save_profile();
-        }
-    });
-
     bind_setting('#auto_hide_scene_count', 'auto_hide_scene_count', 'number', refresh_memory);
 
     // Trigger profile changes
@@ -91,15 +77,10 @@ async function initialize_settings_listeners() {
     bind_setting('#include_narrator_messages', 'include_narrator_messages', 'boolean');
     bind_setting('#message_length_threshold', 'message_length_threshold', 'number');
 
-    bind_setting('#summary_injection_separator', 'summary_injection_separator', 'text');
-    bind_setting('#summary_injection_threshold', 'summary_injection_threshold', 'number');
-
-    bind_setting('#debug_mode', 'debug_mode', 'boolean');
     bind_setting('#default_chat_enabled', 'default_chat_enabled', 'boolean');
     bind_setting('#use_global_toggle_state', 'use_global_toggle_state', 'boolean');
 
     // --- Scene Summary Settings ---
-    bind_setting('#scene_summary_enabled', 'scene_summary_enabled', 'boolean');
     bind_setting('#scene_summary_auto_name', 'scene_summary_auto_name', 'boolean');
     bind_setting('#scene_summary_auto_name_manual', 'scene_summary_auto_name_manual', 'boolean');
     bind_setting('#scene_summary_navigator_width', 'scene_summary_navigator_width', 'number', (value /*: number */) => {
@@ -124,10 +105,6 @@ async function initialize_settings_listeners() {
     });
     bind_setting('#scene_summary_prompt', 'scene_summary_prompt', 'text');
     bind_setting('#scene_summary_prefill', 'scene_summary_prefill', 'text');
-    bind_setting('#scene_summary_position', 'scene_summary_position', 'number');
-    bind_setting('#scene_summary_depth', 'scene_summary_depth', 'number');
-    bind_setting('#scene_summary_role', 'scene_summary_role');
-    bind_setting('#scene_summary_scan', 'scene_summary_scan', 'boolean');
     bind_setting('#scene_summary_message_types', 'scene_summary_message_types', 'text');
 
     // Persist and display scene_summary_history_count
@@ -191,7 +168,6 @@ Available Macros:
     bind_setting('#scene_summary_connection_profile', 'scene_summary_connection_profile', 'text');
 
     // --- Running Scene Summary Settings ---
-    bind_setting('#running_scene_summary_enabled', 'running_scene_summary_enabled', 'boolean', refresh_memory);
     bind_setting('#running_scene_summary_auto_generate', 'running_scene_summary_auto_generate', 'boolean');
     bind_setting('#running_scene_summary_show_navbar', 'running_scene_summary_show_navbar', 'boolean', () => {
         // Refresh navbar buttons visibility
@@ -303,6 +279,7 @@ Available Macros:
     bind_setting('#auto_scene_break_on_new_message', 'auto_scene_break_on_new_message', 'boolean');
     bind_setting('#auto_scene_break_generate_summary', 'auto_scene_break_generate_summary', 'boolean');
     bind_setting('#auto_scene_break_check_which_messages', 'auto_scene_break_check_which_messages', 'text');
+    bind_setting('#auto_scene_break_recent_message_count', 'auto_scene_break_recent_message_count', 'number');
     bind_setting('#auto_scene_break_prompt', 'auto_scene_break_prompt', 'text');
     bind_setting('#auto_scene_break_prefill', 'auto_scene_break_prefill', 'text');
     bind_setting('#auto_scene_break_connection_profile', 'auto_scene_break_connection_profile', 'text');
@@ -421,18 +398,6 @@ function initialize_lorebooks_settings_listeners() {
         if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
         // $FlowFixMe[prop-missing]
         extension_settings.autoLorebooks.autoReorderAlphabetically = value;
-        saveSettingsDebounced();
-    });
-
-    // Debug mode checkbox
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-debug-mode', function() {
-        const value = $(this).prop('checked');
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.debug_mode = value;
         saveSettingsDebounced();
     });
 

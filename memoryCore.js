@@ -21,7 +21,6 @@ import {
     debounce_timeout,
     SUBSYSTEM,
 } from './index.js';
-import { default_scene_template } from './defaultPrompts.js';
 import { get_running_summary_injection } from './runningSceneSummary.js';
 
 // INJECTION RECORDING FOR LOGS
@@ -99,9 +98,6 @@ function update_message_inclusion_flags() {
 
     debug("Updating message inclusion flags")
 
-    const injection_threshold = get_settings('summary_injection_threshold')
-    const first_to_inject = chat.length - injection_threshold
-
     // iterate through the chat in reverse order and mark the messages that should be included as single message summaries
     let message_summary_limit_reached = false;
     const end = chat.length - 1;
@@ -109,10 +105,6 @@ function update_message_inclusion_flags() {
     let new_summary = ""  // temp summary storage to check token length
     for (let i = end; i >= 0; i--) {
         const message = chat[i];
-
-        // Mark whether the message is lagging behind the exclusion threshold (even if no summary)
-        const lagging = i >= first_to_inject
-        set_data(message, 'lagging', lagging)
 
         // check for any of the exclusion criteria
         const include = check_message_exclusion(message)
@@ -153,7 +145,7 @@ function concatenate_summary(existing_text /*: string */, message /*: STMessage 
     if (!memory) {  // if there's no summary, do nothing
         return existing_text
     }
-    const separator = get_settings('summary_injection_separator')
+    const separator = existing_text ? "\n" : "";
     return existing_text + separator + memory
 }
 
@@ -194,7 +186,6 @@ function collect_chat_messages(include /*: string */) /*: Array<number> */ {
     for (let i = context.chat.length-1; i >= 0; i--) {
         const message = context.chat[i];
         if (!get_data(message, 'memory')) continue  // no memory
-        if (get_data(message, 'lagging')) continue  // lagging - not injected yet
         if (get_data(message, 'include') !== include) continue  // not the include types we want
         indexes.push(i)
     }
@@ -217,74 +208,15 @@ function get_message_summary_injection() {
     return ctx.substituteParamsExtended(template, {[generic_memories_macro]: text});
 }
 
-// Collect indexes of all visible scene breaks that have a summary
-// Scene summaries are stored in 'scene_summary_memory' (not 'memory') on the message object.
-// $FlowFixMe[signature-verification-failure]
-function collect_scene_summary_indexes() {
-    const ctx = getContext();
-    const chat = ctx.chat;
-    const indexes = [];
-    for (let i = 0; i < chat.length; i++) {
-        const msg = chat[i];
-        if (!msg) continue;
-        if (get_data(msg, 'scene_break_visible') === false) {
-            debug(`[SCENE SUMMARY] Skipping index ${i}: not visible`);
-            continue;
-        }
-        if (get_data(msg, 'scene_summary_include') === false) {
-            debug(`[SCENE SUMMARY] Skipping index ${i}: include flag false`);
-            continue;
-        }
-        const summary = get_data(msg, 'scene_summary_memory');
-        if (summary && summary.trim()) {
-            debug(`[SCENE SUMMARY] Including index ${i}: summary present`);
-            indexes.push(i);
-        } else {
-            debug(`[SCENE SUMMARY] Skipping index ${i}: no summary`);
-        }
-    }
-    debug(`[SCENE SUMMARY] Final collected indexes: ${JSON.stringify(indexes)}`);
-    return indexes;
-}
-
-// Get scene memory injection text (like get_message_summary_injection)
-// $FlowFixMe[signature-verification-failure]
-function get_scene_memory_injection() {
-    if (!get_settings('scene_summary_enabled')) return "";
-    const ctx = getContext();
-    const chat = ctx.chat;
-    const indexes = collect_scene_summary_indexes();
-
-    let template = get_settings('scene_summary_template');
-    if (typeof template !== "string" || !template.trim()) {
-        template = default_scene_template;
-    }
-
-    // Build an array of scene summary objects with sequential numbering
-    const scene_summaries = indexes.map((idx, i) => {
-        const msg = chat[idx];
-        return {
-            number: i + 1,
-            name: get_data(msg, 'scene_break_name') || `Scene ${i + 1}`,
-            summary: get_data(msg, 'scene_summary_memory') || ""
-        };
-    });
-
-    const summariesText = scene_summaries.map(
-        s => `- [Scene ${s.number}]: ${s.summary}`
-    ).join('\n');
-    return template.replace('{{scene_summaries}}', summariesText);
-}
-
 // $FlowFixMe[signature-verification-failure]
 async function refresh_memory() {
     const ctx = getContext();
 
     // --- Declare scene injection position/role/depth/scan variables ---
-    let scene_summary_position = get_settings('scene_summary_position');
-    let scene_summary_role = get_settings('scene_summary_role');
-    let scene_summary_depth = get_settings('scene_summary_depth');
-    let scene_summary_scan = get_settings('scene_summary_scan');
+    const scene_summary_position = get_settings('running_scene_summary_position');
+    const scene_summary_role = get_settings('running_scene_summary_role');
+    const scene_summary_depth = get_settings('running_scene_summary_depth');
+    const scene_summary_scan = get_settings('running_scene_summary_scan');
 
     // --- Auto-hide/unhide messages older than X ---
     await auto_hide_messages_by_command();
@@ -301,21 +233,8 @@ async function refresh_memory() {
     update_message_inclusion_flags()  // update the inclusion flags for all messages
 
     // --- Scene Summary Injection ---
-    let scene_injection = "";
-
-    // Use running scene summary if enabled (default behavior), otherwise individual scene summaries
-    if (get_settings('running_scene_summary_enabled')) {
-        scene_injection = get_running_summary_injection();
-        // Override position/depth/role/scan settings if running summary has specific settings
-        scene_summary_position = get_settings('running_scene_summary_position');
-        scene_summary_depth = get_settings('running_scene_summary_depth');
-        scene_summary_scan = get_settings('running_scene_summary_scan');
-        scene_summary_role = get_settings('running_scene_summary_role');
-        debug(SUBSYSTEM.MEMORY, `Using running scene summary for injection (${scene_injection.length} chars)`);
-    } else if (get_settings('scene_summary_enabled')) {
-        scene_injection = get_scene_memory_injection();
-        debug(SUBSYSTEM.MEMORY, `Using individual scene summaries for injection (${scene_injection.length} chars)`);
-    }
+    const scene_injection = get_running_summary_injection();
+    debug(SUBSYSTEM.MEMORY, `Using running scene summary for injection (${scene_injection.length} chars)`);
 
     // Store for later logging
     last_scene_injection = scene_injection;
@@ -335,7 +254,5 @@ export {
     concatenate_summaries,
     refresh_memory,
     refresh_memory_debounced,
-    collect_scene_summary_indexes,
-    last_scene_injection,
-    get_scene_memory_injection
+    last_scene_injection
 };

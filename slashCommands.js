@@ -13,8 +13,7 @@ import {
     refresh_settings,
     settings_content_class,
     toggle_popout,
-    collect_scene_summary_indexes,
-    get_scene_memory_injection,
+    get_running_summary_injection,
     display_injection_preview,
     toast,
 } from './index.js';
@@ -120,18 +119,17 @@ function initialize_slash_commands() {
         name: 'log_scene_summary_injection',
         callback: () => {
             const settings = {
-                scene_summary_enabled: get_settings('scene_summary_enabled'),
-                scene_summary_position: get_settings('scene_summary_position'),
-                scene_summary_role: get_settings('scene_summary_role'),
+                running_scene_summary_position: get_settings('running_scene_summary_position'),
+                running_scene_summary_role: get_settings('running_scene_summary_role'),
+                running_scene_summary_depth: get_settings('running_scene_summary_depth'),
+                running_scene_summary_scan: get_settings('running_scene_summary_scan'),
             };
-            const indexes = collect_scene_summary_indexes();
-            const injection = get_scene_memory_injection();
-            log('[Scene Summary Injection] Settings:', settings);
-            log('[Scene Summary Injection] Collected indexes:', indexes);
-            log('[Scene Summary Injection] Injection text:', injection);
-            return { settings, indexes, injection };
+            const injection = get_running_summary_injection();
+            log('[Running Scene Summary Injection] Settings:', settings);
+            log('[Running Scene Summary Injection] Injection text:', injection);
+            return { settings, injection };
         },
-        helpString: 'Log scene summary injection settings, collected indexes, and injection text.',
+        helpString: 'Log running scene summary injection settings and injection text.',
     }));
 
     // Queue management commands

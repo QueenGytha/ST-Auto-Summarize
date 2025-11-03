@@ -1,7 +1,6 @@
 // @flow
 import {
     scene_summary_prompt,
-    default_scene_template,
     scene_summary_error_detection_prompt,
     auto_scene_break_detection_prompt,
     running_scene_summary_prompt,
@@ -18,8 +17,6 @@ export const default_settings = {
     scene_summary_prompt,
     scene_summary_error_detection_prompt,
     scene_summary_connection_profile: "",
-    summary_injection_separator: "\n* ",
-    summary_injection_threshold: 0,
     debug_mode: true,
     default_chat_enabled: true,
     use_global_toggle_state: false,
@@ -30,17 +27,11 @@ export const default_settings = {
     include_narrator_messages: true, // Include system/narrator messages in scene summaries
     message_length_threshold: 0, // Minimum message length to include in scene summaries
     // --- Scene Summary Settings ---
-    scene_summary_enabled: true,
     scene_summary_prefill: "",
-    scene_summary_position: -1, // Do not inject (running summary replaces individual scenes)
-    scene_summary_depth: 2,
-    scene_summary_role: 0, // System
-    scene_summary_scan: false,
     scene_summary_context_limit: 10,
     scene_summary_context_type: 'percent',
     scene_summary_completion_preset: "",
     scene_summary_message_types: "both", // "user", "character", "both" - which message types to include
-    scene_summary_template: default_scene_template,
     scene_summary_auto_name: true, // Auto-generate scene name when auto-generating scene summary (if not already set)
     scene_summary_auto_name_manual: true, // Auto-generate scene name when manually generating scene summary (if not already set)
     scene_summary_navigator_width: 240, // Width of scene navigator bar in pixels (default: 240px, double the original 48px)
@@ -60,7 +51,8 @@ export const default_settings = {
     auto_scene_break_on_load: false,
     auto_scene_break_on_new_message: true,
     auto_scene_break_message_offset: 1,
-    auto_scene_break_check_which_messages: "user", // "user", "character", "both"
+    auto_scene_break_check_which_messages: "both", // "user", "character", "both"
+    auto_scene_break_recent_message_count: 3,
     auto_scene_break_prompt: auto_scene_break_detection_prompt,
     auto_scene_break_prefill: "",
     auto_scene_break_connection_profile: "",
@@ -68,7 +60,7 @@ export const default_settings = {
     auto_scene_break_generate_summary: true, // Auto-generate scene summary when scene break is detected
 
     // --- Running Scene Summary Settings ---
-    running_scene_summary_enabled: true, // Enable running scene summary (default behavior, best practice)
+    running_scene_summary_enabled: true, // Legacy flag (running summary is always enabled)
     running_scene_summary_exclude_latest: 1, // Number of latest scenes to exclude (allows manual validation before combining)
     running_scene_summary_prompt: running_scene_summary_prompt,
     running_scene_summary_template: default_running_scene_template,
