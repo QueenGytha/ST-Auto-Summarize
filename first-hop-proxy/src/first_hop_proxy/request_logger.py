@@ -3,7 +3,7 @@ import json
 import time
 import re
 from datetime import datetime
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 import logging
 from .utils import sanitize_headers_for_logging
 
@@ -107,7 +107,7 @@ class RequestLogger:
                             end_time: float = None, duration: float = None, error: Exception = None,
                             character_chat_info: Optional[Tuple[str, str, str]] = None,
                             original_request_data: Optional[Dict[str, Any]] = None,
-                            stripped_metadata: Optional[Dict[str, Any]] = None) -> str:
+                            stripped_metadata: Optional[List[Dict[str, Any]]] = None) -> str:
         """Log a complete request/response cycle to a single file
 
         Args:
@@ -123,7 +123,7 @@ class RequestLogger:
             error: Exception if request failed
             character_chat_info: Optional tuple of (character, timestamp, operation) for organized logging
             original_request_data: Original request data before ST_METADATA stripping
-            stripped_metadata: The ST_METADATA that was stripped, if any
+            stripped_metadata: List of ST_METADATA dicts that were stripped (can contain multiple blocks)
 
         Returns:
             Path to log file if successful, empty string otherwise
@@ -164,7 +164,10 @@ class RequestLogger:
         # Show ST_METADATA information if it was stripped
         if stripped_metadata:
             log_content.append("\n" + "-" * 40)
-            log_content.append("STRIPPED ST_METADATA:")
+            if isinstance(stripped_metadata, list):
+                log_content.append(f"STRIPPED ST_METADATA ({len(stripped_metadata)} block{'s' if len(stripped_metadata) != 1 else ''}):")
+            else:
+                log_content.append("STRIPPED ST_METADATA:")
             log_content.append("-" * 40)
             log_content.append(json.dumps(stripped_metadata, indent=2))
 

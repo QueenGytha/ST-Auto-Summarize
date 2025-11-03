@@ -118,31 +118,71 @@ export function installGenerateRawInterceptor() /*: void */ {
 /**
  * Determine operation type from call context
  * Uses heuristics to identify the type of LLM operation
+ * Maps to OperationType constants from operationQueue.js
  * @returns {string} Operation type identifier
  */
 // $FlowFixMe[signature-verification-failure]
+// eslint-disable-next-line complexity
 function determineOperationType() /*: string */ {
     try {
         // Try to determine from call stack
         const stack = new Error().stack || '';
 
-        // Check for specific operation types in call stack
-        if (stack.includes('summarize_text') || stack.includes('summarization.js')) {
-            return 'summary';
+        // Check for specific scene operations FIRST (before generic summarize_text check)
+        // Scene operations often call summarize_text(), so must be checked first
+        if (stack.includes('detectSceneBreak') || stack.includes('autoSceneBreakDetection.js')) {
+            return 'detect_scene_break';
         }
-        if (stack.includes('sceneBreak') || stack.includes('scene')) {
-            return 'scene';
+        if (stack.includes('generateSceneSummary') && !stack.includes('Running')) {
+            return 'generate_scene_summary';
         }
+        if (stack.includes('generateSceneName') || stack.includes('sceneNamePrompt')) {
+            return 'generate_scene_name';
+        }
+        if (stack.includes('generateRunningSceneSummary') || stack.includes('runningSceneSummary.js') || stack.includes('combineSceneWithRunning')) {
+            // Check for specific running summary operations
+            if (stack.includes('combineSceneWithRunning')) {
+                return 'combine_scene_with_running';
+            }
+            return 'generate_running_summary';
+        }
+
+        // Check for validation operations
+        if (stack.includes('validateSummary') || stack.includes('summaryValidation.js')) {
+            return 'validate_summary';
+        }
+
+        // Check for specific lorebook operations
+        if (stack.includes('lookupLorebookEntry') || stack.includes('lorebookEntryLookup')) {
+            return 'lorebook_entry_lookup';
+        }
+        if (stack.includes('resolveLorebookEntry') || stack.includes('lorebookEntryResolution')) {
+            return 'resolve_lorebook_entry';
+        }
+        if (stack.includes('createLorebookEntry')) {
+            return 'create_lorebook_entry';
+        }
+        if (stack.includes('mergeLorebookEntry')) {
+            return 'merge_lorebook_entry';
+        }
+        if (stack.includes('updateLorebookRegistry') || stack.includes('updateRegistry')) {
+            return 'update_lorebook_registry';
+        }
+
+        // Generic lorebook check (if none of the specific checks matched)
         if (stack.includes('lorebook') || stack.includes('Lorebook')) {
             return 'lorebook';
         }
-        if (stack.includes('validation') || stack.includes('validate')) {
-            return 'validation';
+
+        // Check for message summarization (AFTER scene checks!)
+        // This is generic and will match many operations, so must be last
+        if (stack.includes('summarize_text') || stack.includes('summarization.js')) {
+            return 'summary';
         }
 
         // Default for chat messages and other operations
         return 'chat';
-    } catch (err) {
+    } catch {
         return 'unknown';
     }
 }

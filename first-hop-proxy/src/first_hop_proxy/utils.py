@@ -3,8 +3,11 @@ Utility functions for the seaking-proxy middleware
 """
 import re
 import json
+import logging
 from typing import Dict, Any, List, Optional, Tuple
 from .constants import SENSITIVE_HEADERS
+
+logger = logging.getLogger(__name__)
 
 
 def sanitize_headers_for_logging(headers: Dict[str, Any]) -> Dict[str, Any]:
@@ -335,7 +338,7 @@ def parse_chat_name(chat: str) -> Tuple[str, str]:
     return (character, timestamp)
 
 
-def extract_st_metadata_from_messages(messages: List[Dict[str, Any]]) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, Any]]]:
+def extract_st_metadata_from_messages(messages: List[Dict[str, Any]]) -> Tuple[Optional[List[Dict[str, Any]]], List[Dict[str, Any]]]:
     """
     Extract ST_METADATA from messages and return cleaned messages.
 
@@ -346,12 +349,14 @@ def extract_st_metadata_from_messages(messages: List[Dict[str, Any]]) -> Tuple[O
         messages: List of message dictionaries
 
     Returns:
-        Tuple of (metadata_dict, cleaned_messages)
+        Tuple of (list_of_metadata_dicts, cleaned_messages)
+        Returns (None, cleaned_messages) if no metadata found
+        Returns (list, cleaned_messages) if metadata found (list may have multiple entries)
     """
     if not messages:
         return (None, messages)
 
-    metadata = None
+    all_metadata = []
     cleaned_messages = []
 
     for message in messages:
@@ -362,9 +367,9 @@ def extract_st_metadata_from_messages(messages: List[Dict[str, Any]]) -> Tuple[O
 
         # Try to parse metadata from this message
         msg_metadata = parse_st_metadata(content)
-        if msg_metadata and not metadata:
-            # Store the first metadata we find
-            metadata = msg_metadata
+        if msg_metadata:
+            # Store ALL metadata we find
+            all_metadata.append(msg_metadata)
 
         # Strip metadata and create cleaned message
         cleaned_content = strip_st_metadata(content)
@@ -376,7 +381,7 @@ def extract_st_metadata_from_messages(messages: List[Dict[str, Any]]) -> Tuple[O
         if cleaned_content:
             cleaned_messages.append(cleaned_message)
 
-    return (metadata, cleaned_messages)
+    return (all_metadata if all_metadata else None, cleaned_messages)
 
 
 def extract_character_chat_info(headers: Dict[str, Any], request_data: Dict[str, Any]) -> Optional[Tuple[str, str, str]]:
@@ -386,12 +391,20 @@ def extract_character_chat_info(headers: Dict[str, Any], request_data: Dict[str,
     Looks for ST_METADATA in request messages and parses the chat field
     to extract character name and timestamp.
 
+    Handles multiple ST_METADATA blocks:
+    - If all have same operation type, use it
+    - If multiple types including 'chat', use the non-'chat' type
+    - If multiple non-'chat' types, HARD FAIL
+
     Args:
         headers: Request headers
         request_data: Request body data
 
     Returns:
         Tuple of (character, timestamp, operation) if found, None otherwise
+
+    Raises:
+        ValueError: If ST_METADATA is malformed or has conflicting operation types
 
     Example:
         Messages containing:
@@ -410,16 +423,45 @@ def extract_character_chat_info(headers: Dict[str, Any], request_data: Dict[str,
     if not messages:
         return None
 
-    metadata, _ = extract_st_metadata_from_messages(messages)
-    if not metadata:
+    all_metadata, _ = extract_st_metadata_from_messages(messages)
+    if not all_metadata:
         return None
 
-    # Get chat and operation from metadata
-    chat = metadata.get('chat')
-    operation = metadata.get('operation', 'chat')
+    # Collect all unique operation types and chat names
+    operations = set()
+    chats = set()
 
-    if not chat:
-        return None
+    for metadata in all_metadata:
+        chat = metadata.get('chat')
+        operation = metadata.get('operation')
+
+        if not chat:
+            raise ValueError("ST_METADATA found but missing required 'chat' field")
+
+        if not operation:
+            raise ValueError(f"ST_METADATA found but missing required 'operation' field - chat: {chat}")
+
+        chats.add(chat)
+        operations.add(operation)
+
+    # Verify all metadata blocks refer to the same chat
+    if len(chats) > 1:
+        raise ValueError(f"Multiple ST_METADATA blocks with different 'chat' values: {chats}")
+
+    chat = chats.pop()
+
+    # Determine which operation to use
+    if len(operations) == 1:
+        # Only one operation type - use it
+        operation = operations.pop()
+    elif len(operations) == 2 and 'chat' in operations:
+        # Two types, one is 'chat' - use the non-'chat' one
+        operations.discard('chat')
+        operation = operations.pop()
+    else:
+        # Either more than 2 types, or 2 non-'chat' types - HARD FAIL
+        raise ValueError(f"Multiple conflicting operation types in ST_METADATA: {operations}. " +
+                        "Expected single type or 'chat' + one specific type.")
 
     # Parse character name and timestamp from chat
     character, timestamp = parse_chat_name(chat)

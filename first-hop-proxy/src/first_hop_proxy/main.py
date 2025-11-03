@@ -1,13 +1,14 @@
 """
 Main application module for First Hop Proxy
 """
+import copy
 import json
 import logging
 import uuid
 import time
 import sys
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from requests.exceptions import HTTPError
@@ -100,33 +101,34 @@ def load_config_for_request(config_name: str) -> Config:
     return request_config
 
 
-def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, str]] = None, request_config: Optional[Config] = None, original_request_data: Optional[Dict[str, Any]] = None, stripped_metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, str]] = None, request_config: Optional[Config] = None, original_request_data: Optional[Dict[str, Any]] = None, stripped_metadata: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Forward request to target proxy with error handling and retry logic"""
     # Generate request ID for logging
     request_id = str(uuid.uuid4())[:8]
     start_time = time.time()
     response_data = None
     error = None
-
-    # Extract character/chat info for organized logging
-    # Use original_request_data if provided, otherwise use cleaned request_data
-    character_chat_info = extract_character_chat_info(headers or {}, original_request_data or request_data)
-
-    # Log incoming request to console
-    print("=" * 80, flush=True)
-    print(f"INCOMING REQUEST [{request_id}]", flush=True)
-    if stripped_metadata:
-        print(f"ST_METADATA: {json.dumps(stripped_metadata, indent=2)}", flush=True)
-        print("--- ORIGINAL (AS RECEIVED) ---", flush=True)
-        print(f"Request Data: {json.dumps(original_request_data, indent=2)}", flush=True)
-        print("--- FORWARDED (AFTER STRIPPING) ---", flush=True)
-        print(f"Request Data: {json.dumps(request_data, indent=2)}", flush=True)
-    else:
-        print(f"Request Data: {json.dumps(request_data, indent=2)}", flush=True)
-    print(f"Headers: {json.dumps(sanitize_headers_for_logging(headers or {}), indent=2)}", flush=True)
-    print("=" * 80, flush=True)
+    character_chat_info = None
 
     try:
+        # Extract character/chat info for organized logging
+        # Use original_request_data if provided, otherwise use cleaned request_data
+        # This will raise ValueError if ST_METADATA is present but malformed
+        character_chat_info = extract_character_chat_info(headers or {}, original_request_data or request_data)
+
+        # Log incoming request to console
+        print("=" * 80, flush=True)
+        print(f"INCOMING REQUEST [{request_id}]", flush=True)
+        if stripped_metadata:
+            print(f"ST_METADATA: {json.dumps(stripped_metadata, indent=2)}", flush=True)
+            print("--- ORIGINAL (AS RECEIVED) ---", flush=True)
+            print(f"Request Data: {json.dumps(original_request_data, indent=2)}", flush=True)
+            print("--- FORWARDED (AFTER STRIPPING) ---", flush=True)
+            print(f"Request Data: {json.dumps(request_data, indent=2)}", flush=True)
+        else:
+            print(f"Request Data: {json.dumps(request_data, indent=2)}", flush=True)
+        print(f"Headers: {json.dumps(sanitize_headers_for_logging(headers or {}), indent=2)}", flush=True)
+        print("=" * 80, flush=True)
         # Use request-specific config if provided, otherwise use global config
         active_config = request_config if request_config is not None else config
 
@@ -266,11 +268,11 @@ def models_endpoint(config_path):
     request_id = str(uuid.uuid4())[:8]
     response_data = None
     error = None
-
-    # Extract character/chat info for organized logging (GET request has no body)
-    character_chat_info = extract_character_chat_info(dict(request.headers), {})
+    character_chat_info = None
 
     try:
+        # Extract character/chat info for organized logging (GET request has no body)
+        character_chat_info = extract_character_chat_info(dict(request.headers), {})
         # Load config based on path parameter
         request_config = None
         if config_path:
@@ -415,7 +417,8 @@ def chat_completions(config_path):
             return jsonify({"error": {"message": "No JSON data provided"}}), 400
 
         # Save original request data for logging (before any modifications)
-        original_request_data = request_data.copy() if isinstance(request_data, dict) else request_data
+        # Use deep copy to ensure original is completely isolated from any modifications
+        original_request_data = copy.deepcopy(request_data)
 
         # Validate required fields
         if "messages" not in request_data:
@@ -431,15 +434,21 @@ def chat_completions(config_path):
                     request_data["messages"] = process_messages_with_regex(request_data["messages"], rules)
 
         # Strip ST_METADATA from messages before forwarding
+        # IMPORTANT: Extract from original_request_data to avoid regex interference
         stripped_metadata = None
-        if "messages" in request_data:
-            metadata, cleaned_messages = extract_st_metadata_from_messages(request_data["messages"])
-            if metadata:
-                stripped_metadata = metadata
-                # Log that we found and stripped metadata
-                logger.info(f"Stripped ST_METADATA from request - Chat: {metadata.get('chat')}, Operation: {metadata.get('operation')}")
+        if "messages" in original_request_data:
+            all_metadata, cleaned_messages = extract_st_metadata_from_messages(original_request_data["messages"])
+            if all_metadata:
+                # Store all metadata for logging
+                stripped_metadata = all_metadata
+                # Log that we found and stripped metadata (show all blocks)
+                for i, metadata in enumerate(all_metadata):
+                    logger.info(f"Stripped ST_METADATA block {i+1} - Chat: {metadata.get('chat')}, Operation: {metadata.get('operation')}")
+                # Apply stripping to current request_data (which may have had regex applied)
                 request_data = request_data.copy()
-                request_data["messages"] = cleaned_messages
+                # Extract again from current request_data to get cleaned messages
+                _, request_cleaned_messages = extract_st_metadata_from_messages(request_data["messages"])
+                request_data["messages"] = request_cleaned_messages
 
         # Forward the request with the appropriate config
         # Pass both original and cleaned data for logging
@@ -452,7 +461,12 @@ def chat_completions(config_path):
         )
         return jsonify(result)
 
+    except ValueError as e:
+        # Malformed ST_METADATA or validation errors - return 400 Bad Request
+        logger.error(f"Validation error in chat completions: {e}")
+        return jsonify({"error": {"message": str(e), "type": "validation_error"}}), 400
     except Exception as e:
+        # Unexpected errors - return 500 Internal Server Error
         logger.error(f"Error in chat completions: {e}")
         return jsonify({"error": {"message": str(e)}}), 500
 
