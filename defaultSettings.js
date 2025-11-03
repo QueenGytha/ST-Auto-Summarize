@@ -149,4 +149,5 @@ If the current name is ALREADY a proper name (like "Victoria", "John Smith"), us
 
     // --- First-Hop Proxy Integration Settings ---
     first_hop_proxy_send_chat_details: false, // Send chat details in LLM requests for proxy logging
+    wrap_lorebook_entries: false, // Wrap each lorebook entry individually with XML tags for downstream parsing
 };

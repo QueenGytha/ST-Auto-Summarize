@@ -207,6 +207,9 @@ export * from './metadataInjector.js';
 export * from './generateRawInterceptor.js';
 export * from './operationContext.js';
 
+// Lorebook entry wrapping for downstream parsing
+export * from './lorebookWrapper.js';
+
 // ============================================================================
 // Enter Key Interception for Queue Operations
 // ============================================================================

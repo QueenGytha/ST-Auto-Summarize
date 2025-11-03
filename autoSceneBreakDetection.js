@@ -962,6 +962,42 @@ export function clearCheckedFlagsInRange(
 
     return clearedCount;
 }
+
+/**
+ * Sets auto_scene_break_checked flag for messages in a range
+ * @param {number} startIndex - Start index (inclusive)
+ * @param {number} endIndex - End index (inclusive)
+ * @returns {number} - Number of messages marked
+ */
+export function setCheckedFlagsInRange(
+    startIndex /*: number */,
+    endIndex /*: number */
+) /*: number */ {
+    const ctx = getContext();
+    const chat = ctx.chat;
+
+    if (!chat || chat.length === 0) {
+        return 0;
+    }
+
+    let markedCount = 0;
+
+    for (let i = startIndex; i <= endIndex && i < chat.length; i++) {
+        const message = chat[i];
+        if (!get_data(message, 'auto_scene_break_checked')) {
+            set_data(message, 'auto_scene_break_checked', true);
+            markedCount++;
+        }
+    }
+
+    if (markedCount > 0) {
+        saveChatDebounced();
+        debug(SUBSYSTEM.SCENE, `Marked ${markedCount} message(s) as checked in range ${startIndex}-${endIndex}`);
+    }
+
+    return markedCount;
+}
+
 /**
  */
 export async function clearAllCheckedFlags() {

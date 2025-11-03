@@ -21,7 +21,7 @@ import {
     queueCombineSceneWithRunning,
     queueProcessLorebookEntry,
 } from './queueIntegration.js';
-import { clearCheckedFlagsInRange } from './autoSceneBreakDetection.js';
+import { clearCheckedFlagsInRange, setCheckedFlagsInRange } from './autoSceneBreakDetection.js';
 import { getConfiguredEntityTypeDefinitions, formatEntityTypeListForPrompt } from './entityTypes.js';
 
 // SCENE SUMMARY PROPERTY STRUCTURE:
@@ -1073,6 +1073,13 @@ export async function generateSceneSummary(
 
     // Save and render
     await saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced, index);
+
+    // Mark all messages in this scene as checked to prevent auto-detection from splitting the scene
+    const markedCount = setCheckedFlagsInRange(startIdx, endIdx);
+    if (markedCount > 0) {
+        debug(SUBSYSTEM.SCENE, `Marked ${markedCount} messages in scene (${startIdx}-${endIdx}) as checked after manual summary generation`);
+    }
+
     await auto_generate_running_summary(index);
     renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
 

@@ -73,6 +73,7 @@ async function initialize_settings_listeners() {
 
     // First-Hop Proxy Integration Settings
     bind_setting('#first_hop_proxy_send_chat_details', 'first_hop_proxy_send_chat_details', 'boolean');
+    bind_setting('#wrap_lorebook_entries', 'wrap_lorebook_entries', 'boolean');
 
     // Message Filtering Settings (used by scene summaries)
     bind_setting('#include_user_messages', 'include_user_messages', 'boolean');

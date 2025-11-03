@@ -42,6 +42,7 @@ import {
     processNewMessageForSceneBreak,
     cleanup_invalid_running_summaries,
     installGenerateRawInterceptor,
+    installLorebookWrapper,
 } from './index.js';
 
 // Import lorebooks utilities (will be dynamically imported if enabled)
@@ -248,6 +249,11 @@ async function initializeExtension() {
     // This ensures ALL LLM calls (including from ST core) get metadata injected
     installGenerateRawInterceptor();
 
+    // Install lorebook wrapper for individual entry wrapping with XML tags
+    console.log('[Auto-Summarize:Init] About to call installLorebookWrapper()');
+    installLorebookWrapper();
+    console.log('[Auto-Summarize:Init] installLorebookWrapper() call completed');
+
     // Load settings
     initialize_settings();
 
@@ -302,6 +308,7 @@ async function initializeExtension() {
                 injectMetadataIntoChatArray(promptData.chat, { operation: 'chat' });
 
                 debug('[Interceptor] Successfully processed chat array');
+
             } else {
                 debug('[Interceptor] No chat array found in promptData');
             }
@@ -309,6 +316,7 @@ async function initializeExtension() {
             debug('[Interceptor] Error processing CHAT_COMPLETION_PROMPT_READY:', String(err));
         }
     });
+
     eventSource.makeLast(event_types.CHARACTER_MESSAGE_RENDERED, (id) => on_chat_event('char_message', id));
     eventSource.on(event_types.USER_MESSAGE_RENDERED, (id) => on_chat_event('user_message', id));
     eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, (id, _stuff) => on_chat_event('before_message', id));

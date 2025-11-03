@@ -59,6 +59,11 @@
                             <span>Send Chat Details</span>
                         </label>
 
+                        <label title="Wraps each lorebook entry individually with &lt;lorebook&gt; tags for downstream parsing. Supports multi-line entries. Tags are stripped by proxy before sending to LLM." class="checkbox_label">
+                            <input id="wrap_lorebook_entries" type="checkbox" />
+                            <span>Wrap Lorebook Entries</span>
+                        </label>
+
                         <div class="note-block">
                             <i class="fa-solid fa-info-circle"></i>
                             <span>When enabled, metadata is added to LLM requests that your proxy can parse and strip before forwarding to the LLM. This allows your proxy to log requests with chat context.</span>
