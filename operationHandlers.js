@@ -116,6 +116,7 @@ export function registerAllOperationHandlers() {
                     { index },
                     {
                         priority: 20, // Highest priority - process before all other operations
+                        queueVersion: operation.queueVersion,
                         metadata: {
                             scene_index: index,
                             triggered_by: 'auto_scene_break_detection'
@@ -166,6 +167,7 @@ export function registerAllOperationHandlers() {
                 summary
             }, {
                 priority: 5,  // Lower priority than summary generation
+                queueVersion: operation.queueVersion,
                 metadata: {
                     message_index: index,
                     operation_source: 'scene_summary'
@@ -280,7 +282,7 @@ export function registerAllOperationHandlers() {
             await enqueueOperation(
                 OperationType.RESOLVE_LOREBOOK_ENTRY,
                 { entryId },
-                { priority: 10, metadata: { entry_comment: entryData.comment } }
+                { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
             );
         } else if (lorebookEntryLookupResult.sameEntityIds.length === 1) {
             // Exact match found - merge
@@ -291,14 +293,14 @@ export function registerAllOperationHandlers() {
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
                 { entryId, action: 'merge', resolvedId },
-                { priority: 10, metadata: { entry_comment: entryData.comment } }
+                { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
             );
         } else {
             // No match - create new
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
                 { entryId, action: 'create' },
-                { priority: 10, metadata: { entry_comment: entryData.comment } }
+                { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
             );
         }
 
@@ -378,14 +380,14 @@ export function registerAllOperationHandlers() {
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
                 { entryId, action: 'merge', resolvedId: lorebookEntryDeduplicateResult.resolvedId },
-                { priority: 10, metadata: { entry_comment: entryData.comment } }
+                { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
             );
         } else {
             // No match - create new
             await enqueueOperation(
                 OperationType.CREATE_LOREBOOK_ENTRY,
                 { entryId, action: 'create' },
-                { priority: 10, metadata: { entry_comment: entryData.comment } }
+                { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
             );
         }
 
@@ -520,7 +522,7 @@ export function registerAllOperationHandlers() {
         await enqueueOperation(
             OperationType.UPDATE_LOREBOOK_REGISTRY,
             { entryId: context.entryId, entityType: context.finalType, entityId: result.entityId, action: result.action },
-            { priority: 10, metadata: { entry_comment: context.entryData.comment } }
+            { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: context.entryData.comment } }
         );
 
         return { success: true, entityId: result.entityId, entityUid: result.entityUid, action: result.action };
