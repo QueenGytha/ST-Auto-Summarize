@@ -22,7 +22,9 @@ from .utils import (
     sanitize_headers_for_logging,
     process_messages_with_regex,
     extract_character_chat_info,
-    extract_st_metadata_from_messages
+    extract_st_metadata_from_messages,
+    extract_lorebook_entries_from_messages,
+    strip_lorebook_attributes_from_messages
 )
 from .constants import DEFAULT_MODELS
 
@@ -101,7 +103,7 @@ def load_config_for_request(config_name: str) -> Config:
     return request_config
 
 
-def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, str]] = None, request_config: Optional[Config] = None, original_request_data: Optional[Dict[str, Any]] = None, stripped_metadata: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, str]] = None, request_config: Optional[Config] = None, original_request_data: Optional[Dict[str, Any]] = None, stripped_metadata: Optional[List[Dict[str, Any]]] = None, lorebook_entries: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Forward request to target proxy with error handling and retry logic"""
     # Generate request ID for logging
     request_id = str(uuid.uuid4())[:8]
@@ -230,7 +232,8 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
                     error=error,
                     character_chat_info=character_chat_info,
                     original_request_data=original_request_data,
-                    stripped_metadata=stripped_metadata
+                    stripped_metadata=stripped_metadata,
+                    lorebook_entries=lorebook_entries
                 )
             except Exception as log_error:
                 logger.error(f"Failed to log request: {log_error}")
@@ -433,6 +436,13 @@ def chat_completions(config_path):
                     request_data = request_data.copy()
                     request_data["messages"] = process_messages_with_regex(request_data["messages"], rules)
 
+        # Extract lorebook entries from messages before stripping (use original_request_data)
+        lorebook_entries = None
+        if "messages" in original_request_data:
+            lorebook_entries = extract_lorebook_entries_from_messages(original_request_data["messages"])
+            if lorebook_entries:
+                logger.info(f"Extracted {len(lorebook_entries)} lorebook entries")
+
         # Strip ST_METADATA from messages before forwarding
         # IMPORTANT: Extract from original_request_data to avoid regex interference
         stripped_metadata = None
@@ -450,6 +460,12 @@ def chat_completions(config_path):
                 _, request_cleaned_messages = extract_st_metadata_from_messages(request_data["messages"])
                 request_data["messages"] = request_cleaned_messages
 
+        # Strip lorebook attributes from messages before forwarding
+        if lorebook_entries and "messages" in request_data:
+            logger.info(f"Stripping lorebook attributes from {len(lorebook_entries)} entries")
+            request_data = request_data.copy()
+            request_data["messages"] = strip_lorebook_attributes_from_messages(request_data["messages"])
+
         # Forward the request with the appropriate config
         # Pass both original and cleaned data for logging
         result = forward_request(
@@ -457,7 +473,8 @@ def chat_completions(config_path):
             dict(request.headers),
             request_config=request_config,
             original_request_data=original_request_data,
-            stripped_metadata=stripped_metadata
+            stripped_metadata=stripped_metadata,
+            lorebook_entries=lorebook_entries
         )
         return jsonify(result)
 

@@ -88,16 +88,25 @@ export const default_settings = {
 
 Current Entry Name: {{entry_name}}
 
+⚠️ CRITICAL: ONLY THE CONTENT IS INJECTED INTO THE AI'S CONTEXT ⚠️
+The AI will NEVER see the entry title, type, or keywords - it ONLY sees the content text during roleplay.
+Therefore, merged content MUST be completely self-contained with specific names and references.
+DO NOT use pronouns or vague references ("him", "her", "it", "the protagonist", "his friend").
+USE specific names ("Alice", "{{user}}", "Sunblade sword", "Shadow Guild", "Marcus").
+
 Your task:
 1. Compare the existing content with the new information.
 2. Merge them carefully while keeping strict PList formatting:
-   - Keep ONE bracketed entry that starts with the canonical entity name.
+   - Keep ONE bracketed entry that starts with [type-EntityName: ...] format.
+   - The type prefix (e.g., "character-", "location-", "item-") MUST match the entry type.
+   - Example: [character-Alice: warrior, ...] or [location-Tavern: old building, ...]
    - Add new details that are not already present.
    - Update existing details that have changed.
    - Remove information that is contradicted or no longer valid.
    - Preserve important existing properties that remain true.
    - Keep properties grouped logically; use parentheses for sub-details, max two nesting levels.
    - Do NOT spin off separate trait entries; every fact stays under this entity.
+   - MAINTAIN SPECIFICITY: Replace any pronouns or vague references with specific names.
 3. CRITICAL: Check if the entry name needs updating:
    - If the current name is a VAGUE/RELATIONAL reference (examples: "amelia's sister", "the bartender", "mysterious woman", "the shopkeeper", "victoria's friend")
    - AND either the existing content OR new content reveals an ACTUAL PROPER NAME
@@ -117,7 +126,7 @@ Just output the merged content as plain text. It must remain valid PList.
 
 FORMAT 2 (JSON - use when renaming is needed):
 {
-  "mergedContent": "the merged lorebook entry content here",
+  "mergedContent": "the merged lorebook entry content here (MUST start with [type-NewName: ...])",
   "canonicalName": "ProperName"
 }
 
@@ -130,9 +139,17 @@ RULES FOR canonicalName:
 - Use the full proper name if available (e.g., "Victoria Thornbrook")
 - NO type prefixes (use "Victoria Thornbrook" not "character-Victoria Thornbrook")
 - If only first name known, use just that (e.g., "Victoria")
+- CRITICAL: mergedContent MUST start with [type-canonicalName: ...] format (e.g., [character-Victoria Thornbrook: ...])
 - Always ensure mergedContent remains valid PList for this single entity.
 
-If the current name is ALREADY a proper name (like "Victoria", "John Smith"), use FORMAT 1.`,
+If the current name is ALREADY a proper name (like "Victoria", "John Smith"), use FORMAT 1.
+
+SPECIFICITY EXAMPLE:
+❌ BAD MERGE:
+[character-Alice: friends with him, uses his sword, told her about the plan, works at the place]
+
+✅ GOOD MERGE:
+[character-Alice: friends with({{user}}), uses({{user}}'s Sunblade sword), revealed(infiltration plan to Sarah), works at(Riverside Tavern owned by Marcus)]`,
     auto_lorebooks_summary_merge_prefill: '', // Prefill for summary merge prompts
     auto_lorebooks_summary_merge_connection_profile: '', // Connection profile for summary merging
     auto_lorebooks_summary_merge_completion_preset: '', // Completion preset for summary merging

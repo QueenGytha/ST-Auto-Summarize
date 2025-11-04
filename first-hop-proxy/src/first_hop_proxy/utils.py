@@ -507,3 +507,146 @@ def sanitize_for_filesystem(name: str, max_length: int = 100) -> str:
         sanitized = 'unknown'
 
     return sanitized
+
+
+def extract_lorebook_entries_from_content(content: str) -> List[Dict[str, Any]]:
+    """
+    Extract lorebook entries wrapped with <setting_lore> tags from message content.
+
+    Args:
+        content: Message content that may contain <setting_lore>...</setting_lore> tags
+
+    Returns:
+        List of dictionaries containing lorebook entry info:
+        {
+            'raw': 'original tag with attributes',
+            'attributes': {'name': '...', 'uid': '...', ...},
+            'content': 'inner text content',
+            'formatted': 'formatted version for logging'
+        }
+    """
+    if not content:
+        return []
+
+    entries = []
+
+    # Pattern to match <setting_lore ...>content</setting_lore>
+    # Captures attributes and content separately
+    pattern = r'<setting_lore\s+([^>]+)>\s*([^<]*?)\s*</setting_lore>'
+
+    matches = re.finditer(pattern, content, re.DOTALL)
+
+    for match in matches:
+        attributes_str = match.group(1)
+        inner_content = match.group(2).strip()
+        full_tag = match.group(0)
+
+        # Parse attributes
+        attributes = {}
+        attr_pattern = r'(\w+)="([^"]*)"'
+        for attr_match in re.finditer(attr_pattern, attributes_str):
+            attr_name = attr_match.group(1)
+            attr_value = attr_match.group(2)
+            attributes[attr_name] = attr_value
+
+        # Format for logging with each attribute on a new line
+        formatted_parts = ['<setting_lore']
+        for key, value in attributes.items():
+            formatted_parts.append(f'  {key}="{value}"')
+        formatted_parts.append('>')
+        formatted_parts.append(inner_content)
+        formatted_parts.append('</setting_lore>')
+        formatted = '\n'.join(formatted_parts)
+
+        entries.append({
+            'raw': full_tag,
+            'attributes': attributes,
+            'content': inner_content,
+            'formatted': formatted
+        })
+
+    return entries
+
+
+def strip_lorebook_attributes(content: str) -> str:
+    """
+    Strip attributes from <setting_lore> tags, keeping only the wrapper and content.
+
+    Transforms:
+        <setting_lore name="x" uid="14" ...>content</setting_lore>
+    To:
+        <setting_lore>content</setting_lore>
+
+    Args:
+        content: Message content that may contain <setting_lore> tags
+
+    Returns:
+        Content with attributes stripped from lorebook tags
+    """
+    if not content:
+        return content
+
+    # Replace <setting_lore ...> with <setting_lore>
+    # Keep the content and closing tag intact
+    pattern = r'<setting_lore\s+[^>]+>'
+    result = re.sub(pattern, '<setting_lore>', content)
+
+    return result
+
+
+def extract_lorebook_entries_from_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Extract all lorebook entries from all messages in a request.
+
+    Args:
+        messages: List of message dictionaries
+
+    Returns:
+        List of lorebook entry dictionaries (see extract_lorebook_entries_from_content)
+    """
+    if not messages:
+        return []
+
+    all_entries = []
+
+    for message in messages:
+        content = message.get('content', '')
+        if not content:
+            continue
+
+        entries = extract_lorebook_entries_from_content(content)
+        all_entries.extend(entries)
+
+    return all_entries
+
+
+def strip_lorebook_attributes_from_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Strip attributes from <setting_lore> tags in all messages.
+
+    Args:
+        messages: List of message dictionaries
+
+    Returns:
+        List of messages with lorebook attributes stripped
+    """
+    if not messages:
+        return messages
+
+    stripped_messages = []
+
+    for message in messages:
+        content = message.get('content', '')
+        if not content:
+            stripped_messages.append(message)
+            continue
+
+        # Strip attributes from lorebook tags
+        stripped_content = strip_lorebook_attributes(content)
+
+        # Create new message with stripped content
+        stripped_message = message.copy()
+        stripped_message['content'] = stripped_content
+        stripped_messages.append(stripped_message)
+
+    return stripped_messages

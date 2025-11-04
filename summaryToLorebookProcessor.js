@@ -245,9 +245,22 @@ function buildEntryName(entry /*: any */) /*: string */ {
  * @returns {Object} Normalized entry
  */
 export function normalizeEntryData(entry /*: any */) /*: any */ {
+    const comment = buildEntryName(entry);
+    let content = entry.content || entry.description || '';
+
+    // Inject type-EntityName prefix into PList content
+    // Replace [Type: or [EntityName: with [type-EntityName: to match the title/comment
+    if (content && content.trim().startsWith('[')) {
+        const colonIndex = content.indexOf(':');
+        if (colonIndex > 0) {
+            // Replace everything between [ and : with the comment (type-EntityName)
+            content = `[${comment}${content.substring(colonIndex)}`;
+        }
+    }
+
     return {
-        comment: buildEntryName(entry),
-        content: entry.content || entry.description || '',
+        comment,
+        content,
         // Accept "keywords" (from prompt JSON), "keys" (internal), or "key" (WI format)
         keys: entry.keys || entry.keywords || entry.key || [],
         secondaryKeys: entry.secondaryKeys || entry.keysecondary || [],

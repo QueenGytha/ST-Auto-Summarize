@@ -39,11 +39,12 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 // - Only entities worth remembering for later
 //
 // PList FORMAT (REQUIRED):
-// Syntax: [EntityName: property1, property2, nested(detail1, detail2)]
+// Syntax: [type-EntityName: property1, property2, nested(detail1, detail2)]
 // - Square brackets [ ] around entire entry
-// - Colon after entity name, comma-separated properties
+// - Entity identifier is lowercase type + hyphen + entity name (e.g., "character-Alice", "location-Tavern")
+// - Colon after entity identifier, comma-separated properties
 // - Nested details use parentheses ( ), max 2 levels deep
-// Example: [Alice: warrior, appearance(red hair, green eyes), personality(confident)]
+// Example: [character-Alice: warrior, appearance(red hair, green eyes), personality(confident)]
 //
 // JSON STRUCTURE:
 //
@@ -85,15 +86,22 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 // ❌ BAD: ["skilled warrior alice", "alice the brave"] - too specific, won't trigger reliably
 //
 // CONTENT GUIDELINES (PList format):
+// ⚠️ CRITICAL: ONLY THE CONTENT FIELD IS PRESERVED IN THE AI'S CONTEXT ⚠️
+// - The "name", "type", and "keywords" fields are ONLY for indexing/triggering
+// - The AI will NEVER see those fields - it ONLY sees the "content" text
+// - Therefore, content MUST be completely self-contained and specific
+// - Content MUST identify what entity it's describing (that's why we use [type-EntityName: ...] format)
+// - Content MUST be specific about relationships (use actual names, not "the user", "her friend", "his sister")
 // - This is where ALL the detail and nuance goes
-// - MUST use PList format: [EntityName: property1, property2, nested(details)]
+// - MUST use PList format: [type-EntityName: property1, property2, nested(details)]
+// - CRITICAL: Start with lowercase type + hyphen + entity name (e.g., [character-Alice: ...], [location-Tavern: ...])
 // - Be thorough but organized using properties
 // - Include appearance, personality, capabilities, significance
 // - Include relationships and context as properties
 // - Store secrets as properties: knows(X), keeping secret from(Y, Z)
 // - For locations/items: Include owner/resident as a property with SPECIFIC NAMES
 //   * For user-owned locations/items, use {{user}}'s residence/property
-//   * Example: [Apartment: {{user}}'s residence, shared with(Sarah)]
+//   * Example: [location-Apartment: {{user}}'s residence, shared with(Sarah)]
 //   * Do NOT use: "protagonist", "the user", "main character", "human subject"
 // - INCLUDE CONCRETE FACTUAL DETAILS:
 //   * Specific quotes: quoted("exact scripture text", "literature about villainy")
@@ -102,24 +110,31 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 //   * What they read/saw/heard: read(ancient murals depicting First War)
 //   ❌ NOT vague: "has beliefs about women", "knows things"
 //   ✅ SPECIFIC: quoted(scripture: "suffer not a woman to teach"), knows(Sunblade thief identity)
+// - BE SPECIFIC ABOUT RELATIONSHIPS AND REFERENCES:
+//   ❌ VAGUE: [character-Alice: friends with the protagonist, uses his sword]
+//   ✅ SPECIFIC: [character-Alice: friends with({{user}}), uses({{user}}'s Sunblade sword)]
+//   ❌ VAGUE: [character-Bob: knows what happened, told her about it]
+//   ✅ SPECIFIC: [character-Bob: knows(Shadow Guild infiltrated castle), revealed information to(Alice)]
+//   ❌ VAGUE: [location-Tavern: owned by him, she works there]
+//   ✅ SPECIFIC: [location-Tavern: owned by(Marcus), employees(Sarah, waitress), location(Riverside district)]
 //
 // EXAMPLES OF GOOD SEPARATION:
 //
 // Example 1: Combat Scene
 // ✅ SUMMARY: "Bandits ambushed Alice and Bob. Alice killed two with greatsword. Bob disabled one with throwing knife. Two fled. Alice wounded in shoulder but mobile."
-// ✅ LOREBOOK: {"name": "Alice", "type": "character", "keywords": ["alice"], "content": "[Alice: warrior, weapon(greatsword, wields with lethal skill), training(formal), wounded(shoulder), continues fighting when injured]"}
+// ✅ LOREBOOK: {"name": "Alice", "type": "character", "keywords": ["alice"], "content": "[character-Alice: warrior, weapon(greatsword, wields with lethal skill), training(formal), wounded(shoulder), continues fighting when injured]"}
 //
 // Example 2: Discovery
 // ✅ SUMMARY: "Found hidden chamber behind waterfall. Ancient murals depicted the First War."
-// ✅ LOREBOOK: {"name": "Hidden Chamber", "type": "location", "keywords": ["chamber", "waterfall"], "content": "[Hidden Chamber: secret room, location(behind waterfall), features(stone walls, ancient murals showing First War), status(undisturbed for centuries)]"}
+// ✅ LOREBOOK: {"name": "Hidden Chamber", "type": "location", "keywords": ["chamber", "waterfall"], "content": "[location-Hidden Chamber: secret room, location(behind waterfall), features(stone walls, ancient murals showing First War), status(undisturbed for centuries)]"}
 //
 // Example 3: Character-Owned Location
 // ✅ SUMMARY: "Visited John's apartment. Sarah was researching quantum physics on his laptop."
-// ✅ LOREBOOK: {"name": "location-Apartment", "type": "location", "keywords": ["apartment"], "content": "[Apartment: John's residence, shared with(Sarah), contains(laptop, research papers on quantum physics)]"}
+// ✅ LOREBOOK: {"name": "Apartment", "type": "location", "keywords": ["apartment"], "content": "[location-Apartment: John's residence, shared with(Sarah), contains(laptop, research papers on quantum physics)]"}
 //
 // Example 4: Revelation
 // ✅ SUMMARY: "Bob revealed Shadow Guild membership. Alice became suspicious but agreed to cooperate."
-// ✅ LOREBOOK: {"name": "Bob", "type": "character", "keywords": ["bob"], "content": "[Bob: Shadow Guild member, keeping secret from(Alice, {{user}} previously), revealed(Guild membership during confrontation), constrained by(Guild secrecy requirements)]"}
+// ✅ LOREBOOK: {"name": "Bob", "type": "character", "keywords": ["bob"], "content": "[character-Bob: Shadow Guild member, keeping secret from(Alice, {{user}} previously), revealed(Guild membership during confrontation), constrained by(Guild secrecy requirements)]"}
 //
 // BAD EXAMPLES:
 //
@@ -130,13 +145,16 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 // → That's a timeline event! Belongs in summary, not lorebooks
 //
 // ❌ LOREBOOK: {"name": "Alice", "type": "character", "content": "Skilled warrior. Red hair, green eyes."}
-// → NOT using PList format! Must be: [Alice: warrior, appearance(red hair, green eyes)]
+// → NOT using PList format! Must be: [character-Alice: warrior, appearance(red hair, green eyes)]
 //
 // ❌ LOREBOOK: {"name": "Secret Alliance", "type": "concept", "content": "[Secret Alliance: ...]"}
 // → Wrong type! Use character/location/item/faction/quest/rule only. Store secrets in character entries.
 //
-// ❌ LOREBOOK: {"name": "location-Apartment", "type": "location", "keywords": ["apartment"], "content": "[Apartment: shared living space, occupants(human subject, Sarah)]"}
-// → Using vague "human subject" instead of specific name! Should be: [Apartment: John's residence, shared with(Sarah)]
+// ❌ LOREBOOK: {"name": "Apartment", "type": "location", "keywords": ["apartment"], "content": "[location-Apartment: shared living space, occupants(human subject, Sarah)]"}
+// → Using vague "human subject" instead of specific name! Should be: [location-Apartment: John's residence, shared with(Sarah)]
+//
+// ❌ LOREBOOK: {"name": "Alice", "type": "character", "keywords": ["alice"], "content": "[character-Alice: friends with him, borrowed his weapon, told her about the plan]"}
+// → Pronouns and vague references! The AI won't know who "him", "his", or "her" are! Should be: [character-Alice: friends with({{user}}), borrowed({{user}}'s Sunblade), revealed(plan to Sarah)]
 //
 // OUTPUT FORMAT:
 // - Output ONLY valid JSON, no text before or after
@@ -176,7 +194,17 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 // - Leave empty unless this scene introduced durable information that must live in a lore entry.
 // - Each object updates a SINGLE concrete entity (character, location, item, faction, quest, rule) or introduces a brand-new one.
 // - Set the "name" field to the entity's canonical name. Never mint a standalone trait or detail entry.
-// - Content MUST stay in valid PList format: [Entity: property, property(detail), ...] with at most two nesting levels.
+//
+// ⚠️ CRITICAL: ONLY THE "content" FIELD IS INJECTED INTO THE AI'S CONTEXT ⚠️
+// - The "name", "type", and "keywords" fields are ONLY for indexing/triggering the entry
+// - The AI will NEVER see those fields during roleplay - it ONLY sees the "content" text
+// - Therefore, content MUST be completely self-contained with ALL necessary context
+// - Content MUST identify the entity (use [type-EntityName: ...] format so AI knows what this is about)
+// - Content MUST use specific names for relationships (not "the protagonist", "her friend", "his ally")
+// - Content MUST be specific about referenced items, places, events (not "the sword", but "Sunblade sword")
+//
+// - Content MUST stay in valid PList format: [type-EntityName: property, property(detail), ...] with at most two nesting levels.
+// - CRITICAL: Start content with lowercase type + hyphen + entity name (e.g., [character-Alice: ...], [location-Tavern: ...]).
 // - Add only facts that are new or changed versus what the lorebook would already contain. If unsure, omit them.
 // - Keywords: 2-4 lowercase triggers tied to that entity (names, distinctive identifiers). Avoid generic terms.
 // - Type must be one of: {{lorebook_entry_types}}.
@@ -187,6 +215,16 @@ export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step
 // - Neutral tone, modern prose. Avoid repetitive sentence starters ("Despite", "Although").
 // - Focus on outcomes and current state; do not speculate about feelings or motivations.
 // - When a fact already exists in the lorebook, avoid repeating it in lorebook output unless the scene changes it.
+//
+// CONTENT SPECIFICITY EXAMPLES:
+// ❌ BAD: [character-Sarah: works for him, knows about it, gave her the information]
+// ✅ GOOD: [character-Sarah: works for(Marcus at Riverside Tavern), knows(Shadow Guild infiltration plan), gave information to(Alice)]
+//
+// ❌ BAD: [item-Amulet: powerful artifact, currently with the protagonist, can do magic]
+// ✅ GOOD: [item-Amulet: powerful artifact, current owner({{user}}), abilities(protection from fire, detects nearby magic)]
+//
+// ❌ BAD: [location-Castle: under attack, they are defending, he is leading]
+// ✅ GOOD: [location-Castle: under attack by(Shadow Guild forces), defenders(Royal Guard, {{user}}), commander(Captain Marcus)]
 //
 // OUTPUT FORMAT:
 // - Output ONLY valid JSON, no text before or after
@@ -241,9 +279,9 @@ Check that the JSON meets these criteria:
 2. Has a "summary" field (string) that contains ALL headers: "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Pending Threads".
 3. Each section uses bullet lines beginning with "- " and states factual outcomes or states (no emotional analysis).
 4. Has a "lorebooks" field (array, may be empty).
-5. Every lorebook entry object includes "name", "type", "keywords" (array), and "content" in valid PList format.
+5. Every lorebook entry object includes "name", "type", "keywords" (array), and "content" in valid PList format starting with [type-EntityName: ...].
 6. No timeline narration or descriptive lore in the recap; enduring traits belong in lorebooks.
-7. Lorebook content stays PList (single entity, <=2 nesting levels) and excludes timeline events.
+7. Lorebook content stays PList (single entity, <=2 nesting levels, format: [type-EntityName: property, ...]) and excludes timeline events.
 
 Respond with ONLY:
 - "VALID" if all criteria met
@@ -259,9 +297,9 @@ Check that the JSON meets these criteria:
 2. Has a "summary" field (string) using the headers "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Pending Threads" in that order.
 3. Each section contains bullet lines with observable facts or outcomes from the scene (no speculation or character biographies).
 4. Has a "lorebooks" field (array, may be empty).
-5. Every lorebook entry object includes "name", "type", "keywords" (array), and "content" in valid PList format for a single entity.
+5. Every lorebook entry object includes "name", "type", "keywords" (array), and "content" in valid PList format (starting with [type-EntityName: ...]) for a single entity.
 6. Recap sections focus on state after the scene; lorebook entries handle enduring traits or nuance.
-7. Lorebook content omits timeline narration and stays within PList syntax (max two nesting levels).
+7. Lorebook content omits timeline narration and stays within PList syntax ([type-EntityName: property, ...], max two nesting levels).
 
 Respond with ONLY:
 - "VALID" if all criteria met
@@ -365,10 +403,11 @@ Registry listing:
 Tasks:
 1. Decide which entry type best fits the new entry. The type MUST be one of the allowed list above.
 2. Confirm the candidate represents ONE concrete entity. Its 'name' should already be that entity's canonical name.
-3. Validate the content is proper PList (single bracketed entry, comma-separated properties, max two nesting levels, no prose).
-4. Compare the candidate against the registry listing and identify any entries that already cover this entity.
-5. Place confident matches in 'sameEntityIds'. If you need more detail before deciding, list those IDs in 'needsFullContextIds'.
-6. Craft a one-line synopsis (<=15 words) that reflects the candidate's newest or most important information.
+3. Validate the content is proper PList (single bracketed entry starting with [type-EntityName: ..., comma-separated properties, max two nesting levels, no prose).
+4. Validate content uses specific names/references (not pronouns like "him", "her", "it", or vague terms like "the protagonist").
+5. Compare the candidate against the registry listing and identify any entries that already cover this entity.
+6. Place confident matches in 'sameEntityIds'. If you need more detail before deciding, list those IDs in 'needsFullContextIds'.
+7. Craft a one-line synopsis (<=15 words) that reflects the candidate's newest or most important information.
 
 Return ONLY a JSON object in this exact shape:
 {
@@ -408,7 +447,8 @@ Return ONLY a JSON object in this exact shape:
 }
 
 Rules:
-- Validate the new candidate remains a single-entity PList (brackets, properties, <=2 nesting levels).
+- Validate the new candidate remains a single-entity PList (brackets starting with [type-EntityName: ..., properties, <=2 nesting levels).
+- Validate content uses specific names (not pronouns or vague references).
 - If none of the candidates match, set the resolvedId field to "new".
 - When choosing an existing entity, pick the ID that truly represents the same subject and merge the newest facts into it.
 - If the candidate adds nothing new, keep the existing content and synopsis; do not fabricate alternate copies.

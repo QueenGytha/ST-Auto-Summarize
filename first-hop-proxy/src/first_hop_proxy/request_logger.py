@@ -130,7 +130,8 @@ class RequestLogger:
                             end_time: float = None, duration: float = None, error: Exception = None,
                             character_chat_info: Optional[Tuple[str, str, str]] = None,
                             original_request_data: Optional[Dict[str, Any]] = None,
-                            stripped_metadata: Optional[List[Dict[str, Any]]] = None) -> str:
+                            stripped_metadata: Optional[List[Dict[str, Any]]] = None,
+                            lorebook_entries: Optional[List[Dict[str, Any]]] = None) -> str:
         """Log a complete request/response cycle to a single file
 
         Args:
@@ -147,6 +148,7 @@ class RequestLogger:
             character_chat_info: Optional tuple of (character, timestamp, operation) for organized logging
             original_request_data: Original request data before ST_METADATA stripping
             stripped_metadata: List of ST_METADATA dicts that were stripped (can contain multiple blocks)
+            lorebook_entries: List of lorebook entry dicts extracted from messages
 
         Returns:
             Path to log file if successful, empty string otherwise
@@ -183,6 +185,19 @@ class RequestLogger:
             sanitized_headers = self._sanitize_headers(headers)
             for key, value in sanitized_headers.items():
                 log_content.append(f"{key}: {value}")
+
+        # Show lorebook entries if present
+        if lorebook_entries:
+            log_content.append("\n" + "=" * 80)
+            log_content.append(f"LOREBOOK ENTRIES ({len(lorebook_entries)} entr{'ies' if len(lorebook_entries) != 1 else 'y'})")
+            log_content.append("=" * 80)
+            for i, entry in enumerate(lorebook_entries):
+                if i > 0:
+                    log_content.append("-" * 80)
+                log_content.append(f"Entry {i+1}:")
+                log_content.append("-" * 80)
+                log_content.append(entry.get('formatted', entry.get('raw', 'No content')))
+            log_content.append("=" * 80)
 
         # Show ST_METADATA information if it was stripped
         if stripped_metadata:

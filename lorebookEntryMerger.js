@@ -301,6 +301,17 @@ export async function executeMerge(lorebookName /*: string */, existingEntry /*:
             if (newComment !== currentComment) {
                 updates.comment = newComment;
 
+                // Synchronize content prefix with new comment
+                // Replace [oldComment: with [newComment: in the PList content
+                if (updates.content && updates.content.trim().startsWith('[')) {
+                    const colonIndex = updates.content.indexOf(':');
+                    if (colonIndex > 0) {
+                        // Replace the entity name prefix in content to match the new comment
+                        updates.content = `[${newComment}${updates.content.substring(colonIndex)}`;
+                        debug(`Updated content prefix from [${currentComment}: to [${newComment}:`);
+                    }
+                }
+
                 // Extract old stub name (without type prefix) to add as keyword
                 const oldStubName = currentComment.replace(/^[^-]+-/, '').toLowerCase();
 
