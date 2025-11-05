@@ -5,24 +5,14 @@
   "description": "Auto-Summarize extension for SillyTavern",
   "main": "index.js",
   "scripts": {
-    "build": "babel *.js --out-dir . --ignore 'node_modules/**'",
-    "watch": "babel *.js --out-dir . --ignore 'node_modules/**' --watch",
-    "lint": "eslint *.js --ignore-pattern syntax-check.js --ignore-pattern verify-flow-annotations.js --no-warn-ignored --max-warnings 0",
-    "lint:quiet": "eslint *.js --ignore-pattern syntax-check.js --ignore-pattern verify-flow-annotations.js --quiet --no-warn-ignored --max-warnings 0",
-    "lint:fix": "eslint *.js --ignore-pattern syntax-check.js --ignore-pattern verify-flow-annotations.js --no-warn-ignored --fix",
-    "flow": "flow status --flowconfig-name .flowconfig",
-    "flow-check": "flow check --flowconfig-name .flowconfig",
+    "lint": "eslint *.js --ignore-pattern syntax-check.js --no-warn-ignored --max-warnings 0",
+    "lint:quiet": "eslint *.js --ignore-pattern syntax-check.js --quiet --no-warn-ignored --max-warnings 0",
+    "lint:fix": "eslint *.js --ignore-pattern syntax-check.js --no-warn-ignored --fix",
     "syntax-check": "node syntax-check.js",
-    "verify-flow-annotations": "node verify-flow-annotations.js",
     "audit": "npm audit --audit-level=moderate",
-    "analyze": "npm run verify-flow-annotations && npm run lint && npm run syntax-check && npm run flow-check",
-    "analyze:full": "npm run verify-flow-annotations && npm run lint && npm run syntax-check && npm run flow-check && npm run audit",
-    "test": "node tests/run-tests.js",
-    "test:coverage": "c8 node tests/run-tests.js",
-    "coverage": "c8 --reporter=text --reporter=html node tests/run-tests.js",
-    "coverage:check": "c8 check-coverage",
-    "coverage:report": "c8 report",
-    "coverage:html": "npm run coverage && node -e \"require('child_process').exec('start coverage/index.html')\""
+    "analyze": "npm run lint && npm run syntax-check",
+    "analyze:full": "npm run lint && npm run syntax-check && npm run audit",
+    "test": "node tests/run-tests.js"
   },
   "keywords": [
     "sillytavern",
@@ -44,20 +34,12 @@
   },
   "homepage": "https://github.com/QueenGytha/ST-Auto-Summarize#readme",
   "devDependencies": {
-    "@babel/cli": "^7.24.8",
-    "@babel/core": "^7.28.4",
-    "@babel/eslint-parser": "^7.28.4",
-    "@babel/plugin-syntax-flow": "^7.27.1",
-    "@babel/preset-flow": "^7.27.1",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.1",
-    "c8": "^10.1.3",
     "eslint": "^9.38.0",
     "eslint-plugin-complexity": "^1.0.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-sonarjs": "^3.0.5",
-    "flow-bin": "^0.288.0",
-    "flowgen": "^1.21.0",
     "typescript": "^5.9.3"
   }
 }

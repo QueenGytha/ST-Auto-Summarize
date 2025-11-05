@@ -1,5 +1,0 @@
-{
-  "presets": ["@babel/preset-flow"],
-  "comments": true,
-  "retainLines": true
-}

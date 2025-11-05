@@ -1,26 +1,26 @@
-// @flow
-/*:: import type { STContext } from '../../../../scripts/st-context.js'; */
+
+
 
 import {
-    get_settings,
-    get_memory,
-    summarize_text,
-    refresh_memory,
-    renderSceneNavigatorBar,
-    log,
-    debug,
-    error,
-    toast,
-    SUBSYSTEM,
-    extension_settings
-} from './index.js';
+  get_settings,
+  get_memory,
+  summarize_text,
+  refresh_memory,
+  renderSceneNavigatorBar,
+  log,
+  debug,
+  error,
+  toast,
+  SUBSYSTEM,
+  extension_settings } from
+'./index.js';
 import {
-    auto_generate_running_summary,
-} from './runningSceneSummary.js';
+  auto_generate_running_summary } from
+'./runningSceneSummary.js';
 import {
-    queueCombineSceneWithRunning,
-    queueProcessLorebookEntry,
-} from './queueIntegration.js';
+  queueCombineSceneWithRunning,
+  queueProcessLorebookEntry } from
+'./queueIntegration.js';
 import { clearCheckedFlagsInRange, setCheckedFlagsInRange } from './autoSceneBreakDetection.js';
 import { getConfiguredEntityTypeDefinitions, formatEntityTypeListForPrompt } from './entityTypes.js';
 
@@ -45,267 +45,248 @@ export const SCENE_BREAK_DIV_CLASS = 'auto_summarize_scene_break_div';
 const SCENE_BREAK_SELECTED_CLASS = 'sceneBreak-selected';
 
 // Simple deterministic hash to detect when summary content changes
-function computeSummaryHash(summaryText /*: string */) /*: string */ {
-    const text = (summaryText || '').trim();
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-        const charCode = text.charCodeAt(i);
-        hash = ((hash << 5) - hash) + charCode;
-        hash |= 0; // force 32-bit int
-    }
-    return Math.abs(hash).toString(36);
+function computeSummaryHash(summaryText ) {
+  const text = (summaryText || '').trim();
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    const charCode = text.charCodeAt(i);
+    hash = (hash << 5) - hash + charCode;
+    hash |= 0; // force 32-bit int
+  }
+  return Math.abs(hash).toString(36);
 }
 
 // Adds the scene break button to the message template
 export function addSceneBreakButton() {
-    const html = `
+  const html = `
 <div title="Mark end of scene" class="mes_button ${SCENE_BREAK_BUTTON_CLASS} fa-solid fa-clapperboard" tabindex="0"></div>
 `;
-    // $FlowFixMe[cannot-resolve-name]
-    $("#message_template .mes_buttons .extraMesButtons").prepend(html);
+  $("#message_template .mes_buttons .extraMesButtons").prepend(html);
 }
 
 // Handles click events for the scene break button
-// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 export function bindSceneBreakButton(
-    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
-    getContext /*: () => STContext */,
-    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
-    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
-    saveChatDebounced /*: () => void */
-) /*: void */ {
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $("div#chat").on("click", `.${SCENE_BREAK_BUTTON_CLASS}`, function () {
-        // $FlowFixMe[cannot-resolve-name]
-        const message_block = $(this).closest(".mes");
-        const message_id = Number(message_block.attr("mesid"));
-        toggleSceneBreak(message_id, get_message_div, getContext, set_data, get_data, saveChatDebounced);
-    });
+get_message_div , // Returns jQuery object - any is appropriate
+getContext ,
+set_data , // value can be any type - legitimate
+get_data , // Returns any type - legitimate
+saveChatDebounced )
+{
+  $("div#chat").on("click", `.${SCENE_BREAK_BUTTON_CLASS}`, function () {
+    const message_block = $(this).closest(".mes");
+    const message_id = Number(message_block.attr("mesid"));
+    toggleSceneBreak(message_id, get_message_div, getContext, set_data, get_data, saveChatDebounced);
+  });
 }
 
 // Toggles the scene break UI and persists state
-// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 export function toggleSceneBreak(
-    index /*: number */,
-    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
-    getContext /*: () => STContext */,
-    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
-    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
-    saveChatDebounced /*: () => void */
-) /*: void */ {
-    const ctx = getContext();
-    const message = ctx.chat[index];
-    const isSet = !!get_data(message, SCENE_BREAK_KEY);
-    const visible = get_data(message, SCENE_BREAK_VISIBLE_KEY);
+index ,
+get_message_div , // Returns jQuery object - any is appropriate
+getContext ,
+set_data , // value can be any type - legitimate
+get_data , // Returns any type - legitimate
+saveChatDebounced )
+{
+  const ctx = getContext();
+  const message = ctx.chat[index];
+  const isSet = !!get_data(message, SCENE_BREAK_KEY);
+  const visible = get_data(message, SCENE_BREAK_VISIBLE_KEY);
 
-    if (!isSet) {
-        set_data(message, SCENE_BREAK_KEY, true);
-        set_data(message, SCENE_BREAK_VISIBLE_KEY, true);
-    } else {
-        set_data(message, SCENE_BREAK_VISIBLE_KEY, !visible);
-        // $FlowFixMe[constant-condition]
-        if (isSet && visible && !get_data(message, SCENE_BREAK_VISIBLE_KEY)) {
-            // Scene break was visible, now hidden - clear checked flags
-            const chat = ctx.chat;
+  if (!isSet) {
+    set_data(message, SCENE_BREAK_KEY, true);
+    set_data(message, SCENE_BREAK_VISIBLE_KEY, true);
+  } else {
+    set_data(message, SCENE_BREAK_VISIBLE_KEY, !visible);
+    if (isSet && visible && !get_data(message, SCENE_BREAK_VISIBLE_KEY)) {
+      // Scene break was visible, now hidden - clear checked flags
+      const chat = ctx.chat;
 
-            // Find the next visible scene break
-            let nextSceneBreakIndex = chat.length;
-            for (let i = index + 1; i < chat.length; i++) {
-                const isSceneBreak = get_data(chat[i], SCENE_BREAK_KEY);
-                const isVisible = get_data(chat[i], SCENE_BREAK_VISIBLE_KEY);
-                if (isSceneBreak && isVisible) {
-                    nextSceneBreakIndex = i;
-                    break;
-                }
-            }
-
-            // Clear checked flags from hidden scene to next visible scene
-            const clearedCount = clearCheckedFlagsInRange(index, nextSceneBreakIndex);
-            if (clearedCount > 0) {
-                debug(SUBSYSTEM.SCENE, `Scene break at ${index} hidden - cleared ${clearedCount} checked flags (range ${index}-${nextSceneBreakIndex - 1})`);
-            }
+      // Find the next visible scene break
+      let nextSceneBreakIndex = chat.length;
+      for (let i = index + 1; i < chat.length; i++) {
+        const isSceneBreak = get_data(chat[i], SCENE_BREAK_KEY);
+        const isVisible = get_data(chat[i], SCENE_BREAK_VISIBLE_KEY);
+        if (isSceneBreak && isVisible) {
+          nextSceneBreakIndex = i;
+          break;
         }
+      }
+
+      // Clear checked flags from hidden scene to next visible scene
+      const clearedCount = clearCheckedFlagsInRange(index, nextSceneBreakIndex);
+      if (clearedCount > 0) {
+        debug(SUBSYSTEM.SCENE, `Scene break at ${index} hidden - cleared ${clearedCount} checked flags (range ${index}-${nextSceneBreakIndex - 1})`);
+      }
     }
-    renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
-    saveChatDebounced();
+  }
+  renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
+  saveChatDebounced();
 
-    // Re-run auto-hide logic after toggling scene break
-    import('./autoHide.js').then(mod => {
-        mod.auto_hide_messages_by_command();
-    });
+  // Re-run auto-hide logic after toggling scene break
+  import('./autoHide.js').then((mod) => {
+    mod.auto_hide_messages_by_command();
+  });
 
-    // Update navigator bar if present
-    // $FlowFixMe[cannot-resolve-name]
-    if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
+  // Update navigator bar if present
+  if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
 }
 
 // --- Helper functions for versioned scene summaries ---
 // Scene summary properties are not at the root; see file header for structure.
-// $FlowFixMe[missing-local-annot] - Return type is inferred correctly
 function getSceneSummaryVersions(
-    message /*: STMessage */,
-    get_data /*: (message: STMessage, key: string) => any */  // Returns any type - legitimate
-) /*: Array<string> */ {
-    // Returns the array of summary versions, or an empty array if none
-    return get_data(message, 'scene_summary_versions') || [];
+message ,
+get_data  // Returns any type - legitimate
+) {
+  // Returns the array of summary versions, or an empty array if none
+  return get_data(message, 'scene_summary_versions') || [];
 }
 
 // Scene summary properties are not at the root; see file header for structure.
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 function setSceneSummaryVersions(
-    message /*: STMessage */,
-    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
-    versions /*: Array<string> */
-) /*: void */ {
-    set_data(message, 'scene_summary_versions', versions);
+message ,
+set_data , // value can be any type - legitimate
+versions )
+{
+  set_data(message, 'scene_summary_versions', versions);
 }
 
 // Scene summary properties are not at the root; see file header for structure.
-// $FlowFixMe[missing-local-annot] - Return type is inferred correctly
 function getCurrentSceneSummaryIndex(
-    message /*: STMessage */,
-    get_data /*: (message: STMessage, key: string) => any */  // Returns any type - legitimate
-) /*: number */ {
-    return get_data(message, 'scene_summary_current_index') ?? 0;
+message ,
+get_data  // Returns any type - legitimate
+) {
+  return get_data(message, 'scene_summary_current_index') ?? 0;
 }
 
 // Scene summary properties are not at the root; see file header for structure.
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 function setCurrentSceneSummaryIndex(
-    message /*: STMessage */,
-    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
-    idx /*: number */
-) /*: void */ {
-    set_data(message, 'scene_summary_current_index', idx);
+message ,
+set_data , // value can be any type - legitimate
+idx )
+{
+  set_data(message, 'scene_summary_current_index', idx);
 }
 
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 function getSceneRangeIndexes(
-    index /*: number */,
-    chat /*: Array<STMessage> */,
-    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
-    sceneCount /*: number */
-) /*: [number, number] */ {
-    // Find all visible scene breaks up to and including index
-    const sceneBreakIndexes = [];
-    for (let i = 0; i <= index; i++) {
-        if (
-            get_data(chat[i], SCENE_BREAK_KEY) &&
-            (get_data(chat[i], SCENE_BREAK_VISIBLE_KEY) === undefined || get_data(chat[i], SCENE_BREAK_VISIBLE_KEY))
-        ) {
-            sceneBreakIndexes.push(i);
-        }
+index ,
+chat ,
+get_data , // Returns any type - legitimate
+sceneCount )
+{
+  // Find all visible scene breaks up to and including index
+  const sceneBreakIndexes = [];
+  for (let i = 0; i <= index; i++) {
+    if (
+    get_data(chat[i], SCENE_BREAK_KEY) && (
+    get_data(chat[i], SCENE_BREAK_VISIBLE_KEY) === undefined || get_data(chat[i], SCENE_BREAK_VISIBLE_KEY)))
+    {
+      sceneBreakIndexes.push(i);
     }
-    // We want to start after the (sceneBreakIndexes.length - sceneCount - 1)th break (the (sceneCount-1)th before the current one)
-    // For count=1, this is after the last break before the current one (or 0 if none)
-    let startIdx = 0;
-    if (sceneBreakIndexes.length >= sceneCount + 1) {
-        // There are enough breaks to go back sceneCount scenes
-        const idx = sceneBreakIndexes.length - sceneCount - 1;
-        startIdx = sceneBreakIndexes[idx] + 1;
-    }
-    const endIdx = index;
-    return [startIdx, endIdx];
+  }
+  // We want to start after the (sceneBreakIndexes.length - sceneCount - 1)th break (the (sceneCount-1)th before the current one)
+  // For count=1, this is after the last break before the current one (or 0 if none)
+  let startIdx = 0;
+  if (sceneBreakIndexes.length >= sceneCount + 1) {
+    // There are enough breaks to go back sceneCount scenes
+    const idx = sceneBreakIndexes.length - sceneCount - 1;
+    startIdx = sceneBreakIndexes[idx] + 1;
+  }
+  const endIdx = index;
+  return [startIdx, endIdx];
 }
 
 // Helper: Handle generate summary button click
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 async function handleGenerateSummaryButtonClick(
-    index /*: number */,
-    chat /*: Array<STMessage> */,
-    message /*: STMessage */,
-    $sceneBreak /*: any */,  // jQuery object - any is appropriate
-    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
-    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
-    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
-    saveChatDebounced /*: () => void */
-) /*: Promise<void> */ {
-    log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
+index ,
+chat ,
+message ,
+$sceneBreak , // jQuery object - any is appropriate
+get_message_div , // Returns jQuery object - any is appropriate
+get_data , // Returns any type - legitimate
+set_data , // value can be any type - legitimate
+saveChatDebounced )
+{
+  log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
 
-    // Use the queue-enabled generateSceneSummary function
-    // $FlowFixMe[cannot-resolve-name]
-    await generateSceneSummary(index, get_message_div, getContext, get_data, set_data, saveChatDebounced, false);
+  // Use the queue-enabled generateSceneSummary function
+  await generateSceneSummary(index, get_message_div, getContext, get_data, set_data, saveChatDebounced, false);
 }
 
 // Helper: Initialize versioned summaries for backward compatibility
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 function initializeSceneSummaryVersions(
-    message /*: STMessage */,
-    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
-    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
-    saveChatDebounced /*: () => void */
-) /*: {versions: Array<string>, currentIdx: number} */ {
-    let versions = getSceneSummaryVersions(message, get_data);
-    let currentIdx = getCurrentSceneSummaryIndex(message, get_data);
+message ,
+get_data , // Returns any type - legitimate
+set_data , // value can be any type - legitimate
+saveChatDebounced )
+{
+  let versions = getSceneSummaryVersions(message, get_data);
+  let currentIdx = getCurrentSceneSummaryIndex(message, get_data);
 
-    if (versions.length === 0) {
-        const initialSummary = get_data(message, SCENE_BREAK_SUMMARY_KEY) || '';
-        versions = [initialSummary];
-        setSceneSummaryVersions(message, set_data, versions);
-        setCurrentSceneSummaryIndex(message, set_data, 0);
-        set_data(message, SCENE_SUMMARY_MEMORY_KEY, initialSummary);
-        set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(initialSummary));
-        saveChatDebounced();
-    }
+  if (versions.length === 0) {
+    const initialSummary = get_data(message, SCENE_BREAK_SUMMARY_KEY) || '';
+    versions = [initialSummary];
+    setSceneSummaryVersions(message, set_data, versions);
+    setCurrentSceneSummaryIndex(message, set_data, 0);
+    set_data(message, SCENE_SUMMARY_MEMORY_KEY, initialSummary);
+    set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(initialSummary));
+    saveChatDebounced();
+  }
 
-    // Clamp currentIdx to valid range
-    if (currentIdx < 0) currentIdx = 0;
-    if (currentIdx >= versions.length) currentIdx = versions.length - 1;
+  // Clamp currentIdx to valid range
+  if (currentIdx < 0) currentIdx = 0;
+  if (currentIdx >= versions.length) currentIdx = versions.length - 1;
 
-    return { versions, currentIdx };
+  return { versions, currentIdx };
 }
 
 // Helper: Find scene boundaries
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 function findSceneBoundaries(
-    chat /*: Array<STMessage> */,
-    index /*: number */,
-    get_data /*: (message: STMessage, key: string) => any */  // Returns any type - legitimate
-) /*: {startIdx: number, sceneMessages: Array<number>} */ {
-    let startIdx = 0;
-    for (let i = index - 1; i >= 0; i--) {
-        if (
-            get_data(chat[i], SCENE_BREAK_KEY) &&
-            (get_data(chat[i], SCENE_BREAK_VISIBLE_KEY) === undefined || get_data(chat[i], SCENE_BREAK_VISIBLE_KEY))
-        ) {
-            startIdx = i + 1;
-            break;
-        }
+chat ,
+index ,
+get_data  // Returns any type - legitimate
+) {
+  let startIdx = 0;
+  for (let i = index - 1; i >= 0; i--) {
+    if (
+    get_data(chat[i], SCENE_BREAK_KEY) && (
+    get_data(chat[i], SCENE_BREAK_VISIBLE_KEY) === undefined || get_data(chat[i], SCENE_BREAK_VISIBLE_KEY)))
+    {
+      startIdx = i + 1;
+      break;
     }
+  }
 
-    const sceneMessages = [];
-    for (let i = startIdx; i <= index; i++) {
-        sceneMessages.push(i);
-    }
+  const sceneMessages = [];
+  for (let i = startIdx; i <= index; i++) {
+    sceneMessages.push(i);
+  }
 
-    return { startIdx, sceneMessages };
+  return { startIdx, sceneMessages };
 }
 
 // Helper: Build scene break HTML element
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 function buildSceneBreakElement(
-    index /*: number */,
-    startIdx /*: number */,
-    sceneMessages /*: Array<number> */,
-    sceneName /*: string */,
-    sceneSummary /*: string */,
-    isVisible /*: boolean */,
-    isCollapsed /*: boolean */,
-    versions /*: Array<string> */,
-    currentIdx /*: number */
-) /*: any */ {  // Returns jQuery object - any is appropriate
-    const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
-    const previewIcon = `<i class="fa-solid fa-eye scene-preview-summary" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
+index ,
+startIdx ,
+sceneMessages ,
+sceneName ,
+sceneSummary ,
+isVisible ,
+isCollapsed ,
+versions ,
+currentIdx )
+{// Returns jQuery object - any is appropriate
+  const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
+  const previewIcon = `<i class="fa-solid fa-eye scene-preview-summary" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
 
-    const stateClass = isVisible ? "sceneBreak-visible" : "sceneBreak-hidden";
-    const borderClass = isVisible ? "auto_summarize_scene_break_border" : "";
-    const collapsedClass = isCollapsed ? "sceneBreak-collapsed" : "";
-    const collapseIcon = isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up';
-    const collapseTitle = isCollapsed ? 'Expand scene summary' : 'Collapse scene summary';
+  const stateClass = isVisible ? "sceneBreak-visible" : "sceneBreak-hidden";
+  const borderClass = isVisible ? "auto_summarize_scene_break_border" : "";
+  const collapsedClass = isCollapsed ? "sceneBreak-collapsed" : "";
+  const collapseIcon = isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up';
+  const collapseTitle = isCollapsed ? 'Expand scene summary' : 'Collapse scene summary';
 
-    // $FlowFixMe[cannot-resolve-name]
-    return $(`
+  return $(`
     <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass} ${collapsedClass}" style="margin:0 0 5px 0;" tabindex="0">
         <div class="sceneBreak-header" style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.5em;">
             <input type="text" class="sceneBreak-name auto_summarize_memory_text" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" style="flex:1;" />
@@ -328,270 +309,242 @@ function buildSceneBreakElement(
     `);
 }
 
-// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 export function renderSceneBreak(
-    index /*: number */,
-    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
-    getContext /*: () => STContext */,
-    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
-    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
-    saveChatDebounced /*: () => void */
-) /*: void */ {
-    const $msgDiv = get_message_div(index);
-    if (!$msgDiv?.length) return;
+index ,
+get_message_div , // Returns jQuery object - any is appropriate
+getContext ,
+get_data , // Returns any type - legitimate
+set_data , // value can be any type - legitimate
+saveChatDebounced )
+{
+  const $msgDiv = get_message_div(index);
+  if (!$msgDiv?.length) return;
 
-    $msgDiv.find(`.${SCENE_BREAK_DIV_CLASS}`).remove();
+  $msgDiv.find(`.${SCENE_BREAK_DIV_CLASS}`).remove();
 
-    const ctx = getContext();
-    const chat = ctx.chat;
-    const message = chat[index];
-    const isSet = !!get_data(message, SCENE_BREAK_KEY);
-    const visible = get_data(message, SCENE_BREAK_VISIBLE_KEY);
-    const isVisible = (visible === undefined) ? true : visible;
+  const ctx = getContext();
+  const chat = ctx.chat;
+  const message = chat[index];
+  const isSet = !!get_data(message, SCENE_BREAK_KEY);
+  const visible = get_data(message, SCENE_BREAK_VISIBLE_KEY);
+  const isVisible = visible === undefined ? true : visible;
 
-    if (!isSet) return;
+  if (!isSet) return;
 
-    // Initialize versioned summaries
-    const { versions, currentIdx } = initializeSceneSummaryVersions(message, get_data, set_data, saveChatDebounced);
+  // Initialize versioned summaries
+  const { versions, currentIdx } = initializeSceneSummaryVersions(message, get_data, set_data, saveChatDebounced);
 
-    const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
-    const sceneSummary = versions[currentIdx] || '';
+  const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
+  const sceneSummary = versions[currentIdx] || '';
 
-    let isCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
-    if (isCollapsed === undefined) {
-        isCollapsed = get_settings('scene_summary_default_collapsed') ?? true;
-    }
+  let isCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
+  if (isCollapsed === undefined) {
+    isCollapsed = get_settings('scene_summary_default_collapsed') ?? true;
+  }
 
-    // Find scene boundaries
-    const { startIdx, sceneMessages } = findSceneBoundaries(chat, index, get_data);
+  // Find scene boundaries
+  const { startIdx, sceneMessages } = findSceneBoundaries(chat, index, get_data);
 
-    // Build scene break element
-    const $sceneBreak = buildSceneBreakElement(index, startIdx, sceneMessages, sceneName, sceneSummary, isVisible, isCollapsed, versions, currentIdx);
+  // Build scene break element
+  const $sceneBreak = buildSceneBreakElement(index, startIdx, sceneMessages, sceneName, sceneSummary, isVisible, isCollapsed, versions, currentIdx);
 
-    // === Insert after the summary box, or after .mes_text if no summary box exists ===
-    const $summaryBox = $msgDiv.find('.auto_summarize_memory_text');
-    if ($summaryBox.length) {
-        $summaryBox.last().after($sceneBreak);
+  // === Insert after the summary box, or after .mes_text if no summary box exists ===
+  const $summaryBox = $msgDiv.find('.auto_summarize_memory_text');
+  if ($summaryBox.length) {
+    $summaryBox.last().after($sceneBreak);
+  } else {
+    const $mesText = $msgDiv.find('.mes_text');
+    if ($mesText.length) {
+      $mesText.after($sceneBreak);
     } else {
-        const $mesText = $msgDiv.find('.mes_text');
-        if ($mesText.length) {
-            $mesText.after($sceneBreak);
-        } else {
-            $msgDiv.append($sceneBreak);
+      $msgDiv.append($sceneBreak);
+    }
+  }
+
+  // --- Editable handlers ---
+  $sceneBreak.find('.sceneBreak-name').on('change blur', function () {
+    set_data(message, SCENE_BREAK_NAME_KEY, $(this).val());
+    saveChatDebounced();
+    // Update navigator bar to show the new name immediately
+    renderSceneNavigatorBar();
+  });
+
+  // --- Collapse/expand toggle handler ---
+  $sceneBreak.find('.scene-collapse-toggle').on('click', function (e) {
+    e.stopPropagation();
+    // Use same default logic as render function
+    let currentCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
+    if (currentCollapsed === undefined) {
+      currentCollapsed = get_settings('scene_summary_default_collapsed') ?? true;
+    }
+    set_data(message, SCENE_BREAK_COLLAPSED_KEY, !currentCollapsed);
+    saveChatDebounced();
+    renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+  });
+
+  $sceneBreak.find('.scene-summary-box').on('change blur', function () {
+    // Update the current version in the versions array
+    const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
+    const idx = getCurrentSceneSummaryIndex(message, get_data);
+    const newSummary = $(this).val();
+    updatedVersions[idx] = newSummary;
+    setSceneSummaryVersions(message, set_data, updatedVersions);
+    // Also update the legacy summary field for compatibility
+    set_data(message, SCENE_BREAK_SUMMARY_KEY, newSummary);
+    set_data(message, SCENE_SUMMARY_MEMORY_KEY, newSummary); // <-- ensure top-level property is set
+    set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(newSummary));
+    saveChatDebounced();
+  });
+
+  // --- Hyperlink handler ---
+  $sceneBreak.find('.scene-start-link').on('click', function () {
+    const mesid = $(this).data('mesid');
+    let $target = $(`div[mesid="${mesid}"]`);
+    if ($target.length) {
+      // Scroll the #chat container so the target is near the top
+      const $chat = $('#chat');
+      const chatOffset = $chat.offset()?.top ?? 0;
+      const targetOffset = $target.offset()?.top ?? 0;
+      const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - 20; // 20px padding
+      $chat.animate({ scrollTop }, 300);
+
+      $target.addClass('scene-highlight');
+      setTimeout(() => $target.removeClass('scene-highlight'), 1200);
+    } else {
+      // fallback: scroll to top to try to load more messages
+      const $chat = $('#chat');
+      $chat.scrollTop(0);
+      setTimeout(() => {
+        $target = $(`div[mesid="${mesid}"]`);
+        if ($target.length) {
+          const chatOffset = $chat.offset()?.top ?? 0;
+          const targetOffset = $target.offset()?.top ?? 0;
+          const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - 20;
+          $chat.animate({ scrollTop }, 300);
+
+          $target.addClass('scene-highlight');
+          setTimeout(() => $target.removeClass('scene-highlight'), 1200);
         }
+      }, 500);
+    }
+  });
+
+  // --- Preview scene content handler ---
+  $sceneBreak.find('.scene-preview-summary').off('click').on('click', function (e) {
+    e.stopPropagation();
+    const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+    const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
+    const ctx = getContext();
+
+    const messageTypes = get_settings('scene_summary_message_types') || "both";
+    const sceneObjects = [];
+    for (let i = startIdx; i <= endIdx; i++) {
+      const msg = chat[i];
+      if (msg.mes && msg.mes.trim() !== "") {
+        // Filter by message type
+        const includeMessage = messageTypes === "both" ||
+        messageTypes === "user" && msg.is_user ||
+        messageTypes === "character" && !msg.is_user;
+        if (includeMessage) {
+          sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+        }
+      }
     }
 
-    // --- Editable handlers ---
-    // $FlowFixMe[missing-this-annot]
-    $sceneBreak.find('.sceneBreak-name').on('change blur', function () {
-        // $FlowFixMe[cannot-resolve-name]
-        set_data(message, SCENE_BREAK_NAME_KEY, $(this).val());
-        saveChatDebounced();
-        // Update navigator bar to show the new name immediately
-        renderSceneNavigatorBar();
-    });
-
-    // --- Collapse/expand toggle handler ---
-    $sceneBreak.find('.scene-collapse-toggle').on('click', function (e) {
-        e.stopPropagation();
-        // Use same default logic as render function
-        let currentCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
-        if (currentCollapsed === undefined) {
-            currentCollapsed = get_settings('scene_summary_default_collapsed') ?? true;
-        }
-        set_data(message, SCENE_BREAK_COLLAPSED_KEY, !currentCollapsed);
-        saveChatDebounced();
-        renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
-    });
-
-    // $FlowFixMe[missing-this-annot]
-    $sceneBreak.find('.scene-summary-box').on('change blur', function () {
-        // Update the current version in the versions array
-        const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
-        const idx = getCurrentSceneSummaryIndex(message, get_data);
-        // $FlowFixMe[cannot-resolve-name]
-        const newSummary = $(this).val();
-        updatedVersions[idx] = newSummary;
-        setSceneSummaryVersions(message, set_data, updatedVersions);
-        // Also update the legacy summary field for compatibility
-        // $FlowFixMe[cannot-resolve-name]
-        set_data(message, SCENE_BREAK_SUMMARY_KEY, newSummary);
-        // $FlowFixMe[cannot-resolve-name]
-        set_data(message, SCENE_SUMMARY_MEMORY_KEY, newSummary); // <-- ensure top-level property is set
-        set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(newSummary));
-        saveChatDebounced();
-    });
-
-    // --- Hyperlink handler ---
-    // $FlowFixMe[missing-this-annot]
-    $sceneBreak.find('.scene-start-link').on('click', function () {
-        // $FlowFixMe[cannot-resolve-name]
-        const mesid = $(this).data('mesid');
-        // $FlowFixMe[cannot-resolve-name]
-        let $target = $(`div[mesid="${mesid}"]`);
-        if ($target.length) {
-            // Scroll the #chat container so the target is near the top
-            // $FlowFixMe[cannot-resolve-name]
-            const $chat = $('#chat');
-            const chatOffset = $chat.offset()?.top ?? 0;
-            const targetOffset = $target.offset()?.top ?? 0;
-            const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - 20; // 20px padding
-            $chat.animate({ scrollTop }, 300);
-
-            $target.addClass('scene-highlight');
-            setTimeout(() => $target.removeClass('scene-highlight'), 1200);
-        } else {
-            // fallback: scroll to top to try to load more messages
-            // $FlowFixMe[cannot-resolve-name]
-            const $chat = $('#chat');
-            $chat.scrollTop(0);
-            setTimeout(() => {
-                // $FlowFixMe[cannot-resolve-name]
-                $target = $(`div[mesid="${mesid}"]`);
-                if ($target.length) {
-                    const chatOffset = $chat.offset()?.top ?? 0;
-                    const targetOffset = $target.offset()?.top ?? 0;
-                    const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - 20;
-                    $chat.animate({ scrollTop }, 300);
-
-                    $target.addClass('scene-highlight');
-                    setTimeout(() => $target.removeClass('scene-highlight'), 1200);
-                }
-            }, 500);
-        }
-    });
-
-    // --- Preview scene content handler ---
-    $sceneBreak.find('.scene-preview-summary').off('click').on('click', function(e) {
-        e.stopPropagation();
-        const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
-        const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
-        const ctx = getContext();
-
-        const messageTypes = get_settings('scene_summary_message_types') || "both";
-        const sceneObjects = [];
-        for (let i = startIdx; i <= endIdx; i++) {
-            const msg = chat[i];
-            if (msg.mes && msg.mes.trim() !== "") {
-                // Filter by message type
-                const includeMessage = (messageTypes === "both") ||
-                                     (messageTypes === "user" && msg.is_user) ||
-                                     (messageTypes === "character" && !msg.is_user);
-                if (includeMessage) {
-                    sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
-                }
-            }
-        }
-
-        const pretty = JSON.stringify(sceneObjects, null, 2);
-        const html = `<div>
+    const pretty = JSON.stringify(sceneObjects, null, 2);
+    const html = `<div>
             <h3>Scene Content Preview</h3>
             <pre style="max-height:400px;overflow-y:auto;white-space:pre-wrap;background:#222;color:#fff;padding:1em;border-radius:4px;">${pretty}</pre>
         </div>`;
-        if (ctx.callPopup) {
-            ctx.callPopup(html, 'text', undefined, {
-                okButton: "Close",
-                wide: true,
-                large: true
-            });
-        } else {
-            // $FlowFixMe[cannot-resolve-name]
-            alert(pretty);
-        }
-    });
+    if (ctx.callPopup) {
+      ctx.callPopup(html, 'text', undefined, {
+        okButton: "Close",
+        wide: true,
+        large: true
+      });
+    } else {
+      alert(pretty);
+    }
+  });
 
-    // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
-    $sceneBreak.find('.scene-generate-summary').off('click').on('click', async function(e) {
-        e.stopPropagation();
-        await handleGenerateSummaryButtonClick(index, chat, message, $sceneBreak, get_message_div, get_data, set_data, saveChatDebounced);
-    });
+  // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
+  $sceneBreak.find('.scene-generate-summary').off('click').on('click', async function (e) {
+    e.stopPropagation();
+    await handleGenerateSummaryButtonClick(index, chat, message, $sceneBreak, get_message_div, get_data, set_data, saveChatDebounced);
+  });
 
-    $sceneBreak.find('.scene-rollback-summary').off('click').on('click', function(e) {
-        e.stopPropagation();
-        const idx = getCurrentSceneSummaryIndex(message, get_data);
-        if (idx > 0) {
-            setCurrentSceneSummaryIndex(message, set_data, idx - 1);
-            const summary = getSceneSummaryVersions(message, get_data)[idx - 1];
-            set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
-            set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary); // <-- ensure top-level property is set
-            set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
-            saveChatDebounced();
-            refresh_memory(); // <-- refresh memory injection to use the newly selected summary
-            renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
-        }
-    });
-    $sceneBreak.find('.scene-rollforward-summary').off('click').on('click', function(e) {
-        e.stopPropagation();
-        const versions = getSceneSummaryVersions(message, get_data);
-        const idx = getCurrentSceneSummaryIndex(message, get_data);
-        if (idx < versions.length - 1) {
-            setCurrentSceneSummaryIndex(message, set_data, idx + 1);
-            const summary = versions[idx + 1];
-            set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
-            set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary); // <-- ensure top-level property is set
-            set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
-            saveChatDebounced();
-            refresh_memory(); // <-- refresh memory injection to use the newly selected summary
-            renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
-        }
-    });
+  $sceneBreak.find('.scene-rollback-summary').off('click').on('click', function (e) {
+    e.stopPropagation();
+    const idx = getCurrentSceneSummaryIndex(message, get_data);
+    if (idx > 0) {
+      setCurrentSceneSummaryIndex(message, set_data, idx - 1);
+      const summary = getSceneSummaryVersions(message, get_data)[idx - 1];
+      set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
+      set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary); // <-- ensure top-level property is set
+      set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
+      saveChatDebounced();
+      refresh_memory(); // <-- refresh memory injection to use the newly selected summary
+      renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+    }
+  });
+  $sceneBreak.find('.scene-rollforward-summary').off('click').on('click', function (e) {
+    e.stopPropagation();
+    const versions = getSceneSummaryVersions(message, get_data);
+    const idx = getCurrentSceneSummaryIndex(message, get_data);
+    if (idx < versions.length - 1) {
+      setCurrentSceneSummaryIndex(message, set_data, idx + 1);
+      const summary = versions[idx + 1];
+      set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
+      set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary); // <-- ensure top-level property is set
+      set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
+      saveChatDebounced();
+      refresh_memory(); // <-- refresh memory injection to use the newly selected summary
+      renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+    }
+  });
 
-    // --- Regenerate running summary from this scene onwards ---
-    // $FlowFixMe[missing-this-annot]
-    $sceneBreak.find('.scene-regenerate-running').off('click').on('click', async function(e) {
-        e.stopPropagation();
-        const sceneSummary = get_data(message, SCENE_SUMMARY_MEMORY_KEY);
-        if (!sceneSummary) {
-            // $FlowFixMe[cannot-resolve-name]
-            alert('This scene has no summary yet. Generate a scene summary first.');
-            return;
-        }
+  // --- Regenerate running summary from this scene onwards ---
+  $sceneBreak.find('.scene-regenerate-running').off('click').on('click', async function (e) {
+    e.stopPropagation();
+    const sceneSummary = get_data(message, SCENE_SUMMARY_MEMORY_KEY);
+    if (!sceneSummary) {
+      alert('This scene has no summary yet. Generate a scene summary first.');
+      return;
+    }
 
-        log(SUBSYSTEM.SCENE, "Combine scene with running summary button clicked for scene at index", index);
+    log(SUBSYSTEM.SCENE, "Combine scene with running summary button clicked for scene at index", index);
 
-        // Queue the operation - this will lock the UI and process through the queue
-        const opId = await queueCombineSceneWithRunning(index);
+    // Queue the operation - this will lock the UI and process through the queue
+    const opId = await queueCombineSceneWithRunning(index);
 
-        if (opId) {
-            log(SUBSYSTEM.SCENE, "Scene combine operation queued with ID:", opId);
-            toast('Scene combine operation queued', 'success');
-        } else {
-            error(SUBSYSTEM.SCENE, "Failed to queue scene combine operation");
-            // $FlowFixMe[cannot-resolve-name]
-            alert('Failed to queue operation. Check console for details.');
-        }
-    });
+    if (opId) {
+      log(SUBSYSTEM.SCENE, "Scene combine operation queued with ID:", opId);
+      toast('Scene combine operation queued', 'success');
+    } else {
+      error(SUBSYSTEM.SCENE, "Failed to queue scene combine operation");
+      alert('Failed to queue operation. Check console for details.');
+    }
+  });
 
-    // --- Selection handlers for visual feedback ---
-    // $FlowFixMe[missing-this-annot]
-    $sceneBreak.on('mousedown', function (_e) {
-        // $FlowFixMe[cannot-resolve-name]
-        $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
-        // $FlowFixMe[cannot-resolve-name]
-        $(this).addClass(SCENE_BREAK_SELECTED_CLASS);
-    });
-    // Remove selection when clicking outside any scene break
-    // $FlowFixMe[cannot-resolve-name]
-    $(document).off('mousedown.sceneBreakDeselect').on('mousedown.sceneBreakDeselect', function (e) {
-        // $FlowFixMe[cannot-resolve-name]
-        if (!$(e.target).closest('.' + SCENE_BREAK_DIV_CLASS).length) {
-            // $FlowFixMe[cannot-resolve-name]
-            $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
-        }
-    });
-    // Also add focus/blur for keyboard navigation
-    // $FlowFixMe[missing-this-annot]
-    $sceneBreak.on('focusin', function () {
-        // $FlowFixMe[cannot-resolve-name]
-        $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
-        // $FlowFixMe[cannot-resolve-name]
-        $(this).addClass(SCENE_BREAK_SELECTED_CLASS);
-    });
-    // $FlowFixMe[missing-this-annot]
-    $sceneBreak.on('focusout', function () {
-        // $FlowFixMe[cannot-resolve-name]
-        $(this).removeClass(SCENE_BREAK_SELECTED_CLASS);
-    });
+  // --- Selection handlers for visual feedback ---
+  $sceneBreak.on('mousedown', function (_e) {
+    $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
+    $(this).addClass(SCENE_BREAK_SELECTED_CLASS);
+  });
+  // Remove selection when clicking outside any scene break
+  $(document).off('mousedown.sceneBreakDeselect').on('mousedown.sceneBreakDeselect', function (e) {
+    if (!$(e.target).closest('.' + SCENE_BREAK_DIV_CLASS).length) {
+      $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
+    }
+  });
+  // Also add focus/blur for keyboard navigation
+  $sceneBreak.on('focusin', function () {
+    $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
+    $(this).addClass(SCENE_BREAK_SELECTED_CLASS);
+  });
+  $sceneBreak.on('focusout', function () {
+    $(this).removeClass(SCENE_BREAK_SELECTED_CLASS);
+  });
 }
 
 /**
@@ -602,53 +555,50 @@ export function renderSceneBreak(
  * @param {object} ctx - Context object
  * @returns {string} - Concatenated scene content
  */
-// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 export function collectSceneContent(
-    startIdx /*: number */,
-    endIdx /*: number */,
-    mode /*: string */,
-    ctx /*: STContext */,
-    get_memory /*: (message: STMessage) => ?string */
-) /*: string */ {
-    const chat = ctx.chat;
-    const result = [];
-    for (let i = startIdx; i <= endIdx; i++) {
-        const msg = chat[i];
-        result.push(msg.mes);
-    }
-    return result.join('\n');
+startIdx ,
+endIdx ,
+mode ,
+ctx ,
+get_memory )
+{
+  const chat = ctx.chat;
+  const result = [];
+  for (let i = startIdx; i <= endIdx; i++) {
+    const msg = chat[i];
+    result.push(msg.mes);
+  }
+  return result.join('\n');
 }
 
 // Call this after chat loads or refresh to re-render all scene breaks
-// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 export function renderAllSceneBreaks(
-    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
-    getContext /*: () => STContext */,
-    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
-    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
-    saveChatDebounced /*: () => void */
-) /*: void */ {
-    const ctx = getContext();
-    if (!ctx?.chat) return;
-    for (let i = 0; i < ctx.chat.length; i++) {
-        const message = ctx.chat[i];
-        if (get_data(message, SCENE_BREAK_KEY)) {
-            // Ensure visible is set to true if undefined (for backward compatibility)
-            if (get_data(message, SCENE_BREAK_VISIBLE_KEY) === undefined) {
-                set_data(message, SCENE_BREAK_VISIBLE_KEY, true);
-            }
-        }
+get_message_div , // Returns jQuery object - any is appropriate
+getContext ,
+get_data , // Returns any type - legitimate
+set_data , // value can be any type - legitimate
+saveChatDebounced )
+{
+  const ctx = getContext();
+  if (!ctx?.chat) return;
+  for (let i = 0; i < ctx.chat.length; i++) {
+    const message = ctx.chat[i];
+    if (get_data(message, SCENE_BREAK_KEY)) {
+      // Ensure visible is set to true if undefined (for backward compatibility)
+      if (get_data(message, SCENE_BREAK_VISIBLE_KEY) === undefined) {
+        set_data(message, SCENE_BREAK_VISIBLE_KEY, true);
+      }
     }
-    // Now render after all flags are set
-    for (let i = 0; i < ctx.chat.length; i++) {
-        const message = ctx.chat[i];
-        if (get_data(message, SCENE_BREAK_KEY)) {
-            renderSceneBreak(i, get_message_div, getContext, get_data, set_data, saveChatDebounced);
-        }
+  }
+  // Now render after all flags are set
+  for (let i = 0; i < ctx.chat.length; i++) {
+    const message = ctx.chat[i];
+    if (get_data(message, SCENE_BREAK_KEY)) {
+      renderSceneBreak(i, get_message_div, getContext, get_data, set_data, saveChatDebounced);
     }
-    // Update navigator bar if present
-    // $FlowFixMe[cannot-resolve-name]
-    if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
+  }
+  // Update navigator bar if present
+  if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
 }
 
 /**
@@ -671,425 +621,415 @@ export function renderAllSceneBreaks(
  * @param {object|null} _savedProfiles - Saved profile/preset info from switchToSceneProfile() (optional, unused but kept for signature consistency)
  * @returns {Promise<string|null>} - The generated scene name, or null if generation failed
  */
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 export async function autoGenerateSceneNameFromSummary(
-    summary /*: string */,
-    message /*: STMessage */,
-    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
-    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
-    ctx /*: STContext */,
-    _savedProfiles /*: ?{savedProfile: ?string, api: ?string, presetManager: ?any, savedPreset: ?any} */,  // any is appropriate for PresetManager
-    index /*: ?number */  // Message index for context
-) /*: Promise<?string> */ {
-    const existingSceneName = get_data(message, SCENE_BREAK_NAME_KEY);
+summary ,
+message ,
+get_data , // Returns any type - legitimate
+set_data , // value can be any type - legitimate
+ctx ,
+_savedProfiles , // any is appropriate for PresetManager
+index  // Message index for context
+) {
+  const existingSceneName = get_data(message, SCENE_BREAK_NAME_KEY);
 
-    // Only generate if no name already exists
-    if (existingSceneName) {
-        debug(SUBSYSTEM.SCENE, "Scene name already exists, skipping auto-generation");
-        return null;
-    }
+  // Only generate if no name already exists
+  if (existingSceneName) {
+    debug(SUBSYSTEM.SCENE, "Scene name already exists, skipping auto-generation");
+    return null;
+  }
 
-    try {
-        debug(SUBSYSTEM.SCENE, "Auto-generating scene name...");
+  try {
+    debug(SUBSYSTEM.SCENE, "Auto-generating scene name...");
 
-        // Create a prompt to generate a brief scene name
-        const sceneNamePrompt = `Based on the following scene summary, generate a very brief scene name (maximum 5 words, like a chapter title).
+    // Create a prompt to generate a brief scene name
+    const sceneNamePrompt = `Based on the following scene summary, generate a very brief scene name (maximum 5 words, like a chapter title).
 
 Scene Summary:
 ${summary}
 
 Respond with ONLY the scene name, nothing else. Make it concise and descriptive, like a chapter title.`;
 
-        ctx.deactivateSendButtons();
+    ctx.deactivateSendButtons();
 
-        // Set operation context for ST_METADATA
-        const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
-        if (index != null) {
-            setOperationSuffix(`-${index}`);
-        }
-
-        let sceneName;
-        try {
-            sceneName = await summarize_text(sceneNamePrompt);
-        } finally {
-            clearOperationSuffix();
-            ctx.activateSendButtons();
-        }
-
-        // Clean up the scene name (remove quotes, trim, limit length)
-        let cleanSceneName = sceneName.trim()
-            .replace(/^["']|["']$/g, '') // Remove leading/trailing quotes
-            .replace(/\n/g, ' ') // Replace newlines with spaces
-            .trim();
-
-        // Limit to ~50 characters max
-        if (cleanSceneName.length > 50) {
-            cleanSceneName = cleanSceneName.substring(0, 47) + '...';
-        }
-
-        debug(SUBSYSTEM.SCENE, "Generated scene name:", cleanSceneName);
-        set_data(message, SCENE_BREAK_NAME_KEY, cleanSceneName);
-
-        // Refresh the scene navigator bar to show the new name immediately
-        renderSceneNavigatorBar();
-
-        return cleanSceneName;
-    } catch (err) {
-        error(SUBSYSTEM.SCENE, "Error generating scene name:", err);
-        // Don't fail the whole summary generation if scene name fails
-        return null;
+    // Set operation context for ST_METADATA
+    const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+    if (index != null) {
+      setOperationSuffix(`-${index}`);
     }
+
+    let sceneName;
+    try {
+      sceneName = await summarize_text(sceneNamePrompt);
+    } finally {
+      clearOperationSuffix();
+      ctx.activateSendButtons();
+    }
+
+    // Clean up the scene name (remove quotes, trim, limit length)
+    let cleanSceneName = sceneName.trim().
+    replace(/^["']|["']$/g, '') // Remove leading/trailing quotes
+    .replace(/\n/g, ' ') // Replace newlines with spaces
+    .trim();
+
+    // Limit to ~50 characters max
+    if (cleanSceneName.length > 50) {
+      cleanSceneName = cleanSceneName.substring(0, 47) + '...';
+    }
+
+    debug(SUBSYSTEM.SCENE, "Generated scene name:", cleanSceneName);
+    set_data(message, SCENE_BREAK_NAME_KEY, cleanSceneName);
+
+    // Refresh the scene navigator bar to show the new name immediately
+    renderSceneNavigatorBar();
+
+    return cleanSceneName;
+  } catch (err) {
+    error(SUBSYSTEM.SCENE, "Error generating scene name:", err);
+    // Don't fail the whole summary generation if scene name fails
+    return null;
+  }
 }
 
 // Helper: Try to queue scene summary generation
-// $FlowFixMe[missing-local-annot] - Function signature is correct
-async function tryQueueSceneSummary(index /*: number */) /*: Promise<boolean> */ {
-    debug(SUBSYSTEM.SCENE, `[Queue] Queueing scene summary generation for index ${index}`);
+async function tryQueueSceneSummary(index ) {
+  debug(SUBSYSTEM.SCENE, `[Queue] Queueing scene summary generation for index ${index}`);
 
-    const { queueGenerateSceneSummary } = await import('./queueIntegration.js');
-    const operationId = await queueGenerateSceneSummary(index);
+  const { queueGenerateSceneSummary } = await import('./queueIntegration.js');
+  const operationId = await queueGenerateSceneSummary(index);
 
-    if (operationId) {
-        log(SUBSYSTEM.SCENE, `[Queue] Queued scene summary generation for index ${index}:`, operationId);
-        toast(`Queued scene summary generation for message ${index}`, 'info');
-        return true;
-    }
+  if (operationId) {
+    log(SUBSYSTEM.SCENE, `[Queue] Queued scene summary generation for index ${index}:`, operationId);
+    toast(`Queued scene summary generation for message ${index}`, 'info');
+    return true;
+  }
 
-    error(SUBSYSTEM.SCENE, `[Queue] Failed to enqueue scene summary generation`);
-    return false;
+  error(SUBSYSTEM.SCENE, `[Queue] Failed to enqueue scene summary generation`);
+  return false;
 }
 
 // Helper: Collect scene objects for summary
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 function collectSceneObjects(
-    startIdx /*: number */,
-    endIdx /*: number */,
-    chat /*: Array<STMessage> */
-) /*: Array<Object> */ {
-    const messageTypes = get_settings('scene_summary_message_types') || "both";
-    const sceneObjects = [];
+startIdx ,
+endIdx ,
+chat )
+{
+  const messageTypes = get_settings('scene_summary_message_types') || "both";
+  const sceneObjects = [];
 
-    for (let i = startIdx; i <= endIdx; i++) {
-        const msg = chat[i];
-        if (msg.mes && msg.mes.trim() !== "") {
-            const includeMessage = (messageTypes === "both") ||
-                                 (messageTypes === "user" && msg.is_user) ||
-                                 (messageTypes === "character" && !msg.is_user);
-            if (includeMessage) {
-                sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
-            }
-        }
+  for (let i = startIdx; i <= endIdx; i++) {
+    const msg = chat[i];
+    if (msg.mes && msg.mes.trim() !== "") {
+      const includeMessage = messageTypes === "both" ||
+      messageTypes === "user" && msg.is_user ||
+      messageTypes === "character" && !msg.is_user;
+      if (includeMessage) {
+        sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
+      }
     }
+  }
 
-    return sceneObjects;
+  return sceneObjects;
 }
 
 // Helper: Prepare scene summary prompt
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 function prepareScenePrompt(
-    sceneObjects /*: Array<Object> */,
-    ctx /*: STContext */
-) /*: string */ {
-    const promptTemplate = get_settings('scene_summary_prompt');
-    const prefill = get_settings('scene_summary_prefill') || "";
-    const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
-    let lorebookTypesMacro = formatEntityTypeListForPrompt(typeDefinitions);
-    if (!lorebookTypesMacro) {
-        lorebookTypesMacro = formatEntityTypeListForPrompt(getConfiguredEntityTypeDefinitions(undefined));
+sceneObjects ,
+ctx )
+{
+  const promptTemplate = get_settings('scene_summary_prompt');
+  const prefill = get_settings('scene_summary_prefill') || "";
+  const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
+  let lorebookTypesMacro = formatEntityTypeListForPrompt(typeDefinitions);
+  if (!lorebookTypesMacro) {
+    lorebookTypesMacro = formatEntityTypeListForPrompt(getConfiguredEntityTypeDefinitions(undefined));
+  }
+
+  // Format scene messages with speaker labels to prevent substituteParamsExtended from stripping them
+  const formattedMessages = sceneObjects.map((obj) => {
+    if (obj.type === 'message') {
+      const role = obj.is_user ? 'USER' : 'CHARACTER';
+      return `[${role}: ${obj.name}]\n${obj.text}`;
+    } else if (obj.type === 'summary') {
+      return `[SUMMARY]\n${obj.summary}`;
     }
+    return '';
+  }).filter((m) => m).join('\n\n');
 
-    // Format scene messages with speaker labels to prevent substituteParamsExtended from stripping them
-    const formattedMessages = sceneObjects.map(obj => {
-        if (obj.type === 'message') {
-            const role = obj.is_user ? 'USER' : 'CHARACTER';
-            return `[${role}: ${obj.name}]\n${obj.text}`;
-        } else if (obj.type === 'summary') {
-            return `[SUMMARY]\n${obj.summary}`;
-        }
-        return '';
-    }).filter(m => m).join('\n\n');
+  let prompt = promptTemplate;
+  if (ctx.substituteParamsExtended) {
+    prompt = ctx.substituteParamsExtended(prompt, {
+      scene_messages: formattedMessages,
+      message: JSON.stringify(sceneObjects, null, 2), // Keep for backward compatibility
+      prefill,
+      lorebook_entry_types: lorebookTypesMacro
+    }) || prompt;
+  }
+  // Fallback replacements
+  prompt = prompt.replace(/\{\{scene_messages\}\}/g, formattedMessages);
+  prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
+  prompt = prompt.replace(/\{\{lorebook_entry_types\}\}/g, lorebookTypesMacro);
+  prompt = `${prompt}\n${prefill}`;
 
-    let prompt = promptTemplate;
-    if (ctx.substituteParamsExtended) {
-        prompt = ctx.substituteParamsExtended(prompt, {
-            scene_messages: formattedMessages,
-            message: JSON.stringify(sceneObjects, null, 2), // Keep for backward compatibility
-            prefill,
-            lorebook_entry_types: lorebookTypesMacro,
-        }) || prompt;
-    }
-    // Fallback replacements
-    prompt = prompt.replace(/\{\{scene_messages\}\}/g, formattedMessages);
-    prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
-    prompt = prompt.replace(/\{\{lorebook_entry_types\}\}/g, lorebookTypesMacro);
-    prompt = `${prompt}\n${prefill}`;
-
-    return prompt;
+  return prompt;
 }
 
 // Helper: Switch to scene summary profile/preset
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 // Legacy switching functions removed - now using withConnectionSettings() from connectionSettingsManager.js
 
 // Helper: Extract and validate JSON from AI response
 // Strips code fences, explanatory text, and validates JSON structure
-// $FlowFixMe[missing-local-annot] - Function signature is correct
-function extractAndValidateJson(rawResponse /*: string */) /*: string */ {
-    let cleaned = rawResponse.trim();
+function extractAndValidateJson(rawResponse ) {
+  let cleaned = rawResponse.trim();
 
-    // Try to find and extract JSON from code fences first
-    const codeFenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-    if (codeFenceMatch) {
-        cleaned = codeFenceMatch[1].trim();
-        debug(SUBSYSTEM.SCENE, "Extracted JSON from code fences");
+  // Try to find and extract JSON from code fences first
+  const codeFenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  if (codeFenceMatch) {
+    cleaned = codeFenceMatch[1].trim();
+    debug(SUBSYSTEM.SCENE, "Extracted JSON from code fences");
+  }
+
+  // If still doesn't look like JSON, try to find the first { or [
+  if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
+    const jsonStartMatch = cleaned.match(/[{[]/);
+    if (jsonStartMatch) {
+      const jsonStart = cleaned.indexOf(jsonStartMatch[0]);
+      cleaned = cleaned.substring(jsonStart);
+      debug(SUBSYSTEM.SCENE, "Stripped explanatory text before JSON");
     }
+  }
 
-    // If still doesn't look like JSON, try to find the first { or [
-    if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
-        const jsonStartMatch = cleaned.match(/[{[]/);
-        if (jsonStartMatch) {
-            const jsonStart = cleaned.indexOf(jsonStartMatch[0]);
-            cleaned = cleaned.substring(jsonStart);
-            debug(SUBSYSTEM.SCENE, "Stripped explanatory text before JSON");
-        }
+  // If still doesn't look like JSON, try to find last } or ]
+  if (!cleaned.endsWith('}') && !cleaned.endsWith(']')) {
+    const lastBrace = cleaned.lastIndexOf('}');
+    const lastBracket = cleaned.lastIndexOf(']');
+    const lastJsonChar = Math.max(lastBrace, lastBracket);
+    if (lastJsonChar > 0) {
+      cleaned = cleaned.substring(0, lastJsonChar + 1);
+      debug(SUBSYSTEM.SCENE, "Stripped text after JSON");
     }
+  }
 
-    // If still doesn't look like JSON, try to find last } or ]
-    if (!cleaned.endsWith('}') && !cleaned.endsWith(']')) {
-        const lastBrace = cleaned.lastIndexOf('}');
-        const lastBracket = cleaned.lastIndexOf(']');
-        const lastJsonChar = Math.max(lastBrace, lastBracket);
-        if (lastJsonChar > 0) {
-            cleaned = cleaned.substring(0, lastJsonChar + 1);
-            debug(SUBSYSTEM.SCENE, "Stripped text after JSON");
-        }
+  // Validate it's actually JSON and has expected structure
+  try {
+    const parsed = JSON.parse(cleaned);
+
+    // Scene summaries should have a "summary" field (and optionally "lorebooks")
+    if (typeof parsed === 'object' && parsed !== null) {
+      if (!('summary' in parsed)) {
+        throw new Error("JSON missing required 'summary' field");
+      }
+
+      // Check if summary is empty or just placeholder text
+      const summaryText = parsed.summary?.trim() || '';
+      if (summaryText === '' || summaryText === '...' || summaryText === 'TODO') {
+        throw new Error("AI returned empty or placeholder summary");
+      }
+
+      // Check if it's just the template structure with no content
+      if (summaryText.length < 10) {
+        throw new Error("AI returned suspiciously short summary (less than 10 chars)");
+      }
+
+      debug(SUBSYSTEM.SCENE, "JSON validated successfully");
+      return cleaned;
+    } else {
+      throw new Error("JSON is not an object");
     }
-
-    // Validate it's actually JSON and has expected structure
-    try {
-        const parsed = JSON.parse(cleaned);
-
-        // Scene summaries should have a "summary" field (and optionally "lorebooks")
-        if (typeof parsed === 'object' && parsed !== null) {
-            if (!('summary' in parsed)) {
-                throw new Error("JSON missing required 'summary' field");
-            }
-
-            // Check if summary is empty or just placeholder text
-            const summaryText = parsed.summary?.trim() || '';
-            if (summaryText === '' || summaryText === '...' || summaryText === 'TODO') {
-                throw new Error("AI returned empty or placeholder summary");
-            }
-
-            // Check if it's just the template structure with no content
-            if (summaryText.length < 10) {
-                throw new Error("AI returned suspiciously short summary (less than 10 chars)");
-            }
-
-            debug(SUBSYSTEM.SCENE, "JSON validated successfully");
-            return cleaned;
-        } else {
-            throw new Error("JSON is not an object");
-        }
-    } catch (parseErr) {
-        error(SUBSYSTEM.SCENE, "Failed to parse or validate JSON:", parseErr);
-        error(SUBSYSTEM.SCENE, "Attempted to parse:", cleaned.substring(0, 200));
-        throw new Error(`Invalid JSON from AI: ${parseErr.message}`);
-    }
+  } catch (parseErr) {
+    error(SUBSYSTEM.SCENE, "Failed to parse or validate JSON:", parseErr);
+    error(SUBSYSTEM.SCENE, "Attempted to parse:", cleaned.substring(0, 200));
+    throw new Error(`Invalid JSON from AI: ${parseErr.message}`);
+  }
 }
 
 // Helper: Generate summary with error handling
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 async function executeSceneSummaryGeneration(
-    prompt /*: string */,
-    ctx /*: STContext */,
-    startIdx /*: number */,
-    endIdx /*: number */
-) /*: Promise<string> */ {
-    let summary = "";
+prompt ,
+ctx ,
+startIdx ,
+endIdx )
+{
+  let summary = "";
+  try {
+    ctx.deactivateSendButtons();
+    debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
+
+    // Set operation context for ST_METADATA
+    const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+    setOperationSuffix(`-${startIdx}-${endIdx}`);
+
     try {
-        ctx.deactivateSendButtons();
-        debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
+      const rawResponse = await summarize_text(prompt);
+      debug(SUBSYSTEM.SCENE, "AI response:", rawResponse);
 
-        // Set operation context for ST_METADATA
-        const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
-        setOperationSuffix(`-${startIdx}-${endIdx}`);
-
-        try {
-            const rawResponse = await summarize_text(prompt);
-            debug(SUBSYSTEM.SCENE, "AI response:", rawResponse);
-
-            // Extract and validate JSON immediately
-            summary = extractAndValidateJson(rawResponse);
-            if (summary !== rawResponse) {
-                debug(SUBSYSTEM.SCENE, "Cleaned summary:", summary);
-            }
-        } finally {
-            clearOperationSuffix();
-        }
-    } catch (err) {
-        summary = "Error generating summary: " + (err?.message || err);
-        error(SUBSYSTEM.SCENE, "Error generating summary:", err);
-        throw err;
+      // Extract and validate JSON immediately
+      summary = extractAndValidateJson(rawResponse);
+      if (summary !== rawResponse) {
+        debug(SUBSYSTEM.SCENE, "Cleaned summary:", summary);
+      }
     } finally {
-        ctx.activateSendButtons();
+      clearOperationSuffix();
     }
-    return summary;
+  } catch (err) {
+    summary = "Error generating summary: " + (err?.message || err);
+    error(SUBSYSTEM.SCENE, "Error generating summary:", err);
+    throw err;
+  } finally {
+    ctx.activateSendButtons();
+  }
+  return summary;
 }
 
 // Helper: Save scene summary and queue lorebook entries
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 async function saveSceneSummary(
-    message /*: STMessage */,
-    summary /*: string */,
-    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
-    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
-    saveChatDebounced /*: () => void */,
-    messageIndex /*: number */
-) /*: Promise<void> */ {
-    const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
-    updatedVersions.push(summary);
-    setSceneSummaryVersions(message, set_data, updatedVersions);
-    setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
-    set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
-    set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary);
-    set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
-    saveChatDebounced();
-    refresh_memory();
+message ,
+summary ,
+get_data , // Returns any type - legitimate
+set_data , // value can be any type - legitimate
+saveChatDebounced ,
+messageIndex )
+{
+  const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
+  updatedVersions.push(summary);
+  setSceneSummaryVersions(message, set_data, updatedVersions);
+  setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
+  set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
+  set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary);
+  set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
+  saveChatDebounced();
+  refresh_memory();
 
-    // Extract and queue lorebook entries
-    if (summary) {
-        debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Calling extractAndQueueLorebookEntries for message ${messageIndex}...`);
-        await extractAndQueueLorebookEntries(summary, messageIndex);
-        debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] extractAndQueueLorebookEntries completed for message ${messageIndex}`);
-    } else {
-        debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Skipping lorebook extraction - no summary available`);
-    }
+  // Extract and queue lorebook entries
+  if (summary) {
+    debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Calling extractAndQueueLorebookEntries for message ${messageIndex}...`);
+    await extractAndQueueLorebookEntries(summary, messageIndex);
+    debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] extractAndQueueLorebookEntries completed for message ${messageIndex}`);
+  } else {
+    debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Skipping lorebook extraction - no summary available`);
+  }
 }
 
 // Helper: Extract lorebooks from summary JSON and queue each as individual operation
 // Note: Summary should already be clean JSON from executeSceneSummaryGeneration()
-// $FlowFixMe[missing-local-annot] - Function signature is correct
 async function extractAndQueueLorebookEntries(
-    summary /*: string */,
-    messageIndex /*: number */
-) /*: Promise<void> */ {
-    debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Starting for message ${messageIndex}`);
-    try {
-        const summaryHash = computeSummaryHash(summary);
-        debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Summary hash: ${summaryHash}`);
+summary ,
+messageIndex )
+{
+  debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Starting for message ${messageIndex}`);
+  try {
+    const summaryHash = computeSummaryHash(summary);
+    debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Summary hash: ${summaryHash}`);
 
-        // Parse JSON (should already be clean from generation)
-        const parsed = JSON.parse(summary);
+    // Parse JSON (should already be clean from generation)
+    const parsed = JSON.parse(summary);
 
-        // Check for 'lorebooks' array (standard format)
-        if (parsed.lorebooks && Array.isArray(parsed.lorebooks)) {
-            debug(SUBSYSTEM.SCENE, `Found ${parsed.lorebooks.length} lorebook entries in scene summary at index ${messageIndex}`);
+    // Check for 'lorebooks' array (standard format)
+    if (parsed.lorebooks && Array.isArray(parsed.lorebooks)) {
+      debug(SUBSYSTEM.SCENE, `Found ${parsed.lorebooks.length} lorebook entries in scene summary at index ${messageIndex}`);
 
-            // Deduplicate entries by name/comment before queueing
-            const seenNames /*: Set<string> */ = new Set();
-            const uniqueEntries = [];
+      // Deduplicate entries by name/comment before queueing
+      const seenNames  = new Set();
+      const uniqueEntries = [];
 
-            for (const entry of parsed.lorebooks) {
-                if (entry && (entry.name || entry.comment)) {
-                    const entryName = (entry.name || entry.comment).toLowerCase().trim();
+      for (const entry of parsed.lorebooks) {
+        if (entry && (entry.name || entry.comment)) {
+          const entryName = (entry.name || entry.comment).toLowerCase().trim();
 
-                    if (seenNames.has(entryName)) {
-                        debug(SUBSYSTEM.SCENE, `Skipping duplicate lorebook entry: ${entry.name || entry.comment}`);
-                        continue;
-                    }
+          if (seenNames.has(entryName)) {
+            debug(SUBSYSTEM.SCENE, `Skipping duplicate lorebook entry: ${entry.name || entry.comment}`);
+            continue;
+          }
 
-                    seenNames.add(entryName);
-                    uniqueEntries.push(entry);
-                }
-            }
-
-            debug(SUBSYSTEM.SCENE, `After deduplication: ${uniqueEntries.length} unique entries (removed ${parsed.lorebooks.length - uniqueEntries.length} duplicates)`);
-
-            // Queue each unique entry individually
-            debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Queueing ${uniqueEntries.length} unique entries...`);
-            for (const entry of uniqueEntries) {
-                // Sequential execution required: entries must be queued in order
-                // eslint-disable-next-line no-await-in-loop
-                debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Calling queueProcessLorebookEntry for: ${entry.name || entry.comment}`);
-                const opId = await queueProcessLorebookEntry(entry, messageIndex, summaryHash);
-                if (opId) {
-                    debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✓ Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);
-                } else {
-                    debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✗ Failed to queue lorebook entry: ${entry.name || entry.comment} (returned null/undefined)`);
-                }
-            }
-            debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Finished queueing all entries`);
-        } else {
-            debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] No lorebooks array found in scene summary at index ${messageIndex}`);
+          seenNames.add(entryName);
+          uniqueEntries.push(entry);
         }
-    } catch (err) {
-        // Not JSON or parsing failed - skip lorebook processing
-        debug(SUBSYSTEM.SCENE, `Scene summary is not JSON, skipping lorebook extraction: ${err.message}`);
+      }
+
+      debug(SUBSYSTEM.SCENE, `After deduplication: ${uniqueEntries.length} unique entries (removed ${parsed.lorebooks.length - uniqueEntries.length} duplicates)`);
+
+      // Queue each unique entry individually
+      debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Queueing ${uniqueEntries.length} unique entries...`);
+      for (const entry of uniqueEntries) {
+        // Sequential execution required: entries must be queued in order
+        // eslint-disable-next-line no-await-in-loop
+        debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Calling queueProcessLorebookEntry for: ${entry.name || entry.comment}`);
+        const opId = await queueProcessLorebookEntry(entry, messageIndex, summaryHash);
+        if (opId) {
+          debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✓ Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);
+        } else {
+          debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✗ Failed to queue lorebook entry: ${entry.name || entry.comment} (returned null/undefined)`);
+        }
+      }
+      debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Finished queueing all entries`);
+    } else {
+      debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] No lorebooks array found in scene summary at index ${messageIndex}`);
     }
+  } catch (err) {
+    // Not JSON or parsing failed - skip lorebook processing
+    debug(SUBSYSTEM.SCENE, `Scene summary is not JSON, skipping lorebook extraction: ${err.message}`);
+  }
 }
 
-// $FlowFixMe[signature-verification-failure] - Function signature is correct but Flow needs annotation
 export async function generateSceneSummary(
-    index /*: number */,
-    get_message_div /*: (index: number) => any */,  // Returns jQuery object - any is appropriate
-    getContext /*: () => STContext */,
-    get_data /*: (message: STMessage, key: string) => any */,  // Returns any type - legitimate
-    set_data /*: (message: STMessage, key: string, value: any) => void */,  // value can be any type - legitimate
-    saveChatDebounced /*: () => void */,
-    skipQueue /*: boolean */ = false
-) /*: Promise<?string> */ {
-    const ctx = getContext();
-    const chat = ctx.chat;
-    const message = chat[index];
+index ,
+get_message_div , // Returns jQuery object - any is appropriate
+getContext ,
+get_data , // Returns any type - legitimate
+set_data , // value can be any type - legitimate
+saveChatDebounced ,
+skipQueue  = false)
+{
+  const ctx = getContext();
+  const chat = ctx.chat;
+  const message = chat[index];
 
-    // Try queueing if not bypassed
-    if (!skipQueue) {
-        const enqueued = await tryQueueSceneSummary(index);
-        if (enqueued) {
-            return;
-        }
-        // Queue is required. If enqueue failed, abort rather than running directly.
-        error(SUBSYSTEM.SCENE, `Failed to enqueue scene summary generation for index ${index}. Aborting.`);
-        toast('Queue required: failed to enqueue scene summary generation. Aborting.', 'error');
-        return null;
+  // Try queueing if not bypassed
+  if (!skipQueue) {
+    const enqueued = await tryQueueSceneSummary(index);
+    if (enqueued) {
+      return;
     }
+    // Queue is required. If enqueue failed, abort rather than running directly.
+    error(SUBSYSTEM.SCENE, `Failed to enqueue scene summary generation for index ${index}. Aborting.`);
+    toast('Queue required: failed to enqueue scene summary generation. Aborting.', 'error');
+    return null;
+  }
 
-    // Direct execution path is only used by queue handler (skipQueue=true)
-    debug(SUBSYSTEM.SCENE, `Executing scene summary generation directly for index ${index} (skipQueue=true)`);
+  // Direct execution path is only used by queue handler (skipQueue=true)
+  debug(SUBSYSTEM.SCENE, `Executing scene summary generation directly for index ${index} (skipQueue=true)`);
 
-    // Get scene range and collect objects
-    const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
-    const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
-    const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
+  // Get scene range and collect objects
+  const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+  const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
+  const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
-    // Prepare prompt
-    const prompt = prepareScenePrompt(sceneObjects, ctx);
+  // Prepare prompt
+  const prompt = prepareScenePrompt(sceneObjects, ctx);
 
-    // Generate summary with connection profile/preset switching
-    const { withConnectionSettings } = await import('./connectionSettingsManager.js');
-    const profile_name = get_settings('scene_summary_connection_profile');
-    const preset_name = get_settings('scene_summary_completion_preset');
+  // Generate summary with connection profile/preset switching
+  const { withConnectionSettings } = await import('./connectionSettingsManager.js');
+  const profile_name = get_settings('scene_summary_connection_profile');
+  const preset_name = get_settings('scene_summary_completion_preset');
 
-    const summary = await withConnectionSettings(
-        profile_name,
-        preset_name,
-        async () => {
-            return await executeSceneSummaryGeneration(prompt, ctx, startIdx, endIdx);
-        }
-    );
-
-    // Save and render
-    await saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced, index);
-
-    // Mark all messages in this scene as checked to prevent auto-detection from splitting the scene
-    const markedCount = setCheckedFlagsInRange(startIdx, endIdx);
-    if (markedCount > 0) {
-        debug(SUBSYSTEM.SCENE, `Marked ${markedCount} messages in scene (${startIdx}-${endIdx}) as checked after manual summary generation`);
+  const summary = await withConnectionSettings(
+    profile_name,
+    preset_name,
+    async () => {
+      return await executeSceneSummaryGeneration(prompt, ctx, startIdx, endIdx);
     }
+  );
 
-    await auto_generate_running_summary(index);
-    renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+  // Save and render
+  await saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced, index);
 
-    return summary;
+  // Mark all messages in this scene as checked to prevent auto-detection from splitting the scene
+  const markedCount = setCheckedFlagsInRange(startIdx, endIdx);
+  if (markedCount > 0) {
+    debug(SUBSYSTEM.SCENE, `Marked ${markedCount} messages in scene (${startIdx}-${endIdx}) as checked after manual summary generation`);
+  }
+
+  await auto_generate_running_summary(index);
+  renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+
+  return summary;
 }

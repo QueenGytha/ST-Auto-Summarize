@@ -1,4 +1,4 @@
-// @flow
+
 // ST-Auto-Summarize Default Prompts
 // New structure: summary (timeline) + lorebooks (detailed entries)
 // See docs/SUMMARY_LOREBOOK_SEPARATION.md for full documentation
