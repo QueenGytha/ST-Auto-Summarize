@@ -179,41 +179,6 @@ class RequestLogger:
             log_content.append(f"**Start Time:** {start_time}  ")
         log_content.append("")
 
-        # Table of Contents
-        toc_items = []
-        if self.include_headers and headers:
-            toc_items.append("- Request Headers")
-        if lorebook_entries:
-            toc_items.append("- Lorebook Entries")
-        if stripped_metadata:
-            toc_items.append("- Stripped ST_METADATA")
-        if self.include_request_data and original_request_data and stripped_metadata:
-            toc_items.append("- Original Request Data (As Received)")
-            toc_items.append("- Original Request Data (Cleaned)")
-        if self.include_request_data and request_data:
-            toc_items.append("- Forwarded Request Data" if stripped_metadata else "- Request Data")
-        if error:
-            toc_items.append("- Error Response")
-        else:
-            if self.include_response_data and response_data:
-                toc_items.append("- Response Data")
-            if self.include_headers and response_headers:
-                toc_items.append("- Response Headers")
-        if self.include_timing:
-            toc_items.append("- Timing Information")
-
-        if toc_items:
-            log_content.append("## Table of Contents")
-            log_content.append("")
-            # Convert to anchor links
-            toc_with_links = []
-            for item in toc_items:
-                text = item[2:]  # Remove "- "
-                anchor = text.lower().replace(" ", "-").replace("(", "").replace(")", "")
-                toc_with_links.append(f"- [{text}](#{anchor})")
-            log_content.extend(toc_with_links)
-            log_content.append("")
-
         # Request Headers
         if self.include_headers and headers:
             log_content.append("## Request Headers")
@@ -229,125 +194,120 @@ class RequestLogger:
         if lorebook_entries:
             entry_count = len(lorebook_entries)
             plural = "entries" if entry_count != 1 else "entry"
-            log_content.append('<details>')
-            log_content.append(f'<summary>Lorebook Entries ({entry_count} {plural})</summary>')
-            log_content.append('')
+            log_content.append(f"## Lorebook Entries")
+            log_content.append("")
+            log_content.append(f"*{entry_count} {plural}*")
+            log_content.append("")
             for i, entry in enumerate(lorebook_entries):
-                if i > 0:
-                    log_content.append('---')
-                    log_content.append('')
-                log_content.append(f'**Entry {i+1}**')
-                log_content.append('')
-                log_content.append('```text')
+                # Try to get entry name
+                entry_name = entry.get('name')
+
+                # If no name key, try to parse from formatted content
+                if not entry_name:
+                    content = entry.get('formatted', entry.get('raw', ''))
+                    # Try to extract name from <setting_lore name="..."> format
+                    match = re.search(r'name="([^"]*)"', content)
+                    if match:
+                        entry_name = match.group(1)
+                    else:
+                        entry_name = f"Entry {i+1}"
+
+                log_content.append(f"### {entry_name}")
+                log_content.append("")
+                log_content.append("```text")
                 log_content.append(entry.get('formatted', entry.get('raw', 'No content')))
-                log_content.append('```')
-                log_content.append('')
-            log_content.append('</details>')
-            log_content.append('')
+                log_content.append("```")
+                log_content.append("")
 
         # Stripped ST_METADATA
         if stripped_metadata:
+            log_content.append("## Stripped ST_METADATA")
+            log_content.append("")
             if isinstance(stripped_metadata, list):
                 block_count = len(stripped_metadata)
                 plural = "blocks" if block_count != 1 else "block"
-                summary_text = f'Stripped ST_METADATA ({block_count} {plural})'
-            else:
-                summary_text = 'Stripped ST_METADATA'
-            log_content.append('<details>')
-            log_content.append(f'<summary>{summary_text}</summary>')
-            log_content.append('')
-            log_content.append('```json')
+                log_content.append(f"*{block_count} {plural}*")
+                log_content.append("")
+            log_content.append("```json")
             log_content.append(json.dumps(stripped_metadata, indent=2))
-            log_content.append('```')
-            log_content.append('</details>')
-            log_content.append('')
+            log_content.append("```")
+            log_content.append("")
 
         # Original Request Data (as received)
         if self.include_request_data and original_request_data and stripped_metadata:
-            log_content.append('<details>')
-            log_content.append('<summary>Original Request Data (As Received)</summary>')
-            log_content.append('')
-            log_content.append('```json')
+            log_content.append("## Original Request Data (As Received)")
+            log_content.append("")
+            log_content.append("```json")
             log_content.append(json.dumps(original_request_data, indent=2))
-            log_content.append('```')
-            log_content.append('</details>')
-            log_content.append('')
+            log_content.append("```")
+            log_content.append("")
 
             # Original Request Data (cleaned up for readability)
-            log_content.append('<details>')
-            log_content.append('<summary>Original Request Data (Cleaned - Logging Only, Not Sent Like This)</summary>')
-            log_content.append('')
-            log_content.append('```json')
+            log_content.append("## Original Request Data (Cleaned)")
+            log_content.append("")
+            log_content.append("*Logging only - not sent like this*")
+            log_content.append("")
+            log_content.append("```json")
             # Convert to JSON string and replace \n escape sequences with actual newlines
             cleaned_json = json.dumps(original_request_data, indent=2).replace('\\n', '\n')
             log_content.append(cleaned_json)
-            log_content.append('```')
-            log_content.append('</details>')
-            log_content.append('')
+            log_content.append("```")
+            log_content.append("")
 
         # Forwarded/Request Data
         if self.include_request_data and request_data:
             if stripped_metadata:
-                summary_text = 'Forwarded Request Data (After Stripping ST_METADATA)'
+                log_content.append("## Forwarded Request Data")
+                log_content.append("")
+                log_content.append("*After stripping ST_METADATA*")
             else:
-                summary_text = 'Request Data'
-            log_content.append('<details>')
-            log_content.append(f'<summary>{summary_text}</summary>')
-            log_content.append('')
-            log_content.append('```json')
+                log_content.append("## Request Data")
+            log_content.append("")
+            log_content.append("```json")
             log_content.append(json.dumps(request_data, indent=2))
-            log_content.append('```')
-            log_content.append('</details>')
-            log_content.append('')
-        
+            log_content.append("```")
+            log_content.append("")
+
         # Error Response or Response Data
         if error:
-            log_content.append('<details>')
-            log_content.append('<summary>Error Response</summary>')
-            log_content.append('')
-            log_content.append(f'**Error Type:** `{type(error).__name__}`  ')
-            log_content.append(f'**Error Message:** {str(error)}  ')
-            log_content.append('</details>')
-            log_content.append('')
+            log_content.append("## Error Response")
+            log_content.append("")
+            log_content.append(f"**Error Type:** `{type(error).__name__}`  ")
+            log_content.append(f"**Error Message:** {str(error)}  ")
+            log_content.append("")
         else:
             if self.include_response_data and response_data:
-                log_content.append('<details>')
-                log_content.append('<summary>Response Data</summary>')
-                log_content.append('')
+                log_content.append("## Response Data")
+                log_content.append("")
                 if isinstance(response_data, dict):
-                    log_content.append('```json')
+                    log_content.append("```json")
                     log_content.append(json.dumps(response_data, indent=2))
-                    log_content.append('```')
+                    log_content.append("```")
                 else:
-                    log_content.append('```text')
+                    log_content.append("```text")
                     log_content.append(str(response_data))
-                    log_content.append('```')
-                log_content.append('</details>')
-                log_content.append('')
+                    log_content.append("```")
+                log_content.append("")
 
             if self.include_headers and response_headers:
-                log_content.append('<details>')
-                log_content.append('<summary>Response Headers</summary>')
-                log_content.append('')
-                log_content.append('```text')
+                log_content.append("## Response Headers")
+                log_content.append("")
+                log_content.append("```text")
                 sanitized_headers = self._sanitize_headers(response_headers)
                 for key, value in sanitized_headers.items():
                     log_content.append(f"{key}: {value}")
-                log_content.append('```')
-                log_content.append('</details>')
-                log_content.append('')
+                log_content.append("```")
+                log_content.append("")
 
         # Timing Information
         if self.include_timing:
-            log_content.append('<details>')
-            log_content.append('<summary>Timing Information</summary>')
-            log_content.append('')
+            log_content.append("## Timing Information")
+            log_content.append("")
             if end_time:
-                log_content.append(f'**End Time:** {end_time}  ')
+                log_content.append(f"**End Time:** {end_time}  ")
             if duration:
-                log_content.append(f'**Total Duration:** {duration:.3f} seconds  ')
-            log_content.append('</details>')
-            log_content.append('')
+                log_content.append(f"**Total Duration:** {duration:.3f} seconds  ")
+            log_content.append("")
 
         # Footer
         log_content.append("---")
@@ -410,27 +370,6 @@ class RequestLogger:
         log_content.append(f"**Timestamp:** {datetime.now().isoformat()}  ")
         log_content.append("")
 
-        # Table of Contents
-        toc_items = []
-        if self.include_headers and headers:
-            toc_items.append("- Request Headers")
-        if error:
-            toc_items.append("- Error Response")
-        elif self.include_response_data and response_data:
-            toc_items.append("- Response Data")
-
-        if toc_items:
-            log_content.append("## Table of Contents")
-            log_content.append("")
-            # Convert to anchor links
-            toc_with_links = []
-            for item in toc_items:
-                text = item[2:]  # Remove "- "
-                anchor = text.lower().replace(" ", "-").replace("(", "").replace(")", "")
-                toc_with_links.append(f"- [{text}](#{anchor})")
-            log_content.extend(toc_with_links)
-            log_content.append("")
-
         # Request Headers
         if self.include_headers and headers:
             log_content.append("## Request Headers")
@@ -444,23 +383,19 @@ class RequestLogger:
 
         # Error or Response
         if error:
-            log_content.append('<details>')
-            log_content.append('<summary>Error Response</summary>')
-            log_content.append('')
-            log_content.append(f'**Error Type:** `{type(error).__name__}`  ')
-            log_content.append(f'**Error Message:** {str(error)}  ')
-            log_content.append('</details>')
-            log_content.append('')
+            log_content.append("## Error Response")
+            log_content.append("")
+            log_content.append(f"**Error Type:** `{type(error).__name__}`  ")
+            log_content.append(f"**Error Message:** {str(error)}  ")
+            log_content.append("")
         else:
             if self.include_response_data and response_data:
-                log_content.append('<details>')
-                log_content.append('<summary>Response Data</summary>')
-                log_content.append('')
-                log_content.append('```json')
+                log_content.append("## Response Data")
+                log_content.append("")
+                log_content.append("```json")
                 log_content.append(json.dumps(response_data, indent=2))
-                log_content.append('```')
-                log_content.append('</details>')
-                log_content.append('')
+                log_content.append("```")
+                log_content.append("")
 
         # Footer
         log_content.append("---")

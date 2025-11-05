@@ -34,7 +34,6 @@ import {
     initialize_settings,
     extension_settings,
     groups,
-    MacrosParser,
     streamingProcessor,
     initializeSceneNavigatorBar,
     renderSceneNavigatorBar,
