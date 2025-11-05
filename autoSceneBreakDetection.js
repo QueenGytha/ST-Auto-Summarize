@@ -123,6 +123,14 @@ function collectContextMessages(chat /*: Array<STMessage> */, index /*: number *
 
     for (let i = index - 1; i >= 0; i--) {
         const message = chat[i];
+        // Stop at the most recent VISIBLE scene break and exclude it from context
+        try {
+            const hasSceneBreak = get_data(message, 'scene_break');
+            const isVisible = get_data(message, 'scene_break_visible');
+            if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
+                break;
+            }
+        } catch { /* ignore lookup errors */ }
         if (!messageMatchesType(message, checkWhich)) {
             continue;
         }
@@ -134,6 +142,22 @@ function collectContextMessages(chat /*: Array<STMessage> */, index /*: number *
     }
 
     return contextMessages.reverse();
+}
+
+// Helper: Hard rule — always skip the immediate message after any scene break
+// This is non-consuming: if the previous message has a scene break marker, the current is skipped.
+// $FlowFixMe[missing-local-annot]
+function isCooldownSkip(chat /*: Array<STMessage> */, index /*: number */, _consume /*: boolean */ = false) /*: boolean */ {
+    if (!Array.isArray(chat) || index <= 0) return false;
+    const prev = chat[index - 1];
+    if (!prev) return false;
+    try {
+        const hasSceneBreak = get_data(prev, 'scene_break');
+        const isVisible = get_data(prev, 'scene_break_visible');
+        return Boolean(hasSceneBreak && (isVisible === undefined || isVisible === true));
+    } catch {
+        return false;
+    }
 }
 
 // Helper: Format messages for the detection prompt
@@ -498,9 +522,15 @@ async function tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkW
     // Collect indexes to check
     const indexesToCheck = [];
     for (let i = start; i <= end; i++) {
-        if (shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich)) {
-            indexesToCheck.push(i);
+        if (!shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich)) {
+            continue;
         }
+        // Apply cooldown: if previous message has an unconsumed cooldown, skip and consume it
+        if (isCooldownSkip(chat, i, true)) {
+            debug(SUBSYSTEM.SCENE, 'Skipping index', i, 'due to scene-break cooldown');
+            continue;
+        }
+        indexesToCheck.push(i);
     }
 
     if (indexesToCheck.length === 0) {
@@ -517,7 +547,7 @@ async function tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkW
         return { queued: true, count: operationIds.length };
     }
 
-    log(SUBSYSTEM.SCENE, '[Queue] Failed to queue operations, falling back to direct execution');
+    error(SUBSYSTEM.SCENE, '[Queue] Failed to enqueue scene break detections');
     return null;
 }
 
@@ -529,6 +559,8 @@ async function handleDetectedSceneBreak(i, rationale, cancellationToken) {
     // $FlowFixMe[missing-local-annot] [cannot-resolve-name]
     const get_message_div = (idx) => $(`div[mesid="${idx}"]`);
     toggleSceneBreak(i, get_message_div, getContext, set_data, get_data, saveChatDebounced);
+
+    // No per-message decrementing cooldown; skipping is enforced by adjacency rule (prev has scene_break)
 
     // Auto-generate scene summary if enabled
     if (!get_settings('auto_scene_break_generate_summary')) return;
@@ -589,7 +621,7 @@ function handleScanError(err, i, checkedCount, totalToCheck, detectedCount, canc
 function countMessagesToCheck(chat, start, end, latestIndex, offset, checkWhich) {
     let totalToCheck = 0;
     for (let i = start; i <= end; i++) {
-        if (shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich)) {
+        if (shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich) && !isCooldownSkip(chat, i, false)) {
             totalToCheck++;
         }
     }
@@ -666,6 +698,12 @@ async function executeScanLoop(chat, start, end, latestIndex, offset, checkWhich
             continue;
         }
 
+        // Cooldown: skip and consume if immediately after a scene break with remaining cooldown
+        if (isCooldownSkip(chat, i, true)) {
+            debug(SUBSYSTEM.SCENE, 'Cooldown skip applied at index', i);
+            continue;
+        }
+
         checkedCount++;
         toast(`Scanning for scene breaks: ${checkedCount}/${totalToCheck} (found ${detectedCount})...`, 'info');
         // Sequential execution required: UI responsiveness delay
@@ -711,14 +749,7 @@ export async function processAutoSceneBreakDetection(
 ) /*: Promise<void> */ {
     log(SUBSYSTEM.SCENE, '=== processAutoSceneBreakDetection called with startIndex:', startIndex, 'endIndex:', endIndex, '===');
 
-    // Validate settings
-    const enabled = get_settings('auto_scene_break_enabled');
-    if (!enabled) {
-        debug(SUBSYSTEM.SCENE, 'Auto scene break detection is disabled - exiting');
-        return;
-    }
-
-    log(SUBSYSTEM.SCENE, 'Auto scene break detection is ENABLED, proceeding...');
+    // Detection is always available; behavior is controlled by per-event settings
 
     const ctx = getContext();
     const chat = ctx.chat;
@@ -739,44 +770,16 @@ export async function processAutoSceneBreakDetection(
 
     log(SUBSYSTEM.SCENE, 'Processing messages', start, 'to', end, '(latest:', latestIndex, ', offset:', offset, ', checking:', checkWhich, ')');
 
-    // Try queueing first
+    // Queue is required - enqueue operations instead of executing directly
     const queueResult = await tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkWhich);
-    if (queueResult) return;
-
-    // Execute directly
-    log(SUBSYSTEM.SCENE, 'Executing scene break detection directly (queue disabled or unavailable)');
-
-    currentScanCancellationToken = { cancelled: false };
-    const cancellationToken = currentScanCancellationToken;
-
-    const eventSource = ctx.eventSource;
-    const event_types = ctx.event_types;
-
-    const stopHandler = () => {
-        if (cancellationToken && !cancellationToken.cancelled) {
-            debug('!!!!! GENERATION_STOPPED event received - cancelling scan !!!!!');
-            cancellationToken.cancelled = true;
-        }
-    };
-
-    eventSource.once(event_types.GENERATION_STOPPED, stopHandler);
-
-    const result = await executeScanLoop(chat, start, end, latestIndex, offset, checkWhich, cancellationToken, eventSource, event_types, stopHandler);
-
-    currentScanCancellationToken = null;
-    eventSource.off(event_types.GENERATION_STOPPED, stopHandler);
-
-    if (!result) return; // Error or abort already handled
-
-    const { checkedCount, detectedCount, totalToCheck } = result;
-    debug('Completed: checked', checkedCount, '/', totalToCheck, 'messages, detected', detectedCount, 'scene breaks');
-
-    if (detectedCount > 0) {
-        toast(`Scan complete: Found ${detectedCount} scene break(s) in ${checkedCount} messages!`, 'success');
-    } else {
-        toast(`Scan complete: ${checkedCount} messages checked, no scene breaks detected`, 'info');
+    if (!queueResult) {
+        error(SUBSYSTEM.SCENE, 'Failed to enqueue scene break detection operations');
+        toast('Failed to queue scene break detection. Check console for details.', 'error');
+        return;
     }
-    await delay(50);
+
+    log(SUBSYSTEM.SCENE, `Successfully queued ${queueResult.count} scene break detection(s)`);
+    return;
 }
 
 /**
@@ -785,12 +788,6 @@ export async function processAutoSceneBreakDetection(
 export async function manualSceneBreakDetection() {
     debug('Manual scene break detection triggered');
     toast('Scanning messages for scene breaks...', 'info');
-
-    const enabled = get_settings('auto_scene_break_enabled');
-    if (!enabled) {
-        toast('Auto scene break detection is disabled. Enable it in settings first.', 'warning');
-        return;
-    }
 
     // Process all messages
     await processAutoSceneBreakDetection();
@@ -866,7 +863,7 @@ export async function processNewMessageForSceneBreak(messageIndex /*: number */)
         let targetIndex = -1;
         for (let i = endIndex; i >= windowStart; i--) {
             const candidate = chat[i];
-            if (shouldCheckMessage(candidate, i, latestIndex, offset, checkWhich)) {
+            if (shouldCheckMessage(candidate, i, latestIndex, offset, checkWhich) && !isCooldownSkip(chat, i, false)) {
                 targetIndex = i;
                 break;
             }
