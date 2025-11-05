@@ -11,8 +11,7 @@
     "syntax-check": "node syntax-check.js",
     "audit": "npm audit --audit-level=moderate",
     "analyze": "npm run lint && npm run syntax-check",
-    "analyze:full": "npm run lint && npm run syntax-check && npm run audit",
-    "test": "node tests/run-tests.js"
+    "analyze:full": "npm run lint && npm run syntax-check && npm run audit"
   },
   "keywords": [
     "sillytavern",
@@ -40,6 +39,7 @@
     "eslint-plugin-complexity": "^1.0.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-sonarjs": "^3.0.5",
+    "puppeteer": "^24.28.0",
     "typescript": "^5.9.3"
   }
 }

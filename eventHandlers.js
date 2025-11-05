@@ -41,7 +41,11 @@ import {
   processNewMessageForSceneBreak,
   cleanup_invalid_running_summaries,
   installGenerateRawInterceptor,
-  installLorebookWrapper } from
+  installLorebookWrapper,
+  installWorldInfoActivationLogger,
+  addLorebookViewerButton,
+  bindLorebookViewerButton,
+  bindSceneBreakLorebookIcons } from
 './index.js';
 
 // Import lorebooks utilities (will be dynamically imported if enabled)
@@ -256,6 +260,11 @@ async function initializeExtension() {
   installLorebookWrapper();
   console.log('[Auto-Summarize:Init] installLorebookWrapper() call completed');
 
+  // Install world info activation logger (PoC for tracking active entries)
+  console.log('[Auto-Summarize:Init] Installing world info activation logger');
+  installWorldInfoActivationLogger();
+  console.log('[Auto-Summarize:Init] World info activation logger installed');
+
   // Load settings
   initialize_settings();
 
@@ -275,6 +284,14 @@ async function initializeExtension() {
 
   addSceneBreakButton();
   bindSceneBreakButton(get_message_div, getContext, set_data, get_data, saveChatDebounced);
+
+  // Initialize lorebook viewer UI
+  console.log('[Auto-Summarize:Init] Adding lorebook viewer button to message template');
+  addLorebookViewerButton();
+  console.log('[Auto-Summarize:Init] Binding lorebook viewer button click handlers');
+  bindLorebookViewerButton();
+  bindSceneBreakLorebookIcons();
+  console.log('[Auto-Summarize:Init] Lorebook viewer initialized');
 
   // ST event listeners
   const ctx = getContext();

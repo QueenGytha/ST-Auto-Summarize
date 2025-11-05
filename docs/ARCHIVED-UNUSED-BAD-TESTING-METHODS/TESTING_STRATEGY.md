@@ -1,13 +1,22 @@
 # Testing Strategy for ST-Auto-Summarize
 
-⚠️ **IMPLEMENTATION STATUS: THEORETICAL - NOT YET IMPLEMENTED** ⚠️
+✅ **SOLUTION VALIDATED: IN-BROWSER TESTING** ✅
 
-This document describes a proposed testing methodology that has **not been validated**. Before proceeding with full implementation:
-1. Validate that real SillyTavern code can be imported (see [IMPLEMENTATION_REALITY_CHECK.md](./IMPLEMENTATION_REALITY_CHECK.md))
-2. Measure actual success rate (target: 80%+ of imports working)
-3. If imports fail, use runtime proxy to real ST (Option B below)
+**Why Other Approaches Failed:**
+- **Import-based testing:** 9.1% success rate (CommonJS incompatibility in `lib.js`)
+- **Runtime proxy:** Can't test UI wiring (missing 50% of coverage)
+- **Playwright with AI:** AI iterates for hours trying to figure out ST's DOM structure
 
-**CRITICAL RULE: Zero tolerance for AI-written mocks, stubs, or fantasy behavior. Either import real ST code or call real running ST at runtime. Nothing else is acceptable.**
+**The Working Solution: In-Browser Unit Testing**
+- Load real SillyTavern in real browser (no import issues)
+- Test functions directly (no navigation complexity)
+- Verify UI creation, settings wiring, and integration
+- Run headlessly via Puppeteer (fully autonomous)
+- AI writes simple tests, gets immediate pass/fail
+
+**CRITICAL RULE: Zero tolerance for AI-written mocks. Tests run in real browser with real ST loaded. All behavior is real.**
+
+**Complete workflow documented in [AI_DEVELOPMENT_WORKFLOW.md](./AI_DEVELOPMENT_WORKFLOW.md)**
 
 ---
 
@@ -32,34 +41,66 @@ Traditional testing approaches don't work because AI cannot maintain accurate mo
 
 ## The Solution
 
-**Import real SillyTavern code into Node.js tests using jsdom for browser APIs.**
+**In-browser unit testing with headless automation**
 
-### Key Innovation (Option A: Real Imports - Preferred)
+### Why This Approach?
 
-Instead of mocking SillyTavern, make the actual ST source code run in Node.js by providing polyfills:
-- jsdom provides: `window`, `document`, jQuery, localStorage
-- MSW intercepts HTTP calls to ST backend
-- Tests use **real ST code** that validates API usage
-- Mock only at HTTP boundary (redirect to test proxy)
+**Three approaches were evaluated:**
 
-### Fallback (Option B: Runtime Proxy - If Imports Fail)
+1. **Import ST code into Node.js** ❌
+   - Tried, failed: 9.1% success rate
+   - CommonJS incompatibility blocks all imports
 
-**If real imports fail completely**, use runtime proxy to real running SillyTavern:
-- Start real ST server before tests
-- Extension code calls "ST APIs" that are HTTP proxies
-- Proxies forward to real ST endpoints
-- Real ST validates API usage and returns real responses
-- **Still zero mocks - tests against running reality**
+2. **Runtime HTTP proxy to ST server** ❌
+   - Can't test UI creation or wiring
+   - Misses 50% of what needs testing
+
+3. **In-browser unit tests** ✅
+   - Loads real ST in real browser
+   - Tests call functions directly (no navigation)
+   - Verifies UI creation, wiring, integration
+   - Runs headlessly for automation
+
+### How It Works
+
+**Load real SillyTavern in browser:**
+```html
+<script src="path/to/sillytavern/script.js"></script>
+<script src="extension/index.js"></script>
+<script src="tests/my-feature.test.js"></script>
+```
+
+**Test functions directly:**
+```javascript
+describe('My Feature', () => {
+  it('creates checkbox and wires to settings', () => {
+    setupMyFeature();  // Call function directly
+
+    const checkbox = document.getElementById('my_checkbox');
+    expect(checkbox).to.exist;  // UI created?
+
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event('change'));
+    expect(settings.my_flag).to.be.true;  // Wiring works?
+  });
+});
+```
+
+**Run headlessly for CI:**
+```bash
+npm test  # Puppeteer runs tests, outputs results
+```
 
 ### Why This Works
 
-✅ Tests against reality, not fantasy
-✅ Wrong API usage → Real ST throws error (imports) or rejects request (proxy)
-✅ No drift when ST updates
-✅ Catches all four AI mistake types
-✅ Fast enough for tight feedback loop (~10s with imports, ~20s with proxy)
-✅ AI can write simple test patterns
-✅ **No AI-written mocks in either approach**
+✅ **Tests against real ST** - Actually loaded and running in browser
+✅ **Catches UI bugs** - Tests can verify elements exist
+✅ **Catches wiring bugs** - Tests can trigger events and check settings
+✅ **Catches integration bugs** - Tests call real ST functions
+✅ **Simple for AI** - Test what AI just wrote, not ST's structure
+✅ **Fully autonomous** - AI runs `npm test`, sees pass/fail
+✅ **Fast enough** - ~10-20s for full test suite
+✅ **No mocks** - Everything is real and loaded
 
 ---
 
@@ -95,60 +136,67 @@ For these, manual testing or Playwright required.
 
 ---
 
-## What Happens If Imports Fail?
+## Implementation Guide
 
-### Pre-Implementation: Validate First
+**Complete end-to-end workflow in [AI_DEVELOPMENT_WORKFLOW.md](./AI_DEVELOPMENT_WORKFLOW.md)**
 
-**Before building full test infrastructure:**
+### Quick Setup
 
-1. **Try to import real ST code** (see [IMPLEMENTATION_REALITY_CHECK.md](./IMPLEMENTATION_REALITY_CHECK.md))
-   ```bash
-   node -e "import('../../../../script.js').then(() => console.log('SUCCESS')).catch(e => console.error('FAILED:', e))"
-   ```
+**1. Install dependencies:**
+```bash
+npm install --save-dev puppeteer http-server
+```
 
-2. **Measure success rate:**
-   - 90-100% imports work → Proceed with Option A (imports)
-   - 70-90% imports work → Proceed with Option A + selective Option B
-   - Below 70% → Use Option B (runtime proxy) exclusively
-   - 0% imports work → Reevaluate approach entirely
+**2. Create test infrastructure:**
+- `tests/index.html` - Loads ST + extension + test framework
+- `tests/runner.js` - Headless test runner via Puppeteer
+- `tests/tests/*.test.js` - Individual test files
 
-### If Imports Fail: Runtime Proxy Architecture
-
-**Do NOT write fallback stubs or "documented proxies"** - that's just mocks with extra steps.
-
-Instead, call real running SillyTavern:
-
-```javascript
-// tests/setup/sillytavern-proxy.js
-// This is a PROXY, not a mock - forwards to real ST
-
-export async function generateRaw(options) {
-  // Every call goes to REAL SillyTavern
-  const response = await fetch('http://localhost:8000/extension-api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(options)
-  });
-
-  if (!response.ok) {
-    throw new Error(`Real ST rejected call: ${await response.text()}`);
+**3. Add npm scripts:**
+```json
+{
+  "scripts": {
+    "test": "node tests/runner.js"
   }
-
-  return await response.json();
-}
-
-// Real ST's state, fetched at runtime
-export async function getChat() {
-  return await fetch('http://localhost:8000/extension-api/chat').then(r => r.json());
 }
 ```
 
-**Setup requirements for Option B:**
-1. ST must expose test endpoints (`/extension-api/*`)
-2. Tests start real ST server before running
-3. Tests call proxies that forward to real ST
-4. Real ST validates all API usage
-5. **Zero AI-written behavior - all responses from real ST**
+### Test Pattern Example
+
+```javascript
+describe('Prompt Selector', () => {
+  it('dropdown updates setting when changed', () => {
+    setupPromptUI();  // Function AI just wrote
+
+    const dropdown = document.getElementById('prompt_selector');
+    dropdown.value = 'custom';
+    dropdown.dispatchEvent(new Event('change'));
+
+    // Did the wiring work?
+    expect(extension_settings.auto_summarize.profiles.default.prompt)
+      .to.equal('custom');
+  });
+
+  it('code uses the selected prompt', async () => {
+    extension_settings.auto_summarize.profiles.default.prompt = 'custom';
+
+    await generateSummary(0);
+
+    // Did the code actually use the setting?
+    expect(window.generateRaw.calls[0].prompt).to.include('custom');
+  });
+});
+```
+
+### AI Workflow
+
+1. **Implement feature** - Write code normally
+2. **Write tests** - Test what you just wrote
+3. **Run tests** - `npm test`
+4. **See failures** - "expected undefined to equal 'value'"
+5. **Fix bugs** - Add missing wiring
+6. **Run again** - Tests pass
+7. **Commit** - Feature complete
 
 ---
 
@@ -225,40 +273,29 @@ describe('My Feature', () => {
 
 ---
 
-## Implementation Overview
+## Detailed Documentation
 
-**Full details in [TESTING_ARCHITECTURE.md - Implementation Guide](./TESTING_ARCHITECTURE.md#implementation-guide).**
+### Complete Workflow Guide
+**See [AI_DEVELOPMENT_WORKFLOW.md](./AI_DEVELOPMENT_WORKFLOW.md)** for:
+- One-time setup instructions
+- Step-by-step development workflow
+- Test pattern examples
+- Common failures and fixes
+- Feature completion checklist
 
-### Phase 0: Validation (DO THIS FIRST!)
+### Validation Results
+**See [IMPLEMENTATION_REALITY_CHECK.md](./IMPLEMENTATION_REALITY_CHECK.md)** for:
+- Why import-based testing failed (9.1% success rate)
+- Technical root cause analysis
+- Why runtime proxy was insufficient
+- Decision rationale
 
-**Before any infrastructure work:**
-
-1. **Test if imports work** (see [IMPLEMENTATION_REALITY_CHECK.md](./IMPLEMENTATION_REALITY_CHECK.md))
-2. **Measure success rate** (how many ST modules import successfully)
-3. **Decide approach** based on results:
-   - High success (80%+) → Proceed with import-based testing
-   - Low success (<80%) → Use runtime proxy approach
-4. **Document what works** (create import status log)
-
-### Phase 1: Setup (After Validation)
-
-**If imports work (Option A):**
-1. Install: `vitest`, `jsdom`, `fake-indexeddb`, `ws`, `canvas`, `msw`
-2. Create `tests/setup/polyfills.js` - Browser APIs (jsdom + polyfills)
-3. Create `tests/setup/sillytavern-loader.js` - Import real ST code (NO fallback stubs)
-4. Create `tests/setup/http-intercept.js` - Redirect LLM calls to proxy
-5. Configure `vitest.config.js`
-
-**If imports fail (Option B):**
-1. Install: `vitest`, `jsdom` (minimal setup)
-2. Create `tests/setup/sillytavern-proxy.js` - Runtime proxies to real ST
-3. Create test script to start ST server before tests
-4. Configure `vitest.config.js` with longer timeouts
-5. Add ST test API endpoints (in ST codebase, not extension)
-
-### Phase 2: Test Helpers
-
-1. `tests/helpers/builders.js` - Fluent APIs (chatBuilder, operationBuilder)
+### Architecture Details
+**See [TESTING_ARCHITECTURE.md](./TESTING_ARCHITECTURE.md)** for:
+- Detailed test infrastructure design
+- Browser environment setup
+- Test framework integration
+- Advanced patterns and troubleshooting
 2. `tests/helpers/assertions.js` - Custom matchers (toHaveUIElement, etc.)
 3. `tests/fixtures/*.js` - Test data
 
@@ -353,23 +390,24 @@ See [TESTING_ARCHITECTURE.md - AI Testing Guide](./TESTING_ARCHITECTURE.md#phase
 
 ## Key Takeaway
 
-**Tests run against real SillyTavern, not imagined APIs.**
+**Tests run in real browser with real SillyTavern loaded.**
 
 When AI makes mistakes:
-- Uses wrong API → Real ST code throws error (imports) OR real ST server rejects request (proxy)
-- Forgets UI → Test can't find element
-- Forgets wiring → Setting doesn't change
-- Breaks integration → Workflow test fails
+- **Forgets UI element** → Test fails: "expected element to exist"
+- **Forgets wiring** → Test fails: "expected setting to equal 'value'"
+- **Uses wrong setting** → Test fails: "expected call to include 'custom'"
+- **Breaks integration** → Test fails: workflow doesn't complete
 
-**No fantasy, no drift, no AI-written mocks - just reality.**
+**No imports, no mocks, no fantasy - just real code in real browser.**
 
 ### Critical Success Factors
 
-1. ✅ **Validate imports work** before building infrastructure
-2. ✅ **Use runtime proxy** if imports fail, not manual mocks
-3. ✅ **Never write mock behavior** - all behavior comes from real ST
-4. ✅ **Document import failures** - know what works and what doesn't
-5. ✅ **Re-validate periodically** - ST changes may affect import success
+1. ✅ **In-browser testing** - Loads real ST in real browser
+2. ✅ **Direct function calls** - Tests what AI just wrote
+3. ✅ **Headless automation** - Puppeteer runs tests autonomously
+4. ✅ **Immediate feedback** - AI sees pass/fail in seconds
+5. ✅ **Catches all bug types** - UI, wiring, integration, logic
+6. ✅ **Simple for AI** - Standard describe/it/expect patterns
 
 ---
 

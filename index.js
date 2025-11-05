@@ -190,7 +190,6 @@ export * from './lorebookManager.js';
 export * from './lorebookEntryMerger.js';
 export * from './categoryIndexes.js';
 export * from './summaryToLorebookProcessor.js';
-export * from './tests.js';
 
 // Metadata injection for LLM requests
 export * from './metadataInjector.js';
@@ -199,6 +198,9 @@ export * from './operationContext.js';
 
 // Lorebook entry wrapping for downstream parsing
 export * from './lorebookWrapper.js';
+
+// Lorebook viewer UI
+export * from './lorebookViewer.js';
 
 // ============================================================================
 // Enter Key Interception for Queue Operations
@@ -239,4 +241,85 @@ export function installEnterKeyInterceptor() {
   };
 
   attemptInstall();
+}
+
+// ============================================================================
+// World Info Activation Tracking
+// ============================================================================
+// Tracks which lorebook entries are active per message
+
+/**
+ * Storage for active lorebook entries per message
+ * Key: message index (number)
+ * Value: array of entry objects with minimal data
+ */
+const activeLorebooksPerMessage = new Map();
+
+/**
+ * Get active lorebook entries for a specific message
+ * @param {number} messageIndex - The message index to query
+ * @returns {Array|null} Array of entry objects, or null if no data
+ */
+export function getActiveLorebooksForMessage(messageIndex) {
+  return activeLorebooksPerMessage.get(messageIndex) || null;
+}
+
+/**
+ * Clear all stored lorebook activation data
+ */
+export function clearActiveLorebooksData() {
+  activeLorebooksPerMessage.clear();
+}
+
+/**
+ * Install World Info activation tracker
+ * Tracks when lorebook entries become active and stores per message
+ */
+export function installWorldInfoActivationLogger() {
+  console.log('[worldinfoactive] Installing activation tracker');
+
+  const ctx = getContext();
+  const eventSource = ctx?.eventSource;
+  const event_types = ctx?.event_types;
+
+  if (!eventSource || !event_types?.WORLD_INFO_ACTIVATED) {
+    console.warn('[worldinfoactive] Unable to install tracker (missing eventSource or WORLD_INFO_ACTIVATED event type)');
+    return;
+  }
+
+  eventSource.on(event_types.WORLD_INFO_ACTIVATED, (entries) => {
+    const chatLength = ctx.chat?.length || 0;
+    const lastMessageIndex = chatLength > 0 ? chatLength - 1 : 0;
+
+    console.log(`[worldinfoactive] Event fired - Chat length: ${chatLength}, Last message index: ${lastMessageIndex}`);
+    console.log(`[worldinfoactive] ${entries.length} active entries:`, entries);
+
+    // Store minimal entry data for this message
+    const minimalEntries = entries.map(entry => ({
+      comment: entry.comment || '(unnamed)',
+      uid: entry.uid,
+      world: entry.world,
+      key: entry.key || [],
+      position: entry.position
+    }));
+
+    activeLorebooksPerMessage.set(lastMessageIndex, minimalEntries);
+    console.log(`[worldinfoactive] Stored ${minimalEntries.length} entries for message ${lastMessageIndex}`);
+
+    // Log each entry with key details
+    entries.forEach((entry, i) => {
+      console.log(`[worldinfoactive] Entry ${i + 1}:`, {
+        name: entry.comment || '(unnamed)',
+        uid: entry.uid,
+        world: entry.world,
+        position: entry.position,
+        keys: entry.key || [],
+        keysSecondary: entry.keysecondary || [],
+        depth: entry.depth,
+        role: entry.role
+      });
+    });
+  });
+
+  console.log('[worldinfoactive] ✓ Tracker installed successfully');
 }
