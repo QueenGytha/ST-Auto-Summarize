@@ -19,6 +19,7 @@ import {
     get_running_summary,
     set_current_running_summary_version,
 } from './runningSceneSummary.js';
+import { manualSceneBreakDetection } from './autoSceneBreakDetection.js';
 
 /**
  * Create and initialize running scene summary controls in scene navigator bar
@@ -56,6 +57,18 @@ function createRunningSceneSummaryNavbar() {
         ">
             <i class="fa-solid fa-edit"></i>
             <span>Edit Summary</span>
+        </button>
+        <button id="running_summary_scan_breaks_btn" class="menu_button" title="Scan all messages for scene breaks (manual run)" style="
+            width: 90%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 11px;
+            text-transform: none;
+        ">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span>Scan Scene Breaks</span>
         </button>
         <button id="running_summary_clear_all_btn" class="menu_button" title="Clear all summaries and reset scene tracking" style="
             width: 90%;
@@ -108,6 +121,17 @@ function createRunningSceneSummaryNavbar() {
             set_current_running_summary_version(versionNum);
         }
         debug(SUBSYSTEM.RUNNING, `Switched to running summary version ${versionNum}`);
+    });
+
+    // Manual scene break scan handler
+    // $FlowFixMe[cannot-resolve-name]
+    $('#running_summary_scan_breaks_btn').on('click', async () => {
+        try {
+            await manualSceneBreakDetection();
+        } catch (err) {
+            error(SUBSYSTEM.SCENE, 'Manual scene break scan failed', err);
+            toast('Failed to scan scene breaks. Check console for details.', 'error');
+        }
     });
 
     // $FlowFixMe[cannot-resolve-name]

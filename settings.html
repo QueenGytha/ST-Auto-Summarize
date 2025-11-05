@@ -282,10 +282,8 @@
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
-                        <label class="checkbox_label" title="Enable automatic scene break detection using LLM.">
-                            <input id="auto_scene_break_enabled" type="checkbox" />
-                            <span>Enable Auto Scene Break Detection</span>
-                        </label>
+                        <!-- Removed master enable toggle: scene break detection is always available.
+                             Behavior is governed by per-event options and manual run. -->
                         <label class="checkbox_label" title="Automatically check for scene breaks when chat loads.">
                             <input id="auto_scene_break_on_load" type="checkbox" />
                             <span>Auto-check on Chat Load</span>

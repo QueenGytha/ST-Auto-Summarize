@@ -340,11 +340,14 @@ async function generate_running_scene_summary(skipQueue /*: boolean */ = false) 
             return null; // Operation will be processed by queue
         }
 
-        debug(SUBSYSTEM.RUNNING, '[Queue] Failed to queue operation, falling back to direct execution');
+        // Queue is required. If enqueue failed, abort rather than running directly.
+        error(SUBSYSTEM.RUNNING, '[Queue] Failed to enqueue running scene summary generation. Aborting.');
+        toast('Queue required: failed to enqueue running scene summary generation. Aborting.', 'error');
+        return null;
     }
 
-    // Fallback to direct execution if queueing was skipped or failed
-    debug(SUBSYSTEM.RUNNING, 'Executing running scene summary generation directly (queue skipped or unavailable)');
+    // Direct execution path is only used by queue handler (skipQueue=true)
+    debug(SUBSYSTEM.RUNNING, `Executing running scene summary generation directly (skipQueue=${String(skipQueue)})`);
 
     debug(SUBSYSTEM.RUNNING, 'Starting running scene summary generation');
 

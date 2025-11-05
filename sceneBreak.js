@@ -755,7 +755,7 @@ async function tryQueueSceneSummary(index /*: number */) /*: Promise<boolean> */
         return true;
     }
 
-    debug(SUBSYSTEM.SCENE, `[Queue] Failed to queue operation, falling back to direct execution`);
+    error(SUBSYSTEM.SCENE, `[Queue] Failed to enqueue scene summary generation`);
     return false;
 }
 
@@ -1044,11 +1044,19 @@ export async function generateSceneSummary(
     const message = chat[index];
 
     // Try queueing if not bypassed
-    if (!skipQueue && await tryQueueSceneSummary(index)) {
-        return;
+    if (!skipQueue) {
+        const enqueued = await tryQueueSceneSummary(index);
+        if (enqueued) {
+            return;
+        }
+        // Queue is required. If enqueue failed, abort rather than running directly.
+        error(SUBSYSTEM.SCENE, `Failed to enqueue scene summary generation for index ${index}. Aborting.`);
+        toast('Queue required: failed to enqueue scene summary generation. Aborting.', 'error');
+        return null;
     }
 
-    debug(SUBSYSTEM.SCENE, `Executing scene summary generation directly for index ${index} (queue ${skipQueue ? 'bypassed' : 'disabled or unavailable'})`);
+    // Direct execution path is only used by queue handler (skipQueue=true)
+    debug(SUBSYSTEM.SCENE, `Executing scene summary generation directly for index ${index} (skipQueue=true)`);
 
     // Get scene range and collect objects
     const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;

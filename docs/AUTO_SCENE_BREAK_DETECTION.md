@@ -2,7 +2,7 @@
 
 ## Feature Overview
 
-Automatic scene break detection uses an LLM to analyze messages and determine if they represent logical scene breaks in the roleplay. When enabled, the system automatically marks messages as scene breaks without manual user intervention.
+Automatic scene break detection uses an LLM to analyze messages and determine if they represent logical scene breaks in the roleplay. The system can automatically mark messages as scene breaks on chat load and/or for new messages (per-event settings), and can also be run manually via the navbar “Scan Scene Breaks” button.
 
 ## Requirements
 
@@ -28,10 +28,9 @@ Automatic scene break detection uses an LLM to analyze messages and determine if
 ### Settings
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `auto_scene_break_enabled` | boolean | false | Master enable/disable toggle |
 | `auto_scene_break_on_load` | boolean | false | Auto-check messages when chat loads |
 | `auto_scene_break_on_new_message` | boolean | true | Auto-check when new message arrives |
-| `auto_scene_break_generate_summary` | boolean | false | Auto-generate scene summary when scene break is detected (completes before checking next messages) |
+| `auto_scene_break_generate_summary` | boolean | true | Auto-generate scene summary when a scene break is detected |
 | `auto_scene_break_message_offset` | number | 1 | How many messages back from latest to skip (1 = skip latest, 0 = check all including latest) |
 | `auto_scene_break_check_which_messages` | string | "both" | Which messages to check: "user" (user only), "character" (AI only), "both" (all messages) |
 | `auto_scene_break_recent_message_count` | number | 3 | How many recent messages matching the selected type to check when auto-scanning new messages (0 = scan entire history) |
@@ -183,7 +182,7 @@ async function manualSceneBreakDetection()
    - If enabled, call `processAutoSceneBreakDetection()` (all messages)
 
 3. **Manual Trigger**
-   - Button in settings panel or slash command
+   - Navbar button: “Scan Scene Breaks”
    - Calls `manualSceneBreakDetection()` which processes all eligible messages
 
 ### UI Components
@@ -194,10 +193,7 @@ async function manualSceneBreakDetection()
 <div class="auto_scene_break_settings">
   <h3>Auto Scene Break Detection</h3>
 
-  <label class="checkbox_label">
-    <input type="checkbox" id="auto_scene_break_enabled" />
-    <span>Enable Auto Scene Break Detection</span>
-  </label>
+  <!-- Master toggle removed; detection is controlled per-event and via manual run -->
 
   <label class="checkbox_label">
     <input type="checkbox" id="auto_scene_break_on_load" />
@@ -242,7 +238,7 @@ async function manualSceneBreakDetection()
   </select>
 
   <button id="manual_scene_break_detection" class="menu_button">
-    <i class="fa-solid fa-magnifying-glass"></i> Scan All Messages
+    <i class="fa-solid fa-magnifying-glass"></i> Scan Scene Breaks
   </button>
 </div>
 ```
@@ -266,11 +262,7 @@ message.scene_break_summary = "Summary";  // String
 
 ### Manual Testing Steps
 
-1. **Enable Feature**
-   - Enable auto scene break detection in settings
-   - Verify settings are saved and persist
-
-2. **Test Message Offset**
+1. **Test Message Offset**
    - Set offset to 1 (skip latest)
    - Send 3 messages
    - Verify only first 2 are checked (not latest)
@@ -292,8 +284,8 @@ message.scene_break_summary = "Summary";  // String
    - Reload chat
    - Verify unchecked messages are scanned
 
-6. **Test Manual Trigger**
-   - Click "Scan All Messages" button
+5. **Test Manual Trigger**
+   - Click "Scan Scene Breaks" button (navbar)
    - Verify all eligible messages are processed
 
 7. **Test API Profile Switching**
@@ -304,10 +296,9 @@ message.scene_break_summary = "Summary";  // String
 ### Playwright Test Cases
 
 ```javascript
-// Test 1: Enable and configure auto scene break detection
+// Test 1: Configure auto scene break detection
 test('Configure auto scene break detection', async () => {
   // Navigate to settings
-  // Enable auto_scene_break_enabled
   // Set offset to 1
   // Save settings
   // Verify settings persisted
@@ -339,9 +330,9 @@ test('Swipe clears checked status', async () => {
 
 // Test 5: Manual scan all messages
 test('Manual scan trigger', async () => {
-  // Disable auto-check
+  // Ensure auto-check is off on load (optional)
   // Send 3 messages
-  // Click "Scan All Messages"
+  // Click "Scan Scene Breaks"
   // Verify all messages processed
 });
 ```

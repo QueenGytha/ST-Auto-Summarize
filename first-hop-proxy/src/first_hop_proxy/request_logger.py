@@ -216,6 +216,14 @@ class RequestLogger:
             log_content.append("-" * 40)
             log_content.append(json.dumps(original_request_data, indent=2))
 
+            # Show cleaned up version with actual newlines for readability
+            log_content.append("\n" + "-" * 40)
+            log_content.append("ORIGINAL REQUEST DATA (CLEANED UP - LOGGING ONLY WAS NOT SENT LIKE THIS):")
+            log_content.append("-" * 40)
+            # Convert to JSON string and replace \n escape sequences with actual newlines
+            cleaned_json = json.dumps(original_request_data, indent=2).replace('\\n', '\n')
+            log_content.append(cleaned_json)
+
         if self.include_request_data and request_data:
             log_content.append("\n" + "-" * 40)
             if stripped_metadata:

@@ -106,6 +106,8 @@ export function registerAllOperationHandlers() {
 
             toggleSceneBreak(index, get_message_div, getContext, set_data, get_data, saveChatDebounced);
 
+            // No decrementing cooldown needed; adjacency rule enforces skip for the immediate next message
+
             // Auto-generate scene summary if enabled - ENQUEUE as separate operation
             if (get_settings('auto_scene_break_generate_summary')) {
                 debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_SUMMARY for message ${index}`);

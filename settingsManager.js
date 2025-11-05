@@ -39,12 +39,7 @@ function getDefaultAutoLorebookSettings() {
         nameTemplate: 'z-AutoLB-{{chat}}',
         deleteOnChatDelete: true,
         autoReorderAlphabetically: true,
-        entity_types: [...DEFAULT_ENTITY_TYPES],
-        queue: {
-            enabled: true,
-            use_lorebook: true,
-            display_enabled: true
-        }
+        entity_types: [...DEFAULT_ENTITY_TYPES]
     };
 }
 
@@ -68,15 +63,16 @@ function initialize_settings() {
         // Merge with defaults for any missing global properties
         const defaultLorebooks = getDefaultAutoLorebookSettings();
 
-        // Deep merge nested objects (only global settings)
+        // Shallow merge global settings (queue settings removed)
         extension_settings.autoLorebooks = {
             ...defaultLorebooks,
             ...extension_settings.autoLorebooks,
-            queue: {
-                ...defaultLorebooks.queue,
-                ...extension_settings.autoLorebooks.queue
-            }
         };
+
+        // Purge legacy queue block if still present in saved settings
+        if (extension_settings.autoLorebooks.queue) {
+            delete extension_settings.autoLorebooks.queue;
+        }
 
         // Remove old per-profile settings from global namespace if they exist
         // These are now stored in individual profiles

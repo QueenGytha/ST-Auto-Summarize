@@ -187,26 +187,16 @@ scene_summary_history_count: 1,          // Last 1 scene
 
 ### 1. Scene Break Settings
 
-**Current:**
+There is no master enable/disable setting. Scene break detection is always available and is controlled by per‑event triggers and manual scans.
+
+Recommended profile settings:
 ```javascript
-auto_scene_break_enabled: false,                    // Manual scene marking
-auto_scene_break_generate_summary: false,           // Don't auto-gen after detection
+auto_scene_break_on_new_message: true,     // Check new messages automatically
+auto_scene_break_on_load: false,           // Avoid scanning on chat load by default
+auto_scene_break_generate_summary: false,  // Prefer manual control of summaries
 ```
 
-**Assessment:** ✅ **Keep as-is**
-
-**Reason:**
-- Auto scene break detection is experimental
-- Manual marking gives user control
-- Can enable per-user preference
-
-**Optional enhancement:**
-```javascript
-auto_scene_break_generate_summary: true,   // Auto-gen summary when scene detected
-```
-
-This would fully automate: detect scene → generate summary → update running summary.
-But keep `false` by default for user control.
+Users who prefer manual runs can leave both per‑event flags off and use the navbar “Scan Scene Breaks” button as needed.
 
 ### 2. Completion Presets
 

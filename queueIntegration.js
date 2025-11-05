@@ -129,8 +129,9 @@ export async function queueCombineSceneWithRunning(index /*: number */, options 
 }
 
 /**
- * Validates queue status
- * @returns {boolean} - Whether queue is enabled
+ * Queue is mandatory for this extension.
+ * Always returns true. Fallback to direct execution happens only
+ * when enqueueing fails at runtime (e.g., no lorebook attached during init).
  */
 function validateQueueStatus() /*: boolean */ {
     return true;

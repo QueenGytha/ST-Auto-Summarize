@@ -378,18 +378,7 @@ function refreshGlobalSettingsUI(settings /*: any */) /*: void */ {
     $('#autolorebooks-name-template').val(settings.nameTemplate || 'z-AutoLB-{{chat}}');
 }
 
-/**
- * Refreshes queue settings UI
- * @param {any} queueSettings - Queue settings object
- */
-function refreshQueueSettingsUI(queueSettings /*: any */ = {}) /*: void */ {
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-queue-enabled').prop('checked', queueSettings.enabled !== false);
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-queue-use-lorebook').prop('checked', queueSettings.use_lorebook !== false);
-    // $FlowFixMe[cannot-resolve-name]
-    $('#autolorebooks-queue-display-enabled').prop('checked', queueSettings.display_enabled !== false);
-}
+// Removed legacy queue settings UI (queue is mandatory)
 
 /**
  * Refreshes summary processing settings UI
@@ -443,7 +432,6 @@ function refresh_lorebooks_settings_ui() {
 
         // Refresh global settings UI
         refreshGlobalSettingsUI(settings);
-        refreshQueueSettingsUI(settings.queue);
 
         // Refresh per-profile settings UI (summary processing)
         // These functions now read directly from profile via get_settings()

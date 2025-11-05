@@ -50,6 +50,8 @@ import * as lorebookUtils from './utils.js';
 
 // Event handling
 let operationQueueModule = null;  // Reference to queue module for reloading
+// Track reason for last MESSAGE_RECEIVED to distinguish swipes
+let lastMessageReceivedReason /*: ?string */ = null;
 
 // Handler functions for each event type
 async function handleChatChanged() {
@@ -156,6 +158,15 @@ async function handleUserMessage() {
 async function handleCharMessageNew(index) {
     // Auto scene break detection on new character message
     log(SUBSYSTEM.EVENT, "Triggering auto scene break detection for character message at index", index);
+    // If the last message was a swipe and offset >= 1 (skip latest), skip detection for this char_message
+    const offset = Number(get_settings('auto_scene_break_message_offset')) || 0;
+    if (offset >= 1 && lastMessageReceivedReason === 'swipe') {
+        debug('[Scene] Skipping auto scene break detection on swipe due to offset >= 1');
+        lastMessageReceivedReason = null; // consume the reason
+        return;
+    }
+    // consume any prior reason to avoid accidental carry-over
+    lastMessageReceivedReason = null;
     await processNewMessageForSceneBreak(index);
 }
 
@@ -321,6 +332,14 @@ async function initializeExtension() {
     eventSource.on(event_types.USER_MESSAGE_RENDERED, (id) => on_chat_event('user_message', id));
     eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, (id, _stuff) => on_chat_event('before_message', id));
     eventSource.on(event_types.MESSAGE_DELETED, (id) => on_chat_event('message_deleted', id));
+    // Record message_received reasons (e.g., 'swipe') so we can gate char_message handling
+    if (event_types.MESSAGE_RECEIVED) {
+        eventSource.on(event_types.MESSAGE_RECEIVED, (id, reason) => {
+            try {
+                lastMessageReceivedReason = reason;
+            } catch { /* ignore */ }
+        });
+    }
     eventSource.on(event_types.MESSAGE_EDITED, (id) => on_chat_event('message_edited', id));
     eventSource.on(event_types.MESSAGE_SWIPED, (id) => on_chat_event('message_swiped', id));
     eventSource.on(event_types.CHAT_CHANGED, () => on_chat_event('chat_changed'));

@@ -278,7 +278,6 @@ Available Macros:
     });
 
     // --- Auto Scene Break Detection Settings ---
-    bind_setting('#auto_scene_break_enabled', 'auto_scene_break_enabled', 'boolean');
     bind_setting('#auto_scene_break_on_load', 'auto_scene_break_on_load', 'boolean');
     bind_setting('#auto_scene_break_on_new_message', 'auto_scene_break_on_new_message', 'boolean');
     bind_setting('#auto_scene_break_generate_summary', 'auto_scene_break_generate_summary', 'boolean');
@@ -405,45 +404,7 @@ function initialize_lorebooks_settings_listeners() {
         saveSettingsDebounced();
     });
 
-    // Queue settings
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-queue-enabled', function() {
-        const value = $(this).prop('checked');
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.queue) extension_settings.autoLorebooks.queue = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.queue.enabled = value;
-        saveSettingsDebounced();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-queue-use-lorebook', function() {
-        const value = $(this).prop('checked');
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.queue) extension_settings.autoLorebooks.queue = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.queue.use_lorebook = value;
-        saveSettingsDebounced();
-    });
-
-    // $FlowFixMe[cannot-resolve-name]
-    // $FlowFixMe[missing-this-annot]
-    $(document).on('change', '#autolorebooks-queue-display-enabled', function() {
-        const value = $(this).prop('checked');
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
-        // $FlowFixMe[prop-missing]
-        if (!extension_settings.autoLorebooks.queue) extension_settings.autoLorebooks.queue = {};
-        // $FlowFixMe[prop-missing]
-        extension_settings.autoLorebooks.queue.display_enabled = value;
-        saveSettingsDebounced();
-    });
+    // Removed legacy Auto-Lorebooks queue toggles (queue is mandatory)
 
     // Summary processing settings
     // $FlowFixMe[cannot-resolve-name]

@@ -233,51 +233,24 @@ export async function updateAllCategoryIndexes(lorebookName /*: string */) /*: P
             return false;
         }
 
-        // Check if operation queue is enabled
-        const queueEnabled = getSetting?.('queue')?.enabled !== false;
-        if (queueEnabled) {
-            debug(`[Queue] Operation queue enabled, queueing update of all category indexes`);
+        // Queue is required for category index updates
+        debug(`[Queue] Queueing update of all category indexes`);
 
-            // Import queue integration
-            // $FlowFixMe[prop-missing] - Dynamic import, function may not exist in queueIntegration
-            const { queueUpdateAllCategoryIndexes } = await import('./queueIntegration.js');
-
-            // Queue the category indexes update
-            // $FlowFixMe[not-a-function] - Function exists at runtime if queue enabled
-            const operationId = queueUpdateAllCategoryIndexes(lorebookName);
-
+        // Import queue integration and check for function presence
+        const qi = await import('./queueIntegration.js');
+        const queueFn = qi?.queueUpdateAllCategoryIndexes;
+        if (typeof queueFn === 'function') {
+            const operationId = queueFn(lorebookName);
             if (operationId) {
                 log(`[Queue] Queued update of all category indexes for ${lorebookName}:`, operationId);
                 return true; // Operation will be processed by queue
             }
-
-            debug(`[Queue] Failed to queue operation, falling back to direct execution`);
-        }
-
-        // Fallback to direct execution if queue disabled or queueing failed
-        debug(`Updating all category indexes for: ${lorebookName} (queue disabled or unavailable)`);
-
-        // Categorize all entries
-        const categorized = await categorizeEntries(lorebookName);
-
-        // Update each category index
-        let allSuccess = true;
-        for (const [categoryPrefix, entityNames] of Object.entries(categorized)) {
-            // Sequential execution required: category indexes must update in order
-            // eslint-disable-next-line no-await-in-loop
-            const success = await updateCategoryIndexEntry(lorebookName, categoryPrefix, entityNames);
-            if (!success) {
-                allSuccess = false;
-            }
-        }
-
-        if (allSuccess) {
-            log(`Successfully updated all category indexes for: ${lorebookName}`);
+            error(`[Queue] Failed to enqueue updateAllCategoryIndexes for ${lorebookName}. Aborting.`);
+            return false;
         } else {
-            error(`Some category indexes failed to update for: ${lorebookName}`);
+            error(`[Queue] queueUpdateAllCategoryIndexes not available. Aborting.`);
+            return false;
         }
-
-        return allSuccess;
 
     } catch (err) {
         error("Error updating category indexes", err);
@@ -299,36 +272,24 @@ export async function updateCategoryIndex(lorebookName /*: string */, categoryPr
             return false;
         }
 
-        // Check if operation queue is enabled
-        const queueEnabled = getSetting?.('queue')?.enabled !== false;
-        if (queueEnabled) {
-            debug(`[Queue] Operation queue enabled, queueing category index update for ${categoryPrefix}`);
+        // Queue is required for category index updates
+        debug(`[Queue] Queueing category index update for ${categoryPrefix}`);
 
-            // Import queue integration
-            // $FlowFixMe[prop-missing] - Dynamic import, function may not exist in queueIntegration
-            const { queueUpdateCategoryIndex } = await import('./queueIntegration.js');
-
-            // Queue the category index update
-            // $FlowFixMe[not-a-function] - Function exists at runtime if queue enabled
-            const operationId = queueUpdateCategoryIndex(lorebookName, categoryPrefix);
-
+        // Import queue integration and check for function presence
+        const qi = await import('./queueIntegration.js');
+        const queueFn = qi?.queueUpdateCategoryIndex;
+        if (typeof queueFn === 'function') {
+            const operationId = queueFn(lorebookName, categoryPrefix);
             if (operationId) {
                 log(`[Queue] Queued category index update for ${categoryPrefix}:`, operationId);
                 return true; // Operation will be processed by queue
             }
-
-            debug(`[Queue] Failed to queue operation, falling back to direct execution`);
+            error(`[Queue] Failed to enqueue updateCategoryIndex for ${categoryPrefix}. Aborting.`);
+            return false;
+        } else {
+            error(`[Queue] queueUpdateCategoryIndex not available. Aborting.`);
+            return false;
         }
-
-        // Fallback to direct execution if queue disabled or queueing failed
-        debug(`Updating category index: ${categoryPrefix} (queue disabled or unavailable)`);
-
-        // Get all entries in this category
-        const categorized = await categorizeEntries(lorebookName);
-        const entityNames = categorized[categoryPrefix] || [];
-
-        // Update the index entry
-        return await updateCategoryIndexEntry(lorebookName, categoryPrefix, entityNames);
 
     } catch (err) {
         error(`Error updating category index for ${categoryPrefix}`, err);

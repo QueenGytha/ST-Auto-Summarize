@@ -46,8 +46,7 @@ export const default_settings = {
     scene_summary_error_detection_retries: 3,
     auto_hide_scene_count: 3, // Hide messages older than last 3 scenes
 
-    // --- Auto Scene Break Detection Settings ---
-    auto_scene_break_enabled: true,
+    // --- Auto Scene Break Detection Settings --- (always available; governed by per-event settings)
     auto_scene_break_on_load: false,
     auto_scene_break_on_new_message: true,
     auto_scene_break_message_offset: 1,
