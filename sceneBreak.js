@@ -12,7 +12,8 @@ import {
   error,
   toast,
   SUBSYSTEM,
-  extension_settings } from
+  extension_settings,
+  createSceneBreakLorebookIcon } from
 './index.js';
 import {
   auto_generate_running_summary } from
@@ -279,6 +280,7 @@ currentIdx )
 {// Returns jQuery object - any is appropriate
   const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
   const previewIcon = `<i class="fa-solid fa-eye scene-preview-summary" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
+  const lorebookIcon = createSceneBreakLorebookIcon(index);
 
   const stateClass = isVisible ? "sceneBreak-visible" : "sceneBreak-hidden";
   const borderClass = isVisible ? "auto_summarize_scene_break_border" : "";
@@ -294,7 +296,7 @@ currentIdx )
         </div>
         <div class="sceneBreak-content">
             <div style="font-size:0.95em; color:inherit; margin-bottom:0.5em;">
-                Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}
+                Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}${lorebookIcon}
             </div>
             <textarea class="scene-summary-box auto_summarize_memory_text" placeholder="Scene summary...">${sceneSummary}</textarea>
             <div class="scene-summary-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
@@ -977,7 +979,8 @@ getContext ,
 get_data , // Returns any type - legitimate
 set_data , // value can be any type - legitimate
 saveChatDebounced ,
-skipQueue  = false)
+skipQueue  = false,
+signal  = null) // AbortSignal to check for cancellation
 {
   const ctx = getContext();
   const chat = ctx.chat;
@@ -1018,6 +1021,12 @@ skipQueue  = false)
       return await executeSceneSummaryGeneration(prompt, ctx, startIdx, endIdx);
     }
   );
+
+  // Check if operation was cancelled while LLM call was in progress
+  if (signal?.aborted) {
+    debug(SUBSYSTEM.SCENE, `Scene summary cancelled for index ${index}, discarding result without saving`);
+    throw new Error('Operation cancelled by user');
+  }
 
   // Save and render
   await saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced, index);

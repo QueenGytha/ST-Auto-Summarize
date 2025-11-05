@@ -13,6 +13,22 @@ export const default_settings = {
   // --- Error Detection Settings ---
   error_detection_enabled: false,
 
+  // --- Operation Queue Settings ---
+  // Maximum number of retries for failed operations before permanently failing.
+  // DEFAULT: 0 (unlimited retries)
+  //
+  // IMPORTANT: Unlimited retries are INTENTIONAL. Operations will retry indefinitely
+  // with exponential backoff until they succeed or are manually removed.
+  //
+  // WHY UNLIMITED: LLM API errors are often transient (rate limits, temporary outages).
+  // Most operations will eventually succeed if given enough time.
+  //
+  // HOW TO STOP: If you want to give up on a retrying operation, manually remove it
+  // from the operations queue UI. The retry loop will detect removal and abort.
+  //
+  // Set to a positive number (e.g., 10) if you want automatic retry limits.
+  max_retries: 0,
+
   // --- Scene Summarization Settings ---
   scene_summary_prompt,
   scene_summary_error_detection_prompt,

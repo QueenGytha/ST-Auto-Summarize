@@ -334,6 +334,7 @@ function renderOperationsList() {
   const allOperations = getAllOperations();
 
   // Filter out completed operations (they're auto-removed)
+  // RETRYING operations are displayed prominently
   const operations = allOperations.filter((op) => op.status !== OperationStatus.COMPLETED);
 
   if (operations.length === 0) {
@@ -341,14 +342,15 @@ function renderOperationsList() {
     return;
   }
 
-  // Sort: in_progress first, then by priority (highest first), then by creation time (oldest first)
+  // Sort: in_progress first, retrying second, then by priority (highest first), then by creation time (oldest first)
   const sorted = [...operations].sort((a, b) => {
     const statusOrder = {
       [OperationStatus.IN_PROGRESS]: 0,
-      [OperationStatus.PENDING]: 1,
-      [OperationStatus.COMPLETED]: 2,
-      [OperationStatus.FAILED]: 3,
-      [OperationStatus.CANCELLED]: 4
+      [OperationStatus.RETRYING]: 1,
+      [OperationStatus.PENDING]: 2,
+      [OperationStatus.COMPLETED]: 3,
+      [OperationStatus.FAILED]: 4,
+      [OperationStatus.CANCELLED]: 5
     };
 
     const orderA = statusOrder[a.status] ?? 99;
@@ -386,7 +388,8 @@ function renderOperation(operation) {
     [OperationStatus.IN_PROGRESS]: '<i class="fa-solid fa-spinner fa-spin" style="color: var(--SmartThemeBodyColor);"></i>',
     [OperationStatus.COMPLETED]: '<i class="fa-solid fa-check" style="color: #4caf50;"></i>',
     [OperationStatus.FAILED]: '<i class="fa-solid fa-xmark" style="color: #f44336;"></i>',
-    [OperationStatus.CANCELLED]: '<i class="fa-solid fa-ban" style="color: #ff9800;"></i>'
+    [OperationStatus.CANCELLED]: '<i class="fa-solid fa-ban" style="color: #ff9800;"></i>',
+    [OperationStatus.RETRYING]: '<i class="fa-solid fa-rotate fa-spin" style="color: #ff9800;"></i>'
   };
 
   const statusColors = {
@@ -394,7 +397,8 @@ function renderOperation(operation) {
     [OperationStatus.IN_PROGRESS]: 'rgba(33, 150, 243, 0.1)',
     [OperationStatus.COMPLETED]: 'rgba(76, 175, 80, 0.1)',
     [OperationStatus.FAILED]: 'rgba(244, 67, 54, 0.1)',
-    [OperationStatus.CANCELLED]: 'rgba(255, 152, 0, 0.1)'
+    [OperationStatus.CANCELLED]: 'rgba(255, 152, 0, 0.1)',
+    [OperationStatus.RETRYING]: 'rgba(255, 152, 0, 0.2)'
   };
 
   const icon = statusIcons[operation.status] || '';
@@ -413,23 +417,29 @@ function renderOperation(operation) {
     durationText = `<span style="opacity: 0.6; font-size: 0.8em;">${formatDuration(duration)}</span>`;
   }
 
-  // Error message if failed
+  // Error message if failed or retrying
   let errorText = '';
-  if (operation.status === OperationStatus.FAILED && operation.error) {
-    errorText = `<div class="queue-operation-error">${operation.error}</div>`;
+  if ((operation.status === OperationStatus.FAILED || operation.status === OperationStatus.RETRYING) && operation.error) {
+    const errorStyle = operation.status === OperationStatus.RETRYING ? 'color: #ff9800;' : '';
+    errorText = `<div class="queue-operation-error" style="${errorStyle}">${operation.error}</div>`;
   }
 
-  // Retry info
+  // Retry info - more prominent for RETRYING status
   let retryText = '';
   if (operation.retries > 0) {
-    retryText = `<span style="font-size: 0.8em; opacity: 0.6;">(retry ${operation.retries})</span>`;
+    const retryStyle = operation.status === OperationStatus.RETRYING
+      ? 'font-size: 0.85em; opacity: 1; color: #ff9800; font-weight: bold;'
+      : 'font-size: 0.8em; opacity: 0.6;';
+    retryText = `<span style="${retryStyle}">(retry ${operation.retries})</span>`;
   }
 
-  // Remove button (only for pending/failed/cancelled)
-  let removeButton = '';
-  if (operation.status !== OperationStatus.IN_PROGRESS) {
-    removeButton = `<button class="queue-operation-remove fa-solid fa-times" data-operation-id="${operation.id}" title="Remove" style="background: none; border: none; cursor: pointer; padding: 0.2em 0.5em; opacity: 0.5;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5"></button>`;
-  }
+  // Remove button - available for ALL states
+  // IN_PROGRESS/RETRYING: Attempts to abort the operation before removal
+  // PENDING/FAILED/CANCELLED: Immediate removal
+  const removeTitle = operation.status === OperationStatus.IN_PROGRESS || operation.status === OperationStatus.RETRYING
+    ? 'Cancel and Remove'
+    : 'Remove';
+  const removeButton = `<button class="queue-operation-remove fa-solid fa-times" data-operation-id="${operation.id}" title="${removeTitle}" style="background: none; border: none; cursor: pointer; padding: 0.2em 0.5em; opacity: 0.5;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5"></button>`;
 
   return $(`
         <div class="queue-operation" style="background: ${bgColor};">

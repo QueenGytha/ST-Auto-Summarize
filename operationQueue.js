@@ -1,6 +1,8 @@
 
 // operationQueue.js - Persistent operation queue using shared lorebook entry storage
 
+/* global AbortController */
+
 import {
   chat_metadata,
   debug,
@@ -10,7 +12,8 @@ import {
   SUBSYSTEM,
   setQueueBlocking,
   getCurrentConnectionSettings,
-  switchConnectionSettings } from
+  switchConnectionSettings,
+  get_settings } from
 './index.js';
 
 import {
@@ -28,7 +31,8 @@ export const OperationStatus  = {
   IN_PROGRESS: 'in_progress',
   COMPLETED: 'completed',
   FAILED: 'failed',
-  CANCELLED: 'cancelled'
+  CANCELLED: 'cancelled',
+  RETRYING: 'retrying'
 } ;
 
 // Operation type constants
@@ -58,6 +62,7 @@ let uiUpdateCallback  = null;
 let isClearing  = false; // Flag to prevent enqueuing during clear
 let queueVersion  = 0; // Incremented on clear to invalidate in-flight operations
 let isChatBlocked  = false; // Tracks whether chat is currently blocked by queue
+const activeOperationControllers  = new Map(); // Tracks active operations for abortion: opId -> { reject }
 
 /**
  * Set chat blocking state for the queue
@@ -287,9 +292,16 @@ async function loadQueue() {
     }
 
     // Clean up any stale in_progress operations (from crashes/restarts)
+    // Also recreate AbortControllers for all operations (not serialized to storage)
     if (currentQueue) {
       let cleanedCount = 0;
       for (const op of currentQueue.queue) {
+        // Recreate AbortController (lost during serialization)
+        if (!op.abortController) {
+          op.abortController = new AbortController();
+        }
+
+        // Reset stale IN_PROGRESS operations
         if (op.status === OperationStatus.IN_PROGRESS) {
           op.status = OperationStatus.PENDING;
           cleanedCount++;
@@ -434,7 +446,8 @@ export async function enqueueOperation(type , params , options  = {}) {
     metadata: options.metadata ?? {},
     queueVersion: queueVersion, // Stamp with current version
     executionSettings: options.executionSettings, // Connection settings to use during execution
-    restoreSettings: options.restoreSettings // Connection settings to restore after execution
+    restoreSettings: options.restoreSettings, // Connection settings to restore after execution
+    abortController: new AbortController() // For cancelling operations (not serialized to storage)
   } ;
 
   // Block chat immediately if this is the first operation being added
@@ -463,6 +476,34 @@ export async function enqueueOperation(type , params , options  = {}) {
  */
 export function getOperation(operationId ) {
   return currentQueue.queue.find((op) => op.id === operationId);
+}
+
+/**
+ * Get abort signal from operation
+ * Helper function to reduce boilerplate in operation handlers
+ * @param {Object} operation - The operation object
+ * @returns {AbortSignal|null} The abort signal or null
+ */
+export function getAbortSignal(operation ) {
+  return operation?.abortController?.signal ?? null;
+}
+
+/**
+ * Check if operation was aborted and throw if so
+ * Helper function for consistent abort handling in operation handlers
+ * @param {AbortSignal|null} signal - The abort signal to check
+ * @param {string} operationType - The operation type (for logging)
+ * @param {string} context - Optional context about when the check occurred
+ * @throws {Error} If the operation was aborted
+ */
+export function throwIfAborted(signal , operationType , context  = '') {
+  if (signal?.aborted) {
+    const msg = context
+      ? `${operationType} cancelled during ${context}, discarding result`
+      : `${operationType} cancelled, discarding result`;
+    debug(SUBSYSTEM.QUEUE, msg);
+    throw new Error('Operation cancelled by user');
+  }
 }
 
 /**
@@ -555,6 +596,38 @@ export async function removeOperation(operationId ) {
     return false;
   }
 
+  const operation = currentQueue.queue[index];
+
+  // If operation is IN_PROGRESS or RETRYING, attempt to abort it first
+  if (operation.status === OperationStatus.IN_PROGRESS || operation.status === OperationStatus.RETRYING) {
+    // Abort the AbortController signal (allows handlers to check signal.aborted)
+    if (operation.abortController) {
+      operation.abortController.abort('Operation cancelled by user');
+      debug(SUBSYSTEM.QUEUE, `Aborted signal for ${operation.status} operation ${operationId}`);
+    }
+
+    // Also reject the Promise wrapper (for executeOperation's Promise.race)
+    const controller = activeOperationControllers.get(operationId);
+    if (controller?.reject) {
+      // Abort the in-flight operation by rejecting its promise
+      debug(SUBSYSTEM.QUEUE, `Aborting ${operation.status} operation ${operationId}`);
+      controller.reject(new Error(`Operation cancelled by user`));
+
+      // Mark as cancelled (prevents retry logic from kicking in)
+      await updateOperationStatus(operationId, OperationStatus.CANCELLED);
+      toast(`Operation cancelled: ${operation.type}`, 'warning');
+    }
+  }
+
+  // Remove this operation ID from any other operation's dependencies
+  // This prevents dependent operations from getting stuck waiting for a removed operation
+  for (const op of currentQueue.queue) {
+    if (op.dependencies?.includes(operationId)) {
+      op.dependencies = op.dependencies.filter(id => id !== operationId);
+      debug(SUBSYSTEM.QUEUE, `Removed dependency ${operationId} from operation ${op.id}`);
+    }
+  }
+
   currentQueue.queue.splice(index, 1);
   await saveQueue();
 
@@ -606,6 +679,31 @@ export async function clearAllOperations() {
   // Increment queue version to invalidate any in-flight operations
   queueVersion++;
   debug(SUBSYSTEM.QUEUE, `Incremented queue version to ${queueVersion} - invalidating in-flight operations`);
+
+  // Abort all IN_PROGRESS/RETRYING operations FIRST (before removing from queue)
+  // This triggers their abort controllers, stopping execution immediately
+  const activeOps = currentQueue.queue.filter(op =>
+    op.status === OperationStatus.IN_PROGRESS ||
+    op.status === OperationStatus.RETRYING
+  );
+
+  for (const op of activeOps) {
+    // Abort the AbortController signal (allows handlers to check signal.aborted)
+    if (op.abortController) {
+      op.abortController.abort('Queue cleared by user');
+    }
+
+    // Also reject the Promise wrapper (for executeOperation's Promise.race)
+    const controller = activeOperationControllers.get(op.id);
+    if (controller?.reject) {
+      debug(SUBSYSTEM.QUEUE, `Aborting ${op.status} operation ${op.id} during queue clear`);
+      controller.reject(new Error('Queue cleared by user'));
+    }
+  }
+
+  if (activeOps.length > 0) {
+    debug(SUBSYSTEM.QUEUE, `Aborted ${activeOps.length} active operation(s)`);
+  }
 
   // Stop the queue processor first to prevent operations from continuing
   if (queueProcessor) {
@@ -740,6 +838,14 @@ async function executeOperation(operation ) {
   debug(SUBSYSTEM.QUEUE, `Executing ${operation.type}:`, operation.id);
   await updateOperationStatus(operation.id, OperationStatus.IN_PROGRESS);
 
+  // Register abort controller for this operation
+  // Allows manual cancellation via removeOperation() while IN_PROGRESS
+  let abortReject = null;
+  const abortPromise = new Promise((_, reject) => {
+    abortReject = reject;
+  });
+  activeOperationControllers.set(operation.id, { reject: abortReject });
+
   // Capture current settings before any switching (only if functions available and execution settings specified)
   let originalSettings = null;
   let presetBeforeProfileSwitch = null;
@@ -774,8 +880,21 @@ async function executeOperation(operation ) {
     }
 
     debug(SUBSYSTEM.QUEUE, `[LIFECYCLE] About to call handler for ${operation.type}, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
-    const result = await handler(operation);
+    // Race between handler completion and manual abort
+    // If user removes operation while IN_PROGRESS, abort wins and throws
+    const result = await Promise.race([
+      handler(operation),
+      abortPromise
+    ]);
     debug(SUBSYSTEM.QUEUE, `[LIFECYCLE] Handler returned for ${operation.type}, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
+
+    // CRITICAL: Check if queue was cleared while we were executing
+    // Defense-in-depth: Even if abort failed, this prevents completion/saving
+    const currentOp = getOperation(operation.id);
+    if (!currentOp || currentOp.queueVersion !== queueVersion) {
+      debug(SUBSYSTEM.QUEUE, `Operation ${operation.id} invalidated by queue clear (version ${operation.queueVersion} != ${queueVersion}) - discarding result`);
+      return null; // Don't mark as completed, don't save results
+    }
 
     await updateOperationStatus(operation.id, OperationStatus.COMPLETED);
     debug(SUBSYSTEM.QUEUE, `Completed ${operation.type}:`, operation.id);
@@ -795,6 +914,15 @@ async function executeOperation(operation ) {
     // "Bad Request" could be a rate limit, so we retry on ALL errors with exponential backoff.
     // Only fail on truly non-retryable errors (auth failures, etc.)
 
+    // Check if operation was cancelled by user (from removeOperation)
+    const wasCancelled = /cancelled by user/i.test(errText);
+
+    if (wasCancelled) {
+      // Operation was manually cancelled - already marked as CANCELLED and removed
+      debug(SUBSYSTEM.QUEUE, `Operation ${operation.id} was cancelled by user, aborting`);
+      return null;
+    }
+
     // Only these errors are truly non-retryable (very conservative list)
     const nonRetryable = /unauthorized|forbidden|authentication.?required|invalid.?api.?key/i.test(errText);
 
@@ -805,14 +933,37 @@ async function executeOperation(operation ) {
       return null;
     }
 
+    // Check max retry limit
+    const settings = get_settings();
+    const maxRetries = settings?.max_retries ?? 0; // Default to 0 (unlimited) if not set
+
+    // If max_retries is 0, retry indefinitely; otherwise check limit
+    if (maxRetries > 0 && operation.retries >= maxRetries) {
+      await updateOperationStatus(operation.id, OperationStatus.FAILED, `Max retries (${maxRetries}) exceeded: ${errText}`);
+      await removeOperation(operation.id);
+      toast(`Queue operation failed after ${maxRetries} retries (${operation.type}): ${errText}`, 'error');
+      return null;
+    }
+
     // Retry with exponential backoff on ALL other errors (including "Bad Request" which may be rate limits)
-    // No retry cap - keep retrying indefinitely until it succeeds
+    // INTENTIONAL: Unlimited retries by default (max_retries = 0)
+    // WHY: LLM API errors are often transient (rate limits, temporary outages)
+    // HOW TO STOP: User manually removes operation from queue UI during backoff
     operation.retries++;
     const backoffDelay = Math.min(10 * Math.pow(2, operation.retries - 1) * 1000, 300000);
-    await updateOperationStatus(operation.id, OperationStatus.PENDING, `Retry ${operation.retries} after ${backoffDelay / 1000}s: ${errText}`);
-    log(SUBSYSTEM.QUEUE, `⚠️ Operation failed (likely rate limit)! Waiting ${backoffDelay / 1000}s before retry ${operation.retries}`);
+    await updateOperationStatus(operation.id, OperationStatus.RETRYING, `Retry ${operation.retries}${maxRetries > 0 ? `/${maxRetries}` : ''} after ${backoffDelay / 1000}s: ${errText}`);
+    log(SUBSYSTEM.QUEUE, `⚠️ Operation failed (likely rate limit)! Waiting ${backoffDelay / 1000}s before retry ${operation.retries}${maxRetries > 0 ? `/${maxRetries}` : ''}`);
     await saveQueue();
+    notifyUIUpdate(); // Update UI to show retrying status
     await new Promise((resolve) => setTimeout(resolve, backoffDelay));
+
+    // CRITICAL: Check if operation was manually removed during backoff
+    // This allows users to abort retrying operations by removing them from the queue UI
+    if (!getOperation(operation.id)) {
+      debug(SUBSYSTEM.QUEUE, `Operation ${operation.id} was removed during backoff, aborting retry`);
+      return null;
+    }
+
     debug(SUBSYSTEM.QUEUE, `Retrying ${operation.type} after backoff (retry ${operation.retries})...`);
     return await executeOperation(operation);
   } finally {
@@ -852,6 +1003,11 @@ async function executeOperation(operation ) {
       // Log but don't throw - restoration errors shouldn't break operation processing
       debug(SUBSYSTEM.QUEUE, `Failed to restore connection settings: ${String(err)}`);
     }
+
+    // Cleanup: Remove abort controller for this operation
+    // This happens whether operation succeeded, failed, or was aborted
+    activeOperationControllers.delete(operation.id);
+    debug(SUBSYSTEM.QUEUE, `Cleaned up abort controller for operation ${operation.id}`);
   }
 }
 

@@ -4,7 +4,9 @@
 import {
   registerOperationHandler,
   OperationType,
-  enqueueOperation } from
+  enqueueOperation,
+  getAbortSignal,
+  throwIfAborted } from
 './operationQueue.js';
 import {
   validate_summary } from
@@ -81,14 +83,21 @@ export function registerAllOperationHandlers() {
   // Validate summary
   registerOperationHandler(OperationType.VALIDATE_SUMMARY, async (operation) => {
     const { summary, type } = operation.params;
+    const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing VALIDATE_SUMMARY for type ${type}`);
+
     const isValid = await validate_summary(summary, type);
+
+    // Check if cancelled after validation (before potential side effects)
+    throwIfAborted(signal, 'VALIDATE_SUMMARY', 'validation');
+
     return { isValid };
   });
 
   // Detect scene break
   registerOperationHandler(OperationType.DETECT_SCENE_BREAK, async (operation) => {
     const { index } = operation.params;
+    const signal = getAbortSignal(operation);
     const ctx = getContext();
     const chat = ctx.chat;
 
@@ -106,6 +115,9 @@ export function registerAllOperationHandlers() {
 
     debug(SUBSYSTEM.QUEUE, `Executing DETECT_SCENE_BREAK for index ${index}`);
     const result = await detectSceneBreak(message, index, previousMessage);
+
+    // Check if cancelled after detection (before side effects)
+    throwIfAborted(signal, 'DETECT_SCENE_BREAK', 'LLM call');
 
     // If scene break detected, actually set it on the message
     if (result.isSceneBreak) {
@@ -147,6 +159,7 @@ export function registerAllOperationHandlers() {
   // Generate scene summary
   registerOperationHandler(OperationType.GENERATE_SCENE_SUMMARY, async (operation) => {
     const { index } = operation.params;
+    const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing GENERATE_SCENE_SUMMARY for index ${index}`);
     toast(`Generating scene summary for message ${index}...`, 'info');
 
@@ -164,8 +177,12 @@ export function registerAllOperationHandlers() {
       get_data,
       set_data,
       saveChatDebounced,
-      true // skipQueue = true when called from queue handler
+      true, // skipQueue = true when called from queue handler
+      signal // Pass abort signal to check before side effects
     );
+
+    // Check if operation was cancelled during execution
+    throwIfAborted(signal, 'GENERATE_SCENE_SUMMARY', 'LLM call');
 
     toast(`✓ Scene summary generated for message ${index}`, 'success');
 
@@ -192,6 +209,7 @@ export function registerAllOperationHandlers() {
   // Generate scene name from scene summary
   registerOperationHandler(OperationType.GENERATE_SCENE_NAME, async (operation) => {
     const { index, summary } = operation.params;
+    const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing GENERATE_SCENE_NAME for index ${index}`);
 
     const ctx = getContext();
@@ -210,6 +228,9 @@ export function registerAllOperationHandlers() {
     // Wait 5 seconds before generating scene name (rate limiting)
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
+    // Check if cancelled during delay
+    throwIfAborted(signal, 'GENERATE_SCENE_NAME', 'rate limit delay');
+
     const name = await autoGenerateSceneNameFromSummary(
       summary,
       message,
@@ -220,30 +241,47 @@ export function registerAllOperationHandlers() {
       index // Pass index for context suffix
     );
 
+    // Check if cancelled after LLM call (before return)
+    throwIfAborted(signal, 'GENERATE_SCENE_NAME', 'LLM call');
+
     return { name };
   });
 
   // Generate running summary (bulk)
-  registerOperationHandler(OperationType.GENERATE_RUNNING_SUMMARY, async (_operation) => {
+  registerOperationHandler(OperationType.GENERATE_RUNNING_SUMMARY, async (operation) => {
+    const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing GENERATE_RUNNING_SUMMARY`);
+
     const summary = await generate_running_scene_summary(true);
+
+    // Check if cancelled after LLM call (before return)
+    throwIfAborted(signal, 'GENERATE_RUNNING_SUMMARY', 'LLM call');
+
     return { summary };
   });
 
   // Combine scene with running summary
   registerOperationHandler(OperationType.COMBINE_SCENE_WITH_RUNNING, async (operation) => {
     const { index } = operation.params;
+    const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing COMBINE_SCENE_WITH_RUNNING for index ${index}`);
+
     const summary = await combine_scene_with_running_summary(index);
+
+    // Check if cancelled after LLM call (before return)
+    throwIfAborted(signal, 'COMBINE_SCENE_WITH_RUNNING', 'LLM call');
+
     return { summary };
   });
 
   // Merge lorebook entry (standalone operation)
   registerOperationHandler(OperationType.MERGE_LOREBOOK_ENTRY, async (operation) => {
     const { lorebookName, entryUid, existingContent, newContent, newKeys, newSecondaryKeys } = operation.params;
+    const signal = getAbortSignal(operation);
     const entryComment = operation.metadata?.entry_comment || entryUid;
     debug(SUBSYSTEM.QUEUE, `Executing MERGE_LOREBOOK_ENTRY for: ${entryComment}`);
-    return await mergeLorebookEntryByUid({
+
+    const result = await mergeLorebookEntryByUid({
       lorebookName,
       entryUid,
       existingContent,
@@ -251,11 +289,17 @@ export function registerAllOperationHandlers() {
       newKeys,
       newSecondaryKeys
     });
+
+    // Check if cancelled after LLM call (before return)
+    throwIfAborted(signal, 'MERGE_LOREBOOK_ENTRY', 'LLM call');
+
+    return result;
   });
 
   // LOREBOOK_ENTRY_LOOKUP - First stage of lorebook processing pipeline
   registerOperationHandler(OperationType.LOREBOOK_ENTRY_LOOKUP, async (operation) => {
     const { entryId, entryData, registryListing, typeList } = operation.params;
+    const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] ⚙️ Starting for: ${entryData.comment || 'Unknown'}, entryId: ${entryId}`);
     debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Operation ID: ${operation.id}, Status: ${operation.status}`);
 
@@ -281,6 +325,9 @@ export function registerAllOperationHandlers() {
     // Run lorebook entry lookup
     debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Running lookup stage...`);
     const lorebookEntryLookupResult = await runLorebookEntryLookupStage(entryData, registryListing, typeList, settings);
+
+    // Check if cancelled after LLM call (before side effects)
+    throwIfAborted(signal, 'LOREBOOK_ENTRY_LOOKUP', 'LLM call');
 
     // Store lorebook entry lookup result in pending ops
     setLorebookEntryLookupResult(entryId, lorebookEntryLookupResult);
@@ -322,6 +369,7 @@ export function registerAllOperationHandlers() {
   // RESOLVE_LOREBOOK_ENTRY - Second stage (conditional) - get full context for uncertain matches
   registerOperationHandler(OperationType.RESOLVE_LOREBOOK_ENTRY, async (operation) => {
     const { entryId } = operation.params;
+    const signal = getAbortSignal(operation);
     const entryData = getEntryData(entryId);
     const lorebookEntryLookupResult = getLorebookEntryLookupResult(entryId);
 
@@ -380,6 +428,9 @@ export function registerAllOperationHandlers() {
       settings
     );
 
+    // Check if cancelled after LLM call (before side effects)
+    throwIfAborted(signal, 'RESOLVE_LOREBOOK_ENTRY', 'LLM call');
+
     // Store lorebook entry deduplicate result
     setLorebookEntryDeduplicateResult(entryId, lorebookEntryDeduplicateResult);
     markStageInProgress(entryId, 'lorebook_entry_deduplicate_complete');
@@ -413,6 +464,7 @@ export function registerAllOperationHandlers() {
    */
   async function prepareEntryContext(operation ) {
     const { entryId, action, resolvedId } = operation.params;
+    const signal = getAbortSignal(operation);
     const entryData = getEntryData(entryId);
     const lorebookEntryLookupResult = getLorebookEntryLookupResult(entryId);
     const lorebookEntryDeduplicateResult = getLorebookEntryDeduplicateResult(entryId);
@@ -434,7 +486,7 @@ export function registerAllOperationHandlers() {
 
     return {
       entryId, action, resolvedId, entryData, lorebookName,
-      registryState, finalType, finalSynopsis,
+      registryState, finalType, finalSynopsis, signal,
       getLorebookEntries, addLorebookEntry, mergeLorebookEntry,
       updateRegistryRecord, assignEntityId, ensureStringArray
     };
@@ -447,7 +499,7 @@ export function registerAllOperationHandlers() {
    */
   async function executeMergeAction(context ) {
     const { resolvedId, entryData, lorebookName, registryState, finalType, finalSynopsis,
-      getLorebookEntries, mergeLorebookEntry, updateRegistryRecord, ensureStringArray, entryId } = context;
+      getLorebookEntries, mergeLorebookEntry, updateRegistryRecord, ensureStringArray, entryId, signal } = context;
 
     const existingEntriesRaw = await getLorebookEntries(lorebookName);
     const record = registryState.index?.[resolvedId];
@@ -458,6 +510,9 @@ export function registerAllOperationHandlers() {
     }
 
     const mergeResult = await mergeLorebookEntry(lorebookName, existingEntry, entryData, { useQueue: false });
+
+    // Check if cancelled after LLM call (before side effects)
+    throwIfAborted(signal, 'CREATE_LOREBOOK_ENTRY (merge)', 'LLM call');
 
     if (!mergeResult?.success) {
       throw new Error(mergeResult?.message || 'Merge failed');
