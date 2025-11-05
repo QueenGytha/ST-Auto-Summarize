@@ -1,5 +1,16 @@
 # Testing Strategy for ST-Auto-Summarize
 
+⚠️ **IMPLEMENTATION STATUS: THEORETICAL - NOT YET IMPLEMENTED** ⚠️
+
+This document describes a proposed testing methodology that has **not been validated**. Before proceeding with full implementation:
+1. Validate that real SillyTavern code can be imported (see [IMPLEMENTATION_REALITY_CHECK.md](./IMPLEMENTATION_REALITY_CHECK.md))
+2. Measure actual success rate (target: 80%+ of imports working)
+3. If imports fail, use runtime proxy to real ST (Option B below)
+
+**CRITICAL RULE: Zero tolerance for AI-written mocks, stubs, or fantasy behavior. Either import real ST code or call real running ST at runtime. Nothing else is acceptable.**
+
+---
+
 ## Quick Reference
 
 This document provides a high-level overview. **For comprehensive implementation details, see [TESTING_ARCHITECTURE.md](./TESTING_ARCHITECTURE.md).**
@@ -23,7 +34,7 @@ Traditional testing approaches don't work because AI cannot maintain accurate mo
 
 **Import real SillyTavern code into Node.js tests using jsdom for browser APIs.**
 
-### Key Innovation
+### Key Innovation (Option A: Real Imports - Preferred)
 
 Instead of mocking SillyTavern, make the actual ST source code run in Node.js by providing polyfills:
 - jsdom provides: `window`, `document`, jQuery, localStorage
@@ -31,14 +42,24 @@ Instead of mocking SillyTavern, make the actual ST source code run in Node.js by
 - Tests use **real ST code** that validates API usage
 - Mock only at HTTP boundary (redirect to test proxy)
 
+### Fallback (Option B: Runtime Proxy - If Imports Fail)
+
+**If real imports fail completely**, use runtime proxy to real running SillyTavern:
+- Start real ST server before tests
+- Extension code calls "ST APIs" that are HTTP proxies
+- Proxies forward to real ST endpoints
+- Real ST validates API usage and returns real responses
+- **Still zero mocks - tests against running reality**
+
 ### Why This Works
 
 ✅ Tests against reality, not fantasy
-✅ Wrong API usage → Real ST throws error
+✅ Wrong API usage → Real ST throws error (imports) or rejects request (proxy)
 ✅ No drift when ST updates
 ✅ Catches all four AI mistake types
-✅ Fast enough for tight feedback loop (~10s)
+✅ Fast enough for tight feedback loop (~10s with imports, ~20s with proxy)
 ✅ AI can write simple test patterns
+✅ **No AI-written mocks in either approach**
 
 ---
 
@@ -71,6 +92,63 @@ Instead of mocking SillyTavern, make the actual ST source code run in Node.js by
 - Animation timing
 
 For these, manual testing or Playwright required.
+
+---
+
+## What Happens If Imports Fail?
+
+### Pre-Implementation: Validate First
+
+**Before building full test infrastructure:**
+
+1. **Try to import real ST code** (see [IMPLEMENTATION_REALITY_CHECK.md](./IMPLEMENTATION_REALITY_CHECK.md))
+   ```bash
+   node -e "import('../../../../script.js').then(() => console.log('SUCCESS')).catch(e => console.error('FAILED:', e))"
+   ```
+
+2. **Measure success rate:**
+   - 90-100% imports work → Proceed with Option A (imports)
+   - 70-90% imports work → Proceed with Option A + selective Option B
+   - Below 70% → Use Option B (runtime proxy) exclusively
+   - 0% imports work → Reevaluate approach entirely
+
+### If Imports Fail: Runtime Proxy Architecture
+
+**Do NOT write fallback stubs or "documented proxies"** - that's just mocks with extra steps.
+
+Instead, call real running SillyTavern:
+
+```javascript
+// tests/setup/sillytavern-proxy.js
+// This is a PROXY, not a mock - forwards to real ST
+
+export async function generateRaw(options) {
+  // Every call goes to REAL SillyTavern
+  const response = await fetch('http://localhost:8000/extension-api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Real ST rejected call: ${await response.text()}`);
+  }
+
+  return await response.json();
+}
+
+// Real ST's state, fetched at runtime
+export async function getChat() {
+  return await fetch('http://localhost:8000/extension-api/chat').then(r => r.json());
+}
+```
+
+**Setup requirements for Option B:**
+1. ST must expose test endpoints (`/extension-api/*`)
+2. Tests start real ST server before running
+3. Tests call proxies that forward to real ST
+4. Real ST validates all API usage
+5. **Zero AI-written behavior - all responses from real ST**
 
 ---
 
@@ -134,10 +212,16 @@ describe('My Feature', () => {
 - **Cons**: Contracts manually written, can be wrong
 - **Why rejected**: Who writes accurate contracts? If AI, they're fantasy
 
-### ❌ Extract Contracts from Running ST
+### ⚠️ Extract Contracts from Running ST
 - **Pros**: Based on real ST
-- **Cons**: Complex tooling, doesn't capture behavior
-- **Why rejected**: If running real ST to extract, why not just import ST code?
+- **Cons**: Complex tooling, doesn't capture behavior, extracted contracts still need implementation
+- **Why rejected**: Extracted structure + AI-written behavior = still fantasy mocks
+
+### ✅ Runtime Proxy to Real ST (Fallback Option)
+- **Description**: Don't import ST code; call real running ST at test time
+- **Pros**: Tests against real ST, no imports needed, no mocks possible
+- **Cons**: Requires ST running, slower, needs test API endpoints
+- **Status**: Viable fallback if imports fail completely
 
 ---
 
@@ -145,13 +229,32 @@ describe('My Feature', () => {
 
 **Full details in [TESTING_ARCHITECTURE.md - Implementation Guide](./TESTING_ARCHITECTURE.md#implementation-guide).**
 
-###  Phase 1: Setup
+### Phase 0: Validation (DO THIS FIRST!)
 
-1. Install: `vitest`, `jsdom`, `msw` (Mock Service Worker)
-2. Create `tests/setup/polyfills.js` - Browser APIs (jsdom)
-3. Create `tests/setup/sillytavern-loader.js` - Import real ST code
+**Before any infrastructure work:**
+
+1. **Test if imports work** (see [IMPLEMENTATION_REALITY_CHECK.md](./IMPLEMENTATION_REALITY_CHECK.md))
+2. **Measure success rate** (how many ST modules import successfully)
+3. **Decide approach** based on results:
+   - High success (80%+) → Proceed with import-based testing
+   - Low success (<80%) → Use runtime proxy approach
+4. **Document what works** (create import status log)
+
+### Phase 1: Setup (After Validation)
+
+**If imports work (Option A):**
+1. Install: `vitest`, `jsdom`, `fake-indexeddb`, `ws`, `canvas`, `msw`
+2. Create `tests/setup/polyfills.js` - Browser APIs (jsdom + polyfills)
+3. Create `tests/setup/sillytavern-loader.js` - Import real ST code (NO fallback stubs)
 4. Create `tests/setup/http-intercept.js` - Redirect LLM calls to proxy
 5. Configure `vitest.config.js`
+
+**If imports fail (Option B):**
+1. Install: `vitest`, `jsdom` (minimal setup)
+2. Create `tests/setup/sillytavern-proxy.js` - Runtime proxies to real ST
+3. Create test script to start ST server before tests
+4. Configure `vitest.config.js` with longer timeouts
+5. Add ST test API endpoints (in ST codebase, not extension)
 
 ### Phase 2: Test Helpers
 
@@ -250,15 +353,23 @@ See [TESTING_ARCHITECTURE.md - AI Testing Guide](./TESTING_ARCHITECTURE.md#phase
 
 ## Key Takeaway
 
-**Tests run against real SillyTavern code, not imagined APIs.**
+**Tests run against real SillyTavern, not imagined APIs.**
 
 When AI makes mistakes:
-- Uses wrong API → Real ST throws error
+- Uses wrong API → Real ST code throws error (imports) OR real ST server rejects request (proxy)
 - Forgets UI → Test can't find element
 - Forgets wiring → Setting doesn't change
 - Breaks integration → Workflow test fails
 
-No fantasy, no drift, just reality.
+**No fantasy, no drift, no AI-written mocks - just reality.**
+
+### Critical Success Factors
+
+1. ✅ **Validate imports work** before building infrastructure
+2. ✅ **Use runtime proxy** if imports fail, not manual mocks
+3. ✅ **Never write mock behavior** - all behavior comes from real ST
+4. ✅ **Document import failures** - know what works and what doesn't
+5. ✅ **Re-validate periodically** - ST changes may affect import success
 
 ---
 
