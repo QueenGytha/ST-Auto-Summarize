@@ -11,6 +11,7 @@ import {
 } from './summaryValidation.js';
 import {
     detectSceneBreak,
+    isCooldownSkip,
 } from './autoSceneBreakDetection.js';
 import {
     generateSceneSummary,
@@ -92,8 +93,19 @@ export function registerAllOperationHandlers() {
     registerOperationHandler(OperationType.DETECT_SCENE_BREAK, async (operation) => {
         const { index } = operation.params;
         const ctx = getContext();
-        const message = ctx.chat[index];
-        const previousMessage = index > 0 ? ctx.chat[index - 1] : null;
+        const chat = ctx.chat;
+
+        // Check cooldown at execution time (scene breaks may have been added after queueing)
+        if (isCooldownSkip(chat, index, false)) {
+            debug(SUBSYSTEM.QUEUE, `Skipping DETECT_SCENE_BREAK at index ${index} - cooldown (execution-time check)`);
+            return {
+                isSceneBreak: false,
+                rationale: 'Skipped due to cooldown - immediately follows a scene break'
+            };
+        }
+
+        const message = chat[index];
+        const previousMessage = index > 0 ? chat[index - 1] : null;
 
         debug(SUBSYSTEM.QUEUE, `Executing DETECT_SCENE_BREAK for index ${index}`);
         const result = await detectSceneBreak(message, index, previousMessage);

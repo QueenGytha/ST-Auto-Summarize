@@ -318,6 +318,31 @@ async function detectSceneBreak(
         const chat = ctx.chat || [];
         const contextMessages = collectContextMessages(chat, messageIndex, checkWhich, contextCount);
 
+        // Guard: Skip detection if no context messages available
+        // This happens when the message immediately follows a scene break or is at the start of chat
+        if (contextMessages.length === 0) {
+            debug('Skipping scene break detection for message', messageIndex, '- no previous context available');
+            set_data(message, 'auto_scene_break_checked', true);
+            saveChatDebounced();
+            return {
+                isSceneBreak: false,
+                rationale: 'Skipped - no previous messages available for comparison'
+            };
+        }
+
+        // Calculate actual range based on collected context messages
+        // This accounts for scene breaks that limit the context window
+        let actualStartIdx = messageIndex;
+        if (contextMessages.length > 0) {
+            // Find the index of the first (oldest) context message in the chat array
+            const firstContextMsg = contextMessages[0];
+            actualStartIdx = chat.indexOf(firstContextMsg);
+            if (actualStartIdx === -1) {
+                // Fallback if not found (shouldn't happen)
+                actualStartIdx = Math.max(0, messageIndex - contextCount);
+            }
+        }
+
         // Build prompt
         const prompt = buildDetectionPrompt(ctx, promptTemplate, message, contextMessages, prefill);
 
@@ -326,10 +351,9 @@ async function detectSceneBreak(
 
         ctx.deactivateSendButtons();
 
-        // Set operation context for ST_METADATA
+        // Set operation context for ST_METADATA with actual range
         const { setOperationSuffix, clearOperationSuffix} = await import('./index.js');
-        const startIdx = Math.max(0, messageIndex - contextCount);
-        setOperationSuffix(`-${startIdx}-${messageIndex}`);
+        setOperationSuffix(`-${actualStartIdx}-${messageIndex}`);
 
         let response;
         try {
@@ -1028,4 +1052,5 @@ export async function clearAllCheckedFlags() {
 export {
     shouldCheckMessage,
     detectSceneBreak,
+    isCooldownSkip,
 };

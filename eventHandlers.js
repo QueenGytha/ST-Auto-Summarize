@@ -315,8 +315,40 @@ async function initializeExtension() {
             if (promptData && Array.isArray(promptData.chat)) {
                 debug('[Interceptor] Processing chat array for CHAT_COMPLETION_PROMPT_READY');
 
-                // Inject metadata header
-                injectMetadataIntoChatArray(promptData.chat, { operation: 'chat' });
+                // Check if an extension operation is already in progress
+                const { getOperationSuffix } = await import('./operationContext.js');
+                const operationSuffix = getOperationSuffix();
+
+                if (operationSuffix !== null) {
+                    // Extension operation in progress (scene break, summary, etc.)
+                    // The generateRawInterceptor will handle metadata injection
+                    debug('[Interceptor] Extension operation in progress, skipping chat-{index} metadata');
+                    return;
+                }
+
+                // Only inject chat-{index} for actual user/character messages
+                const context = getContext();
+                const messageIndex = (context?.chat?.length ?? 0) - 1;
+
+                if (messageIndex >= 0) {
+                    // Check if this is a swipe
+                    const lastMessage = context.chat[messageIndex];
+                    const swipeId = lastMessage?.swipe_id ?? 0;
+
+                    // Build operation string: chat-{index} or chat-{index}-swipe{n}
+                    let operation = `chat-${messageIndex}`;
+                    if (swipeId > 0) {
+                        // swipe_id is 0-indexed, but display as 1-indexed (swipe 1 → swipe2)
+                        operation += `-swipe${swipeId + 1}`;
+                    }
+
+                    injectMetadataIntoChatArray(promptData.chat, { operation });
+                    debug(`[Interceptor] Injected metadata with operation: ${operation}`);
+                } else {
+                    // Fallback to plain 'chat' if index unavailable
+                    injectMetadataIntoChatArray(promptData.chat, { operation: 'chat' });
+                    debug('[Interceptor] Injected metadata with operation: chat (index unavailable)');
+                }
 
                 debug('[Interceptor] Successfully processed chat array');
 

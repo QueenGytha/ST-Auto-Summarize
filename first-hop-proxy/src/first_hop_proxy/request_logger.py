@@ -64,11 +64,11 @@ class RequestLogger:
         if not os.path.exists(folder):
             return 1
 
-        # Find all log files matching the pattern: <number>-<any_operation>.log
+        # Find all log files matching the pattern: <number>-<any_operation>.md
         # We need to scan ALL operation types to maintain sequential numbering
         # Operation names can contain hyphens, underscores, alphanumeric chars
         max_num = 0
-        pattern = re.compile(r'^(\d+)-.+\.log$')
+        pattern = re.compile(r'^(\d+)-.+\.md$')
 
         try:
             for filename in os.listdir(folder):
@@ -91,11 +91,11 @@ class RequestLogger:
             error: Exception if request failed (determines suffix)
 
         Returns:
-            Filename in format: <number>-<operation>[-STATUS].log
+            Filename in format: <number>-<operation>[-STATUS].md
             Examples:
-                00001-chat.log (success)
-                00002-lorebook-RATELIMIT.log (rate limited)
-                00003-summary-FAILED.log (other error)
+                00001-chat.md (success)
+                00002-lorebook-RATELIMIT.md (rate limited)
+                00003-summary-FAILED.md (other error)
         """
         log_number = self._get_next_log_number(folder, operation)
 
@@ -111,14 +111,14 @@ class RequestLogger:
             else:
                 status_suffix = "-FAILED"
 
-        return f"{log_number:05d}-{operation}{status_suffix}.log"
+        return f"{log_number:05d}-{operation}{status_suffix}.md"
 
     def _get_timestamp_filename(self, request_id: str = None) -> str:
         """Generate filename with timestamp and optional request ID (legacy/unsorted)"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # Include milliseconds
         if request_id:
-            return f"{timestamp}_{request_id}.log"
-        return f"{timestamp}.log"
+            return f"{timestamp}_{request_id}.md"
+        return f"{timestamp}.md"
     
     def _sanitize_headers(self, headers: Dict[str, str]) -> Dict[str, str]:
         """Sanitize headers for logging by obfuscating sensitive values"""
@@ -166,111 +166,193 @@ class RequestLogger:
             filename = self._get_timestamp_filename(request_id)
 
         filepath = os.path.join(folder, filename)
-        
+
         log_content = []
-        log_content.append("=" * 80)
-        log_content.append(f"UNIFIED REQUEST LOG - {datetime.now().isoformat()}")
-        log_content.append("=" * 80)
-        log_content.append(f"Request ID: {request_id}")
-        log_content.append(f"Endpoint: {endpoint}")
-        log_content.append(f"Timestamp: {datetime.now().isoformat()}")
-        
+
+        # Title and metadata
+        log_content.append(f"# Request Log - {datetime.now().isoformat()}")
+        log_content.append("")
+        log_content.append(f"**Request ID:** `{request_id}`  ")
+        log_content.append(f"**Endpoint:** `{endpoint}`  ")
+        log_content.append(f"**Timestamp:** {datetime.now().isoformat()}  ")
         if start_time and self.include_timing:
-            log_content.append(f"Start Time: {start_time}")
-        
+            log_content.append(f"**Start Time:** {start_time}  ")
+        log_content.append("")
+
+        # Table of Contents
+        toc_items = []
         if self.include_headers and headers:
-            log_content.append("\n" + "-" * 40)
-            log_content.append("REQUEST HEADERS:")
-            log_content.append("-" * 40)
+            toc_items.append("- Request Headers")
+        if lorebook_entries:
+            toc_items.append("- Lorebook Entries")
+        if stripped_metadata:
+            toc_items.append("- Stripped ST_METADATA")
+        if self.include_request_data and original_request_data and stripped_metadata:
+            toc_items.append("- Original Request Data (As Received)")
+            toc_items.append("- Original Request Data (Cleaned)")
+        if self.include_request_data and request_data:
+            toc_items.append("- Forwarded Request Data" if stripped_metadata else "- Request Data")
+        if error:
+            toc_items.append("- Error Response")
+        else:
+            if self.include_response_data and response_data:
+                toc_items.append("- Response Data")
+            if self.include_headers and response_headers:
+                toc_items.append("- Response Headers")
+        if self.include_timing:
+            toc_items.append("- Timing Information")
+
+        if toc_items:
+            log_content.append("## Table of Contents")
+            log_content.append("")
+            # Convert to anchor links
+            toc_with_links = []
+            for item in toc_items:
+                text = item[2:]  # Remove "- "
+                anchor = text.lower().replace(" ", "-").replace("(", "").replace(")", "")
+                toc_with_links.append(f"- [{text}](#{anchor})")
+            log_content.extend(toc_with_links)
+            log_content.append("")
+
+        # Request Headers
+        if self.include_headers and headers:
+            log_content.append("## Request Headers")
+            log_content.append("")
+            log_content.append("```text")
             sanitized_headers = self._sanitize_headers(headers)
             for key, value in sanitized_headers.items():
                 log_content.append(f"{key}: {value}")
+            log_content.append("```")
+            log_content.append("")
 
-        # Show lorebook entries if present
+        # Lorebook Entries
         if lorebook_entries:
-            log_content.append("\n" + "=" * 80)
-            log_content.append(f"LOREBOOK ENTRIES ({len(lorebook_entries)} entr{'ies' if len(lorebook_entries) != 1 else 'y'})")
-            log_content.append("=" * 80)
+            entry_count = len(lorebook_entries)
+            plural = "entries" if entry_count != 1 else "entry"
+            log_content.append('<details>')
+            log_content.append(f'<summary>Lorebook Entries ({entry_count} {plural})</summary>')
+            log_content.append('')
             for i, entry in enumerate(lorebook_entries):
                 if i > 0:
-                    log_content.append("-" * 80)
-                log_content.append(f"Entry {i+1}:")
-                log_content.append("-" * 80)
+                    log_content.append('---')
+                    log_content.append('')
+                log_content.append(f'**Entry {i+1}**')
+                log_content.append('')
+                log_content.append('```text')
                 log_content.append(entry.get('formatted', entry.get('raw', 'No content')))
-            log_content.append("=" * 80)
+                log_content.append('```')
+                log_content.append('')
+            log_content.append('</details>')
+            log_content.append('')
 
-        # Show ST_METADATA information if it was stripped
+        # Stripped ST_METADATA
         if stripped_metadata:
-            log_content.append("\n" + "-" * 40)
             if isinstance(stripped_metadata, list):
-                log_content.append(f"STRIPPED ST_METADATA ({len(stripped_metadata)} block{'s' if len(stripped_metadata) != 1 else ''}):")
+                block_count = len(stripped_metadata)
+                plural = "blocks" if block_count != 1 else "block"
+                summary_text = f'Stripped ST_METADATA ({block_count} {plural})'
             else:
-                log_content.append("STRIPPED ST_METADATA:")
-            log_content.append("-" * 40)
+                summary_text = 'Stripped ST_METADATA'
+            log_content.append('<details>')
+            log_content.append(f'<summary>{summary_text}</summary>')
+            log_content.append('')
+            log_content.append('```json')
             log_content.append(json.dumps(stripped_metadata, indent=2))
+            log_content.append('```')
+            log_content.append('</details>')
+            log_content.append('')
 
-        # Show original request data if different from forwarded data
+        # Original Request Data (as received)
         if self.include_request_data and original_request_data and stripped_metadata:
-            log_content.append("\n" + "-" * 40)
-            log_content.append("ORIGINAL REQUEST DATA (AS RECEIVED):")
-            log_content.append("-" * 40)
+            log_content.append('<details>')
+            log_content.append('<summary>Original Request Data (As Received)</summary>')
+            log_content.append('')
+            log_content.append('```json')
             log_content.append(json.dumps(original_request_data, indent=2))
+            log_content.append('```')
+            log_content.append('</details>')
+            log_content.append('')
 
-            # Show cleaned up version with actual newlines for readability
-            log_content.append("\n" + "-" * 40)
-            log_content.append("ORIGINAL REQUEST DATA (CLEANED UP - LOGGING ONLY WAS NOT SENT LIKE THIS):")
-            log_content.append("-" * 40)
+            # Original Request Data (cleaned up for readability)
+            log_content.append('<details>')
+            log_content.append('<summary>Original Request Data (Cleaned - Logging Only, Not Sent Like This)</summary>')
+            log_content.append('')
+            log_content.append('```json')
             # Convert to JSON string and replace \n escape sequences with actual newlines
             cleaned_json = json.dumps(original_request_data, indent=2).replace('\\n', '\n')
             log_content.append(cleaned_json)
+            log_content.append('```')
+            log_content.append('</details>')
+            log_content.append('')
 
+        # Forwarded/Request Data
         if self.include_request_data and request_data:
-            log_content.append("\n" + "-" * 40)
             if stripped_metadata:
-                log_content.append("FORWARDED REQUEST DATA (AFTER STRIPPING ST_METADATA):")
+                summary_text = 'Forwarded Request Data (After Stripping ST_METADATA)'
             else:
-                log_content.append("REQUEST DATA:")
-            log_content.append("-" * 40)
+                summary_text = 'Request Data'
+            log_content.append('<details>')
+            log_content.append(f'<summary>{summary_text}</summary>')
+            log_content.append('')
+            log_content.append('```json')
             log_content.append(json.dumps(request_data, indent=2))
+            log_content.append('```')
+            log_content.append('</details>')
+            log_content.append('')
         
-        # Add response or error information
+        # Error Response or Response Data
         if error:
-            log_content.append("\n" + "-" * 40)
-            log_content.append("FINAL ERROR RESPONSE:")
-            log_content.append("-" * 40)
-            log_content.append(f"Error Type: {type(error).__name__}")
-            log_content.append(f"Error Message: {str(error)}")
+            log_content.append('<details>')
+            log_content.append('<summary>Error Response</summary>')
+            log_content.append('')
+            log_content.append(f'**Error Type:** `{type(error).__name__}`  ')
+            log_content.append(f'**Error Message:** {str(error)}  ')
+            log_content.append('</details>')
+            log_content.append('')
         else:
-            log_content.append("\n" + "-" * 40)
-            log_content.append("FINAL RESPONSE DATA:")
-            log_content.append("-" * 40)
-            
             if self.include_response_data and response_data:
+                log_content.append('<details>')
+                log_content.append('<summary>Response Data</summary>')
+                log_content.append('')
                 if isinstance(response_data, dict):
+                    log_content.append('```json')
                     log_content.append(json.dumps(response_data, indent=2))
+                    log_content.append('```')
                 else:
+                    log_content.append('```text')
                     log_content.append(str(response_data))
-            
+                    log_content.append('```')
+                log_content.append('</details>')
+                log_content.append('')
+
             if self.include_headers and response_headers:
-                log_content.append("\n" + "-" * 40)
-                log_content.append("RESPONSE HEADERS:")
-                log_content.append("-" * 40)
+                log_content.append('<details>')
+                log_content.append('<summary>Response Headers</summary>')
+                log_content.append('')
+                log_content.append('```text')
                 sanitized_headers = self._sanitize_headers(response_headers)
                 for key, value in sanitized_headers.items():
                     log_content.append(f"{key}: {value}")
-        
+                log_content.append('```')
+                log_content.append('</details>')
+                log_content.append('')
+
+        # Timing Information
         if self.include_timing:
-            log_content.append("\n" + "-" * 40)
-            log_content.append("TIMING INFORMATION:")
-            log_content.append("-" * 40)
+            log_content.append('<details>')
+            log_content.append('<summary>Timing Information</summary>')
+            log_content.append('')
             if end_time:
-                log_content.append(f"End Time: {end_time}")
+                log_content.append(f'**End Time:** {end_time}  ')
             if duration:
-                log_content.append(f"Total Duration: {duration:.3f} seconds")
-        
-        log_content.append("\n" + "=" * 80)
-        log_content.append(f"LOG COMPLETE - {datetime.now().isoformat()}")
-        log_content.append("=" * 80)
+                log_content.append(f'**Total Duration:** {duration:.3f} seconds  ')
+            log_content.append('</details>')
+            log_content.append('')
+
+        # Footer
+        log_content.append("---")
+        log_content.append("")
+        log_content.append(f"*Log completed at {datetime.now().isoformat()}*")
         
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
@@ -317,39 +399,73 @@ class RequestLogger:
             filename = self._get_timestamp_filename(request_id)
 
         filepath = os.path.join(folder, filename)
-        
+
         log_content = []
-        log_content.append("=" * 80)
-        log_content.append(f"MODELS REQUEST LOG - {datetime.now().isoformat()}")
-        log_content.append("=" * 80)
-        log_content.append(f"Request ID: {request_id}")
-        log_content.append(f"Endpoint: /models")
-        log_content.append(f"Timestamp: {datetime.now().isoformat()}")
-        
+
+        # Title and metadata
+        log_content.append(f"# Models Request Log - {datetime.now().isoformat()}")
+        log_content.append("")
+        log_content.append(f"**Request ID:** `{request_id}`  ")
+        log_content.append(f"**Endpoint:** `/models`  ")
+        log_content.append(f"**Timestamp:** {datetime.now().isoformat()}  ")
+        log_content.append("")
+
+        # Table of Contents
+        toc_items = []
         if self.include_headers and headers:
-            log_content.append("\n" + "-" * 40)
-            log_content.append("REQUEST HEADERS:")
-            log_content.append("-" * 40)
+            toc_items.append("- Request Headers")
+        if error:
+            toc_items.append("- Error Response")
+        elif self.include_response_data and response_data:
+            toc_items.append("- Response Data")
+
+        if toc_items:
+            log_content.append("## Table of Contents")
+            log_content.append("")
+            # Convert to anchor links
+            toc_with_links = []
+            for item in toc_items:
+                text = item[2:]  # Remove "- "
+                anchor = text.lower().replace(" ", "-").replace("(", "").replace(")", "")
+                toc_with_links.append(f"- [{text}](#{anchor})")
+            log_content.extend(toc_with_links)
+            log_content.append("")
+
+        # Request Headers
+        if self.include_headers and headers:
+            log_content.append("## Request Headers")
+            log_content.append("")
+            log_content.append("```text")
             sanitized_headers = self._sanitize_headers(headers)
             for key, value in sanitized_headers.items():
                 log_content.append(f"{key}: {value}")
-        
+            log_content.append("```")
+            log_content.append("")
+
+        # Error or Response
         if error:
-            log_content.append("\n" + "-" * 40)
-            log_content.append("ERROR RESPONSE:")
-            log_content.append("-" * 40)
-            log_content.append(f"Error Type: {type(error).__name__}")
-            log_content.append(f"Error Message: {str(error)}")
+            log_content.append('<details>')
+            log_content.append('<summary>Error Response</summary>')
+            log_content.append('')
+            log_content.append(f'**Error Type:** `{type(error).__name__}`  ')
+            log_content.append(f'**Error Message:** {str(error)}  ')
+            log_content.append('</details>')
+            log_content.append('')
         else:
-            log_content.append("\n" + "-" * 40)
-            log_content.append("RESPONSE DATA:")
-            log_content.append("-" * 40)
             if self.include_response_data and response_data:
+                log_content.append('<details>')
+                log_content.append('<summary>Response Data</summary>')
+                log_content.append('')
+                log_content.append('```json')
                 log_content.append(json.dumps(response_data, indent=2))
-        
-        log_content.append("\n" + "=" * 80)
-        log_content.append(f"LOG COMPLETE - {datetime.now().isoformat()}")
-        log_content.append("=" * 80)
+                log_content.append('```')
+                log_content.append('</details>')
+                log_content.append('')
+
+        # Footer
+        log_content.append("---")
+        log_content.append("")
+        log_content.append(f"*Log completed at {datetime.now().isoformat()}*")
         
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
