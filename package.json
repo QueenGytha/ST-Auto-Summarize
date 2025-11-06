@@ -13,7 +13,7 @@
     "analyze": "npm run lint && npm run syntax-check",
     "analyze:full": "npm run lint && npm run syntax-check && npm run audit",
     "validate-selectors": "node scripts/validate-selectors.js",
-    "pretest": "npm run validate-selectors",
+    "pretest": "npm run validate-selectors && npm run lint:quiet",
     "test": "playwright test",
     "test:feature": "playwright test tests/features",
     "test:suite": "playwright test tests/suite",

@@ -1,6 +1,7 @@
 // ESLint v9+ flat config format
 import complexity from 'eslint-plugin-complexity';
 import sonarjs from 'eslint-plugin-sonarjs';
+import importPlugin from 'eslint-plugin-import';
 
 export default [
 {
@@ -9,7 +10,8 @@ export default [
 
   plugins: {
     complexity,
-    sonarjs
+    sonarjs,
+    import: importPlugin
   },
 
   languageOptions: {
@@ -60,6 +62,11 @@ export default [
       classes: true,
       variables: true
     }],
+
+    // IMPORT VALIDATION (catches exported-but-undefined functions)
+    'import/named': 'error', // Validate named imports exist in target module
+    'import/namespace': 'error', // Validate namespace imports
+    'import/default': 'error', // Validate default imports exist
 
     // COMMON BUGS
     'no-const-assign': 'error', // Catch const reassignment
