@@ -48,17 +48,9 @@ export function setQueueBlocking(blocking ) {
       queueIndicatorButton = document.createElement('div');
       queueIndicatorButton.id = 'queue_indicator_but';
       queueIndicatorButton.className = 'fa-solid fa-hourglass-half interactable';
-      queueIndicatorButton.title = 'Queue operations in progress - click to view queue';
+      queueIndicatorButton.title = 'Queue operations in progress';
       queueIndicatorButton.style.opacity = '1';
-      queueIndicatorButton.style.cursor = 'pointer';
-
-      // Click opens queue UI
-      queueIndicatorButton.addEventListener('click', async () => {
-        const queueUI = document.querySelector(selectorsExtension.queue.panel);
-        if (queueUI) {
-          queueUI.classList.toggle('hidden');
-        }
-      });
+      queueIndicatorButton.style.cursor = 'default';
 
       // Insert next to send button
       if (sendButton && sendButton.parentNode) {
