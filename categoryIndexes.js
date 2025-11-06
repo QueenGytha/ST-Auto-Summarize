@@ -4,21 +4,15 @@
 // These are always active but DON'T trigger the actual entity entries (prevents context bloat)
 
 // Will be imported from index.js via barrel exports
-let log , debug , error , getLorebookEntries , addLorebookEntry , modifyLorebookEntry , deleteLorebookEntry , getSetting ; // Utility and lorebook functions - any type is legitimate
+let log , debug , error , getLorebookEntries , deleteLorebookEntry ; // Utility and lorebook functions - any type is legitimate
 
-export function initCategoryIndexes(utils , lorebookManagerUtils , settingsManagerUtils ) {
+export function initCategoryIndexes(utils , lorebookManagerUtils , _settingsManagerUtils ) {
   // All parameters are any type - objects with various properties - legitimate use of any
   log = utils.log;
   debug = utils.debug;
   error = utils.error;
   getLorebookEntries = lorebookManagerUtils.getLorebookEntries;
-  addLorebookEntry = lorebookManagerUtils.addLorebookEntry;
-  modifyLorebookEntry = lorebookManagerUtils.modifyLorebookEntry;
   deleteLorebookEntry = lorebookManagerUtils.deleteLorebookEntry;
-
-  if (settingsManagerUtils) {
-    getSetting = settingsManagerUtils.getSetting;
-  }
 }
 
 const CATEGORY_CONFIG = {
@@ -128,65 +122,6 @@ async function categorizeEntries(lorebookName ) {
   } catch (err) {
     error("Error categorizing entries", err);
     return {};
-  }
-}
-
-async function updateCategoryIndexEntry(lorebookName , categoryPrefix , entityNames ) {
-  try {
-    const config = CATEGORY_CONFIG[categoryPrefix];
-    if (!config) {
-      error(`Unknown category prefix: ${categoryPrefix}`);
-      return false;
-    }
-
-    // Generate content in PList format
-    let content;
-    if (entityNames.length === 0) {
-      content = `[${config.displayName}: none discovered yet]`;
-    } else {
-      content = `[${config.displayName}: ${entityNames.join(', ')}]`;
-    }
-
-    // Check if index entry already exists
-    const entries = await getLorebookEntries(lorebookName);
-    const existingIndex = entries ? entries.find((e) => e.comment === config.indexName) : null;
-
-    if (existingIndex) {
-      // Update existing entry
-      debug(`Updating category index: ${config.displayName}`);
-      await modifyLorebookEntry(lorebookName, existingIndex.uid, {
-        content: content,
-        keys: config.keys,
-        constant: true,
-        order: config.order,
-        depth: 0,
-        position: 6,
-        excludeRecursion: true,
-        preventRecursion: true, // Alternative property name for safety
-        disable: false
-      });
-    } else {
-      // Create new index entry
-      debug(`Creating category index: ${config.displayName}`);
-      await addLorebookEntry(lorebookName, {
-        comment: config.indexName,
-        content: content,
-        keys: config.keys,
-        constant: true,
-        order: config.order,
-        depth: 0,
-        position: 6,
-        excludeRecursion: true,
-        preventRecursion: true,
-        disable: false
-      });
-    }
-
-    return true;
-
-  } catch (err) {
-    error(`Error updating category index for ${categoryPrefix}`, err);
-    return false;
   }
 }
 

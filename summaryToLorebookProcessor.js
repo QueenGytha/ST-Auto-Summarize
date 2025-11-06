@@ -84,6 +84,7 @@ function getSummaryProcessingSetting(key , defaultValue  = null) {
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 function setSummaryProcessingSetting(key , value ) {
   try {
     // ALL summary processing settings are per-profile

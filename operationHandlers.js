@@ -18,8 +18,7 @@ import {
 import {
   generateSceneSummary,
   toggleSceneBreak,
-  autoGenerateSceneNameFromSummary,
-  SCENE_SUMMARY_HASH_KEY } from
+  autoGenerateSceneNameFromSummary } from
 './sceneBreak.js';
 import {
   generate_running_scene_summary,
@@ -61,7 +60,6 @@ import {
   set_data,
   saveChatDebounced,
   get_settings,
-  extension_settings,
   debug,
   log,
   toast,

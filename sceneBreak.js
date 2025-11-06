@@ -1,9 +1,7 @@
 
 
-
 import {
   get_settings,
-  get_memory,
   summarize_text,
   refresh_memory,
   renderSceneNavigatorBar,
@@ -556,7 +554,7 @@ startIdx ,
 endIdx ,
 mode ,
 ctx ,
-get_memory )
+_get_memory )
 {
   const chat = ctx.chat;
   const result = [];
@@ -927,8 +925,8 @@ messageIndex )
       debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Queueing ${uniqueEntries.length} unique entries...`);
       for (const entry of uniqueEntries) {
         // Sequential execution required: entries must be queued in order
-        // eslint-disable-next-line no-await-in-loop
         debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Calling queueProcessLorebookEntry for: ${entry.name || entry.comment}`);
+        // eslint-disable-next-line no-await-in-loop
         const opId = await queueProcessLorebookEntry(entry, messageIndex, summaryHash);
         if (opId) {
           debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✓ Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);

@@ -11,20 +11,13 @@ import {
   log,
   SUBSYSTEM,
   saveChatDebounced,
-  toggleSceneBreak,
-  generateSceneSummary,
   get_connection_profile_api,
   getPresetManager,
   set_connection_profile,
-  get_current_connection_profile,
-  selectorsExtension } from
+  get_current_connection_profile } from
 './index.js';
 
 const DEFAULT_RECENT_MESSAGE_COUNT = 3;
-
-// Module-level cancellation token for the current scan
-// This allows us to cancel delays when user aborts
-let currentScanCancellationToken = null;
 
 function shouldCheckMessage(
 message ,
@@ -273,8 +266,7 @@ function buildDetectionPrompt(ctx, promptTemplate, message, contextMessages, pre
 
 async function detectSceneBreak(
 message ,
-messageIndex ,
-previousMessage  = null)
+messageIndex )
 {
   const ctx = getContext();
 
@@ -364,96 +356,6 @@ previousMessage  = null)
   }
 }
 
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function interruptibleDelay(ms, cancellationToken = null) {
-  const chunkSize = 1000; // Check every 1 second
-  const chunks = Math.ceil(ms / chunkSize);
-
-  for (let i = 0; i < chunks; i++) {
-    // Check if cancelled before each chunk
-    if (cancellationToken?.cancelled) {
-      debug('Delay interrupted - cancellation detected');
-      throw new Error('ABORTED');
-    }
-
-    // Wait for the chunk (or remaining time if last chunk)
-    const remainingMs = ms - i * chunkSize;
-    const waitTime = Math.min(chunkSize, remainingMs);
-    // Sequential execution required: chunked delay must complete in order
-    // eslint-disable-next-line no-await-in-loop
-    await delay(waitTime);
-  }
-}
-
-async function detectSceneBreakWithRetry(message, messageIndex, previousMessage = null, maxRetries = 5, cancellationToken = null) {
-  let retryCount = 0;
-  let lastError = null;
-
-  while (retryCount <= maxRetries) {
-    try {
-      debug('Attempting detection for message', messageIndex, 'attempt', retryCount + 1, '/', maxRetries + 1);
-      // Sequential execution required: retry loop must wait for each attempt
-      // eslint-disable-next-line no-await-in-loop
-      const result = await detectSceneBreak(message, messageIndex, previousMessage);
-      debug('Detection successful for message', messageIndex, 'on attempt', retryCount + 1);
-      return result;
-    } catch (err) {
-      lastError = err;
-      error('***** RETRY LOOP CAUGHT ERROR for message', messageIndex, 'attempt', retryCount + 1, '*****');
-      error('***** Error message:', err?.message || String(err), '*****');
-
-      // Check if user aborted the request - if so, stop immediately without retrying
-      const errorString = String(err?.message || err);
-      if (errorString.includes('Clicked stop button') || errorString.includes('aborted') || errorString.includes('ABORTED')) {
-        error('***** USER ABORTED - stopping all retries *****');
-        // Mark the cancellation token so delays will also stop
-        if (cancellationToken) {
-          cancellationToken.cancelled = true;
-        }
-        toast('Scene break detection aborted by user', 'warning');
-        throw new Error('ABORTED'); // Throw special error to signal abort
-      }
-
-      // Retry with backoff on ANY error (we can't detect rate limits due to error stripping)
-      if (retryCount < maxRetries) {
-        // Calculate exponential backoff delay: 10s, 20s, 40s, 80s, 160s
-        const backoffDelay = 10 * Math.pow(2, retryCount) * 1000;
-
-        retryCount++;
-        error('***** BACKING OFF', backoffDelay, 'ms before retry', retryCount, '/', maxRetries, '*****');
-        toast(`⚠️ Error! Waiting ${backoffDelay / 1000}s before retry ${retryCount}/${maxRetries} for message ${messageIndex}...`, 'warning');
-        // Sequential execution required: allow toast to display before continuing
-        // eslint-disable-next-line no-await-in-loop
-        await delay(50); // Allow toast to display
-
-        // Use interruptible delay that can be cancelled mid-wait
-        try {
-          // Sequential execution required: exponential backoff between retries
-          // eslint-disable-next-line no-await-in-loop
-          await interruptibleDelay(backoffDelay, cancellationToken);
-          error('***** Backoff complete, retrying message', messageIndex, '*****');
-        } catch {
-          // Delay was interrupted by cancellation
-          error('***** Backoff cancelled - user aborted *****');
-          throw new Error('ABORTED');
-        }
-        // Continue to next retry iteration
-      } else {
-        // Max retries exceeded - stop scanning
-        error('***** MAX RETRIES EXCEEDED - throwing error up *****');
-        throw err;
-      }
-    }
-  }
-
-  // If we got here, all retries failed
-  error('Max retries', maxRetries, 'exceeded for message', messageIndex);
-  throw lastError;
-}
-
 // Helper: Find and mark existing scene breaks as checked
 function findAndMarkExistingSceneBreaks(chat) {
   let latestVisibleSceneBreakIndex = -1;
@@ -521,185 +423,6 @@ async function tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkW
 
   error(SUBSYSTEM.SCENE, '[Queue] Failed to enqueue scene break detections');
   return null;
-}
-
-// Helper: Handle detected scene break
-async function handleDetectedSceneBreak(i, rationale, cancellationToken) {
-  debug('Marking message', i, 'as scene break');
-
-  const get_message_div = (idx) => $(`div[mesid="${idx}"]`);
-  toggleSceneBreak(i, get_message_div, getContext, set_data, get_data, saveChatDebounced);
-
-  // No per-message decrementing cooldown; skipping is enforced by adjacency rule (prev has scene_break)
-
-  // Auto-generate scene summary if enabled
-  if (!get_settings('auto_scene_break_generate_summary')) return;
-
-  // Delay before generating summary to avoid rate limiting
-  debug('Waiting 5 seconds before generating scene summary...');
-  toast(`Waiting 5s before generating scene summary for message ${i}...`, 'info');
-  await delay(50);
-
-  try {
-    await interruptibleDelay(5000, cancellationToken);
-  } catch {
-    error('Pre-summary delay cancelled - user aborted');
-    throw new Error('ABORTED');
-  }
-
-  debug('Auto-generating scene summary for message', i);
-  toast(`Generating scene summary for message ${i}...`, 'info');
-  await delay(50);
-
-  // Set loading state in summary box
-  const $msgDiv = get_message_div(i);
-  const $summaryBox = $msgDiv.find(selectorsExtension.sceneBreak.summaryBox);
-  if ($summaryBox.length) {
-    $summaryBox.val("Generating scene summary...");
-  }
-
-  await generateSceneSummary(i, get_message_div, getContext, get_data, set_data, saveChatDebounced);
-
-  toast(`✓ Scene summary generated for message ${i}`, 'success');
-  await delay(50);
-}
-
-// Helper: Handle scan errors
-function handleScanError(err, i, checkedCount, totalToCheck, detectedCount, cancellationToken, eventSource, event_types, stopHandler) {
-  error('!!!!! FATAL ERROR IN MAIN LOOP for message', i, '!!!!!', err);
-  error('!!!!! Error message:', err?.message || String(err), '!!!!!');
-
-  const errorString = String(err?.message || err);
-  if (errorString.includes('ABORTED') || errorString.includes('Clicked stop button') || errorString.includes('aborted')) {
-    error('!!!!! USER ABORTED - STOPPING SCAN !!!!!');
-    cancellationToken.cancelled = true;
-    currentScanCancellationToken = null;
-    eventSource.off(event_types.GENERATION_STOPPED, stopHandler);
-    return { aborted: true, checkedCount, totalToCheck, detectedCount };
-  }
-
-  // Real error - stop scan
-  error('!!!!! STOPPING SCAN !!!!!');
-  currentScanCancellationToken = null;
-  eventSource.off(event_types.GENERATION_STOPPED, stopHandler);
-  return { error: true, message: err?.message || String(err), checkedCount, totalToCheck, detectedCount };
-}
-
-// Helper: Count messages to check in range
-function countMessagesToCheck(chat, start, end, latestIndex, offset, checkWhich) {
-  let totalToCheck = 0;
-  for (let i = start; i <= end; i++) {
-    if (shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich) && !isCooldownSkip(chat, i, false)) {
-      totalToCheck++;
-    }
-  }
-  return totalToCheck;
-}
-
-// Helper: Handle scene break summary generation
-async function handleSceneSummaryGeneration(i, rationale, cancellationToken) {
-  try {
-    await handleDetectedSceneBreak(i, rationale, cancellationToken);
-  } catch (err) {
-    const errorString = String(err?.message || err);
-    if (errorString.includes('Clicked stop button') || errorString.includes('aborted')) {
-      error('Scene summary generation aborted by user for message', i);
-      cancellationToken.cancelled = true;
-      throw new Error('ABORTED');
-    }
-    error('Failed to auto-generate scene summary for message', i, ':', err);
-    toast(`Failed to generate scene summary for message ${i}: ${err?.message || String(err)}`, 'error');
-    await delay(50);
-  }
-}
-
-// Helper: Process single message in scan
-async function processScanMessage(chat, i, end, cancellationToken) {
-  const previousMessage = i > 0 ? chat[i - 1] : null;
-  const { isSceneBreak, rationale } = await detectSceneBreakWithRetry(chat[i], i, previousMessage, 5, cancellationToken);
-
-  let detectedCount = 0;
-  if (isSceneBreak) {
-    detectedCount = 1;
-    const rationaleText = rationale ? ` - ${rationale}` : '';
-    toast(`✓ Scene break at message ${i}${rationaleText}`, 'success');
-    await delay(50);
-    await handleSceneSummaryGeneration(i, rationale, cancellationToken);
-  }
-
-  // Delay between messages
-  if (i < end) {
-    try {
-      await interruptibleDelay(5000, cancellationToken);
-    } catch {
-      error('Between-message delay cancelled - user aborted');
-      throw new Error('ABORTED');
-    }
-  }
-
-  return detectedCount;
-}
-
-// Helper: Execute scan loop
-async function executeScanLoop(chat, start, end, latestIndex, offset, checkWhich, cancellationToken, eventSource, event_types, stopHandler) {
-  let checkedCount = 0;
-  let detectedCount = 0;
-
-  const totalToCheck = countMessagesToCheck(chat, start, end, latestIndex, offset, checkWhich);
-
-  if (totalToCheck === 0) {
-    toast(`No messages to check (all already scanned or filtered out)`, 'info');
-    return { checkedCount, detectedCount, totalToCheck };
-  }
-
-  toast(`Starting scene break scan: 0/${totalToCheck} messages to check...`, 'info');
-  await delay(50);
-
-  // Process each message
-  for (let i = start; i <= end; i++) {
-    const message = chat[i];
-
-    if (!shouldCheckMessage(message, i, latestIndex, offset, checkWhich)) {
-      continue;
-    }
-
-    // Cooldown: skip and consume if immediately after a scene break with remaining cooldown
-    if (isCooldownSkip(chat, i, true)) {
-      debug(SUBSYSTEM.SCENE, 'Cooldown skip applied at index', i);
-      continue;
-    }
-
-    checkedCount++;
-    toast(`Scanning for scene breaks: ${checkedCount}/${totalToCheck} (found ${detectedCount})...`, 'info');
-    // Sequential execution required: UI responsiveness delay
-    // eslint-disable-next-line no-await-in-loop
-    await delay(50);
-
-    try {
-      // Sequential execution required: messages must be processed in order, respecting rate limits
-      // eslint-disable-next-line no-await-in-loop
-      const detected = await processScanMessage(chat, i, end, cancellationToken);
-      detectedCount += detected;
-    } catch (err) {
-      const result = handleScanError(err, i, checkedCount, totalToCheck, detectedCount, cancellationToken, eventSource, event_types, stopHandler);
-      if (result.aborted) {
-        toast(`⏹️ Scan aborted by user. Checked ${result.checkedCount}/${result.totalToCheck}, found ${result.detectedCount} scene breaks.`, 'info');
-        // Sequential execution required: allow toast to display before returning
-        // eslint-disable-next-line no-await-in-loop
-        await delay(100);
-        return null;
-      }
-      if (result.error) {
-        toast(`🛑 Error on message ${i} after all retries: ${result.message}. Checked ${result.checkedCount}/${result.totalToCheck}, found ${result.detectedCount} scene breaks.`, 'error');
-        // Sequential execution required: allow toast to display before returning
-        // eslint-disable-next-line no-await-in-loop
-        await delay(100);
-        return null;
-      }
-    }
-  }
-
-  return { checkedCount, detectedCount, totalToCheck };
 }
 
 export async function processAutoSceneBreakDetection(

@@ -86,7 +86,7 @@ function createRunningSceneSummaryNavbar() {
   let $navbar = $(selectorsExtension.sceneNav.bar);
   if (!$navbar.length) {
     // Create the bar if it doesn't exist
-    $navbar = $('<div id="scene-summary-navigator-bar"></div>');
+    $navbar = $('<div id="scene-summary-navigator-bar" data-testid="scene-navigator-bar"></div>');
     $(selectorsSillyTavern.chat.holder).after($navbar);
 
     log(SUBSYSTEM.RUNNING, 'Created scene navigator bar for running summary controls');

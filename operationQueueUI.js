@@ -56,7 +56,7 @@ function createQueueUI() {
 
   if (!$navbar.length) {
     debug(SUBSYSTEM.QUEUE, 'Creating shared navbar');
-    $navbar = $(`<div id="${NAVBAR_ID}" style="width: 175px; position: relative;"></div>`);
+    $navbar = $(`<div id="${NAVBAR_ID}" data-testid="scene-navigator-bar" style="width: 175px; position: relative;"></div>`);
     // Insert after the send button area
     $(selectorsSillyTavern.chat.holder).after($navbar);
   }

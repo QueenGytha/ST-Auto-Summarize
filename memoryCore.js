@@ -12,7 +12,6 @@ import {
   character_enabled,
   get_character_key,
   system_message_types,
-  generic_memories_macro,
   auto_hide_messages_by_command,
   chat_enabled,
   MODULE_NAME,
@@ -282,18 +281,6 @@ function collect_chat_messages(include ) {
   // reverse the indexes so they are in chronological order
   indexes.reverse();
   return indexes;
-}
-function get_message_summary_injection() {
-  // get the injection text for single message summary
-  const indexes = collect_chat_messages('Summary of message(s)');
-  if (indexes.length === 0) return ""; // if no memories, return empty
-
-  const text = concatenate_summaries(indexes);
-  const template = get_settings('short_template');
-  const ctx = getContext();
-
-  // replace memories macro
-  return ctx.substituteParamsExtended(template, { [generic_memories_macro]: text });
 }
 
 async function refresh_memory() {

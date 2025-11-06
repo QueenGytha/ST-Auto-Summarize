@@ -7,7 +7,6 @@ import {
 './entityTypes.js';
 
 
-
 function ensureEntityTypesSetting() {
   if (!extension_settings.autoLorebooks) {
     extension_settings.autoLorebooks = {} ;

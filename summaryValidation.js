@@ -34,7 +34,7 @@ async function validate_summary(summary , type  = "scene") {
     // Execute validation with connection profile/preset switching
     const { withConnectionSettings } = await import('./connectionSettingsManager.js');
 
-    const is_valid = await withConnectionSettings(
+    return await withConnectionSettings(
       validation_profile,
       validation_preset,
       async () => {
@@ -76,8 +76,6 @@ async function validate_summary(summary , type  = "scene") {
         return valid;
       }
     );
-
-    return is_valid;
 
   } catch (e) {
     error(SUBSYSTEM.VALIDATION, `Error during summary validation: ${e}`);

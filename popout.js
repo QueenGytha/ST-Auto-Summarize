@@ -2,7 +2,6 @@
 import {
   debug,
   animation_duration,
-  settings_div_id,
   settings_content_class,
   bind_function,
   dragElement,

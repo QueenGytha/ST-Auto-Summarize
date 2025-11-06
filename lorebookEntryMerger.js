@@ -1,7 +1,6 @@
 
 // lorebookEntryMerger.js - AI-powered merging of new lorebook content with existing entries
 
-import { extension_settings } from '../../../extensions.js';
 // Use wrapped version from our interceptor
 import { wrappedGenerateRaw as generateRaw } from './generateRawInterceptor.js';
 
@@ -136,7 +135,8 @@ async function callAIForMerge(existingContent , newContent , entryName  = '') {
           canonicalName: parsed.canonicalName || null
         };
       }
-    } catch (jsonErr) {
+      // eslint-disable-next-line no-unused-vars
+    } catch (_jsonErr) {
       // If direct parsing failed, try to extract JSON from the response
       const jsonMatch = trimmedResponse.match(/\{[\s\S]*"mergedContent"[\s\S]*\}/);
       if (jsonMatch) {
@@ -149,7 +149,8 @@ async function callAIForMerge(existingContent , newContent , entryName  = '') {
               canonicalName: parsed.canonicalName || null
             };
           }
-        } catch (extractErr) {
+          // eslint-disable-next-line no-unused-vars
+        } catch (_extractErr) {
           // Extraction failed, treat as plain text
           debug('AI merge completed (plain text format - JSON extraction failed)');
         }

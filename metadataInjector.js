@@ -2,7 +2,7 @@
 // metadataInjector.js - System for injecting structured metadata into LLM prompts
 // Metadata is added as JSON blocks that can be parsed and stripped by downstream proxies
 
-import { getCurrentChatId, characters, this_chid, name2 } from '../../../../script.js';
+import { getCurrentChatId } from '../../../../script.js';
 import { selected_group, groups } from '../../../group-chats.js';
 
 // Will be imported from index.js via barrel exports
@@ -141,7 +141,7 @@ options  = {})
     const metadataStr = formatMetadataBlock(metadata);
 
     // Find first system message, or create one if none exists
-    let firstSystemMessage = chatArray.find((msg) => msg.role === 'system');
+    const firstSystemMessage = chatArray.find((msg) => msg.role === 'system');
 
     if (firstSystemMessage) {
       // Prepend to existing system message

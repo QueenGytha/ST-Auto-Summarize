@@ -1,6 +1,5 @@
 
 
-
 export const DEFAULT_ENTITY_TYPES  = [
 'character',
 'location',

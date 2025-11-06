@@ -1,7 +1,6 @@
 
 import {
   getContext,
-  get_settings,
   chat_enabled,
   get_data,
   get_memory,
@@ -11,9 +10,6 @@ import {
   css_single_message_summary,
   css_exclude_memory,
   summary_reasoning_class,
-  edit_memory,
-  refresh_memory,
-  css_edit_textarea,
   selectorsSillyTavern } from
 './index.js';
 

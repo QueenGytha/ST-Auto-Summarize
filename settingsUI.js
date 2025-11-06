@@ -19,7 +19,6 @@ import {
   refresh_settings,
   refresh_memory,
   get_user_setting_text_input,
-  display_text_modal,
   bind_setting,
   bind_function,
   reset_settings,

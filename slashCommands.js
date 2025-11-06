@@ -11,7 +11,6 @@ import {
   MODULE_NAME,
   hard_reset_settings,
   refresh_settings,
-  settings_content_class,
   toggle_popout,
   get_running_summary_injection,
   display_injection_preview,
