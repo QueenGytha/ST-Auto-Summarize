@@ -29,7 +29,6 @@ import {
   renderAllSceneBreaks,
   get_manifest,
   refresh_settings,
-  update_connection_profile_dropdown,
   check_st_version,
   initialize_settings,
   extension_settings,
@@ -414,7 +413,6 @@ async function initializeExtension() {
   window.getContext = getContext;
   window.refresh_memory = refresh_memory;
   window.refresh_settings = refresh_settings;
-  window.update_connection_profile_dropdown = update_connection_profile_dropdown;
 
   initializeSceneNavigatorBar();
 
