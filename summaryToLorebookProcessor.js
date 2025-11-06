@@ -5,6 +5,7 @@ import { chat_metadata, saveMetadata } from '../../../../script.js';
 // Use wrapped version from our interceptor
 import { wrappedGenerateRaw as generateRaw } from './generateRawInterceptor.js';
 import { extension_settings } from '../../../extensions.js';
+import { loadPresetPrompts } from './presetPromptLoader.js';
 
 import {
   getConfiguredEntityTypeDefinitions,
@@ -365,7 +366,8 @@ prefill ,
 connectionProfile ,
 completionPreset ,
 label ,
-entryComment  // Optional entry comment for context suffix
+entryComment , // Optional entry comment for context suffix
+include_preset_prompts = false
 ) {
   try {
     console.log('[runModelWithSettings] Called with label:', label);
@@ -389,6 +391,7 @@ entryComment  // Optional entry comment for context suffix
     const response = await withConnectionSettings(
       connectionProfile,
       completionPreset,
+      // eslint-disable-next-line complexity
       async () => {
         // Set operation context for ST_METADATA
         const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
@@ -397,12 +400,73 @@ entryComment  // Optional entry comment for context suffix
         }
 
         try {
-          return await generateRaw({
-            prompt: prompt,
-            instructOverride: false,
-            quietToLoud: false,
-            prefill: prefill || ''
-          });
+          // Build prompt input - either string (current behavior) or messages array (with preset prompts)
+          let prompt_input;
+
+          console.log('[runModelWithSettings] label:', label);
+          console.log('[runModelWithSettings] include_preset_prompts:', include_preset_prompts);
+          console.log('[runModelWithSettings] completionPreset (param):', completionPreset);
+
+          // If preset_name is empty, use the currently active preset (like summarization.js does)
+          const { get_current_preset } = await import('./index.js');
+          const effectivePresetName = completionPreset || (include_preset_prompts ? get_current_preset() : '');
+
+          console.log('[runModelWithSettings] effectivePresetName:', effectivePresetName);
+          console.log('[runModelWithSettings] Condition check (include && preset):', include_preset_prompts && effectivePresetName);
+
+          if (include_preset_prompts && effectivePresetName) {
+            // Load preset prompts and get preset settings
+            const { getPresetManager } = await import('../../../preset-manager.js');
+            const presetManager = getPresetManager('openai');
+            const preset = presetManager?.getCompletionPresetByName(effectivePresetName);
+            const presetMessages = await loadPresetPrompts(effectivePresetName);
+
+            console.log('[runModelWithSettings] presetMessages loaded:', presetMessages?.length || 0, 'prompts');
+            if (presetMessages && presetMessages.length > 0) {
+              console.log('[runModelWithSettings] First preset prompt role:', presetMessages[0]?.role);
+              console.log('[runModelWithSettings] First preset prompt content length:', presetMessages[0]?.content?.length || 0);
+            }
+
+            // Use extension's prefill if set, otherwise use preset's prefill
+            const effectivePrefill = prefill || preset?.assistant_prefill || '';
+            console.log('[runModelWithSettings] effectivePrefill source:', prefill ? 'extension' : (preset?.assistant_prefill ? 'preset' : 'empty'));
+
+            // Only use messages array if we actually got preset prompts
+            if (presetMessages && presetMessages.length > 0) {
+              console.log('[runModelWithSettings] Using messages array format with preset prompts');
+
+              // Build messages array: preset prompts FIRST, then extension prompt
+              prompt_input = [
+                ...presetMessages,
+                { role: 'user', content: prompt }
+              ];
+
+              return await generateRaw({
+                prompt: prompt_input,
+                instructOverride: false,  // Let preset prompts control formatting
+                quietToLoud: false,
+                prefill: effectivePrefill
+              });
+            } else {
+              console.warn('[runModelWithSettings] include_preset_prompts enabled but no preset prompts loaded, falling back to string format');
+              // Fall back to string format
+              return await generateRaw({
+                prompt: prompt,
+                instructOverride: false,
+                quietToLoud: false,
+                prefill: prefill || ''
+              });
+            }
+          } else {
+            console.log('[runModelWithSettings] Using string format (include_preset_prompts not enabled or no preset)');
+            // Current behavior - string prompt only
+            return await generateRaw({
+              prompt: prompt,
+              instructOverride: false,
+              quietToLoud: false,
+              prefill: prefill || ''
+            });
+          }
         } finally {
           clearOperationSuffix();
         }
@@ -430,41 +494,7 @@ function sanitizeLorebookEntryLookupType(rawType ) {
   return parsed.name || sanitizeEntityTypeName(rawType);
 }
 
-function parseJsonSafe(raw ) {
-  if (!raw) return null;
-
-  let cleaned = raw.trim();
-
-  // Strip markdown code fences if present
-  // Handles: ```json\n{...}\n``` or ```\n{...}\n```
-  if (cleaned.startsWith('```')) {
-    const lines = cleaned.split('\n');
-    // Remove first line (```json or ```)
-    lines.shift();
-    // Remove last line if it's just ```
-    if (lines.length > 0 && lines[lines.length - 1].trim() === '```') {
-      lines.pop();
-    }
-    cleaned = lines.join('\n').trim();
-  }
-
-  try {
-    return JSON.parse(cleaned);
-  } catch (err) {
-    // Try original string as fallback in case our cleaning broke something
-    if (cleaned !== raw.trim()) {
-      try {
-        return JSON.parse(raw.trim());
-      } catch {
-        // Both failed, log the original error with original input
-        error?.('Failed to parse JSON response', err, raw);
-        return null;
-      }
-    }
-    error?.('Failed to parse JSON response', err, raw);
-    return null;
-  }
-}
+// parseJsonSafe REMOVED - now using centralized extractJsonFromResponse from utils.js
 
 function handleMissingLorebookEntryLookupPrompt(normalizedEntry ) {
   const entryName = normalizedEntry?.comment || normalizedEntry?.name || 'Unknown';
@@ -498,11 +528,21 @@ settings )
     settings?.lorebook_entry_lookup_connection_profile || '',
     settings?.lorebook_entry_lookup_completion_preset || '',
     'lorebook_entry_lookup',
-    normalizedEntry.comment // Pass comment for context suffix
+    normalizedEntry.comment, // Pass comment for context suffix
+    settings?.lorebook_entry_lookup_include_preset_prompts || false
   );
 
-  const parsed = parseJsonSafe(response);
-  if (!parsed || typeof parsed !== 'object') {
+  // Parse JSON using centralized helper (doesn't throw, uses try-catch internally)
+  let parsed;
+  try {
+    const { extractJsonFromResponse } = await import('./utils.js');
+    parsed = extractJsonFromResponse(response, {
+      requiredFields: ['type'],
+      context: 'lorebook entry lookup'
+    });
+  } catch (err) {
+    // If parsing failed, return default structure
+    debug?.('Failed to parse lorebook entry lookup response:', err);
     return {
       type: normalizedEntry.type || '',
       synopsis: '',
@@ -561,13 +601,23 @@ async function executeLorebookEntryDeduplicateLLMCall(prompt , settings , entryC
     settings?.lorebook_entry_deduplicate_connection_profile || '',
     settings?.lorebook_entry_deduplicate_completion_preset || '',
     'lorebookEntryDeduplicate',
-    entryComment // Pass comment for context suffix
+    entryComment, // Pass comment for context suffix
+    settings?.lorebook_entry_deduplicate_include_preset_prompts || false
   );
 }
 
-function parseLorebookEntryDeduplicateResponse(response , fallbackSynopsis ) {
-  const parsed = parseJsonSafe(response);
-  if (!parsed || typeof parsed !== 'object') {
+async function parseLorebookEntryDeduplicateResponse(response , fallbackSynopsis ) {
+  // Parse JSON using centralized helper
+  let parsed;
+  try {
+    const { extractJsonFromResponse } = await import('./utils.js');
+    parsed = extractJsonFromResponse(response, {
+      requiredFields: ['resolvedId'],
+      context: 'lorebook entry deduplication'
+    });
+  } catch (err) {
+    // If parsing failed, return default structure
+    debug?.('Failed to parse lorebook entry deduplication response:', err);
     return { resolvedId: null, synopsis: fallbackSynopsis || '' };
   }
 
@@ -606,7 +656,7 @@ settings )
     return { resolvedId: null, synopsis: lorebookEntryLookupSynopsis || '' };
   }
 
-  return parseLorebookEntryDeduplicateResponse(response, lorebookEntryLookupSynopsis);
+  return await parseLorebookEntryDeduplicateResponse(response, lorebookEntryLookupSynopsis);
 }
 
 function resolveEntryType(

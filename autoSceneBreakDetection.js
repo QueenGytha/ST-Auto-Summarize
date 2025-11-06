@@ -155,16 +155,22 @@ function formatContextMessagesForPrompt(messages ) {
 }
 
 // Helper: Parse scene break detection response
-function parseSceneBreakResponse(response, messageIndex) {
+async function parseSceneBreakResponse(response, messageIndex) {
+  // Try to parse as JSON first using centralized helper
   try {
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      const isSceneBreak = parsed.status === true || parsed.status === 'true';
-      const rationale = parsed.rationale || '';
-      debug('Parsed JSON for message', messageIndex, '- Status:', isSceneBreak, '- Rationale:', rationale);
-      return { isSceneBreak, rationale };
-    }
+    const { extractJsonFromResponse } = await import('./utils.js');
+    const parsed = extractJsonFromResponse(response, {
+      requiredFields: ['status'],
+      context: 'scene break detection'
+    });
+    const isSceneBreak = parsed.status === true || parsed.status === 'true';
+    const rationale = parsed.rationale || '';
+    debug('Parsed JSON for message', messageIndex, '- Status:', isSceneBreak, '- Rationale:', rationale);
+    return { isSceneBreak, rationale };
+  } catch (jsonErr) {
+    // JSON parsing failed, try fallback patterns
+    debug('JSON parsing failed for message', messageIndex, ', using fallback:', jsonErr.message);
+
     // Fallbacks: common plain-text patterns
     const lower = response.toLowerCase();
     // Explicit "SCENE BREAK:" style prefix used in tests
@@ -176,10 +182,6 @@ function parseSceneBreakResponse(response, messageIndex) {
     const isSceneBreak = lower.includes('true');
     debug('No JSON found for message', messageIndex, ', using fallback. Status:', isSceneBreak);
     return { isSceneBreak, rationale: 'No JSON found, fallback to text search' };
-  } catch (err) {
-    error('Failed to parse JSON response for message', messageIndex, ':', err);
-    const isSceneBreak = response.toLowerCase().includes('true');
-    return { isSceneBreak, rationale: 'JSON parse error, fallback to text search' };
   }
 }
 
@@ -261,7 +263,7 @@ function buildDetectionPrompt(ctx, promptTemplate, message, contextMessages, pre
   prompt = prompt.replace(/\{\{previous_message\}\}/g, previousText);
   prompt = prompt.replace(/\{\{current_message\}\}/g, message.mes);
   prompt = prompt.replace(/\{\{message\}\}/g, message.mes);
-  return `${prompt}\n${prefill}`;
+  return { prompt, prefill };
 }
 
 async function detectSceneBreak(
@@ -278,6 +280,7 @@ messageIndex )
     const prefill = get_settings('auto_scene_break_prefill') || '';
     const profile = get_settings('auto_scene_break_connection_profile');
     const preset = get_settings('auto_scene_break_completion_preset');
+    const includePresetPrompts = get_settings('auto_scene_break_include_preset_prompts') ?? false;
     const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
     const contextCountRaw = Number(get_settings('auto_scene_break_recent_message_count'));
     const contextCount = Number.isFinite(contextCountRaw) ? Math.max(0, contextCountRaw) : DEFAULT_RECENT_MESSAGE_COUNT;
@@ -311,7 +314,7 @@ messageIndex )
     }
 
     // Build prompt
-    const prompt = buildDetectionPrompt(ctx, promptTemplate, message, contextMessages, prefill);
+    const { prompt, prefill: detectionPrefill } = buildDetectionPrompt(ctx, promptTemplate, message, contextMessages, prefill);
 
     // Switch to detection profile/preset and save current
     const saved = await switchToDetectionSettings(ctx, profile, preset);
@@ -326,7 +329,7 @@ messageIndex )
     try {
       // Call LLM using the configured API
       debug('Sending prompt to AI for message', messageIndex);
-      response = await summarize_text(prompt);
+      response = await summarize_text(prompt, detectionPrefill, includePresetPrompts, preset);
       debug('AI raw response for message', messageIndex, ':', response);
     } finally {
       clearOperationSuffix();
@@ -337,7 +340,7 @@ messageIndex )
     await restoreSettings(ctx, saved);
 
     // Parse response
-    const { isSceneBreak, rationale } = parseSceneBreakResponse(response, messageIndex);
+    const { isSceneBreak, rationale } = await parseSceneBreakResponse(response, messageIndex);
 
     // Log the decision
     debug(isSceneBreak ? '✓ SCENE BREAK DETECTED' : '✗ No scene break', 'for message', messageIndex);

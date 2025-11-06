@@ -310,6 +310,9 @@ export function registerAllOperationHandlers() {
       lorebook_entry_deduplicate_completion_preset: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset') || '',
       lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '',
       lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '',
+      merge_include_preset_prompts: get_settings('auto_lorebooks_summary_merge_include_preset_prompts') ?? false,
+      lorebook_entry_lookup_include_preset_prompts: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_include_preset_prompts') ?? false,
+      lorebook_entry_deduplicate_include_preset_prompts: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_include_preset_prompts') ?? false,
       skip_duplicates: get_settings('auto_lorebooks_summary_skip_duplicates') ?? true
     };
 
@@ -330,29 +333,59 @@ export function registerAllOperationHandlers() {
 
     // Enqueue next operation based on lorebook entry lookup result
     if (lorebookEntryLookupResult.needsFullContextIds && lorebookEntryLookupResult.needsFullContextIds.length > 0) {
-      // Need lorebook entry deduplication
+      // Need lorebook entry deduplication - capture settings at enqueue time
+      const deduplicatePrefill = get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '';
+      const deduplicateIncludePresetPrompts = get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_include_preset_prompts') ?? false;
+
       await enqueueOperation(
         OperationType.RESOLVE_LOREBOOK_ENTRY,
         { entryId },
-        { priority: 12, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
+        {
+          priority: 12,
+          queueVersion: operation.queueVersion,
+          metadata: {
+            entry_comment: entryData.comment,
+            hasPrefill: Boolean(deduplicatePrefill && deduplicatePrefill.trim().length > 0),
+            includePresetPrompts: deduplicateIncludePresetPrompts
+          }
+        }
       );
     } else if (lorebookEntryLookupResult.sameEntityIds.length === 1) {
-      // Exact match found - merge
+      // Exact match found - merge - capture merge settings at enqueue time
       const resolvedId = lorebookEntryLookupResult.sameEntityIds[0];
       setLorebookEntryDeduplicateResult(entryId, { resolvedId, synopsis: lorebookEntryLookupResult.synopsis });
       markStageInProgress(entryId, 'lorebook_entry_deduplicate_complete');
 
+      const mergePrefill = get_settings('auto_lorebooks_summary_merge_prefill') || '';
+      const mergeIncludePresetPrompts = get_settings('auto_lorebooks_summary_merge_include_preset_prompts') ?? false;
+
       await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
         { entryId, action: 'merge', resolvedId },
-        { priority: 14, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
+        {
+          priority: 14,
+          queueVersion: operation.queueVersion,
+          metadata: {
+            entry_comment: entryData.comment,
+            hasPrefill: Boolean(mergePrefill && mergePrefill.trim().length > 0),
+            includePresetPrompts: mergeIncludePresetPrompts
+          }
+        }
       );
     } else {
-      // No match - create new
+      // No match - create new (no prefill/preset prompts for create operations)
       await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
         { entryId, action: 'create' },
-        { priority: 14, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
+        {
+          priority: 14,
+          queueVersion: operation.queueVersion,
+          metadata: {
+            entry_comment: entryData.comment,
+            hasPrefill: false,
+            includePresetPrompts: false
+          }
+        }
       );
     }
 
@@ -386,6 +419,9 @@ export function registerAllOperationHandlers() {
       lorebook_entry_deduplicate_completion_preset: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset') || '',
       lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '',
       lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '',
+      merge_include_preset_prompts: get_settings('auto_lorebooks_summary_merge_include_preset_prompts') ?? false,
+      lorebook_entry_lookup_include_preset_prompts: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_include_preset_prompts') ?? false,
+      lorebook_entry_deduplicate_include_preset_prompts: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_include_preset_prompts') ?? false,
       skip_duplicates: get_settings('auto_lorebooks_summary_skip_duplicates') ?? true
     };
 
@@ -430,20 +466,39 @@ export function registerAllOperationHandlers() {
 
     debug(SUBSYSTEM.QUEUE, `✓ LorebookEntryDeduplicate complete for ${entryId}: resolvedId=${lorebookEntryDeduplicateResult.resolvedId || 'new'}`);
 
-    // Enqueue next operation
+    // Enqueue next operation - capture settings at enqueue time
     if (lorebookEntryDeduplicateResult.resolvedId) {
       // Match found - merge
+      const mergePrefill = get_settings('auto_lorebooks_summary_merge_prefill') || '';
+      const mergeIncludePresetPrompts = get_settings('auto_lorebooks_summary_merge_include_preset_prompts') ?? false;
+
       await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
         { entryId, action: 'merge', resolvedId: lorebookEntryDeduplicateResult.resolvedId },
-        { priority: 10, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
+        {
+          priority: 10,
+          queueVersion: operation.queueVersion,
+          metadata: {
+            entry_comment: entryData.comment,
+            hasPrefill: Boolean(mergePrefill && mergePrefill.trim().length > 0),
+            includePresetPrompts: mergeIncludePresetPrompts
+          }
+        }
       );
     } else {
-      // No match - create new
+      // No match - create new (no prefill/preset prompts for create operations)
       await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
         { entryId, action: 'create' },
-        { priority: 14, queueVersion: operation.queueVersion, metadata: { entry_comment: entryData.comment } }
+        {
+          priority: 14,
+          queueVersion: operation.queueVersion,
+          metadata: {
+            entry_comment: entryData.comment,
+            hasPrefill: false,
+            includePresetPrompts: false
+          }
+        }
       );
     }
 

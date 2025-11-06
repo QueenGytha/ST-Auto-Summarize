@@ -3,9 +3,9 @@
 // New structure: summary (timeline) + lorebooks (detailed entries)
 // See docs/SUMMARY_LOREBOOK_SEPARATION.md for full documentation
 
-export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
-// Extract key information from the message below into a structured JSON format.
-// This separates timeline narrative from detailed reference information.
+export const default_prompt = `You are a structured data extraction system analyzing roleplay transcripts.
+Your task is to extract message information into JSON format according to the specifications below.
+You are NOT participating in the roleplay. You are analyzing completed roleplay text.
 //
 // ⚠️ CRITICAL: ONLY USE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️
 //
@@ -171,8 +171,9 @@ export const default_prompt = `// OOC REQUEST: Pause the roleplay and step out o
 {{message}}`;
 
 
-export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
-// Produce a SCENE RECAP in the JSON schema below, keeping events and long-term lore separate.
+export const scene_summary_prompt = `You are a structured data extraction system analyzing roleplay transcripts.
+Your task is to extract scene information into JSON format according to the specifications below.
+You are NOT participating in the roleplay. You are analyzing completed roleplay text.
 //
 // ⚠️ CRITICAL: USE ONLY THE SCENE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️
 // - If the scene does not state a fact, it does not exist
@@ -354,7 +355,7 @@ export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay 
 // - Omit anything not present in the provided recaps
 // - Never invent motives, emotions, or unseen context
 //
-// TARGET STRUCTURE (markdown recap):
+// TARGET STRUCTURE (markdown recap in "summary" field):
 // Maintain the same headers and bullet discipline as the scene recap output. Update or append bullets as needed.
 //   ## Current Situation  -> Active locations, who is present, unresolved stakes
 //   ## Key Developments   -> Durable outcomes and plot shifts (replace outdated bullets)
@@ -383,7 +384,13 @@ export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay 
 
 {{/if}}
 // NEW SCENE RECAP TO MERGE:
-{{scene_summaries}}`;
+{{scene_summaries}}
+
+// OUTPUT FORMAT:
+// You MUST respond with valid JSON in this exact format:
+{
+  "summary": "markdown recap with headers and bullets here"
+}`;
 
 
 export const auto_lorebook_entry_lookup_prompt = `You are the Auto-Lorebooks registry entry lookup assistant for SillyTavern.

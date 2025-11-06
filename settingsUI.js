@@ -72,6 +72,11 @@ async function initialize_settings_listeners() {
   bind_setting(selectorsExtension.proxy.sendChatDetails, 'first_hop_proxy_send_chat_details', 'boolean');
   bind_setting(selectorsExtension.proxy.wrapLorebook, 'wrap_lorebook_entries', 'boolean');
 
+  // Lorebook Viewer Settings
+  bind_setting(selectorsExtension.lorebookViewer.groupByWorld, 'lorebook_viewer_group_by_world', 'boolean');
+  bind_setting(selectorsExtension.lorebookViewer.showDepth, 'lorebook_viewer_show_depth', 'boolean');
+  bind_setting(selectorsExtension.lorebookViewer.showContent, 'lorebook_viewer_show_content', 'boolean');
+
   // Message Filtering Settings (used by scene summaries)
   bind_setting(selectorsExtension.filter.includeUser, 'include_user_messages', 'boolean');
   bind_setting(selectorsExtension.filter.includeHidden, 'include_system_messages', 'boolean');
@@ -125,6 +130,7 @@ async function initialize_settings_listeners() {
   // --- Scene Summary Validation Settings ---
   bind_setting(selectorsExtension.validation.sceneEnabled, 'scene_summary_error_detection_enabled', 'boolean');
   bind_setting(selectorsExtension.validation.scenePreset, 'scene_summary_error_detection_preset', 'text');
+  bind_setting(selectorsExtension.validation.sceneIncludePresetPrompts, 'scene_summary_error_detection_include_preset_prompts', 'boolean');
   bind_setting(selectorsExtension.validation.scenePrefill, 'scene_summary_error_detection_prefill', 'text');
   bind_setting(selectorsExtension.validation.sceneRetries, 'scene_summary_error_detection_retries', 'number');
   bind_setting(selectorsExtension.validation.scenePrompt, 'scene_summary_error_detection_prompt', 'text');
@@ -159,6 +165,7 @@ Available Macros:
 
   // Scene summary preset and connection profile
   bind_setting(selectorsExtension.scene.completionPreset, 'scene_summary_completion_preset', 'text');
+  bind_setting(selectorsExtension.scene.includePresetPrompts, 'scene_summary_include_preset_prompts', 'boolean');
   bind_setting(selectorsExtension.scene.connectionProfile, 'scene_summary_connection_profile', 'text');
 
   // --- Running Scene Summary Settings ---
@@ -170,6 +177,7 @@ Available Macros:
   bind_setting(selectorsExtension.running.prompt, 'running_scene_summary_prompt', 'text');
   bind_setting(selectorsExtension.running.prefill, 'running_scene_summary_prefill', 'text');
   bind_setting(selectorsExtension.running.completionPreset, 'running_scene_summary_completion_preset', 'text');
+  bind_setting(selectorsExtension.running.includePresetPrompts, 'running_scene_summary_include_preset_prompts', 'boolean');
   bind_setting(selectorsExtension.running.connectionProfile, 'running_scene_summary_connection_profile', 'text');
   bind_setting(selectorsExtension.running.position, 'running_scene_summary_position', 'number');
   bind_setting(selectorsExtension.running.depth, 'running_scene_summary_depth', 'number');
@@ -270,6 +278,7 @@ Available Macros:
   bind_setting(selectorsExtension.autoScene.prefill, 'auto_scene_break_prefill', 'text');
   bind_setting(selectorsExtension.autoScene.connectionProfile, 'auto_scene_break_connection_profile', 'text');
   bind_setting(selectorsExtension.autoScene.completionPreset, 'auto_scene_break_completion_preset', 'text');
+  bind_setting(selectorsExtension.autoScene.includePresetPrompts, 'auto_scene_break_include_preset_prompts', 'boolean');
 
   // Message offset with live display update
   const $autoSceneBreakOffset = $(selectorsExtension.autoScene.messageOffset);
@@ -309,6 +318,9 @@ Available Macros:
 
   // Initialize Auto-Lorebooks settings event listeners
   initialize_lorebooks_settings_listeners();
+
+  // Initialize Lorebook Viewer settings
+  initialize_lorebook_viewer_settings_listeners();
 
   refresh_settings();
 }
@@ -385,6 +397,12 @@ function initialize_lorebooks_settings_listeners() {
     save_profile();
   });
 
+  $(document).on('change', selectorsExtension.lorebook.mergeIncludePresetPrompts, function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_summary_merge_include_preset_prompts', value);
+    save_profile();
+  });
+
   $(document).on('input', '#autolorebooks-summary-merge-prefill', function () {
     const value = $(this).val();
     set_settings('auto_lorebooks_summary_merge_prefill', value);
@@ -409,6 +427,12 @@ function initialize_lorebooks_settings_listeners() {
     save_profile();
   });
 
+  $(document).on('change', selectorsExtension.lorebook.lookupIncludePresetPrompts, function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_summary_lorebook_entry_lookup_include_preset_prompts', value);
+    save_profile();
+  });
+
   $(document).on('input', '#autolorebooks-summary-triage-prefill', function () {
     const value = $(this).val();
     set_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill', value);
@@ -430,6 +454,12 @@ function initialize_lorebooks_settings_listeners() {
   $(document).on('change', '#autolorebooks-summary-entry-deduplicate-preset', function () {
     const value = $(this).val();
     set_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset', value);
+    save_profile();
+  });
+
+  $(document).on('change', selectorsExtension.lorebook.dedupeIncludePresetPrompts, function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_include_preset_prompts', value);
     save_profile();
   });
 
@@ -458,6 +488,31 @@ function initialize_lorebooks_settings_listeners() {
   });
 
   debug("Auto-Lorebooks settings event listeners initialized");
+}
+
+function initialize_lorebook_viewer_settings_listeners() {
+  // Group by world checkbox
+  $(document).on('change', '#lorebook-viewer-group-by-world', function () {
+    const value = $(this).prop('checked');
+    set_settings('lorebook_viewer_group_by_world', value);
+    save_profile();
+  });
+
+  // Show depth checkbox
+  $(document).on('change', '#lorebook-viewer-show-depth', function () {
+    const value = $(this).prop('checked');
+    set_settings('lorebook_viewer_show_depth', value);
+    save_profile();
+  });
+
+  // Show content checkbox
+  $(document).on('change', '#lorebook-viewer-show-content', function () {
+    const value = $(this).prop('checked');
+    set_settings('lorebook_viewer_show_content', value);
+    save_profile();
+  });
+
+  debug("Lorebook Viewer settings event listeners initialized");
 }
 
 export { initialize_settings_listeners };

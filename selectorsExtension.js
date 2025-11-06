@@ -69,6 +69,7 @@ export const selectorsExtension = {
     sceneEnabled: '[data-testid="validation-scene-enabled"]',         // #scene_summary_error_detection_enabled
     sceneEditPrompt: '[data-testid="validation-scene-edit-prompt"]',  // #edit_scene_summary_error_detection_prompt
     scenePreset: '[data-testid="validation-scene-preset"]',           // #scene_summary_error_detection_preset
+    sceneIncludePresetPrompts: '[data-testid="validation-scene-include-preset-prompts"]',  // #scene_summary_error_detection_include_preset_prompts
     scenePrefill: '[data-testid="validation-scene-prefill"]',         // #scene_summary_error_detection_prefill
     sceneRetries: '[data-testid="validation-scene-retries"]',         // #scene_summary_error_detection_retries
     scenePrompt: '[data-testid="validation-scene-prompt"]',           // #scene_summary_error_detection_prompt
@@ -86,6 +87,7 @@ export const selectorsExtension = {
     prompt: '[data-testid="scene-prompt"]',                          // #scene_summary_prompt
     defaultPrompt: '[data-testid="scene-default-prompt"]',           // #scene_summary_default_prompt
     completionPreset: '[data-testid="scene-completion-preset"]',     // #scene_summary_completion_preset
+    includePresetPrompts: '[data-testid="scene-include-preset-prompts"]',  // #scene_summary_include_preset_prompts
     connectionProfile: '[data-testid="scene-connection-profile"]',   // #scene_summary_connection_profile
     prefill: '[data-testid="scene-prefill"]',                        // #scene_summary_prefill
     messageTypes: '[data-testid="scene-message-types"]',             // #scene_summary_message_types
@@ -106,6 +108,7 @@ export const selectorsExtension = {
     editPrompt: '[data-testid="running-edit-prompt"]',                        // #edit_running_scene_summary_prompt
     prompt: '[data-testid="running-prompt"]',                                 // #running_scene_summary_prompt
     completionPreset: '[data-testid="running-completion-preset"]',            // #running_scene_summary_completion_preset
+    includePresetPrompts: '[data-testid="running-include-preset-prompts"]',   // #running_scene_summary_include_preset_prompts
     connectionProfile: '[data-testid="running-connection-profile"]',          // #running_scene_summary_connection_profile
     prefill: '[data-testid="running-prefill"]',                               // #running_scene_summary_prefill
     position: '[data-testid="running-position"]',                             // #running_scene_summary_position
@@ -130,6 +133,7 @@ export const selectorsExtension = {
     prompt: '[data-testid="auto-scene-prompt"]',                      // #auto_scene_break_prompt
     connectionProfile: '[data-testid="auto-scene-connection-profile"]',  // #auto_scene_break_connection_profile
     completionPreset: '[data-testid="auto-scene-completion-preset"]',    // #auto_scene_break_completion_preset
+    includePresetPrompts: '[data-testid="auto-scene-include-preset-prompts"]',  // #auto_scene_break_include_preset_prompts
     prefill: '[data-testid="auto-scene-prefill"]',                    // #auto_scene_break_prefill
   },
 
@@ -145,18 +149,28 @@ export const selectorsExtension = {
     skipDuplicates: '[data-testid="lorebook-skip-duplicates"]',           // #autolorebooks-summary-skip-duplicates
     mergeConnection: '[data-testid="lorebook-merge-connection"]',         // #autolorebooks-summary-merge-connection
     mergePreset: '[data-testid="lorebook-merge-preset"]',                 // #autolorebooks-summary-merge-preset
+    mergeIncludePresetPrompts: '[data-testid="lorebook-merge-include-preset-prompts"]',  // #auto_lorebooks_summary_merge_include_preset_prompts
     mergePrefill: '[data-testid="lorebook-merge-prefill"]',               // #autolorebooks-summary-merge-prefill
     mergePrompt: '[data-testid="lorebook-merge-prompt"]',                 // #autolorebooks-summary-merge-prompt
     lookupConnection: '[data-testid="lorebook-lookup-connection"]',       // #autolorebooks-summary-lorebook-entry-lookup-connection
     lookupPreset: '[data-testid="lorebook-lookup-preset"]',               // #autolorebooks-summary-lorebook-entry-lookup-preset
+    lookupIncludePresetPrompts: '[data-testid="lorebook-lookup-include-preset-prompts"]',  // #auto_lorebooks_summary_lorebook_entry_lookup_include_preset_prompts
     lookupPrefill: '[data-testid="lorebook-lookup-prefill"]',             // #autolorebooks-summary-lorebook-entry-lookup-prefill
     lookupPrompt: '[data-testid="lorebook-lookup-prompt"]',               // #autolorebooks-summary-lorebook-entry-lookup-prompt
     restoreLookupPrompt: '[data-testid="lorebook-restore-lookup-prompt"]',  // #restore-summary-triage-prompt
     dedupeConnection: '[data-testid="lorebook-dedupe-connection"]',       // #autolorebooks-summary-entry-deduplicate-connection
     dedupePreset: '[data-testid="lorebook-dedupe-preset"]',               // #autolorebooks-summary-entry-deduplicate-preset
+    dedupeIncludePresetPrompts: '[data-testid="lorebook-dedupe-include-preset-prompts"]',  // #auto_lorebooks_summary_lorebook_entry_deduplicate_include_preset_prompts
     dedupePrefill: '[data-testid="lorebook-dedupe-prefill"]',             // #autolorebooks-summary-entry-deduplicate-prefill
     dedupePrompt: '[data-testid="lorebook-dedupe-prompt"]',               // #autolorebooks-summary-entry-deduplicate-prompt
     restoreDedupePrompt: '[data-testid="lorebook-restore-dedupe-prompt"]',  // #restore-summary-entry-deduplicate-prompt
+  },
+
+  // Lorebook Viewer Settings
+  lorebookViewer: {
+    groupByWorld: '[data-testid="lorebook-viewer-group"]',    // #lorebook-viewer-group-by-world
+    showDepth: '[data-testid="lorebook-viewer-depth"]',       // #lorebook-viewer-show-depth
+    showContent: '[data-testid="lorebook-viewer-content"]',   // #lorebook-viewer-show-content
   },
 
   // Operation Queue UI (dynamically created)

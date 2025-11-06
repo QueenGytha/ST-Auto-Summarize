@@ -230,12 +230,7 @@ prefill )
     processed = processed.replace(/\{\{#if current_running_summary\}\}[\s\S]*?\{\{\/if\}\}/g, '');
   }
 
-  // Add prefill if configured
-  if (prefill) {
-    processed = `${processed}\n${prefill}`;
-  }
-
-  return processed;
+  return { prompt: processed, prefill: prefill || '' };
 }
 
 async function generate_running_scene_summary(skipQueue  = false) {
@@ -288,12 +283,13 @@ async function generate_running_scene_summary(skipQueue  = false) {
 
   // Build prompt with macro replacement
   const template = get_settings('running_scene_summary_prompt') || running_scene_summary_prompt;
-  const prefill = get_settings('running_scene_summary_prefill');
-  const prompt = processPromptMacros(template, current_summary, scene_summaries_text, prefill);
+  const prefillSetting = get_settings('running_scene_summary_prefill');
+  const { prompt, prefill } = processPromptMacros(template, current_summary, scene_summaries_text, prefillSetting);
 
   // Get connection profile and preset settings
   const running_preset = get_settings('running_scene_summary_completion_preset');
   const running_profile = get_settings('running_scene_summary_connection_profile');
+  const include_preset_prompts = get_settings('running_scene_summary_include_preset_prompts');
 
   // Execute with connection profile/preset switching
   const { withConnectionSettings } = await import('./connectionSettingsManager.js');
@@ -314,7 +310,7 @@ async function generate_running_scene_summary(skipQueue  = false) {
 
         try {
           // Generate summary using the configured API
-          const summaryResult = await summarize_text(prompt);
+          const summaryResult = await summarize_text(prompt, prefill, include_preset_prompts, running_preset);
 
           debug(SUBSYSTEM.RUNNING, `Generated running summary (${summaryResult.length} chars)`);
 
@@ -324,13 +320,21 @@ async function generate_running_scene_summary(skipQueue  = false) {
         }
       }
     );
-    const version = add_running_summary_version(result, indexes.length, exclude_count, 0, last_scene_idx);
+
+    // Parse JSON response using centralized helper
+    const { extractJsonFromResponse } = await import('./utils.js');
+    const parsed = extractJsonFromResponse(result, {
+      requiredFields: ['summary'],
+      context: 'running scene summary generation'
+    });
+
+    const version = add_running_summary_version(parsed.summary, indexes.length, exclude_count, 0, last_scene_idx);
 
     log(SUBSYSTEM.RUNNING, `Created running scene summary version ${version} (0 > ${last_scene_idx})`);
 
     toast(`Running scene summary updated (v${version})`, 'success');
 
-    return result;
+    return parsed.summary;
 
   } catch (err) {
     error(SUBSYSTEM.RUNNING, 'Failed to generate running scene summary:', err);
@@ -404,19 +408,17 @@ function buildCombinePrompt(current_summary , scene_summaries_text ) {
     prompt = prompt.replace(/\{\{#if current_running_summary\}\}[\s\S]*?\{\{\/if\}\}/g, '');
   }
 
-  // Add prefill if configured
-  const prefill = get_settings('running_scene_summary_prefill');
-  if (prefill) {
-    prompt = `${prompt}\n${prefill}`;
-  }
+  // Get prefill if configured
+  const prefill = get_settings('running_scene_summary_prefill') || '';
 
-  return prompt;
+  return { prompt, prefill };
 }
 
-async function executeCombineLLMCall(prompt , scene_name , scene_index ) {
+async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index ) {
   // Get connection profile and preset settings
   const running_preset = get_settings('running_scene_summary_completion_preset');
   const running_profile = get_settings('running_scene_summary_connection_profile');
+  const include_preset_prompts = get_settings('running_scene_summary_include_preset_prompts');
 
   // Execute with connection profile/preset switching
   const { withConnectionSettings } = await import('./connectionSettingsManager.js');
@@ -434,11 +436,18 @@ async function executeCombineLLMCall(prompt , scene_name , scene_index ) {
       setOperationSuffix(`-${prev_scene_idx}-${scene_index}`);
 
       try {
-        const result = await summarize_text(prompt);
+        const result = await summarize_text(prompt, prefill, include_preset_prompts, running_preset);
 
-        debug(SUBSYSTEM.RUNNING, `Combined running summary with scene (${result.length} chars)`);
+        // Parse JSON response using centralized helper
+        const { extractJsonFromResponse } = await import('./utils.js');
+        const parsed = extractJsonFromResponse(result, {
+          requiredFields: ['summary'],
+          context: 'running scene summary combine'
+        });
 
-        return result;
+        debug(SUBSYSTEM.RUNNING, `Combined running summary with scene (${parsed.summary.length} chars)`);
+
+        return parsed.summary;
       } finally {
         clearOperationSuffix();
       }
@@ -481,10 +490,10 @@ async function combine_scene_with_running_summary(scene_index ) {
   const current_summary = get_current_running_summary_content();
   const scene_summaries_text = `[${scene_name}]\n${summary_text}`;
 
-  const prompt = buildCombinePrompt(current_summary, scene_summaries_text);
+  const { prompt, prefill } = buildCombinePrompt(current_summary, scene_summaries_text);
 
   try {
-    const result = await executeCombineLLMCall(prompt, scene_name, scene_index);
+    const result = await executeCombineLLMCall(prompt, prefill, scene_name, scene_index);
     storeRunningSummary(result, scene_index, scene_name, scene_summary);
     return result;
 

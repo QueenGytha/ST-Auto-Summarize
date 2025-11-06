@@ -4,7 +4,7 @@
 
 import { generateRaw as _importedGenerateRaw } from '../../../../script.js';
 import { getContext } from '../../../extensions.js';
-import { injectMetadata } from './metadataInjector.js';
+import { injectMetadata, injectMetadataIntoChatArray } from './metadataInjector.js';
 import { getOperationSuffix } from './operationContext.js';
 
 let _originalGenerateRaw  = null; // Store original function
@@ -22,10 +22,8 @@ export async function wrappedGenerateRaw(options ) {
   try {
     _isInterceptorActive = true;
 
-    // Process prompt if it exists
-    if (options && typeof options.prompt === 'string') {
-      console.log('[Auto-Summarize:Interceptor] Processing prompt (first 100 chars):', options.prompt.substring(0, 100));
-
+    // Process prompt - handle both string and messages array formats
+    if (options && options.prompt) {
       // Determine operation type from call stack or default
       const baseOperation = determineOperationType();
 
@@ -35,16 +33,31 @@ export async function wrappedGenerateRaw(options ) {
 
       console.log('[Auto-Summarize:Interceptor] Operation type:', operation);
 
-      // Add metadata header
-      const processedPrompt = injectMetadata(options.prompt, {
-        operation: operation
-      });
+      if (typeof options.prompt === 'string') {
+        // String prompt - inject at beginning
+        console.log('[Auto-Summarize:Interceptor] Processing string prompt (first 100 chars):', options.prompt.substring(0, 100));
 
-      console.log('[Auto-Summarize:Interceptor] Processed prompt (first 200 chars):', processedPrompt.substring(0, 200));
+        const processedPrompt = injectMetadata(options.prompt, {
+          operation: operation
+        });
 
-      options.prompt = processedPrompt;
+        console.log('[Auto-Summarize:Interceptor] Processed prompt (first 200 chars):', processedPrompt.substring(0, 200));
+        options.prompt = processedPrompt;
+
+      } else if (Array.isArray(options.prompt) && options.prompt.length > 0) {
+        // Messages array - inject metadata using existing helper
+        console.log('[Auto-Summarize:Interceptor] Processing messages array with', options.prompt.length, 'messages');
+
+        injectMetadataIntoChatArray(options.prompt, {
+          operation: operation
+        });
+
+        console.log('[Auto-Summarize:Interceptor] Injected metadata into messages array');
+      } else {
+        console.log('[Auto-Summarize:Interceptor] Prompt format not recognized');
+      }
     } else {
-      console.log('[Auto-Summarize:Interceptor] No prompt found in options or not a string');
+      console.log('[Auto-Summarize:Interceptor] No prompt found in options');
     }
 
     // Call original function
@@ -113,15 +126,15 @@ function determineOperationType() {
     if (stack.includes('detectSceneBreak') || stack.includes('autoSceneBreakDetection.js')) {
       return 'detect_scene_break';
     }
-    if (stack.includes('generateSceneSummary') && !stack.includes('Running')) {
+    if (stack.includes('generateSceneSummary') && !stack.includes('runningSceneSummary.js') && !stack.includes('generate_running_scene_summary') && !stack.includes('combine_scene_with_running_summary')) {
       return 'generate_scene_summary';
     }
     if (stack.includes('SceneName') || stack.includes('sceneNamePrompt')) {
       return 'generate_scene_name';
     }
-    if (stack.includes('generateRunningSceneSummary') || stack.includes('runningSceneSummary.js') || stack.includes('combineSceneWithRunning')) {
+    if (stack.includes('generate_running_scene_summary') || stack.includes('runningSceneSummary.js') || stack.includes('combine_scene_with_running_summary')) {
       // Check for specific running summary operations
-      if (stack.includes('combineSceneWithRunning')) {
+      if (stack.includes('combine_scene_with_running_summary')) {
         return 'combine_scene_with_running';
       }
       return 'generate_running_summary';

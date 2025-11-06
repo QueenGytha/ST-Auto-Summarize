@@ -260,6 +260,76 @@ function sanitizeNameSegment(text ) {
   try {return s.normalize('NFC');} catch {return s;}
 }
 
+/**
+ * Extract and parse JSON from AI responses, handling common issues like preambles and code fences.
+ * @param {string} rawResponse - The raw AI response that should contain JSON
+ * @param {Object} options - Optional validation and extraction options
+ * @param {string[]} options.requiredFields - Array of field names that must exist in the parsed JSON
+ * @param {string} options.context - Context string for error messages (e.g., "merge operation", "scene summary")
+ * @returns {Object} The parsed JSON object
+ * @throws {Error} If JSON cannot be extracted or parsed, or if required fields are missing
+ */
+export function extractJsonFromResponse(rawResponse, options = {}) {
+  const { requiredFields = [], context = 'AI response' } = options;
+
+  if (!rawResponse || typeof rawResponse !== 'string') {
+    throw new Error(`${context}: Response is empty or not a string`);
+  }
+
+  let cleaned = rawResponse.trim();
+
+  // Step 1: Strip markdown code fences if present
+  // Handles: ```json\n{...}\n``` or ```\n{...}\n```
+  const codeFenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  if (codeFenceMatch) {
+    cleaned = codeFenceMatch[1].trim();
+    debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped code fences from ${context}`);
+  }
+
+  // Step 2: Strip text before first JSON character
+  if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
+    const jsonStartMatch = cleaned.match(/[{[]/);
+    if (jsonStartMatch) {
+      const jsonStart = cleaned.indexOf(jsonStartMatch[0]);
+      cleaned = cleaned.substring(jsonStart);
+      debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped preamble from ${context}`);
+    }
+  }
+
+  // Step 3: Strip text after last JSON character
+  if (!cleaned.endsWith('}') && !cleaned.endsWith(']')) {
+    const lastBrace = cleaned.lastIndexOf('}');
+    const lastBracket = cleaned.lastIndexOf(']');
+    const lastJsonChar = Math.max(lastBrace, lastBracket);
+    if (lastJsonChar > 0) {
+      cleaned = cleaned.substring(0, lastJsonChar + 1);
+      debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped postamble from ${context}`);
+    }
+  }
+
+  // Step 4: Parse JSON
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (parseErr) {
+    error(SUBSYSTEM.CORE, `[JSON Extract] Failed to parse JSON from ${context}:`, parseErr);
+    error(SUBSYSTEM.CORE, `[JSON Extract] Attempted to parse:`, cleaned.substring(0, 500));
+    throw new Error(`${context}: Invalid JSON - ${parseErr.message}`);
+  }
+
+  // Step 5: Validate required fields
+  if (requiredFields.length > 0) {
+    const missing = requiredFields.filter(field => !(field in parsed));
+    if (missing.length > 0) {
+      error(SUBSYSTEM.CORE, `[JSON Extract] Missing required fields in ${context}:`, missing);
+      throw new Error(`${context}: JSON missing required fields: ${missing.join(', ')}`);
+    }
+  }
+
+  debug(SUBSYSTEM.CORE, `[JSON Extract] Successfully parsed JSON from ${context}`);
+  return parsed;
+}
+
 export function generateLorebookName(template , characterName , chatId ) {
   const charSeg = sanitizeNameSegment(characterName || 'Unknown');
   const chatSeg = sanitizeNameSegment(chatId || 'Chat');

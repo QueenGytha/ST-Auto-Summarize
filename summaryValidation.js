@@ -30,6 +30,7 @@ async function validate_summary(summary , type  = "scene") {
     // Get connection profile and preset for validation
     const validation_profile = get_settings(getValidationKey(type, 'error_detection_connection_profile'));
     const validation_preset = get_settings(getValidationKey(type, 'error_detection_preset'));
+    const include_preset_prompts = get_settings(getValidationKey(type, 'error_detection_include_preset_prompts'));
 
     // Execute validation with connection profile/preset switching
     const { withConnectionSettings } = await import('./connectionSettingsManager.js');
@@ -42,11 +43,10 @@ async function validate_summary(summary , type  = "scene") {
         let prompt = get_settings(getValidationKey(type, 'error_detection_prompt'));
         prompt = prompt.replace("{{summary}}", summary);
 
-        // Add prefill if configured
-        const prefill = get_settings(getValidationKey(type, 'error_detection_prefill'));
+        // Get prefill if configured
+        const prefill = get_settings(getValidationKey(type, 'error_detection_prefill')) || '';
         if (prefill) {
-          debug(SUBSYSTEM.VALIDATION, `Adding prefill to validation prompt`);
-          prompt = `${prompt}\n${prefill}`;
+          debug(SUBSYSTEM.VALIDATION, `Using prefill for validation prompt`);
         }
 
         // Set operation context for ST_METADATA
@@ -57,7 +57,7 @@ async function validate_summary(summary , type  = "scene") {
         try {
           // Generate validation response
           debug(SUBSYSTEM.VALIDATION, `Sending validation prompt: ${prompt.substring(0, 200)}...`);
-          validation_result = await summarize_text(prompt);
+          validation_result = await summarize_text(prompt, prefill, include_preset_prompts, validation_preset);
           debug(SUBSYSTEM.VALIDATION, `Raw validation result: ${validation_result}`);
         } finally {
           clearOperationSuffix();

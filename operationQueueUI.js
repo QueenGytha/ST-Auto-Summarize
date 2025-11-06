@@ -472,6 +472,14 @@ function buildOperationTooltip(operation) {
   // Add operation-specific metadata
   const metadata = operation.metadata || {};
 
+  // Prefill and preset prompts settings (captured at enqueue time)
+  if (metadata.hasPrefill !== undefined) {
+    lines.push(`Prefill: ${metadata.hasPrefill ? 'Yes' : 'No'}`);
+  }
+  if (metadata.includePresetPrompts !== undefined) {
+    lines.push(`Preset Prompts: ${metadata.includePresetPrompts ? 'Yes' : 'No'}`);
+  }
+
   // Message range for message-based operations
   if (operation.params?.index !== undefined) {
     lines.push(`Message: #${operation.params.index}`);

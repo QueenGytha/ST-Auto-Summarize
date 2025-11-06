@@ -285,10 +285,13 @@ function refreshSummaryProcessingUI() {
   $(selectorsExtension.lorebook.skipDuplicates).prop('checked', get_settings('auto_lorebooks_summary_skip_duplicates') ?? true);
   $(selectorsExtension.lorebook.mergePrefill).val(get_settings('auto_lorebooks_summary_merge_prefill') || '');
   $(selectorsExtension.lorebook.mergePrompt).val(get_settings('auto_lorebooks_summary_merge_prompt') || '');
+  $(selectorsExtension.lorebook.mergeIncludePresetPrompts).prop('checked', get_settings('auto_lorebooks_summary_merge_include_preset_prompts') ?? false);
   $(selectorsExtension.lorebook.lookupPrefill).val(get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '');
   $(selectorsExtension.lorebook.lookupPrompt).val(get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prompt') || '');
+  $(selectorsExtension.lorebook.lookupIncludePresetPrompts).prop('checked', get_settings('auto_lorebooks_summary_lorebook_entry_lookup_include_preset_prompts') ?? false);
   $(selectorsExtension.lorebook.dedupePrefill).val(get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '');
   $(selectorsExtension.lorebook.dedupePrompt).val(get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '');
+  $(selectorsExtension.lorebook.dedupeIncludePresetPrompts).prop('checked', get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_include_preset_prompts') ?? false);
 }
 
 function refreshEntityTypesUI() {

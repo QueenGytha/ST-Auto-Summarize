@@ -742,86 +742,24 @@ ctx )
   prompt = prompt.replace(/\{\{scene_messages\}\}/g, formattedMessages);
   prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
   prompt = prompt.replace(/\{\{lorebook_entry_types\}\}/g, lorebookTypesMacro);
-  prompt = `${prompt}\n${prefill}`;
 
-  return prompt;
+  return { prompt, prefill };
 }
 
 // Helper: Switch to scene summary profile/preset
 // Legacy switching functions removed - now using withConnectionSettings() from connectionSettingsManager.js
 
-// Helper: Extract and validate JSON from AI response
-// Strips code fences, explanatory text, and validates JSON structure
-function extractAndValidateJson(rawResponse ) {
-  let cleaned = rawResponse.trim();
-
-  // Try to find and extract JSON from code fences first
-  const codeFenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-  if (codeFenceMatch) {
-    cleaned = codeFenceMatch[1].trim();
-    debug(SUBSYSTEM.SCENE, "Extracted JSON from code fences");
-  }
-
-  // If still doesn't look like JSON, try to find the first { or [
-  if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
-    const jsonStartMatch = cleaned.match(/[{[]/);
-    if (jsonStartMatch) {
-      const jsonStart = cleaned.indexOf(jsonStartMatch[0]);
-      cleaned = cleaned.substring(jsonStart);
-      debug(SUBSYSTEM.SCENE, "Stripped explanatory text before JSON");
-    }
-  }
-
-  // If still doesn't look like JSON, try to find last } or ]
-  if (!cleaned.endsWith('}') && !cleaned.endsWith(']')) {
-    const lastBrace = cleaned.lastIndexOf('}');
-    const lastBracket = cleaned.lastIndexOf(']');
-    const lastJsonChar = Math.max(lastBrace, lastBracket);
-    if (lastJsonChar > 0) {
-      cleaned = cleaned.substring(0, lastJsonChar + 1);
-      debug(SUBSYSTEM.SCENE, "Stripped text after JSON");
-    }
-  }
-
-  // Validate it's actually JSON and has expected structure
-  try {
-    const parsed = JSON.parse(cleaned);
-
-    // Scene summaries should have a "summary" field (and optionally "lorebooks")
-    if (typeof parsed === 'object' && parsed !== null) {
-      if (!('summary' in parsed)) {
-        throw new Error("JSON missing required 'summary' field");
-      }
-
-      // Check if summary is empty or just placeholder text
-      const summaryText = parsed.summary?.trim() || '';
-      if (summaryText === '' || summaryText === '...' || summaryText === 'TODO') {
-        throw new Error("AI returned empty or placeholder summary");
-      }
-
-      // Check if it's just the template structure with no content
-      if (summaryText.length < 10) {
-        throw new Error("AI returned suspiciously short summary (less than 10 chars)");
-      }
-
-      debug(SUBSYSTEM.SCENE, "JSON validated successfully");
-      return cleaned;
-    } else {
-      throw new Error("JSON is not an object");
-    }
-  } catch (parseErr) {
-    error(SUBSYSTEM.SCENE, "Failed to parse or validate JSON:", parseErr);
-    error(SUBSYSTEM.SCENE, "Attempted to parse:", cleaned.substring(0, 200));
-    throw new Error(`Invalid JSON from AI: ${parseErr.message}`);
-  }
-}
+// Helper: Extract and validate JSON from AI response (REMOVED - now uses centralized helper in utils.js)
 
 // Helper: Generate summary with error handling
 async function executeSceneSummaryGeneration(
 prompt ,
+prefill ,
 ctx ,
 startIdx ,
-endIdx )
+endIdx ,
+include_preset_prompts = false ,
+preset_name = null )
 {
   let summary = "";
   try {
@@ -833,14 +771,28 @@ endIdx )
     setOperationSuffix(`-${startIdx}-${endIdx}`);
 
     try {
-      const rawResponse = await summarize_text(prompt);
+      const rawResponse = await summarize_text(prompt, prefill, include_preset_prompts, preset_name);
       debug(SUBSYSTEM.SCENE, "AI response:", rawResponse);
 
-      // Extract and validate JSON immediately
-      summary = extractAndValidateJson(rawResponse);
-      if (summary !== rawResponse) {
-        debug(SUBSYSTEM.SCENE, "Cleaned summary:", summary);
+      // Extract and validate JSON using centralized helper
+      const { extractJsonFromResponse } = await import('./utils.js');
+      const parsed = extractJsonFromResponse(rawResponse, {
+        requiredFields: ['summary'],
+        context: 'scene summary generation'
+      });
+
+      // Additional validation specific to scene summaries
+      const summaryText = parsed.summary?.trim() || '';
+      if (summaryText === '' || summaryText === '...' || summaryText === 'TODO') {
+        throw new Error("AI returned empty or placeholder summary");
       }
+      if (summaryText.length < 10) {
+        throw new Error("AI returned suspiciously short summary (less than 10 chars)");
+      }
+
+      // Convert back to JSON string for storage (maintains compatibility)
+      summary = JSON.stringify(parsed);
+      debug(SUBSYSTEM.SCENE, "Validated and cleaned summary");
     } finally {
       clearOperationSuffix();
     }
@@ -979,18 +931,19 @@ signal  = null) // AbortSignal to check for cancellation
   const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
   // Prepare prompt
-  const prompt = prepareScenePrompt(sceneObjects, ctx);
+  const { prompt, prefill } = prepareScenePrompt(sceneObjects, ctx);
 
   // Generate summary with connection profile/preset switching
   const { withConnectionSettings } = await import('./connectionSettingsManager.js');
   const profile_name = get_settings('scene_summary_connection_profile');
   const preset_name = get_settings('scene_summary_completion_preset');
+  const include_preset_prompts = get_settings('scene_summary_include_preset_prompts');
 
   const summary = await withConnectionSettings(
     profile_name,
     preset_name,
     async () => {
-      return await executeSceneSummaryGeneration(prompt, ctx, startIdx, endIdx);
+      return await executeSceneSummaryGeneration(prompt, prefill, ctx, startIdx, endIdx, include_preset_prompts, preset_name);
     }
   );
 

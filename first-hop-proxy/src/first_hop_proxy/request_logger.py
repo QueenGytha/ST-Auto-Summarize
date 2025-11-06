@@ -289,6 +289,19 @@ class RequestLogger:
                     log_content.append("```")
                 log_content.append("")
 
+                # Response Data (cleaned up for readability)
+                if isinstance(response_data, dict):
+                    log_content.append("## Response Data (Cleaned)")
+                    log_content.append("")
+                    log_content.append("*For readability - actual response uses escaped newlines*")
+                    log_content.append("")
+                    log_content.append("```json")
+                    # Convert to JSON string and replace \n escape sequences with actual newlines
+                    cleaned_json = json.dumps(response_data, indent=2).replace('\\n', '\n')
+                    log_content.append(cleaned_json)
+                    log_content.append("```")
+                    log_content.append("")
+
             if self.include_headers and response_headers:
                 log_content.append("## Response Headers")
                 log_content.append("")

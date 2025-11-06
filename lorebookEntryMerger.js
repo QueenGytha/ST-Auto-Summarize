@@ -3,6 +3,7 @@
 
 // Use wrapped version from our interceptor
 import { wrappedGenerateRaw as generateRaw } from './generateRawInterceptor.js';
+import { loadPresetPrompts } from './presetPromptLoader.js';
 
 // Will be imported from index.js via barrel exports
 let log , debug , error ; // Logging functions - any type is legitimate
@@ -53,7 +54,11 @@ Existing Entry Content:
 New Information from Summary:
 {{new_content}}
 
-Output ONLY the merged content, nothing else. Do not include explanations or meta-commentary.`;
+You MUST respond with valid JSON in this format:
+{
+  "mergedContent": "the merged entry content here",
+  "canonicalName": null
+}`;
 }
 
 function getSummaryProcessingSetting(key , defaultValue  = null) {
@@ -76,43 +81,106 @@ function createMergePrompt(existingContent , newContent , entryName  = '') {
   debug('Merge prompt template first 300 chars:', template.substring(0, 300));
   debug('Entry name being passed:', entryName);
 
-  let prompt = template.
+  const prompt = template.
   replace(/\{\{existing_content\}\}/g, existingContent || '').
   replace(/\{\{current_content\}\}/g, existingContent || '') // Alternate name
   .replace(/\{\{new_content\}\}/g, newContent || '').
   replace(/\{\{new_update\}\}/g, newContent || '') // Alternate name
   .replace(/\{\{entry_name\}\}/g, entryName || ''); // Entry name for name resolution
 
-  // Add prefill if configured
-  if (prefill) {
-    prompt = `${prompt}\n${prefill}`;
-  }
-
-  return prompt;
+  return { prompt, prefill };
 }
 
-async function callAIForMerge(existingContent , newContent , entryName  = '') {
+async function callAIForMerge(existingContent , newContent , entryName  = '', connectionProfile  = '', completionPreset  = '') {
   try {
-    const prompt = createMergePrompt(existingContent, newContent, entryName);
+    const { prompt, prefill } = createMergePrompt(existingContent, newContent, entryName);
 
     debug('Calling AI for entry merge...');
     debug('Prompt:', prompt.substring(0, 200) + '...');
 
+    // Get include_preset_prompts setting
+    const include_preset_prompts = getSummaryProcessingSetting('merge_include_preset_prompts', false);
+
+    console.log('[callAIForMerge] entryName:', entryName);
+    console.log('[callAIForMerge] include_preset_prompts:', include_preset_prompts);
+    console.log('[callAIForMerge] completionPreset (param):', completionPreset);
+
+    // If preset_name is empty, use the currently active preset (like summarization.js does)
+    const { setOperationSuffix, clearOperationSuffix, withConnectionSettings, get_current_preset } = await import('./index.js');
+    const effectivePresetName = completionPreset || (include_preset_prompts ? get_current_preset() : '');
+
+    console.log('[callAIForMerge] effectivePresetName:', effectivePresetName);
+    console.log('[callAIForMerge] Condition check (include && preset):', include_preset_prompts && effectivePresetName);
+
     // Set operation context for ST_METADATA
-    const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
     if (entryName) {
       setOperationSuffix(`-${entryName}`);
     }
 
     let response;
     try {
-      // Metadata injection now handled by global generateRaw interceptor
-      // Call the AI with new object-based signature
-      response = await generateRaw({
-        prompt: prompt,
-        instructOverride: false,
-        quietToLoud: false
-      });
+      // Wrap with connection settings to switch profile/preset
+      response = await withConnectionSettings(
+        connectionProfile,
+        effectivePresetName,
+        // eslint-disable-next-line complexity
+        async () => {
+          let prompt_input;
+
+          if (include_preset_prompts && effectivePresetName) {
+            // Load preset prompts and preset settings
+            const { getPresetManager } = await import('../../../preset-manager.js');
+            const presetManager = getPresetManager('openai');
+            const preset = presetManager?.getCompletionPresetByName(effectivePresetName);
+            const presetMessages = await loadPresetPrompts(effectivePresetName);
+
+            console.log('[callAIForMerge] presetMessages loaded:', presetMessages?.length || 0, 'prompts');
+            if (presetMessages && presetMessages.length > 0) {
+              console.log('[callAIForMerge] First preset prompt role:', presetMessages[0]?.role);
+              console.log('[callAIForMerge] First preset prompt content length:', presetMessages[0]?.content?.length || 0);
+            }
+
+            // Use extension's prefill if set, otherwise use preset's prefill
+            const effectivePrefill = prefill || preset?.assistant_prefill || '';
+            console.log('[callAIForMerge] effectivePrefill source:', prefill ? 'extension' : (preset?.assistant_prefill ? 'preset' : 'empty'));
+
+            // Only use messages array if we actually got preset prompts
+            if (presetMessages && presetMessages.length > 0) {
+              console.log('[callAIForMerge] Using messages array format with preset prompts');
+
+              prompt_input = [
+                ...presetMessages,
+                { role: 'user', content: prompt }
+              ];
+
+              return await generateRaw({
+                prompt: prompt_input,
+                instructOverride: false,
+                quietToLoud: false,
+                prefill: effectivePrefill
+              });
+            } else {
+              console.warn('[callAIForMerge] include_preset_prompts enabled but no preset prompts loaded, falling back to string format');
+              // Fall back to string format
+              return await generateRaw({
+                prompt: prompt,
+                instructOverride: false,
+                quietToLoud: false,
+                prefill: prefill || ''
+              });
+            }
+          } else {
+            console.log('[callAIForMerge] Using string format (include_preset_prompts not enabled or no preset)');
+            // Current behavior - string prompt only
+            return await generateRaw({
+              prompt: prompt,
+              instructOverride: false,
+              quietToLoud: false,
+              prefill: prefill || ''
+            });
+          }
+        }
+      );
     } finally {
       clearOperationSuffix();
     }
@@ -121,49 +189,17 @@ async function callAIForMerge(existingContent , newContent , entryName  = '') {
       throw new Error('AI returned empty response');
     }
 
-    const trimmedResponse = response.trim();
+    // Parse JSON response using centralized helper
+    const { extractJsonFromResponse } = await import('./utils.js');
+    const parsed = extractJsonFromResponse(response, {
+      requiredFields: ['mergedContent'],
+      context: 'lorebook merge operation'
+    });
 
-    // Try to parse as JSON first (FORMAT 2 - with name resolution)
-    // The AI might add explanatory text before the JSON, so extract JSON if present
-    try {
-      // Try parsing the whole response first
-      const parsed = JSON.parse(trimmedResponse);
-      if (parsed.mergedContent) {
-        debug('AI merge completed with name resolution');
-        return {
-          mergedContent: parsed.mergedContent,
-          canonicalName: parsed.canonicalName || null
-        };
-      }
-      // eslint-disable-next-line no-unused-vars
-    } catch (_jsonErr) {
-      // If direct parsing failed, try to extract JSON from the response
-      const jsonMatch = trimmedResponse.match(/\{[\s\S]*"mergedContent"[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.mergedContent) {
-            debug('AI merge completed with name resolution (extracted JSON)');
-            return {
-              mergedContent: parsed.mergedContent,
-              canonicalName: parsed.canonicalName || null
-            };
-          }
-          // eslint-disable-next-line no-unused-vars
-        } catch (_extractErr) {
-          // Extraction failed, treat as plain text
-          debug('AI merge completed (plain text format - JSON extraction failed)');
-        }
-      } else {
-        // Not JSON or malformed - treat as plain text (FORMAT 1 - backward compatible)
-        debug('AI merge completed (plain text format)');
-      }
-    }
-
-    // FORMAT 1: Plain text response (backward compatible)
+    debug('AI merge completed successfully');
     return {
-      mergedContent: trimmedResponse,
-      canonicalName: null
+      mergedContent: parsed.mergedContent,
+      canonicalName: parsed.canonicalName || null
     };
 
   } catch (err) {
@@ -226,11 +262,17 @@ export async function executeMerge(lorebookName , existingEntry , newEntryData )
   try {
     debug(`Executing merge for entry: ${existingEntry.comment}`);
 
+    // Get connection settings for merge operation
+    const connectionProfile = getSummaryProcessingSetting('merge_connection_profile', '');
+    const completionPreset = getSummaryProcessingSetting('merge_completion_preset', '');
+
     // Call AI to merge content (now returns object with mergedContent and optional canonicalName)
     const mergeResult = await callAIForMerge(
       existingEntry.content || '',
       newEntryData.content || '',
-      existingEntry.comment || ''
+      existingEntry.comment || '',
+      connectionProfile,
+      completionPreset
     );
 
     // Prepare updates

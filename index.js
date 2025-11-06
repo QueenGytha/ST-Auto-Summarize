@@ -16,7 +16,6 @@ import { animation_duration, scrollChatToBottom, extension_prompt_roles, extensi
 
 // Import SillyTavern selectors (direct import since this is the barrel file)
 import { selectorsSillyTavern } from './selectorsSillyTavern.js';
-import { selectorsExtension } from './selectorsExtension.js';
 
 // Track if queue is blocking (set by operationQueue.js)
 let isQueueBlocking = false;
@@ -170,6 +169,7 @@ export * from './buttonBindings.js';
 export * from './connectionProfiles.js';
 export * from './connectionSettingsManager.js';
 export * from './promptUtils.js';
+export * from './presetPromptLoader.js';
 export * from './summarization.js';
 export * from './summaryValidation.js';
 export * from './presetManager.js';
@@ -244,17 +244,146 @@ export function installEnterKeyInterceptor() {
 // World Info Activation Tracking
 // ============================================================================
 // Tracks which lorebook entries are active per message
+// Maintains sticky/constant entry state across generations
 
 const activeLorebooksPerMessage = new Map();
+const activeStickyEntries = new Map(); // uid -> {entry, stickyCount, messageIndex}
+let currentGenerationType = null;
+let targetMessageIndex = null;
 
+/**
+ * Get active lorebook entries for a specific message
+ * First checks message.extra for persisted data, falls back to in-memory Map
+ */
 export function getActiveLorebooksForMessage(messageIndex) {
+  const ctx = getContext();
+  const message = ctx?.chat?.[messageIndex];
+
+  // Try to load from persisted data first
+  if (message?.extra?.activeLorebookEntries) {
+    return message.extra.activeLorebookEntries;
+  }
+
+  // Fall back to in-memory storage
   return activeLorebooksPerMessage.get(messageIndex) || null;
 }
 
+/**
+ * Clear all lorebook tracking data
+ */
 export function clearActiveLorebooksData() {
   activeLorebooksPerMessage.clear();
+  activeStickyEntries.clear();
+  currentGenerationType = null;
+  targetMessageIndex = null;
 }
 
+/**
+ * Determine entry strategy type
+ */
+function getEntryStrategy(entry) {
+  if (entry.constant === true) return 'constant';
+  if (entry.vectorized === true) return 'vectorized';
+  return 'normal';
+}
+
+/**
+ * Decrement sticky counters for all active sticky entries
+ * Removes entries that have expired (count reaches 0)
+ */
+function decrementStickyCounters() {
+  const toRemove = [];
+
+  for (const [uid, stickyData] of activeStickyEntries.entries()) {
+    if (stickyData.stickyCount > 0) {
+      stickyData.stickyCount--;
+      console.log(`[worldinfoactive] Decremented sticky count for ${stickyData.entry.comment}: ${stickyData.stickyCount} remaining`);
+
+      if (stickyData.stickyCount === 0) {
+        toRemove.push(uid);
+      }
+    }
+  }
+
+  // Remove expired entries
+  for (const uid of toRemove) {
+    const removed = activeStickyEntries.get(uid);
+    console.log(`[worldinfoactive] Removed expired sticky entry: ${removed.entry.comment}`);
+    activeStickyEntries.delete(uid);
+  }
+}
+
+/**
+ * Get currently active sticky/constant entries
+ * Returns entries that are still active from previous activations
+ */
+function getStillActiveEntries() {
+  const stillActive = [];
+
+  for (const [, stickyData] of activeStickyEntries.entries()) {
+    // Include if: constant OR sticky count > 0
+    if (stickyData.entry.constant || stickyData.stickyCount > 0) {
+      stillActive.push(stickyData.entry);
+    }
+  }
+
+  return stillActive;
+}
+
+/**
+ * Update sticky entry tracking with newly activated entries
+ */
+function updateStickyTracking(entries, messageIndex) {
+  for (const entry of entries) {
+    const strategy = getEntryStrategy(entry);
+
+    // Track sticky entries
+    if (entry.sticky && entry.sticky > 0) {
+      activeStickyEntries.set(entry.uid, {
+        entry: entry,
+        stickyCount: entry.sticky,
+        messageIndex: messageIndex
+      });
+      console.log(`[worldinfoactive] Tracking sticky entry: ${entry.comment} (${entry.sticky} rounds)`);
+    }
+
+    // Track constant entries (always active)
+    if (strategy === 'constant') {
+      activeStickyEntries.set(entry.uid, {
+        entry: entry,
+        stickyCount: Infinity, // Never expires
+        messageIndex: messageIndex
+      });
+      console.log(`[worldinfoactive] Tracking constant entry: ${entry.comment}`);
+    }
+  }
+}
+
+/**
+ * Persist lorebook entries to message.extra for durability across refresh
+ */
+function persistToMessage(messageIndex, entries) {
+  const ctx = getContext();
+  const message = ctx?.chat?.[messageIndex];
+
+  if (!message) {
+    console.warn(`[worldinfoactive] Cannot persist: message ${messageIndex} not found`);
+    return;
+  }
+
+  if (!message.extra) {
+    message.extra = {};
+  }
+
+  message.extra.activeLorebookEntries = entries;
+  console.log(`[worldinfoactive] Persisted ${entries.length} entries to message ${messageIndex}.extra`);
+}
+
+/**
+ * Install world info activation tracker
+ * Listens to GENERATION_STARTED and WORLD_INFO_ACTIVATED events
+ * Tracks sticky/constant entries across multiple generations
+ */
 export function installWorldInfoActivationLogger() {
   console.log('[worldinfoactive] Installing activation tracker');
 
@@ -262,43 +391,108 @@ export function installWorldInfoActivationLogger() {
   const eventSource = ctx?.eventSource;
   const event_types = ctx?.event_types;
 
-  if (!eventSource || !event_types?.WORLD_INFO_ACTIVATED) {
-    console.warn('[worldinfoactive] Unable to install tracker (missing eventSource or WORLD_INFO_ACTIVATED event type)');
+  if (!eventSource || !event_types?.WORLD_INFO_ACTIVATED || !event_types?.GENERATION_STARTED) {
+    console.warn('[worldinfoactive] Unable to install tracker (missing eventSource or event types)');
     return;
   }
 
+  // Track generation type and target message index
+  eventSource.on(event_types.GENERATION_STARTED, (genType) => {
+    currentGenerationType = genType;
+    const chatLength = ctx.chat?.length || 0;
+
+    // Calculate target message index based on generation type
+    if (genType === 'swipe') {
+      // Swipe replaces the last message
+      targetMessageIndex = Math.max(0, chatLength - 1);
+    } else if (genType === 'continue') {
+      // Continue appends to the last message
+      targetMessageIndex = Math.max(0, chatLength - 1);
+    } else {
+      // Normal generation or impersonate creates new message
+      targetMessageIndex = chatLength;
+    }
+
+    console.log(`[worldinfoactive] Generation started: type=${genType}, targetIndex=${targetMessageIndex}`);
+  });
+
+  // Track world info activations
   eventSource.on(event_types.WORLD_INFO_ACTIVATED, (entries) => {
     const chatLength = ctx.chat?.length || 0;
-    const lastMessageIndex = chatLength > 0 ? chatLength - 1 : 0;
 
-    console.log(`[worldinfoactive] Event fired - Chat length: ${chatLength}, Last message index: ${lastMessageIndex}`);
-    console.log(`[worldinfoactive] ${entries.length} active entries:`, entries);
+    // Use calculated target index, fallback to last message
+    const messageIndex = targetMessageIndex !== null ? targetMessageIndex : Math.max(0, chatLength - 1);
 
-    // Store minimal entry data for this message
-    const minimalEntries = entries.map(entry => ({
-      comment: entry.comment || '(unnamed)',
-      uid: entry.uid,
-      world: entry.world,
-      key: entry.key || [],
-      position: entry.position
-    }));
+    console.log(`[worldinfoactive] Event fired - Chat length: ${chatLength}, Target message: ${messageIndex}, Type: ${currentGenerationType}`);
+    console.log(`[worldinfoactive] ${entries.length} newly activated entries`);
 
-    activeLorebooksPerMessage.set(lastMessageIndex, minimalEntries);
-    console.log(`[worldinfoactive] Stored ${minimalEntries.length} entries for message ${lastMessageIndex}`);
+    // First, decrement sticky counters for ongoing entries
+    decrementStickyCounters();
 
-    // Log each entry with key details
-    entries.forEach((entry, i) => {
-      console.log(`[worldinfoactive] Entry ${i + 1}:`, {
-        name: entry.comment || '(unnamed)',
+    // Get still-active sticky/constant entries
+    const stillActive = getStillActiveEntries();
+    console.log(`[worldinfoactive] ${stillActive.length} still-active sticky/constant entries`);
+
+    // Capture rich entry data with all metadata
+    const enhancedEntries = entries.map(entry => {
+      const strategy = getEntryStrategy(entry);
+      return {
+        comment: entry.comment || '(unnamed)',
         uid: entry.uid,
         world: entry.world,
+        key: entry.key || [],
         position: entry.position,
-        keys: entry.key || [],
-        keysSecondary: entry.keysecondary || [],
         depth: entry.depth,
-        role: entry.role
-      });
+        order: entry.order,
+        role: entry.role,
+        constant: entry.constant || false,
+        vectorized: entry.vectorized || false,
+        sticky: entry.sticky || 0,
+        strategy: strategy,
+        content: entry.content || ''
+      };
     });
+
+    // Update sticky tracking with newly activated entries
+    updateStickyTracking(enhancedEntries, messageIndex);
+
+    // Merge newly activated + still-active entries
+    // Deduplicate by uid (newly activated entries take precedence)
+    const entryMap = new Map();
+
+    // Add still-active entries first
+    for (const entry of stillActive) {
+      entryMap.set(entry.uid, entry);
+    }
+
+    // Add/replace with newly activated entries
+    for (const entry of enhancedEntries) {
+      entryMap.set(entry.uid, entry);
+    }
+
+    const mergedEntries = Array.from(entryMap.values());
+    console.log(`[worldinfoactive] Total active entries for message ${messageIndex}: ${mergedEntries.length} (${enhancedEntries.length} new + ${stillActive.length} still-active)`);
+
+    // Store in memory
+    activeLorebooksPerMessage.set(messageIndex, mergedEntries);
+
+    // Persist to message.extra
+    persistToMessage(messageIndex, mergedEntries);
+
+    // Log entry details for debugging
+    mergedEntries.forEach((entry, i) => {
+      const stickyInfo = entry.sticky > 0 ? ` (sticky: ${entry.sticky})` : '';
+      const constantInfo = entry.constant ? ' (constant)' : '';
+      console.log(`[worldinfoactive] Entry ${i + 1}: ${entry.strategy} - ${entry.comment}${stickyInfo}${constantInfo}`);
+    });
+  });
+
+  // Clear sticky state on chat change
+  eventSource.on(event_types.CHAT_CHANGED, () => {
+    console.log('[worldinfoactive] Chat changed, clearing sticky entry state');
+    activeStickyEntries.clear();
+    currentGenerationType = null;
+    targetMessageIndex = null;
   });
 
   console.log('[worldinfoactive] ✓ Tracker installed successfully');

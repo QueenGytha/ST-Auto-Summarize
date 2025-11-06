@@ -15,6 +15,9 @@ import {
 './index.js';
 
 export async function queueValidateSummary(summary , type , options  = {}) {
+  // Capture settings at enqueue time for tooltip display
+  const includePresetPrompts = get_settings('scene_summary_error_detection_include_preset_prompts') ?? false;
+
   return await enqueueOperation(
     OperationType.VALIDATE_SUMMARY,
     { summary, type },
@@ -23,6 +26,8 @@ export async function queueValidateSummary(summary , type , options  = {}) {
       dependencies: options.dependencies ?? [],
       metadata: {
         validation_type: type,
+        hasPrefill: false, // Validation operations don't use prefills
+        includePresetPrompts,
         ...options.metadata
       }
     }
@@ -49,6 +54,9 @@ export async function queueDetectSceneBreaks(indexes , options  = {}) {
 }
 
 export async function queueGenerateSceneSummary(index , options  = {}) {
+  // Capture settings at enqueue time for tooltip display
+  const includePresetPrompts = get_settings('scene_summary_include_preset_prompts') ?? false;
+
   return await enqueueOperation(
     OperationType.GENERATE_SCENE_SUMMARY,
     { index },
@@ -57,6 +65,8 @@ export async function queueGenerateSceneSummary(index , options  = {}) {
       dependencies: options.dependencies ?? [],
       metadata: {
         scene_index: index,
+        hasPrefill: false, // Scene summary operations don't use prefills
+        includePresetPrompts,
         ...options.metadata
       }
     }
@@ -64,6 +74,9 @@ export async function queueGenerateSceneSummary(index , options  = {}) {
 }
 
 export async function queueGenerateRunningSummary(options  = {}) {
+  // Capture settings at enqueue time for tooltip display
+  const includePresetPrompts = get_settings('running_scene_summary_include_preset_prompts') ?? false;
+
   return await enqueueOperation(
     OperationType.GENERATE_RUNNING_SUMMARY,
     {},
@@ -71,6 +84,8 @@ export async function queueGenerateRunningSummary(options  = {}) {
       priority: options.priority ?? 15, // High priority - important narrative synthesis
       dependencies: options.dependencies ?? [],
       metadata: {
+        hasPrefill: false, // Running summary operations don't use prefills
+        includePresetPrompts,
         ...options.metadata
       }
     }
@@ -168,6 +183,10 @@ messageIndex ,
 summaryHash ,
 options )
 {
+  // Capture settings at enqueue time for tooltip display
+  const prefill = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '';
+  const includePresetPrompts = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_include_preset_prompts') ?? false;
+
   return await enqueueOperation(
     OperationType.LOREBOOK_ENTRY_LOOKUP,
     { entryId: context.entryId, entryData: context.normalizedEntry, registryListing: context.registryListing, typeList: context.typeList },
@@ -179,6 +198,8 @@ options )
         entry_comment: context.normalizedEntry.comment,
         message_index: messageIndex,
         summary_hash: summaryHash || null,
+        hasPrefill: Boolean(prefill && prefill.trim().length > 0),
+        includePresetPrompts,
         ...options.metadata
       }
     }
