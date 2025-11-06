@@ -414,6 +414,9 @@ function renderOperation(operation) {
     retryText = `<span style="${retryStyle}">(retry ${operation.retries})</span>`;
   }
 
+  // Build tooltip with operation settings
+  const tooltip = buildOperationTooltip(operation);
+
   // Remove button - available for ALL states
   // IN_PROGRESS/RETRYING: Attempts to abort the operation before removal
   // PENDING/FAILED/CANCELLED: Immediate removal
@@ -427,7 +430,7 @@ function renderOperation(operation) {
             <div class="queue-operation-header">
                 <div class="queue-operation-icon">${icon}</div>
                 <div class="queue-operation-content">
-                    <div class="queue-operation-type">${typeName} ${retryText}</div>
+                    <div class="queue-operation-type" title="${tooltip}">${typeName} ${retryText}</div>
                     ${paramsText ? `<div class="queue-operation-params">${paramsText}</div>` : ''}
                 </div>
                 ${removeButton}
@@ -454,6 +457,53 @@ function formatOperationType(type) {
   };
 
   return names[type] || type;
+}
+
+function buildOperationTooltip(operation) {
+  const lines = [];
+
+  // Connection settings
+  const profile = operation.executionSettings?.connectionProfile || 'Default';
+  const preset = operation.executionSettings?.completionPreset || 'Default';
+
+  lines.push(`Profile: ${profile}`);
+  lines.push(`Preset: ${preset}`);
+
+  // Add operation-specific metadata
+  const metadata = operation.metadata || {};
+
+  // Message range for message-based operations
+  if (operation.params?.index !== undefined) {
+    lines.push(`Message: #${operation.params.index}`);
+  } else if (operation.params?.indexes && operation.params.indexes.length > 0) {
+    const start = operation.params.indexes[0];
+    const end = operation.params.indexes[operation.params.indexes.length - 1];
+    lines.push(`Messages: #${start}-${end}`);
+  }
+
+  // Scene information
+  if (metadata.scene_index !== undefined) {
+    lines.push(`Scene: #${metadata.scene_index}`);
+  }
+
+  // Lorebook entry information
+  if (metadata.entry_type) {
+    lines.push(`Type: ${metadata.entry_type}`);
+  }
+  if (metadata.entry_comment) {
+    lines.push(`Entity: ${metadata.entry_comment}`);
+  }
+  if (metadata.entry_name && !metadata.entry_comment) {
+    lines.push(`Entry: ${metadata.entry_name}`);
+  }
+
+  // Context settings for operations that use them
+  if (metadata.context_limit !== undefined) {
+    const contextType = metadata.context_type || 'percent';
+    lines.push(`Context: ${metadata.context_limit} ${contextType === 'percent' ? '%' : 'msgs'}`);
+  }
+
+  return lines.join('\n');
 }
 
 function formatLorebookOperationParams(params, metadata) {

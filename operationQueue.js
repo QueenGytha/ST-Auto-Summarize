@@ -286,10 +286,16 @@ async function loadQueue() {
           op.status = OperationStatus.PENDING;
           cleanedCount++;
         }
+
+        // Reset RETRYING operations (backoff timer lost during reload)
+        if (op.status === OperationStatus.RETRYING) {
+          op.status = OperationStatus.PENDING;
+          cleanedCount++;
+        }
       }
 
       if (cleanedCount > 0) {
-        debug(SUBSYSTEM.QUEUE, `Cleaned ${cleanedCount} stale in_progress operations`);
+        debug(SUBSYSTEM.QUEUE, `Cleaned ${cleanedCount} stale in_progress/retrying operations`);
         await saveQueue();
       }
     }
@@ -854,6 +860,14 @@ async function executeOperation(operation ) {
     // This allows users to abort retrying operations by removing them from the queue UI
     if (!getOperation(operation.id)) {
       debug(SUBSYSTEM.QUEUE, `Operation ${operation.id} was removed during backoff, aborting retry`);
+      return null;
+    }
+
+    // Check if queue was paused during backoff
+    // If paused, reset operation to PENDING so it can be picked up when queue resumes
+    if (currentQueue.paused) {
+      debug(SUBSYSTEM.QUEUE, `Queue paused during backoff for ${operation.id}, aborting retry`);
+      await updateOperationStatus(operation.id, OperationStatus.PENDING);
       return null;
     }
 
