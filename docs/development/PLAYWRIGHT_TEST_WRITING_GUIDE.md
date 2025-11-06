@@ -645,18 +645,33 @@ test('toggle memory', async ({ page }) => {
 
 ### When Selectors Break
 
+**CRITICAL: Always Check Files First**
+
+Before using Playwright MCP or any discovery tool:
+1. ✅ **Check selector files first** - Does selector already exist?
+2. ✅ **Search codebase** - Is it used elsewhere?
+3. ✅ **Only use MCP if:** Selector exists but is broken, or genuinely new
+
+**AI often gets lazy and uses MCP without checking files first, wasting 10-20k tokens.**
+
 #### Extension Selector Breaks
 
 1. **Test fails:** `selector '[data-testid="memory-toggle"]' not found`
-2. **Cause:** HTML refactored, data-testid changed
-3. **Fix:** Update `selectorsExtension.js` with new data-testid
+2. **AI FIRST checks `selectorsExtension.js`:**
+   - ✅ Selector exists: `memory.toggleButton = '[data-testid="memory-toggle"]'`
+   - ✅ Knows: Just need to update the value
+3. **AI updates `selectorsExtension.js`** with new data-testid
 4. **Token cost:** ~2k tokens
+5. **NO MCP needed** - file already had the selector
 
 #### SillyTavern Selector Breaks
 
 1. **Test fails:** `selector '#send_but' not found`
-2. **Cause:** ST updated, changed their HTML
-3. **AI workflow:**
+2. **AI FIRST checks `selectorsSillyTavern.js`:**
+   - ✅ Selector exists: `chat.sendButton = '#send_but'`
+   - ✅ Knows: Selector defined but value is wrong (ST changed HTML)
+   - ✅ Decides: NOW is appropriate time to use MCP
+3. **AI uses Playwright Inspector:**
    ```bash
    npx playwright codegen http://localhost:8000
    ```
@@ -671,6 +686,7 @@ test('toggle memory', async ({ page }) => {
    ```
 6. **AI updates version comment**
 7. **Token cost:** ~10-20k tokens
+8. **MCP APPROPRIATE** - selector existed but needed new value
 
 ### Enforcement: NO Hardcoded Selectors
 

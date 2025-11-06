@@ -14,13 +14,6 @@ import {
   SUBSYSTEM } from
 './index.js';
 
-/**
- * Queue a summary validation operation
- * @param {string} summary - Summary text to validate
- * @param {string} type - Validation type ('regular' or 'scene')
- * @param {object} options - Additional options
- * @returns {Promise<string>} Operation ID
- */
 export async function queueValidateSummary(summary , type , options  = {}) {
   return await enqueueOperation(
     OperationType.VALIDATE_SUMMARY,
@@ -36,12 +29,6 @@ export async function queueValidateSummary(summary , type , options  = {}) {
   );
 }
 
-/**
- * Queue a scene break detection operation
- * @param {number} index - Message index
- * @param {object} options - Additional options
- * @returns {Promise<string>} Operation ID
- */
 export async function queueDetectSceneBreak(index , options  = {}) {
   return await enqueueOperation(
     OperationType.DETECT_SCENE_BREAK,
@@ -57,22 +44,10 @@ export async function queueDetectSceneBreak(index , options  = {}) {
   );
 }
 
-/**
- * Queue multiple scene break detection operations
- * @param {Array<number>} indexes - Array of message indexes
- * @param {object} options - Additional options
- * @returns {Promise<Array<string>>} Array of operation IDs
- */
 export async function queueDetectSceneBreaks(indexes , options  = {}) {
   return await Promise.all(indexes.map((index) => queueDetectSceneBreak(index, options)));
 }
 
-/**
- * Queue a scene summary generation operation
- * @param {number} index - Scene break message index
- * @param {object} options - Additional options
- * @returns {Promise<string>} Operation ID
- */
 export async function queueGenerateSceneSummary(index , options  = {}) {
   return await enqueueOperation(
     OperationType.GENERATE_SCENE_SUMMARY,
@@ -88,11 +63,6 @@ export async function queueGenerateSceneSummary(index , options  = {}) {
   );
 }
 
-/**
- * Queue a running summary generation operation (bulk)
- * @param {object} options - Additional options
- * @returns {Promise<string>} Operation ID
- */
 export async function queueGenerateRunningSummary(options  = {}) {
   return await enqueueOperation(
     OperationType.GENERATE_RUNNING_SUMMARY,
@@ -107,12 +77,6 @@ export async function queueGenerateRunningSummary(options  = {}) {
   );
 }
 
-/**
- * Queue combining a scene with running summary
- * @param {number} index - Scene index to combine
- * @param {object} options - Additional options
- * @returns {Promise<string>} Operation ID
- */
 export async function queueCombineSceneWithRunning(index , options  = {}) {
   return await enqueueOperation(
     OperationType.COMBINE_SCENE_WITH_RUNNING,
@@ -128,31 +92,14 @@ export async function queueCombineSceneWithRunning(index , options  = {}) {
   );
 }
 
-/**
- * Queue is mandatory for this extension.
- * Always returns true. Fallback to direct execution happens only
- * when enqueueing fails at runtime (e.g., no lorebook attached during init).
- */
 function validateQueueStatus() {
   return true;
 }
 
-/**
- * Extracts and normalizes entry name
- * @param {any} entryData - Entry data
- * @returns {string} - Normalized entry name
- */
 function extractEntryName(entryData ) {
   return String(entryData.name || entryData.comment || 'Unknown').toLowerCase().trim();
 }
 
-/**
- * Cancels operations superseded by newer summary versions
- * @param {string} lowerName - Normalized entry name
- * @param {number} messageIndex - Message index
- * @param {string|null} summaryHash - Current summary hash
- * @returns {Promise<void>}
- */
 async function cancelSupersededOperations(lowerName , messageIndex , summaryHash ) {
   if (!summaryHash) return;
 
@@ -173,13 +120,6 @@ async function cancelSupersededOperations(lowerName , messageIndex , summaryHash
   } catch {/* best effort dedup */}
 }
 
-/**
- * Checks for active duplicate operations
- * @param {string} lowerName - Normalized entry name
- * @param {number} messageIndex - Message index
- * @param {string|null} summaryHash - Current summary hash
- * @returns {boolean} - Whether duplicate exists
- */
 function hasActiveDuplicate(lowerName , messageIndex , summaryHash ) {
   try {
     const ops = getAllOperations();
@@ -204,11 +144,6 @@ function hasActiveDuplicate(lowerName , messageIndex , summaryHash ) {
   }
 }
 
-/**
- * Prepares lorebook entry lookup context
- * @param {any} entryData - Entry data
- * @returns {Promise<any>} - Context object
- */
 async function prepareLorebookEntryLookupContext(entryData ) {
   const { generateEntryId, createPendingEntry } = await import('./lorebookPendingOps.js');
   const { ensureRegistryState, buildRegistryListing, normalizeEntryData } = await import('./summaryToLorebookProcessor.js');
@@ -226,15 +161,6 @@ async function prepareLorebookEntryLookupContext(entryData ) {
   return { entryId, normalizedEntry, registryListing, typeList };
 }
 
-/**
- * Enqueues lorebook entry lookup operation
- * @param {any} context - Lorebook entry lookup context
- * @param {string} entryName - Entry name
- * @param {number} messageIndex - Message index
- * @param {string|null} summaryHash - Summary hash
- * @param {any} options - Queueing options
- * @returns {Promise<string|null>} - Operation ID
- */
 async function enqueueLorebookEntryLookupOperation(
 context ,
 entryName ,
@@ -259,14 +185,6 @@ options )
   );
 }
 
-/**
- * Queue processing of a single lorebook entry using multi-operation pipeline
- * @param {Object} entryData - Lorebook entry data {name, type, keywords, content}
- * @param {number} messageIndex - Message index this entry came from
- * @param {?string} summaryHash - Hash of the summary version that produced this entry
- * @param {Object} options - Queue options
- * @returns {Promise<string|null>} Operation ID or null if queue disabled
- */
 export async function queueProcessLorebookEntry(entryData , messageIndex , summaryHash , options  = {}) {
   const entryName = entryData.name || entryData.comment || 'Unknown';
   debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Called for entry: ${entryName}, messageIndex: ${messageIndex}, summaryHash: ${summaryHash || 'none'}`);

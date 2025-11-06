@@ -1,5 +1,5 @@
 
-import { get_settings, getContext, get_data, SCENE_BREAK_KEY, SCENE_BREAK_VISIBLE_KEY } from './index.js';
+import { get_settings, getContext, get_data, SCENE_BREAK_KEY, SCENE_BREAK_VISIBLE_KEY, selectorsExtension, selectorsSillyTavern } from './index.js';
 
 export function renderSceneNavigatorBar() {
   const width = get_settings('scene_summary_navigator_width') ?? 240;
@@ -7,20 +7,20 @@ export function renderSceneNavigatorBar() {
 
   // In headless/test environments the jQuery stub may be minimal. If required
   // DOM methods (like after) are missing, gracefully skip rendering.
-  const $maybeHost = typeof $ === 'function' ? $('#sheld') : null;
+  const $maybeHost = typeof $ === 'function' ? $(selectorsSillyTavern.chat.holder) : null;
   if (!$maybeHost || typeof $maybeHost.after !== 'function') {
     return; // skip in environments without full jQuery/DOM
   }
 
-  let $bar = $('#scene-summary-navigator-bar');
-  // If not present or in the wrong place, move it after #sheld (main chat container)
+  let $bar = $(selectorsExtension.sceneNav.bar);
+  // If not present or in the wrong place, move it after chat holder (main chat container)
   if (!$bar.length) {
-    $bar = $('<div id="scene-summary-navigator-bar"></div>');
-    $('#sheld').after($bar); // or $('#chat').before($bar); depending on your layout
+    $bar = $('<div id="scene-summary-navigator-bar" data-testid="scene-navigator-bar"></div>');
+    $(selectorsSillyTavern.chat.holder).after($bar);
   } else if (!$bar.parent().is('body')) {
     // Move to correct place if needed
     $bar.detach();
-    $('#sheld').after($bar);
+    $(selectorsSillyTavern.chat.holder).after($bar);
   }
 
   // Apply width setting
@@ -35,8 +35,8 @@ export function renderSceneNavigatorBar() {
   if (!ctx?.chat) return;
 
   // Save running summary controls and queue UI before clearing
-  const $runningControls = $bar.find('.running-summary-controls').detach();
-  const $queueUI = $bar.find('#shared_operation_queue_ui').detach();
+  const $runningControls = $bar.find(selectorsExtension.runningUI.controls).detach();
+  const $queueUI = $bar.find(selectorsExtension.queue.panel).detach();
   $bar.empty();
 
   // Restore queue UI first (should be at top)
@@ -59,7 +59,7 @@ export function renderSceneNavigatorBar() {
       $link.on('click', () => {
         const $target = $(`div[mesid="${idx}"]`);
         if ($target.length) {
-          const $chat = $('#chat');
+          const $chat = $(selectorsSillyTavern.chat.container);
           const chatOffset = $chat.offset()?.top ?? 0;
           const targetOffset = $target.offset()?.top ?? 0;
           const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - 20;
@@ -80,7 +80,7 @@ export function renderSceneNavigatorBar() {
 
   // Always show the navbar and queue toggle button
   $bar.show();
-  $('#queue_navbar_toggle').show();
+  $(selectorsExtension.queue.navbarToggle).show();
 
   // Update running summary controls after rendering
   if (window.updateRunningSceneSummaryNavbar) {

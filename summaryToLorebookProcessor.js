@@ -27,9 +27,6 @@ const REGISTRY_PREFIX  = '_registry_';
 
 // Removed getSetting helper; no settings access needed here
 
-/**
- * Initialize the summary-to-lorebook processor module
- */
 export function initSummaryToLorebookProcessor(utils , lorebookManagerModule , entryMergerModule , connectionSettingsManager , settingsManager ) {
   // All parameters are any type - objects with various properties - legitimate use of any
   log = utils.log;
@@ -76,9 +73,6 @@ export function initSummaryToLorebookProcessor(utils , lorebookManagerModule , e
   }
 }
 
-/**
- * Get summary processing settings (with defaults)
- */
 function getSummaryProcessingSetting(key , defaultValue  = null) {
   try {
     // ALL summary processing settings are per-profile
@@ -90,9 +84,6 @@ function getSummaryProcessingSetting(key , defaultValue  = null) {
   }
 }
 
-/**
- * Set summary processing setting
- */
 function setSummaryProcessingSetting(key , value ) {
   try {
     // ALL summary processing settings are per-profile
@@ -103,10 +94,6 @@ function setSummaryProcessingSetting(key , value ) {
   }
 }
 
-/**
- * Get processed summaries tracker from chat metadata
- * @returns {Set<string>} Set of processed summary IDs
- */
 function getProcessedSummaries() {
   if (!chat_metadata.auto_lorebooks_processed_summaries) {
     chat_metadata.auto_lorebooks_processed_summaries = [];
@@ -114,10 +101,6 @@ function getProcessedSummaries() {
   return new Set(chat_metadata.auto_lorebooks_processed_summaries);
 }
 
-/**
- * Mark a summary as processed
- * @param {string} summaryId - Unique ID for the summary
- */
 function markSummaryProcessed(summaryId ) {
   const processed = getProcessedSummaries();
   processed.add(summaryId);
@@ -126,20 +109,10 @@ function markSummaryProcessed(summaryId ) {
   debug(`Marked summary as processed: ${summaryId}`);
 }
 
-/**
- * Check if a summary has been processed
- * @param {string} summaryId - Unique ID for the summary
- * @returns {boolean}
- */
 function isSummaryProcessed(summaryId ) {
   return getProcessedSummaries().has(summaryId);
 }
 
-/**
- * Generate unique ID for a summary object
- * @param {Object} summary - Summary object
- * @returns {string} Unique ID
- */
 function generateSummaryId(summary ) {
   // Use timestamp + content hash as ID
   const timestamp = summary.timestamp || Date.now();
@@ -148,11 +121,6 @@ function generateSummaryId(summary ) {
   return `summary_${timestamp}_${hash}`;
 }
 
-/**
- * Simple hash function for content
- * @param {string} str - String to hash
- * @returns {string} Hash value
- */
 function simpleHash(str ) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -163,11 +131,6 @@ function simpleHash(str ) {
   return Math.abs(hash).toString(36);
 }
 
-/**
- * Extract lorebook portion from a summary JSON object
- * @param {Object} summary - Summary object
- * @returns {Object|null} Lorebook data or null
- */
 function extractLorebookData(summary ) {
   try {
     // Check if summary has a lorebooks array (plural - standard format)
@@ -203,17 +166,6 @@ function extractLorebookData(summary ) {
   }
 }
 
-/**
- * Find existing entry by comment/name
- * @param {Array} entries - Array of existing lorebook entries
- * @param {Object} newEntry - New entry to find
- * @returns {Object|null} Matching entry or null
- */
-/**
- * Build entry name with type prefix
- * @param {Object} entry - Entry data
- * @returns {string} Entry name with type prefix
- */
 function buildEntryName(entry ) {
   const baseName = entry.comment || entry.name || '';
   const type = entry.type;
@@ -236,11 +188,6 @@ function buildEntryName(entry ) {
   return baseName;
 }
 
-/**
- * Normalize entry data structure
- * @param {Object} entry - Entry data
- * @returns {Object} Normalized entry
- */
 export function normalizeEntryData(entry ) {
   const comment = buildEntryName(entry);
   let content = entry.content || entry.description || '';
@@ -518,11 +465,6 @@ function parseJsonSafe(raw ) {
   }
 }
 
-/**
- * Logs warning and throws error when lorebook entry lookup prompt is missing
- * @param {any} normalizedEntry - The entry being processed
- * @throws {Error} - Always throws to fail the operation
- */
 function handleMissingLorebookEntryLookupPrompt(normalizedEntry ) {
   const entryName = normalizedEntry?.comment || normalizedEntry?.name || 'Unknown';
   error(`CRITICAL: Lorebook Entry Lookup prompt is missing! Cannot process entry: ${entryName}`);
@@ -581,12 +523,6 @@ settings )
   };
 }
 
-/**
- * Checks if lorebook entry deduplicate stage should run
- * @param {any[]} candidateEntries - Candidate entries
- * @param {any} settings - Processing settings
- * @returns {boolean} - Whether to run lorebook entry deduplicate
- */
 function shouldRunLorebookEntryDeduplicate(candidateEntries , settings ) {
   if (!candidateEntries || candidateEntries.length === 0) {
     return false;
@@ -601,15 +537,6 @@ function shouldRunLorebookEntryDeduplicate(candidateEntries , settings ) {
   return true;
 }
 
-/**
- * Builds lorebook entry deduplicate prompt
- * @param {any} normalizedEntry - Entry to resolve
- * @param {string} lorebookEntryLookupSynopsis - Lorebook Entry Lookup synopsis
- * @param {any[]} candidateEntries - Candidate entries
- * @param {string} singleType - Entity type
- * @param {any} settings - Settings
- * @returns {string} - Built prompt
- */
 function buildLorebookEntryDeduplicatePrompt(
 normalizedEntry ,
 lorebookEntryLookupSynopsis ,
@@ -626,13 +553,6 @@ settings )
   replace(/\{\{candidate_entries\}\}/g, JSON.stringify(candidateEntries, null, 2));
 }
 
-/**
- * Executes lorebook entry deduplicate LLM call
- * @param {string} prompt - LorebookEntryDeduplicate prompt
- * @param {any} settings - Settings
- * @param {string} entryComment - Entry comment for context
- * @returns {Promise<string>} - LLM response
- */
 async function executeLorebookEntryDeduplicateLLMCall(prompt , settings , entryComment ) {
   return await runModelWithSettings(
     prompt,
@@ -644,12 +564,6 @@ async function executeLorebookEntryDeduplicateLLMCall(prompt , settings , entryC
   );
 }
 
-/**
- * Parses lorebook entry deduplicate response
- * @param {string} response - LLM response
- * @param {string} fallbackSynopsis - Fallback synopsis
- * @returns {{resolvedId: string|null, synopsis: string}} - Parsed result
- */
 function parseLorebookEntryDeduplicateResponse(response , fallbackSynopsis ) {
   const parsed = parseJsonSafe(response);
   if (!parsed || typeof parsed !== 'object') {
@@ -694,15 +608,6 @@ settings )
   return parseLorebookEntryDeduplicateResponse(response, lorebookEntryLookupSynopsis);
 }
 
-/**
- * Resolves and applies the entity type for a normalized entry
- * Handles type fallbacks and applies type-specific flags
- * @param {any} normalizedEntry - The entry to resolve type for
- * @param {any} lorebookEntryLookup - Lorebook Entry Lookup result containing suggested type
- * @param {Map<string, any>} entityTypeMap - Map of entity type definitions
- * @param {Array<any>} entityTypeDefs - Array of all entity type definitions
- * @returns {{targetType: string, typeDef: any}} - Resolved type name and definition
- */
 function resolveEntryType(
 normalizedEntry ,
 lorebookEntryLookup ,
@@ -732,16 +637,6 @@ entityTypeDefs )
   return { targetType, typeDef };
 }
 
-/**
- * Builds candidate entry list and optionally runs lorebook entry deduplicate stage
- * @param {any} lorebookEntryLookup - Lorebook Entry Lookup result with candidate IDs
- * @param {any} registryState - Current registry state
- * @param {Map<number, any>} existingEntriesMap - Map of existing entries by UID
- * @param {any} normalizedEntry - The entry being processed
- * @param {string} targetType - The resolved type
- * @param {any} settings - Processing settings
- * @returns {Promise<{candidateIds: string[], lorebookEntryDeduplicate: any}>} - Candidates and deduplication result
- */
 async function buildCandidateListAndResolve(
 lorebookEntryLookup ,
 registryState ,
@@ -770,14 +665,6 @@ settings )
   return { candidateIds, lorebookEntryDeduplicate };
 }
 
-/**
- * Applies fallback logic and validates the resolved entity ID
- * @param {any} lorebookEntryDeduplicate - Initial deduplication result
- * @param {string[]} candidateIds - List of candidate IDs
- * @param {any} lorebookEntryLookup - Lorebook Entry Lookup result
- * @param {any} registryState - Current registry state
- * @returns {{resolvedId: string|null, previousType: string|null, finalSynopsis: string}} - Final identity resolution
- */
 function applyFallbackAndValidateIdentity(
 lorebookEntryDeduplicate ,
 candidateIds ,
@@ -805,16 +692,6 @@ registryState )
   return { resolvedId, previousType, finalSynopsis };
 }
 
-/**
- * Executes the merge workflow for an existing entity
- * @param {string} resolvedId - The resolved entity ID
- * @param {any} normalizedEntry - The entry to merge
- * @param {string} targetType - The target entity type
- * @param {string|null} previousType - Previous type if changed
- * @param {string} finalSynopsis - Final synopsis text
- * @param {any} ctx - Processing context
- * @returns {Promise<boolean>} - True if merge succeeded, false otherwise
- */
 async function executeMergeWorkflow(
 resolvedId ,
 normalizedEntry ,
@@ -877,14 +754,6 @@ ctx )
   }
 }
 
-/**
- * Executes the create workflow for a new entity
- * @param {any} normalizedEntry - The entry to create
- * @param {string} targetType - The target entity type
- * @param {string} finalSynopsis - Final synopsis text
- * @param {any} ctx - Processing context
- * @returns {Promise<void>}
- */
 async function executeCreateWorkflow(
 normalizedEntry ,
 targetType ,
@@ -967,12 +836,6 @@ async function handleLorebookEntry(normalizedEntry , ctx ) {
   await executeCreateWorkflow(normalizedEntry, targetType, finalSynopsis, ctx);
 }
 
-/**
- * Initializes summary processing configuration
- * @param {any} summary - Summary to process
- * @param {any} options - Processing options
- * @returns {{useQueue: boolean, skipDuplicates: boolean, summaryId: string, entityTypeDefs: any[], entityTypeMap: Map}} - Config
- */
 function initializeSummaryProcessing(summary , options ) {
   const { useQueue = true, skipDuplicates = true } = options;
   const entityTypeDefs = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
@@ -982,12 +845,6 @@ function initializeSummaryProcessing(summary , options ) {
   return { useQueue, skipDuplicates, summaryId, entityTypeDefs, entityTypeMap };
 }
 
-/**
- * Checks if summary should be skipped due to duplicate
- * @param {string} summaryId - Summary ID
- * @param {boolean} skipDuplicates - Whether to skip duplicates
- * @returns {boolean} - True if should skip
- */
 function shouldSkipDuplicate(summaryId , skipDuplicates ) {
   if (skipDuplicates && isSummaryProcessed(summaryId)) {
     debug(`Summary already processed: ${summaryId}`);
@@ -996,11 +853,6 @@ function shouldSkipDuplicate(summaryId , skipDuplicates ) {
   return false;
 }
 
-/**
- * Extracts and validates entities from summary
- * @param {any} summary - Summary to extract from
- * @returns {{valid: boolean, entries?: any[], error?: string}} - Extraction result
- */
 function extractAndValidateEntities(summary ) {
   const lorebookData = extractLorebookData(summary);
   if (!lorebookData || !lorebookData.entries) {
@@ -1010,11 +862,6 @@ function extractAndValidateEntities(summary ) {
   return { valid: true, entries: lorebookData.entries };
 }
 
-/**
- * Loads summary processing context
- * @param {any} config - Summary configuration
- * @returns {Promise<any>} - Context or error
- */
 async function loadSummaryContext(config ) {
   const lorebookName = getAttachedLorebook();
   if (!lorebookName) {
@@ -1082,13 +929,6 @@ async function loadSummaryContext(config ) {
   };
 }
 
-/**
- * Processes batch of entries
- * @param {any[]} entries - Entries to process
- * @param {any} context - Processing context
- * @param {any} config - Summary configuration
- * @returns {Promise<void>}
- */
 async function processBatchEntries(entries , context , config ) {
   for (const newEntryData of entries) {
     const normalizedEntry = normalizeEntryData(newEntryData);
@@ -1102,23 +942,11 @@ async function processBatchEntries(entries , context , config ) {
   }
 }
 
-/**
- * Finalizes summary processing
- * @param {any} context - Processing context
- * @param {string} summaryId - Summary ID
- * @returns {Promise<void>}
- */
 async function finalizeSummaryProcessing(context , summaryId ) {
   await finalizeRegistryUpdates(context);
   markSummaryProcessed(summaryId);
 }
 
-/**
- * Builds summary result with user notifications
- * @param {any} results - Processing results
- * @param {number} totalEntries - Total entries processed
- * @returns {any} - Result object
- */
 function buildSummaryResult(results , totalEntries ) {
   const message = `Processed ${totalEntries} entries: ${results.created.length} created, ${results.merged.length} merged, ${results.failed.length} failed`;
   log(message);
@@ -1132,12 +960,6 @@ function buildSummaryResult(results , totalEntries ) {
   return { success: true, results, message };
 }
 
-/**
- * Process a single summary object - extracts lorebook entries and creates/merges them
- * @param {Object} summary - Summary object to process
- * @param {Object} options - Processing options
- * @returns {Promise<Object>} Processing result
- */
 export async function processSummaryToLorebook(summary , options  = {}) {
   try {
     // Initialize configuration
@@ -1196,11 +1018,6 @@ export async function processSummaryToLorebook(summary , options  = {}) {
   }
 }
 
-/**
- * Finalizes registry updates after processing
- * @param {any} context - Processing context
- * @returns {Promise<void>}
- */
 async function finalizeRegistryUpdates(context ) {
   const { lorebookName, typesToUpdate, registryState } = context;
 
@@ -1218,18 +1035,6 @@ async function finalizeRegistryUpdates(context ) {
   }
 }
 
-/**
- * Process a single lorebook entry - creates or merges with existing entry
- * @param {Object} entryData - Single lorebook entry data
- * @param {Object} options - Processing options
- * @returns {Promise<Object>} Processing result
- */
-/**
- * Process multiple summaries - extracts lorebook entries from each and creates/merges them
- * @param {Array<Object>} summaries - Array of summary objects
- * @param {Object} options - Processing options
- * @returns {Promise<Object>} Combined results
- */
 export async function processSummariesToLorebook(summaries , options  = {}) {
   try {
     if (!Array.isArray(summaries) || summaries.length === 0) {
@@ -1285,9 +1090,6 @@ export async function processSummariesToLorebook(summaries , options  = {}) {
   }
 }
 
-/**
- * Clear processed summaries tracker
- */
 export function clearProcessedSummaries() {
   chat_metadata.auto_lorebooks_processed_summaries = [];
   saveMetadata();

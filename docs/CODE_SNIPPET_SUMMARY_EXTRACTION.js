@@ -1,12 +1,6 @@
 // CODE SNIPPET: Add to combinedSummary.js
 // Extracts ONLY summary fields when combining, excludes lorebook entries
 
-/**
- * Extract only the summary (timeline) field from each memory
- * Excludes lorebook entries to reduce token usage when combining
- * @param {Array} memories - Array of memory objects (may be JSON strings or objects)
- * @returns {Array<string>} Array of summary strings
- */
 function extract_summary_fields(memories) {
     debug(`[Extract Summaries] Processing ${memories.length} memories`);
 
@@ -80,11 +74,6 @@ function extract_summary_fields(memories) {
 }
 
 
-/**
- * Format extracted summaries for combining prompt
- * @param {Array<string>} summaries - Array of summary strings
- * @returns {string} Formatted text for prompt
- */
 function format_summaries_for_combining(summaries) {
     if (summaries.length === 0) {
         return '(No summaries to combine)';
@@ -97,12 +86,6 @@ function format_summaries_for_combining(summaries) {
 }
 
 
-/**
- * OPTIONAL: Merge lorebook entries programmatically
- * Deduplicates by name+type, keeps most recent content
- * @param {Array} memories - Array of memory objects
- * @returns {Array} Consolidated lorebook entries
- */
 function merge_lorebook_entries(memories) {
     debug('[Merge Lorebooks] Starting programmatic merge');
 
@@ -166,10 +149,6 @@ function merge_lorebook_entries(memories) {
 }
 
 
-/**
- * UPDATED: Generate combined summary using ONLY summary fields
- * This is the main function you'll modify in combinedSummary.js
- */
 async function generate_combined_summary() {
     debug('[Combined Summary] Starting generation');
 

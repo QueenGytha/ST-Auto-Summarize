@@ -13,7 +13,8 @@ import {
   summary_reasoning_class,
   edit_memory,
   refresh_memory,
-  css_edit_textarea } from
+  css_edit_textarea,
+  selectorsSillyTavern } from
 './index.js';
 
 // UI functions
@@ -65,7 +66,7 @@ function update_message_visuals(i , style  = true, text  = null) {
   const memory = get_memory(message);
 
   // get the div holding the main message text
-  const message_element = div_element.find('div.mes_text');
+  const message_element = div_element.find(`div${selectorsSillyTavern.message.text}`);
   let style_class = style ? get_summary_style_class(message) : "";
 
   // if no text is provided, use the memory text
@@ -90,7 +91,7 @@ function update_message_visuals(i , style  = true, text  = null) {
 function update_all_message_visuals() {
   // update the message visuals of each visible message, styled according to the inclusion criteria
   const chat = getContext().chat;
-  const first_displayed_message_id = Number($('#chat').children('.mes').first().attr('mesid'));
+  const first_displayed_message_id = Number($(selectorsSillyTavern.chat.container).children(selectorsSillyTavern.message.block).first().attr('mesid'));
   for (let i = chat.length - 1; i >= first_displayed_message_id; i--) {
     update_message_visuals(i, true);
   }

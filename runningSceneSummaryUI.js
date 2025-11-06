@@ -11,7 +11,9 @@ import {
   get_data,
   refresh_memory,
   renderSceneNavigatorBar,
-  clear_all_summaries_for_chat } from
+  clear_all_summaries_for_chat,
+  selectorsExtension,
+  selectorsSillyTavern } from
 './index.js';
 import {
   get_running_summary_versions,
@@ -21,17 +23,13 @@ import {
 './runningSceneSummary.js';
 import { manualSceneBreakDetection } from './autoSceneBreakDetection.js';
 
-/**
- * Create and initialize running scene summary controls in scene navigator bar
- * Integrated into #scene-summary-navigator-bar (bottom-left)
- */
 function createRunningSceneSummaryNavbar() {
   // Remove existing controls if present
-  $('#scene-summary-navigator-bar .running-summary-controls').remove();
+  $(`${selectorsExtension.sceneNav.bar} .running-summary-controls`).remove();
 
   // Create controls HTML (version selector and edit button only, no regenerate)
   const html = `
-    <div class="running-summary-controls" style="
+    <div class="running-summary-controls" data-testid="running-summary-controls" style="
         display: flex;
         flex-direction: column;
         gap: 5px;
@@ -42,10 +40,10 @@ function createRunningSceneSummaryNavbar() {
         border-top: 1px solid var(--SmartThemeBorderColor);
         width: 100%;
     ">
-        <select id="running_summary_version_selector" class="text_pole" style="width: 90%; font-size: 11px;">
+        <select id="running_summary_version_selector" data-testid="running-version-selector" class="text_pole" style="width: 90%; font-size: 11px;">
             <option value="-1">No Running Summary</option>
         </select>
-        <button id="running_summary_edit_btn" class="menu_button" title="Edit running summary" style="
+        <button id="running_summary_edit_btn" data-testid="running-edit-btn" class="menu_button" title="Edit running summary" style="
             width: 90%;
             display: flex;
             align-items: center;
@@ -57,7 +55,7 @@ function createRunningSceneSummaryNavbar() {
             <i class="fa-solid fa-edit"></i>
             <span>Edit Summary</span>
         </button>
-        <button id="running_summary_scan_breaks_btn" class="menu_button" title="Scan all messages for scene breaks (manual run)" style="
+        <button id="running_summary_scan_breaks_btn" data-testid="running-scan-breaks-btn" class="menu_button" title="Scan all messages for scene breaks (manual run)" style="
             width: 90%;
             display: flex;
             align-items: center;
@@ -69,7 +67,7 @@ function createRunningSceneSummaryNavbar() {
             <i class="fa-solid fa-magnifying-glass"></i>
             <span>Scan Scene Breaks</span>
         </button>
-        <button id="running_summary_clear_all_btn" class="menu_button" title="Clear all summaries and reset scene tracking" style="
+        <button id="running_summary_clear_all_btn" data-testid="running-clear-all-btn" class="menu_button" title="Clear all summaries and reset scene tracking" style="
             width: 90%;
             display: flex;
             align-items: center;
@@ -85,11 +83,11 @@ function createRunningSceneSummaryNavbar() {
     `;
 
   // Ensure scene navigator bar exists
-  let $navbar = $('#scene-summary-navigator-bar');
+  let $navbar = $(selectorsExtension.sceneNav.bar);
   if (!$navbar.length) {
     // Create the bar if it doesn't exist
     $navbar = $('<div id="scene-summary-navigator-bar"></div>');
-    $('#sheld').after($navbar);
+    $(selectorsSillyTavern.chat.holder).after($navbar);
 
     log(SUBSYSTEM.RUNNING, 'Created scene navigator bar for running summary controls');
   }
@@ -105,7 +103,7 @@ function createRunningSceneSummaryNavbar() {
   }
 
   // Bind event handlers
-  $('#running_summary_version_selector').on('change', async function () {
+  $(selectorsExtension.runningUI.versionSelector).on('change', async function () {
     const versionNum = parseInt($(this).val());
     if (versionNum === -1) {
       set_current_running_summary_version(0);
@@ -116,7 +114,7 @@ function createRunningSceneSummaryNavbar() {
   });
 
   // Manual scene break scan handler
-  $('#running_summary_scan_breaks_btn').on('click', async () => {
+  $(selectorsExtension.runningUI.scanBreaksBtn).on('click', async () => {
     try {
       await manualSceneBreakDetection();
     } catch (err) {
@@ -125,7 +123,7 @@ function createRunningSceneSummaryNavbar() {
     }
   });
 
-  $('#running_summary_edit_btn').on('click', async function () {
+  $(selectorsExtension.runningUI.editBtn).on('click', async function () {
     const current = get_running_summary(get_current_running_summary_version());
     if (!current) {
       toast('No running summary to edit', 'warning');
@@ -137,7 +135,7 @@ function createRunningSceneSummaryNavbar() {
             <div>
                 <h3>Edit Running Scene Summary</h3>
                 <p>Editing will create a new version.</p>
-                <textarea id="running_summary_edit_textarea" rows="20" style="width: 100%; height: 400px;">${current.content || ""}</textarea>
+                <textarea id="running_summary_edit_textarea" data-testid="running-edit-textarea" rows="20" style="width: 100%; height: 400px;">${current.content || ""}</textarea>
             </div>
         `;
 
@@ -150,7 +148,7 @@ function createRunningSceneSummaryNavbar() {
       });
 
       if (result) {
-        const edited = $('#running_summary_edit_textarea').val();
+        const edited = $(selectorsExtension.runningUI.editTextarea).val();
         if (edited !== null && edited !== current.content) {
           // Editing creates a new version with same scene indexes
           const versions = get_running_summary_versions();
@@ -175,20 +173,17 @@ function createRunningSceneSummaryNavbar() {
   });
 
   // Clear all summaries handler
-  $('#running_summary_clear_all_btn').on('click', async () => {
+  $(selectorsExtension.runningUI.clearAllBtn).on('click', async () => {
     await handleClearAllSummariesClick();
   });
 
   debug(SUBSYSTEM.RUNNING, 'Running scene summary controls added to navigator bar');
 }
 
-/**
- * Update the navbar visibility and content
- */
 function updateRunningSceneSummaryNavbar() {
   const show = get_settings('running_scene_summary_show_navbar');
 
-  const $controls = $('#scene-summary-navigator-bar .running-summary-controls');
+  const $controls = $(`${selectorsExtension.sceneNav.bar} .running-summary-controls`);
 
   if (!$controls.length) {
     if (show) {
@@ -207,7 +202,7 @@ function updateRunningSceneSummaryNavbar() {
 
   // ALWAYS respect user's navbar visibility preference from localStorage
   // Even when showing controls, the navbar itself might need to be hidden
-  const $navbar = $('#scene-summary-navigator-bar');
+  const $navbar = $(selectorsExtension.sceneNav.bar);
   const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
   if (navbarVisible === 'false') {
     $navbar.hide();
@@ -216,11 +211,8 @@ function updateRunningSceneSummaryNavbar() {
   debug(SUBSYSTEM.UI, `Running scene summary controls ${show ? 'shown' : 'hidden'}`);
 }
 
-/**
- * Update the version selector dropdown
- */
 function updateVersionSelector() {
-  const $selector = $('#running_summary_version_selector');
+  const $selector = $(selectorsExtension.runningUI.versionSelector);
   if (!$selector.length) return;
 
   const ctx = getContext();
@@ -234,7 +226,7 @@ function updateVersionSelector() {
   if (versions.length === 0) {
     $selector.append('<option value="-1">No versions</option>');
     $selector.val('-1');
-    $('#running_summary_edit_btn').prop('disabled', true);
+    $(selectorsExtension.runningUI.editBtn).prop('disabled', true);
     return;
   }
 
@@ -250,7 +242,7 @@ function updateVersionSelector() {
   if (validVersions.length === 0) {
     $selector.append('<option value="-1">No valid versions</option>');
     $selector.val('-1');
-    $('#running_summary_edit_btn').prop('disabled', true);
+    $(selectorsExtension.runningUI.editBtn).prop('disabled', true);
     debug(SUBSYSTEM.RUNNING, 'All versions reference deleted messages');
     return;
   }
@@ -267,23 +259,15 @@ function updateVersionSelector() {
 
   // Set current selection
   $selector.val(currentVersion);
-  $('#running_summary_edit_btn').prop('disabled', false);
+  $(selectorsExtension.runningUI.editBtn).prop('disabled', false);
 
   debug(SUBSYSTEM.RUNNING, `Version selector updated: ${validVersions.length} valid versions (${versions.length - validVersions.length} filtered), current: ${currentVersion}`);
 }
 
-/**
- * Simple pluralization helper for toast messaging
- * @param {number} count
- * @param {string} noun
- */
 function formatCount(count, noun) {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }
 
-/**
- * Handle the "Clear All Summaries" button flow
- */
 async function handleClearAllSummariesClick() {
   const ctx = getContext();
 

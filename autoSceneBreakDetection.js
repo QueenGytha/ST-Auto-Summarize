@@ -16,7 +16,8 @@ import {
   get_connection_profile_api,
   getPresetManager,
   set_connection_profile,
-  get_current_connection_profile } from
+  get_current_connection_profile,
+  selectorsExtension } from
 './index.js';
 
 const DEFAULT_RECENT_MESSAGE_COUNT = 3;
@@ -25,15 +26,6 @@ const DEFAULT_RECENT_MESSAGE_COUNT = 3;
 // This allows us to cancel delays when user aborts
 let currentScanCancellationToken = null;
 
-/**
- * Check if a message should be scanned for scene break detection
- * @param {object} message - The message object
- * @param {number} messageIndex - Index in chat array
- * @param {number} latestIndex - Index of latest message
- * @param {number} offset - Message offset setting (how many to skip from end)
- * @param {string} checkWhich - Which messages to check ("user", "character", "both")
- * @returns {boolean} - True if message should be checked
- */
 function shouldCheckMessage(
 message ,
 messageIndex ,
@@ -279,13 +271,6 @@ function buildDetectionPrompt(ctx, promptTemplate, message, contextMessages, pre
   return `${prompt}\n${prefill}`;
 }
 
-/**
- * Detect if a message should be a scene break using LLM
- * @param {object} message - The message object being checked
- * @param {number} messageIndex - Index in chat array
- * @param {object|null} previousMessage - The previous message for context (null if first message)
- * @returns {Promise<{isSceneBreak: boolean, rationale: string}>} - Object with detection result and rationale
- */
 async function detectSceneBreak(
 message ,
 messageIndex ,
@@ -379,21 +364,10 @@ previousMessage  = null)
   }
 }
 
-/**
- * Delay for a specified number of milliseconds
- * @param {number} ms - Milliseconds to delay
- */
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Interruptible delay that checks for abort signals periodically
- * Splits the delay into 1-second chunks and checks if we should abort between chunks
- * @param {number} ms - Milliseconds to delay
- * @param {object} cancellationToken - Object with a `cancelled` property that can be set to true to abort
- * @returns {Promise<void>}
- */
 async function interruptibleDelay(ms, cancellationToken = null) {
   const chunkSize = 1000; // Check every 1 second
   const chunks = Math.ceil(ms / chunkSize);
@@ -414,17 +388,6 @@ async function interruptibleDelay(ms, cancellationToken = null) {
   }
 }
 
-/**
- * Detect scene break with exponential backoff retry on ALL errors
- * Since SillyTavern strips error details, we can't detect rate limits specifically.
- * Instead, we retry with backoff on ANY error (rate limit or otherwise).
- * @param {object} message - The message object
- * @param {number} messageIndex - Index in chat array
- * @param {object|null} previousMessage - The previous message for context
- * @param {number} maxRetries - Maximum number of retries (default 5)
- * @param {object|null} cancellationToken - Token to check for cancellation during delays
- * @returns {Promise<{isSceneBreak: boolean, rationale: string}>} - Object with detection result and rationale
- */
 async function detectSceneBreakWithRetry(message, messageIndex, previousMessage = null, maxRetries = 5, cancellationToken = null) {
   let retryCount = 0;
   let lastError = null;
@@ -590,7 +553,7 @@ async function handleDetectedSceneBreak(i, rationale, cancellationToken) {
 
   // Set loading state in summary box
   const $msgDiv = get_message_div(i);
-  const $summaryBox = $msgDiv.find('.scene-summary-box');
+  const $summaryBox = $msgDiv.find(selectorsExtension.sceneBreak.summaryBox);
   if ($summaryBox.length) {
     $summaryBox.val("Generating scene summary...");
   }
@@ -739,11 +702,6 @@ async function executeScanLoop(chat, start, end, latestIndex, offset, checkWhich
   return { checkedCount, detectedCount, totalToCheck };
 }
 
-/**
- * Process messages for auto scene break detection
- * @param {number} startIndex - Start index (optional, defaults to 0)
- * @param {number} endIndex - End index (optional, defaults to latest)
- */
 export async function processAutoSceneBreakDetection(
 startIndex  = null,
 endIndex  = null)
@@ -783,9 +741,6 @@ endIndex  = null)
   return;
 }
 
-/**
- * Manually trigger scene break detection on all eligible messages
- */
 export async function manualSceneBreakDetection() {
   debug('Manual scene break detection triggered');
   toast('Scanning messages for scene breaks...', 'info');
@@ -794,10 +749,6 @@ export async function manualSceneBreakDetection() {
   await processAutoSceneBreakDetection();
 }
 
-/**
- * Process only new messages (called on MESSAGE_SENT, MESSAGE_RECEIVED events)
- * @param {number} messageIndex - Index of the new message
- */
 export async function processNewMessageForSceneBreak(messageIndex ) {
   const enabled = get_settings('auto_scene_break_on_new_message');
   if (!enabled) {
@@ -909,9 +860,6 @@ export async function processNewMessageForSceneBreak(messageIndex ) {
   }
 }
 
-/**
- * Process messages on chat load
- */
 export async function processSceneBreakOnChatLoad() {
   const enabled = get_settings('auto_scene_break_on_load');
   if (!enabled) {
@@ -925,11 +873,6 @@ export async function processSceneBreakOnChatLoad() {
   await processAutoSceneBreakDetection();
 }
 
-/**
- * Used when a scene break is hidden to allow re-detection
- * @param {number} startIndex - Index of the hidden scene break
- * @param {number} endIndex - Index of the next visible scene break (or end of chat)
- */
 export function clearCheckedFlagsInRange(
 startIndex ,
 endIndex )
@@ -959,12 +902,6 @@ endIndex )
   return clearedCount;
 }
 
-/**
- * Sets auto_scene_break_checked flag for messages in a range
- * @param {number} startIndex - Start index (inclusive)
- * @param {number} endIndex - End index (inclusive)
- * @returns {number} - Number of messages marked
- */
 export function setCheckedFlagsInRange(
 startIndex ,
 endIndex )
@@ -994,8 +931,6 @@ endIndex )
   return markedCount;
 }
 
-/**
- */
 export async function clearAllCheckedFlags() {
   const ctx = getContext();
   const chat = ctx.chat;

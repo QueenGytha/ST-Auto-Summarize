@@ -21,10 +21,6 @@ let log , debug , error , toast , generateLorebookName , getUniqueLorebookName ;
 const REGISTRY_PREFIX  = '_registry_';
 const REGISTRY_TAG  = 'auto_lorebooks_registry';
 
-/**
- * Initialize the lorebook manager with imported utilities
- * This is called from index.js after all exports are set up
- */
 export function initLorebookManager(utils ) {
   // utils is any type - object with various utility functions - legitimate use of any
   log = utils.log;
@@ -154,10 +150,6 @@ items )
   }
 }
 
-/**
- * Get current context information (character name, chat ID, group info)
- * @returns {Object} Context object with characterName, chatId, isGroupChat, groupName
- */
 export function getCurrentContext() {
   try {
     let characterName = null;
@@ -209,18 +201,10 @@ export function getCurrentContext() {
   }
 }
 
-/**
- * Check if auto-lorebooks is enabled for current chat
- * @returns {boolean} True if enabled (always true)
- */
 export function isAutoLorebooksEnabled() {
   return true;
 }
 
-/**
- * Get the lorebook currently attached to this chat
- * @returns {string|null} Lorebook name or null
- */
 export function getAttachedLorebook() {
   try {
     return chat_metadata?.[METADATA_KEY] || null;
@@ -230,11 +214,6 @@ export function getAttachedLorebook() {
   }
 }
 
-/**
- * Check if a lorebook exists in SillyTavern
- * @param {string} lorebookName - Name of lorebook to check
- * @returns {boolean} True if exists
- */
 export function lorebookExists(lorebookName ) {
   try {
     if (!lorebookName) return false;
@@ -245,12 +224,6 @@ export function lorebookExists(lorebookName ) {
   }
 }
 
-/**
- * Handle case where attached lorebook was manually deleted
- * Clears the stale reference and optionally recreates the lorebook
- * @param {string} missingLorebookName - Name of the missing lorebook
- * @returns {Promise<string|null>} New lorebook name or null
- */
 export async function handleMissingLorebook(missingLorebookName ) {
   try {
     log(`Detected missing lorebook: "${missingLorebookName}"`);
@@ -297,11 +270,6 @@ export async function handleMissingLorebook(missingLorebookName ) {
   }
 }
 
-/**
- * Attach a lorebook to the current chat
- * @param {string} lorebookName - Name of lorebook to attach
- * @returns {boolean} Success
- */
 export function attachLorebook(lorebookName ) {
   try {
     if (!lorebookName) {
@@ -336,10 +304,6 @@ export function attachLorebook(lorebookName ) {
   }
 }
 
-/**
- * Create a new lorebook for the current chat
- * @returns {Promise<string|null>} Created lorebook name or null on failure
- */
 export async function createChatLorebook() {
   try {
     // Get current context
@@ -388,10 +352,6 @@ export async function createChatLorebook() {
   }
 }
 
-/**
- * Ensure the current chat has a lorebook (create if needed)
- * @returns {Promise<boolean>} Success
- */
 export async function ensureChatLorebook() {
   try {
     // Check if enabled
@@ -425,12 +385,6 @@ export async function ensureChatLorebook() {
   }
 }
 
-/**
- * Delete the lorebook associated with a specific chat
- * NOTE: This is called when a chat is deleted
- * @param {string} lorebookName - Name of lorebook to delete
- * @returns {Promise<boolean>} Success
- */
 export async function deleteChatLorebook(lorebookName ) {
   try {
     if (!lorebookName) {
@@ -463,10 +417,6 @@ export async function deleteChatLorebook(lorebookName ) {
   }
 }
 
-/**
- * Get lorebook metadata for current chat
- * @returns {Object|null} Metadata object or null
- */
 export function getLorebookMetadata() {
   try {
     return chat_metadata?.auto_lorebooks || null;
@@ -476,10 +426,6 @@ export function getLorebookMetadata() {
   }
 }
 
-/**
- * Initialize lorebook for current chat (called on chat load/change)
- * @returns {Promise<void>}
- */
 export async function initializeChatLorebook() {
   try {
     debug("Initializing chat lorebook");
@@ -501,12 +447,6 @@ export async function initializeChatLorebook() {
   }
 }
 
-/**
- * Add a new entry to a lorebook
- * @param {string} lorebookName - Name of the lorebook
- * @param {Object} entryData - Entry data (keys, content, etc.)
- * @returns {Promise<Object|null>} Created entry object or null on failure
- */
 export async function addLorebookEntry(lorebookName , entryData  = {}) {
   try {
     if (!lorebookName) {
@@ -578,12 +518,6 @@ export async function addLorebookEntry(lorebookName , entryData  = {}) {
   }
 }
 
-/**
- * Validates modification parameters
- * @param {string} lorebookName - Lorebook name
- * @param {string} uid - Entry UID
- * @returns {boolean} Whether parameters are valid
- */
 function validateModifyParams(lorebookName , uid ) {
   if (!lorebookName) {
     error("Cannot modify entry: lorebook name is empty");
@@ -603,12 +537,6 @@ function validateModifyParams(lorebookName , uid ) {
   return true;
 }
 
-/**
- * Loads lorebook and verifies entry exists
- * @param {string} lorebookName - Lorebook name
- * @param {string} uid - Entry UID
- * @returns {Promise<Object|null>} Lorebook data and entry, or null if not found
- */
 async function loadLorebookAndEntry(lorebookName , uid ) {
   const data = await loadWorldInfo(lorebookName);
   if (!data) {
@@ -624,11 +552,6 @@ async function loadLorebookAndEntry(lorebookName , uid ) {
   return { data, entry: data.entries[uid] };
 }
 
-/**
- * Applies update fields to entry
- * @param {Object} entry - Entry to update
- * @param {Object} updates - Update fields
- */
 function applyEntryUpdates(entry , updates ) {
   if (updates.keys && Array.isArray(updates.keys)) {
     entry.key = updates.keys;
@@ -659,13 +582,6 @@ function applyEntryUpdates(entry , updates ) {
   }
 }
 
-/**
- * Modify an existing lorebook entry
- * @param {string} lorebookName - Name of the lorebook
- * @param {number} uid - UID of the entry to modify
- * @param {Object} updates - Object containing fields to update
- * @returns {Promise<boolean>} Success
- */
 export async function modifyLorebookEntry(lorebookName , uid , updates  = {}) {
   try {
     if (!validateModifyParams(lorebookName, uid)) {
@@ -700,13 +616,6 @@ export async function modifyLorebookEntry(lorebookName , uid , updates  = {}) {
   }
 }
 
-/**
- * Delete an entry from a lorebook
- * @param {string} lorebookName - Name of the lorebook
- * @param {number} uid - UID of the entry to delete
- * @param {boolean} silent - Skip confirmation dialog
- * @returns {Promise<boolean>} Success
- */
 export async function deleteLorebookEntry(lorebookName , uid , silent  = true) {
   try {
     if (!lorebookName) {
@@ -759,11 +668,6 @@ export async function deleteLorebookEntry(lorebookName , uid , silent  = true) {
   }
 }
 
-/**
- * Get all entries from a lorebook
- * @param {string} lorebookName - Name of the lorebook
- * @returns {Promise<Array|null>} Array of entries or null on failure
- */
 export async function getLorebookEntries(lorebookName ) {
   try {
     if (!lorebookName) {
@@ -800,11 +704,6 @@ export async function getLorebookEntries(lorebookName ) {
   }
 }
 
-/**
- * Reorder all entries in a lorebook alphabetically by comment field
- * @param {string} lorebookName - Name of the lorebook
- * @returns {Promise<boolean>} Success
- */
 export async function reorderLorebookEntriesAlphabetically(lorebookName ) {
   try {
     // Check if auto-reorder is enabled

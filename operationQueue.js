@@ -64,10 +64,6 @@ let queueVersion  = 0; // Incremented on clear to invalidate in-flight operation
 let isChatBlocked  = false; // Tracks whether chat is currently blocked by queue
 const activeOperationControllers  = new Map(); // Tracks active operations for abortion: opId -> { reject }
 
-/**
- * Set chat blocking state for the queue
- * @param {boolean} blocked - Whether to block chat
- */
 function setQueueChatBlocking(blocked ) {
   if (isChatBlocked === blocked) {
     // Already in desired state, skip
@@ -81,9 +77,6 @@ function setQueueChatBlocking(blocked ) {
   notifyUIUpdate();
 }
 
-/**
- * Initialize the operation queue system
- */
 export async function initOperationQueue() {
   if (isInitialized) {
     debug(SUBSYSTEM.QUEUE, 'Operation queue already initialized');
@@ -121,9 +114,6 @@ export async function initOperationQueue() {
   log(SUBSYSTEM.QUEUE, '✓ Operation queue system initialized successfully');
 }
 
-/**
- * Reload queue from lorebook (called on chat change)
- */
 export async function reloadQueue() {
   if (!isInitialized) {
     debug(SUBSYSTEM.QUEUE, 'Queue not initialized yet, skipping reload');
@@ -160,17 +150,10 @@ export async function reloadQueue() {
   notifyUIUpdate();
 }
 
-/**
- * Get attached lorebook name
- */
 function getAttachedLorebook() {
   return chat_metadata?.[METADATA_KEY];
 }
 
-/**
- * Get or create the __operation_queue lorebook entry
- * Returns the entry object or null if lorebook not available
- */
 async function getQueueEntry() {
   const lorebookName = getAttachedLorebook();
   if (!lorebookName) {
@@ -249,9 +232,6 @@ async function getQueueEntry() {
   return queueEntry;
 }
 
-/**
- * Load queue from storage (always uses lorebook)
- */
 async function loadQueue() {
   try {
     log(SUBSYSTEM.QUEUE, 'Loading queue from lorebook...');
@@ -326,10 +306,6 @@ async function loadQueue() {
   }
 }
 
-/**
- * Save queue to storage (always uses lorebook)
- * @param {boolean} force - If true, skip reload and force save current in-memory state
- */
 async function saveQueue(force = false) {
   try {
     // Save to lorebook entry
@@ -399,20 +375,10 @@ async function saveQueue(force = false) {
   }
 }
 
-/**
- * Generate unique operation ID
- */
 function generateOperationId() {
   return `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-/**
- * Add operation to queue
- * @param {string} type - Operation type from OperationType
- * @param {object} params - Operation parameters
- * @param {object} options - Optional settings (priority, dependencies, etc.)
- * @returns {string} Operation ID
- */
 export async function enqueueOperation(type , params , options  = {}) {
   // params is any as defined in Operation type - legitimate use of any
   if (!isInitialized) {
@@ -471,31 +437,14 @@ export async function enqueueOperation(type , params , options  = {}) {
   return operation.id;
 }
 
-/**
- * Get operation by ID
- */
 export function getOperation(operationId ) {
   return currentQueue.queue.find((op) => op.id === operationId);
 }
 
-/**
- * Get abort signal from operation
- * Helper function to reduce boilerplate in operation handlers
- * @param {Object} operation - The operation object
- * @returns {AbortSignal|null} The abort signal or null
- */
 export function getAbortSignal(operation ) {
   return operation?.abortController?.signal ?? null;
 }
 
-/**
- * Check if operation was aborted and throw if so
- * Helper function for consistent abort handling in operation handlers
- * @param {AbortSignal|null} signal - The abort signal to check
- * @param {string} operationType - The operation type (for logging)
- * @param {string} context - Optional context about when the check occurred
- * @throws {Error} If the operation was aborted
- */
 export function throwIfAborted(signal , operationType , context  = '') {
   if (signal?.aborted) {
     const msg = context
@@ -506,61 +455,35 @@ export function throwIfAborted(signal , operationType , context  = '') {
   }
 }
 
-/**
- * Get all operations
- */
 export function getAllOperations() {
   return [...currentQueue.queue];
 }
 
-/**
- * Get pending operations
- */
 export function getPendingOperations() {
   return currentQueue.queue.filter((op) => op.status === OperationStatus.PENDING);
 }
 
-/**
- * Get in-progress operations
- */
 export function getInProgressOperations() {
   return currentQueue.queue.filter((op) => op.status === OperationStatus.IN_PROGRESS);
 }
 
-/**
- * Check if queue is actively processing operations
- * Used by send message interceptor to block sends during queue operations
- */
 export function isQueueActive() {
   if (!currentQueue) return false;
   return currentQueue.queue.length > 0 || queueProcessor !== null;
 }
 
-/**
- * Get the current chat blocking state
- * @returns {boolean} - Whether chat is currently blocked by queue
- */
 export function isChatBlockedByQueue() {
   return isChatBlocked;
 }
 
-/**
- * Get completed operations
- */
 export function getCompletedOperations() {
   return currentQueue.queue.filter((op) => op.status === OperationStatus.COMPLETED);
 }
 
-/**
- * Get failed operations
- */
 export function getFailedOperations() {
   return currentQueue.queue.filter((op) => op.status === OperationStatus.FAILED);
 }
 
-/**
- * Update operation status
- */
 export async function updateOperationStatus(operationId , status , errorMsg  = null) {
   const operation = getOperation(operationId);
   if (!operation) {
@@ -587,9 +510,6 @@ export async function updateOperationStatus(operationId , status , errorMsg  = n
   debug(SUBSYSTEM.QUEUE, `Operation ${operationId} status: ${status}`);
 }
 
-/**
- * Remove operation from queue
- */
 export async function removeOperation(operationId ) {
   const index = currentQueue.queue.findIndex((op) => op.id === operationId);
   if (index === -1) {
@@ -641,9 +561,6 @@ export async function removeOperation(operationId ) {
   return true;
 }
 
-/**
- * Clear completed operations from queue
- */
 export async function clearCompletedOperations() {
   const before = currentQueue.queue.length;
   currentQueue.queue = currentQueue.queue.filter((op) =>
@@ -665,10 +582,6 @@ export async function clearCompletedOperations() {
   return removed;
 }
 
-/**
- * Clear all operations from queue
- * Stops queue processor and clears all operations regardless of type or status
- */
 export async function clearAllOperations() {
   const count = currentQueue.queue.length;
 
@@ -740,9 +653,6 @@ export async function clearAllOperations() {
   return count;
 }
 
-/**
- * Pause queue processing
- */
 export async function pauseQueue() {
   currentQueue.paused = true;
   await saveQueue();
@@ -750,9 +660,6 @@ export async function pauseQueue() {
   toast('Operation queue paused', 'info');
 }
 
-/**
- * Resume queue processing
- */
 export async function resumeQueue() {
   currentQueue.paused = false;
   await saveQueue();
@@ -764,17 +671,10 @@ export async function resumeQueue() {
   }
 }
 
-/**
- * Check if queue is paused
- */
 export function isQueuePaused() {
   return currentQueue.paused;
 }
 
-/**
- * Get next operation to process
- * Considers dependencies and priority
- */
 function getNextOperation() {
   const pending = getPendingOperations();
 
@@ -811,10 +711,6 @@ function getNextOperation() {
   return ready[0];
 }
 
-/**
- * Register operation handler
- * Handlers should be async functions that accept (operation) and return result
- */
 const operationHandlers = new Map();
 
 export function registerOperationHandler(operationType , handler ) {
@@ -823,9 +719,6 @@ export function registerOperationHandler(operationType , handler ) {
   debug(SUBSYSTEM.QUEUE, `Registered handler for ${operationType}`);
 }
 
-/**
- * Execute an operation
- */
 // eslint-disable-next-line complexity
 async function executeOperation(operation ) {
   // returns any because different operations return different result types - legitimate use of any
@@ -1011,9 +904,6 @@ async function executeOperation(operation ) {
   }
 }
 
-/**
- * Start queue processor
- */
 function startQueueProcessor() {
   if (queueProcessor) {
     debug(SUBSYSTEM.QUEUE, 'Queue processor already running');
@@ -1080,17 +970,11 @@ function startQueueProcessor() {
   })();
 }
 
-/**
- * Register UI update callback
- */
 export function registerUIUpdateCallback(callback ) {
   uiUpdateCallback = callback;
   debug(SUBSYSTEM.QUEUE, 'Registered UI update callback');
 }
 
-/**
- * Notify UI of updates
- */
 function notifyUIUpdate() {
   if (uiUpdateCallback) {
     try {
@@ -1101,9 +985,6 @@ function notifyUIUpdate() {
   }
 }
 
-/**
- * Get queue statistics
- */
 export function getQueueStats() {
   return {
     total: currentQueue.queue.length,

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-/**
+/*
  * Selector Validation Script
  *
  * Enforces the strict selector strategy to prevent hardcoded selectors in:
@@ -93,16 +93,10 @@ const ALLOWED_PATTERNS = [
   /selectors\.\w+/ // Generic variable name from selector imports
 ];
 
-/**
- * Check if a line contains an allowed pattern
- */
 function isAllowedPattern(line) {
   return ALLOWED_PATTERNS.some(pattern => pattern.test(line));
 }
 
-/**
- * Scan a file for hardcoded selectors
- */
 function scanFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf-8');
   const lines = content.split('\n');
@@ -139,11 +133,6 @@ function scanFile(filePath) {
   return violations;
 }
 
-/**
- * Find JS files to scan
- * Scans: root-level *.js files and tests/ directory
- * Excludes: selector files themselves, scripts/, node_modules, etc.
- */
 function findJsFiles() {
   const fileList = [];
 
@@ -190,9 +179,6 @@ function findJsFiles() {
   return fileList;
 }
 
-/**
- * Recursively scan a directory for JS files
- */
 function scanDirectory(dir, fileList) {
   let files;
   try {
@@ -228,9 +214,6 @@ function scanDirectory(dir, fileList) {
   });
 }
 
-/**
- * Main validation function
- */
 function validateSelectors() {
   console.log('🔍 Validating selectors...\n');
   console.log(`Root dir: ${rootDir}\n`);

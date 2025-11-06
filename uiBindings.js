@@ -13,15 +13,6 @@ import {
   save_profile } from
 './index.js';
 
-/**
- * Bind a UI element to a setting.
- * @param selector {string} jQuery Selector for the UI element
- * @param key {string} Key of the setting
- * @param type {string} Type of the setting (number, boolean)
- * @param callback {function} Callback function to run when the setting is updated
- * @param disable {boolean} Whether to disable the element when chat is disabled
- */
-
 function bind_setting(selector , key , type  = null, callback  = null, disable  = true) {
   // callback accepts any type value (number, boolean, string) - legitimate use of any
   // Bind a UI element to a setting, so if the UI element changes, the setting is updated

@@ -1,15 +1,6 @@
 
 // llmCallValidator.js - Runtime validation for LLM call counts in operations
 
-/**
- * LLM Call Validator
- *
- * This module provides runtime validation to enforce the rule:
- * "Each operation should make at most ONE LLM call"
- *
- * Enable in development mode to catch violations early.
- */
-
 // Global state
 let validationEnabled  = false;
 let currentOperationId  = null;
@@ -23,9 +14,6 @@ let debug  = console.log;
 let error  = console.error;
 let log  = console.log;
 
-/**
- * Initialize the validator
- */
 export function initLLMCallValidator(utils ) {
   if (utils) {
     debug = utils.debug || console.log;
@@ -34,32 +22,19 @@ export function initLLMCallValidator(utils ) {
   }
 }
 
-/**
- * Enable validation (call this in development mode)
- */
 export function enableLLMCallValidation() {
   validationEnabled = true;
   log('[LLM Validator] Enabled - will check for multiple LLM calls per operation');
 }
 
-/**
- * Disable validation
- */
 export function disableLLMCallValidation() {
   validationEnabled = false;
 }
 
-/**
- * Check if validation is enabled
- */
 export function isValidationEnabled() {
   return validationEnabled;
 }
 
-/**
- * Mark the start of an operation
- * Call this before executing an operation handler
- */
 export function beginOperation(operationId , operationType ) {
   if (!validationEnabled) return;
 
@@ -71,10 +46,6 @@ export function beginOperation(operationId , operationType ) {
   debug(`[LLM Validator] Begin operation: ${operationType} (${operationId})`);
 }
 
-/**
- * Record an LLM call
- * Call this whenever generateRaw or similar LLM function is invoked
- */
 export function recordLLMCall(callInfo  = {}) {
   if (!validationEnabled || !currentOperationId) return;
 
@@ -112,10 +83,6 @@ export function recordLLMCall(callInfo  = {}) {
   }
 }
 
-/**
- * Mark the end of an operation
- * Call this after operation handler completes
- */
 export function endOperation(_success  = true) {
   if (!validationEnabled || !currentOperationId) return;
 
@@ -140,23 +107,14 @@ export function endOperation(_success  = true) {
   llmCallDetails = [];
 }
 
-/**
- * Get all violations
- */
 export function getViolations() {
   return violations;
 }
 
-/**
- * Clear violations
- */
 export function clearViolations() {
   violations = [];
 }
 
-/**
- * Get violation report
- */
 export function getViolationReport() {
   if (violations.length === 0) {
     return '✅ No LLM call violations detected';
@@ -186,15 +144,6 @@ export function getViolationReport() {
   return lines.join('\n');
 }
 
-/**
- * Wrapper for generateRaw that automatically records LLM calls
- *
- * Usage in index.js:
- *   import { generateRaw } from '../../../../script.js';
- *   import { wrapGenerateRaw } from './llmCallValidator.js';
- *   const trackedGenerateRaw = wrapGenerateRaw(generateRaw);
- *   // Use trackedGenerateRaw instead of generateRaw
- */
 export function wrapGenerateRaw(generateRawFn ) {
   return async function wrappedGenerateRaw(...args ) {
     // Record the call
@@ -206,33 +155,6 @@ export function wrapGenerateRaw(generateRawFn ) {
     return await generateRawFn(...args);
   };
 }
-
-/**
- * Integration with operation queue
- *
- * Add this to operationQueue.js executeOperation():
- *
- * import { beginOperation, endOperation, isValidationEnabled } from './llmCallValidator.js';
- *
- * async function executeOperation(operation) {
- *     if (isValidationEnabled()) {
- *         beginOperation(operation.id, operation.type);
- *     }
- *
- *     try {
- *         const result = await handler(operation);
- *         if (isValidationEnabled()) {
- *             endOperation(true);
- *         }
- *         return result;
- *     } catch (err) {
- *         if (isValidationEnabled()) {
- *             endOperation(false);
- *         }
- *         throw err;
- *     }
- * }
- */
 
 export default {
   initLLMCallValidator,

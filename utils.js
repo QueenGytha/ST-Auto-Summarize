@@ -62,25 +62,6 @@ function toast(message , type  = "info") {
 }
 const toast_debounced = debounce(toast, 500);
 
-/**
- * IMPORTANT: All extension code MUST use the centralized logging functions (log, debug, error)
- * instead of raw console.log/error/debug calls. This ensures:
- * 1. ALL logs have the [AutoSummarize] prefix for easy filtering
- * 2. Debug logs are consistently available for tracing issues
- * 3. Error logs automatically show toast notifications to the user
- * 4. Consistent formatting across the entire extension
- *
- * Example usage:
- *   log(SUBSYSTEM.SCENE, "Scene created", sceneData);
- *   debug(SUBSYSTEM.MEMORY, "Memory updated", memoryState);
- *   error(SUBSYSTEM.VALIDATION, "Validation failed", err);
- *
- * DO NOT USE:
- *   console.log() - Use log() instead
- *   console.error() - Use error() instead
- *   console.debug() - Use debug() instead
- */
-
 const saveChatDebounced = debounce(() => getContext().saveChat(), debounce_timeout.relaxed);
 function count_tokens(text , padding  = 0) {
   // text is any type because ST API accepts any type - legitimate use of any

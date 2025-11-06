@@ -24,7 +24,8 @@ import {
   bind_function,
   reset_settings,
   extension_settings,
-  saveSettingsDebounced } from
+  saveSettingsDebounced,
+  selectorsExtension } from
 './index.js';
 import { auto_lorebook_entry_lookup_prompt, auto_lorebook_entry_deduplicate_prompt } from './defaultPrompts.js';
 import {
@@ -40,51 +41,51 @@ async function initialize_settings_listeners() {
   log("Initializing settings listeners");
 
 
-  bind_setting('#error_detection_enabled', 'error_detection_enabled', 'boolean');
-  bind_setting('#auto_hide_scene_count', 'auto_hide_scene_count', 'number', refresh_memory);
+  bind_setting(selectorsExtension.validation.enabled, 'error_detection_enabled', 'boolean');
+  bind_setting(selectorsExtension.autoHide.sceneCount, 'auto_hide_scene_count', 'number', refresh_memory);
 
   // Trigger profile changes
-  bind_setting('#profile', 'profile', 'text', () => load_profile(), false);
-  bind_function('#restore_profile', () => load_profile(), false);
-  bind_function('#rename_profile', () => rename_profile(), false);
-  bind_function('#new_profile', new_profile, false);
-  bind_function('#delete_profile', delete_profile, false);
+  bind_setting(selectorsExtension.profiles.select, 'profile', 'text', () => load_profile(), false);
+  bind_function(selectorsExtension.profiles.restore, () => load_profile(), false);
+  bind_function(selectorsExtension.profiles.rename, () => rename_profile(), false);
+  bind_function(selectorsExtension.profiles.new, new_profile, false);
+  bind_function(selectorsExtension.profiles.delete, delete_profile, false);
 
-  bind_function('#export_profile', () => export_profile(), false);
-  bind_function('#import_profile', (e) => {
+  bind_function(selectorsExtension.profiles.export, () => export_profile(), false);
+  bind_function(selectorsExtension.profiles.import, (e) => {
 
     log($(e.target));
-    log($(e.target).parent().find("#import_file"));
-    $(e.target).parent().find("#import_file").click();
+    log($(e.target).parent().find(selectorsExtension.profiles.importFile));
+    $(e.target).parent().find(selectorsExtension.profiles.importFile).click();
   }, false);
-  bind_function('#import_file', async (e) => await import_profile(e), false);
+  bind_function(selectorsExtension.profiles.importFile, async (e) => await import_profile(e), false);
 
-  bind_function('#character_profile', () => toggle_character_profile());
-  bind_function('#chat_profile', () => toggle_chat_profile());
-  bind_setting('#notify_on_profile_switch', 'notify_on_profile_switch', 'boolean');
+  bind_function(selectorsExtension.profiles.characterAutoload, () => toggle_character_profile());
+  bind_function(selectorsExtension.profiles.chatAutoload, () => toggle_chat_profile());
+  bind_setting(selectorsExtension.profiles.notifySwitch, 'notify_on_profile_switch', 'boolean');
 
-  bind_function('#revert_settings', reset_settings);
+  bind_function(selectorsExtension.settings.restoreDefaults, reset_settings);
 
-  bind_function('#toggle_chat_memory', () => toggle_chat_enabled(), false);
-  bind_function("#refresh_memory", () => refresh_memory());
+  bind_function(selectorsExtension.memory.toggle, () => toggle_chat_enabled(), false);
+  bind_function(selectorsExtension.memory.refresh, () => refresh_memory());
 
   // First-Hop Proxy Integration Settings
-  bind_setting('#first_hop_proxy_send_chat_details', 'first_hop_proxy_send_chat_details', 'boolean');
-  bind_setting('#wrap_lorebook_entries', 'wrap_lorebook_entries', 'boolean');
+  bind_setting(selectorsExtension.proxy.sendChatDetails, 'first_hop_proxy_send_chat_details', 'boolean');
+  bind_setting(selectorsExtension.proxy.wrapLorebook, 'wrap_lorebook_entries', 'boolean');
 
   // Message Filtering Settings (used by scene summaries)
-  bind_setting('#include_user_messages', 'include_user_messages', 'boolean');
-  bind_setting('#include_system_messages', 'include_system_messages', 'boolean');
-  bind_setting('#include_narrator_messages', 'include_narrator_messages', 'boolean');
-  bind_setting('#message_length_threshold', 'message_length_threshold', 'number');
+  bind_setting(selectorsExtension.filter.includeUser, 'include_user_messages', 'boolean');
+  bind_setting(selectorsExtension.filter.includeHidden, 'include_system_messages', 'boolean');
+  bind_setting(selectorsExtension.filter.includeSystem, 'include_narrator_messages', 'boolean');
+  bind_setting(selectorsExtension.filter.messageLength, 'message_length_threshold', 'number');
 
-  bind_setting('#default_chat_enabled', 'default_chat_enabled', 'boolean');
-  bind_setting('#use_global_toggle_state', 'use_global_toggle_state', 'boolean');
+  bind_setting(selectorsExtension.misc.defaultEnabled, 'default_chat_enabled', 'boolean');
+  bind_setting(selectorsExtension.misc.globalToggle, 'use_global_toggle_state', 'boolean');
 
   // --- Scene Summary Settings ---
-  bind_setting('#scene_summary_auto_name', 'scene_summary_auto_name', 'boolean');
-  bind_setting('#scene_summary_auto_name_manual', 'scene_summary_auto_name_manual', 'boolean');
-  bind_setting('#scene_summary_navigator_width', 'scene_summary_navigator_width', 'number', (value ) => {
+  bind_setting(selectorsExtension.scene.autoNameDetection, 'scene_summary_auto_name', 'boolean');
+  bind_setting(selectorsExtension.scene.autoNameManual, 'scene_summary_auto_name_manual', 'boolean');
+  bind_setting(selectorsExtension.scene.navWidth, 'scene_summary_navigator_width', 'number', (value ) => {
     // Enforce min/max constraints (30-500 pixels)
     const clampedValue = Math.max(30, Math.min(500, value));
     if (clampedValue !== value) {
@@ -97,17 +98,17 @@ async function initialize_settings_listeners() {
     // Update navbar toggle button position to match new width
     if (window.updateNavbarToggleButtonPosition) window.updateNavbarToggleButtonPosition();
   });
-  bind_setting('#scene_summary_navigator_font_size', 'scene_summary_navigator_font_size', 'number', () => {
+  bind_setting(selectorsExtension.scene.navFontSize, 'scene_summary_navigator_font_size', 'number', () => {
     // Re-render navigator bar with new font size
     if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
   });
-  bind_setting('#scene_summary_prompt', 'scene_summary_prompt', 'text');
-  bind_setting('#scene_summary_prefill', 'scene_summary_prefill', 'text');
-  bind_setting('#scene_summary_message_types', 'scene_summary_message_types', 'text');
+  bind_setting(selectorsExtension.scene.prompt, 'scene_summary_prompt', 'text');
+  bind_setting(selectorsExtension.scene.prefill, 'scene_summary_prefill', 'text');
+  bind_setting(selectorsExtension.scene.messageTypes, 'scene_summary_message_types', 'text');
 
   // Persist and display scene_summary_history_count
-  const $sceneHistoryCount = $('#scene_summary_history_count');
-  const $sceneHistoryCountDisplay = $('#scene_summary_history_count_display');
+  const $sceneHistoryCount = $(selectorsExtension.scene.historyCount);
+  const $sceneHistoryCountDisplay = $(selectorsExtension.scene.historyCountDisplay);
   // Set default if not present
   if (get_settings('scene_summary_history_count') === undefined) {
     set_settings('scene_summary_history_count', 1);
@@ -123,13 +124,13 @@ async function initialize_settings_listeners() {
   });
 
   // --- Scene Summary Validation Settings ---
-  bind_setting('#scene_summary_error_detection_enabled', 'scene_summary_error_detection_enabled', 'boolean');
-  bind_setting('#scene_summary_error_detection_preset', 'scene_summary_error_detection_preset', 'text');
-  bind_setting('#scene_summary_error_detection_prefill', 'scene_summary_error_detection_prefill', 'text');
-  bind_setting('#scene_summary_error_detection_retries', 'scene_summary_error_detection_retries', 'number');
-  bind_setting('#scene_summary_error_detection_prompt', 'scene_summary_error_detection_prompt', 'text');
+  bind_setting(selectorsExtension.validation.sceneEnabled, 'scene_summary_error_detection_enabled', 'boolean');
+  bind_setting(selectorsExtension.validation.scenePreset, 'scene_summary_error_detection_preset', 'text');
+  bind_setting(selectorsExtension.validation.scenePrefill, 'scene_summary_error_detection_prefill', 'text');
+  bind_setting(selectorsExtension.validation.sceneRetries, 'scene_summary_error_detection_retries', 'number');
+  bind_setting(selectorsExtension.validation.scenePrompt, 'scene_summary_error_detection_prompt', 'text');
 
-  bind_function('#edit_scene_summary_error_detection_prompt', async () => {
+  bind_function(selectorsExtension.validation.sceneEditPrompt, async () => {
     const description = `
 Configure the prompt used to verify that scene summaries meet your criteria.
 The prompt should return "VALID" for acceptable summaries and "INVALID" for unacceptable ones.
@@ -140,7 +141,7 @@ Available Macros:
 </ul>`;
     await get_user_setting_text_input('scene_summary_error_detection_prompt', 'Edit Scene Summary Error Detection Prompt', description);
   });
-  bind_function('#edit_scene_summary_prompt', async () => {
+  bind_function(selectorsExtension.scene.editPrompt, async () => {
     const description = `
 Available Macros:
 <ul style="text-align: left; font-size: smaller;">
@@ -154,33 +155,33 @@ Available Macros:
   });
 
   // Scene summary context limit and type
-  bind_setting('#scene_summary_context_limit', 'scene_summary_context_limit', 'number');
-  bind_setting('input[name="scene_summary_context_type"]', 'scene_summary_context_type', 'text');
+  bind_setting(selectorsExtension.scene.contextLimit, 'scene_summary_context_limit', 'number');
+  bind_setting('input[name="scene_summary_context_type"]', 'scene_summary_context_type', 'text');  // Radio button group
 
   // Scene summary preset and connection profile
-  bind_setting('#scene_summary_completion_preset', 'scene_summary_completion_preset', 'text');
-  bind_setting('#scene_summary_connection_profile', 'scene_summary_connection_profile', 'text');
+  bind_setting(selectorsExtension.scene.completionPreset, 'scene_summary_completion_preset', 'text');
+  bind_setting(selectorsExtension.scene.connectionProfile, 'scene_summary_connection_profile', 'text');
 
   // --- Running Scene Summary Settings ---
-  bind_setting('#running_scene_summary_auto_generate', 'running_scene_summary_auto_generate', 'boolean');
-  bind_setting('#running_scene_summary_show_navbar', 'running_scene_summary_show_navbar', 'boolean', () => {
+  bind_setting(selectorsExtension.running.autoGenerate, 'running_scene_summary_auto_generate', 'boolean');
+  bind_setting(selectorsExtension.running.showNavbar, 'running_scene_summary_show_navbar', 'boolean', () => {
     // Refresh navbar buttons visibility
     if (window.updateRunningSceneSummaryNavbar) window.updateRunningSceneSummaryNavbar();
   });
-  bind_setting('#running_scene_summary_prompt', 'running_scene_summary_prompt', 'text');
-  bind_setting('#running_scene_summary_prefill', 'running_scene_summary_prefill', 'text');
-  bind_setting('#running_scene_summary_completion_preset', 'running_scene_summary_completion_preset', 'text');
-  bind_setting('#running_scene_summary_connection_profile', 'running_scene_summary_connection_profile', 'text');
-  bind_setting('#running_scene_summary_position', 'running_scene_summary_position', 'number');
-  bind_setting('#running_scene_summary_depth', 'running_scene_summary_depth', 'number');
-  bind_setting('#running_scene_summary_role', 'running_scene_summary_role');
-  bind_setting('#running_scene_summary_scan', 'running_scene_summary_scan', 'boolean');
-  bind_setting('#running_scene_summary_context_limit', 'running_scene_summary_context_limit', 'number');
-  bind_setting('input[name="running_scene_summary_context_type"]', 'running_scene_summary_context_type', 'text');
+  bind_setting(selectorsExtension.running.prompt, 'running_scene_summary_prompt', 'text');
+  bind_setting(selectorsExtension.running.prefill, 'running_scene_summary_prefill', 'text');
+  bind_setting(selectorsExtension.running.completionPreset, 'running_scene_summary_completion_preset', 'text');
+  bind_setting(selectorsExtension.running.connectionProfile, 'running_scene_summary_connection_profile', 'text');
+  bind_setting(selectorsExtension.running.position, 'running_scene_summary_position', 'number');
+  bind_setting(selectorsExtension.running.depth, 'running_scene_summary_depth', 'number');
+  bind_setting(selectorsExtension.running.role, 'running_scene_summary_role');
+  bind_setting(selectorsExtension.running.scan, 'running_scene_summary_scan', 'boolean');
+  bind_setting(selectorsExtension.running.contextLimit, 'running_scene_summary_context_limit', 'number');
+  bind_setting('input[name="running_scene_summary_context_type"]', 'running_scene_summary_context_type', 'text');  // Radio button group
 
   // Running scene summary exclude latest slider
-  const $runningExcludeLatest = $('#running_scene_summary_exclude_latest');
-  const $runningExcludeLatestDisplay = $('#running_scene_summary_exclude_latest_display');
+  const $runningExcludeLatest = $(selectorsExtension.running.excludeLatest);
+  const $runningExcludeLatestDisplay = $(selectorsExtension.running.excludeLatestDisplay);
   if (get_settings('running_scene_summary_exclude_latest') === undefined) {
     set_settings('running_scene_summary_exclude_latest', 1);
   }
@@ -195,7 +196,7 @@ Available Macros:
   });
 
   // View/edit running scene summary button
-  bind_function('#view_running_scene_summary', async () => {
+  bind_function(selectorsExtension.running.view, async () => {
     const { get_running_summary, get_current_running_summary_version, get_running_summary_versions, set_current_running_summary_version } = await import('./runningSceneSummary.js');
     const current = get_running_summary(get_current_running_summary_version());
     const ctx = getContext();
@@ -210,7 +211,7 @@ Available Macros:
                 <h3>View/Edit Running Scene Summary</h3>
                 <p>Current version: v${current.version} (${current.prev_scene_index ?? 0} > ${current.new_scene_index ?? 0})</p>
                 <p>Editing will create a new version.</p>
-                <textarea id="view_running_summary_textarea" rows="20" style="width: 100%; height: 400px;">${current.content || ""}</textarea>
+                <textarea id="view_running_summary_textarea" data-testid="view-running-summary-textarea" rows="20" style="width: 100%; height: 400px;">${current.content || ""}</textarea>
             </div>
         `;
 
@@ -223,7 +224,7 @@ Available Macros:
       });
 
       if (result) {
-        const edited = $('#view_running_summary_textarea').val();
+        const edited = $(selectorsExtension.viewRunning.textarea).val();
         if (edited !== null && edited !== current.content) {
           // Editing creates a new version with same scene indexes
           const versions = get_running_summary_versions();
@@ -248,7 +249,7 @@ Available Macros:
   });
 
   // Edit running scene summary prompt button
-  bind_function('#edit_running_scene_summary_prompt', async () => {
+  bind_function(selectorsExtension.running.editPrompt, async () => {
     const description = `
 Configure the prompt used to combine multiple scene summaries into a cohesive narrative memory.
 
@@ -261,19 +262,19 @@ Available Macros:
   });
 
   // --- Auto Scene Break Detection Settings ---
-  bind_setting('#auto_scene_break_on_load', 'auto_scene_break_on_load', 'boolean');
-  bind_setting('#auto_scene_break_on_new_message', 'auto_scene_break_on_new_message', 'boolean');
-  bind_setting('#auto_scene_break_generate_summary', 'auto_scene_break_generate_summary', 'boolean');
-  bind_setting('#auto_scene_break_check_which_messages', 'auto_scene_break_check_which_messages', 'text');
-  bind_setting('#auto_scene_break_recent_message_count', 'auto_scene_break_recent_message_count', 'number');
-  bind_setting('#auto_scene_break_prompt', 'auto_scene_break_prompt', 'text');
-  bind_setting('#auto_scene_break_prefill', 'auto_scene_break_prefill', 'text');
-  bind_setting('#auto_scene_break_connection_profile', 'auto_scene_break_connection_profile', 'text');
-  bind_setting('#auto_scene_break_completion_preset', 'auto_scene_break_completion_preset', 'text');
+  bind_setting(selectorsExtension.autoScene.onLoad, 'auto_scene_break_on_load', 'boolean');
+  bind_setting(selectorsExtension.autoScene.onMessage, 'auto_scene_break_on_new_message', 'boolean');
+  bind_setting(selectorsExtension.autoScene.generateSummary, 'auto_scene_break_generate_summary', 'boolean');
+  bind_setting(selectorsExtension.autoScene.checkWhich, 'auto_scene_break_check_which_messages', 'text');
+  bind_setting(selectorsExtension.autoScene.recentCount, 'auto_scene_break_recent_message_count', 'number');
+  bind_setting(selectorsExtension.autoScene.prompt, 'auto_scene_break_prompt', 'text');
+  bind_setting(selectorsExtension.autoScene.prefill, 'auto_scene_break_prefill', 'text');
+  bind_setting(selectorsExtension.autoScene.connectionProfile, 'auto_scene_break_connection_profile', 'text');
+  bind_setting(selectorsExtension.autoScene.completionPreset, 'auto_scene_break_completion_preset', 'text');
 
   // Message offset with live display update
-  const $autoSceneBreakOffset = $('#auto_scene_break_message_offset');
-  const $autoSceneBreakOffsetValue = $('#auto_scene_break_message_offset_value');
+  const $autoSceneBreakOffset = $(selectorsExtension.autoScene.messageOffset);
+  const $autoSceneBreakOffsetValue = $(selectorsExtension.autoScene.offsetDisplay);
   if (get_settings('auto_scene_break_message_offset') === undefined) {
     set_settings('auto_scene_break_message_offset', 1);
   }
@@ -290,7 +291,7 @@ Available Macros:
   });
 
   // Edit prompt button
-  bind_function('#edit_auto_scene_break_prompt', async () => {
+  bind_function(selectorsExtension.autoScene.editPrompt, async () => {
     const description = `
 Configure the prompt used to detect scene breaks automatically.
 The prompt should return "true" if the message is a scene break, or "false" if it is not.
@@ -313,9 +314,6 @@ Available Macros:
   refresh_settings();
 }
 
-/**
- * Initialize event listeners for Auto-Lorebooks settings UI
- */
 function initialize_lorebooks_settings_listeners() {
   ensureEntityTypesSetting();
   renderEntityTypesList();
@@ -449,14 +447,14 @@ function initialize_lorebooks_settings_listeners() {
   });
 
   $(document).on('click', '#restore-summary-triage-prompt', function () {
-    $('#autolorebooks-summary-lorebook-entry-lookup-prompt').val(auto_lorebook_entry_lookup_prompt);
-    $('#autolorebooks-summary-lorebook-entry-lookup-prompt').trigger('input');
+    $(selectorsExtension.lorebook.lookupPrompt).val(auto_lorebook_entry_lookup_prompt);
+    $(selectorsExtension.lorebook.lookupPrompt).trigger('input');
     toast('Lorebook Entry Lookup prompt restored to default', 'success');
   });
 
   $(document).on('click', '#restore-summary-entry-deduplicate-prompt', function () {
-    $('#autolorebooks-summary-entry-deduplicate-prompt').val(auto_lorebook_entry_deduplicate_prompt);
-    $('#autolorebooks-summary-entry-deduplicate-prompt').trigger('input');
+    $(selectorsExtension.lorebook.dedupePrompt).val(auto_lorebook_entry_deduplicate_prompt);
+    $(selectorsExtension.lorebook.dedupePrompt).trigger('input');
     toast('LorebookEntryDeduplicate prompt restored to default', 'success');
   });
 

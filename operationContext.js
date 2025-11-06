@@ -15,33 +15,16 @@
 //       clearOperationSuffix();  // Always cleanup
 //   }
 
-/**
- * Thread-local context storage
- * JavaScript is single-threaded, so this is safe for concurrent operations
- */
 let _context  = { suffix: null };
 
-/**
- * Set operation suffix for the current operation
- * This will be appended to the operation type in ST_METADATA
- * @param {string} suffix - The suffix to append (e.g., '-42-67', '-character-Anonfilly')
- */
 export function setOperationSuffix(suffix ) {
   _context = { suffix };
 }
 
-/**
- * Get the current operation suffix
- * @returns {?string} The current suffix, or null if not set
- */
 export function getOperationSuffix() {
   return _context.suffix;
 }
 
-/**
- * Clear the operation suffix
- * Should be called in a finally block to ensure cleanup
- */
 export function clearOperationSuffix() {
   _context = { suffix: null };
 }

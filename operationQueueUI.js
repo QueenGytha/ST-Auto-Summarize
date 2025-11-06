@@ -16,7 +16,9 @@ import {
 './operationQueue.js';
 import {
   debug,
-  SUBSYSTEM } from
+  SUBSYSTEM,
+  selectorsExtension,
+  selectorsSillyTavern } from
 './index.js';
 
 // Constants
@@ -28,9 +30,6 @@ const ICON_CHEVRON_RIGHT = 'fa-chevron-right';
 let queueUIContainer = null;
 let isInitialized = false;
 
-/**
- * Initialize the queue UI
- */
 export function initQueueUI() {
   if (isInitialized) {
     debug(SUBSYSTEM.QUEUE, 'Queue UI already initialized');
@@ -51,22 +50,19 @@ export function initQueueUI() {
   isInitialized = true;
 }
 
-/**
- * Create queue UI container in shared navbar
- */
 function createQueueUI() {
   // Find or create the shared navbar (used by both extensions)
-  let $navbar = $(`#${NAVBAR_ID}`);
+  let $navbar = $(selectorsExtension.sceneNav.bar);
 
   if (!$navbar.length) {
     debug(SUBSYSTEM.QUEUE, 'Creating shared navbar');
     $navbar = $(`<div id="${NAVBAR_ID}" style="width: 175px; position: relative;"></div>`);
     // Insert after the send button area
-    $('#sheld').after($navbar);
+    $(selectorsSillyTavern.chat.holder).after($navbar);
   }
 
   // Check if queue container already exists (shared between extensions)
-  let $queueContainer = $('#shared_operation_queue_ui');
+  let $queueContainer = $(selectorsExtension.queue.panel);
 
   if ($queueContainer.length) {
     debug(SUBSYSTEM.QUEUE, 'Queue UI already exists (created by other extension)');
@@ -76,19 +72,19 @@ function createQueueUI() {
 
   // Create shared queue container
   $queueContainer = $(`
-        <div id="shared_operation_queue_ui">
-            <div class="queue-header">
-                <div id="queue_toggle_visibility" title="Collapse/Expand">
-                    <h4>Operations <span id="queue_count">(0)</span></h4>
+        <div id="shared_operation_queue_ui" data-testid="queue-panel">
+            <div class="queue-header" data-testid="queue-header">
+                <div id="queue_toggle_visibility" data-testid="queue-toggle-visibility" title="Collapse/Expand">
+                    <h4>Operations <span id="queue_count" data-testid="queue-count">(0)</span></h4>
                     <i class="fa-solid fa-chevron-up"></i>
                 </div>
             </div>
-            <div id="queue_list_container" class="queue-list">
+            <div id="queue_list_container" data-testid="queue-list-container" class="queue-list">
                 <div class="queue-controls">
-                    <button id="queue_toggle_pause" class="menu_button fa-solid fa-pause" title="Pause/Resume queue"></button>
-                    <button id="queue_clear_all" class="menu_button fa-solid fa-trash" title="Clear all"></button>
+                    <button id="queue_toggle_pause" data-testid="queue-toggle-pause" class="menu_button fa-solid fa-pause" title="Pause/Resume queue"></button>
+                    <button id="queue_clear_all" data-testid="queue-clear-all" class="menu_button fa-solid fa-trash" title="Clear all"></button>
                 </div>
-                <div id="queue_operations_list"></div>
+                <div id="queue_operations_list" data-testid="queue-operations-list"></div>
             </div>
         </div>
     `);
@@ -101,13 +97,13 @@ function createQueueUI() {
   // Position is calculated dynamically based on navbar width
   const navbarWidth = $navbar.outerWidth() || 175;
   const $navbarToggle = $(`
-        <button id="${NAVBAR_TOGGLE_ID}" class="menu_button fa-solid ${ICON_CHEVRON_LEFT}"
+        <button id="${NAVBAR_TOGGLE_ID}" data-testid="queue-navbar-toggle" class="menu_button fa-solid ${ICON_CHEVRON_LEFT}"
             title="Hide Queue Navbar"
             style="position: fixed; top: 50vh; left: ${navbarWidth}px; transform: translateY(-50%); font-size: 1.2em; z-index: 1000002; background: rgba(30,30,40,0.95); border: 1px solid var(--SmartThemeBlurTintColor); border-radius: 0 8px 8px 0;"></button>
     `);
 
   // Append button to body (not navbar) so it stays visible when navbar is hidden
-  $('body').append($navbarToggle);
+  $(selectorsSillyTavern.dom.body).append($navbarToggle);
 
   // Bind event handlers
   bindQueueControlEvents();
@@ -120,12 +116,9 @@ function createQueueUI() {
   debug(SUBSYSTEM.QUEUE, 'Queue UI created');
 }
 
-/**
- * Update queue container height dynamically based on viewport and content
- */
 function updateQueueHeight() {
-  const $queueUI = $('#shared_operation_queue_ui');
-  const $queueList = $('#queue_list_container');
+  const $queueUI = $(selectorsExtension.queue.panel);
+  const $queueList = $(selectorsExtension.queue.listContainer);
 
   if (!$queueUI.length || !$queueList.length) {
     return;
@@ -145,7 +138,7 @@ function updateQueueHeight() {
   // Reserve space for:
   // - Bottom margin/padding (20px)
   // - Other navbar elements below queue (estimate based on presence)
-  const navbarBottomContent = $('#scene-summary-navigator-bar').find('.running-summary-controls, .scene-nav-link').length > 0 ? 150 : 50;
+  const navbarBottomContent = $(selectorsExtension.sceneNav.bar).find('.running-summary-controls, .scene-nav-link').length > 0 ? 150 : 50;
 
   // Calculate available height for queue
   const availableHeight = viewportHeight - queueTop - navbarBottomContent;
@@ -155,7 +148,7 @@ function updateQueueHeight() {
   const maxHeight = Math.max(minHeight, availableHeight);
 
   // Get the queue header height
-  const headerHeight = $queueUI.find('.queue-header').outerHeight() || 50;
+  const headerHeight = $queueUI.find(selectorsExtension.queue.header).outerHeight() || 50;
 
   // Calculate height for the list container
   const listMaxHeight = maxHeight - headerHeight - 20; // 20px for padding/margin
@@ -174,9 +167,6 @@ function updateQueueHeight() {
   debug(SUBSYSTEM.QUEUE, `Queue height updated: maxHeight=${maxHeight}px, listMaxHeight=${listMaxHeight}px`);
 }
 
-/**
- * Bind event handlers to queue control buttons
- */
 function bindQueueControlEvents() {
   // Pause/Resume
   $(document).on('click', '#queue_toggle_pause', async function () {
@@ -199,9 +189,9 @@ function bindQueueControlEvents() {
   });
 
   // Toggle visibility
-  $(document).on('click', '#queue_toggle_visibility', function () {
-    const $queueUI = $('#shared_operation_queue_ui');
-    const $list = $('#queue_list_container');
+  $(document).on('click', selectorsExtension.queue.toggleVisibility, function () {
+    const $queueUI = $(selectorsExtension.queue.panel);
+    const $list = $(selectorsExtension.queue.listContainer);
     const $icon = $(this).find('i');
 
     if ($list.is(':visible')) {
@@ -225,8 +215,8 @@ function bindQueueControlEvents() {
   });
 
   // Navbar toggle (show/hide ENTIRE navbar)
-  $(document).on('click', `#${NAVBAR_TOGGLE_ID}`, function () {
-    const $navbar = $(`#${NAVBAR_ID}`);
+  $(document).on('click', selectorsExtension.queue.navbarToggle, function () {
+    const $navbar = $(selectorsExtension.sceneNav.bar);
     const $button = $(this);
 
     if ($navbar.is(':visible')) {
@@ -251,8 +241,8 @@ function bindQueueControlEvents() {
   // Restore navbar visibility state from localStorage
   const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
   if (navbarVisible === 'false') {
-    const $navbar = $(`#${NAVBAR_ID}`);
-    const $button = $(`#${NAVBAR_TOGGLE_ID}`);
+    const $navbar = $(selectorsExtension.sceneNav.bar);
+    const $button = $(selectorsExtension.queue.navbarToggle);
     $navbar.hide(); // Hide entire navbar
     $button.removeClass(ICON_CHEVRON_LEFT).addClass(ICON_CHEVRON_RIGHT);
     $button.attr('title', 'Show Queue Navbar');
@@ -270,9 +260,6 @@ function bindQueueControlEvents() {
   });
 }
 
-/**
- * Update queue display
- */
 function updateQueueDisplay() {
   if (!queueUIContainer) {
     // Try to create UI if it doesn't exist yet
@@ -282,8 +269,8 @@ function updateQueueDisplay() {
     }
   }
 
-  const $navbar = $(`#${NAVBAR_ID}`);
-  const $button = $(`#${NAVBAR_TOGGLE_ID}`);
+  const $navbar = $(selectorsExtension.sceneNav.bar);
+  const $button = $(selectorsExtension.queue.navbarToggle);
 
   // Always show button, navbar visibility controlled by user
   $button.show();
@@ -308,12 +295,12 @@ function updateQueueDisplay() {
 
   // Update count in header
   const stats = getQueueStats();
-  const $count = $('#queue_count');
+  const $count = $(selectorsExtension.queue.count);
   const totalCount = stats.pending + stats.in_progress + stats.failed;
   $count.text(`(${totalCount})`);
 
   // Update pause/resume button
-  const $pauseBtn = $('#queue_toggle_pause');
+  const $pauseBtn = $(selectorsExtension.queue.togglePause);
   if (stats.paused) {
     $pauseBtn.removeClass('fa-pause').addClass('fa-play');
     $pauseBtn.attr('title', 'Resume queue');
@@ -326,11 +313,8 @@ function updateQueueDisplay() {
   renderOperationsList();
 }
 
-/**
- * Render operations list
- */
 function renderOperationsList() {
-  const $list = $('#queue_operations_list');
+  const $list = $(selectorsExtension.queue.operationsList);
   const allOperations = getAllOperations();
 
   // Filter out completed operations (they're auto-removed)
@@ -379,9 +363,6 @@ function renderOperationsList() {
   }, 0);
 }
 
-/**
- * Render individual operation
- */
 function renderOperation(operation) {
   const statusIcons = {
     [OperationStatus.PENDING]: '<i class="fa-solid fa-clock" style="color: var(--SmartThemeQuoteColor);"></i>',
@@ -457,9 +438,6 @@ function renderOperation(operation) {
     `);
 }
 
-/**
- * Format operation type for display
- */
 function formatOperationType(type) {
   const names = {
     [OperationType.VALIDATE_SUMMARY]: 'Validate',
@@ -478,9 +456,6 @@ function formatOperationType(type) {
   return names[type] || type;
 }
 
-/**
- * Format lorebook operation params as <type>-<name>
- */
 function formatLorebookOperationParams(params, metadata) {
   const entryType = params.entryData?.type || metadata?.entry_type || 'entry';
   const entryName = metadata?.entry_comment || params.entryData?.comment || params.entryData?.name || 'Unknown';
@@ -493,9 +468,6 @@ function formatLorebookOperationParams(params, metadata) {
   return `${entryType}-${entryName}`;
 }
 
-/**
- * Format message operation params as Message #N
- */
 function formatMessageOperationParams(params) {
   if (params.index !== undefined) {
     return `Message #${params.index}`;
@@ -506,9 +478,6 @@ function formatMessageOperationParams(params) {
   return '';
 }
 
-/**
- * Format operation params for display
- */
 function formatOperationParams(type, params, metadata) {
   switch (type) {
     case OperationType.VALIDATE_SUMMARY:
@@ -533,9 +502,6 @@ function formatOperationParams(type, params, metadata) {
   }
 }
 
-/**
- * Format duration in ms to human readable
- */
 function formatDuration(ms) {
   if (ms < 1000) {
     return `${ms}ms`;
@@ -546,16 +512,13 @@ function formatDuration(ms) {
   return `${(ms / 60000).toFixed(1)}m`;
 }
 
-/**
- * Show/hide queue UI based on settings
- */
 export function updateQueueUIVisibility() {
   if (!queueUIContainer) {
     return;
   }
 
-  const $navbar = $(`#${NAVBAR_ID}`);
-  const $button = $(`#${NAVBAR_TOGGLE_ID}`);
+  const $navbar = $(selectorsExtension.sceneNav.bar);
+  const $button = $(selectorsExtension.queue.navbarToggle);
 
   // Always show button, navbar visibility controlled by user
   $button.show();
@@ -579,13 +542,9 @@ export function updateQueueUIVisibility() {
   }
 }
 
-/**
- * Update navbar toggle button position to match navbar width
- * Call this when navbar width changes dynamically
- */
 function updateNavbarToggleButtonPosition() {
-  const $navbar = $(`#${NAVBAR_ID}`);
-  const $button = $(`#${NAVBAR_TOGGLE_ID}`);
+  const $navbar = $(selectorsExtension.sceneNav.bar);
+  const $button = $(selectorsExtension.queue.navbarToggle);
 
   // Only update if navbar is visible and button exists
   if (!$navbar.length || !$button.length) return;

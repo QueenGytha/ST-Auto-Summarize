@@ -11,7 +11,8 @@ import {
   group_member_enable_button_highlight,
   toggle_chat_enabled,
   manualSceneBreakDetection,
-  clearAllCheckedFlags } from
+  clearAllCheckedFlags,
+  selectorsSillyTavern } from
 './index.js';
 
 function initialize_message_buttons() {
@@ -19,15 +20,15 @@ function initialize_message_buttons() {
   debug("Initializing message button listeners");
   const ctx = getContext();
 
-  const $chat = $("div#chat");
+  const $chat = $(`div${selectorsSillyTavern.chat.container}`);
 
   // when a message is hidden/unhidden, trigger a memory refresh.
   // Yes the chat is saved already when these buttons are clicked, but we need to wait until after to refresh.
-  $chat.on("click", ".mes_hide", async () => {
+  $chat.on("click", selectorsSillyTavern.message.hide, async () => {
     await ctx.saveChat();
     refresh_memory();
   });
-  $chat.on("click", ".mes_unhide", async () => {
+  $chat.on("click", selectorsSillyTavern.message.unhide, async () => {
     await ctx.saveChat();
     refresh_memory();
   });
@@ -36,13 +37,13 @@ function initialize_group_member_buttons() {
   // Insert a button into the group member selection to disable summarization
   debug("Initializing group member buttons");
 
-  const $template = $('#group_member_template').find('.group_member_icon');
+  const $template = $(selectorsSillyTavern.group.memberTemplate).find(selectorsSillyTavern.group.memberIcon);
   const $button = $(`<div title="Toggle summarization for memory" class="right_menu_button fa-solid fa-lg fa-brain ${group_member_enable_button}"></div>`);
 
   // add listeners
   $(document).on("click", `.${group_member_enable_button}`, (e) => {
 
-    const member_block = $(e.target).closest('.group_member');
+    const member_block = $(e.target).closest(selectorsSillyTavern.group.member);
     const char_key = member_block.data('id');
 
     if (!char_key) {
@@ -58,7 +59,7 @@ function initialize_group_member_buttons() {
 }
 function set_character_enabled_button_states() {
   // for each character in the group chat, set the button state based on their enabled status
-  const $enable_buttons = $(`#rm_group_members`).find(`.${group_member_enable_button}`);
+  const $enable_buttons = $(selectorsSillyTavern.group.membersContainer).find(`.${group_member_enable_button}`);
 
   // if we are creating a new group (openGroupId is undefined), then hide the buttons
   if (openGroupId === undefined) {
@@ -68,7 +69,7 @@ function set_character_enabled_button_states() {
 
   // set the state of each button
   for (const button of $enable_buttons) {
-    const member_block = $(button).closest('.group_member');
+    const member_block = $(button).closest(selectorsSillyTavern.group.member);
     const char_key = member_block.data('id');
     const enabled = character_enabled(char_key);
     if (enabled) {
@@ -87,7 +88,7 @@ function add_menu_button(text , fa_icon , callback , hover  = null) {
     </div>
     `);
 
-  const $extensions_menu = $('#extensionsMenu');
+  const $extensions_menu = $(selectorsSillyTavern.extensions.menu);
   if (!$extensions_menu.length) {
     error('Could not find the extensions menu');
   }

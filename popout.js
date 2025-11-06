@@ -6,7 +6,9 @@ import {
   settings_content_class,
   bind_function,
   dragElement,
-  loadMovingUIState } from
+  loadMovingUIState,
+  selectorsExtension,
+  selectorsSillyTavern } from
 './index.js';
 
 // Popout handling.
@@ -21,19 +23,19 @@ function initialize_popout() {
   // initialize the popout logic, creating the $popout object and storing the $settings_element
 
   // Get the settings element and store it
-  $settings_element = $(`#${settings_div_id}`).find(`.inline-drawer-content .${settings_content_class}`);
+  $settings_element = $(selectorsExtension.settings.panel).find(`.inline-drawer-content .${settings_content_class}`);
   $original_settings_parent = $settings_element.parent(); // where the settings are originally placed
 
   debug('Creating popout window...');
 
   // repurposes the zoomed avatar template (it's a floating div to the left of the chat)
-  $popout = $($('#zoomed_avatar_template').html());
+  $popout = $($(selectorsSillyTavern.templates.zoomedAvatar).html());
   $popout.attr('id', 'qmExtensionPopout').removeClass('zoomed_avatar').addClass('draggable').empty();
 
   // create the control bar with the close button
   const controlBarHtml = `<div class="panelControlBar flex-container">
     <div class="fa-solid fa-grip drag-grabber hoverglow"></div>
-    <div class="fa-solid fa-circle-xmark hoverglow dragClose"></div>
+    <div class="fa-solid fa-circle-xmark hoverglow dragClose" data-testid="popout-drag-close"></div>
     </div>`;
   $popout.append(controlBarHtml);
 
@@ -56,10 +58,10 @@ function initialize_popout() {
 }
 function open_popout() {
   debug("Showing popout");
-  $('body').append($popout); // add the popout to the body
+  $(selectorsSillyTavern.dom.body).append($popout); // add the popout to the body
 
   // setup listener for close button to remove the popout
-  $popout.find('.dragClose').off('click').on('click', function () {
+  $popout.find(selectorsExtension.popout.dragClose).off('click').on('click', function () {
     close_popout();
   });
 

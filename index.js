@@ -14,6 +14,10 @@ import { getContext, getApiUrl, extension_settings } from '../../../extensions.j
 import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from '../../../utils.js';
 import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, saveSettingsDebounced, generateRaw as _originalGenerateRaw, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata, activateSendButtons as _originalActivateSendButtons, deactivateSendButtons as _originalDeactivateSendButtons } from '../../../../script.js';
 
+// Import SillyTavern selectors (direct import since this is the barrel file)
+import { selectorsSillyTavern } from './selectorsSillyTavern.js';
+import { selectorsExtension } from './selectorsExtension.js';
+
 // Track if queue is blocking (set by operationQueue.js)
 let isQueueBlocking = false;
 
@@ -25,8 +29,8 @@ export function setQueueBlocking(blocking ) {
   console.log('[AutoSummarize] [ButtonControl] setQueueBlocking:', blocking);
   isQueueBlocking = blocking;
 
-  const sendButton = document.getElementById('send_but');
-  const stopButton = document.getElementById('mes_stop');
+  const sendButton = document.querySelector(selectorsSillyTavern.buttons.send);
+  const stopButton = document.querySelector(selectorsSillyTavern.buttons.stop);
 
   if (blocking) {
     _originalDeactivateSendButtons();
@@ -50,7 +54,7 @@ export function setQueueBlocking(blocking ) {
 
       // Click opens queue UI
       queueIndicatorButton.addEventListener('click', async () => {
-        const queueUI = document.getElementById('queue-panel');
+        const queueUI = document.querySelector(selectorsExtension.queue.panel);
         if (queueUI) {
           queueUI.classList.toggle('hidden');
         }
@@ -92,8 +96,8 @@ export function installButtonInterceptor() {
   // and force-override them when queue is blocking
 
   const attemptInstall = () => {
-    const sendButton = document.getElementById('send_but');
-    const stopButton = document.getElementById('mes_stop');
+    const sendButton = document.querySelector(selectorsSillyTavern.buttons.send);
+    const stopButton = document.querySelector(selectorsSillyTavern.buttons.stop);
 
     if (!sendButton || !stopButton) {
       console.warn('[AutoSummarize] Buttons not found yet, retrying in 500ms...');
@@ -104,6 +108,7 @@ export function installButtonInterceptor() {
     console.log('[AutoSummarize] Found send/stop buttons, installing observer...');
 
     // Watch for changes to the body's data-generating attribute
+    // eslint-disable-next-line no-undef
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'data-generating') {
@@ -203,7 +208,7 @@ export * from './lorebookWrapper.js';
 export * from './lorebookViewer.js';
 
 // Selector files for testing (E2E test infrastructure)
-export { selectorsExtension } from './selectorsExtension.js';
+export { selectorsExtension, scopeToSettings } from './selectorsExtension.js';
 export { selectorsSillyTavern } from './selectorsSillyTavern.js';
 
 // ============================================================================
@@ -211,18 +216,14 @@ export { selectorsSillyTavern } from './selectorsSillyTavern.js';
 // ============================================================================
 // Intercepts Enter key presses to block when queue is active
 
-/**
- * Install Enter key interceptor for textarea
- * This is called during extension initialization
- */
 export function installEnterKeyInterceptor() {
   console.log('[AutoSummarize] Installing Enter key interceptor');
   if (typeof window === 'undefined') return;
 
   const attemptInstall = () => {
-    const textarea = document.getElementById('send_textarea');
+    const textarea = document.querySelector(selectorsSillyTavern.chat.input);
     if (!textarea) {
-      console.warn('[AutoSummarize] Could not find #send_textarea, retrying in 500ms...');
+      console.warn('[AutoSummarize] Could not find chat input textarea, retrying in 500ms...');
       setTimeout(attemptInstall, 500);
       return;
     }
@@ -252,33 +253,16 @@ export function installEnterKeyInterceptor() {
 // ============================================================================
 // Tracks which lorebook entries are active per message
 
-/**
- * Storage for active lorebook entries per message
- * Key: message index (number)
- * Value: array of entry objects with minimal data
- */
 const activeLorebooksPerMessage = new Map();
 
-/**
- * Get active lorebook entries for a specific message
- * @param {number} messageIndex - The message index to query
- * @returns {Array|null} Array of entry objects, or null if no data
- */
 export function getActiveLorebooksForMessage(messageIndex) {
   return activeLorebooksPerMessage.get(messageIndex) || null;
 }
 
-/**
- * Clear all stored lorebook activation data
- */
 export function clearActiveLorebooksData() {
   activeLorebooksPerMessage.clear();
 }
 
-/**
- * Install World Info activation tracker
- * Tracks when lorebook entries become active and stores per message
- */
 export function installWorldInfoActivationLogger() {
   console.log('[worldinfoactive] Installing activation tracker');
 

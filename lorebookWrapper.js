@@ -8,9 +8,6 @@ const WRAPPER_CLOSE = '</setting_lore>';
 
 let isListenerRegistered  = false;
 
-/**
- * Register listener that wraps lorebook entries as soon as they are loaded.
- */
 export function installLorebookWrapper() {
   if (isListenerRegistered) {
     console.log('[Auto-Summarize:LorebookWrapper] Listener already installed, skipping');
@@ -35,9 +32,6 @@ export function installLorebookWrapper() {
   }
 }
 
-/**
- * Wrap entries whenever SillyTavern finishes loading lore data.
- */
 function handleWorldInfoEntriesLoaded(payload ) {
   try {
     if (!get_settings('wrap_lorebook_entries')) {
@@ -63,9 +57,6 @@ function handleWorldInfoEntriesLoaded(payload ) {
   }
 }
 
-/**
- * Apply wrapping to every entry inside a collection.
- */
 function applyWrapperToCollection(collection ) {
   if (!Array.isArray(collection)) {
     return;
@@ -76,9 +67,6 @@ function applyWrapperToCollection(collection ) {
   }
 }
 
-/**
- * Wrap a single entry's content while preserving decorator lines.
- */
 function wrapEntryContent(entry ) {
   if (!entry || typeof entry.content !== 'string') {
     return;
@@ -103,9 +91,6 @@ function wrapEntryContent(entry ) {
   entry.content = decorators ? [decorators, wrappedBody].filter(Boolean).join('\n') : wrappedBody;
 }
 
-/**
- * Separate decorator lines (prefixed with @@) from the main body.
- */
 function splitDecorators(content ) {
   if (!content.startsWith('@@')) {
     return { decorators: '', body: content };
@@ -124,9 +109,6 @@ function splitDecorators(content ) {
   return { decorators, body };
 }
 
-/**
- * Build the wrapped lorebook body with XML metadata.
- */
 function wrapBody(content , entry ) {
   const normalized = content.replace(/\r/g, '');
   const trimmed = normalized.trim();
@@ -140,9 +122,6 @@ function wrapBody(content , entry ) {
   return `${openTag}\n${trimmed}\n</setting_lore>`;
 }
 
-/**
- * Best-effort detection of an already wrapped entry.
- */
 function isAlreadyWrapped(content ) {
   const trimmed = content.trim();
   return trimmed.startsWith(WRAPPER_OPEN) && trimmed.endsWith(WRAPPER_CLOSE);
@@ -161,9 +140,6 @@ function escapeXML(str ) {
   replace(/'/g, '&apos;');
 }
 
-/**
- * Build the attribute list for the lorebook wrapper tag using entry metadata.
- */
 function buildAttributeList(entry ) {
   const attrs = [];
 

@@ -8,30 +8,10 @@ import { selected_group, groups } from '../../../group-chats.js';
 // Will be imported from index.js via barrel exports
 let get_settings ;
 
-/**
- * Initialize the metadata injector with imported utilities
- * This is called from index.js after all exports are set up
- */
 export function initMetadataInjector(utils ) {
   get_settings = utils.get_settings;
 }
 
-/**
- * Metadata block structure
- * @typedef {Object} MetadataBlock
- * @property {string} version - Schema version for future compatibility
- * @property {string} chat - Current chat name/ID (character or group name)
- * @property {string} operation - Type of operation being performed
- * @property {string} timestamp - ISO 8601 timestamp
- * @property {Object} custom - Custom operation-specific data
- */
-
-
-/**
- * Get the current chat identifier for metadata
- * Returns the full chat ID with timestamp (matches {{chat}} macro in Auto-Lorebooks)
- * @returns {string} Chat identifier (e.g., "CharacterName - 2025-11-03@16h32m59s" or group name)
- */
 export function getChatName() {
   try {
     // For single character chats, getCurrentChatId() returns the full identifier with timestamp
@@ -57,11 +37,6 @@ export function getChatName() {
   }
 }
 
-/**
- * Check if metadata injection is enabled in settings
- * Implicitly enabled when send_chat_details is true
- * @returns {boolean} True if enabled
- */
 export function isMetadataInjectionEnabled() {
   try {
     // get_settings expects a key parameter
@@ -73,10 +48,6 @@ export function isMetadataInjectionEnabled() {
   }
 }
 
-/**
- * Get default metadata that should be included in all requests
- * @returns {Object} Base metadata object
- */
 export function getDefaultMetadata() {
   const chatName = getChatName();
 
@@ -86,14 +57,6 @@ export function getDefaultMetadata() {
   };
 }
 
-/**
- * Create a metadata block with optional custom fields
- * @param {Object} options - Optional metadata fields
- * @param {string} options.operation - Operation type (e.g., 'message_summary', 'scene_summary')
- * @param {Object} options.custom - Custom operation-specific data
- * @param {boolean} options.includeTimestamp - Include ISO timestamp (default: false)
- * @returns {Object} Complete metadata object
- */
 export function createMetadataBlock(options  = {}) {
   const metadata  = getDefaultMetadata();
 
@@ -115,12 +78,6 @@ export function createMetadataBlock(options  = {}) {
   return metadata;
 }
 
-/**
- * Format metadata block as string for injection into prompt
- * Uses XML-style tags for easy parsing and stripping
- * @param {Object} metadata - Metadata object to format
- * @returns {string} Formatted metadata block
- */
 export function formatMetadataBlock(metadata ) {
   try {
     const jsonStr = JSON.stringify(metadata, null, 2);
@@ -131,13 +88,6 @@ export function formatMetadataBlock(metadata ) {
   }
 }
 
-/**
- * Inject metadata into a prompt
- * Prepends metadata block before the prompt text
- * @param {string} prompt - Original prompt text
- * @param {Object} options - Metadata options (same as createMetadataBlock)
- * @returns {string} Prompt with metadata prepended
- */
 export function injectMetadata(
 prompt ,
 options  = {})
@@ -164,11 +114,6 @@ options  = {})
   }
 }
 
-/**
- * Strip metadata blocks from a prompt (utility for testing)
- * @param {string} prompt - Prompt that may contain metadata
- * @returns {string} Prompt with metadata removed
- */
 export function stripMetadata(prompt ) {
   try {
     return prompt.replace(/<ST_METADATA>[\s\S]*?<\/ST_METADATA>\n?\n?/g, '');
@@ -178,12 +123,6 @@ export function stripMetadata(prompt ) {
   }
 }
 
-/**
- * Inject metadata into the first system message of a chat array
- * Mutates the chat array in place
- * @param {Array} chatArray - Array of chat messages
- * @param {Object} options - Metadata options
- */
 export function injectMetadataIntoChatArray(
 chatArray ,
 options  = {})

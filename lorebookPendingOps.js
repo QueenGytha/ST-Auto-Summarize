@@ -4,9 +4,6 @@
 import { chat_metadata, saveMetadata } from '../../../../script.js';
 import { debug, log, error } from './index.js';
 
-/**
- * Ensure pending ops structure exists in metadata
- */
 function ensurePendingOps() {
   if (!chat_metadata.autoLorebooks) {
     chat_metadata.autoLorebooks = { pendingOps: {} };
@@ -17,32 +14,17 @@ function ensurePendingOps() {
   return chat_metadata.autoLorebooks.pendingOps;
 }
 
-/**
- * Generate unique entry ID
- * @returns {string} Entry ID in format "entry_{timestamp}_{random}"
- */
 export function generateEntryId() {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 11);
   return `entry_${timestamp}_${random}`;
 }
 
-/**
- * Get pending operation data for an entry
- * @param {string} entryId - Entry ID
- * @returns {Object|null} Pending data or null if not found
- */
 export function getPendingEntry(entryId ) {
   const pending = ensurePendingOps();
   return pending[entryId] || null;
 }
 
-/**
- * Create new pending entry
- * @param {string} entryId - Entry ID
- * @param {Object} entryData - Initial entry data
- * @returns {Object} Created pending entry
- */
 export function createPendingEntry(entryId , entryData ) {
   const pending = ensurePendingOps();
 
@@ -66,11 +48,6 @@ export function createPendingEntry(entryId , entryData ) {
   return pending[entryId];
 }
 
-/**
- * Update pending entry with new data
- * @param {string} entryId - Entry ID
- * @param {Object} updates - Updates to apply
- */
 export function updatePendingEntry(entryId , updates ) {
   const pending = ensurePendingOps();
   const entry = pending[entryId];
@@ -85,11 +62,6 @@ export function updatePendingEntry(entryId , updates ) {
   saveMetadata();
 }
 
-/**
- * Set lorebook entry lookup result for entry
- * @param {string} entryId - Entry ID
- * @param {Object} lorebookEntryLookupResult - Lorebook Entry Lookup result
- */
 export function setLorebookEntryLookupResult(entryId , lorebookEntryLookupResult ) {
   updatePendingEntry(entryId, {
     stage: 'lorebook_entry_lookup_complete',
@@ -102,11 +74,6 @@ export function setLorebookEntryLookupResult(entryId , lorebookEntryLookupResult
   });
 }
 
-/**
- * Set lorebook entry deduplicate result for entry
- * @param {string} entryId - Entry ID
- * @param {Object} lorebookEntryDeduplicateResult - LorebookEntryDeduplicate result
- */
 export function setLorebookEntryDeduplicateResult(entryId , lorebookEntryDeduplicateResult ) {
   updatePendingEntry(entryId, {
     stage: 'lorebook_entry_deduplicate_complete',
@@ -117,19 +84,10 @@ export function setLorebookEntryDeduplicateResult(entryId , lorebookEntryDedupli
   });
 }
 
-/**
- * Mark entry stage as in progress
- * @param {string} entryId - Entry ID
- * @param {string} stage - Stage name
- */
 export function markStageInProgress(entryId , stage ) {
   updatePendingEntry(entryId, { stage });
 }
 
-/**
- * Complete pending entry and remove from metadata
- * @param {string} entryId - Entry ID
- */
 export function completePendingEntry(entryId ) {
   const pending = ensurePendingOps();
 
@@ -140,19 +98,10 @@ export function completePendingEntry(entryId ) {
   }
 }
 
-/**
- * Get all pending entries
- * @returns {Object} All pending entries
- */
 export function getAllPendingEntries() {
   return ensurePendingOps();
 }
 
-/**
- * Clean up stale pending entries (older than maxAgeMs)
- * @param {number} maxAgeMs - Maximum age in milliseconds
- * @returns {number} Number of entries removed
- */
 export function cleanupStalePendingEntries(maxAgeMs  = 86400000) {
   const pending = ensurePendingOps();
   const now = Date.now();
@@ -178,31 +127,16 @@ export function cleanupStalePendingEntries(maxAgeMs  = 86400000) {
   return removed;
 }
 
-/**
- * Get entry data from pending entry
- * @param {string} entryId - Entry ID
- * @returns {Object|null} Entry data or null
- */
 export function getEntryData(entryId ) {
   const pending = getPendingEntry(entryId);
   return pending ? pending.entryData : null;
 }
 
-/**
- * Get lorebook entry lookup result from pending entry
- * @param {string} entryId - Entry ID
- * @returns {Object|null} Lorebook Entry Lookup result or null
- */
 export function getLorebookEntryLookupResult(entryId ) {
   const pending = getPendingEntry(entryId);
   return pending ? pending.lorebookEntryLookupResult : null;
 }
 
-/**
- * Get lorebook entry deduplicate result from pending entry
- * @param {string} entryId - Entry ID
- * @returns {Object|null} LorebookEntryDeduplicate result or null
- */
 export function getLorebookEntryDeduplicateResult(entryId ) {
   const pending = getPendingEntry(entryId);
   return pending ? pending.lorebookEntryDeduplicateResult : null;

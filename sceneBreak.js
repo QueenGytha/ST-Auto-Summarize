@@ -13,7 +13,9 @@ import {
   toast,
   SUBSYSTEM,
   extension_settings,
-  createSceneBreakLorebookIcon } from
+  createSceneBreakLorebookIcon,
+  selectorsExtension,
+  selectorsSillyTavern } from
 './index.js';
 import {
   auto_generate_running_summary } from
@@ -62,7 +64,7 @@ export function addSceneBreakButton() {
   const html = `
 <div title="Mark end of scene" class="mes_button ${SCENE_BREAK_BUTTON_CLASS} fa-solid fa-clapperboard" tabindex="0"></div>
 `;
-  $("#message_template .mes_buttons .extraMesButtons").prepend(html);
+  $(`${selectorsSillyTavern.message.template} ${selectorsSillyTavern.message.buttons} ${selectorsSillyTavern.message.extraButtons}`).prepend(html);
 }
 
 // Handles click events for the scene break button
@@ -73,8 +75,8 @@ set_data , // value can be any type - legitimate
 get_data , // Returns any type - legitimate
 saveChatDebounced )
 {
-  $("div#chat").on("click", `.${SCENE_BREAK_BUTTON_CLASS}`, function () {
-    const message_block = $(this).closest(".mes");
+  $(`div${selectorsSillyTavern.chat.container}`).on("click", `.${SCENE_BREAK_BUTTON_CLASS}`, function () {
+    const message_block = $(this).closest(selectorsSillyTavern.message.block);
     const message_id = Number(message_block.attr("mesid"));
     toggleSceneBreak(message_id, get_message_div, getContext, set_data, get_data, saveChatDebounced);
   });
@@ -278,8 +280,8 @@ isCollapsed ,
 versions ,
 currentIdx )
 {// Returns jQuery object - any is appropriate
-  const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
-  const previewIcon = `<i class="fa-solid fa-eye scene-preview-summary" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
+  const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-testid="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
+  const previewIcon = `<i class="fa-solid fa-eye scene-preview-summary" data-testid="scene-preview-summary" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
   const lorebookIcon = createSceneBreakLorebookIcon(index);
 
   const stateClass = isVisible ? "sceneBreak-visible" : "sceneBreak-hidden";
@@ -289,21 +291,21 @@ currentIdx )
   const collapseTitle = isCollapsed ? 'Expand scene summary' : 'Collapse scene summary';
 
   return $(`
-    <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass} ${collapsedClass}" style="margin:0 0 5px 0;" tabindex="0">
+    <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass} ${collapsedClass}" data-testid="scene-break-div" style="margin:0 0 5px 0;" tabindex="0">
         <div class="sceneBreak-header" style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.5em;">
-            <input type="text" class="sceneBreak-name auto_summarize_memory_text" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" style="flex:1;" />
-            <button class="scene-collapse-toggle menu_button fa-solid ${collapseIcon}" title="${collapseTitle}" style="padding:0.3em 0.6em;"></button>
+            <input type="text" class="sceneBreak-name auto_summarize_memory_text" data-testid="scene-break-name" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" style="flex:1;" />
+            <button class="scene-collapse-toggle menu_button fa-solid ${collapseIcon}" data-testid="scene-collapse-toggle" title="${collapseTitle}" style="padding:0.3em 0.6em;"></button>
         </div>
         <div class="sceneBreak-content">
             <div style="font-size:0.95em; color:inherit; margin-bottom:0.5em;">
                 Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}${lorebookIcon}
             </div>
-            <textarea class="scene-summary-box auto_summarize_memory_text" placeholder="Scene summary...">${sceneSummary}</textarea>
+            <textarea class="scene-summary-box auto_summarize_memory_text" data-testid="scene-summary-box" placeholder="Scene summary...">${sceneSummary}</textarea>
             <div class="scene-summary-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
-                <button class="scene-rollback-summary menu_button" title="Go to previous summary" style="white-space:nowrap;"><i class="fa-solid fa-rotate-left"></i> Previous Summary</button>
-                <button class="scene-generate-summary menu_button" title="Generate summary for this scene" style="white-space:nowrap;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
-                <button class="scene-rollforward-summary menu_button" title="Go to next summary" style="white-space:nowrap;"><i class="fa-solid fa-rotate-right"></i> Next Summary</button>
-                <button class="scene-regenerate-running menu_button" title="Combine this scene with current running summary" style="margin-left:auto; white-space:nowrap;"><i class="fa-solid fa-sync-alt"></i> Combine</button>
+                <button class="scene-rollback-summary menu_button" data-testid="scene-rollback-summary" title="Go to previous summary" style="white-space:nowrap;"><i class="fa-solid fa-rotate-left"></i> Previous Summary</button>
+                <button class="scene-generate-summary menu_button" data-testid="scene-generate-summary" title="Generate summary for this scene" style="white-space:nowrap;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
+                <button class="scene-rollforward-summary menu_button" data-testid="scene-rollforward-summary" title="Go to next summary" style="white-space:nowrap;"><i class="fa-solid fa-rotate-right"></i> Next Summary</button>
+                <button class="scene-regenerate-running menu_button" data-testid="scene-regenerate-running" title="Combine this scene with current running summary" style="margin-left:auto; white-space:nowrap;"><i class="fa-solid fa-sync-alt"></i> Combine</button>
                 <span style="align-self:center; font-size:0.9em; color:inherit; margin-left:0.5em;">${versions.length > 1 ? `[${currentIdx + 1}/${versions.length}]` : ''}</span>
             </div>
         </div>
@@ -350,12 +352,12 @@ saveChatDebounced )
   // Build scene break element
   const $sceneBreak = buildSceneBreakElement(index, startIdx, sceneMessages, sceneName, sceneSummary, isVisible, isCollapsed, versions, currentIdx);
 
-  // === Insert after the summary box, or after .mes_text if no summary box exists ===
-  const $summaryBox = $msgDiv.find('.auto_summarize_memory_text');
+  // === Insert after the summary box, or after message text if no summary box exists ===
+  const $summaryBox = $msgDiv.find(selectorsExtension.memory.text);
   if ($summaryBox.length) {
     $summaryBox.last().after($sceneBreak);
   } else {
-    const $mesText = $msgDiv.find('.mes_text');
+    const $mesText = $msgDiv.find(selectorsSillyTavern.message.text);
     if ($mesText.length) {
       $mesText.after($sceneBreak);
     } else {
@@ -364,7 +366,7 @@ saveChatDebounced )
   }
 
   // --- Editable handlers ---
-  $sceneBreak.find('.sceneBreak-name').on('change blur', function () {
+  $sceneBreak.find(selectorsExtension.sceneBreak.name).on('change blur', function () {
     set_data(message, SCENE_BREAK_NAME_KEY, $(this).val());
     saveChatDebounced();
     // Update navigator bar to show the new name immediately
@@ -372,7 +374,7 @@ saveChatDebounced )
   });
 
   // --- Collapse/expand toggle handler ---
-  $sceneBreak.find('.scene-collapse-toggle').on('click', function (e) {
+  $sceneBreak.find(selectorsExtension.sceneBreak.collapseToggle).on('click', function (e) {
     e.stopPropagation();
     // Use same default logic as render function
     let currentCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
@@ -384,7 +386,7 @@ saveChatDebounced )
     renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
   });
 
-  $sceneBreak.find('.scene-summary-box').on('change blur', function () {
+  $sceneBreak.find(selectorsExtension.sceneBreak.summaryBox).on('change blur', function () {
     // Update the current version in the versions array
     const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
     const idx = getCurrentSceneSummaryIndex(message, get_data);
@@ -399,12 +401,12 @@ saveChatDebounced )
   });
 
   // --- Hyperlink handler ---
-  $sceneBreak.find('.scene-start-link').on('click', function () {
+  $sceneBreak.find(selectorsExtension.sceneBreak.startLink).on('click', function () {
     const mesid = $(this).data('mesid');
     let $target = $(`div[mesid="${mesid}"]`);
     if ($target.length) {
-      // Scroll the #chat container so the target is near the top
-      const $chat = $('#chat');
+      // Scroll the chat container so the target is near the top
+      const $chat = $(selectorsSillyTavern.chat.container);
       const chatOffset = $chat.offset()?.top ?? 0;
       const targetOffset = $target.offset()?.top ?? 0;
       const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - 20; // 20px padding
@@ -414,7 +416,7 @@ saveChatDebounced )
       setTimeout(() => $target.removeClass('scene-highlight'), 1200);
     } else {
       // fallback: scroll to top to try to load more messages
-      const $chat = $('#chat');
+      const $chat = $(selectorsSillyTavern.chat.container);
       $chat.scrollTop(0);
       setTimeout(() => {
         $target = $(`div[mesid="${mesid}"]`);
@@ -432,7 +434,7 @@ saveChatDebounced )
   });
 
   // --- Preview scene content handler ---
-  $sceneBreak.find('.scene-preview-summary').off('click').on('click', function (e) {
+  $sceneBreak.find(selectorsExtension.sceneBreak.previewSummary).off('click').on('click', function (e) {
     e.stopPropagation();
     const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
     const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
@@ -470,12 +472,12 @@ saveChatDebounced )
   });
 
   // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
-  $sceneBreak.find('.scene-generate-summary').off('click').on('click', async function (e) {
+  $sceneBreak.find(selectorsExtension.sceneBreak.generateSummary).off('click').on('click', async function (e) {
     e.stopPropagation();
     await handleGenerateSummaryButtonClick(index, chat, message, $sceneBreak, get_message_div, get_data, set_data, saveChatDebounced);
   });
 
-  $sceneBreak.find('.scene-rollback-summary').off('click').on('click', function (e) {
+  $sceneBreak.find(selectorsExtension.sceneBreak.rollbackSummary).off('click').on('click', function (e) {
     e.stopPropagation();
     const idx = getCurrentSceneSummaryIndex(message, get_data);
     if (idx > 0) {
@@ -489,7 +491,7 @@ saveChatDebounced )
       renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
     }
   });
-  $sceneBreak.find('.scene-rollforward-summary').off('click').on('click', function (e) {
+  $sceneBreak.find(selectorsExtension.sceneBreak.rollforwardSummary).off('click').on('click', function (e) {
     e.stopPropagation();
     const versions = getSceneSummaryVersions(message, get_data);
     const idx = getCurrentSceneSummaryIndex(message, get_data);
@@ -506,7 +508,7 @@ saveChatDebounced )
   });
 
   // --- Regenerate running summary from this scene onwards ---
-  $sceneBreak.find('.scene-regenerate-running').off('click').on('click', async function (e) {
+  $sceneBreak.find(selectorsExtension.sceneBreak.regenerateRunning).off('click').on('click', async function (e) {
     e.stopPropagation();
     const sceneSummary = get_data(message, SCENE_SUMMARY_MEMORY_KEY);
     if (!sceneSummary) {
@@ -530,18 +532,18 @@ saveChatDebounced )
 
   // --- Selection handlers for visual feedback ---
   $sceneBreak.on('mousedown', function (_e) {
-    $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
+    $(selectorsExtension.sceneBreak.div).removeClass(SCENE_BREAK_SELECTED_CLASS);
     $(this).addClass(SCENE_BREAK_SELECTED_CLASS);
   });
   // Remove selection when clicking outside any scene break
   $(document).off('mousedown.sceneBreakDeselect').on('mousedown.sceneBreakDeselect', function (e) {
-    if (!$(e.target).closest('.' + SCENE_BREAK_DIV_CLASS).length) {
-      $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
+    if (!$(e.target).closest(selectorsExtension.sceneBreak.div).length) {
+      $(selectorsExtension.sceneBreak.div).removeClass(SCENE_BREAK_SELECTED_CLASS);
     }
   });
   // Also add focus/blur for keyboard navigation
   $sceneBreak.on('focusin', function () {
-    $('.' + SCENE_BREAK_DIV_CLASS).removeClass(SCENE_BREAK_SELECTED_CLASS);
+    $(selectorsExtension.sceneBreak.div).removeClass(SCENE_BREAK_SELECTED_CLASS);
     $(this).addClass(SCENE_BREAK_SELECTED_CLASS);
   });
   $sceneBreak.on('focusout', function () {
@@ -549,14 +551,6 @@ saveChatDebounced )
   });
 }
 
-/**
- * Collects all messages for a scene, regardless of exclusion/hidden status.
- * @param {number} startIdx - Start index of the scene (inclusive)
- * @param {number} endIdx - End index of the scene (inclusive)
- * @param {string} mode - Ignored (kept for compatibility, always uses messages)
- * @param {object} ctx - Context object
- * @returns {string} - Concatenated scene content
- */
 export function collectSceneContent(
 startIdx ,
 endIdx ,
@@ -603,26 +597,6 @@ saveChatDebounced )
   if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
 }
 
-/**
- * Generate a scene summary for a message that has a scene break marker
- * @param {number} index - Index of the message with the scene break
- * @param {function} get_message_div - Function to get message div by index
- * @param {function} getContext - Function to get SillyTavern context
- * @param {function} get_data - Function to get data from message
- * @param {function} set_data - Function to set data on message
- * @param {function} saveChatDebounced - Function to save chat
- * @returns {Promise<string>} - The generated scene summary
- */
-/**
- * Generate a scene name using AI based on the scene summary
- * @param {string} summary - The scene summary text
- * @param {object} message - The message object to set the scene name on
- * @param {function} get_data - Function to get data from message
- * @param {function} set_data - Function to set data on message
- * @param {object} ctx - SillyTavern context
- * @param {object|null} _savedProfiles - Saved profile/preset info from switchToSceneProfile() (optional, unused but kept for signature consistency)
- * @returns {Promise<string|null>} - The generated scene name, or null if generation failed
- */
 export async function autoGenerateSceneNameFromSummary(
 summary ,
 message ,

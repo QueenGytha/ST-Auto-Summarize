@@ -1,5 +1,5 @@
 
-import { getContext, get_settings, log, settings_content_class } from './index.js';
+import { getContext, get_settings, log, settings_content_class, selectorsExtension } from './index.js';
 
 function refresh_character_select() {
   // sets the select2 multiselect for choosing a list of characters
@@ -45,12 +45,12 @@ function refresh_select2_element(id , selected , options , placeholder  = "") {
   // Refresh a select2 element with the given ID (a select element) and set the options
 
   // check whether the dropdown is open. If so, don't update the options (it messes with the widget)
-  const $dropdown = $(`#select2-${id}-results`);
+  const $dropdown = $(selectorsExtension.select2.results(id));
   if ($dropdown.length > 0) {
     return;
   }
 
-  const $select = $(`#${id}`);
+  const $select = $(selectorsExtension.select2.element(id));
   $select.empty(); // clear current options
 
   // add the options to the dropdown
@@ -60,7 +60,7 @@ function refresh_select2_element(id , selected , options , placeholder  = "") {
   }
 
   // If the select2 widget hasn't been created yet, create it
-  const $widget = $(`.${settings_content_class} ul#select2-${id}-container`);
+  const $widget = $(selectorsExtension.select2.container(id, settings_content_class));
   if ($widget.length === 0) {
     $select.select2({ // register as a select2 element
       width: '100%',

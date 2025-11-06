@@ -6,9 +6,6 @@
 // Will be imported from index.js via barrel exports
 let log , debug , error , getLorebookEntries , addLorebookEntry , modifyLorebookEntry , deleteLorebookEntry , getSetting ; // Utility and lorebook functions - any type is legitimate
 
-/**
- * Initialize the category indexes manager with imported utilities
- */
 export function initCategoryIndexes(utils , lorebookManagerUtils , settingsManagerUtils ) {
   // All parameters are any type - objects with various properties - legitimate use of any
   log = utils.log;
@@ -24,10 +21,6 @@ export function initCategoryIndexes(utils , lorebookManagerUtils , settingsManag
   }
 }
 
-/**
- * Category configuration
- * Maps entity prefixes to category information
- */
 const CATEGORY_CONFIG = {
   'character': {
     indexName: '__index_characters',
@@ -73,11 +66,6 @@ const CATEGORY_CONFIG = {
   }
 };
 
-/**
- * Extract category prefix from entry name
- * @param {string} entryName - Entry comment/name
- * @returns {string|null} - Category prefix or null
- */
 function extractCategoryPrefix(entryName ) {
   if (!entryName) return null;
 
@@ -91,11 +79,6 @@ function extractCategoryPrefix(entryName ) {
   return null;
 }
 
-/**
- * Extract entity name from prefixed entry name
- * @param {string} entryName - Full entry name (e.g., "character-Alice")
- * @returns {string} - Entity name without prefix
- */
 function extractEntityName(entryName ) {
   const parts = entryName.split('-');
   if (parts.length > 1) {
@@ -104,11 +87,6 @@ function extractEntityName(entryName ) {
   return entryName;
 }
 
-/**
- * Scan lorebook and categorize all entity entries
- * @param {string} lorebookName - Name of lorebook to scan
- * @returns {Promise<Object>} - Object with category arrays
- */
 async function categorizeEntries(lorebookName ) {
   try {
     const entries = await getLorebookEntries(lorebookName);
@@ -153,13 +131,6 @@ async function categorizeEntries(lorebookName ) {
   }
 }
 
-/**
- * Create or update a category index entry
- * @param {string} lorebookName - Name of lorebook
- * @param {string} categoryPrefix - Category prefix (e.g., 'character')
- * @param {Array<string>} entityNames - List of entity names in this category
- * @returns {Promise<boolean>} - Success status
- */
 async function updateCategoryIndexEntry(lorebookName , categoryPrefix , entityNames ) {
   try {
     const config = CATEGORY_CONFIG[categoryPrefix];
@@ -219,11 +190,6 @@ async function updateCategoryIndexEntry(lorebookName , categoryPrefix , entityNa
   }
 }
 
-/**
- * Update all category index entries in a lorebook
- * @param {string} lorebookName - Name of lorebook to update
- * @returns {Promise<boolean>} - Success status
- */
 export async function updateAllCategoryIndexes(lorebookName ) {
   try {
     if (!lorebookName) {
@@ -256,12 +222,6 @@ export async function updateAllCategoryIndexes(lorebookName ) {
   }
 }
 
-/**
- * Update a specific category index after adding/removing an entity
- * @param {string} lorebookName - Name of lorebook
- * @param {string} categoryPrefix - Category to update (e.g., 'character')
- * @returns {Promise<boolean>} - Success status
- */
 export async function updateCategoryIndex(lorebookName , categoryPrefix ) {
   try {
     if (!CATEGORY_CONFIG[categoryPrefix]) {
@@ -294,11 +254,6 @@ export async function updateCategoryIndex(lorebookName , categoryPrefix ) {
   }
 }
 
-/**
- * Get category prefix from entity type
- * @param {string} entityType - Entity type (character, npc, creature, etc.)
- * @returns {string} - Category prefix
- */
 export function getCategoryForEntityType(entityType ) {
   switch (entityType) {
     case 'character':
@@ -321,12 +276,6 @@ export function getCategoryForEntityType(entityType ) {
   }
 }
 
-/**
- * Remove all category index entries from a lorebook
- * Useful for cleanup or resetting
- * @param {string} lorebookName - Name of lorebook
- * @returns {Promise<boolean>} - Success status
- */
 export async function removeCategoryIndexes(lorebookName ) {
   try {
     debug(`Removing all category indexes from: ${lorebookName}`);
@@ -353,11 +302,6 @@ export async function removeCategoryIndexes(lorebookName ) {
   }
 }
 
-/**
- * Get statistics about category indexes
- * @param {string} lorebookName - Name of lorebook
- * @returns {Promise<Object>} - Statistics object
- */
 export async function getCategoryStats(lorebookName ) {
   try {
     const categorized = await categorizeEntries(lorebookName);

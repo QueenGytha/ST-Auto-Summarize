@@ -13,9 +13,6 @@ import {
 
 import { debug, error, chat_metadata, saveMetadata } from './index.js';
 
-/**
- * Get current connection settings (profile and preset)
- */
 async function getCurrentConnectionSettings() {
   const connectionProfile = await get_current_connection_profile();
   const completionPreset = get_current_preset();
@@ -28,16 +25,6 @@ async function getCurrentConnectionSettings() {
   return settings ;
 }
 
-/**
- * Switch connection profile and preset in the correct order
- *
- * CRITICAL: Connection profile MUST be set first because switching profiles
- * auto-loads the profile's default preset. Then we set the desired preset
- * to override that default.
- *
- * @param {?string} profileName - Connection profile to switch to (or null/undefined to skip)
- * @param {?string} presetName - Completion preset to switch to (or null/undefined to skip)
- */
 async function switchConnectionSettings(
 profileName ,
 presetName )
@@ -55,9 +42,6 @@ presetName )
   }
 }
 
-/**
- * Save connection settings state to persistent storage (for crash recovery)
- */
 function saveConnectionSettingsState(state ) {
   try {
     if (!chat_metadata.autoSummarize) {
@@ -73,9 +57,6 @@ function saveConnectionSettingsState(state ) {
   }
 }
 
-/**
- * Get saved connection settings state from persistent storage
- */
 function getSavedConnectionSettingsState() {
   try {
     const saved = chat_metadata?.autoSummarize?.savedConnectionSettings;
@@ -88,9 +69,6 @@ function getSavedConnectionSettingsState() {
   return null;
 }
 
-/**
- * Clear saved connection settings state
- */
 function clearSavedConnectionSettingsState() {
   try {
     if (chat_metadata?.autoSummarize?.savedConnectionSettings) {
@@ -103,9 +81,6 @@ function clearSavedConnectionSettingsState() {
   }
 }
 
-/**
- * Restore connection settings from persistent storage (crash recovery)
- */
 async function restoreConnectionSettingsIfNeeded() {
   const saved = getSavedConnectionSettingsState();
 
@@ -121,15 +96,6 @@ async function restoreConnectionSettingsIfNeeded() {
   return true;
 }
 
-/**
- * Wrapper for executing a function with specific connection settings
- * Automatically saves current settings, switches, executes, and restores
- *
- * @param {?string} profileName - Connection profile to use for operation
- * @param {?string} presetName - Completion preset to use for operation
- * @param {Function} operation - Async function to execute
- * @returns {Promise<any>} Result of the operation
- */
 async function withConnectionSettings(
 profileName ,
 presetName ,

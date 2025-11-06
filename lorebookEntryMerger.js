@@ -11,9 +11,6 @@ let modifyLorebookEntry , getLorebookEntries , reorderLorebookEntriesAlphabetica
 let get_settings ; // Settings function - any type is legitimate
 let enqueueOperation , OperationType ; // Queue functions - any type is legitimate
 
-/**
- * Initialize the lorebook entry merger module
- */
 export function initLorebookEntryMerger(utils , lorebookManagerModule , settingsManagerModule , queueModule ) {
   // All parameters are any type - passed as objects with various properties - legitimate use of any
   log = utils.log;
@@ -39,10 +36,6 @@ export function initLorebookEntryMerger(utils , lorebookManagerModule , settings
   }
 }
 
-/**
- * Get default merge prompt
- * @returns {string} Default prompt
- */
 function getDefaultMergePrompt() {
   return `You are updating a lorebook entry. You have the existing entry content and new information from a summary.
 
@@ -64,12 +57,6 @@ New Information from Summary:
 Output ONLY the merged content, nothing else. Do not include explanations or meta-commentary.`;
 }
 
-/**
- * Get summary processing setting with fallback to default
- * @param {string} key - Setting key
- * @param {*} defaultValue - Default value
- * @returns {*} Setting value
- */
 function getSummaryProcessingSetting(key , defaultValue  = null) {
   // defaultValue and return value are any type - can be various types - legitimate use of any
   try {
@@ -82,13 +69,6 @@ function getSummaryProcessingSetting(key , defaultValue  = null) {
   }
 }
 
-/**
- * Create merge prompt by substituting variables
- * @param {string} existingContent - Current entry content
- * @param {string} newContent - New content from summary
- * @param {string} entryName - Current entry name/comment
- * @returns {string} Formatted prompt
- */
 function createMergePrompt(existingContent , newContent , entryName  = '') {
   const template = getSummaryProcessingSetting('merge_prompt') || getDefaultMergePrompt();
   const prefill = getSummaryProcessingSetting('merge_prefill') || '';
@@ -112,13 +92,6 @@ function createMergePrompt(existingContent , newContent , entryName  = '') {
   return prompt;
 }
 
-/**
- * Call AI to merge entry content
- * @param {string} existingContent - Current entry content
- * @param {string} newContent - New content from summary
- * @param {string} entryName - Current entry name/comment
- * @returns {Promise<Object>} Object with mergedContent and optional canonicalName
- */
 async function callAIForMerge(existingContent , newContent , entryName  = '') {
   try {
     const prompt = createMergePrompt(existingContent, newContent, entryName);
@@ -198,14 +171,6 @@ async function callAIForMerge(existingContent , newContent , entryName  = '') {
   }
 }
 
-/**
- * Merge new content into an existing lorebook entry using AI
- * @param {string} lorebookName - Name of the lorebook
- * @param {Object} existingEntry - Existing entry object
- * @param {Object} newEntryData - New entry data from summary
- * @param {Object} options - Merge options
- * @returns {Promise<Object>} Merge result
- */
 export async function mergeLorebookEntry(lorebookName , existingEntry , newEntryData , options  = {}) {
   // existingEntry, newEntryData, options, and return type are any - complex objects with various properties - legitimate use of any
   try {
@@ -255,13 +220,6 @@ export async function mergeLorebookEntry(lorebookName , existingEntry , newEntry
   }
 }
 
-/**
- * Execute the merge operation (called directly or by queue handler)
- * @param {string} lorebookName - Name of the lorebook
- * @param {Object} existingEntry - Existing entry object
- * @param {Object} newEntryData - New entry data
- * @returns {Promise<Object>} Merge result
- */
 export async function executeMerge(lorebookName , existingEntry , newEntryData ) {
   // existingEntry, newEntryData, and return type are any - complex objects with various properties - legitimate use of any
   try {
@@ -372,11 +330,6 @@ export async function executeMerge(lorebookName , existingEntry , newEntryData )
   }
 }
 
-/**
- * Merge operation by UID (for queue handler)
- * @param {Object} params - Operation parameters
- * @returns {Promise<Object>} Result
- */
 export async function mergeLorebookEntryByUid(params ) {
   // params and return type are any - complex objects with various properties - legitimate use of any
   try {

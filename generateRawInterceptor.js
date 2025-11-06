@@ -10,10 +10,6 @@ import { getOperationSuffix } from './operationContext.js';
 let _originalGenerateRaw  = null; // Store original function
 let _isInterceptorActive  = false; // Prevent recursion
 
-/**
- * Create wrapped version of generateRaw
- * This is exported and should be used instead of the original
- */
 export async function wrappedGenerateRaw(options ) {
   console.log('[Auto-Summarize:Interceptor] wrappedGenerateRaw called! isInterceptorActive:', _isInterceptorActive);
 
@@ -62,11 +58,6 @@ export async function wrappedGenerateRaw(options ) {
   }
 }
 
-/**
- * Install global generateRaw interceptor
- * Tries multiple strategies to intercept all generateRaw calls
- * Must be called during extension initialization
- */
 export function installGenerateRawInterceptor() {
   console.log('[Auto-Summarize:Interceptor] Installing generateRaw interceptor...');
 
@@ -111,12 +102,6 @@ export function installGenerateRawInterceptor() {
   }
 }
 
-/**
- * Determine operation type from call context
- * Uses heuristics to identify the type of LLM operation
- * Maps to OperationType constants from operationQueue.js
- * @returns {string} Operation type identifier
- */
 // eslint-disable-next-line complexity
 function determineOperationType() {
   try {
@@ -178,10 +163,6 @@ function determineOperationType() {
   }
 }
 
-/**
- * Get the original generateRaw function (for testing/debugging)
- * @returns {Function|null} Original generateRaw or null if not installed
- */
 export function getOriginalGenerateRaw() {
   return _originalGenerateRaw;
 }

@@ -368,7 +368,7 @@ async function summarize_text(prompt ) {
   let result;
 
   try {
-    /**
+    /*
      * Generates a message using the provided prompt.
      * @param {string} prompt Prompt to generate a message from
      * @param {string} api API to use. Main API is used if not specified.

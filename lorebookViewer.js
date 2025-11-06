@@ -1,40 +1,31 @@
 // Lorebook Viewer UI
 // Adds buttons to messages and scene breaks to view active lorebook entries
 
-import { getContext } from './index.js';
+import { getContext, selectorsSillyTavern } from './index.js';
 import { getActiveLorebooksForMessage } from './index.js';
 
 const LOREBOOK_VIEWER_BUTTON_CLASS = 'lorebook-viewer-button';
 
-/**
- * Add lorebook viewer button to message template
- * Called during extension initialization
- * Positioned after the scene break button
- */
 export function addLorebookViewerButton() {
   const html = `
 <div title="View active lorebook entries" class="mes_button ${LOREBOOK_VIEWER_BUTTON_CLASS} fa-solid fa-book-atlas" tabindex="0"></div>
 `;
 
   // Insert after the scene break button (which is the first button via prepend)
-  const sceneBreakButton = $("#message_template .mes_buttons .extraMesButtons .auto_summarize_scene_break_button");
+  const sceneBreakButton = $(`${selectorsSillyTavern.message.template} ${selectorsSillyTavern.message.buttons} ${selectorsSillyTavern.message.extraButtons} .auto_summarize_scene_break_button`);
   if (sceneBreakButton.length > 0) {
     sceneBreakButton.after(html);
     console.log('[Auto-Summarize:LorebookViewer] Added lorebook viewer button after scene break button');
   } else {
     // Fallback: append to end if scene break button not found
-    $("#message_template .mes_buttons .extraMesButtons").append(html);
+    $(`${selectorsSillyTavern.message.template} ${selectorsSillyTavern.message.buttons} ${selectorsSillyTavern.message.extraButtons}`).append(html);
     console.log('[Auto-Summarize:LorebookViewer] Added lorebook viewer button to message template (fallback)');
   }
 }
 
-/**
- * Bind click handler for lorebook viewer buttons in messages
- * Uses event delegation for dynamically added messages
- */
 export function bindLorebookViewerButton() {
-  $("div#chat").on("click", `.${LOREBOOK_VIEWER_BUTTON_CLASS}`, function () {
-    const message_block = $(this).closest(".mes");
+  $(`div${selectorsSillyTavern.chat.container}`).on("click", `.${LOREBOOK_VIEWER_BUTTON_CLASS}`, function () {
+    const message_block = $(this).closest(selectorsSillyTavern.message.block);
     const message_id = Number(message_block.attr("mesid"));
 
     console.log(`[Auto-Summarize:LorebookViewer] Clicked for message ${message_id}`);
@@ -44,10 +35,6 @@ export function bindLorebookViewerButton() {
   console.log('[Auto-Summarize:LorebookViewer] Bound click handler for lorebook viewer buttons');
 }
 
-/**
- * Show modal displaying active lorebook entries for a message
- * @param {number} messageIndex - The message index to display entries for
- */
 export function showLorebookEntriesModal(messageIndex) {
   const ctx = getContext();
   const entries = getActiveLorebooksForMessage(messageIndex);
@@ -113,21 +100,12 @@ export function showLorebookEntriesModal(messageIndex) {
   }
 }
 
-/**
- * Create and return lorebook viewer icon HTML for scene breaks
- * @param {number} messageIndex - The message index for the scene break
- * @returns {string} HTML string for the icon
- */
 export function createSceneBreakLorebookIcon(messageIndex) {
   return `<i class="fa-solid fa-book-atlas scene-lorebook-viewer" data-message-index="${messageIndex}" title="View active lorebook entries" style="cursor:pointer; margin-left:0.5em;"></i>`;
 }
 
-/**
- * Bind click handler for scene break lorebook icons
- * Should be called after scene breaks are rendered
- */
 export function bindSceneBreakLorebookIcons() {
-  $("div#chat").on("click", ".scene-lorebook-viewer", function (e) {
+  $(`div${selectorsSillyTavern.chat.container}`).on("click", ".scene-lorebook-viewer", function (e) {
     e.stopPropagation();
     const messageIndex = Number($(this).attr("data-message-index"));
     console.log(`[Auto-Summarize:LorebookViewer] Scene break icon clicked for message ${messageIndex}`);

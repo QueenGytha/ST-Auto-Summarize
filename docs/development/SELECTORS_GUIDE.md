@@ -479,6 +479,21 @@ echo "✅ Selector validation passed"
 
 ## AI Workflows
 
+### CRITICAL: Always Check Selector Files First
+
+**BEFORE using Playwright MCP or any discovery tool, AI MUST:**
+
+1. ✅ **Check `selectorsExtension.js`** - Does selector already exist?
+2. ✅ **Check `selectorsSillyTavern.js`** - Does selector already exist?
+3. ✅ **Search codebase** - Is selector used elsewhere?
+
+**WHY:** AI often gets lazy and duplicates existing functionality without checking first. This wastes tokens and creates duplicate selectors.
+
+**When to use Playwright MCP:**
+- ✅ Selector exists in file but is BROKEN (test fails, selector not found)
+- ✅ Adding NEW selector that doesn't exist yet
+- ❌ **NEVER** use MCP without checking files first
+
 ### Workflow 1: Extension Selector Breaks
 
 **Scenario:** Refactored HTML, changed data-testid
@@ -490,10 +505,9 @@ echo "✅ Selector validation passed"
 2. Tests fail:
    Error: selector '[data-testid="memory-toggle"]' not found
 
-3. AI knows:
-   - Test trying to click memory toggle button
-   - Selector is in selectorsExtension.js
-   - Need to update data-testid reference
+3. AI FIRST checks selectorsExtension.js:
+   ✅ Selector exists: memory.toggleButton = '[data-testid="memory-toggle"]'
+   ✅ Knows: Just need to update the data-testid value
 
 4. AI updates selectorsExtension.js:
    memory: {
@@ -503,6 +517,8 @@ echo "✅ Selector validation passed"
 5. Tests pass ✅
 
 Token cost: ~2k tokens (simple update)
+
+NO MCP NEEDED - file already had the selector defined
 ```
 
 ### Workflow 2: SillyTavern Selector Breaks
@@ -515,10 +531,10 @@ Token cost: ~2k tokens (simple update)
 2. Tests fail:
    Error: selector '#send_but' not found
 
-3. AI knows:
-   - Test trying to click ST's send button
-   - Selector is in selectorsSillyTavern.js
-   - Need to discover new selector
+3. AI FIRST checks selectorsSillyTavern.js:
+   ✅ Selector exists: chat.sendButton = '#send_but'
+   ✅ Knows: Selector is defined, but value is wrong (ST changed HTML)
+   ✅ Decides: NOW is appropriate time to use MCP to discover new value
 
 4. AI runs Playwright Inspector:
    npx playwright codegen http://localhost:8000
@@ -544,6 +560,8 @@ Token cost: ~2k tokens (simple update)
 7. Tests pass ✅
 
 Token cost: ~10-20k tokens (MCP + update)
+
+MCP APPROPRIATE - selector existed but needed new value
 ```
 
 ### Workflow 3: Adding New Selector
@@ -551,10 +569,14 @@ Token cost: ~10-20k tokens (MCP + update)
 **Scenario:** Adding new feature, need new selector
 
 ```
-1. AI adds new HTML:
+1. AI FIRST checks selectorsExtension.js:
+   ❌ Selector doesn't exist for this feature
+   ✅ Decides: This is a NEW selector, okay to add
+
+2. AI adds new HTML:
    <button id="new_feature_btn" data-testid="feature-action">
 
-2. AI adds to selectorsExtension.js:
+3. AI adds to selectorsExtension.js:
    export const selectorsExtension = {
      // ... existing selectors
 
@@ -563,19 +585,93 @@ Token cost: ~10-20k tokens (MCP + update)
      }
    };
 
-3. AI uses in extension code:
+4. AI uses in extension code:
    import { selectorsExtension } from './index.js';
    $(selectorsExtension.feature.actionButton).on('click', ...);
 
-4. AI uses in tests:
+5. AI uses in tests:
    import { selectorsExtension } from '../../index.js';
    await page.click(selectorsExtension.feature.actionButton);
 
-5. Validation passes ✅
+6. Validation passes ✅
    Tests pass ✅
 
 Token cost: ~5k tokens (add selector + usage)
+
+NO MCP NEEDED - AI created the HTML, knows the data-testid
 ```
+
+### Workflow 4: AI Gets Lazy (ANTI-PATTERN)
+
+**Scenario:** AI doesn't check files first (WRONG)
+
+```
+❌ BAD WORKFLOW:
+
+1. AI needs to click memory toggle
+
+2. AI thinks: "I'll use MCP to find the selector"
+   (Skips checking selectorsExtension.js)
+
+3. AI runs Playwright Inspector: 10k tokens
+   AI uses MCP to find element: 10k tokens
+   AI discovers: '[data-testid="memory-toggle"]'
+
+4. AI uses directly in code:
+   await page.click('[data-testid="memory-toggle"]')
+
+5. Validation FAILS: Hardcoded selector detected
+
+6. AI realizes: Should have checked selectorsExtension.js first
+   AI checks: memory.toggleButton = '[data-testid="memory-toggle"]'
+   AI sees: Selector already existed!
+
+7. AI fixes code:
+   await page.click(selectorsExtension.memory.toggleButton)
+
+8. Validation passes ✅
+
+Token cost: ~25k tokens WASTED
+- Could have been 2k if checked file first
+- MCP was completely unnecessary
+```
+
+**CORRECT WORKFLOW:**
+
+```
+✅ GOOD WORKFLOW:
+
+1. AI needs to click memory toggle
+
+2. AI checks selectorsExtension.js FIRST:
+   ✅ Found: memory.toggleButton = '[data-testid="memory-toggle"]'
+
+3. AI uses in code:
+   await page.click(selectorsExtension.memory.toggleButton)
+
+4. Validation passes ✅
+
+Token cost: ~2k tokens (checked file, used selector)
+- NO MCP needed
+- NO wasted tokens
+- NO duplication
+```
+
+### Summary: Check Files First
+
+**ALWAYS:**
+1. Check `selectorsExtension.js` or `selectorsSillyTavern.js`
+2. Search codebase for existing usage
+3. Only use MCP if:
+   - Selector exists but is BROKEN
+   - Adding genuinely NEW selector
+   - ST changed HTML, need new value
+
+**NEVER:**
+- Use MCP without checking files first
+- Assume selector doesn't exist
+- Hardcode selectors (validation blocks this)
+- Duplicate selectors (waste of tokens)
 
 ---
 

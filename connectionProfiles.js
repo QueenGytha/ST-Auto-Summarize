@@ -1,12 +1,12 @@
 
-import { get_settings, error, debug, toast_debounced, getContext, CONNECT_API_MAP } from './index.js';
+import { get_settings, error, debug, toast_debounced, getContext, CONNECT_API_MAP, selectorsSillyTavern } from './index.js';
 
 // Connection profiles
 let connection_profiles_active;
 function check_connection_profiles_active() {
   // detect whether the connection profiles extension is active by checking for the UI elements
   if (connection_profiles_active === undefined) {
-    connection_profiles_active = $('#sys-settings-button').find('#connection_profiles').length > 0;
+    connection_profiles_active = $(selectorsSillyTavern.extensions.sysSettingsButton).find(selectorsSillyTavern.extensions.connectionProfiles).length > 0;
 
     // If not found and we haven't retried yet, schedule a retry after 2 seconds
     if (!connection_profiles_active) {
@@ -16,8 +16,8 @@ function check_connection_profiles_active() {
 
         connection_profiles_active = undefined; // Reset to force re-check
         // Try to refresh the UI if connection profiles are now available
-        const elem = $('#sys-settings-button');
-        if (elem && typeof elem.find === 'function' && elem.find('#connection_profiles').length > 0) {
+        const elem = $(selectorsSillyTavern.extensions.sysSettingsButton);
+        if (elem && typeof elem.find === 'function' && elem.find(selectorsSillyTavern.extensions.connectionProfiles).length > 0) {
           // Connection profiles are now available, refresh the settings UI
           import('./profileUI.js').then((module) => {
             if (module.refresh_settings) {

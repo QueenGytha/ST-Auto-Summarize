@@ -173,10 +173,6 @@ function concatenate_summaries(indexes ) {
   return JSON.stringify(summaries, null, 2);
 }
 
-/**
- * Clear all summary-related metadata for the current chat
- * @returns {Object} Counts describing what was cleared
- */
 function clear_all_summaries_for_chat() {
   const ctx = getContext();
   const chat = ctx.chat;

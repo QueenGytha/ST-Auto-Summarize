@@ -1,9 +1,5 @@
 #!/usr/bin/env node
 /* eslint-env node */
-/**
- * Syntax validation script
- * Checks that all JS files are valid browser-compatible JavaScript
- */
 
 import { execSync } from 'child_process';
 import fs from 'fs';

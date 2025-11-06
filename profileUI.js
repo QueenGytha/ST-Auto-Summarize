@@ -5,7 +5,6 @@ import {
   check_preset_valid,
   get_presets,
   get_connection_profiles,
-  check_connection_profile_valid,
   toast,
   debug,
   error,
@@ -13,6 +12,8 @@ import {
   set_setting_ui_element,
   settings_ui_map,
   chat_enabled,
+  selectorsExtension,
+  scopeToSettings,
   set_character_enabled_button_states,
   get_character_profile,
   get_chat_profile,
@@ -20,7 +21,6 @@ import {
   getContext,
   extension_settings } from
 './index.js';
-import { default_short_template } from './defaultPrompts.js';
 import { ensureEntityTypesSetting, renderEntityTypesList } from './entityTypeSettingsUI.js';
 
 function update_profile_section() {
@@ -31,9 +31,9 @@ function update_profile_section() {
   const current_chat_profile = get_chat_profile();
   const profile_options = Object.keys(get_settings('profiles'));
 
-  const $choose_profile_dropdown = $(`.${settings_content_class} #profile`).empty();
-  const $character = $('button#character_profile');
-  const $chat = $('button#chat_profile');
+  const $choose_profile_dropdown = $(`.${settings_content_class} ${selectorsExtension.profiles.select}`).empty();
+  const $character = $(selectorsExtension.profiles.characterAutoload);
+  const $chat = $(selectorsExtension.profiles.chatAutoload);
   const $character_icon = $character.find('i');
   const $chat_icon = $chat.find('i');
 
@@ -88,7 +88,7 @@ function update_profile_section() {
 }
 
 async function update_scene_summary_preset_dropdown() {
-  const $preset_select = $('#scene_summary_completion_preset');
+  const $preset_select = $(selectorsExtension.scene.completionPreset);
   const summary_preset = get_settings('scene_summary_completion_preset');
   const preset_options = await get_presets();
   $preset_select.empty();
@@ -101,7 +101,7 @@ async function update_scene_summary_preset_dropdown() {
 }
 
 async function update_scene_summary_connection_profile_dropdown() {
-  const $connection_select = $('#scene_summary_connection_profile');
+  const $connection_select = $(selectorsExtension.scene.connectionProfile);
   const summary_connection = get_settings('scene_summary_connection_profile');
   const connection_options = await get_connection_profiles();
   $connection_select.empty();
@@ -116,7 +116,7 @@ async function update_scene_summary_connection_profile_dropdown() {
 }
 
 async function update_auto_scene_break_preset_dropdown() {
-  const $preset_select = $('#auto_scene_break_completion_preset');
+  const $preset_select = $(selectorsExtension.autoScene.completionPreset);
   const summary_preset = get_settings('auto_scene_break_completion_preset');
   const preset_options = await get_presets();
   $preset_select.empty();
@@ -129,7 +129,7 @@ async function update_auto_scene_break_preset_dropdown() {
 }
 
 async function update_auto_scene_break_connection_profile_dropdown() {
-  const $connection_select = $('#auto_scene_break_connection_profile');
+  const $connection_select = $(selectorsExtension.autoScene.connectionProfile);
   const summary_connection = get_settings('auto_scene_break_connection_profile');
   const connection_options = await get_connection_profiles();
   $connection_select.empty();
@@ -143,59 +143,65 @@ async function update_auto_scene_break_connection_profile_dropdown() {
   $connection_select.off('click').on('click', () => update_auto_scene_break_connection_profile_dropdown());
 }
 
-async function update_preset_dropdown() {
-  // set the completion preset dropdown
-  const $preset_select = $(`.${settings_content_class} #completion_preset`);
-  const summary_preset = get_settings('completion_preset');
-  const preset_options = await get_presets();
-  $preset_select.empty();
-  $preset_select.append(`<option value="">Same as Current</option>`);
-  for (const option of preset_options) {// construct the dropdown options
-    $preset_select.append(`<option value="${option}">${option}</option>`);
-  }
-  $preset_select.val(summary_preset);
+// DEAD CODE: These functions reference HTML elements removed in commit 124d47b
+// The #completion_preset and #connection_profile dropdowns no longer exist in settings.html
+// Keeping commented for reference in case features are re-added
 
-  // set a click event to refresh the preset dropdown for the currently available presets
-  $preset_select.off('click').on('click', () => update_preset_dropdown());
+// async function update_preset_dropdown() {
+//   // set the completion preset dropdown
+//   const $preset_select = $(`.${settings_content_class} #completion_preset`);
+//   const summary_preset = get_settings('completion_preset');
+//   const preset_options = await get_presets();
+//   $preset_select.empty();
+//   $preset_select.append(`<option value="">Same as Current</option>`);
+//   for (const option of preset_options) {// construct the dropdown options
+//     $preset_select.append(`<option value="${option}">${option}</option>`);
+//   }
+//   $preset_select.val(summary_preset);
 
-}
-async function update_connection_profile_dropdown() {
-  // set the completion preset dropdown
-  const $connection_select = $(`.${settings_content_class} #connection_profile`);
-  const summary_connection = get_settings('connection_profile');
+//   // set a click event to refresh the preset dropdown for the currently available presets
+//   $preset_select.off('click').on('click', () => update_preset_dropdown());
 
-  const connection_options = await get_connection_profiles();
+// }
+// async function update_connection_profile_dropdown() {
+//   // set the completion preset dropdown
+//   const $connection_select = $(`.${settings_content_class} #connection_profile`);
+//   const summary_connection = get_settings('connection_profile');
 
-  $connection_select.empty();
-  $connection_select.append(`<option value="">Same as Current</option>`);
+//   const connection_options = await get_connection_profiles();
 
-  if (connection_options && Array.isArray(connection_options)) {
-    for (const option of connection_options) {// construct the dropdown options
-      $connection_select.append(`<option value="${option}">${option}</option>`);
-    }
-  }
-  $connection_select.val(summary_connection);
+//   $connection_select.empty();
+//   $connection_select.append(`<option value="">Same as Current</option>`);
 
-  // set a click event to refresh the dropdown
-  $connection_select.off('click').on('click', () => update_connection_profile_dropdown());
-}
+//   if (connection_options && Array.isArray(connection_options)) {
+//     for (const option of connection_options) {// construct the dropdown options
+//       $connection_select.append(`<option value="${option}">${option}</option>`);
+//     }
+//   }
+//   $connection_select.val(summary_connection);
+
+//   // set a click event to refresh the dropdown
+//   $connection_select.off('click').on('click', () => update_connection_profile_dropdown());
+// }
 
 async function update_error_detection_preset_dropdown() {
   // Set the completion preset dropdown for error detection
-  const $regular_preset_select = $(`.${settings_content_class} #message_summary_error_detection_preset`);
-  const $scene_preset_select = $(`.${settings_content_class} #scene_summary_error_detection_preset`);
-  const regular_preset = get_settings('message_summary_error_detection_preset');
+  // NOTE: #message_summary_error_detection_preset doesn't exist in settings.html - only scene version exists
+  // const $regular_preset_select = $(scopeToSettings(selectorsExtension.validation.scenePreset, settings_content_class));
+  const $scene_preset_select = $(scopeToSettings(selectorsExtension.validation.scenePreset, settings_content_class));
+  // const regular_preset = get_settings('message_summary_error_detection_preset');
   const scene_preset = get_settings('scene_summary_error_detection_preset');
   const preset_options = await get_presets();
 
   // Update regular summary error detection preset dropdown
-  $regular_preset_select.empty();
-  $regular_preset_select.append(`<option value="">Same as Summary</option>`);
-  for (const option of preset_options) {
-    $regular_preset_select.append(`<option value="${option}">${option}</option>`);
-  }
-  $regular_preset_select.val(regular_preset);
-  $regular_preset_select.off('click').on('click', () => update_error_detection_preset_dropdown());
+  // DEAD CODE: message_summary_error_detection_preset element doesn't exist
+  // $regular_preset_select.empty();
+  // $regular_preset_select.append(`<option value="">Same as Summary</option>`);
+  // for (const option of preset_options) {
+  //   $regular_preset_select.append(`<option value="${option}">${option}</option>`);
+  // }
+  // $regular_preset_select.val(regular_preset);
+  // $regular_preset_select.off('click').on('click', () => update_error_detection_preset_dropdown());
 
   // Update scene summary error detection preset dropdown
   $scene_preset_select.empty();
@@ -211,11 +217,12 @@ async function update_error_detection_preset_dropdown() {
 // Helper: Update all preset and profile dropdowns
 function updateAllDropdowns() {
   update_error_detection_preset_dropdown();
-  update_connection_profile_dropdown();
-  check_connection_profile_valid();
-  $(`.${settings_content_class} #connection_profile`).parent().show();
+  // REMOVED: These functions reference HTML elements that were removed in commit 124d47b
+  // update_connection_profile_dropdown();
+  // check_connection_profile_valid();
+  // $(`.${settings_content_class} #connection_profile`).parent().show();
 
-  update_preset_dropdown();
+  // update_preset_dropdown();
   update_scene_summary_preset_dropdown();
   update_scene_summary_connection_profile_dropdown();
   update_auto_scene_break_preset_dropdown();
@@ -228,10 +235,11 @@ function updateAllDropdowns() {
 // Helper: Update error detection settings
 function updateErrorDetectionSettings() {
   const error_detection_enabled = get_settings('error_detection_enabled');
-  $(`.${settings_content_class} .error_detection_setting`).prop('disabled', !error_detection_enabled);
+  $(scopeToSettings(selectorsExtension.validation.errorDetectionSetting, settings_content_class)).prop('disabled', !error_detection_enabled);
 
-  const regular_error_enabled = get_settings('message_summary_error_detection_enabled');
-  $(`.${settings_content_class} .regular_error_detection_setting`).prop('disabled', !error_detection_enabled || !regular_error_enabled);
+  // DEAD CODE: regular_error_detection_setting class doesn't exist in settings.html
+  // const regular_error_enabled = get_settings('message_summary_error_detection_enabled');
+  // $(`.${settings_content_class} .regular_error_detection_setting`).prop('disabled', !error_detection_enabled || !regular_error_enabled);
 }
 
 // Helper: Validate and fix settings
@@ -275,7 +283,8 @@ function refresh_settings() {
   // Refresh all settings UI elements according to the current settings
   debug("Refreshing settings...");
 
-  $('#short_template').val(get_settings('short_template') || default_short_template);
+  // DEAD CODE: #short_template element doesn't exist in settings.html
+  // $('#short_template').val(get_settings('short_template') || default_short_template);
 
   updateErrorDetectionSettings();
   updateAllDropdowns();
@@ -293,10 +302,12 @@ function refresh_settings() {
 
   // Enable or disable settings based on others
   if (chat_enabled()) {
-    $(`.${settings_content_class} .settings_input`).prop('disabled', false);
+    // DEAD CODE: .settings_input class doesn't exist in settings.html
+    // $(`.${settings_content_class} .settings_input`).prop('disabled', false);
     updateConditionalSettings();
   } else {
-    $(`.${settings_content_class} .settings_input`).prop('disabled', true);
+    // DEAD CODE: .settings_input class doesn't exist in settings.html
+    // $(`.${settings_content_class} .settings_input`).prop('disabled', true);
   }
 
 
@@ -308,7 +319,7 @@ function refresh_settings() {
 }
 
 async function update_running_scene_summary_preset_dropdown() {
-  const $preset_select = $('#running_scene_summary_completion_preset');
+  const $preset_select = $(selectorsExtension.running.completionPreset);
   const summary_preset = get_settings('running_scene_summary_completion_preset');
   const preset_options = await get_presets();
   $preset_select.empty();
@@ -321,7 +332,7 @@ async function update_running_scene_summary_preset_dropdown() {
 }
 
 async function update_running_scene_summary_connection_profile_dropdown() {
-  const $connection_select = $('#running_scene_summary_connection_profile');
+  const $connection_select = $(selectorsExtension.running.connectionProfile);
   const summary_connection = get_settings('running_scene_summary_connection_profile');
   const connection_options = await get_connection_profiles();
   $connection_select.empty();
@@ -335,51 +346,34 @@ async function update_running_scene_summary_connection_profile_dropdown() {
   $connection_select.off('click').on('click', () => update_running_scene_summary_connection_profile_dropdown());
 }
 
-/**
- * Loads lorebooks settings
- * @returns {any} - Settings object
- */
 function loadLorebooksSettings() {
   return extension_settings.autoLorebooks || {};
 }
 
-/**
- * Refreshes global settings UI
- * @param {any} settings - Settings object
- */
 function refreshGlobalSettingsUI(settings ) {
-  $('#autolorebooks-delete-on-chat-delete').prop('checked', settings.deleteOnChatDelete ?? true);
-  $('#autolorebooks-auto-reorder-alphabetically').prop('checked', settings.autoReorderAlphabetically ?? true);
-  $('#autolorebooks-name-template').val(settings.nameTemplate || 'z-AutoLB-{{chat}}');
+  $(selectorsExtension.lorebook.deleteOnChat).prop('checked', settings.deleteOnChatDelete ?? true);
+  $(selectorsExtension.lorebook.autoReorder).prop('checked', settings.autoReorderAlphabetically ?? true);
+  $(selectorsExtension.lorebook.nameTemplate).val(settings.nameTemplate || 'z-AutoLB-{{chat}}');
 }
 
 // Removed legacy queue settings UI (queue is mandatory)
 
-/**
- * Refreshes summary processing settings UI
- */
 function refreshSummaryProcessingUI() {
   // All summary processing settings are now per-profile, read from profile settings
-  $('#autolorebooks-summary-skip-duplicates').prop('checked', get_settings('auto_lorebooks_summary_skip_duplicates') ?? true);
-  $('#autolorebooks-summary-merge-prefill').val(get_settings('auto_lorebooks_summary_merge_prefill') || '');
-  $('#autolorebooks-summary-merge-prompt').val(get_settings('auto_lorebooks_summary_merge_prompt') || '');
-  $('#autolorebooks-summary-lorebook-entry-lookup-prefill').val(get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '');
-  $('#autolorebooks-summary-lorebook-entry-lookup-prompt').val(get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prompt') || '');
-  $('#autolorebooks-summary-entry-deduplicate-prefill').val(get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '');
-  $('#autolorebooks-summary-entry-deduplicate-prompt').val(get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '');
+  $(selectorsExtension.lorebook.skipDuplicates).prop('checked', get_settings('auto_lorebooks_summary_skip_duplicates') ?? true);
+  $(selectorsExtension.lorebook.mergePrefill).val(get_settings('auto_lorebooks_summary_merge_prefill') || '');
+  $(selectorsExtension.lorebook.mergePrompt).val(get_settings('auto_lorebooks_summary_merge_prompt') || '');
+  $(selectorsExtension.lorebook.lookupPrefill).val(get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '');
+  $(selectorsExtension.lorebook.lookupPrompt).val(get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prompt') || '');
+  $(selectorsExtension.lorebook.dedupePrefill).val(get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '');
+  $(selectorsExtension.lorebook.dedupePrompt).val(get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '');
 }
 
-/**
- * Refreshes entity types UI
- */
 function refreshEntityTypesUI() {
   ensureEntityTypesSetting();
   renderEntityTypesList();
 }
 
-/**
- * Refreshes connection dropdowns
- */
 function refreshConnectionDropdowns() {
   update_autolorebooks_summary_merge_connection_dropdown();
   update_autolorebooks_summary_merge_preset_dropdown();
@@ -389,10 +383,6 @@ function refreshConnectionDropdowns() {
   update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dropdown();
 }
 
-/**
- * Refresh Auto-Lorebooks settings UI
- * Loads values from extension_settings.autoLorebooks into UI elements
- */
 function refresh_lorebooks_settings_ui() {
   try {
     // Load global settings (not per-profile)
@@ -415,11 +405,8 @@ function refresh_lorebooks_settings_ui() {
   }
 }
 
-/**
- * Update Auto-Lorebooks summary merge connection profile dropdown
- */
 async function update_autolorebooks_summary_merge_connection_dropdown() {
-  const $connection_select = $('#autolorebooks-summary-merge-connection');
+  const $connection_select = $(selectorsExtension.lorebook.mergeConnection);
   const currentValue = get_settings('auto_lorebooks_summary_merge_connection_profile') || '';
   const connection_options = await get_connection_profiles();
   $connection_select.empty();
@@ -433,11 +420,8 @@ async function update_autolorebooks_summary_merge_connection_dropdown() {
   $connection_select.off('click').on('click', () => update_autolorebooks_summary_merge_connection_dropdown());
 }
 
-/**
- * Update Auto-Lorebooks summary merge preset dropdown
- */
 async function update_autolorebooks_summary_merge_preset_dropdown() {
-  const $preset_select = $('#autolorebooks-summary-merge-preset');
+  const $preset_select = $(selectorsExtension.lorebook.mergePreset);
   const currentValue = get_settings('auto_lorebooks_summary_merge_completion_preset') || '';
   const preset_options = await get_presets();
   $preset_select.empty();
@@ -449,11 +433,8 @@ async function update_autolorebooks_summary_merge_preset_dropdown() {
   $preset_select.off('click').on('click', () => update_autolorebooks_summary_merge_preset_dropdown());
 }
 
-/**
- * Update Auto-Lorebooks summary triage connection profile dropdown
- */
 async function update_autolorebooks_summary_triage_connection_dropdown() {
-  const $connection_select = $('#autolorebooks-summary-lorebook-entry-lookup-connection');
+  const $connection_select = $(selectorsExtension.lorebook.lookupConnection);
   const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_connection_profile') || '';
   const connection_options = await get_connection_profiles();
   $connection_select.empty();
@@ -467,11 +448,8 @@ async function update_autolorebooks_summary_triage_connection_dropdown() {
   $connection_select.off('click').on('click', () => update_autolorebooks_summary_triage_connection_dropdown());
 }
 
-/**
- * Update Auto-Lorebooks summary triage preset dropdown
- */
 async function update_autolorebooks_summary_triage_preset_dropdown() {
-  const $preset_select = $('#autolorebooks-summary-lorebook-entry-lookup-preset');
+  const $preset_select = $(selectorsExtension.lorebook.lookupPreset);
   const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_completion_preset') || '';
   const preset_options = await get_presets();
   $preset_select.empty();
@@ -483,11 +461,8 @@ async function update_autolorebooks_summary_triage_preset_dropdown() {
   $preset_select.off('click').on('click', () => update_autolorebooks_summary_triage_preset_dropdown());
 }
 
-/**
- * Update Auto-Lorebooks summary lorebook entry deduplicate connection profile dropdown
- */
 async function update_autolorebooks_summary_lorebook_entry_deduplicate_connection_dropdown() {
-  const $connection_select = $('#autolorebooks-summary-entry-deduplicate-connection');
+  const $connection_select = $(selectorsExtension.lorebook.dedupeConnection);
   const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_connection_profile') || '';
   const connection_options = await get_connection_profiles();
   $connection_select.empty();
@@ -501,11 +476,8 @@ async function update_autolorebooks_summary_lorebook_entry_deduplicate_connectio
   $connection_select.off('click').on('click', () => update_autolorebooks_summary_lorebook_entry_deduplicate_connection_dropdown());
 }
 
-/**
- * Update Auto-Lorebooks summary lorebook entry deduplicate preset dropdown
- */
 async function update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dropdown() {
-  const $preset_select = $('#autolorebooks-summary-entry-deduplicate-preset');
+  const $preset_select = $(selectorsExtension.lorebook.dedupePreset);
   const currentValue = get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset') || '';
   const preset_options = await get_presets();
   $preset_select.empty();
@@ -519,8 +491,9 @@ async function update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dr
 
 export {
   update_profile_section,
-  update_preset_dropdown,
-  update_connection_profile_dropdown,
+  // REMOVED: These functions reference HTML elements that were removed in commit 124d47b
+  // update_preset_dropdown,
+  // update_connection_profile_dropdown,
   refresh_settings,
   update_error_detection_preset_dropdown,
   update_scene_summary_preset_dropdown,

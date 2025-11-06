@@ -1,15 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/**
- * Playwright E2E Test Configuration for ST-Auto-Summarize
- *
- * CRITICAL CONSTRAINTS:
- * - Sequential execution ONLY (workers: 1)
- * - Single SillyTavern backend = shared state
- * - Parallel tests would corrupt each other
- *
- * See docs/development/PLAYWRIGHT_TESTING_GUIDE.md for details
- */
 export default defineConfig({
   // Test directories
   testDir: './tests',

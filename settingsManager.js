@@ -15,7 +15,8 @@ import {
   refresh_memory,
   update_all_message_visuals,
   scrollChatToBottom,
-  selected_group } from
+  selected_group,
+  selectorsSillyTavern } from
 './index.js';
 import { DEFAULT_ENTITY_TYPES } from './entityTypes.js';
 
@@ -187,7 +188,7 @@ async function load_settings_html() {
   const path = `${module_dir}/settings.html`;
   const found = await $.get(path).then(async (response) => {
     log(`Loaded settings.html at "${path}"`);
-    $("#extensions_settings2").append(response); // load html into the settings div\
+    $(selectorsSillyTavern.extensions.settings).append(response); // load html into the settings div
     return true;
   }).catch((response) => {
     error(`Error getting settings.json from "${path}": status: ${response.status}`);

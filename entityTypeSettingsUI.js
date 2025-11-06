@@ -1,5 +1,5 @@
 
-import { extension_settings, saveSettingsDebounced, toast } from './index.js';
+import { extension_settings, saveSettingsDebounced, toast, selectorsExtension } from './index.js';
 import {
   DEFAULT_ENTITY_TYPES,
   normalizeEntityTypeDefinition,
@@ -43,7 +43,7 @@ function renderEntityTypesList() {
   ensureEntityTypesSetting();
   const autoLorebooks  = extension_settings.autoLorebooks;
   const types = autoLorebooks.entity_types ?? [];
-  const $list = $('#autolorebooks-entity-types-list');
+  const $list = $(selectorsExtension.lorebook.entityTypesList);
   if ($list.length === 0) return;
   $list.empty();
 
@@ -70,7 +70,7 @@ function renderEntityTypesList() {
 }
 
 function handleAddEntityTypeFromInput() {
-  const raw = String($('#autolorebooks-entity-type-input').val() || '');
+  const raw = String($(selectorsExtension.lorebook.entityTypeInput).val() || '');
   const normalized = normalizeEntityTypeDefinition(raw);
   const def = parseEntityTypeDefinition(normalized);
   if (!def.name) {
@@ -84,7 +84,7 @@ function handleAddEntityTypeFromInput() {
   }
   types.push(normalized);
   setEntityTypesSetting(types);
-  $('#autolorebooks-entity-type-input').val('');
+  $(selectorsExtension.lorebook.entityTypeInput).val('');
 }
 
 function removeEntityType(type ) {

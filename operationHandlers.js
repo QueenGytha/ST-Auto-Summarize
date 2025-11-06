@@ -65,20 +65,15 @@ import {
   debug,
   log,
   toast,
-  SUBSYSTEM } from
+  SUBSYSTEM,
+  selectorsExtension } from
 './index.js';
 import { saveMetadata } from '../../../../script.js';
 
-/**
- * Helper to get message div
- */
 function get_message_div(index) {
   return $(`div[mesid="${index}"]`);
 }
 
-/**
- * Register all operation handlers
- */
 export function registerAllOperationHandlers() {
   // Validate summary
   registerOperationHandler(OperationType.VALIDATE_SUMMARY, async (operation) => {
@@ -165,7 +160,7 @@ export function registerAllOperationHandlers() {
 
     // Set loading state in summary box
     const $msgDiv = get_message_div(index);
-    const $summaryBox = $msgDiv.find('.scene-summary-box');
+    const $summaryBox = $msgDiv.find(selectorsExtension.sceneBreak.summaryBox);
     if ($summaryBox.length) {
       $summaryBox.val("Generating scene summary...");
     }
@@ -457,11 +452,6 @@ export function registerAllOperationHandlers() {
     return { success: true, lorebookEntryDeduplicateResult };
   });
 
-  /**
-   * Prepares context for entry creation/merge
-   * @param {any} operation - Operation with params
-   * @returns {Promise<any>} - Context object
-   */
   async function prepareEntryContext(operation ) {
     const { entryId, action, resolvedId } = operation.params;
     const signal = getAbortSignal(operation);
@@ -492,11 +482,6 @@ export function registerAllOperationHandlers() {
     };
   }
 
-  /**
-   * Executes merge action
-   * @param {any} context - Entry context
-   * @returns {Promise<any>} - Merge result
-   */
   async function executeMergeAction(context ) {
     const { resolvedId, entryData, lorebookName, registryState, finalType, finalSynopsis,
       getLorebookEntries, mergeLorebookEntry, updateRegistryRecord, ensureStringArray, entryId, signal } = context;
@@ -532,11 +517,6 @@ export function registerAllOperationHandlers() {
     return { success: true, entityId: resolvedId, entityUid: existingEntry.uid, action: 'merged' };
   }
 
-  /**
-   * Executes create action
-   * @param {any} context - Entry context
-   * @returns {Promise<any>} - Create result
-   */
   async function executeCreateAction(context ) {
     const { entryData, lorebookName, registryState, finalType, finalSynopsis,
       addLorebookEntry, updateRegistryRecord, assignEntityId, ensureStringArray, entryId } = context;
@@ -563,11 +543,6 @@ export function registerAllOperationHandlers() {
     return { success: true, entityId, entityUid: createdEntry.uid, action: 'created' };
   }
 
-  /**
-   * Handles CREATE_LOREBOOK_ENTRY operation
-   * @param {any} operation - Operation to handle
-   * @returns {Promise<any>} - Operation result
-   */
   async function handleCreateLorebookEntry(operation ) {
     const context = await prepareEntryContext(operation);
 
