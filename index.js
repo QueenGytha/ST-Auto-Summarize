@@ -202,6 +202,10 @@ export * from './lorebookWrapper.js';
 // Lorebook viewer UI
 export * from './lorebookViewer.js';
 
+// Selector files for testing (E2E test infrastructure)
+export { selectorsExtension } from './selectorsExtension.js';
+export { selectorsSillyTavern } from './selectorsSillyTavern.js';
+
 // ============================================================================
 // Enter Key Interception for Queue Operations
 // ============================================================================

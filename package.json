@@ -11,7 +11,15 @@
     "syntax-check": "node syntax-check.js",
     "audit": "npm audit --audit-level=moderate",
     "analyze": "npm run lint && npm run syntax-check",
-    "analyze:full": "npm run lint && npm run syntax-check && npm run audit"
+    "analyze:full": "npm run lint && npm run syntax-check && npm run audit",
+    "validate-selectors": "node scripts/validate-selectors.js",
+    "pretest": "npm run validate-selectors",
+    "test": "playwright test",
+    "test:feature": "playwright test tests/features",
+    "test:suite": "playwright test tests/suite",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug"
   },
   "keywords": [
     "sillytavern",
@@ -33,6 +41,7 @@
   },
   "homepage": "https://github.com/QueenGytha/ST-Auto-Summarize#readme",
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.1",
     "eslint": "^9.38.0",
