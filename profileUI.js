@@ -143,67 +143,11 @@ async function update_auto_scene_break_connection_profile_dropdown() {
   $connection_select.off('click').on('click', () => update_auto_scene_break_connection_profile_dropdown());
 }
 
-// DEAD CODE: These functions reference HTML elements removed in commit 124d47b
-// The #completion_preset and #connection_profile dropdowns no longer exist in settings.html
-// Keeping commented for reference in case features are re-added
-
-// async function update_preset_dropdown() {
-//   // set the completion preset dropdown
-//   const $preset_select = $(`.${settings_content_class} #completion_preset`);
-//   const summary_preset = get_settings('completion_preset');
-//   const preset_options = await get_presets();
-//   $preset_select.empty();
-//   $preset_select.append(`<option value="">Same as Current</option>`);
-//   for (const option of preset_options) {// construct the dropdown options
-//     $preset_select.append(`<option value="${option}">${option}</option>`);
-//   }
-//   $preset_select.val(summary_preset);
-
-//   // set a click event to refresh the preset dropdown for the currently available presets
-//   $preset_select.off('click').on('click', () => update_preset_dropdown());
-
-// }
-// async function update_connection_profile_dropdown() {
-//   // set the completion preset dropdown
-//   const $connection_select = $(`.${settings_content_class} #connection_profile`);
-//   const summary_connection = get_settings('connection_profile');
-
-//   const connection_options = await get_connection_profiles();
-
-//   $connection_select.empty();
-//   $connection_select.append(`<option value="">Same as Current</option>`);
-
-//   if (connection_options && Array.isArray(connection_options)) {
-//     for (const option of connection_options) {// construct the dropdown options
-//       $connection_select.append(`<option value="${option}">${option}</option>`);
-//     }
-//   }
-//   $connection_select.val(summary_connection);
-
-//   // set a click event to refresh the dropdown
-//   $connection_select.off('click').on('click', () => update_connection_profile_dropdown());
-// }
-
 async function update_error_detection_preset_dropdown() {
-  // Set the completion preset dropdown for error detection
-  // NOTE: #message_summary_error_detection_preset doesn't exist in settings.html - only scene version exists
-  // const $regular_preset_select = $(scopeToSettings(selectorsExtension.validation.scenePreset, settings_content_class));
   const $scene_preset_select = $(scopeToSettings(selectorsExtension.validation.scenePreset, settings_content_class));
-  // const regular_preset = get_settings('message_summary_error_detection_preset');
   const scene_preset = get_settings('scene_summary_error_detection_preset');
   const preset_options = await get_presets();
 
-  // Update regular summary error detection preset dropdown
-  // DEAD CODE: message_summary_error_detection_preset element doesn't exist
-  // $regular_preset_select.empty();
-  // $regular_preset_select.append(`<option value="">Same as Summary</option>`);
-  // for (const option of preset_options) {
-  //   $regular_preset_select.append(`<option value="${option}">${option}</option>`);
-  // }
-  // $regular_preset_select.val(regular_preset);
-  // $regular_preset_select.off('click').on('click', () => update_error_detection_preset_dropdown());
-
-  // Update scene summary error detection preset dropdown
   $scene_preset_select.empty();
   $scene_preset_select.append(`<option value="">Same as Scene Summary</option>`);
   for (const option of preset_options) {
@@ -211,18 +155,11 @@ async function update_error_detection_preset_dropdown() {
   }
   $scene_preset_select.val(scene_preset);
   $scene_preset_select.off('click').on('click', () => update_error_detection_preset_dropdown());
-
 }
 
 // Helper: Update all preset and profile dropdowns
 function updateAllDropdowns() {
   update_error_detection_preset_dropdown();
-  // REMOVED: These functions reference HTML elements that were removed in commit 124d47b
-  // update_connection_profile_dropdown();
-  // check_connection_profile_valid();
-  // $(`.${settings_content_class} #connection_profile`).parent().show();
-
-  // update_preset_dropdown();
   update_scene_summary_preset_dropdown();
   update_scene_summary_connection_profile_dropdown();
   update_auto_scene_break_preset_dropdown();
@@ -236,10 +173,6 @@ function updateAllDropdowns() {
 function updateErrorDetectionSettings() {
   const error_detection_enabled = get_settings('error_detection_enabled');
   $(scopeToSettings(selectorsExtension.validation.errorDetectionSetting, settings_content_class)).prop('disabled', !error_detection_enabled);
-
-  // DEAD CODE: regular_error_detection_setting class doesn't exist in settings.html
-  // const regular_error_enabled = get_settings('message_summary_error_detection_enabled');
-  // $(`.${settings_content_class} .regular_error_detection_setting`).prop('disabled', !error_detection_enabled || !regular_error_enabled);
 }
 
 // Helper: Validate and fix settings
@@ -283,9 +216,6 @@ function refresh_settings() {
   // Refresh all settings UI elements according to the current settings
   debug("Refreshing settings...");
 
-  // DEAD CODE: #short_template element doesn't exist in settings.html
-  // $('#short_template').val(get_settings('short_template') || default_short_template);
-
   updateErrorDetectionSettings();
   updateAllDropdowns();
   validateAndFixSettings();
@@ -302,18 +232,10 @@ function refresh_settings() {
 
   // Enable or disable settings based on others
   if (chat_enabled()) {
-    // DEAD CODE: .settings_input class doesn't exist in settings.html
-    // $(`.${settings_content_class} .settings_input`).prop('disabled', false);
     updateConditionalSettings();
-  } else {
-    // DEAD CODE: .settings_input class doesn't exist in settings.html
-    // $(`.${settings_content_class} .settings_input`).prop('disabled', true);
   }
 
-
-  //////////////////////
   // Settings not in the config
-
   // set group chat character enable button state
   set_character_enabled_button_states();
 }
@@ -491,9 +413,6 @@ async function update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dr
 
 export {
   update_profile_section,
-  // REMOVED: These functions reference HTML elements that were removed in commit 124d47b
-  // update_preset_dropdown,
-  // update_connection_profile_dropdown,
   refresh_settings,
   update_error_detection_preset_dropdown,
   update_scene_summary_preset_dropdown,
