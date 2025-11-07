@@ -684,6 +684,17 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
     debug(SUBSYSTEM.SCENE, "Generated scene name:", cleanSceneName);
     set_data(message, SCENE_BREAK_NAME_KEY, cleanSceneName);
 
+    // Update the scene break UI element to show the new name immediately
+    const $messageDiv = $(`${selectorsSillyTavern.message.block}[mesid="${index}"]`);
+    if ($messageDiv.length > 0) {
+      const $sceneBreakDiv = $messageDiv.find(selectorsExtension.sceneBreak.div);
+      const $nameInput = $sceneBreakDiv.find(selectorsExtension.sceneBreak.name);
+      if ($nameInput.length > 0) {
+        $nameInput.val(cleanSceneName);
+        debug(SUBSYSTEM.SCENE, "Updated scene break name input for message", index);
+      }
+    }
+
     // Refresh the scene navigator bar to show the new name immediately
     renderSceneNavigatorBar();
 
