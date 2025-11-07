@@ -15,6 +15,7 @@ import { chat_metadata, saveMetadata, getCurrentChatId, characters, this_chid, n
 import { extension_settings } from '../../../extensions.js';
 import { selected_group, groups } from '../../../group-chats.js';
 import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
+import { UI_UPDATE_DELAY_MS, FULL_COMPLETION_PERCENTAGE, INITIAL_LOREBOOK_ORDER } from './constants.js';
 
 // Will be imported from index.js via barrel exports
 let log , debug , error , toast , generateLorebookName , getUniqueLorebookName ; // Utility functions - any type is legitimate
@@ -117,7 +118,7 @@ async function ensureRegistryEntryRecord(lorebookName , type ) {
   ensuredEntry.disable = hasConstantFlag ? false : true;
   ensuredEntry.preventRecursion = true;
   ensuredEntry.useProbability = false;
-  ensuredEntry.probability = 100;
+  ensuredEntry.probability = FULL_COMPLETION_PERCENTAGE;
   ensuredEntry.tags = Array.isArray(ensuredEntry.tags) ? ensuredEntry.tags : [];
   if (!ensuredEntry.tags.includes(REGISTRY_TAG)) {
     ensuredEntry.tags.push(REGISTRY_TAG);
@@ -431,7 +432,7 @@ export async function initializeChatLorebook() {
     debug("Initializing chat lorebook");
 
     // Wait a bit for SillyTavern to finish loading
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, UI_UPDATE_DELAY_MS));
 
     // If an attached lorebook is referenced but missing, attempt recovery
     const attached = getAttachedLorebook();
@@ -748,7 +749,7 @@ export async function reorderLorebookEntriesAlphabetically(lorebookName ) {
     });
 
     // Assign descending order values starting from 1000
-    let orderValue = 1000;
+    let orderValue = INITIAL_LOREBOOK_ORDER;
     for (const entry of entriesArray) {
       entry.order = orderValue;
       orderValue--;

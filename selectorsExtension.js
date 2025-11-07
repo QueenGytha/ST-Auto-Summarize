@@ -199,6 +199,7 @@ export const selectorsExtension = {
   // Scene Navigator (dynamically created)
   sceneNav: {
     bar: '[data-testid="scene-navigator-bar"]',  // #scene-summary-navigator-bar
+    linksContainer: '[data-testid="scene-nav-links-container"]',  // .scene-nav-links-container
   },
 
   // Scene Break (dynamically created)

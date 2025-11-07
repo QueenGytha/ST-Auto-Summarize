@@ -372,10 +372,10 @@ dialog:has(#auto_summarize_memory_state_interface) {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 60px;
+    padding-top: 0;
     gap: 8px;
     box-shadow: 2px 0 8px rgba(0,0,0,0.2);
-    overflow-y: auto;
+    overflow-y: hidden; /* Changed from auto - sections scroll independently */
 }
 #scene-summary-navigator-bar .scene-nav-link {
     color: #ffd700;
@@ -384,13 +384,31 @@ dialog:has(#auto_summarize_memory_state_interface) {
     cursor: pointer;
     font-size: 1.2em;
     margin: 0;
-    padding: 4px 0;
+    padding: 4px 0.4em;
     text-decoration: underline dotted;
     transition: color 0.2s;
 }
 #scene-summary-navigator-bar .scene-nav-link:hover {
     color: #fff;
     text-decoration: underline solid;
+}
+
+/* Scene Navigation Links Container */
+.scene-nav-links-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1 1 auto; /* Grow to fill remaining space (2/3 when operations expanded, more when collapsed) */
+    overflow-y: auto; /* Independent scrollbar for scene links */
+    overflow-x: hidden;
+    width: 100%;
+    min-height: 50px;
+    gap: 8px;
+}
+
+/* Running Summary Controls - fixed at bottom */
+.running-summary-controls {
+    flex-shrink: 0; /* Prevent controls from shrinking */
 }
 
 /* Queue Navbar Toggle Button */
@@ -401,13 +419,13 @@ dialog:has(#auto_summarize_memory_state_interface) {
 
 /* Operations Queue Styles */
 #shared_operation_queue_ui {
-    margin-top: 1em;
-    padding-top: 1em;
-    border-top: 1px solid var(--SmartThemeBlurTintColor);
     display: flex;
     flex-direction: column;
-    min-height: 100px;
-    max-height: calc(100vh - 120px); /* Dynamic max height based on viewport */
+    flex-shrink: 0; /* Don't shrink to ensure consistent sizing */
+    /* 1/3 of available space (total - navbar padding - running controls estimate) */
+    max-height: calc((100vh - 260px) / 3);
+    width: 100%;
+    align-self: stretch; /* Override parent's center alignment */
 }
 
 .queue-header {
@@ -418,17 +436,20 @@ dialog:has(#auto_summarize_memory_state_interface) {
 #queue_toggle_visibility {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     margin-bottom: 0.3em;
     cursor: pointer;
+    min-height: 1.5em;
+    width: 100%;
 }
 
 #queue_toggle_visibility h4 {
     margin: 0;
     font-size: 1em;
+    flex: 1;
 }
 
 #queue_toggle_visibility i {
+    flex-shrink: 0;
     padding: 0.2em 0.5em;
 }
 
@@ -436,15 +457,19 @@ dialog:has(#auto_summarize_memory_state_interface) {
     flex: 1 1 auto; /* Allow list to grow and shrink */
     overflow-y: auto;
     overflow-x: hidden;
-    min-height: 50px;
 }
 
 .queue-controls {
     display: flex;
     flex-direction: row;
-    gap: 0.3em;
-    margin-bottom: 0.5em;
+    gap: 0.2em;
     flex-shrink: 0;
+    margin-left: 0.5em;
+}
+
+.queue-controls button {
+    padding: 0.2em 0.4em;
+    font-size: 0.85em;
 }
 
 .queue-operation {
@@ -497,6 +522,10 @@ dialog:has(#auto_summarize_memory_state_interface) {
 
 /* Queue collapsed state */
 #shared_operation_queue_ui.queue-collapsed .queue-list {
+    display: none;
+}
+
+#shared_operation_queue_ui.queue-collapsed .queue-controls {
     display: none;
 }
 

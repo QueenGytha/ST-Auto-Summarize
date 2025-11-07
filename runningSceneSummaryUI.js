@@ -27,54 +27,60 @@ function createRunningSceneSummaryNavbar() {
   // Remove existing controls if present
   $(`${selectorsExtension.sceneNav.bar} .running-summary-controls`).remove();
 
+  // Control width constant - change here to adjust all control widths
+  const CONTROL_WIDTH = '95%';
+
   // Create controls HTML (version selector and edit button only, no regenerate)
   const html = `
     <div class="running-summary-controls" data-testid="running-summary-controls" style="
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 0;
         align-items: center;
         margin-top: auto;
-        padding-top: 10px;
-        padding-bottom: 10px;
+        padding-top: 5px;
+        padding-bottom: 5px;
         border-top: 1px solid var(--SmartThemeBorderColor);
         width: 100%;
     ">
-        <select id="running_summary_version_selector" data-testid="running-version-selector" class="text_pole" style="width: 90%; font-size: 11px;">
+        <select id="running_summary_version_selector" data-testid="running-version-selector" class="text_pole" style="width: ${CONTROL_WIDTH}; font-size: 11px; margin: 0;">
             <option value="-1">No Running Summary</option>
         </select>
         <button id="running_summary_edit_btn" data-testid="running-edit-btn" class="menu_button" title="Edit running summary" style="
-            width: 90%;
+            width: ${CONTROL_WIDTH};
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
             font-size: 11px;
             text-transform: none;
+            margin: 0;
         ">
             <i class="fa-solid fa-edit"></i>
             <span>Edit Summary</span>
         </button>
         <button id="running_summary_scan_breaks_btn" data-testid="running-scan-breaks-btn" class="menu_button" title="Scan all messages for scene breaks (manual run)" style="
-            width: 90%;
+            width: ${CONTROL_WIDTH};
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
             font-size: 11px;
             text-transform: none;
+            margin: 0;
         ">
             <i class="fa-solid fa-magnifying-glass"></i>
             <span>Scan Scene Breaks</span>
         </button>
         <button id="running_summary_clear_all_btn" data-testid="running-clear-all-btn" class="menu_button" title="Clear all summaries and reset scene tracking" style="
-            width: 90%;
+            width: ${CONTROL_WIDTH};
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
             font-size: 11px;
             text-transform: none;
+            margin: 0;
         ">
             <i class="fa-solid fa-broom"></i>
             <span>Clear All Summaries</span>

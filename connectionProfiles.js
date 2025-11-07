@@ -1,5 +1,6 @@
 
 import { get_settings, error, debug, toast_debounced, getContext, CONNECT_API_MAP, selectorsSillyTavern } from './index.js';
+import { CONNECTION_TOAST_DURATION_MS, PROFILE_SWITCH_DELAY_MS } from './constants.js';
 
 // Connection profiles
 let connection_profiles_active;
@@ -25,13 +26,13 @@ function check_connection_profiles_active() {
             }
           });
         }
-      }, 2000);
+      }, CONNECTION_TOAST_DURATION_MS);
     }
   }
   return connection_profiles_active;
 }
 async function get_current_connection_profile() {
-  if (!check_connection_profiles_active()) return; // if the extension isn't active, return
+  if (!check_connection_profiles_active()) return undefined; // if the extension isn't active, return
   // get the current connection profile
   const ctx = getContext();
   const result = await ctx.executeSlashCommandsWithOptions(`/profile`);
@@ -39,14 +40,14 @@ async function get_current_connection_profile() {
 }
 async function get_connection_profile_api(name ) {
   // Get the API for the given connection profile name. If not given, get the current summary profile.
-  if (!check_connection_profiles_active()) return; // if the extension isn't active, return
+  if (!check_connection_profiles_active()) return undefined; // if the extension isn't active, return
   if (name === undefined) name = await get_summary_connection_profile();
   const ctx = getContext();
   const result = await ctx.executeSlashCommandsWithOptions(`/profile-get ${name}`);
 
   if (!result.pipe) {
     debug(`/profile-get ${name} returned nothing - no connection profile selected`);
-    return;
+    return undefined;
   }
 
   let data;
@@ -55,7 +56,7 @@ async function get_connection_profile_api(name ) {
   } catch {
     error(`Failed to parse JSON from /profile-get for \"${name}\". Result:`);
     error(result);
-    return;
+    return undefined;
   }
 
   // If the API type isn't defined, it might be excluded from the connection profile. Assume based on mode.
@@ -63,12 +64,13 @@ async function get_connection_profile_api(name ) {
     debug(`API not defined in connection profile ${name}. Mode is ${data.mode}`);
     if (data.mode === 'tc') return 'textgenerationwebui';
     if (data.mode === 'cc') return 'openai';
+    return undefined;
   }
 
   // need to map the API type to a completion API
   if (CONNECT_API_MAP[data.api] === undefined) {
     error(`API type "${data.api}" not found in CONNECT_API_MAP - could not identify API.`);
-    return;
+    return undefined;
   }
   return CONNECT_API_MAP[data.api].selected;
 }
@@ -97,12 +99,12 @@ async function set_connection_profile(name ) {
   await ctx.executeSlashCommandsWithOptions(`/profile ${name}`);
 
   // Wait a moment for the profile to fully apply
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, PROFILE_SWITCH_DELAY_MS));
 }
 async function get_connection_profiles() {
   // Get a list of available connection profiles
 
-  if (!check_connection_profiles_active()) return; // if the extension isn't active, return
+  if (!check_connection_profiles_active()) return undefined; // if the extension isn't active, return
   const ctx = getContext();
   const result = await ctx.executeSlashCommandsWithOptions(`/profile-list`);
   try {
@@ -110,12 +112,13 @@ async function get_connection_profiles() {
   } catch {
     error("Failed to parse JSON from /profile-list. Result:");
     error(result);
+    return undefined;
   }
 
 }
 async function verify_connection_profile(name ) {
   // check if the given connection profile name is valid
-  if (!check_connection_profiles_active()) return; // if the extension isn't active, return
+  if (!check_connection_profiles_active()) return undefined; // if the extension isn't active, return
   if (name === "") return true; // no profile selected, always valid
 
   const names = await get_connection_profiles();
@@ -123,7 +126,7 @@ async function verify_connection_profile(name ) {
 }
 async function check_connection_profile_valid() {
   // check whether the current connection profile selected for summarization is valid
-  if (!check_connection_profiles_active()) return; // if the extension isn't active, return
+  if (!check_connection_profiles_active()) return undefined; // if the extension isn't active, return
   const summary_connection = get_settings('connection_profile');
   const valid = await verify_connection_profile(summary_connection);
   if (!valid) {

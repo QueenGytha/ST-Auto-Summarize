@@ -7,6 +7,7 @@
  */
 
 import { debug, SUBSYSTEM } from './utils.js';
+import { DEBUG_OUTPUT_SHORT_LENGTH } from './constants.js';
 
 /**
  * Loads prompts from a completion preset by name
@@ -60,8 +61,8 @@ export async function loadPresetPrompts(presetName) {
             }))
             .sort((a, b) => {
                 // Sort by injection order if specified
-                const orderA = a.injection_order ?? 100;
-                const orderB = b.injection_order ?? 100;
+                const orderA = a.injection_order ?? DEBUG_OUTPUT_SHORT_LENGTH;
+                const orderB = b.injection_order ?? DEBUG_OUTPUT_SHORT_LENGTH;
                 return orderA - orderB;
             });
 

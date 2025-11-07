@@ -16,6 +16,15 @@ import {
   parseEntityTypeDefinition } from
 './entityTypes.js';
 
+import { SUBSYSTEM } from './index.js';
+
+import {
+  MAX_SUMMARY_ATTEMPTS,
+  ID_GENERATION_BASE,
+  FULL_COMPLETION_PERCENTAGE,
+  MIN_ENTITY_SECTIONS
+} from './constants.js';
+
 // Will be imported from index.js via barrel exports
 let log , debug , error , toast ; // Utility functions - any type is legitimate
 let getAttachedLorebook , getLorebookEntries , addLorebookEntry ; // Lorebook functions - any type is legitimate
@@ -51,13 +60,13 @@ export function initSummaryToLorebookProcessor(utils , lorebookManagerModule , e
   }
 
   // Import connection settings management
-  console.log('[summaryToLorebookProcessor INIT] connectionSettingsManager:', connectionSettingsManager);
-  console.log('[summaryToLorebookProcessor INIT] connectionSettingsManager keys:', Object.keys(connectionSettingsManager || {}));
+  debug(SUBSYSTEM.LOREBOOK,'[summaryToLorebookProcessor INIT] connectionSettingsManager:', connectionSettingsManager);
+  debug(SUBSYSTEM.LOREBOOK,'[summaryToLorebookProcessor INIT] connectionSettingsManager keys:', Object.keys(connectionSettingsManager || {}));
 
   if (connectionSettingsManager) {
     withConnectionSettings = connectionSettingsManager.withConnectionSettings;
-    console.log('[summaryToLorebookProcessor INIT] withConnectionSettings after assignment:', withConnectionSettings);
-    console.log('[summaryToLorebookProcessor INIT] typeof withConnectionSettings:', typeof withConnectionSettings);
+    debug(SUBSYSTEM.LOREBOOK,'[summaryToLorebookProcessor INIT] withConnectionSettings after assignment:', withConnectionSettings);
+    debug(SUBSYSTEM.LOREBOOK,'[summaryToLorebookProcessor INIT] typeof withConnectionSettings:', typeof withConnectionSettings);
 
     if (!withConnectionSettings || typeof withConnectionSettings !== 'function') {
       error?.('Failed to import withConnectionSettings from connectionSettingsManager', {
@@ -66,7 +75,7 @@ export function initSummaryToLorebookProcessor(utils , lorebookManagerModule , e
         withConnectionSettings: typeof withConnectionSettings
       });
     } else {
-      console.log('[summaryToLorebookProcessor INIT] ✓ Successfully imported withConnectionSettings');
+      debug(SUBSYSTEM.LOREBOOK,'[summaryToLorebookProcessor INIT] ✓ Successfully imported withConnectionSettings');
       debug?.('[summaryToLorebookProcessor] Successfully imported withConnectionSettings');
     }
   } else {
@@ -127,10 +136,10 @@ function simpleHash(str ) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
+    hash = (hash << MAX_SUMMARY_ATTEMPTS) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
-  return Math.abs(hash).toString(36);
+  return Math.abs(hash).toString(ID_GENERATION_BASE);
 }
 
 function extractLorebookData(summary ) {
@@ -212,9 +221,9 @@ export function normalizeEntryData(entry ) {
     secondaryKeys: entry.secondaryKeys || entry.keysecondary || [],
     constant: entry.constant,
     disable: entry.disable ?? false,
-    order: entry.order ?? 100,
+    order: entry.order ?? FULL_COMPLETION_PERCENTAGE,
     position: entry.position ?? 0,
-    depth: entry.depth ?? 4,
+    depth: entry.depth ?? MIN_ENTITY_SECTIONS,
     type: typeof entry.type === 'string' ? sanitizeEntityTypeName(entry.type) : ''
   };
 }
@@ -245,8 +254,8 @@ export function ensureRegistryState() {
 
 function buildTypePrefix(type ) {
   const base = sanitizeEntityTypeName(type) || 'type';
-  if (base.length >= 4) return base.slice(0, 4);
-  return base.padEnd(4, 'x');
+  if (base.length >= MIN_ENTITY_SECTIONS) return base.slice(0, MIN_ENTITY_SECTIONS);
+  return base.padEnd(MIN_ENTITY_SECTIONS, 'x');
 }
 
 export function assignEntityId(state , type ) {
@@ -255,7 +264,7 @@ export function assignEntityId(state , type ) {
   const next = current + 1;
   counters[type] = next;
   const prefix = buildTypePrefix(type);
-  return `${prefix}_${String(next).padStart(4, '0')}`;
+  return `${prefix}_${String(next).padStart(MIN_ENTITY_SECTIONS, '0')}`;
 }
 
 export function ensureStringArray(value ) {
@@ -370,9 +379,9 @@ entryComment , // Optional entry comment for context suffix
 include_preset_prompts = false
 ) {
   try {
-    console.log('[runModelWithSettings] Called with label:', label);
-    console.log('[runModelWithSettings] withConnectionSettings:', withConnectionSettings);
-    console.log('[runModelWithSettings] typeof withConnectionSettings:', typeof withConnectionSettings);
+    debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] Called with label:', label);
+    debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] withConnectionSettings:', withConnectionSettings);
+    debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] typeof withConnectionSettings:', typeof withConnectionSettings);
 
     // Validate that withConnectionSettings is available
     if (!withConnectionSettings || typeof withConnectionSettings !== 'function') {
@@ -403,16 +412,16 @@ include_preset_prompts = false
           // Build prompt input - either string (current behavior) or messages array (with preset prompts)
           let prompt_input;
 
-          console.log('[runModelWithSettings] label:', label);
-          console.log('[runModelWithSettings] include_preset_prompts:', include_preset_prompts);
-          console.log('[runModelWithSettings] completionPreset (param):', completionPreset);
+          debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] label:', label);
+          debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] include_preset_prompts:', include_preset_prompts);
+          debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] completionPreset (param):', completionPreset);
 
           // If preset_name is empty, use the currently active preset (like summarization.js does)
           const { get_current_preset } = await import('./index.js');
           const effectivePresetName = completionPreset || (include_preset_prompts ? get_current_preset() : '');
 
-          console.log('[runModelWithSettings] effectivePresetName:', effectivePresetName);
-          console.log('[runModelWithSettings] Condition check (include && preset):', include_preset_prompts && effectivePresetName);
+          debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] effectivePresetName:', effectivePresetName);
+          debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] Condition check (include && preset):', include_preset_prompts && effectivePresetName);
 
           if (include_preset_prompts && effectivePresetName) {
             // Load preset prompts and get preset settings
@@ -421,19 +430,19 @@ include_preset_prompts = false
             const preset = presetManager?.getCompletionPresetByName(effectivePresetName);
             const presetMessages = await loadPresetPrompts(effectivePresetName);
 
-            console.log('[runModelWithSettings] presetMessages loaded:', presetMessages?.length || 0, 'prompts');
+            debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] presetMessages loaded:', presetMessages?.length || 0, 'prompts');
             if (presetMessages && presetMessages.length > 0) {
-              console.log('[runModelWithSettings] First preset prompt role:', presetMessages[0]?.role);
-              console.log('[runModelWithSettings] First preset prompt content length:', presetMessages[0]?.content?.length || 0);
+              debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] First preset prompt role:', presetMessages[0]?.role);
+              debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] First preset prompt content length:', presetMessages[0]?.content?.length || 0);
             }
 
             // Use extension's prefill if set, otherwise use preset's prefill
             const effectivePrefill = prefill || preset?.assistant_prefill || '';
-            console.log('[runModelWithSettings] effectivePrefill source:', prefill ? 'extension' : (preset?.assistant_prefill ? 'preset' : 'empty'));
+            debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] effectivePrefill source:', prefill ? 'extension' : (preset?.assistant_prefill ? 'preset' : 'empty'));
 
             // Only use messages array if we actually got preset prompts
             if (presetMessages && presetMessages.length > 0) {
-              console.log('[runModelWithSettings] Using messages array format with preset prompts');
+              debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] Using messages array format with preset prompts');
 
               // Build messages array: preset prompts FIRST, then extension prompt
               prompt_input = [
@@ -458,7 +467,7 @@ include_preset_prompts = false
               });
             }
           } else {
-            console.log('[runModelWithSettings] Using string format (include_preset_prompts not enabled or no preset)');
+            debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] Using string format (include_preset_prompts not enabled or no preset)');
             // Current behavior - string prompt only
             return await generateRaw({
               prompt: prompt,

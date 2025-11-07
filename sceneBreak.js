@@ -25,6 +25,18 @@ import {
 import { clearCheckedFlagsInRange, setCheckedFlagsInRange } from './autoSceneBreakDetection.js';
 import { getConfiguredEntityTypeDefinitions, formatEntityTypeListForPrompt } from './entityTypes.js';
 
+import {
+  MAX_SUMMARY_ATTEMPTS,
+  ID_GENERATION_BASE,
+  LOREBOOK_ENTRY_NAME_MAX_LENGTH,
+  TOAST_WARNING_DURATION_WPM,
+  TOAST_SHORT_DURATION_WPM,
+  UI_UPDATE_DELAY_MS,
+  SCENE_BREAK_CHARS,
+  SCENE_BREAK_MIN_CHARS,
+  DEFAULT_POLLING_INTERVAL
+} from './constants.js';
+
 // SCENE SUMMARY PROPERTY STRUCTURE:
 // - Scene summaries are stored on the message object as:
 //     - 'scene_summary_memory': the current scene summary text (not at the root like 'memory')
@@ -51,10 +63,10 @@ function computeSummaryHash(summaryText ) {
   let hash = 0;
   for (let i = 0; i < text.length; i++) {
     const charCode = text.charCodeAt(i);
-    hash = (hash << 5) - hash + charCode;
+    hash = (hash << MAX_SUMMARY_ATTEMPTS) - hash + charCode;
     hash |= 0; // force 32-bit int
   }
-  return Math.abs(hash).toString(36);
+  return Math.abs(hash).toString(ID_GENERATION_BASE);
 }
 
 // Adds the scene break button to the message template
@@ -407,11 +419,11 @@ saveChatDebounced )
       const $chat = $(selectorsSillyTavern.chat.container);
       const chatOffset = $chat.offset()?.top ?? 0;
       const targetOffset = $target.offset()?.top ?? 0;
-      const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - 20; // 20px padding
-      $chat.animate({ scrollTop }, 300);
+      const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - LOREBOOK_ENTRY_NAME_MAX_LENGTH; // 20px padding
+      $chat.animate({ scrollTop }, TOAST_WARNING_DURATION_WPM);
 
       $target.addClass('scene-highlight');
-      setTimeout(() => $target.removeClass('scene-highlight'), 1200);
+      setTimeout(() => $target.removeClass('scene-highlight'), TOAST_SHORT_DURATION_WPM);
     } else {
       // fallback: scroll to top to try to load more messages
       const $chat = $(selectorsSillyTavern.chat.container);
@@ -421,13 +433,13 @@ saveChatDebounced )
         if ($target.length) {
           const chatOffset = $chat.offset()?.top ?? 0;
           const targetOffset = $target.offset()?.top ?? 0;
-          const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - 20;
-          $chat.animate({ scrollTop }, 300);
+          const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - LOREBOOK_ENTRY_NAME_MAX_LENGTH;
+          $chat.animate({ scrollTop }, TOAST_WARNING_DURATION_WPM);
 
           $target.addClass('scene-highlight');
-          setTimeout(() => $target.removeClass('scene-highlight'), 1200);
+          setTimeout(() => $target.removeClass('scene-highlight'), TOAST_SHORT_DURATION_WPM);
         }
-      }, 500);
+      }, UI_UPDATE_DELAY_MS);
     }
   });
 
@@ -633,7 +645,26 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
 
     let sceneName;
     try {
-      sceneName = await summarize_text(sceneNamePrompt);
+      const rawResponse = await summarize_text(sceneNamePrompt);
+
+      // Parse JSON response using centralized helper
+      const { extractJsonFromResponse } = await import('./utils.js');
+      const parsed = extractJsonFromResponse(rawResponse, {
+        requiredFields: [], // Flexible validation - we check for scene name variants below
+        context: 'scene name generation'
+      });
+
+      // Flexible scene name extraction - accept both scene_name and sceneName (case-insensitive)
+      const sceneNameKey = Object.keys(parsed).find(key => {
+        const normalizedKey = key.toLowerCase().replace(/_/g, '');
+        return normalizedKey === 'scenename';
+      });
+
+      if (!sceneNameKey) {
+        throw new Error('scene name generation: JSON missing scene name field (expected scene_name or sceneName)');
+      }
+
+      sceneName = parsed[sceneNameKey];
     } finally {
       clearOperationSuffix();
       ctx.activateSendButtons();
@@ -646,8 +677,8 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
     .trim();
 
     // Limit to ~50 characters max
-    if (cleanSceneName.length > 50) {
-      cleanSceneName = cleanSceneName.substring(0, 47) + '...';
+    if (cleanSceneName.length > SCENE_BREAK_CHARS) {
+      cleanSceneName = cleanSceneName.substring(0, SCENE_BREAK_MIN_CHARS) + '...';
     }
 
     debug(SUBSYSTEM.SCENE, "Generated scene name:", cleanSceneName);
@@ -786,7 +817,7 @@ preset_name = null )
       if (summaryText === '' || summaryText === '...' || summaryText === 'TODO') {
         throw new Error("AI returned empty or placeholder summary");
       }
-      if (summaryText.length < 10) {
+      if (summaryText.length < DEFAULT_POLLING_INTERVAL) {
         throw new Error("AI returned suspiciously short summary (less than 10 chars)");
       }
 
@@ -914,7 +945,7 @@ signal  = null) // AbortSignal to check for cancellation
   if (!skipQueue) {
     const enqueued = await tryQueueSceneSummary(index);
     if (enqueued) {
-      return;
+      return null;
     }
     // Queue is required. If enqueue failed, abort rather than running directly.
     error(SUBSYSTEM.SCENE, `Failed to enqueue scene summary generation for index ${index}. Aborting.`);

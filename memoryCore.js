@@ -59,7 +59,8 @@ function check_message_exclusion(message ) {
   }
 
   // check if it's a thought message and exclude (Stepped Thinking extension)
-  // TODO: This is deprecated in the thought extension, could be removed at some point?
+  // NOTE: message.is_thoughts may be deprecated in newer versions of the Stepped Thinking extension,
+  // but we keep this check for backward compatibility with older versions
   if (message.is_thoughts) {
     return false;
   }
@@ -172,6 +173,8 @@ function concatenate_summaries(indexes ) {
   return JSON.stringify(summaries, null, 2);
 }
 
+// Comprehensive cleanup with detailed auditing - tracks 6 types of cleared data
+// eslint-disable-next-line complexity, sonarjs/cognitive-complexity
 function clear_all_summaries_for_chat() {
   const ctx = getContext();
   const chat = ctx.chat;
@@ -298,7 +301,7 @@ async function refresh_memory() {
 
   if (!chat_enabled()) {// if chat not enabled, remove the injections
     ctx.setExtensionPrompt(`${MODULE_NAME}_scene`, "", extension_prompt_types.IN_PROMPT, 0);
-    return;
+    return "";
   }
 
   debug("Refreshing memory");

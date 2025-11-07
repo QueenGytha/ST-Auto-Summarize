@@ -21,6 +21,19 @@ import {
   selectorsSillyTavern } from
 './index.js';
 
+import {
+  QUEUE_BUTTON_WIDTH_PX,
+  QUEUE_CONTAINER_WIDTH_PX,
+  QUEUE_INDICATOR_HEIGHT_PX,
+  PROGRESS_BAR_OFFSET_PX,
+  PROGRESS_BAR_MINOR_OFFSET_PX,
+  PROGRESS_CIRCLE_STROKE_OFFSET_PX,
+  ANIMATION_DELAY_MS,
+  MAX_DISPLAY_PERCENTAGE,
+  ONE_SECOND_MS,
+  ONE_MINUTE_MS
+} from './constants.js';
+
 // Constants
 const NAVBAR_ID = 'scene-summary-navigator-bar';
 const NAVBAR_TOGGLE_ID = 'queue_navbar_toggle';
@@ -56,7 +69,7 @@ function createQueueUI() {
 
   if (!$navbar.length) {
     debug(SUBSYSTEM.QUEUE, 'Creating shared navbar');
-    $navbar = $(`<div id="${NAVBAR_ID}" data-testid="scene-navigator-bar" style="width: 175px; position: relative;"></div>`);
+    $navbar = $(`<div id="${NAVBAR_ID}" data-testid="scene-navigator-bar" style="width: ${QUEUE_BUTTON_WIDTH_PX}px; position: relative;"></div>`);
     // Insert after the send button area
     $(selectorsSillyTavern.chat.holder).after($navbar);
   }
@@ -76,14 +89,14 @@ function createQueueUI() {
             <div class="queue-header" data-testid="queue-header">
                 <div id="queue_toggle_visibility" data-testid="queue-toggle-visibility" title="Collapse/Expand">
                     <h4>Operations <span id="queue_count" data-testid="queue-count">(0)</span></h4>
+                    <div class="queue-controls">
+                        <button id="queue_toggle_pause" data-testid="queue-toggle-pause" class="menu_button fa-solid fa-pause" title="Pause/Resume queue"></button>
+                        <button id="queue_clear_all" data-testid="queue-clear-all" class="menu_button fa-solid fa-trash" title="Clear all"></button>
+                    </div>
                     <i class="fa-solid fa-chevron-up"></i>
                 </div>
             </div>
             <div id="queue_list_container" data-testid="queue-list-container" class="queue-list">
-                <div class="queue-controls">
-                    <button id="queue_toggle_pause" data-testid="queue-toggle-pause" class="menu_button fa-solid fa-pause" title="Pause/Resume queue"></button>
-                    <button id="queue_clear_all" data-testid="queue-clear-all" class="menu_button fa-solid fa-trash" title="Clear all"></button>
-                </div>
                 <div id="queue_operations_list" data-testid="queue-operations-list"></div>
             </div>
         </div>
@@ -95,7 +108,7 @@ function createQueueUI() {
   // Create navbar collapse/expand toggle button (fixed position at middle-right of navbar)
   // This button is NOT a child of the navbar - it's fixed to viewport
   // Position is calculated dynamically based on navbar width
-  const navbarWidth = $navbar.outerWidth() || 175;
+  const navbarWidth = $navbar.outerWidth() || QUEUE_BUTTON_WIDTH_PX;
   const $navbarToggle = $(`
         <button id="${NAVBAR_TOGGLE_ID}" data-testid="queue-navbar-toggle" class="menu_button fa-solid ${ICON_CHEVRON_LEFT}"
             title="Hide Queue Navbar"
@@ -130,15 +143,15 @@ function updateQueueHeight() {
   }
 
   // Get viewport height
-  const viewportHeight = $(window).height() || 800;
+  const viewportHeight = $(window).height() || QUEUE_CONTAINER_WIDTH_PX;
 
   // Get queue container's position from top of viewport
-  const queueTop = $queueUI.offset()?.top || 60;
+  const queueTop = $queueUI.offset()?.top || QUEUE_INDICATOR_HEIGHT_PX;
 
   // Reserve space for:
   // - Bottom margin/padding (20px)
   // - Other navbar elements below queue (estimate based on presence)
-  const navbarBottomContent = $(selectorsExtension.sceneNav.bar).find('.running-summary-controls, .scene-nav-link').length > 0 ? 150 : 50;
+  const navbarBottomContent = $(selectorsExtension.sceneNav.bar).find('.running-summary-controls, .scene-nav-link').length > 0 ? PROGRESS_BAR_OFFSET_PX : PROGRESS_BAR_MINOR_OFFSET_PX;
 
   // Calculate available height for queue
   const availableHeight = viewportHeight - queueTop - navbarBottomContent;
@@ -148,17 +161,17 @@ function updateQueueHeight() {
   const maxHeight = Math.max(minHeight, availableHeight);
 
   // Get the queue header height
-  const headerHeight = $queueUI.find(selectorsExtension.queue.header).outerHeight() || 50;
+  const headerHeight = $queueUI.find(selectorsExtension.queue.header).outerHeight() || PROGRESS_BAR_MINOR_OFFSET_PX;
 
   // Calculate height for the list container
-  const listMaxHeight = maxHeight - headerHeight - 20; // 20px for padding/margin
+  const listMaxHeight = maxHeight - headerHeight - PROGRESS_CIRCLE_STROKE_OFFSET_PX; // 20px for padding/margin
 
   // Update the queue UI max-height
   $queueUI.css('max-height', `${maxHeight}px`);
 
   // Update the list container max-height if needed (let CSS flexbox handle most of it)
   // Only set if we need to override the CSS
-  if (listMaxHeight < 200) {
+  if (listMaxHeight < ANIMATION_DELAY_MS) {
     $queueList.css('max-height', `${listMaxHeight}px`);
   } else {
     $queueList.css('max-height', ''); // Clear inline style, let CSS take over
@@ -195,11 +208,11 @@ function bindQueueControlEvents() {
     const $icon = $(this).find('i');
 
     if ($list.is(':visible')) {
-      $list.slideUp(200);
+      $list.slideUp(ANIMATION_DELAY_MS);
       $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
       $queueUI.addClass('queue-collapsed');
     } else {
-      $list.slideDown(200, () => {
+      $list.slideDown(ANIMATION_DELAY_MS, () => {
         // After expanding, recalculate height
         updateQueueHeight();
       });
@@ -232,7 +245,7 @@ function bindQueueControlEvents() {
       $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
       $button.attr('title', 'Hide Queue Navbar');
       // Calculate button position based on actual navbar width
-      const navbarWidth = $navbar.outerWidth() || 175;
+      const navbarWidth = $navbar.outerWidth() || QUEUE_BUTTON_WIDTH_PX;
       $button.css('left', `${navbarWidth}px`); // Move button to navbar edge when shown
       localStorage.setItem('operation_queue_navbar_visible', 'true');
     }
@@ -256,7 +269,7 @@ function bindQueueControlEvents() {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
       updateQueueHeight();
-    }, 150);
+    }, PROGRESS_BAR_OFFSET_PX);
   });
 }
 
@@ -283,7 +296,7 @@ function updateQueueDisplay() {
     $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
     $button.attr('title', 'Hide Queue Navbar');
     // Calculate button position based on actual navbar width
-    const navbarWidth = $navbar.outerWidth() || 175;
+    const navbarWidth = $navbar.outerWidth() || QUEUE_BUTTON_WIDTH_PX;
     $button.css('left', `${navbarWidth}px`);
   } else {
     // Navbar hidden - sync button state
@@ -322,7 +335,7 @@ function renderOperationsList() {
   const operations = allOperations.filter((op) => op.status !== OperationStatus.COMPLETED);
 
   if (operations.length === 0) {
-    $list.html('<div style="opacity: 0.6; padding: 0.5em; text-align: center;">No operations in queue</div>');
+    $list.empty();
     return;
   }
 
@@ -337,8 +350,8 @@ function renderOperationsList() {
       [OperationStatus.CANCELLED]: 5
     };
 
-    const orderA = statusOrder[a.status] ?? 99;
-    const orderB = statusOrder[b.status] ?? 99;
+    const orderA = statusOrder[a.status] ?? MAX_DISPLAY_PERCENTAGE;
+    const orderB = statusOrder[b.status] ?? MAX_DISPLAY_PERCENTAGE;
 
     if (orderA !== orderB) {
       return orderA - orderB;
@@ -459,6 +472,8 @@ function formatOperationType(type) {
   return names[type] || type;
 }
 
+// UI formatting: displays all available operation metadata fields
+// eslint-disable-next-line complexity
 function buildOperationTooltip(operation) {
   const lines = [];
 
@@ -561,13 +576,13 @@ function formatOperationParams(type, params, metadata) {
 }
 
 function formatDuration(ms) {
-  if (ms < 1000) {
+  if (ms < ONE_SECOND_MS) {
     return `${ms}ms`;
   }
-  if (ms < 60000) {
-    return `${(ms / 1000).toFixed(1)}s`;
+  if (ms < ONE_MINUTE_MS) {
+    return `${(ms / ONE_SECOND_MS).toFixed(1)}s`;
   }
-  return `${(ms / 60000).toFixed(1)}m`;
+  return `${(ms / ONE_MINUTE_MS).toFixed(1)}m`;
 }
 
 export function updateQueueUIVisibility() {
@@ -589,7 +604,7 @@ export function updateQueueUIVisibility() {
     $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
     $button.attr('title', 'Hide Queue Navbar');
     // Calculate button position based on actual navbar width
-    const navbarWidth = $navbar.outerWidth() || 175;
+    const navbarWidth = $navbar.outerWidth() || QUEUE_BUTTON_WIDTH_PX;
     $button.css('left', `${navbarWidth}px`);
   } else {
     // Navbar hidden - sync button state
@@ -609,7 +624,7 @@ function updateNavbarToggleButtonPosition() {
   if (!$navbar.is(':visible')) return;
 
   // Calculate button position based on current navbar width
-  const navbarWidth = $navbar.outerWidth() || 175;
+  const navbarWidth = $navbar.outerWidth() || QUEUE_BUTTON_WIDTH_PX;
   $button.css('left', `${navbarWidth}px`);
 }
 

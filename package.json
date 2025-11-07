@@ -19,7 +19,8 @@
     "test:suite": "playwright test tests/suite",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug"
+    "test:debug": "playwright test --debug",
+    "prepare": "husky"
   },
   "keywords": [
     "sillytavern",
@@ -40,6 +41,12 @@
     "url": "https://github.com/QueenGytha/ST-Auto-Summarize/issues"
   },
   "homepage": "https://github.com/QueenGytha/ST-Auto-Summarize#readme",
+  "lint-staged": {
+    "*.js": [
+      "eslint --max-warnings 0",
+      "node syntax-check.js"
+    ]
+  },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
@@ -48,6 +55,8 @@
     "eslint-plugin-complexity": "^1.0.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-sonarjs": "^3.0.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
     "puppeteer": "^24.28.0",
     "typescript": "^5.9.3"
   }

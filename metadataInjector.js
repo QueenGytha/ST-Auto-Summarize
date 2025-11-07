@@ -4,6 +4,7 @@
 
 import { getCurrentChatId } from '../../../../script.js';
 import { selected_group, groups } from '../../../group-chats.js';
+import { debug, SUBSYSTEM } from './index.js';
 
 // Will be imported from index.js via barrel exports
 let get_settings ;
@@ -146,17 +147,17 @@ options  = {})
     if (firstSystemMessage) {
       // Prepend to existing system message
       firstSystemMessage.content = metadataStr + firstSystemMessage.content;
-      console.log('[Auto-Summarize:Interceptor] Injected metadata into existing system message');
+      debug(SUBSYSTEM.CORE,'[Auto-Summarize:Interceptor] Injected metadata into existing system message');
     } else {
       // No system message exists, insert at beginning
       chatArray.unshift({
         role: 'system',
         content: metadataStr
       });
-      console.log('[Auto-Summarize:Interceptor] Created new system message with metadata');
+      debug(SUBSYSTEM.CORE,'[Auto-Summarize:Interceptor] Created new system message with metadata');
     }
 
-    console.log('[Auto-Summarize:Interceptor] Metadata:', JSON.stringify(metadata));
+    debug(SUBSYSTEM.CORE,'[Auto-Summarize:Interceptor] Metadata:', JSON.stringify(metadata));
   } catch (err) {
     console.error('[Auto-Summarize:Metadata] Error injecting metadata into chat array:', err);
   }

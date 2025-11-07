@@ -22,6 +22,17 @@ import {
   METADATA_KEY
 } from '../../../world-info.js';
 
+import {
+  ID_GENERATION_BASE,
+  ENTRY_ID_LENGTH,
+  FULL_COMPLETION_PERCENTAGE,
+  UI_UPDATE_DELAY_MS,
+  DEFAULT_POLLING_INTERVAL,
+  ONE_SECOND_MS,
+  QUEUE_OPERATION_TIMEOUT_MS,
+  OPERATION_FETCH_TIMEOUT_MS
+} from './constants.js';
+
 // Queue entry name in lorebook - NEVER ACTIVE (disabled, used only for persistence)
 const QUEUE_ENTRY_NAME = '__operation_queue';
 
@@ -382,7 +393,7 @@ async function saveQueue(force = false) {
 }
 
 function generateOperationId() {
-  return `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `op_${Date.now()}_${Math.random().toString(ID_GENERATION_BASE).substr(2, ENTRY_ID_LENGTH)}`;
 }
 
 export async function enqueueOperation(type , params , options  = {}) {
@@ -632,7 +643,7 @@ export async function clearAllOperations() {
     currentQueue.paused = true;
 
     // Wait for processor to stop (it checks paused flag on each iteration)
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, FULL_COMPLETION_PERCENTAGE));
     queueProcessor = null;
 
     // Restore paused state
@@ -649,7 +660,7 @@ export async function clearAllOperations() {
   setQueueChatBlocking(false);
 
   // Clear the flag after a short delay to allow any in-flight enqueue attempts to be rejected
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, UI_UPDATE_DELAY_MS));
   isClearing = false;
   debug(SUBSYSTEM.QUEUE, 'Cleared isClearing flag - enqueue operations now allowed');
 
@@ -725,7 +736,8 @@ export function registerOperationHandler(operationType , handler ) {
   debug(SUBSYSTEM.QUEUE, `Registered handler for ${operationType}`);
 }
 
-// eslint-disable-next-line complexity
+// Core queue processor: abort handling, profile switching, retry logic, error recovery
+// eslint-disable-next-line complexity, sonarjs/cognitive-complexity
 async function executeOperation(operation ) {
   // returns any because different operations return different result types - legitimate use of any
   const handler = operationHandlers.get(operation.type);
@@ -849,9 +861,9 @@ async function executeOperation(operation ) {
     // WHY: LLM API errors are often transient (rate limits, temporary outages)
     // HOW TO STOP: User manually removes operation from queue UI during backoff
     operation.retries++;
-    const backoffDelay = Math.min(10 * Math.pow(2, operation.retries - 1) * 1000, 300000);
-    await updateOperationStatus(operation.id, OperationStatus.RETRYING, `Retry ${operation.retries}${maxRetries > 0 ? `/${maxRetries}` : ''} after ${backoffDelay / 1000}s: ${errText}`);
-    log(SUBSYSTEM.QUEUE, `⚠️ Operation failed (likely rate limit)! Waiting ${backoffDelay / 1000}s before retry ${operation.retries}${maxRetries > 0 ? `/${maxRetries}` : ''}`);
+    const backoffDelay = Math.min(DEFAULT_POLLING_INTERVAL * Math.pow(2, operation.retries - 1) * ONE_SECOND_MS, QUEUE_OPERATION_TIMEOUT_MS);
+    await updateOperationStatus(operation.id, OperationStatus.RETRYING, `Retry ${operation.retries}${maxRetries > 0 ? `/${maxRetries}` : ''} after ${backoffDelay / ONE_SECOND_MS}s: ${errText}`);
+    log(SUBSYSTEM.QUEUE, `⚠️ Operation failed (likely rate limit)! Waiting ${backoffDelay / ONE_SECOND_MS}s before retry ${operation.retries}${maxRetries > 0 ? `/${maxRetries}` : ''}`);
     await saveQueue();
     notifyUIUpdate(); // Update UI to show retrying status
     await new Promise((resolve) => setTimeout(resolve, backoffDelay));
@@ -880,30 +892,31 @@ async function executeOperation(operation ) {
       if (operation.executionSettings && getCurrentConnectionSettings && switchConnectionSettings) {
         // Determine what settings to restore to
         const targetSettings  = operation.restoreSettings || originalSettings;
-        if (!targetSettings) return; // No settings to restore
+        if (targetSettings) { // Only restore if settings available
 
-        const connectionProfile  = targetSettings?.connectionProfile;
-        const completionPreset  = targetSettings?.completionPreset;
-        let presetBeforeRestoreProfileSwitch = null;
+          const connectionProfile  = targetSettings?.connectionProfile;
+          const completionPreset  = targetSettings?.completionPreset;
+          let presetBeforeRestoreProfileSwitch = null;
 
-        // If changing profile, capture current preset FIRST (before profile switch)
-        if (connectionProfile) {
-          const currentSettings = await getCurrentConnectionSettings();
-          presetBeforeRestoreProfileSwitch = currentSettings?.completionPreset;
-          debug(SUBSYSTEM.QUEUE, `Restoring to profile: ${connectionProfile}`);
-          await switchConnectionSettings(connectionProfile, undefined);
-        }
+          // If changing profile, capture current preset FIRST (before profile switch)
+          if (connectionProfile) {
+            const currentSettings = await getCurrentConnectionSettings();
+            presetBeforeRestoreProfileSwitch = currentSettings?.completionPreset;
+            debug(SUBSYSTEM.QUEUE, `Restoring to profile: ${connectionProfile}`);
+            await switchConnectionSettings(connectionProfile, undefined);
+          }
 
-        // If preset specified, switch to it (overrides profile's default)
-        // If preset NOT specified but we switched profiles, restore the captured preset
-        if (completionPreset) {
-          debug(SUBSYSTEM.QUEUE, `Restoring to preset: ${completionPreset}`);
-          await switchConnectionSettings(undefined, completionPreset);
-        } else if (connectionProfile && presetBeforeRestoreProfileSwitch) {
-          // Edge case: Only profile changed, preset is "same as current"
-          // Must explicitly restore it because profile switch auto-loads default
-          debug(SUBSYSTEM.QUEUE, `Restoring preset after profile switch: ${presetBeforeRestoreProfileSwitch}`);
-          await switchConnectionSettings(undefined, presetBeforeRestoreProfileSwitch);
+          // If preset specified, switch to it (overrides profile's default)
+          // If preset NOT specified but we switched profiles, restore the captured preset
+          if (completionPreset) {
+            debug(SUBSYSTEM.QUEUE, `Restoring to preset: ${completionPreset}`);
+            await switchConnectionSettings(undefined, completionPreset);
+          } else if (connectionProfile && presetBeforeRestoreProfileSwitch) {
+            // Edge case: Only profile changed, preset is "same as current"
+            // Must explicitly restore it because profile switch auto-loads default
+            debug(SUBSYSTEM.QUEUE, `Restoring preset after profile switch: ${presetBeforeRestoreProfileSwitch}`);
+            await switchConnectionSettings(undefined, presetBeforeRestoreProfileSwitch);
+          }
         }
       }
     } catch (err) {
@@ -978,7 +991,7 @@ function startQueueProcessor() {
       // Sequential execution required: rate limiting delay between operations
       debug(SUBSYSTEM.QUEUE, `[LOOP] Starting 5-second delay, queue state: blocked=${String(isChatBlocked)}`);
       // eslint-disable-next-line no-await-in-loop
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, OPERATION_FETCH_TIMEOUT_MS));
       debug(SUBSYSTEM.QUEUE, `[LOOP] After 5-second delay, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
     }
   })();

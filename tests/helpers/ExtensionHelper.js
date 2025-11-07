@@ -11,13 +11,6 @@ export class ExtensionHelper {
   // Navigation Methods
   // ============================================================================
 
-  async navigateToExtension() {
-    // Example implementation (requires selectors):
-    // await this.page.click(this.stSelectors.extensions.menuButton);
-    // await this.page.click(this.selectors.panel.container);
-    throw new Error('Not implemented - add selectors first');
-  }
-
   async navigateToChat() {
     await this.page.goto('/');
   }
@@ -49,7 +42,7 @@ export class ExtensionHelper {
   async setDefaultSettings() {
     await this.page.evaluate(() => {
       const MODULE_NAME = 'auto-summarize';
-      // TODO: Import default settings from defaultSettings.js
+      // Note: Default settings should match defaultSettings.js
       window.extension_settings[MODULE_NAME] = {
         enabled: false,
         profile: 'default'
@@ -61,11 +54,6 @@ export class ExtensionHelper {
   // ============================================================================
   // Chat Methods
   // ============================================================================
-
-  async addChatMessage(text, sender = 'user') {
-    // TODO: Implement using chat selectors
-    throw new Error('Not implemented - add selectors first');
-  }
 
   async getChatMessages() {
     return await this.page.evaluate(() => {
@@ -85,23 +73,9 @@ export class ExtensionHelper {
     }, messageIndex);
   }
 
-  async clickSummarize() {
-    throw new Error('Not implemented - add selectors first');
-  }
-
-  async toggleMemory() {
-    throw new Error('Not implemented - add selectors first');
-  }
-
   // ============================================================================
   // Operation Queue Methods
   // ============================================================================
-
-  async waitForOperationComplete(timeout = 30000) {
-    // TODO: Implement polling for queue completion
-    // Check chat_metadata.__operation_queue or use queue UI
-    throw new Error('Not implemented - add selectors first');
-  }
 
   async getQueueStatus() {
     return await this.page.evaluate(() => {
@@ -120,18 +94,6 @@ export class ExtensionHelper {
   }
 
   // ============================================================================
-  // Profile Methods
-  // ============================================================================
-
-  async switchProfile(profileName) {
-    throw new Error('Not implemented - add selectors first');
-  }
-
-  async createProfile(profileName) {
-    throw new Error('Not implemented - add selectors first');
-  }
-
-  // ============================================================================
   // Utility Methods
   // ============================================================================
 
@@ -146,10 +108,5 @@ export class ExtensionHelper {
       path: `test-results/screenshots/${name}.png`,
       fullPage: true
     });
-  }
-
-  async getToastMessages() {
-    // TODO: Implement by reading toastr messages from DOM
-    throw new Error('Not implemented - add selectors first');
   }
 }

@@ -13,6 +13,7 @@ import {
   debug,
   SUBSYSTEM } from
 './index.js';
+import { MAX_SUMMARY_ATTEMPTS, HIGH_PRIORITY_OFFSET, STANDARD_QUEUE_POSITION, OPERATION_ID_LENGTH } from './constants.js';
 
 export async function queueValidateSummary(summary , type , options  = {}) {
   // Capture settings at enqueue time for tooltip display
@@ -22,7 +23,7 @@ export async function queueValidateSummary(summary , type , options  = {}) {
     OperationType.VALIDATE_SUMMARY,
     { summary, type },
     {
-      priority: options.priority ?? 5, // Medium priority - nice-to-have enhancement
+      priority: options.priority ?? MAX_SUMMARY_ATTEMPTS, // Medium priority - nice-to-have enhancement
       dependencies: options.dependencies ?? [],
       metadata: {
         validation_type: type,
@@ -39,7 +40,7 @@ export async function queueDetectSceneBreak(index , options  = {}) {
     OperationType.DETECT_SCENE_BREAK,
     { index },
     {
-      priority: options.priority ?? -10, // Lowest priority - detection can wait for important operations
+      priority: options.priority ?? HIGH_PRIORITY_OFFSET, // Lowest priority - detection can wait for important operations
       dependencies: options.dependencies ?? [],
       metadata: {
         message_index: index,
@@ -81,7 +82,7 @@ export async function queueGenerateRunningSummary(options  = {}) {
     OperationType.GENERATE_RUNNING_SUMMARY,
     {},
     {
-      priority: options.priority ?? 15, // High priority - important narrative synthesis
+      priority: options.priority ?? STANDARD_QUEUE_POSITION, // High priority - important narrative synthesis
       dependencies: options.dependencies ?? [],
       metadata: {
         hasPrefill: false, // Running summary operations don't use prefills
@@ -97,7 +98,7 @@ export async function queueCombineSceneWithRunning(index , options  = {}) {
     OperationType.COMBINE_SCENE_WITH_RUNNING,
     { index },
     {
-      priority: options.priority ?? 15, // High priority - important narrative synthesis
+      priority: options.priority ?? STANDARD_QUEUE_POSITION, // High priority - important narrative synthesis
       dependencies: options.dependencies ?? [],
       metadata: {
         scene_index: index,
@@ -191,7 +192,7 @@ options )
     OperationType.LOREBOOK_ENTRY_LOOKUP,
     { entryId: context.entryId, entryData: context.normalizedEntry, registryListing: context.registryListing, typeList: context.typeList },
     {
-      priority: options.priority ?? 11, // First stage of lorebook pipeline - lowest in group
+      priority: options.priority ?? OPERATION_ID_LENGTH, // First stage of lorebook pipeline - lowest in group
       dependencies: options.dependencies ?? [],
       metadata: {
         entry_name: entryName,

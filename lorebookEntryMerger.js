@@ -4,6 +4,8 @@
 // Use wrapped version from our interceptor
 import { wrappedGenerateRaw as generateRaw } from './generateRawInterceptor.js';
 import { loadPresetPrompts } from './presetPromptLoader.js';
+import { SUBSYSTEM } from './index.js';
+import { DEBUG_OUTPUT_LONG_LENGTH, DEBUG_OUTPUT_MEDIUM_LENGTH } from './constants.js';
 
 // Will be imported from index.js via barrel exports
 let log , debug , error ; // Logging functions - any type is legitimate
@@ -78,7 +80,7 @@ function createMergePrompt(existingContent , newContent , entryName  = '') {
   const prefill = getSummaryProcessingSetting('merge_prefill') || '';
 
   // DEBUG: Log what template we got
-  debug('Merge prompt template first 300 chars:', template.substring(0, 300));
+  debug('Merge prompt template first 300 chars:', template.substring(0, DEBUG_OUTPUT_LONG_LENGTH));
   debug('Entry name being passed:', entryName);
 
   const prompt = template.
@@ -96,21 +98,21 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
     const { prompt, prefill } = createMergePrompt(existingContent, newContent, entryName);
 
     debug('Calling AI for entry merge...');
-    debug('Prompt:', prompt.substring(0, 200) + '...');
+    debug('Prompt:', prompt.substring(0, DEBUG_OUTPUT_MEDIUM_LENGTH) + '...');
 
     // Get include_preset_prompts setting
     const include_preset_prompts = getSummaryProcessingSetting('merge_include_preset_prompts', false);
 
-    console.log('[callAIForMerge] entryName:', entryName);
-    console.log('[callAIForMerge] include_preset_prompts:', include_preset_prompts);
-    console.log('[callAIForMerge] completionPreset (param):', completionPreset);
+    debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] entryName:', entryName);
+    debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] include_preset_prompts:', include_preset_prompts);
+    debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] completionPreset (param):', completionPreset);
 
     // If preset_name is empty, use the currently active preset (like summarization.js does)
     const { setOperationSuffix, clearOperationSuffix, withConnectionSettings, get_current_preset } = await import('./index.js');
     const effectivePresetName = completionPreset || (include_preset_prompts ? get_current_preset() : '');
 
-    console.log('[callAIForMerge] effectivePresetName:', effectivePresetName);
-    console.log('[callAIForMerge] Condition check (include && preset):', include_preset_prompts && effectivePresetName);
+    debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] effectivePresetName:', effectivePresetName);
+    debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] Condition check (include && preset):', include_preset_prompts && effectivePresetName);
 
     // Set operation context for ST_METADATA
     if (entryName) {
@@ -134,19 +136,19 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
             const preset = presetManager?.getCompletionPresetByName(effectivePresetName);
             const presetMessages = await loadPresetPrompts(effectivePresetName);
 
-            console.log('[callAIForMerge] presetMessages loaded:', presetMessages?.length || 0, 'prompts');
+            debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] presetMessages loaded:', presetMessages?.length || 0, 'prompts');
             if (presetMessages && presetMessages.length > 0) {
-              console.log('[callAIForMerge] First preset prompt role:', presetMessages[0]?.role);
-              console.log('[callAIForMerge] First preset prompt content length:', presetMessages[0]?.content?.length || 0);
+              debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] First preset prompt role:', presetMessages[0]?.role);
+              debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] First preset prompt content length:', presetMessages[0]?.content?.length || 0);
             }
 
             // Use extension's prefill if set, otherwise use preset's prefill
             const effectivePrefill = prefill || preset?.assistant_prefill || '';
-            console.log('[callAIForMerge] effectivePrefill source:', prefill ? 'extension' : (preset?.assistant_prefill ? 'preset' : 'empty'));
+            debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] effectivePrefill source:', prefill ? 'extension' : (preset?.assistant_prefill ? 'preset' : 'empty'));
 
             // Only use messages array if we actually got preset prompts
             if (presetMessages && presetMessages.length > 0) {
-              console.log('[callAIForMerge] Using messages array format with preset prompts');
+              debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] Using messages array format with preset prompts');
 
               prompt_input = [
                 ...presetMessages,
@@ -170,7 +172,7 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
               });
             }
           } else {
-            console.log('[callAIForMerge] Using string format (include_preset_prompts not enabled or no preset)');
+            debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] Using string format (include_preset_prompts not enabled or no preset)');
             // Current behavior - string prompt only
             return await generateRaw({
               prompt: prompt,
@@ -257,6 +259,8 @@ export async function mergeLorebookEntry(lorebookName , existingEntry , newEntry
   }
 }
 
+// Business logic: merge entries with name resolution and key deduplication
+// eslint-disable-next-line complexity
 export async function executeMerge(lorebookName , existingEntry , newEntryData ) {
   // existingEntry, newEntryData, and return type are any - complex objects with various properties - legitimate use of any
   try {

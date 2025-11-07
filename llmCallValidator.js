@@ -1,6 +1,9 @@
 
 // llmCallValidator.js - Runtime validation for LLM call counts in operations
 
+import { debug, error, log } from './index.js';
+import { DEBUG_OUTPUT_SHORT_LENGTH, SEPARATOR_LINE_LENGTH } from './constants.js';
+
 // Global state
 let validationEnabled  = false;
 let currentOperationId  = null;
@@ -9,16 +12,12 @@ let llmCallsInCurrentOperation  = 0;
 let llmCallDetails  = [];
 let violations  = [];
 
-// Logging functions (will be initialized)
-let debug  = console.log;
-let error  = console.error;
-let log  = console.log;
-
 export function initLLMCallValidator(utils ) {
   if (utils) {
-    debug = utils.debug || console.log;
+    // These are fallback assignments - console usage is legitimate here as fallback
+    debug = utils.debug || console.log; // eslint-disable-line no-console
     error = utils.error || console.error;
-    log = utils.log || console.log;
+    log = utils.log || console.log; // eslint-disable-line no-console
   }
 }
 
@@ -56,7 +55,7 @@ export function recordLLMCall(callInfo  = {}) {
     operationType: currentOperationType,
     callNumber: llmCallsInCurrentOperation,
     timestamp: Date.now(),
-    prompt: callInfo.prompt?.substring(0, 100) || 'unknown',
+    prompt: callInfo.prompt?.substring(0, DEBUG_OUTPUT_SHORT_LENGTH) || 'unknown',
     stackTrace: new Error().stack
   };
 
@@ -122,7 +121,7 @@ export function getViolationReport() {
 
   const lines = [
   '❌ LLM CALL VIOLATIONS DETECTED',
-  '='.repeat(80),
+  '='.repeat(SEPARATOR_LINE_LENGTH),
   '',
   `Found ${violations.length} operation(s) that made multiple LLM calls:`,
   ''];
@@ -135,7 +134,7 @@ export function getViolationReport() {
     lines.push('');
   });
 
-  lines.push('='.repeat(80));
+  lines.push('='.repeat(SEPARATOR_LINE_LENGTH));
   lines.push('');
   lines.push('CRITICAL: Each operation must make at most ONE LLM call.');
   lines.push('This ensures efficient retry behavior when rate limits are hit.');

@@ -5,6 +5,7 @@ import {
   debug,
   get_data } from
 './index.js';
+import { ANIMATION_DELAY_MS } from './constants.js';
 
 // Helper: Find all visible scene breaks
 function findVisibleSceneBreaks(chat) {
@@ -102,7 +103,7 @@ async function auto_hide_messages_by_command() {
 
   // Wait for SillyTavern to update
   debug("[auto_hide] Waiting for backend/UI update...");
-  await new Promise((resolve) => setTimeout(resolve, 200));
+  await new Promise((resolve) => setTimeout(resolve, ANIMATION_DELAY_MS));
 }
 
 export {

@@ -1,9 +1,17 @@
 
 import { get_settings, getContext, get_data, SCENE_BREAK_KEY, SCENE_BREAK_VISIBLE_KEY, selectorsExtension, selectorsSillyTavern } from './index.js';
 
+import {
+  NAVIGATION_TIME_LIMIT_SECONDS,
+  NAVIGATION_DATE_THRESHOLD_MONTHS,
+  LOREBOOK_ENTRY_NAME_MAX_LENGTH,
+  TOAST_WARNING_DURATION_WPM,
+  TOAST_SHORT_DURATION_WPM
+} from './constants.js';
+
 export function renderSceneNavigatorBar() {
-  const width = get_settings('scene_summary_navigator_width') ?? 240;
-  const fontSize = get_settings('scene_summary_navigator_font_size') ?? 12;
+  const width = get_settings('scene_summary_navigator_width') ?? NAVIGATION_TIME_LIMIT_SECONDS;
+  const fontSize = get_settings('scene_summary_navigator_font_size') ?? NAVIGATION_DATE_THRESHOLD_MONTHS;
 
   // In headless/test environments the jQuery stub may be minimal. If required
   // DOM methods (like after) are missing, gracefully skip rendering.
@@ -44,6 +52,9 @@ export function renderSceneNavigatorBar() {
     $bar.append($queueUI);
   }
 
+  // Create container for scene navigation links
+  const $sceneLinksContainer = $('<div class="scene-nav-links-container" data-testid="scene-nav-links-container"></div>');
+
   // Find all visible scene breaks and number them sequentially
   // let sceneNum = 1; // Not currently used - using idx instead
   ctx.chat.forEach((msg, idx) => {
@@ -62,16 +73,19 @@ export function renderSceneNavigatorBar() {
           const $chat = $(selectorsSillyTavern.chat.container);
           const chatOffset = $chat.offset()?.top ?? 0;
           const targetOffset = $target.offset()?.top ?? 0;
-          const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - 20;
-          $chat.animate({ scrollTop }, 300);
+          const scrollTop = $chat.scrollTop() + (targetOffset - chatOffset) - LOREBOOK_ENTRY_NAME_MAX_LENGTH;
+          $chat.animate({ scrollTop }, TOAST_WARNING_DURATION_WPM);
           $target.addClass('scene-highlight');
-          setTimeout(() => $target.removeClass('scene-highlight'), 1200);
+          setTimeout(() => $target.removeClass('scene-highlight'), TOAST_SHORT_DURATION_WPM);
         }
       });
-      $bar.append($link);
+      $sceneLinksContainer.append($link); // Append to container instead of bar
       // sceneNum++; // Not currently used
     }
   });
+
+  // Append scene links container to navbar
+  $bar.append($sceneLinksContainer);
 
   // Restore running summary controls if they existed
   if ($runningControls.length) {

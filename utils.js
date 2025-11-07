@@ -12,6 +12,13 @@ import {
   refresh_memory,
   save_profile } from
 './index.js';
+import {
+  UI_UPDATE_DELAY_MS,
+  HEX_COLOR_BASE,
+  MAX_QUEUE_PRIORITY,
+  DEBUG_OUTPUT_MEDIUM_LENGTH,
+  FULL_COMPLETION_PERCENTAGE
+} from './constants.js';
 
 // Consistent prefix for ALL extension logs - easily searchable
 const LOG_PREFIX = '[AutoSummarize]';
@@ -27,18 +34,21 @@ const SUBSYSTEM = {
   UI: '[UI]',
   PROFILE: '[Profile]',
   EVENT: '[Event]',
-  QUEUE: '[Queue]'
+  QUEUE: '[Queue]',
+  LOREBOOK: '[Lorebook]'
 };
 
 function log(subsystem , ...args ) {
   // subsystem and args are any type for flexible logging - legitimate use of any
   // Always log with prefix - subsystem check not needed as both branches are identical
+  // eslint-disable-next-line no-console
   console.log(LOG_PREFIX, subsystem, ...args);
 }
 
 function debug(subsystem , ...args ) {
   // subsystem and args are any type for flexible logging - legitimate use of any
   // Always log with prefix - subsystem check not needed as both branches are identical
+  // eslint-disable-next-line no-console
   console.log(LOG_PREFIX, '[DEBUG]', subsystem, ...args);
 }
 
@@ -60,7 +70,7 @@ function toast(message , type  = "info") {
   // debounce the toast messages
   toastr[type](message, MODULE_NAME_FANCY);
 }
-const toast_debounced = debounce(toast, 500);
+const toast_debounced = debounce(toast, UI_UPDATE_DELAY_MS);
 
 const saveChatDebounced = debounce(() => getContext().saveChat(), debounce_timeout.relaxed);
 function count_tokens(text , padding  = 0) {
@@ -79,7 +89,7 @@ function get_short_token_limit() {
   const number_type = get_settings('message_summary_context_type');
   if (number_type === "percent") {
     const context_size = get_context_size();
-    return Math.floor(context_size * message_summary_context_limit / 100);
+    return Math.floor(context_size * message_summary_context_limit / FULL_COMPLETION_PERCENTAGE);
   } else {
     return message_summary_context_limit;
   }
@@ -89,7 +99,7 @@ function get_current_character_identifier() {
   // You have to use the character's avatar image path to uniquely identify them
   const context = getContext();
   if (context.groupId) {
-    return; // if a group is selected, return
+    return undefined; // if a group is selected, return
   }
 
   // otherwise get the avatar image path of the current character
@@ -138,7 +148,7 @@ function escape_string(text ) {
       case '\r':return '\\r';
       case '\b':return '\\b';
       case '\f':return '\\f';
-      default:return '\\x' + match.charCodeAt(0).toString(16).padStart(2, '0');
+      default:return '\\x' + match.charCodeAt(0).toString(HEX_COLOR_BASE).padStart(2, '0');
     }
   });
 }
@@ -156,7 +166,7 @@ function unescape_string(text ) {
           // Handle escaped hexadecimal characters like \\xNN
           const hexMatch = match.match(/\\x([0-9a-f]{2})/i);
           if (hexMatch) {
-            return String.fromCharCode(parseInt(hexMatch[1], 16));
+            return String.fromCharCode(parseInt(hexMatch[1], HEX_COLOR_BASE));
           }
           return match; // Return as is if no match
         }
@@ -173,6 +183,7 @@ function check_st_version() {
   } else {
     log(`Symbols not found in context: [${getContext().symbols}]`);
     toast("Incompatible ST version - please update.", "error");
+    return false;
   }
 }
 
@@ -313,7 +324,7 @@ export function extractJsonFromResponse(rawResponse, options = {}) {
     parsed = JSON.parse(cleaned);
   } catch (parseErr) {
     error(SUBSYSTEM.CORE, `[JSON Extract] Failed to parse JSON from ${context}:`, parseErr);
-    error(SUBSYSTEM.CORE, `[JSON Extract] Attempted to parse:`, cleaned.substring(0, 500));
+    error(SUBSYSTEM.CORE, `[JSON Extract] Attempted to parse:`, cleaned.substring(0, DEBUG_OUTPUT_MEDIUM_LENGTH));
     throw new Error(`${context}: Invalid JSON - ${parseErr.message}`);
   }
 
@@ -346,7 +357,7 @@ export function getUniqueLorebookName(baseName , existingNames ) {
   if (existing.includes(baseName)) {
     let found  = '';
     // Try numeric suffixes (2..9999)
-    for (let i = 2; i <= 9999; i++) {
+    for (let i = 2; i <= MAX_QUEUE_PRIORITY; i++) {
       const candidate = `${baseName} (${i})`;
       if (!existing.includes(candidate)) {found = candidate;break;}
     }

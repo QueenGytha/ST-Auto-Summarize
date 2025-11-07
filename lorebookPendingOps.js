@@ -3,6 +3,7 @@
 
 import { chat_metadata, saveMetadata } from '../../../../script.js';
 import { debug, log, error } from './index.js';
+import { ID_GENERATION_BASE, OPERATION_ID_LENGTH, ONE_SECOND_MS } from './constants.js';
 
 function ensurePendingOps() {
   if (!chat_metadata.autoLorebooks) {
@@ -16,7 +17,7 @@ function ensurePendingOps() {
 
 export function generateEntryId() {
   const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 11);
+  const random = Math.random().toString(ID_GENERATION_BASE).substring(2, OPERATION_ID_LENGTH);
   return `entry_${timestamp}_${random}`;
 }
 
@@ -114,7 +115,7 @@ export function cleanupStalePendingEntries(maxAgeMs  = 86400000) {
       if (age > maxAgeMs) {
         delete pending[entryId];
         removed++;
-        debug(`[PendingOps] Removed stale entry: ${entryId} (age: ${Math.round(age / 1000)}s)`);
+        debug(`[PendingOps] Removed stale entry: ${entryId} (age: ${Math.round(age / ONE_SECOND_MS)}s)`);
       }
     }
   });

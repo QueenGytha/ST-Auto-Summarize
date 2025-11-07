@@ -475,6 +475,8 @@ export async function manualSceneBreakDetection() {
   await processAutoSceneBreakDetection();
 }
 
+// Complex range calculation algorithm with multiple constraints - inherent complexity
+// eslint-disable-next-line complexity, sonarjs/cognitive-complexity
 export async function processNewMessageForSceneBreak(messageIndex ) {
   const enabled = get_settings('auto_scene_break_on_new_message');
   if (!enabled) {

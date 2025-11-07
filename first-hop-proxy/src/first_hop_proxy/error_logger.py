@@ -19,7 +19,7 @@ class ErrorLogger:
         # Use the new independent error logging configuration
         self.config = config.get("error_logging", {})
         self.enabled = self.config.get("enabled", False)
-        self.base_error_folder = "logs/unsorted/errors"  # Base folder for unsorted error logs
+        self.base_error_folder = "logs/unsorted"  # Base folder for unsorted error logs (same as regular logs)
 
         # Additional error logging settings
         self.include_stack_traces = self.config.get("include_stack_traces", True)
@@ -35,6 +35,7 @@ class ErrorLogger:
     def _get_error_log_folder(self, character_chat_info: Optional[Tuple[str, str, str]] = None) -> str:
         """
         Determine the error log folder path based on character/chat information.
+        Uses the same folder as regular logs (no separate errors subfolder).
 
         Args:
             character_chat_info: Optional tuple of (character, timestamp, operation)
@@ -44,7 +45,7 @@ class ErrorLogger:
         """
         if character_chat_info:
             character, timestamp, operation = character_chat_info
-            folder = os.path.join("logs", "characters", character, timestamp, "errors")
+            folder = os.path.join("logs", "characters", character, timestamp)
             # Create directory structure if it doesn't exist
             os.makedirs(folder, exist_ok=True)
             return folder
@@ -53,11 +54,14 @@ class ErrorLogger:
 
     def _get_next_error_log_number(self, folder: str, operation: str) -> int:
         """
-        Get the next sequential error log number for the given folder and operation.
+        Get the next sequential log number for the given folder.
+
+        Scans ALL log files (both regular and error logs) regardless of operation type
+        to maintain sequential numbering across all logs.
 
         Args:
-            folder: Error log folder path
-            operation: Operation type (e.g., 'chat', 'lorebook')
+            folder: Log folder path
+            operation: Operation type (not used, kept for compatibility)
 
         Returns:
             Next sequential log number (1-based)
@@ -65,9 +69,10 @@ class ErrorLogger:
         if not os.path.exists(folder):
             return 1
 
-        # Find all error log files matching the pattern: <number>-<operation>.log
+        # Find all log files matching the pattern: <number>-<anything>.md
+        # This includes both regular logs and error logs
         max_num = 0
-        pattern = re.compile(r'^(\d+)-' + re.escape(operation) + r'\.log$')
+        pattern = re.compile(r'^(\d+)-.+\.md$')
 
         try:
             for filename in os.listdir(folder):
@@ -76,23 +81,23 @@ class ErrorLogger:
                     num = int(match.group(1))
                     max_num = max(max_num, num)
         except Exception as e:
-            logger.error(f"Error scanning error log folder {folder}: {e}")
+            logger.error(f"Error scanning log folder {folder}: {e}")
 
         return max_num + 1
 
     def _get_sequenced_error_filename(self, operation: str, folder: str) -> str:
         """
-        Generate filename with sequential numbering and operation type.
+        Generate filename with sequential numbering, operation type, and ERROR suffix.
 
         Args:
             operation: Operation type (e.g., 'chat', 'lorebook')
             folder: Error log folder path to check for existing logs
 
         Returns:
-            Filename in format: <number>-<operation>.log (e.g., 00001-chat.log)
+            Filename in format: <number>-<operation>-ERROR.md (e.g., 00019-chat-ERROR.md)
         """
         log_number = self._get_next_error_log_number(folder, operation)
-        return f"{log_number:05d}-{operation}.log"
+        return f"{log_number:05d}-{operation}-ERROR.md"
 
     def _get_error_filename(self, error_code: Union[int, str], timestamp: Optional[float] = None) -> str:
         """Generate filename for error log based on error code and timestamp (legacy/unsorted)"""
@@ -110,7 +115,7 @@ class ErrorLogger:
             # For exception types, use a sanitized version
             error_code_str = str(error_code).replace(" ", "_").replace("<", "").replace(">", "").replace("'", "")
 
-        return f"{error_code_str}_{timestamp_str}.log"
+        return f"{error_code_str}_{timestamp_str}-ERROR.md"
     
     def _get_error_code(self, error: Union[Exception, Response, int]) -> Union[int, str]:
         """Extract error code from various error types"""
@@ -224,29 +229,37 @@ class ErrorLogger:
             filename = self._get_error_filename(error_code)
 
         filepath = os.path.join(folder, filename)
-        
-        # Create log content
+
+        # Create log content in markdown format
         log_content = []
-        log_content.append("=" * 80)
-        log_content.append(f"ERROR LOG - {datetime.now().isoformat()}")
-        log_content.append("=" * 80)
-        log_content.append(f"Error Code: {error_code}")
-        log_content.append(f"File: {filename}")
+        log_content.append(f"# Error Log - {datetime.now().isoformat()}")
         log_content.append("")
-        
+        log_content.append(f"**Error Code:** `{error_code}`  ")
+        log_content.append(f"**File:** `{filename}`  ")
+        log_content.append(f"**Timestamp:** {datetime.now().isoformat()}  ")
+        log_content.append("")
+
         # Add retry information header if this is a retry
         if retry_attempt is not None:
-            log_content.append("-" * 40)
-            log_content.append(f"RETRY ATTEMPT #{retry_attempt}")
-            if retry_delay is not None:
-                log_content.append(f"Retry Delay: {retry_delay:.2f} seconds")
-            log_content.append("-" * 40)
+            log_content.append("## Retry Information")
             log_content.append("")
-        
+            log_content.append(f"**Retry Attempt:** #{retry_attempt}  ")
+            if retry_delay is not None:
+                log_content.append(f"**Retry Delay:** {retry_delay:.2f} seconds  ")
+            log_content.append("")
+
         # Add error details
-        log_content.append("ERROR DETAILS:")
-        log_content.append("-" * 40)
+        log_content.append("## Error Details")
+        log_content.append("")
+        log_content.append("```json")
         log_content.append(json.dumps(error_context, indent=2, default=str))
+        log_content.append("```")
+        log_content.append("")
+
+        # Footer
+        log_content.append("---")
+        log_content.append("")
+        log_content.append(f"*Log completed at {datetime.now().isoformat()}*")
         
         # Write to file
         try:
@@ -313,10 +326,10 @@ class ErrorLogger:
             return
 
         try:
-            # Get all log files
+            # Get all error log files (look for ERROR in filename)
             log_files = []
             for filename in os.listdir(folder):
-                if filename.endswith('.log'):
+                if filename.endswith('.md') and 'ERROR' in filename:
                     filepath = os.path.join(folder, filename)
                     file_stat = os.stat(filepath)
                     log_files.append({
@@ -373,12 +386,24 @@ class ErrorLogger:
 
         try:
             for filename in os.listdir(folder):
-                if filename.endswith('.log'):
+                if filename.endswith('.md') and 'ERROR' in filename:
                     filepath = os.path.join(folder, filename)
                     file_stat = os.stat(filepath)
 
                     # Parse error code from filename
-                    error_code = filename.split('_')[0]
+                    # Format: 00019-operation-ERROR.md or code_timestamp-ERROR.md
+                    if filename.endswith('-ERROR.md'):
+                        # Remove the -ERROR.md suffix
+                        base = filename.replace('-ERROR.md', '')
+                        parts = base.split('-')
+                        if len(parts) >= 2 and parts[0].isdigit():
+                            # Sequenced format: 00019-operation
+                            error_code = parts[1]
+                        else:
+                            # Legacy format: code_timestamp
+                            error_code = parts[0].split('_')[0]
+                    else:
+                        error_code = "unknown"
 
                     error_logs.append({
                         "filename": filename,

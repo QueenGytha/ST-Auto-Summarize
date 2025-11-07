@@ -240,7 +240,7 @@ async function on_chat_event(event  = null, data  = null) {
 
 // Initialization function that runs when module loads
 async function initializeExtension() {
-  console.log('[EVENT HANDLERS] initializeExtension() called');
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] initializeExtension() called');
   log(`Loading extension...`);
 
   // Read version from manifest.json
@@ -255,14 +255,14 @@ async function initializeExtension() {
   installGenerateRawInterceptor();
 
   // Install lorebook wrapper for individual entry wrapping with XML tags
-  console.log('[Auto-Summarize:Init] About to call installLorebookWrapper()');
+  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] About to call installLorebookWrapper()');
   installLorebookWrapper();
-  console.log('[Auto-Summarize:Init] installLorebookWrapper() call completed');
+  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] installLorebookWrapper() call completed');
 
   // Install world info activation logger (PoC for tracking active entries)
-  console.log('[Auto-Summarize:Init] Installing world info activation logger');
+  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] Installing world info activation logger');
   installWorldInfoActivationLogger();
-  console.log('[Auto-Summarize:Init] World info activation logger installed');
+  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] World info activation logger installed');
 
   // Load settings
   initialize_settings();
@@ -285,12 +285,12 @@ async function initializeExtension() {
   bindSceneBreakButton(get_message_div, getContext, set_data, get_data, saveChatDebounced);
 
   // Initialize lorebook viewer UI
-  console.log('[Auto-Summarize:Init] Adding lorebook viewer button to message template');
+  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] Adding lorebook viewer button to message template');
   addLorebookViewerButton();
-  console.log('[Auto-Summarize:Init] Binding lorebook viewer button click handlers');
+  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] Binding lorebook viewer button click handlers');
   bindLorebookViewerButton();
   bindSceneBreakLorebookIcons();
-  console.log('[Auto-Summarize:Init] Lorebook viewer initialized');
+  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] Lorebook viewer initialized');
 
   // ST event listeners
   const ctx = getContext();
@@ -426,35 +426,35 @@ async function initializeExtension() {
   log('[Queue] ✓ Operation queue initialized (handlers will be registered after module init)');
 
   // Initialize Auto-Lorebooks functionality
-  console.log('[EVENT HANDLERS] About to initialize Auto-Lorebooks functionality...');
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] About to initialize Auto-Lorebooks functionality...');
   log('[Lorebooks] Initializing Auto-Lorebooks functionality...');
   try {
-    console.log('[EVENT HANDLERS] Importing modules...');
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Importing modules...');
     const lorebookManager = await import('./lorebookManager.js');
     const categoryIndexes = await import('./categoryIndexes.js');
     const lorebookEntryMerger = await import('./lorebookEntryMerger.js');
     const summaryToLorebookProcessor = await import('./summaryToLorebookProcessor.js');
     const connectionSettingsManager = await import('./connectionSettingsManager.js');
-    console.log('[EVENT HANDLERS] All modules imported successfully');
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] All modules imported successfully');
 
     // Initialize lorebooks modules
-    console.log('[EVENT HANDLERS] Initializing lorebookManager...');
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing lorebookManager...');
     lorebookManager.initLorebookManager(lorebookUtils);
-    console.log('[EVENT HANDLERS] Initializing categoryIndexes...');
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing categoryIndexes...');
     categoryIndexes.initCategoryIndexes(lorebookUtils, lorebookManager, { get_settings });
 
     // Initialize with operation queue
-    console.log('[EVENT HANDLERS] Initializing lorebookEntryMerger...');
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing lorebookEntryMerger...');
     if (operationQueueModule) {
       lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, operationQueueModule);
     } else {
       lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, null);
     }
 
-    console.log('[EVENT HANDLERS] About to init summaryToLorebookProcessor with connectionSettingsManager:', connectionSettingsManager);
-    console.log('[EVENT HANDLERS] connectionSettingsManager.withConnectionSettings:', connectionSettingsManager?.withConnectionSettings);
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] About to init summaryToLorebookProcessor with connectionSettingsManager:', connectionSettingsManager);
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] connectionSettingsManager.withConnectionSettings:', connectionSettingsManager?.withConnectionSettings);
     summaryToLorebookProcessor.initSummaryToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger, connectionSettingsManager, { get_settings, set_settings });
-    console.log('[EVENT HANDLERS] ✓ summaryToLorebookProcessor initialized');
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] ✓ summaryToLorebookProcessor initialized');
 
     log('[Lorebooks] ✓ Auto-Lorebooks functionality initialized');
   } catch (err) {
@@ -481,7 +481,7 @@ async function initializeExtension() {
 }
 
 // Call initialization immediately when module loads
-console.log('[EVENT HANDLERS] Module loaded, calling initializeExtension()...');
+debug(SUBSYSTEM.EVENT, 'Module loaded, calling initializeExtension()...');
 initializeExtension().catch((err) => {
   console.error('[EVENT HANDLERS] Failed to initialize extension:', err);
   console.error('[EVENT HANDLERS] Stack trace:', err.stack);

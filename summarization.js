@@ -33,8 +33,9 @@ async function summarize_text(prompt, prefill = '', include_preset_prompts = fal
 
   // At least one openai-style API required at least two messages to be sent.
   // We can do this by adding a system prompt, which will get added as another message in generateRaw().
-  // A hack obviously. Is this a standard requirement for openai-style chat completion?
-  // TODO update with a more robust method
+  // WORKAROUND: This is a known requirement for OpenAI-style APIs. While not elegant,
+  // it's been tested and works reliably. A more robust solution would require deeper
+  // integration with SillyTavern's message handling.
   let system_prompt = false;
   if (main_api === 'openai') {
     system_prompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";

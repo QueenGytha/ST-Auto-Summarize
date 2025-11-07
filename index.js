@@ -17,6 +17,12 @@ import { animation_duration, scrollChatToBottom, extension_prompt_roles, extensi
 // Import SillyTavern selectors (direct import since this is the barrel file)
 import { selectorsSillyTavern } from './selectorsSillyTavern.js';
 
+// Import constants (direct import since this is the barrel file)
+import { UI_UPDATE_DELAY_MS } from './constants.js';
+
+// Import logging utilities (direct import since this is the barrel file)
+import { debug, SUBSYSTEM } from './utils.js';
+
 // Track if queue is blocking (set by operationQueue.js)
 let isQueueBlocking = false;
 
@@ -25,7 +31,7 @@ let queueIndicatorButton = null;
 
 // Function for queue to control blocking state
 export function setQueueBlocking(blocking ) {
-  console.log('[AutoSummarize] [ButtonControl] setQueueBlocking:', blocking);
+  debug(SUBSYSTEM.UI, '[ButtonControl] setQueueBlocking:', blocking);
   isQueueBlocking = blocking;
 
   const sendButton = document.querySelector(selectorsSillyTavern.buttons.send);
@@ -58,7 +64,7 @@ export function setQueueBlocking(blocking ) {
     }
 
     queueIndicatorButton.classList.remove('displayNone');
-    console.log('[AutoSummarize] [ButtonControl] Showing queue indicator button');
+    debug(SUBSYSTEM.UI, '[ButtonControl] Showing queue indicator button');
   } else {
     _originalActivateSendButtons();
 
@@ -72,7 +78,7 @@ export function setQueueBlocking(blocking ) {
       sendButton.classList.remove('displayNone');
     }
 
-    console.log('[AutoSummarize] [ButtonControl] Restored send button');
+    debug(SUBSYSTEM.UI, '[ButtonControl] Restored send button');
   }
 }
 
@@ -80,7 +86,7 @@ export function setQueueBlocking(blocking ) {
 export function installButtonInterceptor() {
   if (typeof window === 'undefined') return;
 
-  console.log('[AutoSummarize] Installing button function interceptors...');
+  debug(SUBSYSTEM.UI, 'Installing button function interceptors...');
 
   // ST's script.js doesn't export to window, so we need to hook into the DOM manipulation directly
   // Instead of trying to override functions, we'll use MutationObserver to watch button state changes
@@ -91,12 +97,12 @@ export function installButtonInterceptor() {
     const stopButton = document.querySelector(selectorsSillyTavern.buttons.stop);
 
     if (!sendButton || !stopButton) {
-      console.warn('[AutoSummarize] Buttons not found yet, retrying in 500ms...');
-      setTimeout(attemptInstall, 500);
+      debug(SUBSYSTEM.UI, 'Buttons not found yet, retrying in 500ms...');
+      setTimeout(attemptInstall, UI_UPDATE_DELAY_MS);
       return;
     }
 
-    console.log('[AutoSummarize] Found send/stop buttons, installing observer...');
+    debug(SUBSYSTEM.UI, 'Found send/stop buttons, installing observer...');
 
     // Watch for changes to the body's data-generating attribute
     // eslint-disable-next-line no-undef
@@ -104,11 +110,11 @@ export function installButtonInterceptor() {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'data-generating') {
           const isGenerating = document.body.dataset.generating === 'true';
-          console.log('[AutoSummarize] [ButtonControl] Generation state changed:', isGenerating, 'isQueueBlocking:', isQueueBlocking);
+          debug(SUBSYSTEM.UI, '[ButtonControl] Generation state changed:', isGenerating, 'isQueueBlocking:', isQueueBlocking);
 
           // If queue is blocking and ST tries to unblock (by removing data-generating), re-block it
           if (isQueueBlocking && !isGenerating) {
-            console.log('[AutoSummarize] [ButtonControl] Queue is blocking - forcing generation state back to true');
+            debug(SUBSYSTEM.UI, '[ButtonControl] Queue is blocking - forcing generation state back to true');
             document.body.dataset.generating = 'true';
           }
         }
@@ -120,7 +126,7 @@ export function installButtonInterceptor() {
       attributeFilter: ['data-generating']
     });
 
-    console.log('[AutoSummarize] Button state observer installed');
+    debug(SUBSYSTEM.UI, 'Button state observer installed');
   };
 
   attemptInstall();
@@ -151,6 +157,7 @@ export * from './settingsUI.js';
 export * from './profileManager.js';
 export * from './defaultPrompts.js';
 export * from './defaultSettings.js';
+export * from './constants.js';
 export * from './sceneBreak.js';
 export * from './autoSceneBreakDetection.js';
 export * from './runningSceneSummary.js';
@@ -209,14 +216,14 @@ export { selectorsSillyTavern } from './selectorsSillyTavern.js';
 // Intercepts Enter key presses to block when queue is active
 
 export function installEnterKeyInterceptor() {
-  console.log('[AutoSummarize] Installing Enter key interceptor');
+  debug(SUBSYSTEM.UI, 'Installing Enter key interceptor');
   if (typeof window === 'undefined') return;
 
   const attemptInstall = () => {
     const textarea = document.querySelector(selectorsSillyTavern.chat.input);
     if (!textarea) {
-      console.warn('[AutoSummarize] Could not find chat input textarea, retrying in 500ms...');
-      setTimeout(attemptInstall, 500);
+      debug(SUBSYSTEM.UI, 'Could not find chat input textarea, retrying in 500ms...');
+      setTimeout(attemptInstall, UI_UPDATE_DELAY_MS);
       return;
     }
 
@@ -227,14 +234,14 @@ export function installEnterKeyInterceptor() {
         if (isQueueActive()) {
           e.preventDefault();
           e.stopPropagation();
-          console.log('[AutoSummarize] [Queue] Blocked Enter key - queue is processing operations');
+          debug(SUBSYSTEM.UI, '[Queue] Blocked Enter key - queue is processing operations');
           const { toast } = await import('./index.js');
           toast('Please wait - queue operations in progress', 'warning');
         }
       }
     }, true); // Use capture phase to intercept before ST's handlers
 
-    console.log('[AutoSummarize] Enter key interceptor installed');
+    debug(SUBSYSTEM.UI, 'Enter key interceptor installed');
   };
 
   attemptInstall();
@@ -297,7 +304,7 @@ function decrementStickyCounters() {
   for (const [uid, stickyData] of activeStickyEntries.entries()) {
     if (stickyData.stickyCount > 0) {
       stickyData.stickyCount--;
-      console.log(`[worldinfoactive] Decremented sticky count for ${stickyData.entry.comment}: ${stickyData.stickyCount} remaining`);
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Decremented sticky count for ${stickyData.entry.comment}: ${stickyData.stickyCount} remaining`);
 
       if (stickyData.stickyCount === 0) {
         toRemove.push(uid);
@@ -308,7 +315,7 @@ function decrementStickyCounters() {
   // Remove expired entries
   for (const uid of toRemove) {
     const removed = activeStickyEntries.get(uid);
-    console.log(`[worldinfoactive] Removed expired sticky entry: ${removed.entry.comment}`);
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Removed expired sticky entry: ${removed.entry.comment}`);
     activeStickyEntries.delete(uid);
   }
 }
@@ -344,7 +351,7 @@ function updateStickyTracking(entries, messageIndex) {
         stickyCount: entry.sticky,
         messageIndex: messageIndex
       });
-      console.log(`[worldinfoactive] Tracking sticky entry: ${entry.comment} (${entry.sticky} rounds)`);
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Tracking sticky entry: ${entry.comment} (${entry.sticky} rounds)`);
     }
 
     // Track constant entries (always active)
@@ -354,7 +361,7 @@ function updateStickyTracking(entries, messageIndex) {
         stickyCount: Infinity, // Never expires
         messageIndex: messageIndex
       });
-      console.log(`[worldinfoactive] Tracking constant entry: ${entry.comment}`);
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Tracking constant entry: ${entry.comment}`);
     }
   }
 }
@@ -367,7 +374,7 @@ function persistToMessage(messageIndex, entries) {
   const message = ctx?.chat?.[messageIndex];
 
   if (!message) {
-    console.warn(`[worldinfoactive] Cannot persist: message ${messageIndex} not found`);
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Cannot persist: message ${messageIndex} not found`);
     return;
   }
 
@@ -376,7 +383,7 @@ function persistToMessage(messageIndex, entries) {
   }
 
   message.extra.activeLorebookEntries = entries;
-  console.log(`[worldinfoactive] Persisted ${entries.length} entries to message ${messageIndex}.extra`);
+  debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Persisted ${entries.length} entries to message ${messageIndex}.extra`);
 }
 
 /**
@@ -385,14 +392,14 @@ function persistToMessage(messageIndex, entries) {
  * Tracks sticky/constant entries across multiple generations
  */
 export function installWorldInfoActivationLogger() {
-  console.log('[worldinfoactive] Installing activation tracker');
+  debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] Installing activation tracker');
 
   const ctx = getContext();
   const eventSource = ctx?.eventSource;
   const event_types = ctx?.event_types;
 
   if (!eventSource || !event_types?.WORLD_INFO_ACTIVATED || !event_types?.GENERATION_STARTED) {
-    console.warn('[worldinfoactive] Unable to install tracker (missing eventSource or event types)');
+    debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] Unable to install tracker (missing eventSource or event types)');
     return;
   }
 
@@ -413,7 +420,7 @@ export function installWorldInfoActivationLogger() {
       targetMessageIndex = chatLength;
     }
 
-    console.log(`[worldinfoactive] Generation started: type=${genType}, targetIndex=${targetMessageIndex}`);
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Generation started: type=${genType}, targetIndex=${targetMessageIndex}`);
   });
 
   // Track world info activations
@@ -423,15 +430,15 @@ export function installWorldInfoActivationLogger() {
     // Use calculated target index, fallback to last message
     const messageIndex = targetMessageIndex !== null ? targetMessageIndex : Math.max(0, chatLength - 1);
 
-    console.log(`[worldinfoactive] Event fired - Chat length: ${chatLength}, Target message: ${messageIndex}, Type: ${currentGenerationType}`);
-    console.log(`[worldinfoactive] ${entries.length} newly activated entries`);
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Event fired - Chat length: ${chatLength}, Target message: ${messageIndex}, Type: ${currentGenerationType}`);
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] ${entries.length} newly activated entries`);
 
     // First, decrement sticky counters for ongoing entries
     decrementStickyCounters();
 
     // Get still-active sticky/constant entries
     const stillActive = getStillActiveEntries();
-    console.log(`[worldinfoactive] ${stillActive.length} still-active sticky/constant entries`);
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] ${stillActive.length} still-active sticky/constant entries`);
 
     // Capture rich entry data with all metadata
     const enhancedEntries = entries.map(entry => {
@@ -471,7 +478,7 @@ export function installWorldInfoActivationLogger() {
     }
 
     const mergedEntries = Array.from(entryMap.values());
-    console.log(`[worldinfoactive] Total active entries for message ${messageIndex}: ${mergedEntries.length} (${enhancedEntries.length} new + ${stillActive.length} still-active)`);
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Total active entries for message ${messageIndex}: ${mergedEntries.length} (${enhancedEntries.length} new + ${stillActive.length} still-active)`);
 
     // Store in memory
     activeLorebooksPerMessage.set(messageIndex, mergedEntries);
@@ -483,17 +490,17 @@ export function installWorldInfoActivationLogger() {
     mergedEntries.forEach((entry, i) => {
       const stickyInfo = entry.sticky > 0 ? ` (sticky: ${entry.sticky})` : '';
       const constantInfo = entry.constant ? ' (constant)' : '';
-      console.log(`[worldinfoactive] Entry ${i + 1}: ${entry.strategy} - ${entry.comment}${stickyInfo}${constantInfo}`);
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Entry ${i + 1}: ${entry.strategy} - ${entry.comment}${stickyInfo}${constantInfo}`);
     });
   });
 
   // Clear sticky state on chat change
   eventSource.on(event_types.CHAT_CHANGED, () => {
-    console.log('[worldinfoactive] Chat changed, clearing sticky entry state');
+    debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] Chat changed, clearing sticky entry state');
     activeStickyEntries.clear();
     currentGenerationType = null;
     targetMessageIndex = null;
   });
 
-  console.log('[worldinfoactive] ✓ Tracker installed successfully');
+  debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] ✓ Tracker installed successfully');
 }

@@ -2,6 +2,7 @@
 import complexity from 'eslint-plugin-complexity';
 import sonarjs from 'eslint-plugin-sonarjs';
 import importPlugin from 'eslint-plugin-import';
+import { MAX_LINE_LENGTH } from './constants.js';
 
 export default [
 {
@@ -118,11 +119,28 @@ export default [
       maxEOF: 1
     }],
 
+    // AI DEVELOPMENT SAFEGUARDS
+    'no-console': ['error', { // Block console.log, force debug() subsystem
+      allow: ['warn', 'error']
+    }],
+    'consistent-return': 'error', // Catch functions with inconsistent return statements
+    'no-magic-numbers': ['error', { // Force named constants for magic numbers
+      ignore: [0, 1, -1, 2], // Allow common numbers
+      ignoreArrayIndexes: true,
+      ignoreDefaultValues: true,
+      enforceConst: true,
+      detectObjects: false // Don't flag object property values
+    }],
+    'no-warning-comments': ['error', { // Block TODO/FIXME comments
+      terms: ['TODO', 'FIXME', 'XXX'],
+      location: 'start'
+    }],
+
     // COMPLEXITY ANALYSIS (critical for AI-generated code)
     'complexity': ['error', { max: 20 }], // Error on functions with complexity > 20
 
     // SONARJS CODE QUALITY RULES (only using rules available in v3.0.5)
-    'sonarjs/cognitive-complexity': ['error', 30], // Error on high cognitive complexity
+    'sonarjs/cognitive-complexity': ['error', MAX_LINE_LENGTH], // Error on high cognitive complexity
     'sonarjs/no-all-duplicated-branches': 'error', // Catch if/else with same code
     'sonarjs/no-collection-size-mischeck': 'error', // Catch .length === 0 bugs
     'sonarjs/no-duplicate-string': ['warn', { // Warn on repeated strings

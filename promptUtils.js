@@ -1,5 +1,6 @@
 
 import { formatInstructModeChat } from './index.js';
+import { SLICE_TRIM_LAST_TWO } from './constants.js';
 
 function system_prompt_split(text ) {
   // Given text with some number of {{macro}} items, split the text by these items and format the rest as system messages surrounding the macros
@@ -47,7 +48,7 @@ function substitute_params(text , params ) {
     if (!part) return "";
     if (!part.startsWith('{{') || !part.endsWith('}}')) return part;
     part = part.trim(); // clean whitespace
-    const macro = part.slice(2, -2);
+    const macro = part.slice(2, SLICE_TRIM_LAST_TWO);
     return params[macro] ?? "";
   });
   return formatted.join('');

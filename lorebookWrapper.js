@@ -1,7 +1,7 @@
 
 // Listens for SillyTavern world info entry loads and wraps each entry with XML tags
 
-import { get_settings, getContext } from './index.js';
+import { get_settings, getContext, debug, SUBSYSTEM } from './index.js';
 
 const WRAPPER_OPEN = '<setting_lore ';
 const WRAPPER_CLOSE = '</setting_lore>';
@@ -10,7 +10,7 @@ let isListenerRegistered  = false;
 
 export function installLorebookWrapper() {
   if (isListenerRegistered) {
-    console.log('[Auto-Summarize:LorebookWrapper] Listener already installed, skipping');
+    debug(SUBSYSTEM.LOREBOOK,'[Auto-Summarize:LorebookWrapper] Listener already installed, skipping');
     return;
   }
 
@@ -26,7 +26,7 @@ export function installLorebookWrapper() {
 
     eventSource.on(event_types.WORLDINFO_ENTRIES_LOADED, handleWorldInfoEntriesLoaded);
     isListenerRegistered = true;
-    console.log('[Auto-Summarize:LorebookWrapper] ✓ Registered WORLDINFO_ENTRIES_LOADED listener');
+    debug(SUBSYSTEM.LOREBOOK,'[Auto-Summarize:LorebookWrapper] ✓ Registered WORLDINFO_ENTRIES_LOADED listener');
   } catch (err) {
     console.error('[Auto-Summarize:LorebookWrapper] Failed to install wrapper listener:', err);
   }
@@ -140,6 +140,8 @@ function escapeXML(str ) {
   replace(/'/g, '&apos;');
 }
 
+// Serialization: 9 independent optional fields - inherent complexity
+// eslint-disable-next-line complexity
 function buildAttributeList(entry ) {
   const attrs = [];
 

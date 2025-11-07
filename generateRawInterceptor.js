@@ -6,16 +6,18 @@ import { generateRaw as _importedGenerateRaw } from '../../../../script.js';
 import { getContext } from '../../../extensions.js';
 import { injectMetadata, injectMetadataIntoChatArray } from './metadataInjector.js';
 import { getOperationSuffix } from './operationContext.js';
+import { debug, error, SUBSYSTEM } from './index.js';
+import { DEBUG_OUTPUT_SHORT_LENGTH, DEBUG_OUTPUT_MEDIUM_LENGTH } from './constants.js';
 
 let _originalGenerateRaw  = null; // Store original function
 let _isInterceptorActive  = false; // Prevent recursion
 
 export async function wrappedGenerateRaw(options ) {
-  console.log('[Auto-Summarize:Interceptor] wrappedGenerateRaw called! isInterceptorActive:', _isInterceptorActive);
+  debug(SUBSYSTEM.CORE, '[Interceptor] wrappedGenerateRaw called! isInterceptorActive:', _isInterceptorActive);
 
   // Prevent infinite recursion
   if (_isInterceptorActive) {
-    console.log('[Auto-Summarize:Interceptor] Recursion detected, calling original');
+    debug(SUBSYSTEM.CORE, '[Interceptor] Recursion detected, calling original');
     return await _importedGenerateRaw(options);
   }
 
@@ -31,39 +33,39 @@ export async function wrappedGenerateRaw(options ) {
       const suffix = getOperationSuffix();
       const operation = suffix ? `${baseOperation}${suffix}` : baseOperation;
 
-      console.log('[Auto-Summarize:Interceptor] Operation type:', operation);
+      debug(SUBSYSTEM.CORE, '[Interceptor] Operation type:', operation);
 
       if (typeof options.prompt === 'string') {
         // String prompt - inject at beginning
-        console.log('[Auto-Summarize:Interceptor] Processing string prompt (first 100 chars):', options.prompt.substring(0, 100));
+        debug(SUBSYSTEM.CORE, '[Interceptor] Processing string prompt (first 100 chars):', options.prompt.substring(0, DEBUG_OUTPUT_SHORT_LENGTH));
 
         const processedPrompt = injectMetadata(options.prompt, {
           operation: operation
         });
 
-        console.log('[Auto-Summarize:Interceptor] Processed prompt (first 200 chars):', processedPrompt.substring(0, 200));
+        debug(SUBSYSTEM.CORE, '[Interceptor] Processed prompt (first 200 chars):', processedPrompt.substring(0, DEBUG_OUTPUT_MEDIUM_LENGTH));
         options.prompt = processedPrompt;
 
       } else if (Array.isArray(options.prompt) && options.prompt.length > 0) {
         // Messages array - inject metadata using existing helper
-        console.log('[Auto-Summarize:Interceptor] Processing messages array with', options.prompt.length, 'messages');
+        debug(SUBSYSTEM.CORE, '[Interceptor] Processing messages array with', options.prompt.length, 'messages');
 
         injectMetadataIntoChatArray(options.prompt, {
           operation: operation
         });
 
-        console.log('[Auto-Summarize:Interceptor] Injected metadata into messages array');
+        debug(SUBSYSTEM.CORE, '[Interceptor] Injected metadata into messages array');
       } else {
-        console.log('[Auto-Summarize:Interceptor] Prompt format not recognized');
+        debug(SUBSYSTEM.CORE, '[Interceptor] Prompt format not recognized');
       }
     } else {
-      console.log('[Auto-Summarize:Interceptor] No prompt found in options');
+      debug(SUBSYSTEM.CORE, '[Interceptor] No prompt found in options');
     }
 
     // Call original function
     return await _importedGenerateRaw(options);
   } catch (err) {
-    console.error('[Auto-Summarize:Interceptor] Error in wrapped generateRaw:', err);
+    error(SUBSYSTEM.CORE, '[Interceptor] Error in wrapped generateRaw:', err);
     // Still call original on error
     return await _importedGenerateRaw(options);
   } finally {
@@ -72,46 +74,46 @@ export async function wrappedGenerateRaw(options ) {
 }
 
 export function installGenerateRawInterceptor() {
-  console.log('[Auto-Summarize:Interceptor] Installing generateRaw interceptor...');
+  debug(SUBSYSTEM.CORE, '[Interceptor] Installing generateRaw interceptor...');
 
   try {
     // Strategy 1: Wrap on context object (for code that uses ctx.generateRaw)
     const ctx = getContext();
-    console.log('[Auto-Summarize:Interceptor] Context object exists:', !!ctx);
+    debug(SUBSYSTEM.CORE, '[Interceptor] Context object exists:', !!ctx);
 
     if (ctx) {
-      console.log('[Auto-Summarize:Interceptor] ctx.generateRaw exists:', !!ctx.generateRaw);
-      console.log('[Auto-Summarize:Interceptor] ctx.generateRaw is function:', typeof ctx.generateRaw === 'function');
+      debug(SUBSYSTEM.CORE, '[Interceptor] ctx.generateRaw exists:', !!ctx.generateRaw);
+      debug(SUBSYSTEM.CORE, '[Interceptor] ctx.generateRaw is function:', typeof ctx.generateRaw === 'function');
 
       if (typeof ctx.generateRaw === 'function') {
         _originalGenerateRaw = ctx.generateRaw;
         ctx.generateRaw = wrappedGenerateRaw;
-        console.log('[Auto-Summarize:Interceptor] ✓ Wrapped ctx.generateRaw');
-        console.log('[Auto-Summarize:Interceptor] Verification - ctx.generateRaw === wrappedGenerateRaw:', ctx.generateRaw === wrappedGenerateRaw);
+        debug(SUBSYSTEM.CORE, '[Interceptor] ✓ Wrapped ctx.generateRaw');
+        debug(SUBSYSTEM.CORE, '[Interceptor] Verification - ctx.generateRaw === wrappedGenerateRaw:', ctx.generateRaw === wrappedGenerateRaw);
       } else {
-        console.warn('[Auto-Summarize:Interceptor] ctx.generateRaw not found or not a function');
+        debug(SUBSYSTEM.CORE, '[Interceptor] ctx.generateRaw not found or not a function');
       }
     }
 
     // Strategy 2: Wrap on window object (for global access)
     if (typeof window !== 'undefined') {
-      console.log('[Auto-Summarize:Interceptor] window.generateRaw exists:', !!window.generateRaw);
-      console.log('[Auto-Summarize:Interceptor] window.generateRaw is function:', typeof window.generateRaw === 'function');
+      debug(SUBSYSTEM.CORE, '[Interceptor] window.generateRaw exists:', !!window.generateRaw);
+      debug(SUBSYSTEM.CORE, '[Interceptor] window.generateRaw is function:', typeof window.generateRaw === 'function');
 
       if (window.generateRaw) {
         if (!_originalGenerateRaw) _originalGenerateRaw = window.generateRaw;
         window.generateRaw = wrappedGenerateRaw;
-        console.log('[Auto-Summarize:Interceptor] ✓ Wrapped window.generateRaw');
-        console.log('[Auto-Summarize:Interceptor] Verification - window.generateRaw === wrappedGenerateRaw:', window.generateRaw === wrappedGenerateRaw);
+        debug(SUBSYSTEM.CORE, '[Interceptor] ✓ Wrapped window.generateRaw');
+        debug(SUBSYSTEM.CORE, '[Interceptor] Verification - window.generateRaw === wrappedGenerateRaw:', window.generateRaw === wrappedGenerateRaw);
       } else {
-        console.warn('[Auto-Summarize:Interceptor] window.generateRaw not found');
+        debug(SUBSYSTEM.CORE, '[Interceptor] window.generateRaw not found');
       }
     }
 
-    console.log('[Auto-Summarize:Interceptor] ✓ Interceptor installed successfully');
-    console.log('[Auto-Summarize:Interceptor] NOTE: Extension code must import wrappedGenerateRaw to use interception');
+    debug(SUBSYSTEM.CORE, '[Interceptor] ✓ Interceptor installed successfully');
+    debug(SUBSYSTEM.CORE, '[Interceptor] NOTE: Extension code must import wrappedGenerateRaw to use interception');
   } catch (err) {
-    console.error('[Auto-Summarize:Interceptor] Failed to install interceptor:', err);
+    error(SUBSYSTEM.CORE, '[Interceptor] Failed to install interceptor:', err);
   }
 }
 

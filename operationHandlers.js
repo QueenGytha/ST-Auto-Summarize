@@ -8,6 +8,7 @@ import {
   getAbortSignal,
   throwIfAborted } from
 './operationQueue.js';
+import { OPERATION_FETCH_TIMEOUT_MS } from './constants.js';
 import {
   validate_summary } from
 './summaryValidation.js';
@@ -219,7 +220,7 @@ export function registerAllOperationHandlers() {
     }
 
     // Wait 5 seconds before generating scene name (rate limiting)
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await new Promise((resolve) => setTimeout(resolve, OPERATION_FETCH_TIMEOUT_MS));
 
     // Check if cancelled during delay
     throwIfAborted(signal, 'GENERATE_SCENE_NAME', 'rate limit delay');
@@ -290,6 +291,8 @@ export function registerAllOperationHandlers() {
   });
 
   // LOREBOOK_ENTRY_LOOKUP - First stage of lorebook processing pipeline
+  // Pipeline state machine: determines next stage based on AI results
+  // eslint-disable-next-line complexity
   registerOperationHandler(OperationType.LOREBOOK_ENTRY_LOOKUP, async (operation) => {
     const { entryId, entryData, registryListing, typeList } = operation.params;
     const signal = getAbortSignal(operation);
@@ -393,6 +396,8 @@ export function registerAllOperationHandlers() {
   });
 
   // RESOLVE_LOREBOOK_ENTRY - Second stage (conditional) - get full context for uncertain matches
+  // Pipeline state machine: determines next stage based on AI results
+  // eslint-disable-next-line complexity
   registerOperationHandler(OperationType.RESOLVE_LOREBOOK_ENTRY, async (operation) => {
     const { entryId } = operation.params;
     const signal = getAbortSignal(operation);

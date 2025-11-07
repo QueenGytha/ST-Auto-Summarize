@@ -14,6 +14,7 @@ import {
   get_current_chat_identifier,
   check_preset_valid } from
 './index.js';
+import { JSON_INDENT_SPACES } from './constants.js';
 
 
 // Profile management
@@ -105,7 +106,7 @@ function export_profile(profile  = null) {
   }
 
   log("Exporting Configuration Profile: " + profile);
-  const data = JSON.stringify(settings, null, 4);
+  const data = JSON.stringify(settings, null, JSON_INDENT_SPACES);
   download(data, `${profile}.json`, 'application/json');
 }
 async function import_profile(e ) {

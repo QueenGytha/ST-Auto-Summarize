@@ -179,6 +179,7 @@ async function get_manifest() {
     return await response.json();
   }
   error(`Error getting manifest.json from "${path}": status: ${response.status}`);
+  return undefined;
 }
 async function load_settings_html() {
   // fetch the settings html file and append it to the settings div.

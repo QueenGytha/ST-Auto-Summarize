@@ -8,6 +8,7 @@ import {
   log,
   SUBSYSTEM } from
 './index.js';
+import { DEBUG_OUTPUT_MEDIUM_LENGTH } from './constants.js';
 
 // Helper: Get setting key for validation type
 function getValidationKey(type , suffix ) {
@@ -56,7 +57,7 @@ async function validate_summary(summary , type  = "scene") {
         let validation_result;
         try {
           // Generate validation response
-          debug(SUBSYSTEM.VALIDATION, `Sending validation prompt: ${prompt.substring(0, 200)}...`);
+          debug(SUBSYSTEM.VALIDATION, `Sending validation prompt: ${prompt.substring(0, DEBUG_OUTPUT_MEDIUM_LENGTH)}...`);
           validation_result = await summarize_text(prompt, prefill, include_preset_prompts, validation_preset);
           debug(SUBSYSTEM.VALIDATION, `Raw validation result: ${validation_result}`);
         } finally {

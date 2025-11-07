@@ -34,6 +34,13 @@ import {
   removeEntityType,
   restoreEntityTypesToDefault } from
 './entityTypeSettingsUI.js';
+import {
+  MAX_LINE_LENGTH,
+  UI_UPDATE_DELAY_MS,
+  MAX_DISPLAY_PERCENTAGE,
+  MAX_SUMMARY_ATTEMPTS,
+  DEFAULT_POLLING_INTERVAL
+} from './constants.js';
 
 // UI initialization
 async function initialize_settings_listeners() {
@@ -91,11 +98,11 @@ async function initialize_settings_listeners() {
   bind_setting(selectorsExtension.scene.autoNameManual, 'scene_summary_auto_name_manual', 'boolean');
   bind_setting(selectorsExtension.scene.navWidth, 'scene_summary_navigator_width', 'number', (value ) => {
     // Enforce min/max constraints (30-500 pixels)
-    const clampedValue = Math.max(30, Math.min(500, value));
+    const clampedValue = Math.max(MAX_LINE_LENGTH, Math.min(UI_UPDATE_DELAY_MS, value));
     if (clampedValue !== value) {
       set_settings('scene_summary_navigator_width', clampedValue);
       refresh_settings();
-      toast('Navigator width clamped to valid range (30-500 pixels)', 'warning');
+      toast(`Navigator width clamped to valid range (${MAX_LINE_LENGTH}-${UI_UPDATE_DELAY_MS} pixels)`, 'warning');
     }
     // Re-render navigator bar with new width
     if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
@@ -120,7 +127,7 @@ async function initialize_settings_listeners() {
   $sceneHistoryCount.val(get_settings('scene_summary_history_count') || 1);
   $sceneHistoryCountDisplay.text($sceneHistoryCount.val());
   $sceneHistoryCount.on('input change', function () {
-    const val = Math.max(1, Math.min(99, Number($(this).val()) || 1));
+    const val = Math.max(1, Math.min(MAX_DISPLAY_PERCENTAGE, Number($(this).val()) || 1));
     set_settings('scene_summary_history_count', val);
     save_profile(); // auto-save when changed
     $sceneHistoryCount.val(val);
@@ -195,7 +202,7 @@ Available Macros:
   $runningExcludeLatest.val(get_settings('running_scene_summary_exclude_latest') || 1);
   $runningExcludeLatestDisplay.text($runningExcludeLatest.val());
   $runningExcludeLatest.on('input change', function () {
-    const val = Math.max(0, Math.min(5, Number($(this).val()) || 1));
+    const val = Math.max(0, Math.min(MAX_SUMMARY_ATTEMPTS, Number($(this).val()) || 1));
     set_settings('running_scene_summary_exclude_latest', val);
     save_profile();
     $runningExcludeLatest.val(val);
@@ -291,7 +298,7 @@ Available Macros:
   $autoSceneBreakOffset.on('input change', function () {
     let val = Number($(this).val());
     if (isNaN(val)) val = 1;
-    val = Math.max(0, Math.min(10, val));
+    val = Math.max(0, Math.min(DEFAULT_POLLING_INTERVAL, val));
     set_settings('auto_scene_break_message_offset', val);
     save_profile(); // auto-save when changed
     $autoSceneBreakOffset.val(val);
