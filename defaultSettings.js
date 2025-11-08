@@ -106,75 +106,58 @@ export const default_settings = {
 
   // --- Auto-Lorebooks Summary Processing Settings ---
   auto_lorebooks_summary_skip_duplicates: true, // Skip entities that already exist in lorebook
-  auto_lorebooks_summary_merge_prompt: `You are updating a lorebook entry. You have the existing entry content and new information from a summary.
+  auto_lorebooks_summary_merge_prompt: `You are updating a lorebook entry. You have the existing entry content and new information from a recap.
 
 Current Entry Name: {{entry_name}}
 
 ⚠️ CRITICAL: ONLY THE CONTENT IS INJECTED INTO THE AI'S CONTEXT ⚠️
-The AI will NEVER see the entry title, type, or keywords - it ONLY sees the content text during roleplay.
-Therefore, merged content MUST be completely self-contained with specific names and references.
-DO NOT use pronouns or vague references ("him", "her", "it", "the protagonist", "his friend").
-USE specific names ("Alice", "{{user}}", "Sunblade sword", "Shadow Guild", "Marcus").
+The AI will NEVER see the entry title, type, or keywords — it ONLY sees the content text during roleplay.
+Therefore, merged content MUST be self-contained and use specific names and references.
+Do NOT use pronouns or vague references ("him", "her", "it", "the protagonist"). Use specific names ("Alice", "{{user}}", "Sunblade sword", "Shadow Guild", "Marcus").
+
+Target format (bullet style; no PList):
+- Identity: <Type> — <Canonical Name>
+- Synopsis: <1 line identity/purpose>
+- Attributes: <appearance/traits/capabilities>
+- Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>
+- State: <status/location/owner/ongoing effects>
+- Secrets/Leverage: <what/who knows>
+- Tension/Triggers: <what escalates/defuses>
+- Style Notes: <voice/tone anchors>
 
 Your task:
 1. Compare the existing content with the new information.
-2. Merge them carefully while keeping strict PList formatting:
-   - Keep ONE bracketed entry that starts with [type-EntityName: ...] format.
-   - The type prefix (e.g., "character-", "location-", "item-") MUST match the entry type.
-   - Example: [character-Alice: warrior, ...] or [location-Tavern: old building, ...]
+2. Merge them carefully while keeping the bullet structure above:
    - Add new details that are not already present.
-   - Update existing details that have changed.
+   - Update details that have changed.
    - Remove information that is contradicted or no longer valid.
-   - Preserve important existing properties that remain true.
-   - Keep properties grouped logically; use parentheses for sub-details, max two nesting levels.
-   - Do NOT spin off separate trait entries; every fact stays under this entity.
-   - MAINTAIN SPECIFICITY: Replace any pronouns or vague references with specific names.
-3. CRITICAL: Check if the entry name needs updating:
-   - If the current name is a VAGUE/RELATIONAL reference (examples: "amelia's sister", "the bartender", "mysterious woman", "the shopkeeper", "victoria's friend")
-   - AND either the existing content OR new content reveals an ACTUAL PROPER NAME
-   - YOU MUST use FORMAT 2 with the proper name as canonicalName
-4. If the new information adds nothing, return the original content EXACTLY (FORMAT 1). Do not rewrite or reorder it.
+   - Preserve important existing bullets that remain true.
+   - Keep bullets concise; one fact per bullet.
+3. Name resolution:
+   - If the current name is relational/vague (e.g., "amelia's sister", "the bartender", "mysterious woman"), and a proper name is available in either content, set canonicalName to that proper name.
+   - Ensure the Identity bullet uses the canonical name after merging.
+4. If no new information is added, return the original content EXACTLY. Do not rewrite or reorder it.
 
 Existing Entry Content:
 {{existing_content}}
 
-New Information from Summary:
+New Information from Recap:
 {{new_content}}
 
 OUTPUT INSTRUCTIONS:
 
-⚠️ CRITICAL: You MUST output valid JSON in the following format ⚠️
+⚠️ You MUST output valid JSON in the following format ⚠️
 
 {
-  "mergedContent": "the merged lorebook entry content here (MUST start with [type-name: ...])",
+  "mergedContent": "the merged lorebook entry in bullet-point format",
   "canonicalName": "ProperName or null"
 }
 
-REQUIRED FIELDS:
-- "mergedContent": The merged lorebook entry content (required, string)
-- "canonicalName": The proper name if renaming is needed, or null if no rename (required, string or null)
-
-WHEN TO SET canonicalName:
-- If current name is relational/vague (possessive forms, job titles, family relations, descriptions)
-- AND you have access to a proper name (first name, full name, character name)
-- Example: Current="character-Amelia's Sister" + Content has "Victoria" -> canonicalName: "Victoria Thornbrook"
-- Otherwise: canonicalName: null
-
-RULES FOR canonicalName:
-- Use the full proper name if available (e.g., "Victoria Thornbrook")
-- NO type prefixes (use "Victoria Thornbrook" not "character-Victoria Thornbrook")
-- If only first name known, use just that (e.g., "Victoria")
-- CRITICAL: mergedContent MUST start with [type-canonicalName: ...] format (e.g., [character-Victoria Thornbrook: ...])
-- Always ensure mergedContent remains valid PList for this single entity.
-
-If the current name is ALREADY a proper name (like "Victoria", "John Smith"), set canonicalName to null.
-
-SPECIFICITY EXAMPLE:
-❌ BAD MERGE:
-[character-Alice: friends with him, uses his sword, told her about the plan, works at the place]
-
-✅ GOOD MERGE:
-[character-Alice: friends with({{user}}), uses({{user}}'s Sunblade sword), revealed(infiltration plan to Sarah), works at(Riverside Tavern owned by Marcus)]`,
+Rules for canonicalName:
+- Use the full proper name if available (e.g., "Victoria Thornbrook").
+- No type prefixes.
+- If only a first name is known, use just that (e.g., "Victoria").
+- If the current name is already a proper name, set canonicalName to null.`,
   auto_lorebooks_summary_merge_prefill: JSON_EXTRACTION_PREFILL, // Prefill for summary merge prompts
   auto_lorebooks_summary_merge_connection_profile: '', // Connection profile for summary merging
   auto_lorebooks_summary_merge_completion_preset: '', // Completion preset for summary merging

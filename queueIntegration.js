@@ -15,11 +15,11 @@ import {
 './index.js';
 import { MAX_SUMMARY_ATTEMPTS, HIGH_PRIORITY_OFFSET, STANDARD_QUEUE_POSITION, OPERATION_ID_LENGTH } from './constants.js';
 
-export async function queueValidateSummary(summary , type , options  = {}) {
+export function queueValidateSummary(summary , type , options  = {}) {
   // Capture settings at enqueue time for tooltip display
   const includePresetPrompts = get_settings('scene_summary_error_detection_include_preset_prompts') ?? false;
 
-  return await enqueueOperation(
+  return enqueueOperation(
     OperationType.VALIDATE_SUMMARY,
     { summary, type },
     {
@@ -35,8 +35,8 @@ export async function queueValidateSummary(summary , type , options  = {}) {
   );
 }
 
-export async function queueDetectSceneBreak(index , options  = {}) {
-  return await enqueueOperation(
+export function queueDetectSceneBreak(index , options  = {}) {
+  return enqueueOperation(
     OperationType.DETECT_SCENE_BREAK,
     { index },
     {
@@ -50,15 +50,15 @@ export async function queueDetectSceneBreak(index , options  = {}) {
   );
 }
 
-export async function queueDetectSceneBreaks(indexes , options  = {}) {
-  return await Promise.all(indexes.map((index) => queueDetectSceneBreak(index, options)));
+export function queueDetectSceneBreaks(indexes , options  = {}) {
+  return indexes.map((index) => queueDetectSceneBreak(index, options));
 }
 
-export async function queueGenerateSceneSummary(index , options  = {}) {
+export function queueGenerateSceneSummary(index , options  = {}) {
   // Capture settings at enqueue time for tooltip display
   const includePresetPrompts = get_settings('scene_summary_include_preset_prompts') ?? false;
 
-  return await enqueueOperation(
+  return enqueueOperation(
     OperationType.GENERATE_SCENE_SUMMARY,
     { index },
     {
@@ -74,11 +74,11 @@ export async function queueGenerateSceneSummary(index , options  = {}) {
   );
 }
 
-export async function queueGenerateRunningSummary(options  = {}) {
+export function queueGenerateRunningSummary(options  = {}) {
   // Capture settings at enqueue time for tooltip display
   const includePresetPrompts = get_settings('running_scene_summary_include_preset_prompts') ?? false;
 
-  return await enqueueOperation(
+  return enqueueOperation(
     OperationType.GENERATE_RUNNING_SUMMARY,
     {},
     {
@@ -93,8 +93,8 @@ export async function queueGenerateRunningSummary(options  = {}) {
   );
 }
 
-export async function queueCombineSceneWithRunning(index , options  = {}) {
-  return await enqueueOperation(
+export function queueCombineSceneWithRunning(index , options  = {}) {
+  return enqueueOperation(
     OperationType.COMBINE_SCENE_WITH_RUNNING,
     { index },
     {
@@ -117,20 +117,20 @@ function extractEntryName(entryData ) {
 }
 
 async function cancelSupersededOperations(lowerName , messageIndex , summaryHash ) {
-  if (!summaryHash) return;
+  if (!summaryHash) {return;}
 
   try {
     const ops = getAllOperations();
     for (const op of ops) {
-      if (op.type !== OperationType.LOREBOOK_ENTRY_LOOKUP) continue;
-      if (op.status !== OperationStatus.PENDING) continue;
+      if (op.type !== OperationType.LOREBOOK_ENTRY_LOOKUP) {continue;}
+      if (op.status !== OperationStatus.PENDING) {continue;}
       const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
-      if (metaName !== lowerName) continue;
-      if (op?.metadata?.message_index !== messageIndex) continue;
+      if (metaName !== lowerName) {continue;}
+      if (op?.metadata?.message_index !== messageIndex) {continue;}
       const opHash = op.metadata?.summary_hash || null;
-      if (opHash && opHash === summaryHash) continue;
+      if (opHash && opHash === summaryHash) {continue;}
       // Sequential execution required: operations must be updated in order
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- Operations must be updated sequentially to maintain queue state
       await updateOperationStatus(op.id, OperationStatus.CANCELLED, 'Replaced by newer summary version');
     }
   } catch {/* best effort dedup */}
@@ -142,14 +142,14 @@ function hasActiveDuplicate(lowerName , messageIndex , summaryHash ) {
     return ops.some((op) => {
       const status = op.status;
       const active = status === 'pending' || status === 'in_progress';
-      if (!active) return false;
+      if (!active) {return false;}
 
       if (op.type === OperationType.LOREBOOK_ENTRY_LOOKUP) {
         const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
         const sameMsg = op?.metadata?.message_index === messageIndex;
-        if (!sameMsg || metaName !== lowerName) return false;
+        if (!sameMsg || metaName !== lowerName) {return false;}
         const opHash = op.metadata?.summary_hash || null;
-        if (summaryHash && opHash && opHash !== summaryHash) return false;
+        if (summaryHash && opHash && opHash !== summaryHash) {return false;}
         return true;
       }
 
@@ -177,7 +177,7 @@ async function prepareLorebookEntryLookupContext(entryData ) {
   return { entryId, normalizedEntry, registryListing, typeList };
 }
 
-async function enqueueLorebookEntryLookupOperation(
+function enqueueLorebookEntryLookupOperation(
 context ,
 entryName ,
 messageIndex ,
@@ -188,7 +188,7 @@ options )
   const prefill = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '';
   const includePresetPrompts = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_include_preset_prompts') ?? false;
 
-  return await enqueueOperation(
+  return enqueueOperation(
     OperationType.LOREBOOK_ENTRY_LOOKUP,
     { entryId: context.entryId, entryData: context.normalizedEntry, registryListing: context.registryListing, typeList: context.typeList },
     {

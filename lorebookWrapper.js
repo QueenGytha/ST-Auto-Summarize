@@ -141,7 +141,7 @@ function escapeXML(str ) {
 }
 
 // Serialization: 9 independent optional fields - inherent complexity
-// eslint-disable-next-line complexity
+// eslint-disable-next-line complexity -- Building XML attributes for 9 independent optional fields
 function buildAttributeList(entry ) {
   const attrs = [];
 

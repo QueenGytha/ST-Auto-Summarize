@@ -19,8 +19,8 @@ async function getCurrentConnectionSettings() {
 
   // Flow requires explicit property setting for readonly types
   const settings = {};
-  if (connectionProfile != null) settings .connectionProfile = connectionProfile;
-  if (completionPreset != null) settings .completionPreset = completionPreset;
+  if (connectionProfile != null) {settings .connectionProfile = connectionProfile;}
+  if (completionPreset != null) {settings .completionPreset = completionPreset;}
 
   return settings ;
 }

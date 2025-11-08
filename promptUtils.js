@@ -11,14 +11,14 @@ function system_prompt_split(text ) {
   const parts = text.split(/(\{\{#if.*?\/if}})|(\{\{.*?}})/gs);
 
   const formatted = parts.map((part) => {
-    if (!part) return ""; // some parts are undefined
-    part = part.trim(); // trim whitespace
-    if (!part) return ""; // if empty after trimming
-    if (part.startsWith('{{') && part.endsWith('}}')) {
-      return part; // don't format macros
+    if (!part) {return "";} // some parts are undefined
+    const trimmed = part.trim(); // trim whitespace
+    if (!trimmed) {return "";} // if empty after trimming
+    if (trimmed.startsWith('{{') && trimmed.endsWith('}}')) {
+      return trimmed; // don't format macros
     }
-    const formatted = formatInstructModeChat("assistant", part, false, true, "", "", "", null);
-    return `${formatted}`;
+    const instructFormatted = formatInstructModeChat("assistant", trimmed, false, true, "", "", "", null);
+    return `${instructFormatted}`;
   });
   return formatted.join('');
 }
@@ -28,12 +28,12 @@ function substitute_conditionals(text , params ) {
 
   const parts = text.split(/(\{\{#if.*?\/if}})/gs);
   const formatted = parts.map((part) => {
-    if (!part) return "";
-    if (!part.startsWith('{{#if')) return part;
-    part = part.trim(); // clean whitespace
-    const macro_name = part.match(/\{\{#if (.*?)}}/)[1];
+    if (!part) {return "";}
+    if (!part.startsWith('{{#if')) {return part;}
+    const trimmed = part.trim(); // clean whitespace
+    const macro_name = trimmed.match(/\{\{#if (.*?)}}/)[1];
     const macro_present = Boolean(params[macro_name]?.trim());
-    const conditional_content = part.match(/\{\{#if.*?}}(.*?)\{\{\/if}}/s)[1] ?? "";
+    const conditional_content = trimmed.match(/\{\{#if.*?}}(.*?)\{\{\/if}}/s)[1] ?? "";
     return macro_present ? conditional_content : "";
   });
   return formatted.join('');
@@ -45,10 +45,10 @@ function substitute_params(text , params ) {
 
   const parts = text.split(/(\{\{.*?}})/g);
   const formatted = parts.map((part) => {
-    if (!part) return "";
-    if (!part.startsWith('{{') || !part.endsWith('}}')) return part;
-    part = part.trim(); // clean whitespace
-    const macro = part.slice(2, SLICE_TRIM_LAST_TWO);
+    if (!part) {return "";}
+    if (!part.startsWith('{{') || !part.endsWith('}}')) {return part;}
+    const trimmed = part.trim(); // clean whitespace
+    const macro = trimmed.slice(2, SLICE_TRIM_LAST_TWO);
     return params[macro] ?? "";
   });
   return formatted.join('');

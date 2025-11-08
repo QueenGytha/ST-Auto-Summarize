@@ -177,3 +177,16 @@ export const JSON_INDENT_SPACES = 4;
 
 /** Initial lorebook entry order value for alphabetical sorting */
 export const INITIAL_LOREBOOK_ORDER = 1000;
+
+// ============================================================================
+// Code Quality Constants (ESLint Configuration)
+// ============================================================================
+
+/** Maximum nesting depth of code blocks */
+export const MAX_NESTING_DEPTH = 5;
+
+/** Maximum nesting depth of callbacks */
+export const MAX_NESTED_CALLBACKS = 4;
+
+/** Maximum number of function parameters */
+export const MAX_FUNCTION_PARAMS = 5;

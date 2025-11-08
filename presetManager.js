@@ -15,9 +15,9 @@ async function get_summary_preset() {
   return preset_name;
 }
 async function set_preset(name ) {
-  if (name === get_current_preset()) return; // If already using the current preset, return
+  if (name === get_current_preset()) {return;} // If already using the current preset, return
 
-  if (!check_preset_valid()) return; // don't set an invalid preset
+  if (!check_preset_valid()) {return;} // don't set an invalid preset
 
   // Set the completion preset
   debug(`Setting completion preset to ${name}`);
@@ -29,22 +29,20 @@ async function get_presets() {
   const summary_api = await get_connection_profile_api(); // API for the summary connection profile (undefined if not active)
   const { preset_names } = getPresetManager().getPresetList(summary_api); // presets for the given API (current if undefined)
   // array of names
-  if (Array.isArray(preset_names)) return preset_names;
+  if (Array.isArray(preset_names)) {return preset_names;}
   // object of {names: index}
   return Object.keys(preset_names) ;
 }
 async function verify_preset(name ) {
   // check if the given preset name is valid for the current API
-  if (name === "") return true; // no preset selected, always valid
+  if (name === "") {return true;} // no preset selected, always valid
 
   const preset_names = await get_presets();
 
-  if (Array.isArray(preset_names)) {// array of names
-    return preset_names.includes(name);
-  } else {// object of {names: index}
-    return preset_names[name] !== undefined;
-  }
-
+  // array of names vs object of {names: index}
+  return Array.isArray(preset_names)
+    ? preset_names.includes(name)
+    : preset_names[name] !== undefined;
 }
 async function check_preset_valid() {
   // check whether the current preset selected for summarization is valid

@@ -20,7 +20,7 @@ function findVisibleSceneBreaks(chat) {
 
 // Helper: Apply scene-based hiding rules
 function applySceneBasedHiding(chat, auto_hide_scene_count, to_hide, to_unhide) {
-  if (auto_hide_scene_count < 0) return;
+  if (auto_hide_scene_count < 0) {return;}
 
   const scene_break_indexes = findVisibleSceneBreaks(chat);
   const scenes_to_keep = auto_hide_scene_count;
@@ -56,17 +56,17 @@ async function executeCommand(ctx, command, batchStart, last) {
 
 // Helper: Process batched commands for contiguous ranges
 async function processBatchedCommands(ctx, indexes, command) {
-  if (indexes.length === 0) return;
+  if (indexes.length === 0) {return;}
 
   let batchStart = null;
   let last = null;
 
   for (let i = 0; i < indexes.length; i++) {
-    if (batchStart === null) batchStart = indexes[i];
+    if (batchStart === null) {batchStart = indexes[i];}
 
     if (last !== null && indexes[i] !== last + 1) {
       // Sequential execution required: batches must complete in order
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- Batches must execute sequentially to maintain message order
       await executeCommand(ctx, command, batchStart, last);
       batchStart = indexes[i];
     }

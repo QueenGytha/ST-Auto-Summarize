@@ -176,10 +176,10 @@ async function get_manifest() {
   const path = `${module_dir}/manifest.json`;
   const response = await fetch(path);
   if (response.ok) {
-    return await response.json();
+    return response.json();
   }
   error(`Error getting manifest.json from "${path}": status: ${response.status}`);
-  return undefined;
+  return null;
 }
 async function load_settings_html() {
   // fetch the settings html file and append it to the settings div.
@@ -187,16 +187,16 @@ async function load_settings_html() {
 
   const module_dir = get_extension_directory();
   const path = `${module_dir}/settings.html`;
-  const found = await $.get(path).then(async (response) => {
+
+  try {
+    const response = await $.get(path);
     log(`Loaded settings.html at "${path}"`);
     $(selectorsSillyTavern.extensions.settings).append(response); // load html into the settings div
     return true;
-  }).catch((response) => {
+  } catch (response) {
     error(`Error getting settings.json from "${path}": status: ${response.status}`);
     return false;
-  });
-
-  return new Promise((resolve) => resolve(found));
+  }
 }
 
 function chat_enabled() {
@@ -215,24 +215,25 @@ function toggle_chat_enabled(value  = null) {
   // Change the state of the extension. If value is null, toggle. Otherwise, set to the given value
   const current = chat_enabled();
 
-  if (value === null) {// toggle
-    value = !current;
-  } else if (value === current) {
+  let newValue = value;
+  if (newValue === null) {// toggle
+    newValue = !current;
+  } else if (newValue === current) {
     return; // no change
   }
 
   // set the new value
   if (get_settings('use_global_toggle_state')) {// using the global state - update the global state
-    set_settings('global_toggle_state', value);
+    set_settings('global_toggle_state', newValue);
   } else {// using per-chat state - update the chat state
     const enabled = get_settings('chats_enabled');
     const context = getContext();
-    enabled[context.chatId] = value;
+    enabled[context.chatId] = newValue;
     set_settings('chats_enabled', enabled);
   }
 
 
-  if (value) {
+  if (newValue) {
     toastr.info(`Memory is now enabled for this chat`);
   } else {
     toastr.warning(`Memory is now disabled for this chat`);
@@ -251,18 +252,18 @@ function toggle_chat_enabled(value  = null) {
 function character_enabled(character_key ) {
   // check if the given character is enabled for summarization in the current chat
   const group_id = selected_group;
-  if (selected_group === null) return true; // not in group chat, always enabled
+  if (selected_group === null) {return true;} // not in group chat, always enabled
 
   const disabled_characters_settings = get_settings('disabled_group_characters');
   const disabled_characters = disabled_characters_settings[group_id];
-  if (!disabled_characters) return true;
+  if (!disabled_characters) {return true;}
   return !disabled_characters.includes(character_key);
 
 }
 function toggle_character_enabled(character_key ) {
   // Toggle whether the given character is enabled for summarization in the current chat
   const group_id = selected_group;
-  if (group_id === undefined) return; // not in group chat, nothing to toggle
+  if (group_id === undefined) {return;} // not in group chat, nothing to toggle
 
   const disabled_characters_settings = get_settings('disabled_group_characters');
   const disabled_characters = disabled_characters_settings[group_id] || [];

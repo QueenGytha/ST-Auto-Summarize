@@ -129,9 +129,9 @@ function collectContextMessages(chat , index , checkWhich , count ) {
 // Helper: Hard rule — always skip the immediate message after any scene break
 // This is non-consuming: if the previous message has a scene break marker, the current is skipped.
 function isCooldownSkip(chat , index , _consume  = false) {
-  if (!Array.isArray(chat) || index <= 0) return false;
+  if (!Array.isArray(chat) || index <= 0) {return false;}
   const prev = chat[index - 1];
-  if (!prev) return false;
+  if (!prev) {return false;}
   try {
     const hasSceneBreak = get_data(prev, 'scene_break');
     const isVisible = get_data(prev, 'scene_break_visible');
@@ -229,7 +229,7 @@ async function switchToDetectionSettings(ctx, profile, preset) {
 
 // Helper: Restore previous profile/preset using PresetManager API
 async function restoreSettings(ctx, saved) {
-  if (!saved) return;
+  if (!saved) {return;}
 
   // Restore preset if it was changed
   if (saved.presetManager && saved.savedPreset) {
@@ -390,7 +390,9 @@ function findAndMarkExistingSceneBreaks(chat) {
 }
 
 // Helper: Try to queue scene break detections
-async function tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkWhich) {
+async function tryQueueSceneBreaks(config) {
+  const { chat, start, end, latestIndex, offset, checkWhich } = config;
+
   log(SUBSYSTEM.SCENE, '[Queue] Queueing scene break detections instead of executing directly');
 
   // Import queue integration
@@ -456,7 +458,8 @@ endIndex  = null)
   log(SUBSYSTEM.SCENE, 'Processing messages', start, 'to', end, '(latest:', latestIndex, ', offset:', offset, ', checking:', checkWhich, ')');
 
   // Queue is required - enqueue operations instead of executing directly
-  const queueResult = await tryQueueSceneBreaks(chat, start, end, latestIndex, offset, checkWhich);
+  const rangeConfig = { start, end, latestIndex, offset, checkWhich };
+  const queueResult = await tryQueueSceneBreaks({ chat, ...rangeConfig });
   if (!queueResult) {
     error(SUBSYSTEM.SCENE, 'Failed to enqueue scene break detection operations');
     toast('Failed to queue scene break detection. Check console for details.', 'error');
@@ -464,7 +467,6 @@ endIndex  = null)
   }
 
   log(SUBSYSTEM.SCENE, `Successfully queued ${queueResult.count} scene break detection(s)`);
-  return;
 }
 
 export async function manualSceneBreakDetection() {
@@ -476,7 +478,7 @@ export async function manualSceneBreakDetection() {
 }
 
 // Complex range calculation algorithm with multiple constraints - inherent complexity
-// eslint-disable-next-line complexity, sonarjs/cognitive-complexity
+// eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Range calculation with multiple constraints inherently complex
 export async function processNewMessageForSceneBreak(messageIndex ) {
   const enabled = get_settings('auto_scene_break_on_new_message');
   if (!enabled) {
@@ -659,7 +661,7 @@ endIndex )
   return markedCount;
 }
 
-export async function clearAllCheckedFlags() {
+export function clearAllCheckedFlags() {
   const ctx = getContext();
   const chat = ctx.chat;
 

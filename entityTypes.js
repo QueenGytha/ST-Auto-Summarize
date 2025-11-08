@@ -39,17 +39,17 @@ export function parseEntityTypeDefinition(rawValue ) {
 
   if (flagsPart) {
     const tokens = flagsPart.split(',');
-    tokens.forEach((token) => {
+    for (const token of tokens) {
       const t = token.trim();
-      if (!t) return;
-      if (!t.startsWith('entry:')) return;
+      if (!t) {continue;}
+      if (!t.startsWith('entry:')) {continue;}
       const flagName = t.slice('entry:'.length).trim();
       if (VALID_ENTRY_FLAGS.has(flagName)) {
         if (!entryFlags.includes(flagName)) {
           entryFlags.push(flagName);
         }
       }
-    });
+    }
   }
 
   return {
@@ -61,7 +61,7 @@ export function parseEntityTypeDefinition(rawValue ) {
 
 export function normalizeEntityTypeDefinition(rawValue ) {
   const parsed = parseEntityTypeDefinition(rawValue);
-  if (!parsed.name) return '';
+  if (!parsed.name) {return '';}
   const flags = [...parsed.entryFlags].sort().map((flag) => `entry:${flag}`);
   return flags.length ? `${parsed.name}(${flags.join(',')})` : parsed.name;
 }
@@ -75,13 +75,13 @@ export function getConfiguredEntityTypeDefinitions(rawList ) {
   const defs  = [];
   const seen  = new Set();
 
-  source.forEach((raw) => {
+  for (const raw of source) {
     const normalized = normalizeEntityTypeDefinition(raw);
-    if (!normalized) return;
-    if (seen.has(normalized)) return;
+    if (!normalized) {continue;}
+    if (seen.has(normalized)) {continue;}
     seen.add(normalized);
     defs.push(parseEntityTypeDefinition(normalized));
-  });
+  }
 
   if (defs.length === 0) {
     return getConfiguredEntityTypeDefinitions(DEFAULT_ENTITY_TYPES);
@@ -96,17 +96,17 @@ export function formatEntityTypeListForPrompt(defs ) {
 
 export function createEntityTypeMap(defs ) {
   const map  = new Map();
-  defs.forEach((def) => {
-    if (!def.name) return;
+  for (const def of defs) {
+    if (!def.name) {continue;}
     if (!map.has(def.name)) {
       map.set(def.name, def);
     }
-  });
+  }
   return map;
 }
 
 export function applyEntityTypeFlagsToEntry(entry , def ) {
-  if (!def) return;
+  if (!def) {return;}
   const flags  = new Set(def.entryFlags);
   if (flags.has('constant')) {
     entry.constant = true;

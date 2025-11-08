@@ -32,6 +32,7 @@ export function initLorebookManager(utils ) {
   getUniqueLorebookName = utils.getUniqueLorebookName;
 }
 
+// eslint-disable-next-line complexity -- Initialization requires validation of multiple entity types and defensive property checks
 async function ensureRegistryEntriesForLorebook(lorebookName ) {
   try {
     const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
@@ -56,14 +57,14 @@ async function ensureRegistryEntriesForLorebook(lorebookName ) {
     );
 
     let added = false;
-    typeDefinitions.forEach((def) => {
+    for (const def of typeDefinitions) {
       const typeName = def?.name;
-      if (!typeName) return;
+      if (!typeName) {continue;}
       const registryComment = `${REGISTRY_PREFIX}${typeName}`;
-      if (existingComments.has(registryComment)) return;
+      if (existingComments.has(registryComment)) {continue;}
 
       const entry = createWorldInfoEntry(lorebookName, data);
-      if (!entry) return;
+      if (!entry) {continue;}
 
       entry.comment = registryComment;
       entry.content = `[Registry: ${typeName}]`;
@@ -79,7 +80,7 @@ async function ensureRegistryEntriesForLorebook(lorebookName ) {
         entry.tags.push(REGISTRY_TAG);
       }
       added = true;
-    });
+    }
 
     if (added) {
       await saveWorldInfo(lorebookName, data, true);
@@ -99,12 +100,12 @@ async function ensureRegistryEntryRecord(lorebookName , type ) {
     error?.(`Failed to load lorebook data while ensuring registry entry: ${lorebookName}`);
     return null;
   }
-  if (!data.entries) data.entries = {};
+  if (!data.entries) {data.entries = {};}
   const registryComment = `${REGISTRY_PREFIX}${type}`;
   let entry = Object.values(data.entries).find((e) => e && e.comment === registryComment);
   if (!entry) {
     entry = createWorldInfoEntry(lorebookName, data);
-    if (!entry) return null;
+    if (!entry) {return null;}
     entry.comment = registryComment;
   }
   const ensuredEntry  = entry;
@@ -133,7 +134,7 @@ items )
 {
   try {
     const ensured = await ensureRegistryEntryRecord(lorebookName, type);
-    if (!ensured) return;
+    if (!ensured) {return;}
     const { data, entry } = ensured;
     const lines = items.map((item) => {
       const name = item.name || item.comment || 'Unknown';
@@ -217,7 +218,7 @@ export function getAttachedLorebook() {
 
 export function lorebookExists(lorebookName ) {
   try {
-    if (!lorebookName) return false;
+    if (!lorebookName) {return false;}
     return world_names && world_names.includes(lorebookName);
   } catch (err) {
     error("Error checking if lorebook exists", err);

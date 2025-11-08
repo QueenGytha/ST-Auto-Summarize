@@ -40,7 +40,7 @@ export function renderSceneNavigatorBar() {
   }
 
   const ctx = getContext();
-  if (!ctx?.chat) return;
+  if (!ctx?.chat) {return;}
 
   // Save running summary controls and queue UI before clearing
   const $runningControls = $bar.find(selectorsExtension.runningUI.controls).detach();
@@ -57,7 +57,7 @@ export function renderSceneNavigatorBar() {
 
   // Find all visible scene breaks and number them sequentially
   // let sceneNum = 1; // Not currently used - using idx instead
-  ctx.chat.forEach((msg, idx) => {
+  for (const [idx, msg] of ctx.chat.entries()) {
     if (get_data(msg, SCENE_BREAK_KEY) && get_data(msg, SCENE_BREAK_VISIBLE_KEY) !== false) {
       const name = get_data(msg, 'scene_break_name') || `#${idx}`;
       // Use the actual message index for the label
@@ -82,7 +82,7 @@ export function renderSceneNavigatorBar() {
       $sceneLinksContainer.append($link); // Append to container instead of bar
       // sceneNum++; // Not currently used
     }
-  });
+  }
 
   // Append scene links container to navbar
   $bar.append($sceneLinksContainer);

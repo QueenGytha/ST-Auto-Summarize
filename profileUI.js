@@ -158,14 +158,14 @@ async function update_error_detection_preset_dropdown() {
 }
 
 // Helper: Update all preset and profile dropdowns
-function updateAllDropdowns() {
-  update_error_detection_preset_dropdown();
-  update_scene_summary_preset_dropdown();
-  update_scene_summary_connection_profile_dropdown();
-  update_auto_scene_break_preset_dropdown();
-  update_auto_scene_break_connection_profile_dropdown();
-  update_running_scene_summary_preset_dropdown();
-  update_running_scene_summary_connection_profile_dropdown();
+async function updateAllDropdowns() {
+  await update_error_detection_preset_dropdown();
+  await update_scene_summary_preset_dropdown();
+  await update_scene_summary_connection_profile_dropdown();
+  await update_auto_scene_break_preset_dropdown();
+  await update_auto_scene_break_connection_profile_dropdown();
+  await update_running_scene_summary_preset_dropdown();
+  await update_running_scene_summary_connection_profile_dropdown();
   check_preset_valid();
 }
 
@@ -217,7 +217,7 @@ function refresh_settings() {
   debug("Refreshing settings...");
 
   updateErrorDetectionSettings();
-  updateAllDropdowns();
+  void updateAllDropdowns();
   validateAndFixSettings();
 
   update_profile_section();
@@ -299,13 +299,13 @@ function refreshEntityTypesUI() {
   renderEntityTypesList();
 }
 
-function refreshConnectionDropdowns() {
-  update_autolorebooks_summary_merge_connection_dropdown();
-  update_autolorebooks_summary_merge_preset_dropdown();
-  update_autolorebooks_summary_triage_connection_dropdown();
-  update_autolorebooks_summary_triage_preset_dropdown();
-  update_autolorebooks_summary_lorebook_entry_deduplicate_connection_dropdown();
-  update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dropdown();
+async function refreshConnectionDropdowns() {
+  await update_autolorebooks_summary_merge_connection_dropdown();
+  await update_autolorebooks_summary_merge_preset_dropdown();
+  await update_autolorebooks_summary_triage_connection_dropdown();
+  await update_autolorebooks_summary_triage_preset_dropdown();
+  await update_autolorebooks_summary_lorebook_entry_deduplicate_connection_dropdown();
+  await update_autolorebooks_summary_lorebook_entry_deduplicate_preset_dropdown();
 }
 
 function refresh_lorebooks_settings_ui() {
@@ -321,7 +321,7 @@ function refresh_lorebooks_settings_ui() {
     refreshSummaryProcessingUI();
 
     refreshEntityTypesUI();
-    refreshConnectionDropdowns();
+    void refreshConnectionDropdowns();
 
     debug("Auto-Lorebooks settings UI refreshed");
 

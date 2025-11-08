@@ -1,5 +1,5 @@
 
-/* global localStorage */
+/* global localStorage -- Browser API for persisting UI preferences */
 import {
   get_settings,
   getContext,
@@ -109,8 +109,8 @@ function createRunningSceneSummaryNavbar() {
   }
 
   // Bind event handlers
-  $(selectorsExtension.runningUI.versionSelector).on('change', async function () {
-    const versionNum = parseInt($(this).val());
+  $(selectorsExtension.runningUI.versionSelector).on('change', function () {
+    const versionNum = Number.parseInt($(this).val(), 10);
     if (versionNum === -1) {
       set_current_running_summary_version(0);
     } else {
@@ -137,7 +137,7 @@ function createRunningSceneSummaryNavbar() {
     }
 
     const ctx = getContext();
-    const html = `
+    const popupHtml = `
             <div>
                 <h3>Edit Running Scene Summary</h3>
                 <p>Editing will create a new version.</p>
@@ -146,7 +146,7 @@ function createRunningSceneSummaryNavbar() {
         `;
 
     try {
-      const result = await ctx.callPopup(html, 'text', undefined, {
+      const result = await ctx.callPopup(popupHtml, 'text', undefined, {
         okButton: "Save",
         cancelButton: "Cancel",
         wide: true,
@@ -219,7 +219,7 @@ function updateRunningSceneSummaryNavbar() {
 
 function updateVersionSelector() {
   const $selector = $(selectorsExtension.runningUI.versionSelector);
-  if (!$selector.length) return;
+  if (!$selector.length) {return;}
 
   const ctx = getContext();
   const chat = ctx.chat;
@@ -240,7 +240,7 @@ function updateVersionSelector() {
   const validVersions = versions.filter((v) => {
     const new_scene_idx = v.new_scene_index ?? 0;
     // Check if the scene index is still valid and has a scene summary
-    if (new_scene_idx >= chat.length) return false;
+    if (new_scene_idx >= chat.length) {return false;}
     const msg = chat[new_scene_idx];
     return msg && get_data(msg, 'scene_summary_memory');
   });
@@ -255,13 +255,13 @@ function updateVersionSelector() {
 
   // Add versions (newest first)
   const sortedVersions = validVersions.slice().sort((a, b) => b.version - a.version);
-  sortedVersions.forEach((v) => {
+  for (const v of sortedVersions) {
     // Format: Summary: v0 (0 > 3), Summary: v1 (3 > 7), etc.
     const prev_idx = v.prev_scene_index ?? 0;
     const new_idx = v.new_scene_index ?? 0;
     const label = `Summary: v${v.version} (${prev_idx} > ${new_idx})`;
     $selector.append(`<option value="${v.version}">${label}</option>`);
-  });
+  }
 
   // Set current selection
   $selector.val(currentVersion);

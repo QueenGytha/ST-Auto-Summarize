@@ -54,8 +54,8 @@ function refresh_select2_element(id , selected , options , placeholder  = "") {
   $select.empty(); // clear current options
 
   // add the options to the dropdown
-  for (const { id, name } of options) {
-    const option = $(`<option value="${id}">${name}</option>`);
+  for (const { id: optionId, name } of options) {
+    const option = $(`<option value="${optionId}">${name}</option>`);
     $select.append(option);
   }
 

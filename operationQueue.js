@@ -1,7 +1,7 @@
 
 // operationQueue.js - Persistent operation queue using shared lorebook entry storage
 
-/* global AbortController */
+/* global AbortController -- Browser API for aborting async operations */
 
 import {
   chat_metadata,
@@ -393,7 +393,7 @@ async function saveQueue(force = false) {
 }
 
 function generateOperationId() {
-  return `op_${Date.now()}_${Math.random().toString(ID_GENERATION_BASE).substr(2, ENTRY_ID_LENGTH)}`;
+  return `op_${Date.now()}_${Math.random().toString(ID_GENERATION_BASE).slice(2, 2 + ENTRY_ID_LENGTH)}`;
 }
 
 export async function enqueueOperation(type , params , options  = {}) {
@@ -485,7 +485,7 @@ export function getInProgressOperations() {
 }
 
 export function isQueueActive() {
-  if (!currentQueue) return false;
+  if (!currentQueue) {return false;}
   return currentQueue.queue.length > 0 || queueProcessor !== null;
 }
 
@@ -737,7 +737,7 @@ export function registerOperationHandler(operationType , handler ) {
 }
 
 // Core queue processor: abort handling, profile switching, retry logic, error recovery
-// eslint-disable-next-line complexity, sonarjs/cognitive-complexity
+// eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Queue processor handles abort, profile switching, retry, and error recovery
 async function executeOperation(operation ) {
   // returns any because different operations return different result types - legitimate use of any
   const handler = operationHandlers.get(operation.type);
@@ -752,7 +752,7 @@ async function executeOperation(operation ) {
   // Register abort controller for this operation
   // Allows manual cancellation via removeOperation() while IN_PROGRESS
   let abortReject = null;
-  const abortPromise = new Promise((_, reject) => {
+  const abortPromise = new Promise((_resolve, reject) => {
     abortReject = reject;
   });
   activeOperationControllers.set(operation.id, { reject: abortReject });
@@ -774,7 +774,7 @@ async function executeOperation(operation ) {
       if (connectionProfile) {
         presetBeforeProfileSwitch = originalSettings?.completionPreset;
         debug(SUBSYSTEM.QUEUE, `Switching to execution profile: ${connectionProfile}`);
-        await switchConnectionSettings(connectionProfile, undefined);
+        await switchConnectionSettings(connectionProfile);
       }
 
       // If preset specified, switch to it (overrides profile's default)
@@ -903,7 +903,7 @@ async function executeOperation(operation ) {
             const currentSettings = await getCurrentConnectionSettings();
             presetBeforeRestoreProfileSwitch = currentSettings?.completionPreset;
             debug(SUBSYSTEM.QUEUE, `Restoring to profile: ${connectionProfile}`);
-            await switchConnectionSettings(connectionProfile, undefined);
+            await switchConnectionSettings(connectionProfile);
           }
 
           // If preset specified, switch to it (overrides profile's default)
@@ -974,13 +974,13 @@ function startQueueProcessor() {
         operation.started_at = Date.now();
       }
       // Sequential execution required: queue must be saved before executing operation
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- Queue state must be persisted before each operation
       await saveQueue();
 
       debug(SUBSYSTEM.QUEUE, `[LOOP] About to execute operation, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
       try {
         // Sequential execution required: operations must execute one at a time in order
-        // eslint-disable-next-line no-await-in-loop
+        // eslint-disable-next-line no-await-in-loop -- Operations must execute sequentially to prevent race conditions
         await executeOperation(operation);
       } catch {
 
@@ -990,7 +990,7 @@ function startQueueProcessor() {
       }debug(SUBSYSTEM.QUEUE, `[LOOP] After executeOperation, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
       // Sequential execution required: rate limiting delay between operations
       debug(SUBSYSTEM.QUEUE, `[LOOP] Starting 5-second delay, queue state: blocked=${String(isChatBlocked)}`);
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- Rate limiting delay required between operations
       await new Promise((resolve) => setTimeout(resolve, OPERATION_FETCH_TIMEOUT_MS));
       debug(SUBSYSTEM.QUEUE, `[LOOP] After 5-second delay, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
     }

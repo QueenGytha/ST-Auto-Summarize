@@ -1,0 +1,361 @@
+
+> st-auto-summarize@1.0.0 lint
+> eslint *.js --ignore-pattern syntax-check.js --no-warn-ignored --max-warnings 0
+
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/autoHide.js
+   23:34  error    Expected { after 'if' condition  curly
+   59:29  error    Expected { after 'if' condition  curly
+   65:30  error    Expected { after 'if' condition  curly
+  106:9   warning  Avoid creating new promises      promise/avoid-new
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/autoSceneBreakDetection.js
+  132:43  error  Expected { after 'if' condition                                                         curly
+  134:14  error  Expected { after 'if' condition                                                         curly
+  232:15  error  Expected { after 'if' condition                                                         curly
+  393:1   error  Async function 'tryQueueSceneBreaks' has too many parameters (6). Maximum allowed is 5  max-params
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/categoryIndexes.js
+   64:19  error  Expected { after 'if' condition  curly
+  219:19  error  Expected { after 'if' condition  curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/connectionProfiles.js
+   16:69  error    Expected { after 'if' condition              curly
+   21:66  error    Do not pass function directly to `.find(…)`  unicorn/no-array-callback-reference
+   23:11  error    Expected catch() or return                   promise/catch-or-return
+   23:36  warning  Prefer await to then()/catch()/finally()     promise/prefer-await-to-then
+   24:13  error    Each then() should return a value or throw   promise/always-return
+   35:44  error    Expected { after 'if' condition              curly
+   35:51  error    Do not use useless `undefined`               unicorn/no-useless-undefined
+   43:44  error    Expected { after 'if' condition              curly
+   43:51  error    Do not use useless `undefined`               unicorn/no-useless-undefined
+   44:27  error    Expected { after 'if' condition              curly
+   44:27  error    Assignment to function parameter 'name'      no-param-reassign
+   50:12  error    Do not use useless `undefined`               unicorn/no-useless-undefined
+   59:12  error    Do not use useless `undefined`               unicorn/no-useless-undefined
+   65:29  error    Expected { after 'if' condition              curly
+   66:29  error    Expected { after 'if' condition              curly
+   67:12  error    Do not use useless `undefined`               unicorn/no-useless-undefined
+   73:12  error    Do not use useless `undefined`               unicorn/no-useless-undefined
+   90:44  error    Expected { after 'if' condition              curly
+   91:14  error    Expected { after 'if' condition              curly
+   92:58  error    Expected { after 'if' condition              curly
+   93:49  error    Expected { after 'if' condition              curly
+  102:9   warning  Avoid creating new promises                  promise/avoid-new
+  107:44  error    Expected { after 'if' condition              curly
+  107:51  error    Do not use useless `undefined`               unicorn/no-useless-undefined
+  115:12  error    Do not use useless `undefined`               unicorn/no-useless-undefined
+  121:44  error    Expected { after 'if' condition              curly
+  121:51  error    Do not use useless `undefined`               unicorn/no-useless-undefined
+  122:20  error    Expected { after 'if' condition              curly
+  129:44  error    Expected { after 'if' condition              curly
+  129:51  error    Do not use useless `undefined`               unicorn/no-useless-undefined
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/connectionSettingsManager.js
+  22:34  error  Expected { after 'if' condition  curly
+  23:33  error  Expected { after 'if' condition  curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/entityTypeSettingsUI.js
+  46:27  error    Expected { after 'if' condition        curly
+  54:9   warning  Use `for…of` instead of `.forEach(…)`  unicorn/no-array-for-each
+  61:20  warning  Use `for…of` instead of `.forEach(…)`  unicorn/no-array-for-each
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/entityTypes.js
+   42:12  warning  Use `for…of` instead of `.forEach(…)`  unicorn/no-array-for-each
+   44:15  error    Expected { after 'if' condition        curly
+   45:36  error    Expected { after 'if' condition        curly
+   64:21  error    Expected { after 'if' condition        curly
+   78:10  warning  Use `for…of` instead of `.forEach(…)`  unicorn/no-array-for-each
+   80:22  error    Expected { after 'if' condition        curly
+   81:31  error    Expected { after 'if' condition        curly
+   99:8   warning  Use `for…of` instead of `.forEach(…)`  unicorn/no-array-for-each
+  100:20  error    Expected { after 'if' condition        curly
+  109:13  error    Expected { after 'if' condition        curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/eslint.config.js
+    7:21  error  Parse errors in imported module 'eslint-plugin-unicorn': Unexpected token with (5:42)  import/namespace
+    7:21  error  Parse errors in imported module 'eslint-plugin-unicorn': Unexpected token with (5:42)  import/default
+  173:28  error  No magic number: 5                                                                     no-magic-numbers
+  174:39  error  No magic number: 4                                                                     no-magic-numbers
+  175:29  error  No magic number: 5                                                                     no-magic-numbers
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/eventHandlers.js
+  100:27  error    Expected { after 'if' condition                              curly
+  136:24  error    Expected { after 'if' condition                              curly
+  149:24  error    Expected { after 'if' condition                              curly
+  153:24  error    Expected { after 'if' condition                              curly
+  173:24  error    Expected { after 'if' condition                              curly
+  175:62  error    Expected { after 'if' condition                              curly
+  176:61  error    Expected { after 'if' condition                              curly
+  182:24  error    Expected { after 'if' condition                              curly
+  201:24  error    Expected { after 'if' condition                              curly
+  208:24  error    Expected { after 'if' condition                              curly
+  227:15  error    Expected { after 'if' condition                              curly
+  232:3   warning  This `if` statement can be replaced by a ternary expression  unicorn/prefer-ternary
+  302:5   error    Floating promises can lead to unexpected scheduling          no-floating-promise/no-floating-promise
+  406:31  warning  Use `for…of` instead of `.forEach(…)`                        unicorn/no-array-for-each
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/generateRawInterceptor.js
+  104:36  error  Expected { after 'if' condition            curly
+  124:19  error  Pass a message to the `Error` constructor  unicorn/error-message
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/index.js
+   87:38  error    Expected { after 'if' condition        curly
+  110:17  warning  Use `for…of` instead of `.forEach(…)`  unicorn/no-array-for-each
+  220:38  error    Expected { after 'if' condition        curly
+  292:32  error    Expected { after 'if' condition        curly
+  293:34  error    Expected { after 'if' condition        curly
+  490:19  warning  Use `for…of` instead of `.forEach(…)`  unicorn/no-array-for-each
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/llmCallValidator.js
+   38:27  error    Expected { after 'if' condition            curly
+   49:50  error    Expected { after 'if' condition            curly
+   59:17  error    Pass a message to the `Error` constructor  unicorn/error-message
+   86:50  error    Expected { after 'if' condition            curly
+  130:14  warning  Use `for…of` instead of `.forEach(…)`      unicorn/no-array-for-each
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/lorebookManager.js
+   59:21  warning  Use `for…of` instead of `.forEach(…)`  unicorn/no-array-for-each
+   61:22  error    Expected { after 'if' condition        curly
+   63:50  error    Expected { after 'if' condition        curly
+   66:19  error    Expected { after 'if' condition        curly
+  102:22  error    Expected { after 'if' condition        curly
+  107:17  error    Expected { after 'if' condition        curly
+  136:19  error    Expected { after 'if' condition        curly
+  220:24  error    Expected { after 'if' condition        curly
+  435:11  warning  Avoid creating new promises            promise/avoid-new
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/lorebookPendingOps.js
+  111:24  warning  Use `for…of` instead of `.forEach(…)`  unicorn/no-array-for-each
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/lorebookViewer.js
+  166:36  error  Expected { after 'if' condition  curly
+  167:38  error  Expected { after 'if' condition  curly
+  168:34  error  Expected { after 'if' condition  curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/memoryCore.js
+   44:17  error  Expected { after 'if' condition  curly
+  279:39  error  Expected { after 'if' condition  curly
+  280:51  error  Expected { after 'if' condition  curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/messageData.js
+  58:30  error  Expected { after 'if' condition  curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/messageVisuals.js
+  70:5  error  Assignment to function parameter 'text'  no-param-reassign
+  72:7  error  Assignment to function parameter 'text'  no-param-reassign
+  75:7  error  Assignment to function parameter 'text'  no-param-reassign
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/operationHandlers.js
+   76:8   warning  Function 'registerAllOperationHandlers' has too many lines (431). Maximum allowed is 200  max-lines-per-function
+  162:38  error    Do not pass function directly to `.find(…)`                                               unicorn/no-array-callback-reference
+  223:11  warning  Avoid creating new promises                                                               promise/avoid-new
+  442:25  warning  Use `for…of` instead of `.forEach(…)`                                                     unicorn/no-array-for-each
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/operationQueue.js
+  488:22  error    Expected { after 'if' condition                                      curly
+  646:11  warning  Avoid creating new promises                                          promise/avoid-new
+  663:9   warning  Avoid creating new promises                                          promise/avoid-new
+  755:24  warning  Avoid creating new promises                                          promise/avoid-new
+  755:37  error    Promise constructor parameters must be named to match "^_?resolve$"  promise/param-names
+  777:59  error    Do not use useless `undefined`                                       unicorn/no-useless-undefined
+  869:11  warning  Avoid creating new promises                                          promise/avoid-new
+  906:63  error    Do not use useless `undefined`                                       unicorn/no-useless-undefined
+  994:13  warning  Avoid creating new promises                                          promise/avoid-new
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/operationQueueUI.js
+  164:38  error  Do not pass function directly to `.find(…)`  unicorn/no-array-callback-reference
+  623:43  error  Expected { after 'if' condition              curly
+  624:32  error  Expected { after 'if' condition              curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/popout.js
+  63:16  error  Do not pass function directly to `.find(…)`  unicorn/no-array-callback-reference
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/presetManager.js
+  18:38  error    Expected { after 'if' condition                              curly
+  20:30  error    Expected { after 'if' condition                              curly
+  32:36  error    Expected { after 'if' condition                              curly
+  38:20  error    Expected { after 'if' condition                              curly
+  42:3   warning  This `if` statement can be replaced by a ternary expression  unicorn/prefer-ternary
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/presetPromptLoader.js
+  51:42  error  Expected { after 'if' condition  curly
+  53:60  error  Expected { after 'if' condition  curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/profileManager.js
+   46:5  error  Assignment to function parameter 'profile'  no-param-reassign
+   63:5  error  Assignment to function parameter 'profile'  no-param-reassign
+   79:5  error  Assignment to function parameter 'profile'  no-param-reassign
+   99:5  error  Assignment to function parameter 'profile'  no-param-reassign
+  245:5  error  Assignment to function parameter 'key'      no-param-reassign
+  271:5  error  Assignment to function parameter 'id'       no-param-reassign
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/profileUI.js
+  162:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  163:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  164:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  165:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  166:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  167:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  168:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  303:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  304:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  305:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  306:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  307:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  308:3  error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/promptUtils.js
+  14:16  error  Expected { after 'if' condition          curly
+  15:5   error  Assignment to function parameter 'part'  no-param-reassign
+  16:16  error  Expected { after 'if' condition          curly
+  31:16  error  Expected { after 'if' condition          curly
+  32:36  error  Expected { after 'if' condition          curly
+  33:5   error  Assignment to function parameter 'part'  no-param-reassign
+  48:16  error  Expected { after 'if' condition          curly
+  49:57  error  Expected { after 'if' condition          curly
+  50:5   error  Assignment to function parameter 'part'  no-param-reassign
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/queueIntegration.js
+  120:21  error  Expected { after 'if' condition  curly
+  125:60  error  Expected { after 'if' condition  curly
+  126:50  error  Expected { after 'if' condition  curly
+  128:35  error  Expected { after 'if' condition  curly
+  129:57  error  Expected { after 'if' condition  curly
+  131:45  error  Expected { after 'if' condition  curly
+  145:20  error  Expected { after 'if' condition  curly
+  150:49  error  Expected { after 'if' condition  curly
+  152:62  error  Expected { after 'if' condition  curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/runningSceneSummary.js
+   42:5   error    Assignment to function parameter 'version'                   no-param-reassign
+   59:17  error    Prefer `.some(…)` over `.find(…)`                            unicorn/prefer-array-some
+  190:7   warning  This `if` statement can be replaced by a ternary expression  unicorn/prefer-ternary
+  507:61  error    Expected { after 'if' condition                              curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/runningSceneSummaryUI.js
+  113:24  error    Prefer `Number.parseInt` over `parseInt`  unicorn/prefer-number-properties
+  222:26  error    Expected { after 'if' condition           curly
+  243:39  error    Expected { after 'if' condition           curly
+  258:18  warning  Use `for…of` instead of `.forEach(…)`     unicorn/no-array-for-each
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/sceneBreak.js
+   96:8   error    Function 'toggleSceneBreak' has too many parameters (6). Maximum allowed is 5                        max-params
+  140:3   error    Expected catch() or return                                                                           promise/catch-or-return
+  140:27  warning  Prefer await to then()/catch()/finally()                                                             promise/prefer-await-to-then
+  140:32  error    Each then() should return a value or throw                                                           promise/always-return
+  145:39  error    Expected { after 'if' condition                                                                      curly
+  213:1   error    Async function 'handleGenerateSummaryButtonClick' has too many parameters (8). Maximum allowed is 5  max-params
+  250:23  error    Expected { after 'if' condition                                                                      curly
+  251:38  error    Expected { after 'if' condition                                                                      curly
+  282:1   error    Function 'buildSceneBreakElement' has too many parameters (9). Maximum allowed is 5                  max-params
+  326:8   error    Function 'renderSceneBreak' has too many parameters (6). Maximum allowed is 5                        max-params
+  335:25  error    Expected { after 'if' condition                                                                      curly
+  346:15  error    Expected { after 'if' condition                                                                      curly
+  366:36  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  370:35  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  379:20  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  387:20  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  399:20  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  414:20  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  447:20  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  485:20  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  490:20  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  504:20  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  521:20  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  589:19  error    Expected { after 'if' condition                                                                      curly
+  607:39  error    Expected { after 'if' condition                                                                      curly
+  610:8   error    Async function 'autoGenerateSceneNameFromSummary' has too many parameters (7). Maximum allowed is 5  max-params
+  690:47  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  691:46  error    Do not pass function directly to `.find(…)`                                                          unicorn/no-array-callback-reference
+  760:91  error    Do not use useless `undefined`                                                                       unicorn/no-useless-undefined
+  797:1   error    Async function 'executeSceneSummaryGeneration' has too many parameters (7). Maximum allowed is 5     max-params
+  852:1   error    Async function 'saveSceneSummary' has too many parameters (6). Maximum allowed is 5                  max-params
+  941:8   error    Async function 'generateSceneSummary' has too many parameters (8). Maximum allowed is 5              max-params
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/sceneNavigator.js
+  43:19  error    Expected { after 'if' condition              curly
+  46:38  error    Do not pass function directly to `.find(…)`  unicorn/no-array-callback-reference
+  47:30  error    Do not pass function directly to `.find(…)`  unicorn/no-array-callback-reference
+  60:12  warning  Use `for…of` instead of `.forEach(…)`        unicorn/no-array-for-each
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/settingsManager.js
+  182:10  error    Do not use useless `undefined`            unicorn/no-useless-undefined
+  199:10  warning  Avoid creating new promises               promise/avoid-new
+  219:5   error    Assignment to function parameter 'value'  no-param-reassign
+  254:32  error    Expected { after 'if' condition           curly
+  258:29  error    Expected { after 'if' condition           curly
+  265:31  error    Expected { after 'if' condition           curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/settingsUI.js
+   46:1   warning  Async function 'initialize_settings_listeners' has too many lines (226). Maximum allowed is 200  max-lines-per-function
+   64:35  error    Do not pass function directly to `.find(…)`                                                      unicorn/no-array-callback-reference
+   65:31  error    Do not pass function directly to `.find(…)`                                                      unicorn/no-array-callback-reference
+  108:41  error    Expected { after 'if' condition                                                                  curly
+  110:50  error    Expected { after 'if' condition                                                                  curly
+  114:41  error    Expected { after 'if' condition                                                                  curly
+  182:49  error    Expected { after 'if' condition                                                                  curly
+  300:9   error    Prefer `Number.isNaN` over `isNaN`                                                               unicorn/prefer-number-properties
+  300:21  error    Expected { after 'if' condition                                                                  curly
+  364:46  error    Expected { after 'if' condition                                                                  curly
+  373:44  error    Expected { after 'if' condition                                                                  curly
+  381:44  error    Expected { after 'if' condition                                                                  curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/slashCommands.js
+   58:7   warning  This `if` statement can be replaced by a ternary expression  unicorn/prefer-ternary
+   59:9   error    Assignment to function parameter 'state'                     no-param-reassign
+   61:9   error    Assignment to function parameter 'state'                     no-param-reassign
+  104:25  error    Expected { after 'if' condition                              curly
+  104:25  error    Assignment to function parameter 'index'                     no-param-reassign
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/summaryToLorebookProcessor.js
+  246:64  error    Expected { after 'if' condition                                                                  curly
+  247:70  error    Expected { after 'if' condition                                                                  curly
+  257:43  error    Expected { after 'if' condition                                                                  curly
+  282:34  error    Expected { after 'if' condition                                                                  curly
+  283:21  error    Expected { after 'if' condition                                                                  curly
+  284:35  error    Expected { after 'if' condition                                                                  curly
+  285:38  error    Expected { after 'if' condition                                                                  curly
+  286:39  error    Expected { after 'if' condition                                                                  curly
+  287:38  error    Expected { after 'if' condition                                                                  curly
+  292:37  warning  Use `for…of` instead of `.forEach(…)`                                                            unicorn/no-array-for-each
+  293:18  error    Expected { after 'if' condition                                                                  curly
+  295:25  error    Expected { after 'if' condition                                                                  curly
+  303:16  warning  Use `for…of` instead of `.forEach(…)`                                                            unicorn/no-array-for-each
+  310:8   warning  Use `for…of` instead of `.forEach(…)`                                                            unicorn/no-array-for-each
+  324:37  warning  Use `for…of` instead of `.forEach(…)`                                                            unicorn/no-array-for-each
+  325:18  error    Expected { after 'if' condition                                                                  curly
+  326:46  error    Expected { after 'if' condition                                                                  curly
+  341:16  warning  Use `for…of` instead of `.forEach(…)`                                                            unicorn/no-array-for-each
+  343:18  error    Expected { after 'if' condition                                                                  curly
+  345:17  error    Expected { after 'if' condition                                                                  curly
+  372:1   error    Async function 'runModelWithSettings' has too many parameters (7). Maximum allowed is 5          max-params
+  390:60  error    Pass a message to the `Error` constructor                                                        unicorn/error-message
+  500:48  error    Expected { after 'if' condition                                                                  curly
+  684:18  error    Expected { after 'if' condition                                                                  curly
+  700:1   error    Async function 'buildCandidateListAndResolve' has too many parameters (6). Maximum allowed is 5  max-params
+  709:37  warning  Use `for…of` instead of `.forEach(…)`                                                            unicorn/no-array-for-each
+  710:43  warning  Use `for…of` instead of `.forEach(…)`                                                            unicorn/no-array-for-each
+  755:1   error    Async function 'executeMergeWorkflow' has too many parameters (6). Maximum allowed is 5          max-params
+  940:19  warning  Use `for…of` instead of `.forEach(…)`                                                            unicorn/no-array-for-each
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/summaryValidation.js
+  21:49  error  Expected { after 'if' condition  curly
+  22:73  error  Expected { after 'if' condition  curly
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/uiBindings.js
+  19:3  error  Assignment to function parameter 'selector'  no-param-reassign
+  80:3  error  Assignment to function parameter 'selector'  no-param-reassign
+
+/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/utils.js
+  102:12  error  Do not use useless `undefined`                       unicorn/no-useless-undefined
+  142:14  error  Expected { after 'if' condition                      curly
+  157:14  error  Expected { after 'if' condition                      curly
+  169:40  error  Prefer `Number.parseInt` over `parseInt`             unicorn/prefer-number-properties
+  193:3   error  Floating promises can lead to unexpected scheduling  no-floating-promise/no-floating-promise
+  200:3   error  Assignment to function parameter 'text'              no-param-reassign
+  209:3   error  Assignment to function parameter 'title'             no-param-reassign
+
+✖ 275 problems (235 errors, 40 warnings)
+  165 errors and 23 warnings potentially fixable with the `--fix` option.
+

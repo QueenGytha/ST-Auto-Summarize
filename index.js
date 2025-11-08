@@ -21,7 +21,7 @@ import { selectorsSillyTavern } from './selectorsSillyTavern.js';
 import { UI_UPDATE_DELAY_MS } from './constants.js';
 
 // Import logging utilities (direct import since this is the barrel file)
-import { debug, SUBSYSTEM } from './utils.js';
+import { debug, SUBSYSTEM, toast } from './utils.js';
 
 // Track if queue is blocking (set by operationQueue.js)
 let isQueueBlocking = false;
@@ -84,7 +84,7 @@ export function setQueueBlocking(blocking ) {
 
 // Override the GLOBAL functions to intercept ALL calls
 export function installButtonInterceptor() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {return;}
 
   debug(SUBSYSTEM.UI, 'Installing button function interceptors...');
 
@@ -105,9 +105,9 @@ export function installButtonInterceptor() {
     debug(SUBSYSTEM.UI, 'Found send/stop buttons, installing observer...');
 
     // Watch for changes to the body's data-generating attribute
-    // eslint-disable-next-line no-undef
+    // eslint-disable-next-line no-undef -- MutationObserver is a browser global, not Node.js
     const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
+      for (const mutation of mutations) {
         if (mutation.type === 'attributes' && mutation.attributeName === 'data-generating') {
           const isGenerating = document.body.dataset.generating === 'true';
           debug(SUBSYSTEM.UI, '[ButtonControl] Generation state changed:', isGenerating, 'isQueueBlocking:', isQueueBlocking);
@@ -118,7 +118,7 @@ export function installButtonInterceptor() {
             document.body.dataset.generating = 'true';
           }
         }
-      });
+      }
     });
 
     observer.observe(document.body, {
@@ -153,6 +153,8 @@ export {
 
 
 // Barrel file. Implictly imports before exporting
+// profileUI.js must be exported first as it provides refresh_settings used by many modules
+export * from './profileUI.js';
 export * from './settingsUI.js';
 export * from './profileManager.js';
 export * from './defaultPrompts.js';
@@ -169,7 +171,6 @@ export * from './messageVisuals.js';
 export * from './memoryCore.js';
 export * from './uiBindings.js';
 export * from './characterSelect.js';
-export * from './profileUI.js';
 export * from './messageData.js';
 export * from './popout.js';
 export * from './buttonBindings.js';
@@ -217,7 +218,7 @@ export { selectorsSillyTavern } from './selectorsSillyTavern.js';
 
 export function installEnterKeyInterceptor() {
   debug(SUBSYSTEM.UI, 'Installing Enter key interceptor');
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {return;}
 
   const attemptInstall = () => {
     const textarea = document.querySelector(selectorsSillyTavern.chat.input);
@@ -235,7 +236,6 @@ export function installEnterKeyInterceptor() {
           e.preventDefault();
           e.stopPropagation();
           debug(SUBSYSTEM.UI, '[Queue] Blocked Enter key - queue is processing operations');
-          const { toast } = await import('./index.js');
           toast('Please wait - queue operations in progress', 'warning');
         }
       }
@@ -289,8 +289,8 @@ export function clearActiveLorebooksData() {
  * Determine entry strategy type
  */
 function getEntryStrategy(entry) {
-  if (entry.constant === true) return 'constant';
-  if (entry.vectorized === true) return 'vectorized';
+  if (entry.constant === true) {return 'constant';}
+  if (entry.vectorized === true) {return 'vectorized';}
   return 'normal';
 }
 
@@ -487,11 +487,11 @@ export function installWorldInfoActivationLogger() {
     persistToMessage(messageIndex, mergedEntries);
 
     // Log entry details for debugging
-    mergedEntries.forEach((entry, i) => {
+    for (const [i, entry] of mergedEntries.entries()) {
       const stickyInfo = entry.sticky > 0 ? ` (sticky: ${entry.sticky})` : '';
       const constantInfo = entry.constant ? ' (constant)' : '';
       debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Entry ${i + 1}: ${entry.strategy} - ${entry.comment}${stickyInfo}${constantInfo}`);
-    });
+    }
   });
 
   // Clear sticky state on chat change

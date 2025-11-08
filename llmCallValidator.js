@@ -15,9 +15,9 @@ let violations  = [];
 export function initLLMCallValidator(utils ) {
   if (utils) {
     // These are fallback assignments - console usage is legitimate here as fallback
-    debug = utils.debug || console.log; // eslint-disable-line no-console
+    debug = utils.debug || console.log; // eslint-disable-line no-console -- Fallback for debug when utils not available
     error = utils.error || console.error;
-    log = utils.log || console.log; // eslint-disable-line no-console
+    log = utils.log || console.log; // eslint-disable-line no-console -- Fallback for log when utils not available
   }
 }
 
@@ -35,7 +35,7 @@ export function isValidationEnabled() {
 }
 
 export function beginOperation(operationId , operationType ) {
-  if (!validationEnabled) return;
+  if (!validationEnabled) {return;}
 
   currentOperationId = operationId;
   currentOperationType = operationType;
@@ -46,7 +46,7 @@ export function beginOperation(operationId , operationType ) {
 }
 
 export function recordLLMCall(callInfo  = {}) {
-  if (!validationEnabled || !currentOperationId) return;
+  if (!validationEnabled || !currentOperationId) {return;}
 
   llmCallsInCurrentOperation++;
 
@@ -55,8 +55,8 @@ export function recordLLMCall(callInfo  = {}) {
     operationType: currentOperationType,
     callNumber: llmCallsInCurrentOperation,
     timestamp: Date.now(),
-    prompt: callInfo.prompt?.substring(0, DEBUG_OUTPUT_SHORT_LENGTH) || 'unknown',
-    stackTrace: new Error().stack
+    prompt: callInfo.prompt?.slice(0, DEBUG_OUTPUT_SHORT_LENGTH) || 'unknown',
+    stackTrace: new Error('Stack trace for LLM call tracking').stack
   };
 
   llmCallDetails.push(callDetail);
@@ -83,7 +83,7 @@ export function recordLLMCall(callInfo  = {}) {
 }
 
 export function endOperation(_success  = true) {
-  if (!validationEnabled || !currentOperationId) return;
+  if (!validationEnabled || !currentOperationId) {return;}
 
   const operationType = currentOperationType || 'unknown';
   const callCount = llmCallsInCurrentOperation;
@@ -127,12 +127,12 @@ export function getViolationReport() {
   ''];
 
 
-  violations.forEach((v, index) => {
+  for (const [index, v] of violations.entries()) {
     lines.push(`${index + 1}. Operation: ${v.operationType} (${v.operationId})`);
     lines.push(`   LLM Calls: ${v.callCount}`);
     lines.push(`   Issue: Should be split into ${v.callCount} separate operations`);
     lines.push('');
-  });
+  }
 
   lines.push('='.repeat(SEPARATOR_LINE_LENGTH));
   lines.push('');
@@ -144,6 +144,7 @@ export function getViolationReport() {
 }
 
 export function wrapGenerateRaw(generateRawFn ) {
+  // eslint-disable-next-line require-await -- Wrapper maintains async signature of generateRaw
   return async function wrappedGenerateRaw(...args ) {
     // Record the call
     recordLLMCall({
@@ -151,7 +152,7 @@ export function wrapGenerateRaw(generateRawFn ) {
     });
 
     // Execute the actual LLM call
-    return await generateRawFn(...args);
+    return generateRawFn(...args);
   };
 }
 

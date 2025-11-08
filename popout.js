@@ -49,7 +49,7 @@ function initialize_popout() {
 
   // when escape is pressed, toggle the popout.
   // This has to be here because ST removes .draggable items when escape is pressed, destroying the popout.
-  $(document).on('keydown', async function (event) {
+  $(document).on('keydown', function (event) {
     if (event.key === 'Escape') {
       close_popout();
     }

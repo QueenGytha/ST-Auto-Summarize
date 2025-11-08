@@ -48,13 +48,17 @@
     ]
   },
   "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.5.0",
     "@playwright/test": "^1.56.1",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.1",
     "eslint": "^9.38.0",
     "eslint-plugin-complexity": "^1.0.2",
     "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-no-floating-promise": "^2.0.0",
+    "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-sonarjs": "^3.0.5",
+    "eslint-plugin-unicorn": "^62.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
     "puppeteer": "^24.28.0",

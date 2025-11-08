@@ -17,7 +17,7 @@ function ensurePendingOps() {
 
 export function generateEntryId() {
   const timestamp = Date.now();
-  const random = Math.random().toString(ID_GENERATION_BASE).substring(2, OPERATION_ID_LENGTH);
+  const random = Math.random().toString(ID_GENERATION_BASE).slice(2, OPERATION_ID_LENGTH);
   return `entry_${timestamp}_${random}`;
 }
 
@@ -108,7 +108,7 @@ export function cleanupStalePendingEntries(maxAgeMs  = 86400000) {
   const now = Date.now();
   let removed = 0;
 
-  Object.keys(pending).forEach((entryId) => {
+  for (const entryId of Object.keys(pending)) {
     const entry = pending[entryId];
     if (entry && entry.timestamp) {
       const age = now - entry.timestamp;
@@ -118,7 +118,7 @@ export function cleanupStalePendingEntries(maxAgeMs  = 86400000) {
         debug(`[PendingOps] Removed stale entry: ${entryId} (age: ${Math.round(age / ONE_SECOND_MS)}s)`);
       }
     }
-  });
+  }
 
   if (removed > 0) {
     log(`[PendingOps] Cleaned up ${removed} stale pending entries`);

@@ -18,8 +18,8 @@ function getValidationKey(type , suffix ) {
 }
 
 async function validate_summary(summary , type  = "scene") {
-  if (!get_settings('error_detection_enabled')) return true;
-  if (!get_settings(getValidationKey(type, 'error_detection_enabled'))) return true;
+  if (!get_settings('error_detection_enabled')) {return true;}
+  if (!get_settings(getValidationKey(type, 'error_detection_enabled'))) {return true;}
 
   debug(SUBSYSTEM.VALIDATION, `Validating ${type} summary...`);
 
@@ -57,7 +57,7 @@ async function validate_summary(summary , type  = "scene") {
         let validation_result;
         try {
           // Generate validation response
-          debug(SUBSYSTEM.VALIDATION, `Sending validation prompt: ${prompt.substring(0, DEBUG_OUTPUT_MEDIUM_LENGTH)}...`);
+          debug(SUBSYSTEM.VALIDATION, `Sending validation prompt: ${prompt.slice(0, DEBUG_OUTPUT_MEDIUM_LENGTH)}...`);
           validation_result = await summarize_text(prompt, prefill, include_preset_prompts, validation_preset);
           debug(SUBSYSTEM.VALIDATION, `Raw validation result: ${validation_result}`);
         } finally {

@@ -36,6 +36,7 @@ function initialize_slash_commands() {
 
   SlashCommandParser.addCommandObject(SlashCommand.fromProps({
     name: 'auto_summarize_log_settings',
+    // eslint-disable-next-line require-await -- SillyTavern expects async callback
     callback: async (_args) => {
       log(extension_settings[MODULE_NAME]);
     },
@@ -55,13 +56,10 @@ function initialize_slash_commands() {
   SlashCommandParser.addCommandObject(SlashCommand.fromProps({
     name: 'toggle_memory',
     callback: (args, state) => {
-      if (state === "") {// if not provided the state is an empty string, but we need it to be null to get the default behavior
-        state = null;
-      } else {
-        state = state === "true"; // convert to boolean
-      }
+      // if not provided the state is an empty string, but we need it to be null to get the default behavior
+      const enabledState = state === "" ? null : state === "true";
 
-      toggle_chat_enabled(state); // toggle the memory for the current chat
+      toggle_chat_enabled(enabledState); // toggle the memory for the current chat
     },
     helpString: 'Change whether memory is enabled for the current chat. If no state is provided, it will toggle the current state.',
     unnamedArgumentList: [
@@ -99,10 +97,12 @@ function initialize_slash_commands() {
 
   SlashCommandParser.addCommandObject(SlashCommand.fromProps({
     name: 'get_memory',
+    // eslint-disable-next-line require-await -- SillyTavern expects async callback
     callback: async (args, index) => {
       const chat = getContext().chat;
-      if (index === "") index = chat.length - 1;
-      return get_memory(chat[index]);
+      let messageIndex = index;
+      if (messageIndex === "") {messageIndex = chat.length - 1;}
+      return get_memory(chat[messageIndex]);
     },
     helpString: 'Return the memory associated with a given message index. If no index given, assumes the most recent message.',
     unnamedArgumentList: [

@@ -41,7 +41,7 @@ let last_scene_injection = "";
 function check_message_exclusion(message ) {
   // check for any exclusion criteria for a given message based on current settings
   // (this does NOT take context lengths into account, only exclusion criteria based on the message itself).
-  if (!message) return false;
+  if (!message) {return false;}
 
   // system messages sent by this extension are always ignored
   if (get_data(message, 'is_auto_summarize_system_memory')) {
@@ -174,7 +174,7 @@ function concatenate_summaries(indexes ) {
 }
 
 // Comprehensive cleanup with detailed auditing - tracks 6 types of cleared data
-// eslint-disable-next-line complexity, sonarjs/cognitive-complexity
+// eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Cleanup with detailed auditing of 6 data types inherently complex
 function clear_all_summaries_for_chat() {
   const ctx = getContext();
   const chat = ctx.chat;
@@ -276,8 +276,8 @@ function collect_chat_messages(include ) {
   // iterate in reverse order
   for (let i = context.chat.length - 1; i >= 0; i--) {
     const message = context.chat[i];
-    if (!get_data(message, 'memory')) continue; // no memory
-    if (get_data(message, 'include') !== include) continue; // not the include types we want
+    if (!get_data(message, 'memory')) {continue;} // no memory
+    if (get_data(message, 'include') !== include) {continue;} // not the include types we want
     indexes.push(i);
   }
 

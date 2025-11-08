@@ -55,7 +55,7 @@ function edit_memory(message , text ) {
   // perform a manual edit of the memory text
 
   const current_text = get_memory(message);
-  if (text === current_text) return; // no change
+  if (text === current_text) {return;} // no change
   set_data(message, "memory", text);
   set_data(message, "error", null); // remove any errors
   set_data(message, "reasoning", null); // remove any reasoning
@@ -128,7 +128,6 @@ _abort , // Unused parameter (indicated by underscore) - any is appropriate
 _type  // Unused parameter (indicated by underscore)
 ) {
   // Message exclusion feature removed - this function now does nothing
-  return;
 };
 
 export {

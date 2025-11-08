@@ -98,7 +98,7 @@ export function showLorebookEntriesModal(messageIndex) {
     let contentHtml = '';
     if (showContent && entry.content) {
       const truncated = entry.content.length > DEBUG_OUTPUT_MEDIUM_LENGTH
-        ? entry.content.substring(0, DEBUG_OUTPUT_MEDIUM_LENGTH) + '...'
+        ? entry.content.slice(0, DEBUG_OUTPUT_MEDIUM_LENGTH) + '...'
         : entry.content;
       contentHtml = `
         <div style="margin-top: 0.5em; padding: 0.5em; background: rgba(0,0,0,0.2); border-radius: 3px; font-size: 0.85em; font-style: italic;">
@@ -163,9 +163,9 @@ export function showLorebookEntriesModal(messageIndex) {
   };
 
   const strategyBreakdown = [];
-  if (strategyCounts.constant > 0) strategyBreakdown.push(`🔵 ${strategyCounts.constant} constant`);
-  if (strategyCounts.vectorized > 0) strategyBreakdown.push(`🔗 ${strategyCounts.vectorized} vectorized`);
-  if (strategyCounts.normal > 0) strategyBreakdown.push(`🟢 ${strategyCounts.normal} normal`);
+  if (strategyCounts.constant > 0) {strategyBreakdown.push(`🔵 ${strategyCounts.constant} constant`);}
+  if (strategyCounts.vectorized > 0) {strategyBreakdown.push(`🔗 ${strategyCounts.vectorized} vectorized`);}
+  if (strategyCounts.normal > 0) {strategyBreakdown.push(`🟢 ${strategyCounts.normal} normal`);}
 
   const html = `
     <div>

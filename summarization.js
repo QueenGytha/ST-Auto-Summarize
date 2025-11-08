@@ -11,7 +11,7 @@ import {
   get_current_preset } from
 './index.js';
 
-// eslint-disable-next-line complexity
+// eslint-disable-next-line complexity -- LLM call with multiple conditional branches for preset handling
 async function summarize_text(prompt, prefill = '', include_preset_prompts = false, preset_name = null) {
   // Test override: allow tests to inject a fixed response
   if (typeof globalThis !== 'undefined') {
@@ -92,6 +92,7 @@ async function summarize_text(prompt, prefill = '', include_preset_prompts = fal
       // When using messages array, don't pass systemPrompt separately (would duplicate)
       // Also don't override instruct mode when using preset prompts
       // Metadata injection now handled by global generateRaw interceptor
+      // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
       result = await generateRaw({
         prompt: prompt_input,
         instructOverride: false,  // Let preset prompts control formatting
@@ -103,6 +104,7 @@ async function summarize_text(prompt, prefill = '', include_preset_prompts = fal
     } else {
       // Current behavior - string prompt only
       // Metadata injection now handled by global generateRaw interceptor
+      // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
       result = await generateRaw({
         prompt: prompt,
         instructOverride: true,

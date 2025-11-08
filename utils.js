@@ -41,14 +41,14 @@ const SUBSYSTEM = {
 function log(subsystem , ...args ) {
   // subsystem and args are any type for flexible logging - legitimate use of any
   // Always log with prefix - subsystem check not needed as both branches are identical
-  // eslint-disable-next-line no-console
+  // eslint-disable-next-line no-console -- Console is the intended logging mechanism for extension
   console.log(LOG_PREFIX, subsystem, ...args);
 }
 
 function debug(subsystem , ...args ) {
   // subsystem and args are any type for flexible logging - legitimate use of any
   // Always log with prefix - subsystem check not needed as both branches are identical
-  // eslint-disable-next-line no-console
+  // eslint-disable-next-line no-console -- Console is the intended logging mechanism for extension
   console.log(LOG_PREFIX, '[DEBUG]', subsystem, ...args);
 }
 
@@ -99,7 +99,7 @@ function get_current_character_identifier() {
   // You have to use the character's avatar image path to uniquely identify them
   const context = getContext();
   if (context.groupId) {
-    return undefined; // if a group is selected, return
+    return null; // if a group is selected, return
   }
 
   // otherwise get the avatar image path of the current character
@@ -122,7 +122,7 @@ function get_current_chat_identifier() {
 function get_extension_directory() {
   // get the directory of the extension
   const index_path = new URL(import.meta.url).pathname;
-  return index_path.substring(0, index_path.lastIndexOf('/')); // remove the /index.js from the path
+  return index_path.slice(0, index_path.lastIndexOf('/')); // remove the /index.js from the path
 }
 function clean_string_for_title(text ) {
   // clean a given string for use in a div title.
@@ -139,7 +139,7 @@ function clean_string_for_title(text ) {
 }
 function escape_string(text ) {
   // escape control characters in the text
-  if (!text) return text;
+  if (!text) {return text;}
   return text.replace(/[\x00-\x1F\x7F]/g, function (match) {
     // Escape control characters
     switch (match) {
@@ -154,7 +154,7 @@ function escape_string(text ) {
 }
 function unescape_string(text ) {
   // given a string with escaped characters, unescape them
-  if (!text) return text;
+  if (!text) {return text;}
   return text.replace(/\\[ntrbf0x][0-9a-f]{2}|\\[ntrbf]/g, function (match) {
     switch (match) {
       case '\\n':return '\n';
@@ -166,7 +166,7 @@ function unescape_string(text ) {
           // Handle escaped hexadecimal characters like \\xNN
           const hexMatch = match.match(/\\x([0-9a-f]{2})/i);
           if (hexMatch) {
-            return String.fromCharCode(parseInt(hexMatch[1], HEX_COLOR_BASE));
+            return String.fromCharCode(Number.parseInt(hexMatch[1], HEX_COLOR_BASE));
           }
           return match; // Return as is if no match
         }
@@ -187,18 +187,18 @@ function check_st_version() {
   }
 }
 
-function display_injection_preview() {
+async function display_injection_preview() {
   let text = refresh_memory();
   text = `...\n\n${text}\n\n...`;
-  display_text_modal("Memory State Preview", text);
+  await display_text_modal("Memory State Preview", text);
 }
 
 async function display_text_modal(title , text  = "") {
   // Display a modal with the given title and text
   // replace newlines in text with <br> for HTML
   const ctx = getContext();
-  text = text.replace(/\n/g, '<br>');
-  const html = `<h2>${title}</h2><div style="text-align: left; overflow: auto;">${text}</div>`;
+  const htmlText = text.replace(/\n/g, '<br>');
+  const html = `<h2>${title}</h2><div style="text-align: left; overflow: auto;">${htmlText}</div>`;
   //const popupResult = await ctx.callPopup(html, 'text', undefined, { okButton: `Close` });
   const popup = new ctx.Popup(html, ctx.POPUP_TYPE.TEXT, undefined, { okButton: 'Close', allowVerticalScrolling: true });
   await popup.show();
@@ -206,7 +206,7 @@ async function display_text_modal(title , text  = "") {
 async function get_user_setting_text_input(key , title , description  = "", _defaultValue  = "") {
   // _defaultValue is unused parameter - any is acceptable
   const value = get_settings(key) ?? '';
-  title = `
+  const htmlTitle = `
 <h3>${title}</h3>
 <p>${description}</p>
 `;
@@ -214,9 +214,9 @@ async function get_user_setting_text_input(key , title , description  = "", _def
   // Use let with any type annotation to avoid Flow recursive definition error
   // Can't use const because Flow would throw recursive-definition error
   // popup is any type to avoid Flow recursive definition - legitimate use of any
-  /* eslint-disable prefer-const */
+  /* eslint-disable prefer-const -- Variable must be let to reference itself in callback before assignment */
   let popup ;
-  popup = new ctx.Popup(title, ctx.POPUP_TYPE.INPUT, value, {
+  popup = new ctx.Popup(htmlTitle, ctx.POPUP_TYPE.INPUT, value, {
     rows: 20,
     customButtons: [{
       text: 'Restore Default',
@@ -229,7 +229,7 @@ async function get_user_setting_text_input(key , title , description  = "", _def
   });
   popup.mainInput.classList.remove('result-control');
   const input = await popup.show();
-  /* eslint-enable prefer-const */
+  /* eslint-enable prefer-const -- Re-enable after self-referencing pattern */
   if (input !== undefined && input !== null && input !== false) {
     set_settings(key, input);
     save_profile(); // auto-save when prompt is edited
@@ -302,7 +302,7 @@ export function extractJsonFromResponse(rawResponse, options = {}) {
     const jsonStartMatch = cleaned.match(/[{[]/);
     if (jsonStartMatch) {
       const jsonStart = cleaned.indexOf(jsonStartMatch[0]);
-      cleaned = cleaned.substring(jsonStart);
+      cleaned = cleaned.slice(jsonStart);
       debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped preamble from ${context}`);
     }
   }
@@ -313,7 +313,7 @@ export function extractJsonFromResponse(rawResponse, options = {}) {
     const lastBracket = cleaned.lastIndexOf(']');
     const lastJsonChar = Math.max(lastBrace, lastBracket);
     if (lastJsonChar > 0) {
-      cleaned = cleaned.substring(0, lastJsonChar + 1);
+      cleaned = cleaned.slice(0, lastJsonChar + 1);
       debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped postamble from ${context}`);
     }
   }
@@ -324,7 +324,7 @@ export function extractJsonFromResponse(rawResponse, options = {}) {
     parsed = JSON.parse(cleaned);
   } catch (parseErr) {
     error(SUBSYSTEM.CORE, `[JSON Extract] Failed to parse JSON from ${context}:`, parseErr);
-    error(SUBSYSTEM.CORE, `[JSON Extract] Attempted to parse:`, cleaned.substring(0, DEBUG_OUTPUT_MEDIUM_LENGTH));
+    error(SUBSYSTEM.CORE, `[JSON Extract] Attempted to parse:`, cleaned.slice(0, DEBUG_OUTPUT_MEDIUM_LENGTH));
     throw new Error(`${context}: Invalid JSON - ${parseErr.message}`);
   }
 

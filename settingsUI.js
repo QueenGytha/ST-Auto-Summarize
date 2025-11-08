@@ -43,6 +43,7 @@ import {
 } from './constants.js';
 
 // UI initialization
+// eslint-disable-next-line max-lines-per-function -- Sequential UI bindings for 50+ settings controls (226 lines is acceptable for initialization)
 async function initialize_settings_listeners() {
   log("Initializing settings listeners");
 
@@ -64,7 +65,7 @@ async function initialize_settings_listeners() {
     log($(e.target).parent().find(selectorsExtension.profiles.importFile));
     $(e.target).parent().find(selectorsExtension.profiles.importFile).click();
   }, false);
-  bind_function(selectorsExtension.profiles.importFile, async (e) => await import_profile(e), false);
+  bind_function(selectorsExtension.profiles.importFile, (e) => void import_profile(e), false);
 
   bind_function(selectorsExtension.profiles.characterAutoload, () => toggle_character_profile());
   bind_function(selectorsExtension.profiles.chatAutoload, () => toggle_chat_profile());
@@ -105,13 +106,13 @@ async function initialize_settings_listeners() {
       toast(`Navigator width clamped to valid range (${MAX_LINE_LENGTH}-${UI_UPDATE_DELAY_MS} pixels)`, 'warning');
     }
     // Re-render navigator bar with new width
-    if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
+    if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
     // Update navbar toggle button position to match new width
-    if (window.updateNavbarToggleButtonPosition) window.updateNavbarToggleButtonPosition();
+    if (window.updateNavbarToggleButtonPosition) {window.updateNavbarToggleButtonPosition();}
   });
   bind_setting(selectorsExtension.scene.navFontSize, 'scene_summary_navigator_font_size', 'number', () => {
     // Re-render navigator bar with new font size
-    if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
+    if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
   });
   bind_setting(selectorsExtension.scene.prompt, 'scene_summary_prompt', 'text');
   bind_setting(selectorsExtension.scene.prefill, 'scene_summary_prefill', 'text');
@@ -179,7 +180,7 @@ Available Macros:
   bind_setting(selectorsExtension.running.autoGenerate, 'running_scene_summary_auto_generate', 'boolean');
   bind_setting(selectorsExtension.running.showNavbar, 'running_scene_summary_show_navbar', 'boolean', () => {
     // Refresh navbar buttons visibility
-    if (window.updateRunningSceneSummaryNavbar) window.updateRunningSceneSummaryNavbar();
+    if (window.updateRunningSceneSummaryNavbar) {window.updateRunningSceneSummaryNavbar();}
   });
   bind_setting(selectorsExtension.running.prompt, 'running_scene_summary_prompt', 'text');
   bind_setting(selectorsExtension.running.prefill, 'running_scene_summary_prefill', 'text');
@@ -297,7 +298,7 @@ Available Macros:
   $autoSceneBreakOffsetValue.text($autoSceneBreakOffset.val());
   $autoSceneBreakOffset.on('input change', function () {
     let val = Number($(this).val());
-    if (isNaN(val)) val = 1;
+    if (Number.isNaN(val)) {val = 1;}
     val = Math.max(0, Math.min(DEFAULT_POLLING_INTERVAL, val));
     set_settings('auto_scene_break_message_offset', val);
     save_profile(); // auto-save when changed
@@ -361,7 +362,7 @@ function initialize_lorebooks_settings_listeners() {
   $(document).on('input', '#autolorebooks-name-template', function () {
     const value = $(this).val().trim();
     if (value && value.length > 0) {
-      if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+      if (!extension_settings.autoLorebooks) {extension_settings.autoLorebooks = {};}
       extension_settings.autoLorebooks.nameTemplate = value;
       saveSettingsDebounced();
     }
@@ -370,7 +371,7 @@ function initialize_lorebooks_settings_listeners() {
   // Delete on chat delete checkbox
   $(document).on('change', '#autolorebooks-delete-on-chat-delete', function () {
     const value = $(this).prop('checked');
-    if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+    if (!extension_settings.autoLorebooks) {extension_settings.autoLorebooks = {};}
     extension_settings.autoLorebooks.deleteOnChatDelete = value;
     saveSettingsDebounced();
   });
@@ -378,7 +379,7 @@ function initialize_lorebooks_settings_listeners() {
   // Auto-reorder alphabetically checkbox
   $(document).on('change', '#autolorebooks-auto-reorder-alphabetically', function () {
     const value = $(this).prop('checked');
-    if (!extension_settings.autoLorebooks) extension_settings.autoLorebooks = {};
+    if (!extension_settings.autoLorebooks) {extension_settings.autoLorebooks = {};}
     extension_settings.autoLorebooks.autoReorderAlphabetically = value;
     saveSettingsDebounced();
   });

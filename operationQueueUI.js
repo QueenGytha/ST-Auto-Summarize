@@ -1,5 +1,5 @@
 
-/* global localStorage */
+/* global localStorage -- Browser API for persisting UI preferences */
 // operationQueueUI.js - UI for operation queue display in navbar
 
 import {
@@ -473,7 +473,7 @@ function formatOperationType(type) {
 }
 
 // UI formatting: displays all available operation metadata fields
-// eslint-disable-next-line complexity
+// eslint-disable-next-line complexity -- Tooltip builder formats all available operation metadata fields
 function buildOperationTooltip(operation) {
   const lines = [];
 
@@ -620,8 +620,8 @@ function updateNavbarToggleButtonPosition() {
   const $button = $(selectorsExtension.queue.navbarToggle);
 
   // Only update if navbar is visible and button exists
-  if (!$navbar.length || !$button.length) return;
-  if (!$navbar.is(':visible')) return;
+  if (!$navbar.length || !$button.length) {return;}
+  if (!$navbar.is(':visible')) {return;}
 
   // Calculate button position based on current navbar width
   const navbarWidth = $navbar.outerWidth() || QUEUE_BUTTON_WIDTH_PX;

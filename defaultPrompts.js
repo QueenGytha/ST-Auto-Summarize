@@ -1,6 +1,6 @@
 
 // ST-Auto-Summarize Default Prompts
-// New structure: summary (timeline) + lorebooks (detailed entries)
+// Structure: recap (events + tone) + lorebooks (detailed entries)
 // See docs/SUMMARY_LOREBOOK_SEPARATION.md for full documentation
 
 export const default_prompt = `You are a structured data extraction system analyzing roleplay transcripts.
@@ -18,45 +18,43 @@ You are NOT participating in the roleplay. You are analyzing completed roleplay 
 //
 // CRITICAL: SEPARATION OF CONCERNS
 //
-// SUMMARY field:
-// - Brief timeline of what happened with concrete factual details
-// - MENTION entities by name for context, include specific items/quotes/actions
-// - DO NOT describe entity personalities or traits (that goes in lorebooks)
-// - Include factual details: what was said, read, used, specific names/items
-// - Exclude emotional analysis: NOT "felt jealous", "seemed worried", "angrily did X"
-// - Terse, factual, minimal tokens but complete factual coverage
-// - Primarily past tense (present tense for ongoing/unresolved states)
-// - Focus on WHAT HAPPENED and OUTCOMES with specific details, not WHO/WHAT things are
-// - Be concise but preserve important factual details
+// RECAP (summary string):
+// - Use markdown headers and bullets in this order:
+//   ## Current Situation
+//   ## Key Developments
+//   ## Dialogue Highlights
+//   ## Tone & Style
+//   ## Pending Threads
+// - One fact per bullet; be specific (names, items, places).
+// - Focus on outcomes and current state; avoid blow-by-blow narration.
 //
 // LOREBOOKS array:
-// - NEW entities discovered OR updates to existing entities
-// - MUST use PList (Property List) format for content (28-44% token savings)
-// - Each entry needs: name, type, keywords, content
-// - Type must be one of: {{lorebook_entry_types}}
-// - Optional: secondaryKeys (array) for AND disambiguation
-// - DO NOT include timeline events (that goes in summary)
-// - Only entities worth remembering for later
+// - New entities or durable updates only (characters, locations, items, factions, quests, rules)
+// - Each entry needs: name, type, keywords, optional secondaryKeys, content
+// - Content uses bullet points and must begin with an Identity bullet: "- Identity: <Type> — <Canonical Name>"
+// - Use specific names for all references; avoid pronouns
+// - Do NOT include timeline narration here; keep that in the recap
 //
-// PList FORMAT (REQUIRED):
-// Syntax: [type-EntityName: property1, property2, nested(detail1, detail2)]
-// - Square brackets [ ] around entire entry
-// - Entity identifier is lowercase type + hyphen + entity name (e.g., "character-Alice", "location-Tavern")
-// - Colon after entity identifier, comma-separated properties
-// - Nested details use parentheses ( ), max 2 levels deep
-// Example: [character-Alice: warrior, appearance(red hair, green eyes), personality(confident)]
+// CONTENT FORMAT (bullet style for lorebooks):
+// - Identity: <Type> — <Canonical Name>
+// - Synopsis: <1 line>
+// - Attributes: <traits/capabilities>
+// - Relationships: <X ↔ Y with stance + micro-cues>
+// - State: <status/location/owner>
+// - Secrets/Leverage: <what/who knows>
+// - Tension/Triggers: <what escalates/defuses>
+// - Style Notes: <voice/tone anchors>
 //
-// JSON STRUCTURE:
-//
+// OUTPUT JSON SHAPE:
 // {
-//   "summary": "Timeline of what occurred",
+//   "summary": "markdown recap string",
 //   "lorebooks": [
 //     {
 //       "name": "Entity Name",
 //       "type": "{{lorebook_entry_types}}",
-//       "keywords": ["keyword1", "keyword2", "keyword3"],
-//       "secondaryKeys": ["disambiguation term"], // optional
-//       "content": "Detailed description with nuance"
+//       "keywords": ["keyword1", "keyword2"],
+//       "secondaryKeys": ["and-term"],
+//       "content": "- Identity: <Type> — <Canonical Name>\n- Synopsis: <1 line>\n- Attributes: <bullets>\n- Relationships: <bullets with specific names>\n- State: <status/location/owner>\n- Secrets/Leverage: <who knows>\n- Tension/Triggers: <micro cues>\n- Style Notes: <voice/tone anchors>"
 //     }
 //   ]
 // }
@@ -70,13 +68,11 @@ You are NOT participating in the roleplay. You are analyzing completed roleplay 
 // - rule: World mechanics, magic systems, game rules (how it works, limitations, exceptions)
 //
 // KEYWORDS GUIDELINES:
-// - 2–4 keywords; all lowercase
-// - Use SIMPLE, SINGLE WORDS that will appear in chat (exact match required)
-// - Include canonical name and common aliases/nicknames
-// - Avoid multi-word phrases unless they're used together consistently
-// - Avoid generic terms (e.g., "place", "city", "market", "warrior") and verbs
-// - Keywords trigger on exact match - keep them simple and broad
-// - If a keyword is too generic and triggers incorrectly, use secondaryKeys for AND disambiguation
+// - No hard limit: include as many meaningful triggers as needed; all lowercase
+// - Prioritize canonical name, real aliases/nicknames, and distinctive identifiers likely to appear
+// - Use SIMPLE tokens that actually occur in chat (exact match required); avoid padding or redundant variants
+// - Avoid generic terms (e.g., "place", "city", "market", "warrior") and verbs; multi-word phrases only if consistently used together
+// - If a keyword is broad, use secondaryKeys for AND disambiguation
 // - Do NOT output regex patterns
 //
 // Examples:
@@ -85,76 +81,34 @@ You are NOT participating in the roleplay. You are analyzing completed roleplay 
 // ✅ GOOD: ["alice"] - will trigger when Alice is mentioned
 // ❌ BAD: ["skilled warrior alice", "alice the brave"] - too specific, won't trigger reliably
 //
-// CONTENT GUIDELINES (PList format):
-// ⚠️ CRITICAL: ONLY THE CONTENT FIELD IS PRESERVED IN THE AI'S CONTEXT ⚠️
+// CONTENT GUIDELINES (bullet style for lorebooks):
+// ⚠️ ONLY THE "content" FIELD IS PRESERVED IN CONTEXT ⚠️
 // - The "name", "type", and "keywords" fields are ONLY for indexing/triggering
-// - The AI will NEVER see those fields - it ONLY sees the "content" text
-// - Therefore, content MUST be completely self-contained and specific
-// - Content MUST identify what entity it's describing (that's why we use [type-EntityName: ...] format)
-// - Content MUST be specific about relationships (use actual names, not "the user", "her friend", "his sister")
-// - This is where ALL the detail and nuance goes
-// - MUST use PList format: [type-EntityName: property1, property2, nested(details)]
-// - CRITICAL: Start with lowercase type + hyphen + entity name (e.g., [character-Alice: ...], [location-Tavern: ...])
-// - Be thorough but organized using properties
-// - Include appearance, personality, capabilities, significance
-// - Include relationships and context as properties
-// - Store secrets as properties: knows(X), keeping secret from(Y, Z)
-// - For locations/items: Include owner/resident as a property with SPECIFIC NAMES
-//   * For user-owned locations/items, use {{user}}'s residence/property
-//   * Example: [location-Apartment: {{user}}'s residence, shared with(Sarah)]
-//   * Do NOT use: "protagonist", "the user", "main character", "human subject"
-// - INCLUDE CONCRETE FACTUAL DETAILS:
-//   * Specific quotes: quoted("exact scripture text", "literature about villainy")
-//   * Specific items used: used(dagger), read(book title), wore(red cloak)
-//   * Specific actions taken: displayed(knife-fighting stance), fled(westward direction)
-//   * What they read/saw/heard: read(ancient murals depicting First War)
-//   ❌ NOT vague: "has beliefs about women", "knows things"
-//   ✅ SPECIFIC: quoted(scripture: "suffer not a woman to teach"), knows(Sunblade thief identity)
-// - BE SPECIFIC ABOUT RELATIONSHIPS AND REFERENCES:
-//   ❌ VAGUE: [character-Alice: friends with the protagonist, uses his sword]
-//   ✅ SPECIFIC: [character-Alice: friends with({{user}}), uses({{user}}'s Sunblade sword)]
-//   ❌ VAGUE: [character-Bob: knows what happened, told her about it]
-//   ✅ SPECIFIC: [character-Bob: knows(Shadow Guild infiltrated castle), revealed information to(Alice)]
-//   ❌ VAGUE: [location-Tavern: owned by him, she works there]
-//   ✅ SPECIFIC: [location-Tavern: owned by(Marcus), employees(Sarah, waitress), location(Riverside district)]
+// - The AI will NEVER see those fields; it ONLY sees the "content" text
+// - Therefore, content MUST be self-contained and name the entity in the Identity bullet
+// - Use specific names for relationships (not pronouns)
+// - Include micro-moments and short quotes when they lock in dynamics
+// - Keep bullets crisp and factual; one fact per bullet
 //
-// EXAMPLES OF GOOD SEPARATION:
+// EXAMPLES OF GOOD SEPARATION (bullet style):
 //
 // Example 1: Combat Scene
-// ✅ SUMMARY: "Bandits ambushed Alice and Bob. Alice killed two with greatsword. Bob disabled one with throwing knife. Two fled. Alice wounded in shoulder but mobile."
-// ✅ LOREBOOK: {"name": "Alice", "type": "character", "keywords": ["alice"], "content": "[character-Alice: warrior, weapon(greatsword, wields with lethal skill), training(formal), wounded(shoulder), continues fighting when injured]"}
+// ✅ SUMMARY (Key Developments):
+// - Bandits ambushed Alice and Bob
+// - Alice killed two with a greatsword; Bob disabled one with a throwing knife; two fled
+// - Alice wounded in shoulder but mobile
+// ✅ LOREBOOK (Alice):
+// - Identity: Character — Alice
+// - Attributes: Greatsword; formal training; continues fighting when injured
+// - State: Shoulder wound
 //
 // Example 2: Discovery
-// ✅ SUMMARY: "Found hidden chamber behind waterfall. Ancient murals depicted the First War."
-// ✅ LOREBOOK: {"name": "Hidden Chamber", "type": "location", "keywords": ["chamber", "waterfall"], "content": "[location-Hidden Chamber: secret room, location(behind waterfall), features(stone walls, ancient murals showing First War), status(undisturbed for centuries)]"}
-//
-// Example 3: Character-Owned Location
-// ✅ SUMMARY: "Visited John's apartment. Sarah was researching quantum physics on his laptop."
-// ✅ LOREBOOK: {"name": "Apartment", "type": "location", "keywords": ["apartment"], "content": "[location-Apartment: John's residence, shared with(Sarah), contains(laptop, research papers on quantum physics)]"}
-//
-// Example 4: Revelation
-// ✅ SUMMARY: "Bob revealed Shadow Guild membership. Alice became suspicious but agreed to cooperate."
-// ✅ LOREBOOK: {"name": "Bob", "type": "character", "keywords": ["bob"], "content": "[character-Bob: Shadow Guild member, keeping secret from(Alice, {{user}} previously), revealed(Guild membership during confrontation), constrained by(Guild secrecy requirements)]"}
-//
-// BAD EXAMPLES:
-//
-// ❌ SUMMARY: "Alice, a skilled warrior with red hair and green eyes, fought the bandits using her greatsword technique..."
-// → Too much description! Just say "Alice fought bandits with greatsword"
-//
-// ❌ LOREBOOK: {"name": "Battle", "content": "Alice and Bob were ambushed and fought bandits on the road"}
-// → That's a timeline event! Belongs in summary, not lorebooks
-//
-// ❌ LOREBOOK: {"name": "Alice", "type": "character", "content": "Skilled warrior. Red hair, green eyes."}
-// → NOT using PList format! Must be: [character-Alice: warrior, appearance(red hair, green eyes)]
-//
-// ❌ LOREBOOK: {"name": "Secret Alliance", "type": "concept", "content": "[Secret Alliance: ...]"}
-// → Wrong type! Use character/location/item/faction/quest/rule only. Store secrets in character entries.
-//
-// ❌ LOREBOOK: {"name": "Apartment", "type": "location", "keywords": ["apartment"], "content": "[location-Apartment: shared living space, occupants(human subject, Sarah)]"}
-// → Using vague "human subject" instead of specific name! Should be: [location-Apartment: John's residence, shared with(Sarah)]
-//
-// ❌ LOREBOOK: {"name": "Alice", "type": "character", "keywords": ["alice"], "content": "[character-Alice: friends with him, borrowed his weapon, told her about the plan]"}
-// → Pronouns and vague references! The AI won't know who "him", "his", or "her" are! Should be: [character-Alice: friends with({{user}}), borrowed({{user}}'s Sunblade), revealed(plan to Sarah)]
+// ✅ SUMMARY (Key Developments):
+// - Found hidden chamber behind waterfall; ancient murals depicted the First War
+// ✅ LOREBOOK (Hidden Chamber):
+// - Identity: Location — Hidden Chamber
+// - Attributes: Stone walls; ancient murals (First War)
+// - State: Undisturbed for centuries; behind a waterfall
 //
 // OUTPUT FORMAT:
 // - Output ONLY valid JSON, no text before or after
@@ -172,79 +126,51 @@ You are NOT participating in the roleplay. You are analyzing completed roleplay 
 
 
 export const scene_summary_prompt = `You are a structured data extraction system analyzing roleplay transcripts.
-Your task is to extract scene information into JSON format according to the specifications below.
+Your task is to extract scene information into JSON according to the specifications below.
 You are NOT participating in the roleplay. You are analyzing completed roleplay text.
 //
 // ⚠️ CRITICAL: USE ONLY THE SCENE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️
 // - If the scene does not state a fact, it does not exist
-// - Do not invent motives, emotions, or extrapolated outcomes
+// - Do not invent motives beyond the text
 // - Franchise names: ignore canon outside this transcript
 //
-// SUMMARY field (markdown recap):
-// - Structure exactly in this order with markdown headers:
-//   ## Current Situation  -> Where the scene ends, who is present, unresolved stakes
-//   ## Key Developments   -> Bullet each significant change or result from this scene
-//   ## Dialogue Highlights -> Short quotes or paraphrases that lock in promises, threats, revelations
-//   ## Pending Threads     -> Goals, deadlines, secrets, obligations that carry forward
-// - One bullet per fact. Keep wording factual and specific (locations, items, explicit actions).
-// - Only record lasting information or immediate consequences. Skip blow-by-blow narration.
-// - Reference characters by name, but do NOT restate traits, backstory, or attitudes that belong in lorebooks.
-// - You may quote brief lines (max one sentence) only when they establish canon the future scene must respect.
+// RECAP (summary string):
+// Use markdown headers and bullets in this exact order:
+//   ## Current Situation   -> Where the scene ends; who is present; unresolved stakes
+//   ## Key Developments    -> One bullet per significant change/outcome in this scene
+//   ## Dialogue Highlights  -> Exact short quotes/paraphrases that set canon (promises, threats, reveals)
+//   ## Tone & Style        -> Words/phrases that capture the vibe and voice to preserve
+//   ## Pending Threads      -> Goals, deadlines, secrets, obligations that carry forward
+// Rules:
+// - One fact per bullet; be specific (names, items, places).
+// - Do not narrate blow-by-blow; focus on durable outcomes.
+// - Avoid describing traits/backstory here—put those in lorebooks.
 //
-// LOREBOOKS array (persistent knowledge targets):
-// - Leave empty unless this scene introduced durable information that must live in a lore entry.
-// - Each object updates a SINGLE concrete entity (character, location, item, faction, quest, rule) or introduces a brand-new one.
-// - Set the "name" field to the entity's canonical name. Never mint a standalone trait or detail entry.
+// LOREBOOKS (array):
+// - Only include if this scene adds durable knowledge about an entity.
+// - Each object updates ONE concrete entity (character, location, item, faction, quest, rule).
+// - Fields: name, type (one of {{lorebook_entry_types}}), keywords, optional secondaryKeys, content.
+// - Content MUST be bullet points. Start with identity so it stands alone without the title:
+//   - Identity: <Type> — <Canonical Name>
+//   - Synopsis: <1 line identity/purpose>
+//   - Attributes: <appearance/traits/capabilities>
+//   - Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>
+//   - State: <status/location/owner/ongoing effects>
+//   - Secrets/Leverage: <what/who knows>
+//   - Tension/Triggers: <what escalates/defuses; quotes if needed>
+//   - Style Notes: <voice ticks or phrasing anchors>
+// - Use specific names (not pronouns) for all references; avoid numeric scoring (no "+1 suspicion").
+// - Add only new/changed facts; omit if unsure.
+// - Keywords: include as many meaningful triggers as needed (lowercase). Prefer canonical name, real aliases/nicknames, and distinctive identifiers; avoid generic terms. Use secondaryKeys for AND disambiguation when a token is broad.
 //
-// ⚠️ CRITICAL: ONLY THE "content" FIELD IS INJECTED INTO THE AI'S CONTEXT ⚠️
-// - The "name", "type", and "keywords" fields are ONLY for indexing/triggering the entry
-// - The AI will NEVER see those fields during roleplay - it ONLY sees the "content" text
-// - Therefore, content MUST be completely self-contained with ALL necessary context
-// - Content MUST identify the entity (use [type-EntityName: ...] format so AI knows what this is about)
-// - Content MUST use specific names for relationships (not "the protagonist", "her friend", "his ally")
-// - Content MUST be specific about referenced items, places, events (not "the sword", but "Sunblade sword")
-//
-// - Content MUST stay in valid PList format: [type-EntityName: property, property(detail), ...] with at most two nesting levels.
-// - CRITICAL: Start content with lowercase type + hyphen + entity name (e.g., [character-Alice: ...], [location-Tavern: ...]).
-// - Add only facts that are new or changed versus what the lorebook would already contain. If unsure, omit them.
-// - Keywords: 2-4 lowercase triggers tied to that entity (names, distinctive identifiers). Avoid generic terms.
-// - Type must be one of: {{lorebook_entry_types}}.
-// - Optional secondaryKeys are allowed for AND disambiguation when needed.
-// - If a detail belongs here, also mention the entity inside the recap so scene context stays coherent.
-//
-// Writing discipline:
-// - Neutral tone, modern prose. Avoid repetitive sentence starters ("Despite", "Although").
-// - Focus on outcomes and current state; do not speculate about feelings or motivations.
-// - When a fact already exists in the lorebook, avoid repeating it in lorebook output unless the scene changes it.
-//
-// CONTENT SPECIFICITY EXAMPLES:
-// ❌ BAD: [character-Sarah: works for him, knows about it, gave her the information]
-// ✅ GOOD: [character-Sarah: works for(Marcus at Riverside Tavern), knows(Shadow Guild infiltration plan), gave information to(Alice)]
-//
-// ❌ BAD: [item-Amulet: powerful artifact, currently with the protagonist, can do magic]
-// ✅ GOOD: [item-Amulet: powerful artifact, current owner({{user}}), abilities(protection from fire, detects nearby magic)]
-//
-// ❌ BAD: [location-Castle: under attack, they are defending, he is leading]
-// ✅ GOOD: [location-Castle: under attack by(Shadow Guild forces), defenders(Royal Guard, {{user}}), commander(Captain Marcus)]
-//
-// OUTPUT FORMAT:
-// - Output ONLY valid JSON, no text before or after
-// - Summary is required
-// - Lorebooks array is optional (empty array if no new entities)
+// Output ONLY valid JSON, no text before or after.
 
 {
   "summary": "",
   "lorebooks": []
 }
 
-// Scene Content:
-// Messages are formatted as:
-// [USER: name] or [CHARACTER: name]
-// message text
-//
-// [SUMMARY] (if any)
-// summary text
-
+// Scene Content (oldest to newest):
 {{scene_messages}}`;
 
 
@@ -277,12 +203,12 @@ export const message_summary_error_detection_prompt = `You are validating a role
 
 Check that the JSON meets these criteria:
 1. Valid JSON structure.
-2. Has a "summary" field (string) that contains ALL headers: "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Pending Threads".
-3. Each section uses bullet lines beginning with "- " and states factual outcomes or states (no emotional analysis).
+2. Has a "summary" field (string) with headers in this order: "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Tone & Style", "## Pending Threads".
+3. Each section uses bullet lines ("- ") with observable facts; no blow-by-blow narration.
 4. Has a "lorebooks" field (array, may be empty).
-5. Every lorebook entry object includes "name", "type", "keywords" (array), and "content" in valid PList format starting with [type-EntityName: ...].
-6. No timeline narration or descriptive lore in the recap; enduring traits belong in lorebooks.
-7. Lorebook content stays PList (single entity, <=2 nesting levels, format: [type-EntityName: property, ...]) and excludes timeline events.
+5. Each lorebook entry includes "name", "type", "keywords" (array), and "content" as bullet points.
+6. Lorebook content begins with an identity bullet like "- Identity: <Type> — <Canonical Name>" and avoids pronouns for references.
+7. Recap focuses on events + overall tone; detailed nuance and relationships live in lorebooks.
 
 Respond with ONLY:
 - "VALID" if all criteria met
@@ -295,12 +221,11 @@ export const scene_summary_error_detection_prompt = `You are validating a scene 
 
 Check that the JSON meets these criteria:
 1. Valid JSON structure.
-2. Has a "summary" field (string) using the headers "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Pending Threads" in that order.
-3. Each section contains bullet lines with observable facts or outcomes from the scene (no speculation or character biographies).
+2. Has a "summary" field (string) using the headers "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Tone & Style", "## Pending Threads" in that order.
+3. Each section contains bullet lines with observable facts or outcomes from the scene (no speculation or biographies).
 4. Has a "lorebooks" field (array, may be empty).
-5. Every lorebook entry object includes "name", "type", "keywords" (array), and "content" in valid PList format (starting with [type-EntityName: ...]) for a single entity.
-6. Recap sections focus on state after the scene; lorebook entries handle enduring traits or nuance.
-7. Lorebook content omits timeline narration and stays within PList syntax ([type-EntityName: property, ...], max two nesting levels).
+5. Every lorebook entry includes "name", "type", "keywords" (array), and bullet-point "content" that starts with an identity bullet and uses specific names.
+6. Recap covers events and overall tone; lorebooks capture nuance, relationships, and dynamics.
 
 Respond with ONLY:
 - "VALID" if all criteria met
@@ -315,7 +240,7 @@ Scene content:
 {{message}}`;
 
 
-export const auto_scene_break_detection_prompt = `You are segmenting a roleplay transcript into scene-sized chunks (short, chapter-like story beats). Determine whether the CURRENT message begins a new scene relative to the PREVIOUS message. A scene break means the prior beat resolved and the story now shifts focus.
+export const auto_scene_break_detection_prompt = `You are segmenting a roleplay transcript into scene-sized chunks (short, chapter-like story beats). Determine whether the CURRENT message begins a new scene relative to the PREVIOUS messages. A scene break means the prior beat resolved and the story now shifts focus.
 
 Scene break if the current message clearly does at least one of:
 - Moves to a new location or setting.
@@ -324,15 +249,28 @@ Scene break if the current message clearly does at least one of:
 - Starts a new objective or major conflict after the previous one concluded.
 - Includes explicit separators or OOC markers ("---", "Scene Break", "Chapter 3", GM notes resetting play).
 
+Natural narrative beats to watch for:
+- Resolution or decision that concludes the prior exchange
+- Reveal of major information that shifts the situation
+- Escalation to a qualitatively new level (not just intensifying current action)
+- Clear pause or transition point in the narrative flow
+
 Do NOT mark a break when:
 - The current line is a reaction, continuation, or escalation of the same exchange.
 - Minor topic shifts happen within the same setting, participants, and timeframe.
 - The message is meta chatter that does not advance the narrative.
+- The current message is mid-action, mid-conversation, or mid-beat (the exchange hasn't concluded yet).
 
 Decision process:
 1. Check for explicit separators or time/scene headers and mark a break if present.
 2. Otherwise compare setting, time, cast, and objective; mark a break only if there is a clear change.
-3. If evidence is ambiguous, treat it as a continuation (status false).
+3. Consider narrative flow: Has the prior beat concluded? Is this starting a new beat?
+4. If evidence is ambiguous, treat it as a continuation (status false).
+
+CRITICAL: Base your decision ONLY on the provided messages below.
+- Never invent details, context, or relationships not explicitly stated in the text.
+- Do not assume narrative patterns based on genre expectations.
+- If a detail is not mentioned in the messages, it does not exist for this decision.
 
 Previous messages (oldest to newest):
 {{previous_message}}
@@ -340,7 +278,7 @@ Previous messages (oldest to newest):
 Current message:
 {{current_message}}
 
-Return ONLY valid JSON:
+Return ONLY valid JSON with no code fences, no commentary, no additional text:
 {
   "status": true or false,
   "rationale": "Quote the key cue that triggered your decision"
@@ -357,10 +295,11 @@ export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay 
 //
 // TARGET STRUCTURE (markdown recap in "summary" field):
 // Maintain the same headers and bullet discipline as the scene recap output. Update or append bullets as needed.
-//   ## Current Situation  -> Active locations, who is present, unresolved stakes
-//   ## Key Developments   -> Durable outcomes and plot shifts (replace outdated bullets)
-//   ## Dialogue Highlights -> Quotes or paraphrases that continue to matter
-//   ## Pending Threads     -> Goals, timers, secrets, obligations in play
+//   ## Current Situation   -> Active locations, who is present, unresolved stakes
+//   ## Key Developments    -> Durable outcomes and plot shifts (replace outdated bullets)
+//   ## Dialogue Highlights  -> Quotes or paraphrases that continue to matter
+//   ## Tone & Style         -> Vibe/style anchors that must persist
+//   ## Pending Threads       -> Goals, timers, secrets, obligations in play
 //
 // MERGE RULES:
 // - Start from the existing running recap and edit it; do not rewrite from scratch unless necessary.
@@ -409,8 +348,8 @@ Registry listing:
 
 Tasks:
 1. Decide which entry type best fits the new entry. The type MUST be one of the allowed list above.
-2. Confirm the candidate represents ONE concrete entity. Its 'name' should already be that entity's canonical name.
-3. Validate the content is proper PList (single bracketed entry starting with [type-EntityName: ..., comma-separated properties, max two nesting levels, no prose).
+2. Confirm the candidate represents ONE concrete entity. Its 'name' is its canonical name.
+3. Validate the content uses BULLET POINTS and begins with an identity bullet like "- Identity: <Type> — <Canonical Name>".
 4. Validate content uses specific names/references (not pronouns like "him", "her", "it", or vague terms like "the protagonist").
 5. Compare the candidate against the registry listing and identify any entries that already cover this entity.
 6. Place confident matches in 'sameEntityIds'. If you need more detail before deciding, list those IDs in 'needsFullContextIds'.
@@ -454,7 +393,7 @@ Return ONLY a JSON object in this exact shape:
 }
 
 Rules:
-- Validate the new candidate remains a single-entity PList (brackets starting with [type-EntityName: ..., properties, <=2 nesting levels).
+- Validate the new candidate is a single entity and the content uses bullet points with an identity bullet first.
 - Validate content uses specific names (not pronouns or vague references).
 - If none of the candidates match, set the resolvedId field to "new".
 - When choosing an existing entity, pick the ID that truly represents the same subject and merge the newest facts into it.

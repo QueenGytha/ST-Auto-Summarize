@@ -16,8 +16,8 @@ import {
 function bind_setting(selector , key , type  = null, callback  = null, disable  = true) {
   // callback accepts any type value (number, boolean, string) - legitimate use of any
   // Bind a UI element to a setting, so if the UI element changes, the setting is updated
-  selector = `.${settings_content_class} ${selector}`; // add the settings div to the selector
-  const element = $(selector);
+  const fullSelector = `.${settings_content_class} ${selector}`; // add the settings div to the selector
+  const element = $(fullSelector);
   settings_ui_map[key] = [element, type];
 
   // if no elements found, log error
@@ -77,10 +77,10 @@ function bind_function(selector , func , disable  = true) {
   // event parameter is complex DOM event, return can be void or Promise - legitimate use of any
   // bind a function to an element (typically a button or input)
   // if disable is true, disable the element if chat is disabled
-  selector = `.${settings_content_class} ${selector}`;
-  const element = $(selector);
+  const fullSelector = `.${settings_content_class} ${selector}`;
+  const element = $(fullSelector);
   if (element.length === 0) {
-    error(`No element found for selector [${selector}] when binding function`);
+    error(`No element found for selector [${fullSelector}] when binding function`);
     return;
   }
 

@@ -93,6 +93,7 @@ saveChatDebounced )
 }
 
 // Toggles the scene break UI and persists state
+// eslint-disable-next-line max-params -- SillyTavern API dependency injection (6 functions always passed together)
 export function toggleSceneBreak(
 index ,
 get_message_div , // Returns jQuery object - any is appropriate
@@ -136,13 +137,18 @@ saveChatDebounced )
   renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
   saveChatDebounced();
 
-  // Re-run auto-hide logic after toggling scene break
-  import('./autoHide.js').then((mod) => {
-    mod.auto_hide_messages_by_command();
-  });
+  // Re-run auto-hide logic after toggling scene break (fire-and-forget async import)
+  void (async () => {
+    try {
+      const mod = await import('./autoHide.js');
+      mod.auto_hide_messages_by_command();
+    } catch (err) {
+      console.error('[AutoSummarize] Failed to load autoHide module:', err);
+    }
+  })();
 
   // Update navigator bar if present
-  if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
+  if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
 }
 
 // --- Helper functions for versioned scene summaries ---
@@ -210,6 +216,7 @@ sceneCount )
 }
 
 // Helper: Handle generate summary button click
+// eslint-disable-next-line max-params -- SillyTavern API dependency injection + UI context
 async function handleGenerateSummaryButtonClick(
 index ,
 chat ,
@@ -223,7 +230,7 @@ saveChatDebounced )
   log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
 
   // Use the queue-enabled generateSceneSummary function
-  await generateSceneSummary(index, get_message_div, getContext, get_data, set_data, saveChatDebounced, false);
+  await generateSceneSummary({ index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue: false });
 }
 
 // Helper: Initialize versioned summaries for backward compatibility
@@ -247,8 +254,8 @@ saveChatDebounced )
   }
 
   // Clamp currentIdx to valid range
-  if (currentIdx < 0) currentIdx = 0;
-  if (currentIdx >= versions.length) currentIdx = versions.length - 1;
+  if (currentIdx < 0) {currentIdx = 0;}
+  if (currentIdx >= versions.length) {currentIdx = versions.length - 1;}
 
   return { versions, currentIdx };
 }
@@ -279,17 +286,9 @@ get_data  // Returns any type - legitimate
 }
 
 // Helper: Build scene break HTML element
-function buildSceneBreakElement(
-index ,
-startIdx ,
-sceneMessages ,
-sceneName ,
-sceneSummary ,
-isVisible ,
-isCollapsed ,
-versions ,
-currentIdx )
-{// Returns jQuery object - any is appropriate
+function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - any is appropriate
+  const { startIdx, sceneMessages, sceneName, sceneSummary, isVisible, isCollapsed, versions, currentIdx } = sceneData;
+
   const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-testid="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
   const previewIcon = `<i class="fa-solid fa-eye scene-preview-summary" data-testid="scene-preview-summary" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
   const lorebookIcon = createSceneBreakLorebookIcon(index);
@@ -323,6 +322,7 @@ currentIdx )
     `);
 }
 
+/* eslint-disable max-params -- UI rendering: 6 ST functions required */
 export function renderSceneBreak(
 index ,
 get_message_div , // Returns jQuery object - any is appropriate
@@ -332,7 +332,7 @@ set_data , // value can be any type - legitimate
 saveChatDebounced )
 {
   const $msgDiv = get_message_div(index);
-  if (!$msgDiv?.length) return;
+  if (!$msgDiv?.length) {return;}
 
   $msgDiv.find(`.${SCENE_BREAK_DIV_CLASS}`).remove();
 
@@ -343,7 +343,7 @@ saveChatDebounced )
   const visible = get_data(message, SCENE_BREAK_VISIBLE_KEY);
   const isVisible = visible === undefined ? true : visible;
 
-  if (!isSet) return;
+  if (!isSet) {return;}
 
   // Initialize versioned summaries
   const { versions, currentIdx } = initializeSceneSummaryVersions(message, get_data, set_data, saveChatDebounced);
@@ -360,7 +360,17 @@ saveChatDebounced )
   const { startIdx, sceneMessages } = findSceneBoundaries(chat, index, get_data);
 
   // Build scene break element
-  const $sceneBreak = buildSceneBreakElement(index, startIdx, sceneMessages, sceneName, sceneSummary, isVisible, isCollapsed, versions, currentIdx);
+  const sceneData = {
+    startIdx,
+    sceneMessages,
+    sceneName,
+    sceneSummary,
+    isVisible,
+    isCollapsed,
+    versions,
+    currentIdx,
+  };
+  const $sceneBreak = buildSceneBreakElement(index, sceneData);
 
   // === Insert after the summary box, or after message text if no summary box exists ===
   const $summaryBox = $msgDiv.find(selectorsExtension.memory.text);
@@ -447,12 +457,11 @@ saveChatDebounced )
   $sceneBreak.find(selectorsExtension.sceneBreak.previewSummary).off('click').on('click', function (e) {
     e.stopPropagation();
     const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
-    const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
-    const ctx = getContext();
+    const [rangeStartIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
 
     const messageTypes = get_settings('scene_summary_message_types') || "both";
     const sceneObjects = [];
-    for (let i = startIdx; i <= endIdx; i++) {
+    for (let i = rangeStartIdx; i <= endIdx; i++) {
       const msg = chat[i];
       if (msg.mes && msg.mes.trim() !== "") {
         // Filter by message type
@@ -503,11 +512,11 @@ saveChatDebounced )
   });
   $sceneBreak.find(selectorsExtension.sceneBreak.rollforwardSummary).off('click').on('click', function (e) {
     e.stopPropagation();
-    const versions = getSceneSummaryVersions(message, get_data);
+    const currentVersions = getSceneSummaryVersions(message, get_data);
     const idx = getCurrentSceneSummaryIndex(message, get_data);
-    if (idx < versions.length - 1) {
+    if (idx < currentVersions.length - 1) {
       setCurrentSceneSummaryIndex(message, set_data, idx + 1);
-      const summary = versions[idx + 1];
+      const summary = currentVersions[idx + 1];
       set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
       set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary); // <-- ensure top-level property is set
       set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
@@ -520,8 +529,8 @@ saveChatDebounced )
   // --- Regenerate running summary from this scene onwards ---
   $sceneBreak.find(selectorsExtension.sceneBreak.regenerateRunning).off('click').on('click', async function (e) {
     e.stopPropagation();
-    const sceneSummary = get_data(message, SCENE_SUMMARY_MEMORY_KEY);
-    if (!sceneSummary) {
+    const loadedSceneSummary = get_data(message, SCENE_SUMMARY_MEMORY_KEY);
+    if (!loadedSceneSummary) {
       alert('This scene has no summary yet. Generate a scene summary first.');
       return;
     }
@@ -560,6 +569,7 @@ saveChatDebounced )
     $(this).removeClass(SCENE_BREAK_SELECTED_CLASS);
   });
 }
+/* eslint-enable max-params -- Re-enable rule disabled for jQuery UI binding function */
 
 export function collectSceneContent(
 startIdx ,
@@ -586,7 +596,7 @@ set_data , // value can be any type - legitimate
 saveChatDebounced )
 {
   const ctx = getContext();
-  if (!ctx?.chat) return;
+  if (!ctx?.chat) {return;}
   for (let i = 0; i < ctx.chat.length; i++) {
     const message = ctx.chat[i];
     if (get_data(message, SCENE_BREAK_KEY)) {
@@ -604,18 +614,12 @@ saveChatDebounced )
     }
   }
   // Update navigator bar if present
-  if (window.renderSceneNavigatorBar) window.renderSceneNavigatorBar();
+  if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
 }
 
-export async function autoGenerateSceneNameFromSummary(
-summary ,
-message ,
-get_data , // Returns any type - legitimate
-set_data , // value can be any type - legitimate
-ctx ,
-_savedProfiles , // any is appropriate for PresetManager
-index  // Message index for context
-) {
+
+export async function autoGenerateSceneNameFromSummary(config) {
+  const { summary, message, get_data, set_data, ctx, index } = config;
   const existingSceneName = get_data(message, SCENE_BREAK_NAME_KEY);
 
   // Only generate if no name already exists
@@ -678,7 +682,7 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
 
     // Limit to ~50 characters max
     if (cleanSceneName.length > SCENE_BREAK_CHARS) {
-      cleanSceneName = cleanSceneName.substring(0, SCENE_BREAK_MIN_CHARS) + '...';
+      cleanSceneName = cleanSceneName.slice(0, SCENE_BREAK_MIN_CHARS) + '...';
     }
 
     debug(SUBSYSTEM.SCENE, "Generated scene name:", cleanSceneName);
@@ -757,7 +761,7 @@ ctx )
   const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
   let lorebookTypesMacro = formatEntityTypeListForPrompt(typeDefinitions);
   if (!lorebookTypesMacro) {
-    lorebookTypesMacro = formatEntityTypeListForPrompt(getConfiguredEntityTypeDefinitions(undefined));
+    lorebookTypesMacro = formatEntityTypeListForPrompt(getConfiguredEntityTypeDefinitions());
   }
 
   // Format scene messages with speaker labels to prevent substituteParamsExtended from stripping them
@@ -794,15 +798,10 @@ ctx )
 // Helper: Extract and validate JSON from AI response (REMOVED - now uses centralized helper in utils.js)
 
 // Helper: Generate summary with error handling
-async function executeSceneSummaryGeneration(
-prompt ,
-prefill ,
-ctx ,
-startIdx ,
-endIdx ,
-include_preset_prompts = false ,
-preset_name = null )
-{
+async function executeSceneSummaryGeneration(llmConfig, range, ctx) {
+  const { prompt, prefill, include_preset_prompts = false, preset_name = null } = llmConfig;
+  const { startIdx, endIdx } = range;
+
   let summary = "";
   try {
     ctx.deactivateSendButtons();
@@ -849,14 +848,9 @@ preset_name = null )
 }
 
 // Helper: Save scene summary and queue lorebook entries
-async function saveSceneSummary(
-message ,
-summary ,
-get_data , // Returns any type - legitimate
-set_data , // value can be any type - legitimate
-saveChatDebounced ,
-messageIndex )
-{
+
+async function saveSceneSummary(config) {
+  const { message, summary, get_data, set_data, saveChatDebounced, messageIndex } = config;
   const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
   updatedVersions.push(summary);
   setSceneSummaryVersions(message, set_data, updatedVersions);
@@ -920,7 +914,7 @@ messageIndex )
       for (const entry of uniqueEntries) {
         // Sequential execution required: entries must be queued in order
         debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Calling queueProcessLorebookEntry for: ${entry.name || entry.comment}`);
-        // eslint-disable-next-line no-await-in-loop
+        // eslint-disable-next-line no-await-in-loop -- Lorebook entries must be queued sequentially to maintain processing order
         const opId = await queueProcessLorebookEntry(entry, messageIndex, summaryHash);
         if (opId) {
           debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✓ Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);
@@ -938,16 +932,9 @@ messageIndex )
   }
 }
 
-export async function generateSceneSummary(
-index ,
-get_message_div , // Returns jQuery object - any is appropriate
-getContext ,
-get_data , // Returns any type - legitimate
-set_data , // value can be any type - legitimate
-saveChatDebounced ,
-skipQueue  = false,
-signal  = null) // AbortSignal to check for cancellation
-{
+
+export async function generateSceneSummary(config) {
+  const { index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue = false, signal = null } = config;
   const ctx = getContext();
   const chat = ctx.chat;
   const message = chat[index];
@@ -984,8 +971,11 @@ signal  = null) // AbortSignal to check for cancellation
   const summary = await withConnectionSettings(
     profile_name,
     preset_name,
+    // eslint-disable-next-line require-await -- Async wrapper required by withConnectionSettings signature
     async () => {
-      return await executeSceneSummaryGeneration(prompt, prefill, ctx, startIdx, endIdx, include_preset_prompts, preset_name);
+      const llmConfig = { prompt, prefill, include_preset_prompts, preset_name };
+      const range = { startIdx, endIdx };
+      return executeSceneSummaryGeneration(llmConfig, range, ctx);
     }
   );
 
@@ -996,7 +986,7 @@ signal  = null) // AbortSignal to check for cancellation
   }
 
   // Save and render
-  await saveSceneSummary(message, summary, get_data, set_data, saveChatDebounced, index);
+  await saveSceneSummary({ message, summary, get_data, set_data, saveChatDebounced, messageIndex: index });
 
   // Mark all messages in this scene as checked to prevent auto-detection from splitting the scene
   const markedCount = setCheckedFlagsInRange(startIdx, endIdx);

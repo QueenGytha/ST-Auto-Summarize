@@ -61,7 +61,7 @@ const CATEGORY_CONFIG = {
 };
 
 function extractCategoryPrefix(entryName ) {
-  if (!entryName) return null;
+  if (!entryName) {return null;}
 
   // Check for each category prefix
   for (const prefix of Object.keys(CATEGORY_CONFIG)) {
@@ -216,13 +216,13 @@ export async function removeCategoryIndexes(lorebookName ) {
     debug(`Removing all category indexes from: ${lorebookName}`);
 
     const entries = await getLorebookEntries(lorebookName);
-    if (!entries) return true;
+    if (!entries) {return true;}
 
     let removedCount = 0;
     for (const entry of entries) {
       if (entry.comment && entry.comment.startsWith('__index_')) {
         // Sequential execution required: index entries must be deleted in order
-        // eslint-disable-next-line no-await-in-loop
+        // eslint-disable-next-line no-await-in-loop -- Index entries must be deleted sequentially to avoid lorebook corruption
         await deleteLorebookEntry(lorebookName, entry.uid, true);
         removedCount++;
       }

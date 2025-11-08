@@ -1,5 +1,5 @@
-/* eslint-env node */
-/* global process */
+/* eslint-env node -- Playwright config runs in Node.js environment */
+/* global process -- Node.js global for environment variables */
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({

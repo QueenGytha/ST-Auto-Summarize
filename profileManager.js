@@ -42,11 +42,12 @@ function copy_settings(profile  = null) {
 }
 function detect_settings_difference(profile  = null) {
   // check if the current settings differ from the given profile
-  if (!profile) {// if none provided, compare to the current profile
-    profile = get_settings('profile');
+  let activeProfile = profile;
+  if (!activeProfile) {// if none provided, compare to the current profile
+    activeProfile = get_settings('profile');
   }
   const current_settings = copy_settings();
-  const profile_settings = copy_settings(profile);
+  const profile_settings = copy_settings(activeProfile);
 
   let different = false;
   for (const key of Object.keys(profile_settings)) {
@@ -59,14 +60,15 @@ function detect_settings_difference(profile  = null) {
 }
 function save_profile(profile  = null) {
   // Save the current settings to the given profile
-  if (!profile) {// if none provided, save to the current profile
-    profile = get_settings('profile');
+  let targetProfile = profile;
+  if (!targetProfile) {// if none provided, save to the current profile
+    targetProfile = get_settings('profile');
   }
-  log("Saving Configuration Profile: " + profile);
+  log("Saving Configuration Profile: " + targetProfile);
 
   // save the current settings to the profile
   const profiles = get_settings('profiles');
-  profiles[profile] = copy_settings();
+  profiles[targetProfile] = copy_settings();
   set_settings('profiles', profiles);
 
   // check preset validity
@@ -75,11 +77,12 @@ function save_profile(profile  = null) {
 function load_profile(profile  = null) {
   // load a given settings profile
   const current_profile = get_settings('profile');
-  if (!profile) {// if none provided, reload the current profile
-    profile = current_profile;
+  let targetProfile = profile;
+  if (!targetProfile) {// if none provided, reload the current profile
+    targetProfile = current_profile;
   }
 
-  const settings = copy_settings(profile); // copy the settings from the profile
+  const settings = copy_settings(targetProfile); // copy the settings from the profile
   if (!settings) {
     error("Profile not found: " + profile);
     return;
@@ -95,11 +98,12 @@ function load_profile(profile  = null) {
 }
 function export_profile(profile  = null) {
   // export a settings profile
-  if (!profile) {// if none provided, reload the current profile
-    profile = get_settings('profile');
+  let targetProfile = profile;
+  if (!targetProfile) {// if none provided, reload the current profile
+    targetProfile = get_settings('profile');
   }
 
-  const settings = copy_settings(profile); // copy the settings from the profile
+  const settings = copy_settings(targetProfile); // copy the settings from the profile
   if (!settings) {
     error("Profile not found: " + profile);
     return;
@@ -241,14 +245,15 @@ function toggle_chat_profile() {
 }
 function get_character_profile(key  = null) {
   // Get the profile for a given character
-  if (!key) {// if none given, assume the current character
-    key = get_current_character_identifier();
+  let characterKey = key;
+  if (!characterKey) {// if none given, assume the current character
+    characterKey = get_current_character_identifier();
   }
   const character_profiles = get_settings('character_profiles');
   if (!character_profiles || typeof character_profiles !== 'object') {
     return null;
   }
-  return character_profiles[key];
+  return character_profiles[characterKey];
 }
 function set_character_profile(key , profile  = null) {
   // Set the profile for a given character (or unset it if no profile provided)
@@ -267,11 +272,12 @@ function set_character_profile(key , profile  = null) {
 }
 function get_chat_profile(id  = null) {
   // Get the profile for a given chat
-  if (!id) {// if none given, assume the current character
-    id = get_current_chat_identifier();
+  let chatId = id;
+  if (!chatId) {// if none given, assume the current character
+    chatId = get_current_chat_identifier();
   }
   const profiles = get_settings('chat_profiles');
-  return profiles[id];
+  return profiles[chatId];
 }
 function set_chat_profile(id , profile  = null) {
   // Set the profile for a given chat (or unset it if no profile provided)

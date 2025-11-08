@@ -48,9 +48,9 @@ export async function loadPresetPrompts(presetName) {
         const messages = preset.prompts
             .filter(p => {
                 // Skip if explicitly disabled
-                if (p.enabled === false) return false;
+                if (p.enabled === false) {return false;}
                 // Must have content
-                if (!p.content || p.content.trim() === '') return false;
+                if (!p.content || p.content.trim() === '') {return false;}
                 return true;
             })
             .map(p => ({

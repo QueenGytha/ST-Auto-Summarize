@@ -66,18 +66,19 @@ function update_message_visuals(i , style  = true, text  = null) {
   let style_class = style ? get_summary_style_class(message) : "";
 
   // if no text is provided, use the memory text
-  if (!text) {
-    text = ""; // default text when no memory
+  let displayText = text;
+  if (!displayText) {
+    displayText = ""; // default text when no memory
     if (memory) {
-      text = clean_string_for_title(`Memory: ${memory}`);
+      displayText = clean_string_for_title(`Memory: ${memory}`);
     } else if (error_message) {
       style_class = ''; // clear the style class if there's an error
-      text = `Error: ${error_message}`;
+      displayText = `Error: ${error_message}`;
     }
   }
 
   // create the div element for the memory and add it to the message div
-  const memory_div = $(`<div class="${summary_div_class} ${css_message_div}"><span class="${style_class}">${text}</span></div>`);
+  const memory_div = $(`<div class="${summary_div_class} ${css_message_div}"><span class="${style_class}">${displayText}</span></div>`);
   if (reasoning) {
     reasoning = clean_string_for_title(reasoning);
     memory_div.prepend($(`<span class="${summary_reasoning_class}" title="${reasoning}">[Reasoning] </span>`));

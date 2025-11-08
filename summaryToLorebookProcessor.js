@@ -94,7 +94,7 @@ function getSummaryProcessingSetting(key , defaultValue  = null) {
   }
 }
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line no-unused-vars -- Reserved for future use in UI settings
 function setSummaryProcessingSetting(key , value ) {
   try {
     // ALL summary processing settings are per-profile
@@ -209,7 +209,7 @@ export function normalizeEntryData(entry ) {
     const colonIndex = content.indexOf(':');
     if (colonIndex > 0) {
       // Replace everything between [ and : with the comment (type-EntityName)
-      content = `[${comment}${content.substring(colonIndex)}`;
+      content = `[${comment}${content.slice(colonIndex)}`;
     }
   }
 
@@ -243,8 +243,8 @@ export function ensureRegistryState() {
   const autoLorebooks  = metadata.auto_lorebooks;
   const registry = autoLorebooks.registry;
   if (registry && typeof registry === 'object') {
-    if (!registry.index || typeof registry.index !== 'object') registry.index = {};
-    if (!registry.counters || typeof registry.counters !== 'object') registry.counters = {};
+    if (!registry.index || typeof registry.index !== 'object') {registry.index = {};}
+    if (!registry.counters || typeof registry.counters !== 'object') {registry.counters = {};}
     return registry;
   }
   const newState = { index: {}, counters: {} };
@@ -254,7 +254,7 @@ export function ensureRegistryState() {
 
 function buildTypePrefix(type ) {
   const base = sanitizeEntityTypeName(type) || 'type';
-  if (base.length >= MIN_ENTITY_SECTIONS) return base.slice(0, MIN_ENTITY_SECTIONS);
+  if (base.length >= MIN_ENTITY_SECTIONS) {return base.slice(0, MIN_ENTITY_SECTIONS);}
   return base.padEnd(MIN_ENTITY_SECTIONS, 'x');
 }
 
@@ -279,51 +279,51 @@ export function updateRegistryRecord(state , id , updates ) {
     state.index[id] = {};
   }
   const record = state.index[id];
-  if (updates.uid !== undefined) record.uid = updates.uid;
-  if (updates.type) record.type = updates.type;
-  if (updates.name !== undefined) record.name = updates.name;
-  if (updates.comment !== undefined) record.comment = updates.comment;
-  if (updates.synopsis !== undefined) record.synopsis = updates.synopsis;
-  if (updates.aliases !== undefined) record.aliases = ensureStringArray(updates.aliases);
+  if (updates.uid !== undefined) {record.uid = updates.uid;}
+  if (updates.type) {record.type = updates.type;}
+  if (updates.name !== undefined) {record.name = updates.name;}
+  if (updates.comment !== undefined) {record.comment = updates.comment;}
+  if (updates.synopsis !== undefined) {record.synopsis = updates.synopsis;}
+  if (updates.aliases !== undefined) {record.aliases = ensureStringArray(updates.aliases);}
 }
 
 export function buildRegistryListing(state ) {
   const grouped  = {};
-  Object.entries(state.index || {}).forEach(([id, record]) => {
-    if (!record) return;
+  for (const [id, record] of Object.entries(state.index || {})) {
+    if (!record) {continue;}
     const type = record.type || 'unknown';
-    if (!grouped[type]) grouped[type] = [];
+    if (!grouped[type]) {grouped[type] = [];}
     grouped[type].push({ id, ...record });
-  });
+  }
   const types = Object.keys(grouped);
   if (types.length === 0) {
     return 'No registry entries available yet.';
   }
   const sections = [];
-  types.sort().forEach((type) => {
+  for (const type of types.sort()) {
     sections.push(`[Type: ${type}]`);
     const records = grouped[type] || [];
-    records.sort((a, b) => {
+    for (const [index, record] of records.sort((a, b) => {
       const nameA = (a.name || a.comment || '').toLowerCase();
       const nameB = (b.name || b.comment || '').toLowerCase();
       return nameA.localeCompare(nameB);
-    }).forEach((record, index) => {
+    }).entries()) {
       const name = record.name || record.comment || 'Unknown';
       const aliases = ensureStringArray(record.aliases);
       const aliasText = aliases.length > 0 ? aliases.join('; ') : '—';
       const synopsis = record.synopsis || '—';
       sections.push(`${index + 1}. id: ${record.id} | name: ${name} | aliases: ${aliasText} | synopsis: ${synopsis}`);
-    });
+    }
     sections.push('');
-  });
+  }
   return sections.join('\n').trim();
 }
 
 export function buildRegistryItemsForType(state , type ) {
   const items = [];
-  Object.entries(state.index || {}).forEach(([id, record]) => {
-    if (!record) return;
-    if ((record.type || 'unknown') !== type) return;
+  for (const [id, record] of Object.entries(state.index || {})) {
+    if (!record) {continue;}
+    if ((record.type || 'unknown') !== type) {continue;}
     items.push({
       id,
       name: record.name || '',
@@ -331,18 +331,18 @@ export function buildRegistryItemsForType(state , type ) {
       aliases: ensureStringArray(record.aliases),
       synopsis: record.synopsis || ''
     });
-  });
+  }
   items.sort((a, b) => (a.name || a.comment || '').localeCompare(b.name || b.comment || ''));
   return items;
 }
 
 export function buildCandidateEntriesData(candidateIds , registryState , existingEntriesMap ) {
   const data = [];
-  candidateIds.forEach((id) => {
+  for (const id of candidateIds) {
     const record = registryState.index?.[id];
-    if (!record) return;
+    if (!record) {continue;}
     const entry = existingEntriesMap.get(String(record.uid));
-    if (!entry) return;
+    if (!entry) {continue;}
     data.push({
       id,
       uid: record.uid,
@@ -353,7 +353,7 @@ export function buildCandidateEntriesData(candidateIds , registryState , existin
       aliases: ensureStringArray(record.aliases),
       synopsis: record.synopsis || ''
     });
-  });
+  }
   return data;
 }
 
@@ -369,15 +369,9 @@ function buildNewEntryPayload(entry ) {
   };
 }
 
-async function runModelWithSettings(
-prompt ,
-prefill ,
-connectionProfile ,
-completionPreset ,
-label ,
-entryComment , // Optional entry comment for context suffix
-include_preset_prompts = false
-) {
+async function runModelWithSettings(config) {
+  const { prompt, prefill, connectionProfile, completionPreset, include_preset_prompts = false, label, entryComment } = config;
+
   try {
     debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] Called with label:', label);
     debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] withConnectionSettings:', withConnectionSettings);
@@ -387,7 +381,7 @@ include_preset_prompts = false
     if (!withConnectionSettings || typeof withConnectionSettings !== 'function') {
       const errorMsg = 'withConnectionSettings is not available. Module may not be initialized properly.';
       console.error('[runModelWithSettings] ERROR:', errorMsg);
-      console.error('[runModelWithSettings] Stack trace:', new Error().stack);
+      console.error('[runModelWithSettings] Stack trace:', new Error('Stack trace for debugging withConnectionSettings availability').stack);
       error?.(errorMsg, {
         typeofWithConnectionSettings: typeof withConnectionSettings,
         initialized: !!withConnectionSettings
@@ -400,7 +394,7 @@ include_preset_prompts = false
     const response = await withConnectionSettings(
       connectionProfile,
       completionPreset,
-      // eslint-disable-next-line complexity
+      // eslint-disable-next-line complexity -- LLM call with multiple conditional branches for prompt construction
       async () => {
         // Set operation context for ST_METADATA
         const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
@@ -450,7 +444,8 @@ include_preset_prompts = false
                 { role: 'user', content: prompt }
               ];
 
-              return await generateRaw({
+              // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
+              return generateRaw({
                 prompt: prompt_input,
                 instructOverride: false,  // Let preset prompts control formatting
                 quietToLoud: false,
@@ -459,7 +454,8 @@ include_preset_prompts = false
             } else {
               console.warn('[runModelWithSettings] include_preset_prompts enabled but no preset prompts loaded, falling back to string format');
               // Fall back to string format
-              return await generateRaw({
+              // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
+              return generateRaw({
                 prompt: prompt,
                 instructOverride: false,
                 quietToLoud: false,
@@ -469,7 +465,8 @@ include_preset_prompts = false
           } else {
             debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] Using string format (include_preset_prompts not enabled or no preset)');
             // Current behavior - string prompt only
-            return await generateRaw({
+            // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
+            return generateRaw({
               prompt: prompt,
               instructOverride: false,
               quietToLoud: false,
@@ -497,7 +494,7 @@ include_preset_prompts = false
 }
 
 function sanitizeLorebookEntryLookupType(rawType ) {
-  if (!rawType || typeof rawType !== 'string') return '';
+  if (!rawType || typeof rawType !== 'string') {return '';}
   const normalized = normalizeEntityTypeDefinition(rawType);
   const parsed = parseEntityTypeDefinition(normalized);
   return parsed.name || sanitizeEntityTypeName(rawType);
@@ -531,15 +528,16 @@ settings )
   replace(/\{\{new_entry\}\}/g, JSON.stringify(payload, null, 2)).
   replace(/\{\{candidate_registry\}\}/g, registryListing);
 
-  const response = await runModelWithSettings(
+  const config = {
     prompt,
-    settings?.lorebook_entry_lookup_prefill || '',
-    settings?.lorebook_entry_lookup_connection_profile || '',
-    settings?.lorebook_entry_lookup_completion_preset || '',
-    'lorebook_entry_lookup',
-    normalizedEntry.comment, // Pass comment for context suffix
-    settings?.lorebook_entry_lookup_include_preset_prompts || false
-  );
+    prefill: settings?.lorebook_entry_lookup_prefill || '',
+    connectionProfile: settings?.lorebook_entry_lookup_connection_profile || '',
+    completionPreset: settings?.lorebook_entry_lookup_completion_preset || '',
+    include_preset_prompts: settings?.lorebook_entry_lookup_include_preset_prompts || false,
+    label: 'lorebook_entry_lookup',
+    entryComment: normalizedEntry.comment, // Pass comment for context suffix
+  };
+  const response = await runModelWithSettings(config);
 
   // Parse JSON using centralized helper (doesn't throw, uses try-catch internally)
   let parsed;
@@ -603,16 +601,18 @@ settings )
   replace(/\{\{candidate_entries\}\}/g, JSON.stringify(candidateEntries, null, 2));
 }
 
+// eslint-disable-next-line require-await -- Async function returns promise from runModelWithSettings
 async function executeLorebookEntryDeduplicateLLMCall(prompt , settings , entryComment ) {
-  return await runModelWithSettings(
+  const config = {
     prompt,
-    settings?.lorebook_entry_deduplicate_prefill || '',
-    settings?.lorebook_entry_deduplicate_connection_profile || '',
-    settings?.lorebook_entry_deduplicate_completion_preset || '',
-    'lorebookEntryDeduplicate',
+    prefill: settings?.lorebook_entry_deduplicate_prefill || '',
+    connectionProfile: settings?.lorebook_entry_deduplicate_connection_profile || '',
+    completionPreset: settings?.lorebook_entry_deduplicate_completion_preset || '',
+    include_preset_prompts: settings?.lorebook_entry_deduplicate_include_preset_prompts || false,
+    label: 'lorebookEntryDeduplicate',
     entryComment, // Pass comment for context suffix
-    settings?.lorebook_entry_deduplicate_include_preset_prompts || false
-  );
+  };
+  return runModelWithSettings(config);
 }
 
 async function parseLorebookEntryDeduplicateResponse(response , fallbackSynopsis ) {
@@ -665,7 +665,7 @@ settings )
     return { resolvedId: null, synopsis: lorebookEntryLookupSynopsis || '' };
   }
 
-  return await parseLorebookEntryDeduplicateResponse(response, lorebookEntryLookupSynopsis);
+  return parseLorebookEntryDeduplicateResponse(response, lorebookEntryLookupSynopsis);
 }
 
 function resolveEntryType(
@@ -681,7 +681,7 @@ entityTypeDefs )
   if (!typeDef && targetType) {
     const fallbackName = sanitizeEntityTypeName(targetType);
     typeDef = entityTypeMap.get(fallbackName);
-    if (typeDef) targetType = typeDef.name;
+    if (typeDef) {targetType = typeDef.name;}
   }
 
   // Use first available type as ultimate fallback
@@ -697,17 +697,12 @@ entityTypeDefs )
   return { targetType, typeDef };
 }
 
-async function buildCandidateListAndResolve(
-lorebookEntryLookup ,
-registryState ,
-existingEntriesMap ,
-normalizedEntry ,
-targetType ,
-settings )
-{
+async function buildCandidateListAndResolve(ctx) {
+  const { lorebookEntryLookup, registryState, existingEntriesMap, normalizedEntry, targetType, settings } = ctx;
+
   const candidateIdSet  = new Set();
-  lorebookEntryLookup.sameEntityIds.forEach((id) => candidateIdSet.add(String(id)));
-  lorebookEntryLookup.needsFullContextIds.forEach((id) => candidateIdSet.add(String(id)));
+  for (const id of lorebookEntryLookup.sameEntityIds) {candidateIdSet.add(String(id));}
+  for (const id of lorebookEntryLookup.needsFullContextIds) {candidateIdSet.add(String(id));}
   const candidateIds = Array.from(candidateIdSet).filter((id) => registryState.index?.[id]);
 
   let lorebookEntryDeduplicate = null;
@@ -752,15 +747,8 @@ registryState )
   return { resolvedId, previousType, finalSynopsis };
 }
 
-async function executeMergeWorkflow(
-resolvedId ,
-normalizedEntry ,
-targetType ,
-previousType ,
-finalSynopsis ,
-ctx )
-{
-  const { lorebookName, existingEntriesMap, registryState, useQueue, results, typesToUpdate } = ctx;
+async function executeMergeWorkflow(config) {
+  const { resolvedId, normalizedEntry, targetType, previousType, finalSynopsis, lorebookName, existingEntriesMap, registryState, useQueue, results, typesToUpdate, ctx } = config;
 
   const record = registryState.index?.[resolvedId];
   const existingEntry = record ? existingEntriesMap.get(String(record.uid)) : null;
@@ -863,14 +851,15 @@ async function handleLorebookEntry(normalizedEntry , ctx ) {
 
   const { targetType } = resolveEntryType(normalizedEntry, lorebookEntryLookup, entityTypeMap, entityTypeDefs);
 
-  const { candidateIds, lorebookEntryDeduplicate } = await buildCandidateListAndResolve(
+  const lookupCtx = {
     lorebookEntryLookup,
     registryState,
     existingEntriesMap,
     normalizedEntry,
     targetType,
-    settings
-  );
+    settings,
+  };
+  const { candidateIds, lorebookEntryDeduplicate } = await buildCandidateListAndResolve(lookupCtx);
 
   const { resolvedId, previousType, finalSynopsis } = applyFallbackAndValidateIdentity(
     lorebookEntryDeduplicate,
@@ -880,14 +869,15 @@ async function handleLorebookEntry(normalizedEntry , ctx ) {
   );
 
   if (resolvedId) {
-    const merged = await executeMergeWorkflow(
+    const merged = await executeMergeWorkflow({
       resolvedId,
       normalizedEntry,
       targetType,
       previousType,
       finalSynopsis,
-      ctx
-    );
+      ctx,
+      ...ctx
+    });
     if (merged) {
       return;
     }
@@ -937,11 +927,11 @@ async function loadSummaryContext(config ) {
 
   const existingEntries = existingEntriesRaw.filter((entry) => !isRegistryEntry(entry));
   const existingEntriesMap  = new Map();
-  existingEntries.forEach((entry) => {
+  for (const entry of existingEntries) {
     if (entry && entry.uid !== undefined) {
       existingEntriesMap.set(String(entry.uid), entry);
     }
-  });
+  }
 
   const registryState = ensureRegistryState();
 
@@ -997,7 +987,7 @@ async function processBatchEntries(entries , context , config ) {
       normalizedEntry.type = fallback || config.entityTypeDefs[0]?.name || 'character';
     }
     // Sequential execution required: lorebook entries must be processed in order
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- Lorebook entries must be processed sequentially to maintain state consistency
     await handleLorebookEntry(normalizedEntry, context);
   }
 }
@@ -1085,7 +1075,7 @@ async function finalizeRegistryUpdates(context ) {
     for (const type of typesToUpdate) {
       const items = buildRegistryItemsForType(registryState, type);
       // Sequential execution required: registry entries must update in order
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- Registry entries must update sequentially to avoid race conditions
       await updateRegistryEntryContent(lorebookName, type, items);
     }
   }
@@ -1116,7 +1106,7 @@ export async function processSummariesToLorebook(summaries , options  = {}) {
 
     for (const summary of summaries) {
       // Sequential execution required: summaries must be processed in order
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- Summaries must be processed sequentially to maintain message order
       const result = await processSummaryToLorebook(summary, options);
 
       if (result.skipped) {

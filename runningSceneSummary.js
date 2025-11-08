@@ -38,12 +38,13 @@ function get_current_running_summary_version() {
 
 function get_running_summary(version  = null) {
   const storage = get_running_summary_storage();
-  if (version === null) {
-    version = storage.current_version;
+  let targetVersion = version;
+  if (targetVersion === null) {
+    targetVersion = storage.current_version;
   }
 
   const versions = storage.versions || [];
-  return versions.find((v) => v.version === version) || null;
+  return versions.find((v) => v.version === targetVersion) || null;
 }
 
 function get_current_running_summary_content() {
@@ -56,7 +57,7 @@ function set_current_running_summary_version(version ) {
   const versions = storage.versions || [];
 
   // Verify version exists
-  if (!versions.find((v) => v.version === version)) {
+  if (!versions.some((v) => v.version === version)) {
     error(SUBSYSTEM.RUNNING, `Cannot set version ${version} as current - version not found`);
     return;
   }
@@ -187,12 +188,8 @@ function extractSummaryText(scene_summary ) {
   try {
     const parsed = JSON.parse(json_to_parse);
     if (parsed && typeof parsed === 'object') {
-      if (parsed.summary) {
-        summary_text = parsed.summary;
-      } else {
-        // Valid JSON but no 'summary' property - use empty string
-        summary_text = "";
-      }
+      // Valid JSON but no 'summary' property - use empty string
+      summary_text = parsed.summary || "";
     }
   } catch {
 
@@ -423,7 +420,7 @@ async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index
   // Execute with connection profile/preset switching
   const { withConnectionSettings } = await import('./connectionSettingsManager.js');
 
-  return await withConnectionSettings(
+  return withConnectionSettings(
     running_profile,
     running_preset,
     async () => {
@@ -504,7 +501,7 @@ async function combine_scene_with_running_summary(scene_index ) {
 }
 
 async function auto_generate_running_summary(scene_index  = null) {
-  if (!get_settings('running_scene_summary_auto_generate')) return;
+  if (!get_settings('running_scene_summary_auto_generate')) {return;}
 
   debug(SUBSYSTEM.RUNNING, 'Auto-generating running scene summary for scene index:', scene_index);
 

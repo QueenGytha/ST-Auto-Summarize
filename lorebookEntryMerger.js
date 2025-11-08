@@ -80,7 +80,7 @@ function createMergePrompt(existingContent , newContent , entryName  = '') {
   const prefill = getSummaryProcessingSetting('merge_prefill') || '';
 
   // DEBUG: Log what template we got
-  debug('Merge prompt template first 300 chars:', template.substring(0, DEBUG_OUTPUT_LONG_LENGTH));
+  debug('Merge prompt template first 300 chars:', template.slice(0, DEBUG_OUTPUT_LONG_LENGTH));
   debug('Entry name being passed:', entryName);
 
   const prompt = template.
@@ -98,7 +98,7 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
     const { prompt, prefill } = createMergePrompt(existingContent, newContent, entryName);
 
     debug('Calling AI for entry merge...');
-    debug('Prompt:', prompt.substring(0, DEBUG_OUTPUT_MEDIUM_LENGTH) + '...');
+    debug('Prompt:', prompt.slice(0, DEBUG_OUTPUT_MEDIUM_LENGTH) + '...');
 
     // Get include_preset_prompts setting
     const include_preset_prompts = getSummaryProcessingSetting('merge_include_preset_prompts', false);
@@ -125,7 +125,7 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
       response = await withConnectionSettings(
         connectionProfile,
         effectivePresetName,
-        // eslint-disable-next-line complexity
+        // eslint-disable-next-line complexity -- Prompt construction with multiple conditional branches inherently complex
         async () => {
           let prompt_input;
 
@@ -155,7 +155,8 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
                 { role: 'user', content: prompt }
               ];
 
-              return await generateRaw({
+              // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
+              return generateRaw({
                 prompt: prompt_input,
                 instructOverride: false,
                 quietToLoud: false,
@@ -164,7 +165,8 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
             } else {
               console.warn('[callAIForMerge] include_preset_prompts enabled but no preset prompts loaded, falling back to string format');
               // Fall back to string format
-              return await generateRaw({
+              // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
+              return generateRaw({
                 prompt: prompt,
                 instructOverride: false,
                 quietToLoud: false,
@@ -174,7 +176,8 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
           } else {
             debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] Using string format (include_preset_prompts not enabled or no preset)');
             // Current behavior - string prompt only
-            return await generateRaw({
+            // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
+            return generateRaw({
               prompt: prompt,
               instructOverride: false,
               quietToLoud: false,
@@ -259,8 +262,160 @@ export async function mergeLorebookEntry(lorebookName , existingEntry , newEntry
   }
 }
 
+/**
+ * Synchronizes PList-style content name: [oldName: ...] → [newName: ...]
+ * @param {string} content - Content to update
+ * @param {string} newComment - New canonical name
+ * @param {string} currentComment - Old name for logging
+ * @returns {string} Updated content
+ */
+function synchronizePListContentName(content, newComment, currentComment) {
+  const colonIndex = content.indexOf(':');
+  if (colonIndex <= 0) {
+    return content; // Early return - no colon found
+  }
+
+  debug(`Updated content prefix from [${currentComment}: to [${newComment}:`);
+  return `[${newComment}${content.slice(colonIndex)}`;
+}
+
+/**
+ * Synchronizes bullet-style content with Identity/Entity/Name line
+ * @param {string} content - Content to update
+ * @param {string} finalCanonicalName - Canonical name to use
+ * @param {RegExpMatchArray|null} typeMatch - Type prefix match result
+ * @param {string} currentComment - Current comment for logging
+ * @param {string} newComment - New comment for logging
+ * @returns {string} Updated content
+ */
+function synchronizeBulletContentName(content, finalCanonicalName, typeMatch, currentComment, newComment) {
+  const typeWord = (typeMatch && typeMatch[1]) ? String(typeMatch[1]) : '';
+  const typeLabel = typeWord ? typeWord.charAt(0).toUpperCase() + typeWord.slice(1) : '';
+  const lines = content.split('\n');
+  const identityIdx = lines.findIndex((l) => /^(\s*[-*]\s*)(Identity|Entity|Name)\s*:\s*/i.test(l));
+  const newIdentity = `- Identity: ${typeLabel ? typeLabel + ' — ' : ''}${finalCanonicalName}`;
+
+  if (identityIdx >= 0) {
+    // Update existing Identity line
+    lines[identityIdx] = newIdentity;
+    debug(`Updated Identity bullet for ${currentComment} -> ${newComment}`);
+    return lines.join('\n');
+  }
+
+  // Prepend new Identity line
+  debug(`Prepended Identity bullet for ${newComment}`);
+  return `${newIdentity}\n${content}`;
+}
+
+/**
+ * Merges key arrays with deduplication
+ * @param {Array} existingKeys - Current keys
+ * @param {Array} newKeys - New keys to add
+ * @returns {Array|null} Merged keys or null if no changes
+ */
+function mergeKeyArrays(existingKeys, newKeys) {
+  const existingArray = existingKeys || [];
+  const newArray = (newKeys || []).filter((k) => k && k.trim());
+
+  if (newArray.length === 0) {
+    return null; // No changes
+  }
+
+  // Combine and deduplicate
+  const mergedKeys = [...new Set([...existingArray, ...newArray])];
+
+  if (mergedKeys.length > existingArray.length) {
+    debug(`Merged keys: ${existingArray.length} existing + ${newArray.length} new = ${mergedKeys.length} total`);
+    return mergedKeys;
+  }
+
+  return null; // No changes
+}
+
+/**
+ * Merges secondary key arrays with deduplication
+ * @param {Array} existingSecondary - Current secondary keys
+ * @param {Array} newSecondary - New secondary keys to add
+ * @returns {Array|null} Merged secondary keys or null if no changes
+ */
+function mergeSecondaryKeyArrays(existingSecondary, newSecondary) {
+  const existingArray = existingSecondary || [];
+  const newArray = (newSecondary || []).filter((k) => k && k.trim());
+
+  if (newArray.length === 0) {
+    return null; // No changes
+  }
+
+  const mergedSecondary = [...new Set([...existingArray, ...newArray])];
+
+  if (mergedSecondary.length > existingArray.length) {
+    return mergedSecondary;
+  }
+
+  return null; // No changes
+}
+
+/**
+ * Builds name resolution updates from AI merge result
+ * @param {Object} mergeResult - AI merge result with canonicalName
+ * @param {Object} existingEntry - Existing lorebook entry
+ * @param {Object} newEntryData - New entry data to merge
+ * @returns {Object} { updates, finalCanonicalName }
+ */
+function buildNameResolutionUpdates(mergeResult, existingEntry, newEntryData) {
+  const updates = {
+    content: mergeResult.mergedContent
+  };
+
+  let finalCanonicalName = null;
+
+  // Check if AI suggested a canonical name
+  if (!mergeResult.canonicalName || !mergeResult.canonicalName.trim()) {
+    return { updates, finalCanonicalName };
+  }
+
+  finalCanonicalName = mergeResult.canonicalName.trim();
+  const currentComment = existingEntry.comment || '';
+
+  // Extract the type prefix (e.g., "character-" from "character-amelia's sister")
+  const typeMatch = currentComment.match(/^([^-]+)-/);
+  const typePrefix = typeMatch ? typeMatch[1] + '-' : '';
+
+  // Build new comment with canonical name
+  const newComment = typePrefix + finalCanonicalName;
+
+  // Only update if the name actually changed
+  if (newComment === currentComment) {
+    return { updates, finalCanonicalName };
+  }
+
+  updates.comment = newComment;
+
+  // Synchronize content with new name
+  if (updates.content && typeof updates.content === 'string') {
+    const contentTrim = updates.content.trim();
+    // Use ternary for PList vs Bullet style selection
+    updates.content = contentTrim.startsWith('[')
+      ? synchronizePListContentName(updates.content, newComment, currentComment)
+      : synchronizeBulletContentName(updates.content, finalCanonicalName, typeMatch, currentComment, newComment);
+  }
+
+  // Extract old stub name (without type prefix) to add as keyword
+  const oldStubName = currentComment.replace(/^[^-]+-/, '').toLowerCase();
+
+  debug(`Name resolution: "${currentComment}" -> "${newComment}"`);
+  debug(`Adding old stub "${oldStubName}" to keywords`);
+
+  // Add old stub name to newEntryData.keys for later merging
+  const existingKeys = existingEntry.key || [];
+  if (oldStubName && !existingKeys.includes(oldStubName)) {
+    newEntryData.keys = [...(newEntryData.keys || []), oldStubName];
+  }
+
+  return { updates, finalCanonicalName };
+}
+
 // Business logic: merge entries with name resolution and key deduplication
-// eslint-disable-next-line complexity
 export async function executeMerge(lorebookName , existingEntry , newEntryData ) {
   // existingEntry, newEntryData, and return type are any - complex objects with various properties - legitimate use of any
   try {
@@ -279,74 +434,19 @@ export async function executeMerge(lorebookName , existingEntry , newEntryData )
       completionPreset
     );
 
-    // Prepare updates
-    const updates  = {
-      content: mergeResult.mergedContent
-    };
-
-    // Handle name resolution if AI suggested a canonical name
-    let finalCanonicalName = null;
-    if (mergeResult.canonicalName && mergeResult.canonicalName.trim()) {
-      finalCanonicalName = mergeResult.canonicalName.trim();
-      const currentComment = existingEntry.comment || '';
-
-      // Extract the type prefix (e.g., "character-" from "character-amelia's sister")
-      const typeMatch = currentComment.match(/^([^-]+)-/);
-      const typePrefix = typeMatch ? typeMatch[1] + '-' : '';
-
-      // Build new comment with canonical name
-      const newComment = typePrefix + finalCanonicalName;
-
-      // Only update if the name actually changed
-      if (newComment !== currentComment) {
-        updates.comment = newComment;
-
-        // Synchronize content prefix with new comment
-        // Replace [oldComment: with [newComment: in the PList content
-        if (updates.content && updates.content.trim().startsWith('[')) {
-          const colonIndex = updates.content.indexOf(':');
-          if (colonIndex > 0) {
-            // Replace the entity name prefix in content to match the new comment
-            updates.content = `[${newComment}${updates.content.substring(colonIndex)}`;
-            debug(`Updated content prefix from [${currentComment}: to [${newComment}:`);
-          }
-        }
-
-        // Extract old stub name (without type prefix) to add as keyword
-        const oldStubName = currentComment.replace(/^[^-]+-/, '').toLowerCase();
-
-        debug(`Name resolution: "${currentComment}" -> "${newComment}"`);
-        debug(`Adding old stub "${oldStubName}" to keywords`);
-
-        // Add old stub name to keys if not already present
-        const existingKeys = existingEntry.key || [];
-        if (oldStubName && !existingKeys.includes(oldStubName)) {
-          // We'll add it when merging keys below
-          newEntryData.keys = [...(newEntryData.keys || []), oldStubName];
-        }
-      }
-    }
+    // Handle name resolution using helper function
+    const { updates, finalCanonicalName } = buildNameResolutionUpdates(mergeResult, existingEntry, newEntryData);
 
     // Merge keys if new ones provided
-    if (newEntryData.keys && newEntryData.keys.length > 0) {
-      const existingKeys = existingEntry.key || [];
-      const newKeys = newEntryData.keys.filter((k) => k && k.trim());
-      // Combine and deduplicate
-      const mergedKeys = [...new Set([...existingKeys, ...newKeys])];
-      if (mergedKeys.length > existingKeys.length) {
-        updates.keys = mergedKeys;
-        debug(`Merged keys: ${existingKeys.length} existing + ${newKeys.length} new = ${mergedKeys.length} total`);
-      }
+    const mergedKeys = mergeKeyArrays(existingEntry.key, newEntryData.keys);
+    if (mergedKeys) {
+      updates.keys = mergedKeys;
     }
 
     // Merge secondary keys if new ones provided
-    if (newEntryData.secondaryKeys && newEntryData.secondaryKeys.length > 0) {
-      const existingSecondary = existingEntry.keysecondary || [];
-      const newSecondary = newEntryData.secondaryKeys.filter((k) => k && k.trim());
-      const mergedSecondary = [...new Set([...existingSecondary, ...newSecondary])];
-      if (mergedSecondary.length > existingSecondary.length) {
-        updates.secondaryKeys = mergedSecondary;
-      }
+    const mergedSecondary = mergeSecondaryKeyArrays(existingEntry.keysecondary, newEntryData.secondaryKeys);
+    if (mergedSecondary) {
+      updates.secondaryKeys = mergedSecondary;
     }
 
     // Apply the updates

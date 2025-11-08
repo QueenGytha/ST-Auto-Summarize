@@ -73,6 +73,7 @@ function get_message_div(index) {
   return $(`div[mesid="${index}"]`);
 }
 
+// eslint-disable-next-line max-lines-per-function -- Sequential operation handler registration for 10+ operation types (431 lines is acceptable for initialization)
 export function registerAllOperationHandlers() {
   // Validate summary
   registerOperationHandler(OperationType.VALIDATE_SUMMARY, async (operation) => {
@@ -164,16 +165,16 @@ export function registerAllOperationHandlers() {
       $summaryBox.val("Generating scene summary...");
     }
 
-    const summary = await generateSceneSummary(
+    const summary = await generateSceneSummary({
       index,
       get_message_div,
       getContext,
       get_data,
       set_data,
       saveChatDebounced,
-      true, // skipQueue = true when called from queue handler
+      skipQueue: true, // skipQueue = true when called from queue handler
       signal // Pass abort signal to check before side effects
-    );
+    });
 
     // Check if operation was cancelled during execution
     throwIfAborted(signal, 'GENERATE_SCENE_SUMMARY', 'LLM call');
@@ -225,15 +226,15 @@ export function registerAllOperationHandlers() {
     // Check if cancelled during delay
     throwIfAborted(signal, 'GENERATE_SCENE_NAME', 'rate limit delay');
 
-    const name = await autoGenerateSceneNameFromSummary(
+    const name = await autoGenerateSceneNameFromSummary({
       summary,
       message,
       get_data,
       set_data,
       ctx,
-      null, // savedProfiles not needed, function handles its own profile switching
+      _savedProfiles: null, // savedProfiles not needed, function handles its own profile switching
       index // Pass index for context suffix
-    );
+    });
 
     // Check if cancelled after LLM call (before return)
     throwIfAborted(signal, 'GENERATE_SCENE_NAME', 'LLM call');
@@ -292,7 +293,7 @@ export function registerAllOperationHandlers() {
 
   // LOREBOOK_ENTRY_LOOKUP - First stage of lorebook processing pipeline
   // Pipeline state machine: determines next stage based on AI results
-  // eslint-disable-next-line complexity
+  // eslint-disable-next-line complexity -- Pipeline state machine with multiple conditional branches based on AI results
   registerOperationHandler(OperationType.LOREBOOK_ENTRY_LOOKUP, async (operation) => {
     const { entryId, entryData, registryListing, typeList } = operation.params;
     const signal = getAbortSignal(operation);
@@ -397,7 +398,7 @@ export function registerAllOperationHandlers() {
 
   // RESOLVE_LOREBOOK_ENTRY - Second stage (conditional) - get full context for uncertain matches
   // Pipeline state machine: determines next stage based on AI results
-  // eslint-disable-next-line complexity
+  // eslint-disable-next-line complexity -- Pipeline state machine with multiple conditional branches based on AI results
   registerOperationHandler(OperationType.RESOLVE_LOREBOOK_ENTRY, async (operation) => {
     const { entryId } = operation.params;
     const signal = getAbortSignal(operation);
@@ -439,11 +440,11 @@ export function registerAllOperationHandlers() {
     // Get existing entries to build candidate data
     const existingEntriesRaw = await getLorebookEntries(lorebookName);
     const existingEntriesMap  = new Map();
-    existingEntriesRaw?.forEach((entry) => {
+    if (existingEntriesRaw) {for (const entry of existingEntriesRaw) {
       if (entry && entry.uid !== undefined) {
         existingEntriesMap.set(String(entry.uid), entry);
       }
-    });
+    }}
 
     const registryState = ensureRegistryState();
     const candidateIds = Array.from(new Set([
@@ -510,7 +511,7 @@ export function registerAllOperationHandlers() {
     return { success: true, lorebookEntryDeduplicateResult };
   });
 
-  async function prepareEntryContext(operation ) {
+  function prepareEntryContext(operation ) {
     const { entryId, action, resolvedId } = operation.params;
     const signal = getAbortSignal(operation);
     const entryData = getEntryData(entryId);
@@ -535,16 +536,16 @@ export function registerAllOperationHandlers() {
     return {
       entryId, action, resolvedId, entryData, lorebookName,
       registryState, finalType, finalSynopsis, signal,
-      getLorebookEntries, addLorebookEntry, mergeLorebookEntry,
-      updateRegistryRecord, assignEntityId, ensureStringArray
+      contextGetLorebookEntries: getLorebookEntries, contextAddLorebookEntry: addLorebookEntry, contextMergeLorebookEntry: mergeLorebookEntry,
+      contextUpdateRegistryRecord: updateRegistryRecord, contextAssignEntityId: assignEntityId, contextEnsureStringArray: ensureStringArray
     };
   }
 
   async function executeMergeAction(context ) {
     const { resolvedId, entryData, lorebookName, registryState, finalType, finalSynopsis,
-      getLorebookEntries, mergeLorebookEntry, updateRegistryRecord, ensureStringArray, entryId, signal } = context;
+      contextGetLorebookEntries, contextMergeLorebookEntry, contextUpdateRegistryRecord, contextEnsureStringArray, entryId, signal } = context;
 
-    const existingEntriesRaw = await getLorebookEntries(lorebookName);
+    const existingEntriesRaw = await contextGetLorebookEntries(lorebookName);
     const record = registryState.index?.[resolvedId];
     const existingEntry = record ? existingEntriesRaw?.find((e) => e.uid === record.uid) : null;
 
@@ -552,7 +553,7 @@ export function registerAllOperationHandlers() {
       return { success: false, fallbackToCreate: true };
     }
 
-    const mergeResult = await mergeLorebookEntry(lorebookName, existingEntry, entryData, { useQueue: false });
+    const mergeResult = await contextMergeLorebookEntry(lorebookName, existingEntry, entryData, { useQueue: false });
 
     // Check if cancelled after LLM call (before side effects)
     throwIfAborted(signal, 'CREATE_LOREBOOK_ENTRY (merge)', 'LLM call');
@@ -561,12 +562,12 @@ export function registerAllOperationHandlers() {
       throw new Error(mergeResult?.message || 'Merge failed');
     }
 
-    updateRegistryRecord(registryState, resolvedId, {
+    contextUpdateRegistryRecord(registryState, resolvedId, {
       uid: existingEntry.uid,
       type: finalType,
       name: entryData.comment || existingEntry.comment || '',
       comment: entryData.comment || existingEntry.comment || '',
-      aliases: ensureStringArray(entryData.keys),
+      aliases: contextEnsureStringArray(entryData.keys),
       synopsis: finalSynopsis
     });
 
@@ -577,22 +578,22 @@ export function registerAllOperationHandlers() {
 
   async function executeCreateAction(context ) {
     const { entryData, lorebookName, registryState, finalType, finalSynopsis,
-      addLorebookEntry, updateRegistryRecord, assignEntityId, ensureStringArray, entryId } = context;
+      contextAddLorebookEntry, contextUpdateRegistryRecord, contextAssignEntityId, contextEnsureStringArray, entryId } = context;
 
-    const createdEntry = await addLorebookEntry(lorebookName, entryData);
+    const createdEntry = await contextAddLorebookEntry(lorebookName, entryData);
 
     if (!createdEntry) {
       throw new Error('Failed to create lorebook entry');
     }
 
-    const entityId = assignEntityId(registryState, finalType);
+    const entityId = contextAssignEntityId(registryState, finalType);
 
-    updateRegistryRecord(registryState, entityId, {
+    contextUpdateRegistryRecord(registryState, entityId, {
       uid: createdEntry.uid,
       type: finalType,
       name: entryData.comment || createdEntry.comment || '',
       comment: entryData.comment || createdEntry.comment || '',
-      aliases: ensureStringArray(entryData.keys),
+      aliases: contextEnsureStringArray(entryData.keys),
       synopsis: finalSynopsis
     });
 

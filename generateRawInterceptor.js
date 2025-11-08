@@ -18,7 +18,7 @@ export async function wrappedGenerateRaw(options ) {
   // Prevent infinite recursion
   if (_isInterceptorActive) {
     debug(SUBSYSTEM.CORE, '[Interceptor] Recursion detected, calling original');
-    return await _importedGenerateRaw(options);
+    return _importedGenerateRaw(options);
   }
 
   try {
@@ -37,13 +37,13 @@ export async function wrappedGenerateRaw(options ) {
 
       if (typeof options.prompt === 'string') {
         // String prompt - inject at beginning
-        debug(SUBSYSTEM.CORE, '[Interceptor] Processing string prompt (first 100 chars):', options.prompt.substring(0, DEBUG_OUTPUT_SHORT_LENGTH));
+        debug(SUBSYSTEM.CORE, '[Interceptor] Processing string prompt (first 100 chars):', options.prompt.slice(0, DEBUG_OUTPUT_SHORT_LENGTH));
 
         const processedPrompt = injectMetadata(options.prompt, {
           operation: operation
         });
 
-        debug(SUBSYSTEM.CORE, '[Interceptor] Processed prompt (first 200 chars):', processedPrompt.substring(0, DEBUG_OUTPUT_MEDIUM_LENGTH));
+        debug(SUBSYSTEM.CORE, '[Interceptor] Processed prompt (first 200 chars):', processedPrompt.slice(0, DEBUG_OUTPUT_MEDIUM_LENGTH));
         options.prompt = processedPrompt;
 
       } else if (Array.isArray(options.prompt) && options.prompt.length > 0) {
@@ -101,7 +101,7 @@ export function installGenerateRawInterceptor() {
       debug(SUBSYSTEM.CORE, '[Interceptor] window.generateRaw is function:', typeof window.generateRaw === 'function');
 
       if (window.generateRaw) {
-        if (!_originalGenerateRaw) _originalGenerateRaw = window.generateRaw;
+        if (!_originalGenerateRaw) {_originalGenerateRaw = window.generateRaw;}
         window.generateRaw = wrappedGenerateRaw;
         debug(SUBSYSTEM.CORE, '[Interceptor] ✓ Wrapped window.generateRaw');
         debug(SUBSYSTEM.CORE, '[Interceptor] Verification - window.generateRaw === wrappedGenerateRaw:', window.generateRaw === wrappedGenerateRaw);
@@ -117,11 +117,11 @@ export function installGenerateRawInterceptor() {
   }
 }
 
-// eslint-disable-next-line complexity
+// eslint-disable-next-line complexity -- Stack trace analysis requires checking multiple conditions
 function determineOperationType() {
   try {
     // Try to determine from call stack
-    const stack = new Error().stack || '';
+    const stack = new Error('Stack trace for operation type detection').stack || '';
 
     // Check for specific scene operations FIRST (before generic summarize_text check)
     // Scene operations often call summarize_text(), so must be checked first

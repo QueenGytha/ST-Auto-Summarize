@@ -97,7 +97,7 @@ async function handleChatChanged() {
 // Delete the auto-created lorebook when a chat is deleted
 async function handleChatDeleted(deletedChatName ) {
   try {
-    if (!deletedChatName) return;
+    if (!deletedChatName) {return;}
 
     const deleteEnabled = extension_settings?.autoLorebooks?.deleteOnChatDelete ?? true;
     if (!deleteEnabled) {
@@ -132,8 +132,8 @@ async function handleChatDeleted(deletedChatName ) {
   }
 }
 
-async function handleMessageDeleted() {
-  if (!chat_enabled()) return;
+function handleMessageDeleted() {
+  if (!chat_enabled()) {return;}
   debug("Message deleted, refreshing memory and cleaning up running summaries");
   refresh_memory();
   cleanup_invalid_running_summaries();
@@ -145,12 +145,14 @@ async function handleMessageDeleted() {
   renderSceneNavigatorBar();
 }
 
-async function handleBeforeMessage() {
-  if (!chat_enabled()) return;
+function handleBeforeMessage() {
+  if (!chat_enabled()) {return;}
+  debug(SUBSYSTEM.EVENT, 'before_message event - no action required');
 }
 
-async function handleUserMessage() {
-  if (!chat_enabled()) return;
+function handleUserMessage() {
+  if (!chat_enabled()) {return;}
+  debug(SUBSYSTEM.EVENT, 'user_message event - no action required (auto scene break detection runs on char_message)');
   // NOTE: Auto scene break detection runs on 'char_message' after AI responds, not here
 }
 
@@ -170,16 +172,16 @@ async function handleCharMessageNew(index) {
 }
 
 async function handleCharMessage(index) {
-  if (!chat_enabled()) return;
+  if (!chat_enabled()) {return;}
   const context = getContext();
-  if (!context.groupId && context.characterId === undefined) return; // no characters or group selected
-  if (streamingProcessor && !streamingProcessor.isFinished) return; // Streaming in-progress
+  if (!context.groupId && context.characterId === undefined) {return;} // no characters or group selected
+  if (streamingProcessor && !streamingProcessor.isFinished) {return;} // Streaming in-progress
 
   await handleCharMessageNew(index);
 }
 
-async function handleMessageSwiped(index) {
-  if (!chat_enabled()) return;
+function handleMessageSwiped(index) {
+  if (!chat_enabled()) {return;}
   const context = getContext();
   debug("Message swiped, reloading memory");
 
@@ -197,15 +199,15 @@ async function handleMessageSwiped(index) {
   scrollChatToBottom();
 }
 
-async function handleMessageSent() {
-  if (!chat_enabled()) return;
+function handleMessageSent() {
+  if (!chat_enabled()) {return;}
   if (last_scene_injection) {
     debug(`[MEMORY INJECTION] scene_injection:\n${last_scene_injection}`);
   }
 }
 
-async function handleDefaultEvent(event) {
-  if (!chat_enabled()) return;
+function handleDefaultEvent(event) {
+  if (!chat_enabled()) {return;}
   debug(`Unknown event: "${event}", refreshing memory`);
   refresh_memory();
 }
@@ -224,16 +226,12 @@ const eventHandlers = {
 
 async function on_chat_event(event  = null, data  = null) {
   // data is any type - different event types pass different data types (number for message id, undefined, etc.) - legitimate use of any
-  if (!event) return; // Guard against null event
+  if (!event) {return;} // Guard against null event
   debug(`[on_chat_event] event: ${event}, data: ${JSON.stringify(data)}`);
   debug("Chat updated: " + event);
 
   const handler = eventHandlers[event];
-  if (handler) {
-    await handler(data);
-  } else {
-    await handleDefaultEvent(event);
-  }
+  await (handler ? handler(data) : handleDefaultEvent(event));
 }
 
 // Entry point
@@ -299,7 +297,7 @@ async function initializeExtension() {
   debug(`[eventHandlers] Registered event_types: ${JSON.stringify(event_types)}`);
   // Inject metadata into chat completion prompts for proxy logging
   eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, async (promptData) => {
-    on_chat_event('chat_completion_prompt_ready', promptData);
+    await on_chat_event('chat_completion_prompt_ready', promptData);
 
     try {
       debug('[Interceptor] CHAT_COMPLETION_PROMPT_READY handler started');
@@ -403,11 +401,11 @@ async function initializeExtension() {
   eventSource.on(event_types.GROUP_UPDATED, set_character_enabled_button_states);
 
   // Log all events for debugging
-  Object.entries(event_types).forEach(([key, type]) => {
+  for (const [key, type] of Object.entries(event_types)) {
     eventSource.on(type, (...args) => {
       debug(`[eventHandlers] Event triggered: ${key} (${type}), args: ${JSON.stringify(args)}`);
     });
-  });
+  }
 
   // Export to the Global namespace so can be used in the console for debugging
   window.getContext = getContext;
