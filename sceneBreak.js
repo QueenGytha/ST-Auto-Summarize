@@ -686,7 +686,7 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
     const sceneMessages = [];
     for (let i = startIdx; i <= endIdx; i++) {
       if (chat[i]) {
-        sceneMessages.push(chat[i]);
+        sceneMessages.push(chat[i].mes);
       }
     }
 

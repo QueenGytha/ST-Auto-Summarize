@@ -29,7 +29,7 @@ const DEFAULT_STICKY_ROUNDS = 4;
 
 // Will be imported from index.js via barrel exports
 let log , debug , error , toast ; // Utility functions - any type is legitimate
-let getAttachedLorebook , getLorebookEntries , addLorebookEntry ; // Lorebook functions - any type is legitimate
+let getAttachedLorebook , getLorebookEntries , addLorebookEntry , modifyLorebookEntry ; // Lorebook functions - any type is legitimate
 let mergeLorebookEntry ; // Entry merger function - any type is legitimate
 let updateRegistryEntryContent ;
 let withConnectionSettings ; // Connection settings management - any type is legitimate
@@ -53,6 +53,7 @@ export function initRecapToLorebookProcessor(utils , lorebookManagerModule , ent
     getAttachedLorebook = lorebookManagerModule.getAttachedLorebook;
     getLorebookEntries = lorebookManagerModule.getLorebookEntries;
     addLorebookEntry = lorebookManagerModule.addLorebookEntry;
+    modifyLorebookEntry = lorebookManagerModule.modifyLorebookEntry;
     updateRegistryEntryContent = lorebookManagerModule.updateRegistryEntryContent;
   }
 
@@ -900,13 +901,26 @@ export async function processBulkPopulateResults(results , lorebookName , existi
 
     const type = result.type || 'character';
     const synopsis = result.synopsis || '';
-    const entryName = entry.comment || 'Unnamed';
+    const currentComment = entry.comment || 'Unnamed';
     const aliases = ensureStringArray(entry.key);
+
+    // Build prefixed comment using type (e.g., "faction-Companions")
+    const prefixedComment = buildEntryName({
+      comment: currentComment,
+      type: result.type
+    });
+
+    // Update entry comment if it changed
+    if (prefixedComment !== currentComment) {
+      // eslint-disable-next-line no-await-in-loop -- Sequential execution required: each call modifies and saves the same lorebook
+      await modifyLorebookEntry(lorebookName, entry.uid, { comment: prefixedComment });
+      debug?.(`Updated entry ${entryId} comment from "${currentComment}" to "${prefixedComment}"`);
+    }
 
     updateRegistryRecord(registryState, entryId, {
       type,
-      name: entryName,
-      comment: entryName,
+      name: prefixedComment,
+      comment: prefixedComment,
       aliases,
       synopsis
     });
