@@ -664,7 +664,26 @@ export async function initializeChatLorebook() {
   }
 }
 
+function logEntrySettingsApplication(entryData , field , typeName , applied ) {
+  if (applied) {
+    debug?.(`[applyEntryDataToNewEntry] ✓ Setting ${field} = ${entryData[field]}`);
+  } else {
+    debug?.(`[applyEntryDataToNewEntry] ✗ Skipping ${field} (type: ${typeof entryData[field]}, value: ${entryData[field]})`);
+  }
+}
+
 function applyEntryDataToNewEntry(newEntry , entryData ) {
+  debug?.(`[applyEntryDataToNewEntry] Applying settings to entry "${entryData.comment}":`, {
+    excludeRecursion: entryData.excludeRecursion,
+    excludeRecursionType: typeof entryData.excludeRecursion,
+    preventRecursion: entryData.preventRecursion,
+    preventRecursionType: typeof entryData.preventRecursion,
+    ignoreBudget: entryData.ignoreBudget,
+    ignoreBudgetType: typeof entryData.ignoreBudget,
+    sticky: entryData.sticky,
+    stickyType: typeof entryData.sticky
+  });
+
   if (entryData.keys && Array.isArray(entryData.keys)) {
     newEntry.key = entryData.keys;
   }
@@ -691,16 +710,35 @@ function applyEntryDataToNewEntry(newEntry , entryData ) {
   }
   if (typeof entryData.excludeRecursion === 'boolean') {
     newEntry.excludeRecursion = entryData.excludeRecursion;
+    logEntrySettingsApplication(entryData, 'excludeRecursion', 'boolean', true);
+  } else {
+    logEntrySettingsApplication(entryData, 'excludeRecursion', 'boolean', false);
   }
   if (typeof entryData.preventRecursion === 'boolean') {
     newEntry.preventRecursion = entryData.preventRecursion;
+    logEntrySettingsApplication(entryData, 'preventRecursion', 'boolean', true);
+  } else {
+    logEntrySettingsApplication(entryData, 'preventRecursion', 'boolean', false);
   }
   if (typeof entryData.ignoreBudget === 'boolean') {
     newEntry.ignoreBudget = entryData.ignoreBudget;
+    logEntrySettingsApplication(entryData, 'ignoreBudget', 'boolean', true);
+  } else {
+    logEntrySettingsApplication(entryData, 'ignoreBudget', 'boolean', false);
   }
   if (typeof entryData.sticky === 'number') {
     newEntry.sticky = entryData.sticky;
+    logEntrySettingsApplication(entryData, 'sticky', 'number', true);
+  } else {
+    logEntrySettingsApplication(entryData, 'sticky', 'number', false);
   }
+
+  debug?.(`[applyEntryDataToNewEntry] Final entry settings:`, {
+    excludeRecursion: newEntry.excludeRecursion,
+    preventRecursion: newEntry.preventRecursion,
+    ignoreBudget: newEntry.ignoreBudget,
+    sticky: newEntry.sticky
+  });
 }
 
 export async function addLorebookEntry(lorebookName , entryData  = {}) {

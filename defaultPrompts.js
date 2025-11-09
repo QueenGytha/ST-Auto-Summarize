@@ -69,14 +69,15 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // CONTENT FORMAT (bullet style for lorebooks):
 // - Identity: <Type> — <Canonical Name>
 // - Synopsis: <1 line>
-// - Attributes: <traits/capabilities>
+// - Attributes: <appearance/traits/capabilities> (permanent, defining features)
 // - Relationships: <X ↔ Y with stance + micro-cues>
-// - State: <status/location/owner>
+// - State: <status/location/owner/ongoing effects> (current, temporary conditions)
 // - Access: <who/how can use without owning> (optional)
 // - Secrets/Leverage: <what/who knows>
 // - Tension/Triggers: <what escalates/defuses>
 // - Style Notes: <voice/tone anchors>
 // IMPORTANT: Use only the bullets that are relevant for the entity and scene. It is correct to omit bullets that do not apply. Do not invent entities (e.g., factions, rules) or filler to match templates.
+// - Appearance guidance (character entities): Attributes captures PERMANENT appearance (height, build, eye color, distinctive scars, typical clothing style). State captures TEMPORARY appearance changes (current injuries, dirt/blood, torn clothing, current outfit if different from typical).
 //
 // QUALITY CHECK BEFORE RESPONDING:
 // - Recap includes all four sections (headers present); no blow‑by‑blow; quotes escaped.
@@ -151,8 +152,8 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Alice wounded in shoulder but mobile
 // ✅ LOREBOOK (Alice):
 // - Identity: Character — Alice
-// - Attributes: Greatsword; formal training; continues fighting when injured
-// - State: Shoulder wound
+// - Attributes: Tall; athletic build; short black hair; green eyes; wears leather armor; greatsword fighter; formal training; continues fighting when injured
+// - State: Bleeding shoulder wound (arrow); armor torn on left side; covered in dirt and blood
 //
 // Example 2: Discovery
 // ✅ RECAP (Key Developments):
@@ -161,6 +162,14 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Identity: Location — Hidden Chamber
 // - Attributes: Stone walls; ancient murals (First War)
 // - State: Undisturbed for centuries; behind a waterfall
+//
+// Example 3: Character Introduction
+// ✅ RECAP (Key Developments):
+// - Met Marcus at the tavern; he offered information about the stolen artifact
+// ✅ LOREBOOK (Marcus):
+// - Identity: Character — Marcus
+// - Attributes: Middle-aged; scarred face (burn marks on left cheek); gray-streaked beard; weathered brown cloak; gruff manner; information broker
+// - Relationships: Marcus ↔ {{user}} — cautious; transactional; "I don't give information for free, friend"
 
 // REMINDER: Output must be valid JSON starting with { character. Recap is REQUIRED. Lorebooks array is OPTIONAL (can be empty: []).
 
@@ -240,13 +249,14 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Content MUST be bullet points. Start with identity so it stands alone without the title:
 //   - Identity: <Type> — <Canonical Name>
 //   - Synopsis: <1 line identity/purpose>
-//   - Attributes: <appearance/traits/capabilities>
+//   - Attributes: <appearance/traits/capabilities> (permanent, defining features)
 //   - Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>
-//   - State: <current status/location/owner/ongoing effects with scene/time anchors when present>
+//   - State: <current status/location/owner/ongoing effects with scene/time anchors when present> (current, temporary conditions)
 //   - Secrets/Leverage: <what/who knows>
 //   - Tension/Triggers: <what escalates/defuses; quotes if needed>
 //   - Style Notes: <voice ticks or phrasing anchors>
 //   - Notable Dialogue: <significant quotes WITH recipient context; speech patterns>
+//   - Appearance guidance (character entities): Attributes captures PERMANENT appearance (height, build, eye color, hair, distinctive scars/marks, typical clothing style). State captures TEMPORARY appearance changes (current injuries, dirt/blood, torn clothing, current outfit if notably different from typical).
 //   - Location rule: State should be durable (control, features, access). Do NOT include transient scene events (e.g., "X entered/exited", "fight happened here"). Keep one-off events in the recap.
 //   - Notable Dialogue rule (character entities only): Capture significant dialogue and voice patterns (idioms, formality level, verbal tics, characteristic phrases). Format as "To [Recipient]: \"quote\"" or "To [Recipient] (context): \"quote\"". Include dialogue that demonstrates character voice/personality. Do NOT capture dialogue spoken by {{user}}. Compare with existing entity content; omit duplicate quotes/patterns already captured. Only add if it provides new information about voice/style or significant content.
 // - Quest creation rule: If Pending Threads contain an explicit ongoing objective, create/update a "quest" entry with a concise Synopsis and State (status/owner). Use the actor and objective tokens in keywords; put broad tokens only in secondaryKeys.
@@ -469,12 +479,22 @@ MINIMUM SCENE LENGTH RULE:
 DECISION CRITERIA:
 A scene break means the prior beat resolved and the story now shifts focus.
 
+PRIORITY SIGNALS (check these FIRST, in order):
+1. EXPLICIT TIME TRANSITIONS override location continuity
+   - "Dawn arrived", "the next morning", "hours later", "that evening", "the next day", "later that night"
+   - Time skips from night → morning, morning → evening, or any explicit passage of hours/days
+   - These are ALWAYS scene breaks, even if characters remain in the same location
+
+2. EXPLICIT SEPARATORS or OOC MARKERS
+   - "---", "Scene Break", "Chapter X", GM notes resetting play
+   - These are ALWAYS scene breaks
+
 Scene break if a message clearly does at least one of:
 - Moves to a new location or setting
-- Skips time with explicit cues ("Later...", "The next morning...", timestamps)
+- Skips time with explicit cues (see PRIORITY SIGNALS above)
 - Switches primary characters or point of view to a different group
 - Starts a new objective or major conflict after the previous one concluded
-- Includes explicit separators or OOC markers ("---", "Scene Break", "Chapter 3", GM notes resetting play)
+- Includes explicit separators or OOC markers (see PRIORITY SIGNALS above)
 
 Natural narrative beats to watch for:
 - Resolution or decision that concludes the prior exchange
@@ -491,13 +511,17 @@ Do NOT mark a break when:
 - The message is mid-action, mid-conversation, or mid-beat (the exchange hasn't concluded yet)
 - Fewer than {{minimum_scene_length}} messages have occurred
 
+EXCEPTION: Same location + explicit time skip (night → dawn) = SCENE BREAK
+Example: If characters sleep in a field at night and a message begins with "Dawn arrived" in the same field, mark the dawn message as a break.
+
 Decision process:
 1. Check if at least {{minimum_scene_length}} messages have passed
-2. Check for explicit separators or time/scene headers and mark that message as a break if present
-3. Otherwise compare setting, time, cast, and objective across messages; mark a break only if there is a clear change
-4. Consider narrative flow: Has the prior beat concluded? Is the marked message starting a new beat?
-5. If evidence is ambiguous, treat it as a continuation (sceneBreakAt: false)
-6. Return the FIRST message number that qualifies as a scene break
+2. Check for EXPLICIT TIME TRANSITIONS first (dawn/morning/evening/next day/hours later/etc.) - these override location continuity and are scene breaks
+3. Check for explicit separators or OOC markers ("---"/"Scene Break"/"Chapter X"/etc.) - these are scene breaks
+4. Otherwise compare setting, time, cast, and objective across messages; mark a break only if there is a clear change
+5. Consider narrative flow: Has the prior beat concluded? Is the marked message starting a new beat?
+6. If evidence is ambiguous, treat it as a continuation (sceneBreakAt: false)
+7. Return the FIRST message number that qualifies as a scene break
 
 CRITICAL: Base your decision ONLY on the provided messages below.
 - Never invent details, context, or relationships not explicitly stated in the text

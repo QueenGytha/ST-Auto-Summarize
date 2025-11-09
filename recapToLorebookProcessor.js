@@ -319,6 +319,9 @@ export function normalizeEntryData(entry ) {
   const rawSecondary = entry.secondaryKeys || entry.keysecondary || [];
   const refined = refineKeywords(rawKeys, rawSecondary);
 
+  // Read and coerce lorebook entry settings
+  const entrySettings = readAndCoerceLorebookEntrySettings(comment);
+
   return {
     comment,
     content,
@@ -330,11 +333,46 @@ export function normalizeEntryData(entry ) {
     position: entry.position ?? 0,
     depth: entry.depth ?? MIN_ENTITY_SECTIONS,
     type: typeof entry.type === 'string' ? sanitizeEntityTypeName(entry.type) : '',
-    excludeRecursion: get_settings('auto_lorebooks_entry_exclude_recursion') ?? false,
-    preventRecursion: get_settings('auto_lorebooks_entry_prevent_recursion') ?? false,
-    ignoreBudget: get_settings('auto_lorebooks_entry_ignore_budget') ?? true,
-    sticky: get_settings('auto_lorebooks_entry_sticky') ?? DEFAULT_STICKY_ROUNDS
+    ...entrySettings
   };
+}
+
+function readAndCoerceLorebookEntrySettings(entryComment ) {
+  // Read raw settings from profile
+  const rawExcludeRecursion = get_settings('auto_lorebooks_entry_exclude_recursion');
+  const rawPreventRecursion = get_settings('auto_lorebooks_entry_prevent_recursion');
+  const rawIgnoreBudget = get_settings('auto_lorebooks_entry_ignore_budget');
+  const rawSticky = get_settings('auto_lorebooks_entry_sticky');
+
+  debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] Raw settings from get_settings():`, {
+    excludeRecursion: rawExcludeRecursion,
+    excludeRecursionType: typeof rawExcludeRecursion,
+    preventRecursion: rawPreventRecursion,
+    preventRecursionType: typeof rawPreventRecursion,
+    ignoreBudget: rawIgnoreBudget,
+    ignoreBudgetType: typeof rawIgnoreBudget,
+    sticky: rawSticky,
+    stickyType: typeof rawSticky
+  });
+
+  // Apply explicit type coercion to ensure correct types
+  const excludeRecursion = rawExcludeRecursion === undefined ? false : Boolean(rawExcludeRecursion);
+  const preventRecursion = rawPreventRecursion === undefined ? false : Boolean(rawPreventRecursion);
+  const ignoreBudget = rawIgnoreBudget === undefined ? true : Boolean(rawIgnoreBudget);
+  const sticky = rawSticky === undefined ? DEFAULT_STICKY_ROUNDS : Number(rawSticky);
+
+  debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] Final coerced settings for entry "${entryComment}":`, {
+    excludeRecursion,
+    excludeRecursionType: typeof excludeRecursion,
+    preventRecursion,
+    preventRecursionType: typeof preventRecursion,
+    ignoreBudget,
+    ignoreBudgetType: typeof ignoreBudget,
+    sticky,
+    stickyType: typeof sticky
+  });
+
+  return { excludeRecursion, preventRecursion, ignoreBudget, sticky };
 }
 
 // Standalone keyword generation has been removed; entries must provide keywords in the recap JSON.
