@@ -2,17 +2,20 @@
 
 ## Feature Overview
 
-Automatic scene break detection uses an LLM to analyze messages and determine if they represent logical scene breaks in the roleplay. The system can automatically mark messages as scene breaks on chat load and/or for new messages (per-event settings), and can also be run manually via the navbar “Scan Scene Breaks” button.
+Automatic scene break detection uses an LLM to analyze message ranges and determine if any messages represent logical scene breaks in the roleplay. The system analyzes entire ranges of messages (from last scene break to latest) in a single LLM call, with the LLM returning which message number (if any) should be marked as a scene break. The system can automatically run on chat load and/or for new messages (per-event settings), and can also be triggered manually via the navbar "Scan Scene Breaks" button.
 
 ## Requirements
 
 ### Core Functionality
-1. **LLM-Based Detection**: Use a separate LLM call with configurable prompt to detect scene breaks
-2. **True/False Output**: Prompt must enforce boolean output; any response containing "true" triggers a scene break
-3. **Message Tracking**: Track which messages have been checked on the message object itself (swipe/regen clears tracking)
-4. **Message Offset**: Configurable offset from latest message (default: -1, meaning skip latest message)
-5. **Automatic Triggers**: Run on chat load and new messages (both configurable, default: enabled)
-6. **Manual Trigger**: User can manually trigger detection via button/command
+1. **LLM-Based Detection**: Uses separate LLM calls with configurable prompt to analyze message ranges for scene breaks
+2. **Message Number Output**: LLM returns a message number (e.g., 5) or false; response is validated and retried if invalid
+3. **Range-Based Analysis**: Analyzes entire message ranges (from last scene break to latest) in one LLM call instead of checking one-by-one
+4. **Message Tracking**: Tracks which messages have been checked on the message object itself (swipe/regen clears tracking)
+5. **Message Offset**: Configurable offset from latest message (default: 2, meaning skip 2 most recent messages)
+6. **Minimum Scene Length**: Enforces minimum number of messages (default: 4) before allowing scene breaks
+7. **Automatic Triggers**: Run on chat load and new messages (both configurable, default: enabled)
+8. **Manual Trigger**: User can manually trigger detection via button/command
+9. **Recursive Scanning**: When break found mid-range, marks up to that point and queues new detection for remainder
 
 ### Storage Strategy
 - **Checked Status**: Store `auto_scene_break_checked: true` on message object via `set_data()`
@@ -31,52 +34,66 @@ Automatic scene break detection uses an LLM to analyze messages and determine if
 | `auto_scene_break_on_load` | boolean | false | Auto-check messages when chat loads |
 | `auto_scene_break_on_new_message` | boolean | true | Auto-check when new message arrives |
 | `auto_scene_break_generate_recap` | boolean | true | Auto-generate scene recap when a scene break is detected |
-| `auto_scene_break_message_offset` | number | 1 | How many messages back from latest to skip (1 = skip latest, 0 = check all including latest) |
-| `auto_scene_break_check_which_messages` | string | "both" | Which messages to check: "user" (user only), "character" (AI only), "both" (all messages) |
-| `auto_scene_break_recent_message_count` | number | 3 | How many recent messages matching the selected type to check when auto-scanning new messages (0 = scan entire history) |
-| `auto_scene_break_prompt` | string | (see below) | LLM prompt template for detection |
-| `auto_scene_break_prefill` | string | "" | Prefill to enforce true/false output (optional) |
+| `auto_scene_break_message_offset` | number | 2 | How many messages back from latest to skip (2 = skip 2 most recent, 0 = check all including latest) |
+| `auto_scene_break_check_which_messages` | string | "both" | Which messages to analyze: "user" (user only), "character" (AI only), "both" (all messages) |
+| `auto_scene_break_minimum_scene_length` | number | 4 | Minimum number of filtered messages required before allowing a scene break (prevents breaking too early) |
+| `auto_scene_break_prompt` | string | (see below) | LLM prompt template for range-based detection |
+| `auto_scene_break_prefill` | string | "" | Prefill to enforce JSON output (optional) |
 | `auto_scene_break_connection_profile` | string | "" | Optional API connection profile |
 | `auto_scene_break_completion_preset` | string | "" | Optional completion preset |
 
 ### Default Prompt
 ```
-You are analyzing a roleplay conversation to detect scene breaks. A scene break occurs when there is a significant shift in:
-- Location or setting (moving to a different place)
-- Time period (significant time skip like "later that day", "the next morning", etc.)
-- Narrative focus or POV (switching to different characters or perspective)
-- Major plot transition (end of one story arc, beginning of another)
+You are segmenting a roleplay transcript into scene-sized chunks (short, chapter-like story beats).
+Your task is to analyze the provided messages and determine if ANY of them marks the start of a new scene, outputting ONLY valid JSON.
 
-You will be given two messages: the previous message and the current message. Analyze whether the current message represents a scene break compared to the previous message.
+MANDATORY OUTPUT FORMAT:
+Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
 
-Previous messages (oldest to newest):
-{{previous_message}}
-
-Current message:
-{{current_message}}
-
-Respond with ONLY a JSON object in this exact format:
+Required format (copy this structure exactly):
 {
-  "status": true or false,
-  "rationale": "Brief 1-sentence explanation of why this is or isn't a scene break"
+  "sceneBreakAt": false OR a message number (e.g., 5),
+  "rationale": "Quote the key cue that triggered your decision"
 }
 
-Do not include any text outside the JSON object.
+Example valid responses:
+{"sceneBreakAt": 5, "rationale": "Message #5 opens with explicit time skip: 'The next morning...'"}
+{"sceneBreakAt": false, "rationale": "All messages are part of the same continuous scene"}
+
+MINIMUM SCENE LENGTH RULE:
+- At least {{minimum_scene_length}} messages must occur before you can mark a scene break
+- This ensures scenes are not broken too early
+- Count only the messages of the type being analyzed (user/character/both as configured)
+
+Messages to analyze (with SillyTavern message numbers):
+{{messages}}
+
+REMINDER:
+- Output must be valid JSON starting with { character
+- Return the message NUMBER (as shown above) or false
+- Return ONLY the FIRST qualifying scene break
 ```
 
-> **Tip:** `{{previous_message}}` and `{{previous_messages}}` both expand to the formatted list of prior messages (filtered by the "Check Which Messages" setting and limited by the recent message count).
+> **Macros:** `{{messages}}` expands to all messages in the range formatted with their SillyTavern message numbers (e.g., "Message #5 [USER]: text"). `{{minimum_scene_length}}` expands to the configured minimum scene length setting.
 
 **Response Format:**
 The LLM returns a JSON object with:
-- `status`: Boolean indicating if scene break detected
+- `sceneBreakAt`: Message number (e.g., 5) or false
 - `rationale`: Brief explanation for debugging/troubleshooting
 
 Example responses:
 ```json
-{"status": true, "rationale": "Location changed from bedroom to kitchen"}
-{"status": false, "rationale": "Conversation continues in same location and timeframe"}
-{"status": true, "rationale": "Time skip indicated by 'later that evening'"}
+{"sceneBreakAt": 5, "rationale": "Message #5: Location changed from bedroom to kitchen"}
+{"sceneBreakAt": false, "rationale": "All messages are part of the same continuous scene"}
+{"sceneBreakAt": 12, "rationale": "Message #12: Time skip indicated by 'later that evening'"}
 ```
+
+**Validation:**
+Responses are validated to ensure:
+1. `sceneBreakAt` is either false or a valid message number in the analyzed range
+2. Message number is in the filtered set (matches the configured message type filter)
+3. At least `minimum_scene_length` messages exist before the break point
+4. Invalid responses trigger automatic retry
 
 ### Default Prefill
 ```
@@ -91,30 +108,39 @@ Example responses:
 
 ```javascript
 /**
- * Check if a message needs to be scanned for scene break detection
- * @param {object} message - The message object
- * @param {number} messageIndex - Index in chat array
- * @param {number} latestIndex - Index of latest message
- * @param {number} offset - Message offset setting
- * @returns {boolean} - True if message should be checked
+ * Format messages for range-based detection with ST message numbers
+ * @param {Array} chat - Chat messages array
+ * @param {number} startIndex - Start of range
+ * @param {number} endIndex - End of range
+ * @param {string} checkWhich - Message type filter ("user", "character", "both")
+ * @returns {Object} - {formatted: string, filteredIndices: array}
  */
-function shouldCheckMessage(message, messageIndex, latestIndex, offset)
+function formatMessagesForRangeDetection(chat, startIndex, endIndex, checkWhich)
 
 /**
- * Detect if a message should be a scene break using LLM
- * @param {object} message - The message object being checked
- * @param {number} messageIndex - Index in chat array
- * @param {object|null} previousMessage - The previous message for context
- * @returns {Promise<{isSceneBreak: boolean, rationale: string}>} - Detection result with rationale
+ * Detect scene breaks in a message range using LLM
+ * @param {number} startIndex - Start of range to analyze
+ * @param {number} endIndex - End of range to analyze
+ * @returns {Promise<{sceneBreakAt: number|false, rationale: string, filteredIndices: array}>}
  */
-async function detectSceneBreak(message, messageIndex, previousMessage = null)
+async function detectSceneBreak(startIndex, endIndex)
 
 /**
- * Process messages for auto scene break detection
- * @param {number} startIndex - Start index (optional, defaults to 0)
- * @param {number} endIndex - End index (optional, defaults to latest)
+ * Validate scene break response from LLM
+ * @param {number|false} sceneBreakAt - Message number or false
+ * @param {number} startIndex - Start of analyzed range
+ * @param {number} endIndex - End of analyzed range
+ * @param {Array<number>} filteredIndices - Array of filtered message indices
+ * @param {number} minimumSceneLength - Minimum required scene length
+ * @returns {Object} - {valid: boolean, reason?: string}
  */
-async function processAutoSceneBreakDetection(startIndex, endIndex)
+function validateSceneBreakResponse(sceneBreakAt, startIndex, endIndex, filteredIndices, minimumSceneLength)
+
+/**
+ * Process new message for scene break detection
+ * @param {number} messageIndex - Index of the new message
+ */
+async function processNewMessageForSceneBreak(messageIndex)
 
 /**
  * Manually trigger scene break detection on all eligible messages
@@ -124,36 +150,45 @@ async function manualSceneBreakDetection()
 
 #### Detection Logic Flow
 
-1. **Entry Point** (`processAutoSceneBreakDetection`)
-   - Get settings: enabled, offset, connection profile, preset
-   - Get chat context and messages
-   - Determine range of messages to check (startIndex to endIndex)
-   - For new message triggers, use `auto_scene_break_recent_message_count` to include the most recent matching messages of the selected type
+1. **Entry Point** (`processNewMessageForSceneBreak` or `manualSceneBreakDetection`)
+   - Get settings: enabled, offset, message type filter, minimum scene length
+   - Determine range: from (latest visible scene break + 1) to (latest - offset)
+   - If no scene break exists, start from message 0
+   - Queue range-based detection operation
 
-2. **Message Filtering** (`shouldCheckMessage`)
-   - Check if already marked with `auto_scene_break_checked: true`
-   - Check if message index is within offset range (e.g., if offset=-1, skip messages >= latestIndex-1)
-   - Return true only if message should be checked
+2. **Range Formatting** (`formatMessagesForRangeDetection`)
+   - Format all messages in range with SillyTavern message numbers
+   - Filter messages by configured type (user/character/both)
+   - Format as "Message #X [USER/CHARACTER]: text"
+   - Return formatted string and array of filtered indices
 
-3. **LLM Detection** (`detectSceneBreak`)
-   - Get prompt template and prefill from settings
-   - Get previous message for context (if exists, otherwise use placeholder text)
-   - Substitute both previous and current message into prompt using `{{previous_message}}` and `{{current_message}}` macros
+3. **Range Analysis** (`detectSceneBreak`)
+   - Get prompt template, prefill, and settings
+   - Check if enough filtered messages exist (minimum + 1)
+   - Substitute `{{messages}}` and `{{minimum_scene_length}}` in prompt
    - Switch to detection connection profile/preset if configured
-   - Call `recap_text(prompt)` (same as scene recap generation)
-   - Parse JSON response to extract `status` and `rationale`
-   - Fallback: If JSON parsing fails, check if response contains "true" (backward compatibility)
-   - Log decision with rationale for debugging
+   - Call `recap_text(prompt)` to send to LLM
+   - Parse JSON response to extract `sceneBreakAt` (message number or false) and `rationale`
+   - Fallback: Try multiple patterns to extract message number if JSON parsing fails
    - Restore original connection profile/preset
-   - Mark message as checked: `set_data(message, 'auto_scene_break_checked', true)`
-   - Return `{isSceneBreak: boolean, rationale: string}`
-   - On error: Retry with exponential backoff (10s, 20s, 40s, 80s, 160s) for up to 6 attempts
+   - Return `{sceneBreakAt: number|false, rationale: string, filteredIndices: array}`
 
-4. **Scene Break Marking**
-   - If `detectSceneBreak()` returns true:
-     - Call `toggleSceneBreak(messageIndex, ...)` from sceneBreak.js
-     - This sets `scene_break: true` and `scene_break_visible: true`
-     - Renders scene break UI on message
+4. **Response Validation** (`validateSceneBreakResponse`)
+   - If sceneBreakAt is false, validation passes
+   - Check if sceneBreakAt is a valid number
+   - Check if number is within the analyzed range (startIndex to endIndex)
+   - Check if number is in the filtered message set
+   - Check if at least `minimum_scene_length` messages exist before the break
+   - Invalid responses trigger automatic retry (operation remains in queue)
+
+5. **Scene Break Marking & Recursive Scanning**
+   - If sceneBreakAt is valid:
+     - Call `toggleSceneBreak(sceneBreakAt, ...)` to mark the message
+     - Mark all messages from startIndex to sceneBreakAt as checked
+     - If sceneBreakAt < endIndex, queue new detection for remainder (sceneBreakAt+1 to endIndex)
+     - Optionally queue scene recap generation if enabled
+   - If sceneBreakAt is false:
+     - Mark entire range as checked (no break found)
 
 5. **Auto-Generate Scene Recap** (Optional)
    - If `auto_scene_break_generate_recap` is enabled:
@@ -174,16 +209,18 @@ async function manualSceneBreakDetection()
 
 1. **MESSAGE_RECEIVED** / **MESSAGE_SENT**
    - Check `auto_scene_break_on_new_message` setting
-   - If enabled, call `processAutoSceneBreakDetection(startIndex, latestIndex)`
-   - `startIndex` is derived from `auto_scene_break_recent_message_count` (limited to the selected message type) and `auto_scene_break_message_offset`
+   - If enabled, call `processNewMessageForSceneBreak(messageIndex)`
+   - Determines range from (latest visible scene break + 1) to (messageIndex - offset)
+   - Queues single range-based detection operation
 
 2. **CHAT_CHANGED**
    - Check `auto_scene_break_on_load` setting
-   - If enabled, call `processAutoSceneBreakDetection()` (all messages)
+   - If enabled, call `processAutoSceneBreakDetection()` to scan all unchecked messages
+   - Analyzes entire chat in ranges from scene break to scene break
 
 3. **Manual Trigger**
-   - Navbar button: “Scan Scene Breaks”
-   - Calls `manualSceneBreakDetection()` which processes all eligible messages
+   - Navbar button: "Scan Scene Breaks"
+   - Calls `manualSceneBreakDetection()` which processes all eligible messages in ranges
 
 ### UI Components
 
