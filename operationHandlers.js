@@ -76,6 +76,16 @@ function get_message_div(index) {
   return $(`div[mesid="${index}"]`);
 }
 
+// Helper: Mark range of messages as scene-break-checked
+function markRangeAsChecked(chat, startIdx, endIdx) {
+  for (let i = startIdx; i <= endIdx; i++) {
+    const msg = chat[i];
+    if (msg) {
+      set_data(msg, 'auto_scene_break_checked', true);
+    }
+  }
+}
+
 // eslint-disable-next-line max-lines-per-function -- Sequential operation handler registration for 10+ operation types (431 lines is acceptable for initialization)
 export function registerAllOperationHandlers() {
   // Validate recap
@@ -112,7 +122,15 @@ export function registerAllOperationHandlers() {
     const validation = validateSceneBreakResponse(sceneBreakAt, startIndex, endIndex, filteredIndices, minimumSceneLength);
 
     if (!validation.valid) {
-      // Invalid response - don't mark as checked (allows retry)
+      const isBelowMinimum = validation.reason.includes('below minimum scene length');
+
+      if (isBelowMinimum) {
+        debug(SUBSYSTEM.QUEUE, `Scene break at ${sceneBreakAt} rejected (too close to previous break) - treating range ${startIndex}-${endIndex} as complete`);
+        markRangeAsChecked(chat, startIndex, endIndex);
+        saveChatDebounced();
+        return { sceneBreakAt: false, rationale: `Rejected: ${validation.reason}` };
+      }
+
       error(SUBSYSTEM.QUEUE, `Invalid scene break response for range ${startIndex}-${endIndex}: ${validation.reason}`);
       error(SUBSYSTEM.QUEUE, `  sceneBreakAt: ${sceneBreakAt}, rationale: ${rationale}`);
       toast(`⚠ Invalid scene break detection response - will retry`, 'warning');
@@ -122,12 +140,7 @@ export function registerAllOperationHandlers() {
     if (sceneBreakAt === false) {
       // No scene break found - mark entire range as checked
       debug(SUBSYSTEM.QUEUE, `✗ No scene break found in range ${startIndex} to ${endIndex}`);
-      for (let i = startIndex; i <= endIndex; i++) {
-        const msg = chat[i];
-        if (msg) {
-          set_data(msg, 'auto_scene_break_checked', true);
-        }
-      }
+      markRangeAsChecked(chat, startIndex, endIndex);
       saveChatDebounced();
       return result;
     }
@@ -141,12 +154,7 @@ export function registerAllOperationHandlers() {
     toggleSceneBreak(sceneBreakAt, get_message_div, getContext, set_data, get_data, saveChatDebounced);
 
     // Mark messages from startIndex to sceneBreakAt (inclusive) as checked
-    for (let i = startIndex; i <= sceneBreakAt; i++) {
-      const msg = chat[i];
-      if (msg) {
-        set_data(msg, 'auto_scene_break_checked', true);
-      }
-    }
+    markRangeAsChecked(chat, startIndex, sceneBreakAt);
     saveChatDebounced();
 
     // Queue new detection for remaining range if there are enough messages

@@ -738,17 +738,34 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
 
     debug(SUBSYSTEM.SCENE, `Lorebook activation for scene ${startIdx}-${endIdx}: ${totalBeforeFiltering} total -> ${filteredEntries.length} after filtering (chatLB: ${chatLorebookName || 'none'}, suppress: ${suppressOtherLorebooks})`);
 
+    // Enhance entries with strategy metadata (matching automatic tracking format)
+    const enhancedEntries = filteredEntries.map(entry => ({
+      comment: entry.comment || '(unnamed)',
+      uid: entry.uid,
+      world: entry.world,
+      key: entry.key || [],
+      position: entry.position,
+      depth: entry.depth,
+      order: entry.order,
+      role: entry.role,
+      constant: entry.constant || false,
+      vectorized: entry.vectorized || false,
+      sticky: entry.sticky || 0,
+      strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal'),
+      content: entry.content || ''
+    }));
+
     return {
-      entries: filteredEntries,
+      entries: enhancedEntries,
       metadata: {
         startIdx,
         endIdx,
         sceneMessageCount: sceneMessages.length,
-        totalActivatedEntries: filteredEntries.length,
+        totalActivatedEntries: enhancedEntries.length,
         totalBeforeFiltering,
         chatLorebookName: chatLorebookName || null,
         suppressOtherLorebooks,
-        entryNames: filteredEntries.map(e => e.comment || e.uid || 'Unnamed')
+        entryNames: enhancedEntries.map(e => e.comment || e.uid || 'Unnamed')
       }
     };
   } catch (err) {
@@ -917,6 +934,15 @@ async function saveSceneRecap(config) {
     };
     set_data(message, SCENE_RECAP_METADATA_KEY, existingMetadata);
     debug(SUBSYSTEM.SCENE, `Stored lorebook metadata for version ${versionIndex}: ${lorebookMetadata.totalActivatedEntries || 0} entries`);
+
+    // Persist manually looked-up lorebook entries to message.extra for display
+    if (lorebookMetadata.entries && Array.isArray(lorebookMetadata.entries) && lorebookMetadata.entries.length > 0) {
+      if (!message.extra) {
+        message.extra = {};
+      }
+      message.extra.activeLorebookEntries = lorebookMetadata.entries;
+      debug(SUBSYSTEM.SCENE, `Persisted ${lorebookMetadata.entries.length} manually looked-up entries to message ${messageIndex}.extra`);
+    }
   }
 
   saveChatDebounced();
