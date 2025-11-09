@@ -357,6 +357,8 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 
 // REMINDER: Output must be valid JSON starting with { character. "recap" is REQUIRED. "lorebooks" is OPTIONAL (can be empty: []).
 
+{{active_lorebooks}}
+
 // Scene Content (oldest to newest):
 {{scene_messages}}`;
 
