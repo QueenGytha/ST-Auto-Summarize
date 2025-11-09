@@ -1,4 +1,4 @@
-/* eslint-disable no-undef, no-unused-vars, no-console -- Code snippet example file, not production code */
+/* eslint-disable no-undef, no-unused-vars, no-console, require-await -- Code snippet example file, not production code */
 // CODE SNIPPET: Add to combinedRecap.js
 // Extracts ONLY recap fields when combining, excludes lorebook entries
 

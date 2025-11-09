@@ -209,7 +209,7 @@ export default [
     'no-useless-constructor': 'error', // Empty constructors
     'require-await': 'warn', // Async functions without await
     'no-unused-expressions': 'error', // Statements with no effect
-    'no-return-await': 'error', // Redundant return await
+    // NOTE: 'no-return-await' removed (deprecated). Modern best practice is to keep 'return await' for better stack traces.
 
     // Unicorn dead code rules
     'unicorn/no-useless-promise-resolve-reject': 'error', // Unnecessary Promise.resolve/reject
