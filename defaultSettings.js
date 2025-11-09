@@ -187,5 +187,5 @@ Rules for canonicalName:
 
   // --- First-Hop Proxy Integration Settings ---
   first_hop_proxy_send_chat_details: false, // Send chat details in LLM requests for proxy logging
-  wrap_lorebook_entries: false // Wrap each lorebook entry individually with XML tags for downstream parsing
+  wrap_lorebook_entries: true // Wrap each lorebook entry individually with XML tags for downstream parsing
 };

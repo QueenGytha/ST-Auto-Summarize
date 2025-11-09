@@ -211,7 +211,21 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //                           Include only: promises, threats, vows/oaths, explicit plans, naming/revelations, permissions/boundaries, agreements, or coded signals likely to recur.
 //                           Quote hygiene: Keep concise. When multiple speakers and attribution is ambiguous in merge context, tag speaker: Name: "quote".
 //                           JSON safety: Escape all internal double quotes in values as \" (e.g., Rolan: \"Trust your instincts, Sister.\"). Do not use unescaped double quotes inside JSON strings.
-//   ## Tone & Style        -> Words/phrases that capture the vibe and voice to preserve
+//   ## Tone & Style        -> Capture the ROLEPLAY's writing style and genre (NOT character emotions)
+//                           Focus on: genre/subgenre, narrative voice (POV, tense), prose patterns, dialogue style, recurring motifs
+//                           Examples of GOOD Tone & Style bullets:
+//                             - "Genre: cyberpunk noir; corporate espionage with body horror elements"
+//                             - "Narrative voice: first-person present tense; unreliable narrator; stream of consciousness"
+//                             - "Prose style: sparse Hemingway sentences; heavy color symbolism (red = danger, white = sterility)"
+//                             - "Dialogue: Tarantino-style rapid banter; pop culture references; profanity as rhythm"
+//                             - "Motifs: technology vs. nature; corporate jargon masking violence; neon-lit urban decay"
+//                             - "Format: mindspeak in italics with colons (*:text:*); alternating POV chapters; letters/journal entries"
+//                           Examples of BAD Tone & Style bullets (these are character states, NOT writing style):
+//                             ❌ "tense; conflicted; determined" - these are emotions, belong in Key Developments
+//                             ❌ "Alice distrusts Bob" - this is relationship, belongs in Key Developments or lorebooks
+//                             ❌ "mounting pressure" - this is plot state, belongs in Current Situation
+//                           Purpose: Give future LLM the context needed to WRITE in the same style when old messages scroll out of context
+//                           Update only when writing style itself changes (new POV, genre shift, new narrative device introduced)
 //   ## Pending Threads      -> Goals, deadlines, secrets, obligations that carry forward
 // Rules:
 // - One fact per bullet; be specific (names, items, places).
@@ -221,7 +235,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Explicit uncertainty: When the text states uncertainty, capture it using prefixes like "Likely:" or "Uncertain:", but never invent or upgrade uncertainty to fact.
 // - Pending Threads should be actionable: verb+noun+anchor when present (e.g., "Retrieve Sunblade (before dawn)", "Meet Clara (east gate, first light)").
 // - All sections MUST be present; if a section has no content, include a single line with "—".
-// - Final check before responding: durable outcomes covered; only canon-binding quotes included; Tone & Style tokens match current vibe; dynamic snapshots updated if relationships shifted.
+// - Final check before responding: durable outcomes covered; only canon-binding quotes included; Tone & Style describes WRITING STYLE (genre, POV, prose patterns, dialogue format, motifs) NOT character emotions; dynamic snapshots updated if relationships shifted.
 // - Coherence note: If a new or updated lorebook entity is introduced, reference it by name once in recap (Current Situation or Key Developments) so context remains coherent.
 //
 // LOREBOOKS (array):
@@ -496,11 +510,11 @@ Your response MUST start with { and end with }. No code fences, no commentary, n
 
 Required format (copy this structure exactly):
 {
-  "recap": "# Running Narrative\n\n## Current Situation\n- Where the story stands now\n\n## Key Developments\n- Durable outcomes and plot shifts\n\n## Dialogue Highlights\n- Binding quotes that still matter\n\n## Tone & Style\n- Vibe tokens to preserve\n\n## Pending Threads\n- Goals, timers, secrets, obligations in play"
+  "recap": "# Running Narrative\n\n## Current Situation\n- Where the story stands now\n\n## Key Developments\n- Durable outcomes and plot shifts\n\n## Dialogue Highlights\n- Binding quotes that still matter\n\n## Tone & Style\n- Genre, narrative voice, prose patterns, dialogue format, recurring motifs\n\n## Pending Threads\n- Goals, timers, secrets, obligations in play"
 }
 
 Example valid response:
-{"recap": "# Running Narrative\n\n## Current Situation\n- Haven-Eastern Gate; Adam present; Senta nearby (unseen).\n\n## Key Developments\n- [travel] Entered Haven via eastern gate.\n- [relationship] Senta follows Adam at a distance (unresolved).\n\n## Dialogue Highlights\n- Rolan: \"Trust your instincts, Sister.\"\n\n## Tone & Style\n- dusty arrival; measured mindspeak; wary city edges\n\n## Pending Threads\n- Find lodging at Companion's Bell (Tailor's Row)."}
+{"recap": "# Running Narrative\n\n## Current Situation\n- Haven-Eastern Gate; Adam present; Senta nearby (unseen).\n\n## Key Developments\n- [travel] Entered Haven via eastern gate.\n- [relationship] Senta follows Adam at a distance (unresolved).\n\n## Dialogue Highlights\n- Rolan: \"Trust your instincts, Sister.\"\n\n## Tone & Style\n- Genre: high fantasy; cultural conflict narrative\n- Narrative voice: close third-person; alternating Senta/Adam POV\n- Format: mindspeak in italics with colons (*:text:*); mental dialogue parallel to speech\n- Prose: sensory grounding (hooves on cobblestones, sapphire eyes); urban geography as labyrinth\n- Motifs: \"demon horses\" vs \"Companions\" (language of fear vs reverence)\n\n## Pending Threads\n- Find lodging at Companion's Bell (Tailor's Row)."}
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
@@ -517,7 +531,10 @@ This replaces chat history, so preserve all nuance required for future scenes.
 //   ## Current Situation     -> Active locations, who is present, unresolved stakes
 //   ## Key Developments      -> Durable outcomes and plot shifts (replace outdated bullets)
 //   ## Dialogue Highlights   -> Quotes or paraphrases that continue to matter
-//   ## Tone & Style          -> Vibe/style anchors that must persist
+//   ## Tone & Style          -> Roleplay's genre, writing style, and narrative patterns (NOT character emotions)
+//                             Capture: genre/subgenre, narrative voice (POV, tense), prose patterns, dialogue format, recurring motifs
+//                             Update ONLY when the writing style itself changes (new POV introduced, genre shift, new narrative device)
+//                             DO NOT list character emotions (tense, conflicted) - those belong in Key Developments
 //   ## Pending Threads       -> Goals, timers, secrets, obligations in play
 //
 // MERGE RULES:
@@ -530,6 +547,7 @@ This replaces chat history, so preserve all nuance required for future scenes.
 // - When the new recap introduces lasting character or world detail, assume the scene recap already emitted a lorebook update—just reference the entity here.
 // - Treat critical state transitions (ownership/location/status/effects) as merge invariants: replace outdated bullets with the current state. If the change itself is story-important, state it once ("was X, now Y") and then compress to the current state in subsequent merges (avoid "change stacks").
 // - Dialogue Highlights: De-duplicate binding quotes; carry forward only if still binding or referenced. Prefer newer binding phrases over stale ones. Keep concise.
+// - Tone & Style: Describes the ROLEPLAY's writing style (genre, POV, prose patterns, dialogue format, motifs). Update ONLY when writing style changes (new POV, genre shift, narrative device added). Do NOT accumulate character emotions from scenes. If the new scene maintains existing style, keep Tone & Style unchanged. Format as bullets covering: genre/subgenre, narrative voice, prose patterns, dialogue conventions, recurring motifs.
 // - Location hierarchies: When sublocations are in play, include the full chain once (e.g., "Ponyville-Twilight's Library-Spike's Room") in Current Situation or the first relevant bullet to anchor continuity; subsequent mentions may use the most specific segment so long as there is no ambiguity. Rely on lorebooks for full details.
 // - Entity mentions: Ensure any canonical names present in the new scene recap appear at least once in the merged recap (Current Situation or Key Developments) to maintain coherence.
 // - Category tags: If Key Developments bullets include category tags (e.g., [reveal], [plan]), preserve them when merging; do not invent new tags.
@@ -541,7 +559,7 @@ This replaces chat history, so preserve all nuance required for future scenes.
 // - Every open thread, obligation, or secret mentioned in any recap still appears.
 // - No bullet restates personality traits or backstory that belongs in lorebooks.
 // - Conflicting facts are resolved in favor of the newest scene, with the current state stated clearly.
-// - Relationship dynamics read coherently with the current arc (tone/patterns preserved or updated where the scene shifted); Tone & Style tokens are replaced only when the vibe clearly changes.
+// - Relationship dynamics read coherently with the current arc (tone/patterns preserved or updated where the scene shifted); Tone & Style describes WRITING STYLE (genre, POV, prose patterns, motifs) NOT character emotions, and is updated only when narrative style changes.
 // - If sublocations are involved, the recap shows the full chain at least once, with later mentions shortened without losing clarity.
 // - Canonical names from the new scene recap are present at least once in the merged recap.
 // - Category tags (if present) are preserved and consistent; no extraneous tags added.

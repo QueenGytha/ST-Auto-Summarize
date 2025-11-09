@@ -124,6 +124,48 @@ export function stripMetadata(prompt ) {
   }
 }
 
+export function hasExistingMetadata(chatArray ) {
+  try {
+    if (!Array.isArray(chatArray) || chatArray.length === 0) {
+      return false;
+    }
+
+    const firstSystemMessage = chatArray.find((msg) => msg.role === 'system');
+    if (!firstSystemMessage || typeof firstSystemMessage.content !== 'string') {
+      return false;
+    }
+
+    return /<ST_METADATA>[\s\S]*?<\/ST_METADATA>/.test(firstSystemMessage.content);
+  } catch (err) {
+    console.error('[Auto-Recap:Metadata] Error checking existing metadata:', err);
+    return false;
+  }
+}
+
+export function getExistingOperation(chatArray ) {
+  try {
+    if (!Array.isArray(chatArray) || chatArray.length === 0) {
+      return null;
+    }
+
+    const firstSystemMessage = chatArray.find((msg) => msg.role === 'system');
+    if (!firstSystemMessage || typeof firstSystemMessage.content !== 'string') {
+      return null;
+    }
+
+    const match = firstSystemMessage.content.match(/<ST_METADATA>([\s\S]*?)<\/ST_METADATA>/);
+    if (!match) {
+      return null;
+    }
+
+    const metadata = JSON.parse(match[1]);
+    return metadata?.operation || null;
+  } catch (err) {
+    console.error('[Auto-Recap:Metadata] Error getting existing operation:', err);
+    return null;
+  }
+}
+
 export function injectMetadataIntoChatArray(
 chatArray ,
 options  = {})
@@ -137,6 +179,26 @@ options  = {})
       return;
     }
 
+    // Check if metadata already exists
+    const existingOperation = getExistingOperation(chatArray);
+
+    if (existingOperation !== null) {
+      // Metadata already exists
+      if (options?.replaceIfChat === true) {
+        // Only replace if existing is a chat-type operation
+        if (!existingOperation.startsWith('chat')) {
+          debug(SUBSYSTEM.CORE,'[Auto-Recap:Interceptor] Existing specific operation found, keeping it:', existingOperation);
+          return; // Keep existing specific operation
+        }
+        debug(SUBSYSTEM.CORE,'[Auto-Recap:Interceptor] Replacing chat-type operation with specific operation');
+        // Continue to replace chat-type with specific operation
+      } else {
+        // Don't replace, defer to existing
+        debug(SUBSYSTEM.CORE,'[Auto-Recap:Interceptor] Metadata already exists, skipping injection');
+        return;
+      }
+    }
+
     // Create metadata block
     const metadata = createMetadataBlock(options);
     const metadataStr = formatMetadataBlock(metadata);
@@ -145,6 +207,10 @@ options  = {})
     const firstSystemMessage = chatArray.find((msg) => msg.role === 'system');
 
     if (firstSystemMessage) {
+      // Strip existing metadata if replacing
+      if (existingOperation !== null) {
+        firstSystemMessage.content = firstSystemMessage.content.replace(/<ST_METADATA>[\s\S]*?<\/ST_METADATA>\n?\n?/, '');
+      }
       // Prepend to existing system message
       firstSystemMessage.content = metadataStr + firstSystemMessage.content;
       debug(SUBSYSTEM.CORE,'[Auto-Recap:Interceptor] Injected metadata into existing system message');

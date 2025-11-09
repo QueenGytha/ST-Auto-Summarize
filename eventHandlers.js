@@ -319,11 +319,17 @@ async function initializeExtension() {
       debug('[Interceptor] Metadata injection enabled, proceeding...');
 
       // Import metadata injector
-      const { injectMetadataIntoChatArray } = await import('./metadataInjector.js');
+      const { injectMetadataIntoChatArray, hasExistingMetadata } = await import('./metadataInjector.js');
 
       // Process the chat array
       if (promptData && Array.isArray(promptData.chat)) {
         debug('[Interceptor] Processing chat array for CHAT_COMPLETION_PROMPT_READY');
+
+        // Check if metadata already exists (another handler may have already injected)
+        if (hasExistingMetadata(promptData.chat)) {
+          debug('[Interceptor] Metadata already exists in prompt, skipping chat-{index} metadata');
+          return;
+        }
 
         // Check if an extension operation is already in progress
         const { getOperationSuffix } = await import('./operationContext.js');

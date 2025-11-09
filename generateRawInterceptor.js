@@ -50,8 +50,12 @@ export async function wrappedGenerateRaw(options ) {
         // Messages array - inject metadata using existing helper
         debug(SUBSYSTEM.CORE, '[Interceptor] Processing messages array with', options.prompt.length, 'messages');
 
+        // Specific operations (non-chat) should replace generic chat metadata
+        const isSpecificOperation = baseOperation !== 'chat';
+
         injectMetadataIntoChatArray(options.prompt, {
-          operation: operation
+          operation: operation,
+          replaceIfChat: isSpecificOperation
         });
 
         debug(SUBSYSTEM.CORE, '[Interceptor] Injected metadata into messages array');
