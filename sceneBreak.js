@@ -23,6 +23,7 @@ import {
 './queueIntegration.js';
 import { clearCheckedFlagsInRange, setCheckedFlagsInRange } from './autoSceneBreakDetection.js';
 import { getConfiguredEntityTypeDefinitions, formatEntityTypeListForPrompt } from './entityTypes.js';
+import { getAttachedLorebook } from './lorebookManager.js';
 
 import {
   MAX_RECAP_ATTEMPTS,
@@ -51,6 +52,7 @@ export const SCENE_BREAK_NAME_KEY = 'scene_break_name';
 export const SCENE_BREAK_RECAP_KEY = 'scene_break_recap';
 export const SCENE_RECAP_MEMORY_KEY = 'scene_recap_memory';
 export const SCENE_RECAP_HASH_KEY = 'scene_recap_hash';
+export const SCENE_RECAP_METADATA_KEY = 'scene_recap_metadata';
 export const SCENE_BREAK_COLLAPSED_KEY = 'scene_break_collapsed';
 export const SCENE_BREAK_BUTTON_CLASS = 'auto_recap_scene_break_button';
 export const SCENE_BREAK_DIV_CLASS = 'auto_recap_scene_break_div';
@@ -658,25 +660,62 @@ chat )
 }
 
 // Helper: Get active lorebook entries at a specific message position
-async function getActiveLorebooksAtPosition(endIdx, ctx) {
+async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
   const includeActiveLorebooks = get_settings('scene_recap_include_active_lorebooks');
   if (!includeActiveLorebooks) {
-    return [];
+    return { entries: [], metadata: { startIdx: endIdx, endIdx, sceneMessageCount: 0 } };
   }
 
   try {
     const { checkWorldInfo } = await import('../../../world-info.js');
     const chat = ctx.chat;
 
-    const MAX_CONTEXT_FOR_WI_CHECK = 999999;
-    const wiResult = await checkWorldInfo(chat, MAX_CONTEXT_FOR_WI_CHECK, true, { chat });
-
-    if (!wiResult || !wiResult.allActivatedEntries) {
-      return [];
+    // Find scene boundaries (walk back to previous scene break or chat start)
+    let startIdx = 0;
+    for (let i = endIdx - 1; i >= 0; i--) {
+      if (
+        get_data(chat[i], SCENE_BREAK_KEY) && (
+        get_data(chat[i], SCENE_BREAK_VISIBLE_KEY) === undefined || get_data(chat[i], SCENE_BREAK_VISIBLE_KEY))
+      ) {
+        startIdx = i + 1;
+        break;
+      }
     }
 
+    // Extract only scene messages (from startIdx to endIdx inclusive)
+    const sceneMessages = [];
+    for (let i = startIdx; i <= endIdx; i++) {
+      if (chat[i]) {
+        sceneMessages.push(chat[i]);
+      }
+    }
+
+    debug(SUBSYSTEM.SCENE, `Checking lorebook activation for scene messages ${startIdx}-${endIdx} (${sceneMessages.length} messages)`);
+
+    // Build globalScanData with character context for lorebook matching
+    const globalScanData = {
+      characterDescription: ctx.description || '',
+      characterPersonality: ctx.personality || '',
+      personaDescription: ctx.userPersonality || '',
+      scenario: ctx.scenario || ''
+    };
+
+    const MAX_CONTEXT_FOR_WI_CHECK = 999999;
+    const wiResult = await checkWorldInfo(sceneMessages, MAX_CONTEXT_FOR_WI_CHECK, true, globalScanData);
+
+    if (!wiResult || !wiResult.allActivatedEntries) {
+      return { entries: [], metadata: { startIdx, endIdx, sceneMessageCount: sceneMessages.length } };
+    }
+
+    // Get chat lorebook name to filter entries
+    const chatLorebookName = getAttachedLorebook();
+    const suppressOtherLorebooks = get_settings('suppress_other_lorebooks');
+
     const entries = Array.from(wiResult.allActivatedEntries);
-    return entries.filter(entry => {
+    const totalBeforeFiltering = entries.length;
+
+    const filteredEntries = entries.filter(entry => {
+      // Filter out internal/system entries
       if (entry.comment && entry.comment.startsWith('_registry_')) {
         return false;
       }
@@ -686,11 +725,35 @@ async function getActiveLorebooksAtPosition(endIdx, ctx) {
       if (entry.comment === 'Auto-Recap Operations Queue') {
         return false;
       }
+
+      // Filter to only chat lorebook entries if suppression is enabled
+      if (suppressOtherLorebooks && chatLorebookName) {
+        if (entry.world !== chatLorebookName) {
+          return false;
+        }
+      }
+
       return true;
     });
+
+    debug(SUBSYSTEM.SCENE, `Lorebook activation for scene ${startIdx}-${endIdx}: ${totalBeforeFiltering} total -> ${filteredEntries.length} after filtering (chatLB: ${chatLorebookName || 'none'}, suppress: ${suppressOtherLorebooks})`);
+
+    return {
+      entries: filteredEntries,
+      metadata: {
+        startIdx,
+        endIdx,
+        sceneMessageCount: sceneMessages.length,
+        totalActivatedEntries: filteredEntries.length,
+        totalBeforeFiltering,
+        chatLorebookName: chatLorebookName || null,
+        suppressOtherLorebooks,
+        entryNames: filteredEntries.map(e => e.comment || e.uid || 'Unnamed')
+      }
+    };
   } catch (err) {
     debug(SUBSYSTEM.SCENE, `Failed to get active lorebooks: ${err.message}`);
-    return [];
+    return { entries: [], metadata: { startIdx: endIdx, endIdx, sceneMessageCount: 0, error: err.message } };
   }
 }
 
@@ -732,7 +795,8 @@ function formatLorebooksForPrompt(entries) {
 async function prepareScenePrompt(
 sceneObjects ,
 ctx ,
-endIdx )
+endIdx ,
+get_data )
 {
   const promptTemplate = get_settings('scene_recap_prompt');
   const prefill = get_settings('scene_recap_prefill') || "";
@@ -742,8 +806,8 @@ endIdx )
     lorebookTypesMacro = formatEntityTypeListForPrompt(getConfiguredEntityTypeDefinitions());
   }
 
-  // Get active lorebooks if enabled
-  const activeEntries = await getActiveLorebooksAtPosition(endIdx, ctx);
+  // Get active lorebooks if enabled (now returns { entries, metadata })
+  const { entries: activeEntries, metadata: lorebookMetadata } = await getActiveLorebooksAtPosition(endIdx, ctx, get_data);
   const activeLorebooksText = formatLorebooksForPrompt(activeEntries);
 
   // Format scene messages with speaker labels to prevent substituteParamsExtended from stripping them
@@ -773,7 +837,7 @@ endIdx )
   prompt = prompt.replace(/\{\{lorebook_entry_types\}\}/g, lorebookTypesMacro);
   prompt = prompt.replace(/\{\{active_lorebooks\}\}/g, activeLorebooksText);
 
-  return { prompt, prefill };
+  return { prompt, prefill, lorebookMetadata };
 }
 
 // Helper: Switch to scene recap profile/preset
@@ -834,7 +898,7 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx) {
 // Helper: Save scene recap and queue lorebook entries
 
 async function saveSceneRecap(config) {
-  const { message, recap, get_data, set_data, saveChatDebounced, messageIndex } = config;
+  const { message, recap, get_data, set_data, saveChatDebounced, messageIndex, lorebookMetadata } = config;
   const updatedVersions = getSceneRecapVersions(message, get_data).slice();
   updatedVersions.push(recap);
   setSceneRecapVersions(message, set_data, updatedVersions);
@@ -842,6 +906,19 @@ async function saveSceneRecap(config) {
   set_data(message, SCENE_BREAK_RECAP_KEY, recap);
   set_data(message, SCENE_RECAP_MEMORY_KEY, recap);
   set_data(message, SCENE_RECAP_HASH_KEY, computeRecapHash(recap));
+
+  // Store lorebook metadata for this version
+  if (lorebookMetadata) {
+    const existingMetadata = get_data(message, SCENE_RECAP_METADATA_KEY) || {};
+    const versionIndex = updatedVersions.length - 1;
+    existingMetadata[versionIndex] = {
+      timestamp: Date.now(),
+      ...lorebookMetadata
+    };
+    set_data(message, SCENE_RECAP_METADATA_KEY, existingMetadata);
+    debug(SUBSYSTEM.SCENE, `Stored lorebook metadata for version ${versionIndex}: ${lorebookMetadata.totalActivatedEntries || 0} entries`);
+  }
+
   saveChatDebounced();
   refresh_memory();
 
@@ -970,8 +1047,8 @@ export async function generateSceneRecap(config) {
   const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
   const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
-  // Prepare prompt
-  const { prompt, prefill } = await prepareScenePrompt(sceneObjects, ctx, endIdx);
+  // Prepare prompt (now returns lorebook metadata)
+  const { prompt, prefill, lorebookMetadata } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data);
 
   // Generate recap with connection profile/preset switching
   const { withConnectionSettings } = await import('./connectionSettingsManager.js');
@@ -996,8 +1073,8 @@ export async function generateSceneRecap(config) {
     throw new Error('Operation cancelled by user');
   }
 
-  // Save and render (returns lorebook operation IDs)
-  const lorebookOpIds = await saveSceneRecap({ message, recap, get_data, set_data, saveChatDebounced, messageIndex: index });
+  // Save and render (returns lorebook operation IDs, now includes lorebook metadata)
+  const lorebookOpIds = await saveSceneRecap({ message, recap, get_data, set_data, saveChatDebounced, messageIndex: index, lorebookMetadata });
 
   // Mark all messages in this scene as checked to prevent auto-detection from splitting the scene
   const markedCount = setCheckedFlagsInRange(startIdx, endIdx);
