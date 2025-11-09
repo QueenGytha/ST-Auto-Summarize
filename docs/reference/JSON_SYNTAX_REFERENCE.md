@@ -1,8 +1,8 @@
-# JSON Syntax Reference for ST-Auto-Summarize & ST-Auto-Lorebooks Integration
+# JSON Syntax Reference for ST-Auto-Recap & ST-Auto-Lorebooks Integration
 
-## Summary JSON Structure
+## Recap JSON Structure
 
-This document defines the exact JSON structure that ST-Auto-Summarize generates and ST-Auto-Lorebooks consumes.
+This document defines the exact JSON structure that ST-Auto-Recap generates and ST-Auto-Lorebooks consumes.
 
 ## Base Structure
 
@@ -544,9 +544,9 @@ When an entity already exists and you need to update it, use the `updates` array
 
 ## Processing by ST-Auto-Lorebooks
 
-When ST-Auto-Lorebooks processes these summaries:
+When ST-Auto-Lorebooks processes these recaps:
 
-1. **Reads the JSON** from summary storage
+1. **Reads the JSON** from recap storage
 2. **Extracts entities array**
 3. **For each entity**:
    - Checks if lorebook entry exists (by name or aliases)
@@ -556,7 +556,7 @@ When ST-Auto-Lorebooks processes these summaries:
 5. **Sets lorebook entry metadata** (keys, depth, order, position)
 6. **Saves to chat-specific lorebook**
 
-## Naming Convention Summary
+## Naming Convention Recap
 
 | Entity Type | Prefix | Example Entry Name |
 |-------------|--------|-------------------|
@@ -572,4 +572,4 @@ When ST-Auto-Lorebooks processes these summaries:
 
 ---
 
-**This syntax reference serves as the contract between ST-Auto-Summarize (generates JSON) and ST-Auto-Lorebooks (processes JSON).**
+**This syntax reference serves as the contract between ST-Auto-Recap (generates JSON) and ST-Auto-Lorebooks (processes JSON).**

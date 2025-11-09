@@ -5,7 +5,7 @@
 
 ---
 
-## Executive Summary
+## Executive Recap
 
 **Answer: ✅ YES - Individual wrapping is VIABLE with proper sorting**
 
@@ -171,7 +171,7 @@ But the cached content for `character-Anonfilly` is 609 chars - likely multi-lin
 **Hypothesis:** SillyTavern processes character entries through formatter that:
 1. Removes newlines
 2. Wraps with `[Character: ...]` brackets
-3. Truncates or summarizes
+3. Truncates or recaps
 
 **Implication:** Character entries might NOT match their cached content exactly!
 

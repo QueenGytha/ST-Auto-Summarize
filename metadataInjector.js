@@ -33,7 +33,7 @@ export function getChatName() {
     // Fallback
     return 'Unknown';
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error getting chat name:', err);
+    console.error('[Auto-Recap:Metadata] Error getting chat name:', err);
     return 'Unknown';
   }
 }
@@ -44,7 +44,7 @@ export function isMetadataInjectionEnabled() {
     const enabled = get_settings('first_hop_proxy_send_chat_details');
     return enabled === true;
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error checking if enabled:', err);
+    console.error('[Auto-Recap:Metadata] Error checking if enabled:', err);
     return false; // Default to disabled
   }
 }
@@ -84,7 +84,7 @@ export function formatMetadataBlock(metadata ) {
     const jsonStr = JSON.stringify(metadata, null, 2);
     return `<ST_METADATA>\n${jsonStr}\n</ST_METADATA>\n\n`;
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error formatting metadata block:', err);
+    console.error('[Auto-Recap:Metadata] Error formatting metadata block:', err);
     return '';
   }
 }
@@ -109,7 +109,7 @@ options  = {})
     return metadataStr + prompt;
 
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error injecting metadata:', err);
+    console.error('[Auto-Recap:Metadata] Error injecting metadata:', err);
     // Return original prompt on error
     return prompt;
   }
@@ -119,7 +119,7 @@ export function stripMetadata(prompt ) {
   try {
     return prompt.replace(/<ST_METADATA>[\s\S]*?<\/ST_METADATA>\n?\n?/g, '');
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error stripping metadata:', err);
+    console.error('[Auto-Recap:Metadata] Error stripping metadata:', err);
     return prompt;
   }
 }
@@ -147,18 +147,18 @@ options  = {})
     if (firstSystemMessage) {
       // Prepend to existing system message
       firstSystemMessage.content = metadataStr + firstSystemMessage.content;
-      debug(SUBSYSTEM.CORE,'[Auto-Summarize:Interceptor] Injected metadata into existing system message');
+      debug(SUBSYSTEM.CORE,'[Auto-Recap:Interceptor] Injected metadata into existing system message');
     } else {
       // No system message exists, insert at beginning
       chatArray.unshift({
         role: 'system',
         content: metadataStr
       });
-      debug(SUBSYSTEM.CORE,'[Auto-Summarize:Interceptor] Created new system message with metadata');
+      debug(SUBSYSTEM.CORE,'[Auto-Recap:Interceptor] Created new system message with metadata');
     }
 
-    debug(SUBSYSTEM.CORE,'[Auto-Summarize:Interceptor] Metadata:', JSON.stringify(metadata));
+    debug(SUBSYSTEM.CORE,'[Auto-Recap:Interceptor] Metadata:', JSON.stringify(metadata));
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error injecting metadata into chat array:', err);
+    console.error('[Auto-Recap:Metadata] Error injecting metadata into chat array:', err);
   }
 }

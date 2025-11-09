@@ -55,7 +55,7 @@ function initialize_settings() {
   }
 
   // Initialize Auto-Lorebooks GLOBAL settings (merged extension uses separate namespace)
-  // NOTE: Per-profile settings (tracking, summary_processing) are stored in profiles via default_settings
+  // NOTE: Per-profile settings (tracking, recap_processing) are stored in profiles via default_settings
   if (!extension_settings.autoLorebooks) {
     log("Auto-Lorebooks global settings not found. Initializing with defaults...");
     extension_settings.autoLorebooks = getDefaultAutoLorebookSettings();
@@ -80,8 +80,8 @@ function initialize_settings() {
     if (extension_settings.autoLorebooks.tracking) {
       delete extension_settings.autoLorebooks.tracking;
     }
-    if (extension_settings.autoLorebooks.summary_processing) {
-      delete extension_settings.autoLorebooks.summary_processing;
+    if (extension_settings.autoLorebooks.recap_processing) {
+      delete extension_settings.autoLorebooks.recap_processing;
     }
   }
 
@@ -250,7 +250,7 @@ function toggle_chat_enabled(value  = null) {
   scrollChatToBottom();
 }
 function character_enabled(character_key ) {
-  // check if the given character is enabled for summarization in the current chat
+  // check if the given character is enabled for recap generation in the current chat
   const group_id = selected_group;
   if (selected_group === null) {return true;} // not in group chat, always enabled
 
@@ -261,7 +261,7 @@ function character_enabled(character_key ) {
 
 }
 function toggle_character_enabled(character_key ) {
-  // Toggle whether the given character is enabled for summarization in the current chat
+  // Toggle whether the given character is enabled for recap generation in the current chat
   const group_id = selected_group;
   if (group_id === undefined) {return;} // not in group chat, nothing to toggle
 
@@ -277,7 +277,7 @@ function toggle_character_enabled(character_key ) {
 
   disabled_characters_settings[group_id] = disabled_characters;
   set_settings('disabled_group_characters', disabled_characters_settings);
-  debug(`${disabled ? "Enabled" : "Disabled"} group character summarization (${character_key})`);
+  debug(`${disabled ? "Enabled" : "Disabled"} group character recap generation (${character_key})`);
   refresh_memory();
 }
 

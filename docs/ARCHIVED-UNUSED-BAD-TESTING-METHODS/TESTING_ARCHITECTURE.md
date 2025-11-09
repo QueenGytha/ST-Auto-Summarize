@@ -1,4 +1,4 @@
-# Testing Architecture for ST-Auto-Summarize
+# Testing Architecture for ST-Auto-Recap
 
 ## Table of Contents
 1. [Problem Statement](#problem-statement)
@@ -15,7 +15,7 @@
 
 ### The Challenge
 
-ST-Auto-Summarize is developed **entirely by AI**, including all functionality, UI, and tests. This creates unique testing challenges:
+ST-Auto-Recap is developed **entirely by AI**, including all functionality, UI, and tests. This creates unique testing challenges:
 
 #### AI's Systematic Mistakes
 
@@ -50,7 +50,7 @@ export function generateRaw(prompt) {  // Wrong signature!
 }
 
 // AI code then uses fantasy API
-const result = generateRaw("Summarize this");  // Works in tests, fails in production
+const result = generateRaw("Recap this");  // Works in tests, fails in production
 ```
 
 **Problem**: AI develops against fantasy version of SillyTavern, tests pass, production fails.
@@ -58,7 +58,7 @@ const result = generateRaw("Summarize this");  // Works in tests, fails in produ
 #### Pure Business Logic Tests Miss Critical Issues
 ```javascript
 // ✅ Tests that business logic works
-test('extracts entities from summary', () => {
+test('extracts entities from recap', () => {
   const entities = extractEntities({ lorebooks: [...] });
   expect(entities).toHaveLength(2);
 });
@@ -104,10 +104,10 @@ export default {
 };
 
 // Test
-test('can generate summary', async ({ page }) => {
+test('can generate recap', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000');
-  await page.click('#auto_summarize_button');
-  await page.waitForSelector('.summary-result');
+  await page.click('#auto_recap_button');
+  await page.waitForSelector('.recap-result');
   // ...
 });
 ```
@@ -136,10 +136,10 @@ Test only pure JavaScript functions without any DOM or SillyTavern dependencies.
 
 ```javascript
 // No DOM, no ST, just pure functions
-test('combines summaries correctly', () => {
-  const summaries = ['Summary 1', 'Summary 2'];
-  const result = combineSummaries(summaries);
-  expect(result).toContain('Summary 1');
+test('combines recaps correctly', () => {
+  const recaps = ['Recap 1', 'Recap 2'];
+  const result = combineRecaps(recaps);
+  expect(result).toContain('Recap 1');
 });
 
 test('calculates tokens correctly', () => {
@@ -176,7 +176,7 @@ export const chat_metadata = {};
 
 export function generateRaw(options) {
   // Hand-written mock behavior
-  return Promise.resolve({ content: "Mock summary" });
+  return Promise.resolve({ content: "Mock recap" });
 }
 
 export function saveMetadata() {
@@ -203,10 +203,10 @@ export function generateRaw(prompt) {  // Wrong signature
 }
 
 // AI writes code against wrong mock
-const summary = generateRaw("Summarize");  // ✅ Test passes
+const recap = generateRaw("Recap");  // ✅ Test passes
 
 // Real ST:
-const summary = await generateRaw({ prompt: "Summarize" });  // ❌ Production fails
+const recap = await generateRaw({ prompt: "Recap" });  // ❌ Production fails
 ```
 
 #### Why Rejected
@@ -815,19 +815,19 @@ export function chatBuilder() {
       return this;
     },
 
-    withSummary(messageId, summary, isLongTerm = false) {
+    withRecap(messageId, recap, isLongTerm = false) {
       messages[messageId].extra.memory = {
-        summary,
+        recap,
         isLongTerm
       };
       return this;
     },
 
-    withSceneSummary(name, content, startIndex) {
-      if (!metadata.scene_summaries) {
-        metadata.scene_summaries = [];
+    withSceneRecap(name, content, startIndex) {
+      if (!metadata.scene_recaps) {
+        metadata.scene_recaps = [];
       }
-      metadata.scene_summaries.push({
+      metadata.scene_recaps.push({
         name,
         content,
         startIndex: startIndex ?? messages.length - 1
@@ -1002,16 +1002,16 @@ export const customMatchers = {
     };
   },
 
-  toHaveSummary(received, messageId) {
+  toHaveRecap(received, messageId) {
     const message = Array.isArray(received) ? received[messageId] : received;
-    const pass = message?.extra?.memory?.summary !== undefined;
+    const pass = message?.extra?.memory?.recap !== undefined;
 
     return {
       pass,
       message: () =>
         pass
-          ? `Expected message ${messageId} not to have summary`
-          : `Expected message ${messageId} to have summary but extra.memory.summary was undefined`
+          ? `Expected message ${messageId} not to have recap`
+          : `Expected message ${messageId} to have recap but extra.memory.recap was undefined`
     };
   }
 };
@@ -1046,10 +1046,10 @@ export const longConversationChat = {
   metadata: {}
 };
 
-export const chatWithSummaries = {
+export const chatWithRecaps = {
   messages: [
-    { name: 'User', is_user: true, mes: 'Hello', extra: { memory: { summary: 'User greets' } } },
-    { name: 'Char', is_user: false, mes: 'Hi', extra: { memory: { summary: 'Char responds' } } }
+    { name: 'User', is_user: true, mes: 'Hello', extra: { memory: { recap: 'User greets' } } },
+    { name: 'Char', is_user: false, mes: 'Hi', extra: { memory: { recap: 'Char responds' } } }
   ],
   metadata: {}
 };
@@ -1059,11 +1059,11 @@ export const chatWithSummaries = {
  * Canned LLM responses for proxy
  */
 
-export const summarizationResponses = {
+export const recap generationResponses = {
   greeting: {
-    match: /summarize.*hello/i,
+    match: /recap.*hello/i,
     response: {
-      content: 'Summary: User sends a friendly greeting to the character.'
+      content: 'Recap: User sends a friendly greeting to the character.'
     }
   },
 
@@ -1071,7 +1071,7 @@ export const summarizationResponses = {
     match: /scene.*alice.*bob/i,
     response: {
       content: JSON.stringify({
-        summary: 'Alice and Bob discuss plans',
+        recap: 'Alice and Bob discuss plans',
         lorebooks: [
           { type: 'character', name: 'Alice', description: 'A detective' },
           { type: 'character', name: 'Bob', description: 'A suspect' }
@@ -1103,26 +1103,26 @@ describe('Settings UI - Element Existence', () => {
     global.$('body').append('<div id="extensions_settings"></div>');
 
     // Setup extension settings
-    global.extension_settings = { auto_summarize: {} };
+    global.extension_settings = { auto_recap: {} };
 
     // Initialize UI
     setupSettingsUI();
   });
 
   it('creates enable checkbox', () => {
-    expect(null).toHaveUIElement('#enable_auto_summarize');
+    expect(null).toHaveUIElement('#enable_auto_recap');
   });
 
   it('creates max tokens input', () => {
     expect(null).toHaveUIElement('#max_tokens');
   });
 
-  it('creates summary prompt textarea', () => {
-    expect(null).toHaveUIElement('#summary_prompt');
+  it('creates recap prompt textarea', () => {
+    expect(null).toHaveUIElement('#recap_prompt');
   });
 
   it('creates scene break button', () => {
-    expect(null).toHaveUIElement('#auto_summarize_scene_break_button');
+    expect(null).toHaveUIElement('#auto_recap_scene_break_button');
   });
 
   it('creates all required profile settings', () => {
@@ -1143,19 +1143,19 @@ describe('Settings UI - Wiring', () => {
   beforeEach(() => {
     global.$('body').empty();
     global.$('body').append('<div id="extensions_settings"></div>');
-    global.extension_settings = { auto_summarize: { profiles: { default: {} } } };
+    global.extension_settings = { auto_recap: { profiles: { default: {} } } };
     setupSettingsUI();
   });
 
   it('checkbox changes setting when clicked', () => {
-    const $checkbox = global.$('#enable_auto_summarize');
+    const $checkbox = global.$('#enable_auto_recap');
 
     // Simulate user interaction
     $checkbox.prop('checked', true);
     $checkbox.trigger('change');
 
     // Verify setting changed
-    expect(global.extension_settings.auto_summarize.enabled).toBe(true);
+    expect(global.extension_settings.auto_recap.enabled).toBe(true);
   });
 
   it('slider updates setting value', () => {
@@ -1164,11 +1164,11 @@ describe('Settings UI - Wiring', () => {
     $slider.val(1000);
     $slider.trigger('input');
 
-    expect(global.extension_settings.auto_summarize.profiles.default.max_tokens).toBe(1000);
+    expect(global.extension_settings.auto_recap.profiles.default.max_tokens).toBe(1000);
   });
 
   it('scene break button has click handler', () => {
-    const $button = global.$('#auto_summarize_scene_break_button');
+    const $button = global.$('#auto_recap_scene_break_button');
     expect($button[0]).toHaveWiredHandler('click');
   });
 });
@@ -1184,46 +1184,46 @@ describe('Settings UI - Wiring', () => {
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { generateSummary } from '../../summarization.js';
+import { generateRecap } from '../../recapping.js';
 import { chat, chat_metadata } from '../setup/sillytavern-loader.js';
 
 describe('SillyTavern API - generateRaw Usage', () => {
   it('calls generateRaw with correct options object', async () => {
     chat[0] = { mes: 'Test message', extra: {} };
 
-    // If generateSummary calls generateRaw incorrectly, real ST code throws
-    await expect(generateSummary(0)).resolves.toBeDefined();
+    // If generateRecap calls generateRaw incorrectly, real ST code throws
+    await expect(generateRecap(0)).resolves.toBeDefined();
   });
 
   it('handles generateRaw promise correctly', async () => {
     chat[0] = { mes: 'Test', extra: {} };
 
     // Should await the promise, not treat as synchronous
-    const result = await generateSummary(0);
-    expect(result).toHaveProperty('summary');
+    const result = await generateRecap(0);
+    expect(result).toHaveProperty('recap');
   });
 });
 
 describe('SillyTavern API - Chat Structure', () => {
   it('modifies chat structure correctly', () => {
-    const { addSummaryToMessage } = require('../../memoryCore.js');
+    const { addRecapToMessage } = require('../../memoryCore.js');
 
     chat[0] = { mes: 'Test', extra: {} };
-    addSummaryToMessage(0, 'Test summary');
+    addRecapToMessage(0, 'Test recap');
 
     // Verify structure matches ST expectations
     expect(chat[0]).toHaveProperty('extra');
     expect(chat[0].extra).toHaveProperty('memory');
-    expect(chat[0].extra.memory).toHaveProperty('summary');
+    expect(chat[0].extra.memory).toHaveProperty('recap');
   });
 
   it('checks message exists before modifying', () => {
-    const { addSummaryToMessage } = require('../../memoryCore.js');
+    const { addRecapToMessage } = require('../../memoryCore.js');
 
     chat.length = 0;
 
     // Should not crash or create invalid state
-    expect(() => addSummaryToMessage(5, 'summary')).not.toThrow();
+    expect(() => addRecapToMessage(5, 'recap')).not.toThrow();
   });
 });
 ```
@@ -1240,29 +1240,29 @@ describe('SillyTavern API - Chat Structure', () => {
 import { describe, it, expect, beforeEach } from 'vitest';
 import { chatBuilder, lorebookBuilder } from '../helpers/builders.js';
 
-describe('Summarization Workflow', () => {
+describe('Recap Generation Workflow', () => {
   beforeEach(() => {
     chatBuilder().install();
   });
 
-  it('generates and stores summary for message', async () => {
+  it('generates and stores recap for message', async () => {
     // Setup
     chatBuilder()
       .addUserMessage('Hello there!')
       .install();
 
     // Execute workflow
-    const { summarizeMessage } = await import('../../summarization.js');
-    await summarizeMessage(0);
+    const { recapMessage } = await import('../../recapping.js');
+    await recapMessage(0);
 
     // Verify
-    expect(global.chat).toHaveSummary(0);
-    expect(global.chat[0].extra.memory.summary).toBeTruthy();
+    expect(global.chat).toHaveRecap(0);
+    expect(global.chat[0].extra.memory.recap).toBeTruthy();
   });
 
-  it('validates summary if validation enabled', async () => {
+  it('validates recap if validation enabled', async () => {
     // Setup
-    global.extension_settings.auto_summarize = {
+    global.extension_settings.auto_recap = {
       profiles: {
         default: {
           validation_enabled: true
@@ -1276,8 +1276,8 @@ describe('Summarization Workflow', () => {
       .install();
 
     // Execute
-    const { summarizeMessage } = await import('../../summarization.js');
-    await summarizeMessage(0);
+    const { recapMessage } = await import('../../recapping.js');
+    await recapMessage(0);
 
     // Verify validation was performed
     expect(global.chat[0].extra.memory.validated).toBe(true);
@@ -1287,9 +1287,9 @@ describe('Summarization Workflow', () => {
 describe('Lorebook Pipeline', () => {
   it('extracts entities and creates lorebook entries', async () => {
     // Setup
-    const sceneSummary = {
+    const sceneRecap = {
       content: JSON.stringify({
-        summary: 'Alice meets Bob at the cafe',
+        recap: 'Alice meets Bob at the cafe',
         lorebooks: [
           { type: 'character', name: 'Alice', description: 'A detective investigating' },
           { type: 'character', name: 'Bob', description: 'A cafe owner' }
@@ -1301,7 +1301,7 @@ describe('Lorebook Pipeline', () => {
 
     // Execute
     const { processLorebookExtraction } = await import('../../lorebookManager.js');
-    const result = await processLorebookExtraction(sceneSummary, lorebook);
+    const result = await processLorebookExtraction(sceneRecap, lorebook);
 
     // Verify
     expect(result).toHaveLorebookEntry('character_alice');
@@ -1310,7 +1310,7 @@ describe('Lorebook Pipeline', () => {
 });
 
 describe('Scene Detection', () => {
-  it('detects scene break and generates summary', async () => {
+  it('detects scene break and generates recap', async () => {
     // Setup
     chatBuilder()
       .addUserMessage('Goodbye for now')
@@ -1318,7 +1318,7 @@ describe('Scene Detection', () => {
       .addUserMessage('Next day arrives')
       .install();
 
-    global.extension_settings.auto_summarize = {
+    global.extension_settings.auto_recap = {
       profiles: {
         default: {
           auto_scene_detection_enabled: true,
@@ -1334,7 +1334,7 @@ describe('Scene Detection', () => {
 
     // Verify
     expect(hasBreak).toBe(true);
-    expect(global.chat_metadata.scene_summaries).toBeDefined();
+    expect(global.chat_metadata.scene_recaps).toBeDefined();
   });
 });
 ```
@@ -1465,7 +1465,7 @@ describe('New Feature UI', () => {
     $element.val('new_value');
     $element.trigger('change');
 
-    expect(global.extension_settings.auto_summarize.your_setting).toBe('new_value');
+    expect(global.extension_settings.auto_recap.your_setting).toBe('new_value');
   });
 });
 ```
@@ -1599,7 +1599,7 @@ describe('Feature Name - UI Elements', () => {
 describe('Feature Name - Settings Wiring', () => {
   beforeEach(() => {
     global.extension_settings = {
-      auto_summarize: {
+      auto_recap: {
         profiles: { default: {} },
         profile: 'default'
       }
@@ -1616,7 +1616,7 @@ describe('Feature Name - Settings Wiring', () => {
     $input.trigger('change');
 
     // Verify setting changed
-    const settings = global.extension_settings.auto_summarize.profiles.default;
+    const settings = global.extension_settings.auto_recap.profiles.default;
     expect(settings.your_setting).toBe('new_value');
   });
 });
@@ -1862,7 +1862,7 @@ open coverage/index.html
 
 ---
 
-## Summary
+## Recap
 
 ### The Testing Approach
 

@@ -1,4 +1,4 @@
-# AI Development Workflow for ST-Auto-Summarize
+# AI Development Workflow for ST-Auto-Recap
 
 **Complete end-to-end guide for AI-driven feature development with testing**
 
@@ -40,7 +40,7 @@ AI systematically makes these mistakes when implementing features:
 ### Step 1: Install Dependencies
 
 ```bash
-cd /mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize
+cd /mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Recap
 
 npm install --save-dev puppeteer http-server
 ```
@@ -54,7 +54,7 @@ npm install --save-dev puppeteer http-server
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>ST-Auto-Summarize Tests</title>
+  <title>ST-Auto-Recap Tests</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mocha@10/mocha.css">
 </head>
 <body>
@@ -70,7 +70,7 @@ npm install --save-dev puppeteer http-server
     window.chat = [];
     window.chat_metadata = {};
     window.extension_settings = {
-      auto_summarize: {
+      auto_recap: {
         profiles: {
           default: {}
         },
@@ -152,7 +152,7 @@ npm install --save-dev puppeteer http-server
     import * as index from '../index.js';
     import * as settingsUI from '../settingsUI.js';
     import * as settingsManager from '../settingsManager.js';
-    import * as summarization from '../summarization.js';
+    import * as recap generation from '../recapping.js';
     import * as memoryCore from '../memoryCore.js';
     import * as operationQueue from '../operationQueue.js';
     // ... import all other modules
@@ -162,7 +162,7 @@ npm install --save-dev puppeteer http-server
       index,
       settingsUI,
       settingsManager,
-      summarization,
+      recap generation,
       memoryCore,
       operationQueue
       // ... etc
@@ -344,7 +344,7 @@ runTests();
 
 ### Phase 1: Receive Feature Request
 
-**Example:** "Add a dropdown to select which prompt template to use for summarization"
+**Example:** "Add a dropdown to select which prompt template to use for recap generation"
 
 **Requirements:**
 - Dropdown in settings UI
@@ -360,8 +360,8 @@ runTests();
 // settingsUI.js - Add UI element
 export function setupPromptSelector() {
   const html = `
-    <label for="summary_prompt_template">Prompt Template:</label>
-    <select id="summary_prompt_template">
+    <label for="recap_prompt_template">Prompt Template:</label>
+    <select id="recap_prompt_template">
       <option value="default">Default</option>
       <option value="detailed">Detailed</option>
       <option value="brief">Brief</option>
@@ -371,7 +371,7 @@ export function setupPromptSelector() {
   $('#prompt_settings_container').append(html);
 
   // Wire to settings
-  $('#summary_prompt_template').on('change', function() {
+  $('#recap_prompt_template').on('change', function() {
     const settings = get_settings();
     settings.prompt_template = $(this).val();
     saveSettingsDebounced();
@@ -379,18 +379,18 @@ export function setupPromptSelector() {
 
   // Load current value
   const settings = get_settings();
-  $('#summary_prompt_template').val(settings.prompt_template || 'default');
+  $('#recap_prompt_template').val(settings.prompt_template || 'default');
 }
 
-// summarization.js - Use the setting
-export async function generateSummary(messageId) {
+// recapping.js - Use the setting
+export async function generateRecap(messageId) {
   const settings = get_settings();
   const message = chat[messageId];
 
   const prompts = {
-    default: 'Summarize this message: {{message}}',
-    detailed: 'Provide a detailed summary of: {{message}}',
-    brief: 'Briefly summarize: {{message}}'
+    default: 'Recap this message: {{message}}',
+    detailed: 'Provide a detailed recap of: {{message}}',
+    brief: 'Briefly recap: {{message}}'
   };
 
   const template = prompts[settings.prompt_template] || prompts.default;
@@ -418,7 +418,7 @@ describe('Prompt Selector Feature', () => {
     document.body.innerHTML = '<div id="prompt_settings_container"></div>';
 
     // Reset settings
-    window.extension_settings.auto_summarize.profiles.default = {
+    window.extension_settings.auto_recap.profiles.default = {
       prompt_template: 'default'
     };
 
@@ -432,7 +432,7 @@ describe('Prompt Selector Feature', () => {
     it('creates dropdown element', () => {
       window.extensionModules.settingsUI.setupPromptSelector();
 
-      const dropdown = document.getElementById('summary_prompt_template');
+      const dropdown = document.getElementById('recap_prompt_template');
       expect(dropdown).to.exist;
       expect(dropdown.tagName).to.equal('SELECT');
     });
@@ -440,7 +440,7 @@ describe('Prompt Selector Feature', () => {
     it('has all three options', () => {
       window.extensionModules.settingsUI.setupPromptSelector();
 
-      const dropdown = document.getElementById('summary_prompt_template');
+      const dropdown = document.getElementById('recap_prompt_template');
       const options = Array.from(dropdown.options).map(o => o.value);
 
       expect(options).to.include('default');
@@ -453,32 +453,32 @@ describe('Prompt Selector Feature', () => {
     it('updates setting when dropdown changes', () => {
       window.extensionModules.settingsUI.setupPromptSelector();
 
-      const dropdown = document.getElementById('summary_prompt_template');
+      const dropdown = document.getElementById('recap_prompt_template');
       dropdown.value = 'detailed';
       dropdown.dispatchEvent(new Event('change'));
 
-      const settings = window.extension_settings.auto_summarize.profiles.default;
+      const settings = window.extension_settings.auto_recap.profiles.default;
       expect(settings.prompt_template).to.equal('detailed');
     });
 
     it('loads current setting value on init', () => {
       // Set initial value
-      window.extension_settings.auto_summarize.profiles.default.prompt_template = 'brief';
+      window.extension_settings.auto_recap.profiles.default.prompt_template = 'brief';
 
       // Setup UI
       window.extensionModules.settingsUI.setupPromptSelector();
 
       // Verify dropdown shows current value
-      const dropdown = document.getElementById('summary_prompt_template');
+      const dropdown = document.getElementById('recap_prompt_template');
       expect(dropdown.value).to.equal('brief');
     });
   });
 
-  describe('Integration with Summarization', () => {
+  describe('Integration with Recap Generation', () => {
     it('uses selected prompt template', async () => {
       // Set prompt template
-      window.extension_settings.auto_summarize.profiles.default.prompt_template = 'detailed';
-      window.extension_settings.auto_summarize.profiles.default.max_tokens = 100;
+      window.extension_settings.auto_recap.profiles.default.prompt_template = 'detailed';
+      window.extension_settings.auto_recap.profiles.default.max_tokens = 100;
 
       // Add message to chat
       window.chat = [{
@@ -486,26 +486,26 @@ describe('Prompt Selector Feature', () => {
         extra: {}
       }];
 
-      // Generate summary
-      await window.extensionModules.summarization.generateSummary(0);
+      // Generate recap
+      await window.extensionModules.recap generation.generateRecap(0);
 
       // Verify correct prompt was used
       expect(window.generateRaw.calls).to.have.lengthOf(1);
       const call = window.generateRaw.calls[0];
-      expect(call.prompt).to.include('Provide a detailed summary');
+      expect(call.prompt).to.include('Provide a detailed recap');
       expect(call.prompt).to.include('This is a test message');
     });
 
     it('falls back to default if template not set', async () => {
       // Don't set prompt_template (undefined)
-      window.extension_settings.auto_summarize.profiles.default = {};
+      window.extension_settings.auto_recap.profiles.default = {};
 
       window.chat = [{ mes: 'Test', extra: {} }];
 
-      await window.extensionModules.summarization.generateSummary(0);
+      await window.extensionModules.recap generation.generateRecap(0);
 
       const call = window.generateRaw.calls[0];
-      expect(call.prompt).to.include('Summarize this message:');
+      expect(call.prompt).to.include('Recap this message:');
     });
 
     it('uses correct template for each option', async () => {
@@ -513,16 +513,16 @@ describe('Prompt Selector Feature', () => {
 
       const templates = ['default', 'detailed', 'brief'];
       const expectedStrings = [
-        'Summarize this message:',
-        'Provide a detailed summary',
-        'Briefly summarize:'
+        'Recap this message:',
+        'Provide a detailed recap',
+        'Briefly recap:'
       ];
 
       for (let i = 0; i < templates.length; i++) {
         window.generateRaw.calls = []; // Clear calls
-        window.extension_settings.auto_summarize.profiles.default.prompt_template = templates[i];
+        window.extension_settings.auto_recap.profiles.default.prompt_template = templates[i];
 
-        await window.extensionModules.summarization.generateSummary(0);
+        await window.extensionModules.recap generation.generateRecap(0);
 
         expect(window.generateRaw.calls[0].prompt).to.include(expectedStrings[i]);
       }
@@ -531,14 +531,14 @@ describe('Prompt Selector Feature', () => {
 
   describe('Edge Cases', () => {
     it('handles invalid template gracefully', async () => {
-      window.extension_settings.auto_summarize.profiles.default.prompt_template = 'nonexistent';
+      window.extension_settings.auto_recap.profiles.default.prompt_template = 'nonexistent';
       window.chat = [{ mes: 'Test', extra: {} }];
 
       // Should not crash
-      await window.extensionModules.summarization.generateSummary(0);
+      await window.extensionModules.recap generation.generateRecap(0);
 
       // Should fall back to default
-      expect(window.generateRaw.calls[0].prompt).to.include('Summarize this message:');
+      expect(window.generateRaw.calls[0].prompt).to.include('Recap this message:');
     });
   });
 });
@@ -569,15 +569,15 @@ RESULTS: 8 passed, 2 failed
   ✓ Prompt Selector Feature UI Creation creates dropdown element
   ✓ Prompt Selector Feature UI Creation has all three options
   ✓ Prompt Selector Feature Settings Wiring loads current setting value on init
-  ✓ Prompt Selector Feature Integration with Summarization falls back to default if template not set
-  ✓ Prompt Selector Feature Integration with Summarization uses correct template for each option
+  ✓ Prompt Selector Feature Integration with Recap Generation falls back to default if template not set
+  ✓ Prompt Selector Feature Integration with Recap Generation uses correct template for each option
   ✓ Prompt Selector Feature Edge Cases handles invalid template gracefully
 
 ❌ FAILED:
   ✗ Prompt Selector Feature Settings Wiring updates setting when dropdown changes
     Error: expected undefined to equal 'detailed'
-  ✗ Prompt Selector Feature Integration with Summarization uses selected prompt template
-    Error: expected 'Summarize this message: This is a test message' to include 'Provide a detailed summary'
+  ✗ Prompt Selector Feature Integration with Recap Generation uses selected prompt template
+    Error: expected 'Recap this message: This is a test message' to include 'Provide a detailed recap'
 
 ======================================================================
 ```
@@ -598,8 +598,8 @@ RESULTS: 8 passed, 2 failed
 // settingsUI.js - FIX: Actually wire the handler (was missing)
 export function setupPromptSelector() {
   const html = `
-    <label for="summary_prompt_template">Prompt Template:</label>
-    <select id="summary_prompt_template">
+    <label for="recap_prompt_template">Prompt Template:</label>
+    <select id="recap_prompt_template">
       <option value="default">Default</option>
       <option value="detailed">Detailed</option>
       <option value="brief">Brief</option>
@@ -609,14 +609,14 @@ export function setupPromptSelector() {
   $('#prompt_settings_container').append(html);
 
   // FIX: Add the handler that was missing
-  $('#summary_prompt_template').on('change', function() {
+  $('#recap_prompt_template').on('change', function() {
     const settings = get_settings();
     settings.prompt_template = $(this).val();
     saveSettingsDebounced();
   });
 
   const settings = get_settings();
-  $('#summary_prompt_template').val(settings.prompt_template || 'default');
+  $('#recap_prompt_template').val(settings.prompt_template || 'default');
 }
 ```
 
@@ -638,9 +638,9 @@ RESULTS: 10 passed, 0 failed
   ✓ Prompt Selector Feature UI Creation has all three options
   ✓ Prompt Selector Feature Settings Wiring updates setting when dropdown changes
   ✓ Prompt Selector Feature Settings Wiring loads current setting value on init
-  ✓ Prompt Selector Feature Integration with Summarization uses selected prompt template
-  ✓ Prompt Selector Feature Integration with Summarization falls back to default if template not set
-  ✓ Prompt Selector Feature Integration with Summarization uses correct template for each option
+  ✓ Prompt Selector Feature Integration with Recap Generation uses selected prompt template
+  ✓ Prompt Selector Feature Integration with Recap Generation falls back to default if template not set
+  ✓ Prompt Selector Feature Integration with Recap Generation uses correct template for each option
   ✓ Prompt Selector Feature Edge Cases handles invalid template gracefully
 
 ======================================================================
@@ -701,7 +701,7 @@ describe('Feature Name - UI Creation', () => {
 describe('Feature Name - Settings Wiring', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="settings"></div>';
-    window.extension_settings.auto_summarize.profiles.default = {};
+    window.extension_settings.auto_recap.profiles.default = {};
   });
 
   it('updates setting when input changes', () => {
@@ -711,7 +711,7 @@ describe('Feature Name - Settings Wiring', () => {
     input.value = 'new_value';
     input.dispatchEvent(new Event('input'));
 
-    const settings = window.extension_settings.auto_summarize.profiles.default;
+    const settings = window.extension_settings.auto_recap.profiles.default;
     expect(settings.my_setting).to.equal('new_value');
   });
 
@@ -722,13 +722,13 @@ describe('Feature Name - Settings Wiring', () => {
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event('change'));
 
-    const settings = window.extension_settings.auto_summarize.profiles.default;
+    const settings = window.extension_settings.auto_recap.profiles.default;
     expect(settings.my_flag).to.be.true;
   });
 
   it('loads current setting value on init', () => {
     // Pre-set the setting
-    window.extension_settings.auto_summarize.profiles.default.my_setting = 'existing';
+    window.extension_settings.auto_recap.profiles.default.my_setting = 'existing';
 
     setupMyFeatureUI();
 
@@ -750,7 +750,7 @@ describe('Feature Name - Setting Usage', () => {
   });
 
   it('uses the configured setting', async () => {
-    window.extension_settings.auto_summarize.profiles.default.my_setting = 'custom_value';
+    window.extension_settings.auto_recap.profiles.default.my_setting = 'custom_value';
 
     await myFeatureFunction();
 
@@ -759,7 +759,7 @@ describe('Feature Name - Setting Usage', () => {
   });
 
   it('respects setting changes', async () => {
-    window.extension_settings.auto_summarize.profiles.default.max_retries = 3;
+    window.extension_settings.auto_recap.profiles.default.max_retries = 3;
 
     // Simulate operation
     let attempts = 0;
@@ -810,14 +810,14 @@ describe('Feature Name - Integration', () => {
 describe('Feature Name - Edge Cases', () => {
   it('handles missing setting gracefully', async () => {
     // Don't set the setting
-    window.extension_settings.auto_summarize.profiles.default = {};
+    window.extension_settings.auto_recap.profiles.default = {};
 
     // Should not crash
     await expect(myFeatureFunction()).to.not.throw;
   });
 
   it('handles invalid setting value', async () => {
-    window.extension_settings.auto_summarize.profiles.default.my_setting = 'invalid';
+    window.extension_settings.auto_recap.profiles.default.my_setting = 'invalid';
 
     // Should fall back to default
     await myFeatureFunction();
@@ -868,7 +868,7 @@ $('#my_input').val(settings.foo).on('input', function() {
 **Fix:**
 ```javascript
 // WRONG: Hardcoded
-const prompt = 'Summarize: ' + message;
+const prompt = 'Recap: ' + message;
 
 // RIGHT: Uses setting
 const settings = get_settings();
@@ -947,7 +947,7 @@ if (settings.enabled !== false) {  // True by default
 
 ---
 
-## Development Cycle Summary
+## Development Cycle Recap
 
 ```
 1. Receive feature request
@@ -992,7 +992,7 @@ Opens browser with test results. Use for debugging test failures.
 
 ---
 
-## Summary
+## Recap
 
 **This workflow catches AI's systematic mistakes automatically:**
 

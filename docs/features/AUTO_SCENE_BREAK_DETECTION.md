@@ -23,14 +23,14 @@ Automatic scene break detection uses an LLM to analyze messages and determine if
 - **Own Connection Profile**: Separate optional connection profile for detection calls
 - **Own Completion Preset**: Separate optional preset for detection calls
 - **Fallback**: If profile/preset not set, use current profile/preset
-- **Similar to Scene Summary**: Follow same pattern as scene summary generation
+- **Similar to Scene Recap**: Follow same pattern as scene recap generation
 
 ### Settings
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `auto_scene_break_on_load` | boolean | false | Auto-check messages when chat loads |
 | `auto_scene_break_on_new_message` | boolean | true | Auto-check when new message arrives |
-| `auto_scene_break_generate_summary` | boolean | true | Auto-generate scene summary when a scene break is detected |
+| `auto_scene_break_generate_recap` | boolean | true | Auto-generate scene recap when a scene break is detected |
 | `auto_scene_break_message_offset` | number | 1 | How many messages back from latest to skip (1 = skip latest, 0 = check all including latest) |
 | `auto_scene_break_check_which_messages` | string | "both" | Which messages to check: "user" (user only), "character" (AI only), "both" (all messages) |
 | `auto_scene_break_recent_message_count` | number | 3 | How many recent messages matching the selected type to check when auto-scanning new messages (0 = scan entire history) |
@@ -140,7 +140,7 @@ async function manualSceneBreakDetection()
    - Get previous message for context (if exists, otherwise use placeholder text)
    - Substitute both previous and current message into prompt using `{{previous_message}}` and `{{current_message}}` macros
    - Switch to detection connection profile/preset if configured
-   - Call `summarize_text(prompt)` (same as scene summary generation)
+   - Call `recap_text(prompt)` (same as scene recap generation)
    - Parse JSON response to extract `status` and `rationale`
    - Fallback: If JSON parsing fails, check if response contains "true" (backward compatibility)
    - Log decision with rationale for debugging
@@ -155,11 +155,11 @@ async function manualSceneBreakDetection()
      - This sets `scene_break: true` and `scene_break_visible: true`
      - Renders scene break UI on message
 
-5. **Auto-Generate Scene Summary** (Optional)
-   - If `auto_scene_break_generate_summary` is enabled:
-     - Call `generateSceneSummary(messageIndex, ...)` from sceneBreak.js
-     - Wait for summary generation to complete before continuing
-     - This ensures sequential processing: summary finishes before checking next message
+5. **Auto-Generate Scene Recap** (Optional)
+   - If `auto_scene_break_generate_recap` is enabled:
+     - Call `generateSceneRecap(messageIndex, ...)` from sceneBreak.js
+     - Wait for recap generation to complete before continuing
+     - This ensures sequential processing: recap finishes before checking next message
      - Handle errors gracefully (log but don't stop scan)
      - Show progress toasts to user
 
@@ -206,8 +206,8 @@ async function manualSceneBreakDetection()
   </label>
 
   <label class="checkbox_label">
-    <input type="checkbox" id="auto_scene_break_generate_summary" />
-    <span>Auto-generate Scene Summary on Detection</span>
+    <input type="checkbox" id="auto_scene_break_generate_recap" />
+    <span>Auto-generate Scene Recap on Detection</span>
   </label>
 
   <label for="auto_scene_break_message_offset">
@@ -255,7 +255,7 @@ message.auto_scene_break_checked = true;  // Boolean
 message.scene_break = true;               // Boolean
 message.scene_break_visible = true;       // Boolean
 message.scene_break_name = "Scene name";  // String
-message.scene_break_summary = "Summary";  // String
+message.scene_break_recap = "Recap";  // String
 ```
 
 ## Testing Plan
@@ -342,15 +342,15 @@ test('Manual scan trigger', async () => {
 ### Viewing Rationale in Logs
 Debug output always includes detailed rationale for each decision:
 ```
-[AutoSummarize] [DEBUG] ✓ SCENE BREAK DETECTED for message 42
-[AutoSummarize] [DEBUG]   Rationale: Time skip indicated by 'the next morning'
+[AutoRecap] [DEBUG] ✓ SCENE BREAK DETECTED for message 42
+[AutoRecap] [DEBUG]   Rationale: Time skip indicated by 'the next morning'
 ```
 
 or
 
 ```
-[AutoSummarize] [DEBUG] ✗ No scene break for message 43
-[AutoSummarize] [DEBUG]   Rationale: Conversation continues in same location and timeframe
+[AutoRecap] [DEBUG] ✗ No scene break for message 43
+[AutoRecap] [DEBUG]   Rationale: Conversation continues in same location and timeframe
 ```
 
 ### Rationale in Toast Notifications
@@ -387,21 +387,21 @@ If the LLM response doesn't contain valid JSON, the system falls back to simple 
 5. **Detection History**: Track which messages were auto-detected vs manual
 6. **Scene Break Suggestions**: Show suggestions without auto-marking (require user confirmation)
 
-## File Changes Summary
+## File Changes Recap
 
 ### New Files
-- `autoSceneBreakDetection.js` - Core detection logic (with auto-generate scene summary integration)
+- `autoSceneBreakDetection.js` - Core detection logic (with auto-generate scene recap integration)
 
 ### Modified Files
-- `defaultSettings.js` - Add default settings (including `auto_scene_break_generate_summary`)
+- `defaultSettings.js` - Add default settings (including `auto_scene_break_generate_recap`)
 - `defaultPrompts.js` - Add default detection prompt with JSON response format
 - `settings.html` - Add UI section with auto-generate checkbox
 - `settingsUI.js` - Wire up settings UI (including auto-generate binding)
 - `eventHandlers.js` - Add event triggers for auto-detection
 - `index.js` - Add barrel exports for autoSceneBreakDetection module
-- `sceneBreak.js` - Extract `generateSceneSummary()` function for reuse
+- `sceneBreak.js` - Extract `generateSceneRecap()` function for reuse
 
 ### Files to Reference
-- `sceneBreak.js` - Use `toggleSceneBreak()` to mark messages and `generateSceneSummary()` to create summaries
-- `summarization.js` - Use `summarize_text()` for LLM calls
+- `sceneBreak.js` - Use `toggleSceneBreak()` to mark messages and `generateSceneRecap()` to create recaps
+- `recapping.js` - Use `recap_text()` for LLM calls
 - `connectionProfiles.js` - Profile switching logic

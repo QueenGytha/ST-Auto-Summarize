@@ -78,12 +78,12 @@ Since we can't parallelize, we optimize:
 
 **Structure:**
 ```javascript
-// tests/features/summarization.spec.js
+// tests/features/recap generation.spec.js
 
 import { test, expect } from '@playwright/test';
 import { ExtensionHelper } from '../helpers/ExtensionHelper.js';
 
-test.describe('Summarization Feature', () => {
+test.describe('Recap Generation Feature', () => {
   let page;
   let ext;
 
@@ -101,23 +101,23 @@ test.describe('Summarization Feature', () => {
     await page.close();
   });
 
-  test('can summarize a message', async () => {
+  test('can recap a message', async () => {
     await ext.addChatMessage('Test message');
     await page.reload(); // Show new state
 
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
 
-    const summary = await ext.getSummaryForMessage(0);
-    expect(summary).toBeTruthy();
+    const recap = await ext.getRecapForMessage(0);
+    expect(recap).toBeTruthy();
   });
 
-  test('summarization fails gracefully without connection', async () => {
+  test('recap generation fails gracefully without connection', async () => {
     await ext.setSettings({ connection_profile: 'invalid' });
     await ext.addChatMessage('Test message');
     await page.reload();
 
-    await ext.clickSummarize();
+    await ext.clickRecap();
 
     const errorMsg = await ext.getOperationError();
     expect(errorMsg).toContain('connection');
@@ -136,7 +136,7 @@ test.describe('Summarization Feature', () => {
 
 **Run command:**
 ```bash
-npm run test:feature summarization
+npm run test:feature recap generation
 ```
 
 ### Path 2: Full-Suite Tests
@@ -213,23 +213,23 @@ test.describe.serial('Complete Workflow', () => {
   });
 
   // TEST 3: Inherits state from test 2
-  test('3. summarize message using detailed profile', async () => {
+  test('3. recap message using detailed profile', async () => {
     // NO navigation, NO profile creation
     // Extension panel is already open
     // 'detailed' profile is already active
 
-    await ext.addChatMessage('Test message for summarization');
+    await ext.addChatMessage('Test message for recap generation');
 
     // No need to navigate or find panel, already there
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
 
-    const summary = await ext.getSummaryForMessage(0);
-    expect(summary).toBeTruthy();
-    expect(summary.length).toBeGreaterThan(50); // Detailed summaries are longer
+    const recap = await ext.getRecapForMessage(0);
+    expect(recap).toBeTruthy();
+    expect(recap.length).toBeGreaterThan(50); // Detailed recaps are longer
 
     // State after test 3:
-    // - One chat message with summary
+    // - One chat message with recap
     // - Operation queue processed
   });
 
@@ -240,26 +240,26 @@ test.describe.serial('Complete Workflow', () => {
     await ext.switchToProfile('default'); // or create 'brief' profile
     await ext.addChatMessage('Second test message');
 
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
 
-    const summary = await ext.getSummaryForMessage(1);
-    expect(summary).toBeTruthy();
+    const recap = await ext.getRecapForMessage(1);
+    expect(recap).toBeTruthy();
 
-    const firstSummary = await ext.getSummaryForMessage(0);
-    // Compare summary styles (detailed vs brief)
+    const firstRecap = await ext.getRecapForMessage(0);
+    // Compare recap styles (detailed vs brief)
 
     // State after test 4:
-    // - Two messages with summaries
+    // - Two messages with recaps
     // - Profile switched to default
   });
 
   // TEST 5: Inherits state from test 4
-  test('5. verify summaries persist across reload', async () => {
+  test('5. verify recaps persist across reload', async () => {
     await page.reload(); // First reload since test 1!
 
-    const summaries = await ext.getAllSummaries();
-    expect(summaries.length).toBe(2);
+    const recaps = await ext.getAllRecaps();
+    expect(recaps.length).toBe(2);
 
     // State after test 5:
     // - Back on fresh page load
@@ -288,7 +288,7 @@ npm run test:suite
 **During development:**
 ```bash
 # Feature development: Use isolation tests
-npm run test:feature summarization  # Fast iteration
+npm run test:feature recap generation  # Fast iteration
 ```
 
 **Before commit:**
@@ -326,7 +326,7 @@ tests/
 ├── features/                     # Feature-isolation tests
 │   ├── settings.spec.js
 │   ├── profiles.spec.js
-│   ├── summarization.spec.js
+│   ├── recap generation.spec.js
 │   ├── validation.spec.js
 │   ├── lorebook.spec.js
 │   ├── scene-detection.spec.js
@@ -335,7 +335,7 @@ tests/
 └── suite/                        # Full-suite chained tests
     ├── 01-initialization.spec.js
     ├── 02-settings-workflow.spec.js
-    ├── 03-summarization-workflow.spec.js
+    ├── 03-recap generation-workflow.spec.js
     ├── 04-profile-workflow.spec.js
     └── 05-advanced-features.spec.js
 ```
@@ -438,7 +438,7 @@ When HTML changes, selectors break. In AI-developed projects, this is critical b
 
 ### File: selectorsExtension.js
 
-**Location:** `ST-Auto-Summarize/selectorsExtension.js` (root level)
+**Location:** `ST-Auto-Recap/selectorsExtension.js` (root level)
 
 ```javascript
 /**
@@ -483,11 +483,11 @@ export const selectorsExtension = {
     wrapCheckbox: '[data-testid="setting-wrap-lorebook"]'
   },
 
-  // Summarization
-  summarization: {
-    summarizeButton: '[data-testid="summarize-btn"]',
+  // Recap Generation
+  recap generation: {
+    recapButton: '[data-testid="recap-btn"]',
     validateButton: '[data-testid="validate-btn"]',
-    progressBar: '[data-testid="summary-progress"]'
+    progressBar: '[data-testid="recap-progress"]'
   },
 
   // Operation queue
@@ -502,7 +502,7 @@ export const selectorsExtension = {
 
 ### File: selectorsSillyTavern.js
 
-**Location:** `ST-Auto-Summarize/selectorsSillyTavern.js` (root level)
+**Location:** `ST-Auto-Recap/selectorsSillyTavern.js` (root level)
 
 ```javascript
 /**
@@ -767,7 +767,7 @@ export class ExtensionHelper {
   async setDefaultSettings() {
     await this.page.evaluate(() => {
       // Load default settings from fixture or hardcode
-      window.extension_settings['auto-summarize'] = {
+      window.extension_settings['auto-recap'] = {
         enabled: false,
         profile: 'default',
         notify_on_switch: false,
@@ -784,7 +784,7 @@ export class ExtensionHelper {
    */
   async setSettings(settings) {
     await this.page.evaluate((s) => {
-      Object.assign(window.extension_settings['auto-summarize'], s);
+      Object.assign(window.extension_settings['auto-recap'], s);
       window.saveSettingsDebounced();
     }, settings);
   }
@@ -794,7 +794,7 @@ export class ExtensionHelper {
    */
   async getSettings() {
     return await this.page.evaluate(() => {
-      return window.extension_settings['auto-summarize'];
+      return window.extension_settings['auto-recap'];
     });
   }
 
@@ -848,17 +848,17 @@ export class ExtensionHelper {
     await this.page.waitForSelector(`${selectorsSillyTavern.chat.messageBlock}:has-text("${text}")`);
   }
 
-  // ============ SUMMARIZATION ============
+  // ============ RECAP GENERATION ============
 
   /**
-   * Click summarize button (SLOW - tests UI)
+   * Click recap button (SLOW - tests UI)
    */
-  async clickSummarize(messageIndex = 0) {
+  async clickRecap(messageIndex = 0) {
     // If button requires message context, select message first
     if (messageIndex !== null) {
       await this.selectMessage(messageIndex);
     }
-    await this.page.click(selectorsExtension.summarization.summarizeButton);
+    await this.page.click(selectorsExtension.recap generation.recapButton);
   }
 
   /**
@@ -872,23 +872,23 @@ export class ExtensionHelper {
   }
 
   /**
-   * Get summary for message (FAST - direct access)
+   * Get recap for message (FAST - direct access)
    */
-  async getSummaryForMessage(messageIndex) {
+  async getRecapForMessage(messageIndex) {
     return await this.page.evaluate((idx) => {
       const context = window.SillyTavern.getContext();
-      return context.chat[idx]?.extra?.memory?.summary;
+      return context.chat[idx]?.extra?.memory?.recap;
     }, messageIndex);
   }
 
   /**
-   * Get all summaries (FAST - direct access)
+   * Get all recaps (FAST - direct access)
    */
-  async getAllSummaries() {
+  async getAllRecaps() {
     return await this.page.evaluate(() => {
       const context = window.SillyTavern.getContext();
       return context.chat
-        .map(msg => msg.extra?.memory?.summary)
+        .map(msg => msg.extra?.memory?.recap)
         .filter(s => s);
     });
   }
@@ -956,7 +956,7 @@ export class ExtensionHelper {
    */
   async getCurrentProfile() {
     return await this.page.evaluate(() => {
-      return window.extension_settings['auto-summarize'].profile;
+      return window.extension_settings['auto-recap'].profile;
     });
   }
 
@@ -972,7 +972,7 @@ export class ExtensionHelper {
 
       // Set settings
       if (cfg.settings) {
-        Object.assign(window.extension_settings['auto-summarize'], cfg.settings);
+        Object.assign(window.extension_settings['auto-recap'], cfg.settings);
       }
 
       // Add messages
@@ -987,12 +987,12 @@ export class ExtensionHelper {
         });
       }
 
-      // Add summaries
-      if (cfg.summaries) {
-        cfg.summaries.forEach((summary, idx) => {
+      // Add recaps
+      if (cfg.recaps) {
+        cfg.recaps.forEach((recap, idx) => {
           if (!context.chat[idx].extra) context.chat[idx].extra = {};
           if (!context.chat[idx].extra.memory) context.chat[idx].extra.memory = {};
-          context.chat[idx].extra.memory.summary = summary;
+          context.chat[idx].extra.memory.recap = recap;
         });
       }
 
@@ -1008,13 +1008,13 @@ export class ExtensionHelper {
     return await this.page.evaluate(() => {
       const context = window.SillyTavern.getContext();
       return {
-        settings: window.extension_settings['auto-summarize'],
+        settings: window.extension_settings['auto-recap'],
         messages: context.chat.map(msg => ({
           text: msg.mes,
-          summary: msg.extra?.memory?.summary
+          recap: msg.extra?.memory?.recap
         })),
         queue: window.getOperationQueue(),
-        profile: window.extension_settings['auto-summarize'].profile
+        profile: window.extension_settings['auto-recap'].profile
       };
     });
   }
@@ -1148,19 +1148,19 @@ test.describe.serial('Suite tests', () => {
 ### Idiom 3: Fast Setup, Slow Testing
 
 ```javascript
-test('summarization works', async () => {
+test('recap generation works', async () => {
   // FAST: Setup via evaluate (not testing this)
   await ext.setSettings({ enabled: true });
   await ext.addChatMessage('Test message');
   await page.reload(); // Show new state
 
   // SLOW: Test via UI (testing this)
-  await ext.clickSummarize();
+  await ext.clickRecap();
   await ext.waitForOperationComplete();
 
   // FAST: Verify via evaluate (not testing UI, just checking result)
-  const summary = await ext.getSummaryForMessage(0);
-  expect(summary).toBeTruthy();
+  const recap = await ext.getRecapForMessage(0);
+  expect(recap).toBeTruthy();
 });
 ```
 
@@ -1218,14 +1218,14 @@ test.describe.serial('Tests', () => {
 
 ```javascript
 // SLOW: Sequential waits
-await page.waitForSelector('#summary'); // 100ms
+await page.waitForSelector('#recap'); // 100ms
 await page.waitForSelector('#lorebook'); // 100ms
 await page.waitForSelector('#complete'); // 100ms
 // Total: 300ms
 
 // FAST: Parallel waits
 await Promise.all([
-  page.waitForSelector('#summary'),
+  page.waitForSelector('#recap'),
   page.waitForSelector('#lorebook'),
   page.waitForSelector('#complete')
 ]);
@@ -1259,15 +1259,15 @@ test('complex workflow', async () => {
     expect(profile).toBe('test');
   });
 
-  await test.step('Action: Summarize messages', async () => {
+  await test.step('Action: Recap messages', async () => {
     await ext.addChatMessage('Message 1');
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
   });
 
   await test.step('Verify: Check results', async () => {
-    const summary = await ext.getSummaryForMessage(0);
-    expect(summary).toBeTruthy();
+    const recap = await ext.getRecapForMessage(0);
+    expect(recap).toBeTruthy();
   });
 
   // Benefit: Playwright trace shows which step failed
@@ -1280,7 +1280,7 @@ test('complex workflow', async () => {
 // Default timeout: 10s (set in config)
 
 // Override for slow operations
-await page.click('#summarize', { timeout: 30000 }); // LLM call
+await page.click('#recap', { timeout: 30000 }); // LLM call
 await ext.waitForOperationComplete(60000); // Long operation
 
 // Override for fast operations (fail faster)
@@ -1307,11 +1307,11 @@ test.describe.serial('Chained tests', () => {
     // - Profile 'detailed' active (from test 1)
 
     await ext.addChatMessage('Test');
-    await ext.clickSummarize();
+    await ext.clickRecap();
 
     // STATE AFTER THIS TEST:
     // - All from test 1
-    // - One message with summary
+    // - One message with recap
     // - Operation queue empty
   });
 });
@@ -1321,7 +1321,7 @@ test.describe.serial('Chained tests', () => {
 
 ## Speed Optimization Techniques
 
-### Summary of Optimizations
+### Recap of Optimizations
 
 | Technique | Savings per Test | Applies To |
 |-----------|------------------|------------|
@@ -1378,14 +1378,14 @@ async setupTestScenario(config) {
   await this.page.evaluate((cfg) => {
     // Single evaluate call does everything
     if (cfg.settings) {
-      Object.assign(extension_settings['auto-summarize'], cfg.settings);
+      Object.assign(extension_settings['auto-recap'], cfg.settings);
     }
     if (cfg.messages) {
       cfg.messages.forEach(msg => chat.push(msg));
     }
-    if (cfg.summaries) {
-      cfg.summaries.forEach((s, i) => {
-        chat[i].extra.memory.summary = s;
+    if (cfg.recaps) {
+      cfg.recaps.forEach((s, i) => {
+        chat[i].extra.memory.recap = s;
       });
     }
     saveChat();
@@ -1400,7 +1400,7 @@ await ext.setupTestScenario({
     { text: 'Message 1', isUser: true },
     { text: 'Response 1', isUser: false }
   ],
-  summaries: ['Summary 1', 'Summary 2']
+  recaps: ['Recap 1', 'Recap 2']
 });
 // One call, ~50ms
 ```
@@ -1438,7 +1438,7 @@ await page.waitForFunction(() => {
 
 // FAST: Wait for multiple conditions at once
 await Promise.all([
-  page.waitForSelector('#summary'),
+  page.waitForSelector('#recap'),
   page.waitForFunction(() => operationQueue.length === 0)
 ]);
 ```
@@ -1487,7 +1487,7 @@ export default {
 };
 
 // Override for slow actions
-await page.click('#summarize', { timeout: 30000 }); // LLM call
+await page.click('#recap', { timeout: 30000 }); // LLM call
 
 // Override for instant actions (fail faster)
 await page.click('#toggle', { timeout: 2000 }); // Should be instant
@@ -1660,20 +1660,20 @@ test('settings persist across reload', async () => {
 ### Pattern: Test Async Operation Completion
 
 ```javascript
-test('summarization completes successfully', async () => {
+test('recap generation completes successfully', async () => {
   await ext.addChatMessage('Test message');
   await page.reload();
 
   // Start operation
-  await ext.clickSummarize();
+  await ext.clickRecap();
 
   // Wait for completion (with timeout)
   await ext.waitForOperationComplete(30000);
 
   // Verify result
-  const summary = await ext.getSummaryForMessage(0);
-  expect(summary).toBeTruthy();
-  expect(summary.length).toBeGreaterThan(10);
+  const recap = await ext.getRecapForMessage(0);
+  expect(recap).toBeTruthy();
+  expect(recap.length).toBeGreaterThan(10);
 });
 ```
 
@@ -1687,7 +1687,7 @@ test('handles connection failure gracefully', async () => {
   await page.reload();
 
   // Attempt operation
-  await ext.clickSummarize();
+  await ext.clickRecap();
 
   // Wait for error (not completion)
   await page.waitForSelector('.error-message', { timeout: 10000 });
@@ -1711,28 +1711,28 @@ test('switching profiles changes behavior', async () => {
   await ext.addChatMessage('Test 1');
   await page.reload();
 
-  await ext.clickSummarize();
+  await ext.clickRecap();
   await ext.waitForOperationComplete();
-  const briefSummary = await ext.getSummaryForMessage(0);
+  const briefRecap = await ext.getRecapForMessage(0);
 
   // Switch profile
   await ext.switchToProfile('detailed');
   await ext.addChatMessage('Test 2');
   await page.reload();
 
-  await ext.clickSummarize();
+  await ext.clickRecap();
   await ext.waitForOperationComplete();
-  const detailedSummary = await ext.getSummaryForMessage(1);
+  const detailedRecap = await ext.getRecapForMessage(1);
 
   // Verify different behavior
-  expect(detailedSummary.length).toBeGreaterThan(briefSummary.length);
+  expect(detailedRecap.length).toBeGreaterThan(briefRecap.length);
 });
 ```
 
 ### Pattern: Test Lorebook Entry Creation
 
 ```javascript
-test('creates lorebook entry from summary', async () => {
+test('creates lorebook entry from recap', async () => {
   await ext.setSettings({
     enabled: true,
     auto_lorebook_enabled: true
@@ -1741,7 +1741,7 @@ test('creates lorebook entry from summary', async () => {
   await ext.addChatMessage('Alice went to the market and bought apples.');
   await page.reload();
 
-  await ext.clickSummarize();
+  await ext.clickRecap();
   await ext.waitForOperationComplete();
 
   // Wait for lorebook processing
@@ -1768,13 +1768,13 @@ test('operations process in order', async () => {
   await ext.addChatMessage('Message 3');
   await page.reload();
 
-  // Click summarize for each (queues operations)
+  // Click recap for each (queues operations)
   await ext.selectMessage(0);
-  await ext.clickSummarize();
+  await ext.clickRecap();
   await ext.selectMessage(1);
-  await ext.clickSummarize();
+  await ext.clickRecap();
   await ext.selectMessage(2);
-  await ext.clickSummarize();
+  await ext.clickRecap();
 
   // Check queue has 3 operations
   const queue = await ext.getOperationQueue();
@@ -1785,9 +1785,9 @@ test('operations process in order', async () => {
     return window.getOperationQueue().operations.length === 0;
   }, { timeout: 90000 }); // 3 operations × 30s
 
-  // Verify all summaries created
-  const summaries = await ext.getAllSummaries();
-  expect(summaries.length).toBe(3);
+  // Verify all recaps created
+  const recaps = await ext.getAllRecaps();
+  expect(recaps.length).toBe(3);
 });
 ```
 
@@ -1811,32 +1811,32 @@ test.describe.serial('Complete workflow', () => {
     expect(settings.enabled).toBe(true);
   });
 
-  test('2. create first summary', async () => {
+  test('2. create first recap', async () => {
     // Extension already enabled from test 1
     await ext.addChatMessage('First message');
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
 
-    const summary = await ext.getSummaryForMessage(0);
-    expect(summary).toBeTruthy();
+    const recap = await ext.getRecapForMessage(0);
+    expect(recap).toBeTruthy();
   });
 
-  test('3. create second summary', async () => {
-    // First message and summary already exist from test 2
+  test('3. create second recap', async () => {
+    // First message and recap already exist from test 2
     await ext.addChatMessage('Second message');
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
 
-    const summaries = await ext.getAllSummaries();
-    expect(summaries.length).toBe(2);
+    const recaps = await ext.getAllRecaps();
+    expect(recaps.length).toBe(2);
   });
 
   test('4. verify persistence', async () => {
     // First reload since test 1!
     await page.reload();
 
-    const summaries = await ext.getAllSummaries();
-    expect(summaries.length).toBe(2);
+    const recaps = await ext.getAllRecaps();
+    expect(recaps.length).toBe(2);
   });
 
   test.afterAll(async () => {
@@ -1851,13 +1851,13 @@ test.describe.serial('Complete workflow', () => {
 
 ### Example 1: Feature-Isolation Test
 
-**tests/features/summarization.spec.js:**
+**tests/features/recap generation.spec.js:**
 
 ```javascript
 import { test, expect } from '@playwright/test';
 import { ExtensionHelper } from '../helpers/ExtensionHelper.js';
 
-test.describe('Summarization Feature', () => {
+test.describe('Recap Generation Feature', () => {
   let page;
   let ext;
 
@@ -1873,33 +1873,33 @@ test.describe('Summarization Feature', () => {
     await page.close();
   });
 
-  test('can summarize a single message', async () => {
+  test('can recap a single message', async () => {
     // Arrange
     await ext.setSettings({ enabled: true });
-    await ext.addChatMessage('Test message for summarization');
+    await ext.addChatMessage('Test message for recap generation');
     await page.reload();
 
     // Act
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
 
     // Assert
-    const summary = await ext.getSummaryForMessage(0);
-    expect(summary).toBeTruthy();
-    expect(summary.length).toBeGreaterThan(0);
+    const recap = await ext.getRecapForMessage(0);
+    expect(recap).toBeTruthy();
+    expect(recap.length).toBeGreaterThan(0);
   });
 
-  test('summarization fails when extension disabled', async () => {
+  test('recap generation fails when extension disabled', async () => {
     // Arrange: Extension disabled by default
     await ext.addChatMessage('Test message');
     await page.reload();
 
     // Act & Assert
-    const summarizeButton = page.locator(selectorsExtension.summarization.summarizeButton);
-    await expect(summarizeButton).toBeDisabled();
+    const recapButton = page.locator(selectorsExtension.recap generation.recapButton);
+    await expect(recapButton).toBeDisabled();
   });
 
-  test('can validate summary after creation', async () => {
+  test('can validate recap after creation', async () => {
     // Arrange
     await ext.setSettings({
       enabled: true,
@@ -1908,8 +1908,8 @@ test.describe('Summarization Feature', () => {
     await ext.addChatMessage('Test message');
     await page.reload();
 
-    // Act: Summarize
-    await ext.clickSummarize();
+    // Act: Recap
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
 
     // Act: Validate
@@ -1935,7 +1935,7 @@ test.describe('Summarization Feature', () => {
     await page.reload();
 
     // Act
-    await ext.clickSummarize();
+    await ext.clickRecap();
 
     // Assert: Error appears
     await page.waitForSelector('.error-message');
@@ -1943,7 +1943,7 @@ test.describe('Summarization Feature', () => {
     expect(errorText).toContain('Invalid response');
   });
 
-  test('summarization works with different profiles', async () => {
+  test('recap generation works with different profiles', async () => {
     // Test 1: Brief profile
     await ext.setSettings({
       enabled: true,
@@ -1951,9 +1951,9 @@ test.describe('Summarization Feature', () => {
     });
     await ext.addChatMessage('Test message 1');
     await page.reload();
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
-    const briefSummary = await ext.getSummaryForMessage(0);
+    const briefRecap = await ext.getRecapForMessage(0);
 
     // Reset state
     await page.close();
@@ -1969,12 +1969,12 @@ test.describe('Summarization Feature', () => {
     });
     await ext.addChatMessage('Test message 2');
     await page.reload();
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
-    const detailedSummary = await ext.getSummaryForMessage(0);
+    const detailedRecap = await ext.getRecapForMessage(0);
 
     // Assert: Different lengths
-    expect(detailedSummary.length).toBeGreaterThan(briefSummary.length);
+    expect(detailedRecap.length).toBeGreaterThan(briefRecap.length);
   });
 });
 ```
@@ -2023,48 +2023,48 @@ test.describe.serial('Complete Workflow Suite', () => {
     // - Default profile active
   });
 
-  // TEST 2: First message and summary
-  test('2. summarize first message', async () => {
+  // TEST 2: First message and recap
+  test('2. recap first message', async () => {
     // STATE EXPECTED:
     // - Extension enabled
 
     await ext.addChatMessage('Alice went to the market to buy fresh apples and oranges.');
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
 
-    const summary = await ext.getSummaryForMessage(0);
-    expect(summary).toBeTruthy();
-    expect(summary).toContain('Alice');
+    const recap = await ext.getRecapForMessage(0);
+    expect(recap).toBeTruthy();
+    expect(recap).toContain('Alice');
 
     // STATE AFTER:
-    // - One message with summary
+    // - One message with recap
   });
 
   // TEST 3: Second message
-  test('3. summarize second message', async () => {
+  test('3. recap second message', async () => {
     // STATE EXPECTED:
-    // - One message with summary from test 2
+    // - One message with recap from test 2
 
     await ext.addChatMessage('Bob joined Alice at the market and they bought vegetables.');
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
 
-    const summaries = await ext.getAllSummaries();
-    expect(summaries.length).toBe(2);
+    const recaps = await ext.getAllRecaps();
+    expect(recaps.length).toBe(2);
 
     // STATE AFTER:
-    // - Two messages with summaries
+    // - Two messages with recaps
   });
 
   // TEST 4: Enable Auto-Lorebooks
   test('4. enable lorebook creation', async () => {
     // STATE EXPECTED:
-    // - Two messages with summaries
+    // - Two messages with recaps
 
     await ext.setSettings({ auto_lorebook_enabled: true });
 
-    // Trigger lorebook processing for existing summaries
-    await ext.processLorebooksForAllSummaries();
+    // Trigger lorebook processing for existing recaps
+    await ext.processLorebooksForAllRecaps();
     await page.waitForTimeout(3000); // Allow async processing
 
     const entries = await lore.getLorebookEntries();
@@ -2084,7 +2084,7 @@ test.describe.serial('Complete Workflow Suite', () => {
   // TEST 5: Create profile
   test('5. create detailed profile', async () => {
     // STATE EXPECTED:
-    // - Two messages, summaries, lorebook entries
+    // - Two messages, recaps, lorebook entries
 
     await ext.openExtensionPanel();
     await ext.createProfile('detailed');
@@ -2099,21 +2099,21 @@ test.describe.serial('Complete Workflow Suite', () => {
   });
 
   // TEST 6: Third message with detailed profile
-  test('6. summarize with detailed profile', async () => {
+  test('6. recap with detailed profile', async () => {
     // STATE EXPECTED:
     // - Profile 'detailed' active
     // - Extension panel open
 
     await ext.addChatMessage('Charlie arrived with a basket of fresh bread from the bakery.');
-    await ext.clickSummarize();
+    await ext.clickRecap();
     await ext.waitForOperationComplete();
 
-    const summary = await ext.getSummaryForMessage(2);
-    expect(summary).toBeTruthy();
+    const recap = await ext.getRecapForMessage(2);
+    expect(recap).toBeTruthy();
 
-    // Compare with previous summaries (detailed should be longer)
-    const previousSummary = await ext.getSummaryForMessage(1);
-    expect(summary.length).toBeGreaterThan(previousSummary.length * 0.8);
+    // Compare with previous recaps (detailed should be longer)
+    const previousRecap = await ext.getRecapForMessage(1);
+    expect(recap.length).toBeGreaterThan(previousRecap.length * 0.8);
 
     // Verify lorebook entry created for Charlie
     await page.waitForTimeout(2000);
@@ -2121,29 +2121,29 @@ test.describe.serial('Complete Workflow Suite', () => {
     expect(charlieEntry).toBeTruthy();
 
     // STATE AFTER:
-    // - Three messages with summaries
+    // - Three messages with recaps
     // - Three character entries (Alice, Bob, Charlie)
   });
 
   // TEST 7: Scene break
-  test('7. create scene break and scene summary', async () => {
+  test('7. create scene break and scene recap', async () => {
     // STATE EXPECTED:
-    // - Three messages with summaries
+    // - Three messages with recaps
 
     await ext.clickSceneBreak();
     await ext.waitForOperationComplete();
 
     const sceneData = await page.evaluate(() => {
-      return window.SillyTavern.getContext().chat_metadata.scene_summaries;
+      return window.SillyTavern.getContext().chat_metadata.scene_recaps;
     });
 
     expect(sceneData).toBeTruthy();
     expect(sceneData.length).toBe(1);
-    expect(sceneData[0].summary).toContain('market');
+    expect(sceneData[0].recap).toContain('market');
 
     // STATE AFTER:
     // - Scene break after message 2
-    // - One scene summary
+    // - One scene recap
   });
 
   // TEST 8: Switch back to default profile
@@ -2163,9 +2163,9 @@ test.describe.serial('Complete Workflow Suite', () => {
   // TEST 9: Persistence check
   test('9. verify all data persists across reload', async () => {
     // STATE EXPECTED:
-    // - Three messages with summaries
+    // - Three messages with recaps
     // - Lorebook entries
-    // - Scene summary
+    // - Scene recap
     // - Profile 'default' active
 
     // First reload in the entire suite!
@@ -2183,9 +2183,9 @@ test.describe.serial('Complete Workflow Suite', () => {
     const profile = await ext.getCurrentProfile();
     expect(profile).toBe('default');
 
-    // Verify summaries
-    const summaries = await ext.getAllSummaries();
-    expect(summaries.length).toBe(3);
+    // Verify recaps
+    const recaps = await ext.getAllRecaps();
+    expect(recaps.length).toBe(3);
 
     // Verify lorebook entries
     const entries = await lore.getLorebookEntries();
@@ -2193,7 +2193,7 @@ test.describe.serial('Complete Workflow Suite', () => {
 
     // Verify scene data
     const sceneData = await page.evaluate(() => {
-      return window.SillyTavern.getContext().chat_metadata.scene_summaries;
+      return window.SillyTavern.getContext().chat_metadata.scene_recaps;
     });
     expect(sceneData.length).toBe(1);
 
@@ -2214,8 +2214,8 @@ test.describe.serial('Complete Workflow Suite', () => {
     expect(settings.enabled).toBe(false);
 
     // Verify UI elements are disabled/hidden
-    const summarizeButton = page.locator(selectorsExtension.summarization.summarizeButton);
-    await expect(summarizeButton).toBeDisabled();
+    const recapButton = page.locator(selectorsExtension.recap generation.recapButton);
+    await expect(recapButton).toBeDisabled();
 
     // STATE AFTER:
     // - Extension disabled
@@ -2258,7 +2258,7 @@ Feature: Add scene break detection
 │
 ├─ STEP 6: Add to full suite
 │  Duration: 10 min
-│  AI adds: test case to tests/suite/03-summarization-workflow.spec.js
+│  AI adds: test case to tests/suite/03-recap generation-workflow.spec.js
 │  Chains with existing tests
 │
 ├─ STEP 7: Run full suite
@@ -2308,14 +2308,14 @@ Feature: Add scene break detection
 **Scenario: Assertion failure**
 
 ```
-1. Test fails: "Expected summary.length > 50, got 12"
+1. Test fails: "Expected recap.length > 50, got 12"
 
 2. AI reasons:
-   - Summary was created (length=12) but too short
+   - Recap was created (length=12) but too short
    - Possible causes:
      a) LLM mock returning wrong response
      b) Profile using wrong prompt
-     c) Summarization truncated
+     c) Recap Generation truncated
 
 3. AI investigates:
    - Takes screenshot (see actual state)
@@ -2324,7 +2324,7 @@ Feature: Add scene break detection
 
 4. AI discovers:
    - Operation succeeded
-   - LLM mock returned: "Summary here"
+   - LLM mock returned: "Recap here"
    - Mock configured wrong for this test
 
 5. AI fixes:
@@ -2352,7 +2352,7 @@ Feature: Add scene break detection
 - Verify no regressions
 - Update tests if behavior changed intentionally
 
-### Token Economics Summary
+### Token Economics Recap
 
 ```
 One-time setup:
@@ -2380,7 +2380,7 @@ Maintenance:
 
 ---
 
-## Summary
+## Recap
 
 ### Core Principles
 
@@ -2423,7 +2423,7 @@ Maintenance:
 
 ```bash
 # Feature-isolation tests (fast iteration)
-npm run test:feature summarization
+npm run test:feature recap generation
 
 # Full-suite tests (comprehensive)
 npm run test:suite
@@ -2451,16 +2451,16 @@ await ext.addChatMessage('text');
 
 // UI interaction (slow)
 await ext.openExtensionPanel();
-await ext.clickSummarize();
+await ext.clickRecap();
 await ext.waitForOperationComplete();
 
 // Verification (fast)
-const summary = await ext.getSummaryForMessage(0);
+const recap = await ext.getRecapForMessage(0);
 const settings = await ext.getSettings();
 const queue = await ext.getOperationQueue();
 
 // Batch operations (fast)
-await ext.setupTestScenario({ settings, messages, summaries });
+await ext.setupTestScenario({ settings, messages, recaps });
 const state = await ext.getTestState();
 ```
 

@@ -84,15 +84,15 @@ function load_profile(profile  = null) {
 
   const settings = copy_settings(targetProfile); // copy the settings from the profile
   if (!settings) {
-    error("Profile not found: " + profile);
+    error("Profile not found: " + targetProfile);
     return;
   }
 
-  log("Loading Configuration Profile: " + profile);
+  log("Loading Configuration Profile: " + targetProfile);
   Object.assign(extension_settings[MODULE_NAME], settings); // update the settings
-  set_settings('profile', profile); // set the current profile
-  if (get_settings("notify_on_profile_switch") && current_profile !== profile) {
-    toast(`Switched to profile "${profile}"`, 'info');
+  set_settings('profile', targetProfile); // set the current profile
+  if (get_settings("notify_on_profile_switch") && current_profile !== targetProfile) {
+    toast(`Switched to profile "${targetProfile}"`, 'info');
   }
   refresh_settings();
 }

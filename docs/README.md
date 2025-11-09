@@ -1,4 +1,4 @@
-# ST-Auto-Summarize Documentation
+# ST-Auto-Recap Documentation
 
 ## Quick Start
 
@@ -11,7 +11,7 @@
 Core feature documentation for production functionality:
 
 - [Auto Scene Break Detection](features/AUTO_SCENE_BREAK_DETECTION.md) - Automatic scene transition detection
-- [Running Scene Summary](features/RUNNING_SCENE_SUMMARY.md) - Comprehensive memory system combining scene summaries
+- [Running Scene Recap](features/RUNNING_SCENE_RECAP.md) - Comprehensive memory system combining scene recaps
 - [Tracking Entries](features/TRACKING_ENTRIES.md) - AI-editable lorebook entries for entity tracking
 - [Prompts Guide](features/PROMPTS_GUIDE.md) - Reference for all LLM prompts used in the extension
 
@@ -21,14 +21,14 @@ User and developer guides for configuration and usage:
 
 - [Lorebook Entry Guidelines](guides/LOREBOOK_ENTRY_GUIDELINES.md) - Guidelines for entity extraction and lorebook usage
 - [Default Settings Best Practices](guides/DEFAULT_SETTINGS_BEST_PRACTICES.md) - Configuration recommendations
-- [Summary/Lorebook Separation](guides/SUMMARY_LOREBOOK_SEPARATION.md) - Design principles for separating summaries and entities
+- [Recap/Lorebook Separation](guides/RECAP_LOREBOOK_SEPARATION.md) - Design principles for separating recaps and entities
 
 ## Reference
 
 Technical reference material for advanced users and developers:
 
 - [JSON Syntax Reference](reference/JSON_SYNTAX_REFERENCE.md) - JSON structure used throughout the extension
-- [Summary/Lorebook Examples](reference/SUMMARY_LOREBOOK_EXAMPLES.md) - Practical examples for developers
+- [Recap/Lorebook Examples](reference/RECAP_LOREBOOK_EXAMPLES.md) - Practical examples for developers
 - [SillyTavern Lorebook Injection](reference/SILLYTAVERN_LOREBOOK_INJECTION.md) - Deep dive into ST lorebook internals
 - [SillyTavern Playwright](reference/SILLYTAVERN_PLAYWRIGHT.md) - Browser automation reference for testing
 
@@ -46,12 +46,12 @@ Historical analyses, investigations, and legacy documentation:
 
 - **[archived/investigations/](archived/investigations/)** - In-depth analyses that led to current implementations
   - Concurrency analysis
-  - Summarization best practices analysis
+  - Recap Generation best practices analysis
   - Lorebook wrapping investigations
 
 - **[archived/session-notes/](archived/session-notes/)** - Temporary development session notes
 
-- **[archived/legacy/](archived/legacy/)** - Superseded implementation summaries
+- **[archived/legacy/](archived/legacy/)** - Superseded implementation recaps
 
 - **[ARCHIVED/](ARCHIVED/)** - Previously archived testing documentation (failed approaches)
 

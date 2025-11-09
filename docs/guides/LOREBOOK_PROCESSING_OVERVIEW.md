@@ -21,16 +21,16 @@ This all happens automatically in the background, requiring no manual interventi
 │                         CHAT ACTIVITY                                │
 │  • User sends message                                                │
 │  • AI responds                                                       │
-│  • Scene summary generated (every N messages)                        │
+│  • Scene recap generated (every N messages)                        │
 └──────────────────────┬──────────────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    ENTRY EXTRACTION                                  │
 │                                                                       │
-│  Scene Summary JSON:                                                 │
+│  Scene Recap JSON:                                                 │
 │  {                                                                    │
-│    "summary": "Alice met Bob at the tavern...",                      │
+│    "recap": "Alice met Bob at the tavern...",                      │
 │    "lorebooks": [                                                    │
 │      {"name": "Alice", "content": "...", "type": "character"},       │
 │      {"name": "Rusty Tankard", "content": "...", "type": "location"} │
@@ -173,7 +173,7 @@ This all happens automatically in the background, requiring no manual interventi
 ┌─────────────────────────────────────────────────────────────────────┐
 │                   STAGE 6: CATEGORY INDEXES                          │
 │                                                                       │
-│  Update category summary entries:                                    │
+│  Update category recap entries:                                    │
 │                                                                       │
 │  [Characters: Alice, Bob, Carol, David]                              │
 │  [Locations: Waterdeep, The Rusty Tankard, The Market Square]        │
@@ -374,8 +374,8 @@ AI: "You push open the heavy oak door. The Rusty Tankard is packed tonight.
 ```
 
 **Processing**:
-1. Scene summary generated (every N messages)
-2. Summary includes:
+1. Scene recap generated (every N messages)
+2. Recap includes:
    - Entity: "The Rusty Tankard" (location)
    - Entity: "Marcus" (character)
 3. Two entries queued
@@ -413,7 +413,7 @@ AI: "You draw your sword and charge the three bandits!
 - Stats updated: "HP: 75/100, Gold: 50"
 - GM Notes updated: "Combat encounter with bandits at The Rusty Tankard"
 
-**Scene Summary**:
+**Scene Recap**:
 - Entity: "Bandit Group" (character/creature)
 
 **Entry: Bandit Group**
@@ -430,7 +430,7 @@ AI: "Marcus vaults over the bar, grabbing a club. 'I've got your back!' he shout
 
 **Processing**:
 
-**Scene Summary**:
+**Scene Recap**:
 - Entity: "Marcus" (character) - now with more info
   - "A veteran soldier who owns The Rusty Tankard"
 
@@ -514,7 +514,7 @@ All prompts and behavior configurable:
 
 ---
 
-## Summary
+## Recap
 
 The Auto-Lorebooks system provides a complete, AI-powered "memory management" solution that:
 

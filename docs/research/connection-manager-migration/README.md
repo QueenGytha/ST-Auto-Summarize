@@ -8,9 +8,9 @@ This directory contains comprehensive research and analysis of migrating from th
 
 1. **[CONNECTION_MANAGER_REQUEST_SERVICE_MIGRATION_ANALYSIS.md](CONNECTION_MANAGER_REQUEST_SERVICE_MIGRATION_ANALYSIS.md)** (3,010 lines)
    - **Main migration analysis document**
-   - Executive summary with cost-benefit analysis
+   - Executive recap with cost-benefit analysis
    - Complete architectural comparison (current vs. proposed)
-   - Critical findings summary
+   - Critical findings recap
    - Scope corrections (verified actual counts vs. initial estimates)
    - Risk assessment (CRITICAL/HIGH/MEDIUM/LOW)
    - Implementation plan with pilot phase
@@ -43,7 +43,7 @@ This directory contains comprehensive research and analysis of migrating from th
    - **Read this to understand what was verified and what needs more work**
 
 4. **[CRITICAL_FINDINGS_CONNECTION_MANAGER.md](CRITICAL_FINDINGS_CONNECTION_MANAGER.md)** (557 lines)
-   - **Focused summary of critical blocking issues**
+   - **Focused recap of critical blocking issues**
    - Event system bypass details
    - Operation type detection incompatibility
    - Dual injection path requirements
@@ -55,12 +55,12 @@ This directory contains comprehensive research and analysis of migrating from th
 
 5. **[timeline-memory/ANALYSIS.md](timeline-memory/ANALYSIS.md)** (1,000+ lines)
    - Analysis of the Timeline-Memory extension
-   - Comparison with ST-Auto-Summarize approach
+   - Comparison with ST-Auto-Recap approach
    - Catalog of prompts and techniques
    - Identified features worth adopting
    - **Read this for context on what sparked the investigation**
 
-## Key Findings Summary
+## Key Findings Recap
 
 ### Core Technical Issues (All Verified)
 
@@ -118,9 +118,9 @@ This directory contains comprehensive research and analysis of migrating from th
 │ CONNECTION_MANAGER_REQUEST_SERVICE_MIGRATION_       │
 │ ANALYSIS.md (MAIN DOCUMENT)                         │
 │                                                      │
-│ - Executive summary                                  │
+│ - Executive recap                                  │
 │ - Scope corrections ←─────────────────────┐         │
-│ - Critical findings summary               │         │
+│ - Critical findings recap               │         │
 │ - Risk assessment                         │         │
 │ - Recommendations                         │         │
 │                                           │         │
@@ -189,7 +189,7 @@ This directory contains comprehensive research and analysis of migrating from th
 │ CRITICAL_FINDINGS_CONNECTION_MANAGER.md             │
 │ (QUICK REFERENCE)                                    │
 │                                                      │
-│ - Focused summary of blocking issues                │
+│ - Focused recap of blocking issues                │
 │ - Corrected effort estimates                        │
 │ - Pilot phase requirements                          │
 │ - References main analysis for details              │
@@ -199,10 +199,10 @@ This directory contains comprehensive research and analysis of migrating from th
 ## Reading Guide
 
 ### For Decision Makers
-1. Start with **CONNECTION_MANAGER_REQUEST_SERVICE_MIGRATION_ANALYSIS.md** → Executive Summary
+1. Start with **CONNECTION_MANAGER_REQUEST_SERVICE_MIGRATION_ANALYSIS.md** → Executive Recap
 2. Read **CRITICAL_FINDINGS_CONNECTION_MANAGER.md** for show-stoppers
 3. Review **Benefits vs. Costs** section in main analysis
-4. Check **VERIFICATION_REPORT.md** → Summary Statistics to understand confidence level
+4. Check **VERIFICATION_REPORT.md** → Recap Statistics to understand confidence level
 
 ### For Technical Implementation
 1. Read **TECHNICAL_ISSUE_TRACES.md** end-to-end for complete understanding

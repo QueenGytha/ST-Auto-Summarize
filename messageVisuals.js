@@ -5,11 +5,11 @@ import {
   get_data,
   get_memory,
   clean_string_for_title,
-  summary_div_class,
+  recap_div_class,
   css_message_div,
-  css_single_message_summary,
+  css_single_message_recap,
   css_exclude_memory,
-  summary_reasoning_class,
+  recap_reasoning_class,
   selectorsSillyTavern } from
 './index.js';
 
@@ -23,13 +23,13 @@ function get_message_div(index ) {
   }
   return div;
 }
-function get_summary_style_class(message ) {
+function get_recap_style_class(message ) {
   const include = get_data(message, 'include');
   const exclude = get_data(message, 'exclude'); // force-excluded by user
 
   let style = "";
-  if (include === "Summary of message(s)") {// included as single message summary
-    style = css_single_message_summary;
+  if (include === "Recap of message(s)") {// included as single message recap
+    style = css_single_message_recap;
   } else if (exclude) {// marked as force-excluded
     style = css_exclude_memory;
   }
@@ -48,7 +48,7 @@ function update_message_visuals(i , style  = true, text  = null) {
   }
 
   // remove any existing added divs
-  div_element.find(`div.${summary_div_class}`).remove();
+  div_element.find(`div.${recap_div_class}`).remove();
 
   // Don't display memories if chat is disabled
   if (!chat_enabled()) {
@@ -63,7 +63,7 @@ function update_message_visuals(i , style  = true, text  = null) {
 
   // get the div holding the main message text
   const message_element = div_element.find(`div${selectorsSillyTavern.message.text}`);
-  let style_class = style ? get_summary_style_class(message) : "";
+  let style_class = style ? get_recap_style_class(message) : "";
 
   // if no text is provided, use the memory text
   let displayText = text;
@@ -78,10 +78,10 @@ function update_message_visuals(i , style  = true, text  = null) {
   }
 
   // create the div element for the memory and add it to the message div
-  const memory_div = $(`<div class="${summary_div_class} ${css_message_div}"><span class="${style_class}">${displayText}</span></div>`);
+  const memory_div = $(`<div class="${recap_div_class} ${css_message_div}"><span class="${style_class}">${displayText}</span></div>`);
   if (reasoning) {
     reasoning = clean_string_for_title(reasoning);
-    memory_div.prepend($(`<span class="${summary_reasoning_class}" title="${reasoning}">[Reasoning] </span>`));
+    memory_div.prepend($(`<span class="${recap_reasoning_class}" title="${reasoning}">[Reasoning] </span>`));
   }
   message_element.after(memory_div);
 }
@@ -96,6 +96,6 @@ function update_all_message_visuals() {
 
 export {
   get_message_div,
-  get_summary_style_class,
+  get_recap_style_class,
   update_message_visuals,
   update_all_message_visuals };

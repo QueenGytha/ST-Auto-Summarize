@@ -4,7 +4,7 @@ import {
   getContext,
   get_data,
   set_data,
-  summarize_text,
+  recap_text,
   debug,
   error,
   toast,
@@ -168,20 +168,71 @@ async function parseSceneBreakResponse(response, messageIndex) {
     debug('Parsed JSON for message', messageIndex, '- Status:', isSceneBreak, '- Rationale:', rationale);
     return { isSceneBreak, rationale };
   } catch (jsonErr) {
-    // JSON parsing failed, try fallback patterns
+    // JSON parsing failed, try structured fallback patterns
     debug('JSON parsing failed for message', messageIndex, ', using fallback:', jsonErr.message);
 
-    // Fallbacks: common plain-text patterns
     const lower = response.toLowerCase();
-    // Explicit "SCENE BREAK:" style prefix used in tests
-    if (lower.startsWith('scene break')) {
-      const rationale = response.split(':').slice(1).join(':').trim();
-      return { isSceneBreak: true, rationale };
+    const original = response.trim();
+    let isSceneBreak = false;
+    let rationale = '';
+
+    // Pattern 1: Key-value extraction (status: true/false or status = true/false)
+    const statusMatch = lower.match(/status\s*[:=]\s*(true|false)/i);
+    if (statusMatch) {
+      isSceneBreak = statusMatch[1] === 'true';
+      // Try to extract rationale
+      const rationaleMatch = original.match(/rationale\s*[:=]\s*["']?([^"'\n]+)["']?/i);
+      rationale = rationaleMatch ? rationaleMatch[1].trim() : 'Extracted from key-value pattern';
+      debug(`Fallback pattern 1 matched for message ${messageIndex}: status=${isSceneBreak}, rationale="${rationale}"`);
+      return { isSceneBreak, rationale };
     }
-    // Generic text that contains the word "true"
-    const isSceneBreak = lower.includes('true');
-    debug('No JSON found for message', messageIndex, ', using fallback. Status:', isSceneBreak);
-    return { isSceneBreak, rationale: 'No JSON found, fallback to text search' };
+
+    // Pattern 2: Explicit declarations (IS/is NOT a scene break)
+    const explicitMatch = lower.match(/\b(is|is\s+not)\s+(a\s+)?scene\s+break\b/);
+    if (explicitMatch) {
+      isSceneBreak = !explicitMatch[0].includes('not');
+      rationale = 'Explicit scene break declaration found';
+      debug(`Fallback pattern 2 matched for message ${messageIndex}: status=${isSceneBreak}`);
+      return { isSceneBreak, rationale };
+    }
+
+    // Pattern 3: YES/NO responses at start
+    const yesNoMatch = lower.match(/^(yes|no)\b/);
+    if (yesNoMatch) {
+      isSceneBreak = yesNoMatch[1] === 'yes';
+      // Extract rationale from rest of response
+      rationale = original.replace(/^(yes|no)[,:\s]*/i, '').trim() || 'Based on yes/no response';
+      debug(`Fallback pattern 3 matched for message ${messageIndex}: status=${isSceneBreak}, rationale="${rationale}"`);
+      return { isSceneBreak, rationale };
+    }
+
+    // Pattern 4: Explicit "SCENE BREAK:" prefix (test-specific)
+    if (lower.startsWith('scene break')) {
+      isSceneBreak = true;
+      rationale = original.split(':').slice(1).join(':').trim() || 'Scene break prefix found';
+      debug(`Fallback pattern 4 matched for message ${messageIndex}`);
+      return { isSceneBreak, rationale };
+    }
+
+    // Pattern 5: Look for scene break indicators (conservative - require multiple)
+    const indicators = [
+      /\b(new|different)\s+(location|setting|place)\b/i,
+      /\b(time|temporal)\s+(skip|jump|shift)\b/i,
+      /\b(chapter|scene)\s+\d+\b/i,
+      /\b(later|next\s+day|next\s+morning|hours\s+later)\b/i,
+      /\b(major\s+shift|transition|new\s+objective)\b/i
+    ];
+    const indicatorCount = indicators.filter(pattern => pattern.test(lower)).length;
+    if (indicatorCount >= 2) {
+      isSceneBreak = true;
+      rationale = `Multiple scene break indicators detected (${indicatorCount})`;
+      debug(`Fallback pattern 5 matched for message ${messageIndex}: ${indicatorCount} indicators`);
+      return { isSceneBreak, rationale };
+    }
+
+    // Default: conservative fallback (assume continuation if uncertain)
+    debug(`No fallback patterns matched for message ${messageIndex}, defaulting to false`);
+    return { isSceneBreak: false, rationale: 'No clear scene break indicators found in fallback analysis' };
   }
 }
 
@@ -329,7 +380,7 @@ messageIndex )
     try {
       // Call LLM using the configured API
       debug('Sending prompt to AI for message', messageIndex);
-      response = await summarize_text(prompt, detectionPrefill, includePresetPrompts, preset);
+      response = await recap_text(prompt, detectionPrefill, includePresetPrompts, preset);
       debug('AI raw response for message', messageIndex, ':', response);
     } finally {
       clearOperationSuffix();
@@ -511,7 +562,7 @@ export async function processNewMessageForSceneBreak(messageIndex ) {
   const recentCountRaw = Number(get_settings('auto_scene_break_recent_message_count'));
   const recentCount = Number.isFinite(recentCountRaw) ? Math.max(0, recentCountRaw) : DEFAULT_RECENT_MESSAGE_COUNT;
 
-  const forceFullRescan = typeof window !== 'undefined' && window.autoSummarizeForceSceneBreakRescan === true;
+  const forceFullRescan = typeof window !== 'undefined' && window.autoRecapForceSceneBreakRescan === true;
 
   let rangeStart = 0;
   if (!forceFullRescan && recentCount > 0) {
@@ -585,7 +636,7 @@ export async function processNewMessageForSceneBreak(messageIndex ) {
   await processAutoSceneBreakDetection(rangeStart, endIndex);
 
   if (forceFullRescan && typeof window !== 'undefined') {
-    window.autoSummarizeForceSceneBreakRescan = false;
+    window.autoRecapForceSceneBreakRescan = false;
     debug(SUBSYSTEM.SCENE, 'Completed forced full scene break rescan after clear-all action');
   }
 }

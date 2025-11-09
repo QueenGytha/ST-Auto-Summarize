@@ -112,7 +112,7 @@ async function ensureRegistryEntryRecord(lorebookName , type ) {
   ensuredEntry.key = Array.isArray(ensuredEntry.key) ? ensuredEntry.key : [];
   ensuredEntry.keysecondary = Array.isArray(ensuredEntry.keysecondary) ? ensuredEntry.keysecondary : [];
   // Get type definition to check for constant flag
-  const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.auto_summarize?.entity_types);
+  const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.auto_recap?.entity_types);
   const typeDef = typeDefinitions.find((def) => def?.name === type);
   const hasConstantFlag = typeDef?.entryFlags && Array.isArray(typeDef.entryFlags) && typeDef.entryFlags.includes('constant');
   ensuredEntry.constant = hasConstantFlag ? true : false;

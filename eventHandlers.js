@@ -38,7 +38,7 @@ import {
   renderSceneNavigatorBar,
   processSceneBreakOnChatLoad,
   processNewMessageForSceneBreak,
-  cleanup_invalid_running_summaries,
+  cleanup_invalid_running_recaps,
   installGenerateRawInterceptor,
   installLorebookWrapper,
   installWorldInfoActivationLogger,
@@ -89,8 +89,13 @@ async function handleChatChanged() {
   }
 
   // Reload queue from new chat's lorebook (after ensuring it's available)
+  // Skip reload if processor is actively processing operations to prevent race conditions
   if (operationQueueModule) {
-    await operationQueueModule.reloadQueue();
+    if (operationQueueModule.isQueueProcessorActive()) {
+      debug('[Queue] Skipping queue reload during active processing (prevents concurrent processor bug)');
+    } else {
+      await operationQueueModule.reloadQueue();
+    }
   }
 }
 
@@ -134,9 +139,9 @@ async function handleChatDeleted(deletedChatName ) {
 
 function handleMessageDeleted() {
   if (!chat_enabled()) {return;}
-  debug("Message deleted, refreshing memory and cleaning up running summaries");
+  debug("Message deleted, refreshing memory and cleaning up running recaps");
   refresh_memory();
-  cleanup_invalid_running_summaries();
+  cleanup_invalid_running_recaps();
   // Update the version selector UI after cleanup
   if (typeof window.updateVersionSelector === 'function') {
     window.updateVersionSelector();
@@ -253,14 +258,14 @@ async function initializeExtension() {
   installGenerateRawInterceptor();
 
   // Install lorebook wrapper for individual entry wrapping with XML tags
-  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] About to call installLorebookWrapper()');
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] About to call installLorebookWrapper()');
   installLorebookWrapper();
-  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] installLorebookWrapper() call completed');
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] installLorebookWrapper() call completed');
 
   // Install world info activation logger (PoC for tracking active entries)
-  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] Installing world info activation logger');
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] Installing world info activation logger');
   installWorldInfoActivationLogger();
-  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] World info activation logger installed');
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] World info activation logger installed');
 
   // Load settings
   initialize_settings();
@@ -283,12 +288,12 @@ async function initializeExtension() {
   bindSceneBreakButton(get_message_div, getContext, set_data, get_data, saveChatDebounced);
 
   // Initialize lorebook viewer UI
-  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] Adding lorebook viewer button to message template');
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] Adding lorebook viewer button to message template');
   addLorebookViewerButton();
-  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] Binding lorebook viewer button click handlers');
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] Binding lorebook viewer button click handlers');
   bindLorebookViewerButton();
   bindSceneBreakLorebookIcons();
-  debug(SUBSYSTEM.EVENT, '[Auto-Summarize:Init] Lorebook viewer initialized');
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] Lorebook viewer initialized');
 
   // ST event listeners
   const ctx = getContext();
@@ -325,7 +330,7 @@ async function initializeExtension() {
         const operationSuffix = getOperationSuffix();
 
         if (operationSuffix !== null) {
-          // Extension operation in progress (scene break, summary, etc.)
+          // Extension operation in progress (scene break, recap, etc.)
           // The generateRawInterceptor will handle metadata injection
           debug('[Interceptor] Extension operation in progress, skipping chat-{index} metadata');
           return;
@@ -431,7 +436,7 @@ async function initializeExtension() {
     const lorebookManager = await import('./lorebookManager.js');
     const categoryIndexes = await import('./categoryIndexes.js');
     const lorebookEntryMerger = await import('./lorebookEntryMerger.js');
-    const summaryToLorebookProcessor = await import('./summaryToLorebookProcessor.js');
+    const recapToLorebookProcessor = await import('./recapToLorebookProcessor.js');
     const connectionSettingsManager = await import('./connectionSettingsManager.js');
     debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] All modules imported successfully');
 
@@ -449,10 +454,10 @@ async function initializeExtension() {
       lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, null);
     }
 
-    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] About to init summaryToLorebookProcessor with connectionSettingsManager:', connectionSettingsManager);
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] About to init recapToLorebookProcessor with connectionSettingsManager:', connectionSettingsManager);
     debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] connectionSettingsManager.withConnectionSettings:', connectionSettingsManager?.withConnectionSettings);
-    summaryToLorebookProcessor.initSummaryToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger, connectionSettingsManager, { get_settings, set_settings });
-    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] ✓ summaryToLorebookProcessor initialized');
+    recapToLorebookProcessor.initRecapToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger, connectionSettingsManager, { get_settings, set_settings });
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] ✓ recapToLorebookProcessor initialized');
 
     log('[Lorebooks] ✓ Auto-Lorebooks functionality initialized');
   } catch (err) {

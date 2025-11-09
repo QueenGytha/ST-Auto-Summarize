@@ -109,21 +109,21 @@ eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, async (promptData) => {
 **Complete Trace:**
 
 ```
-Extension calls summarize_text()
+Extension calls recap_text()
     ↓
-[Extension] summarization.js::line 95 or 106: Call generateRaw()
+[Extension] recapping.js::line 95 or 106: Call generateRaw()
     |   await generateRaw({ prompt: prompt_input, ... })
     ↓
 [Extension] generateRawInterceptor.js::line 15: wrappedGenerateRaw() called
     ↓
 [Extension] generateRawInterceptor.js::line 30: Determine operation type from stack
     |   const baseOperation = determineOperationType();
-    |   // Stack trace shows "summarize_text" → returns "summary"
+    |   // Stack trace shows "recap_text" → returns "recap"
     ↓
 [Extension] generateRawInterceptor.js::line 33: Get operation suffix from global state
     |   const suffix = getOperationSuffix();  // e.g., "-42-67"
     |   const operation = suffix ? `${baseOperation}${suffix}` : baseOperation;
-    |   // Result: "summary-42-67"
+    |   // Result: "recap-42-67"
     ↓
 [Extension] generateRawInterceptor.js::line 42 or 53: Inject metadata
     |   if (typeof options.prompt === 'string') {
@@ -198,7 +198,7 @@ The event handler checks `getOperationSuffix()` and exits if set (line 325-329),
 Extension calls sendLLMRequest()
     ↓
 [Extension] NEW sendLLMRequest() function
-    |   - Receives: operationType parameter (e.g., "summary-42-67")
+    |   - Receives: operationType parameter (e.g., "recap-42-67")
     |   - Injects metadata manually into prompt
     |   - Builds request payload
     ↓
@@ -268,14 +268,14 @@ function determineOperationType() {
     if (stack.includes('detectSceneBreak') || stack.includes('autoSceneBreakDetection.js')) {
       return 'detect_scene_break';
     }
-    if (stack.includes('generateSceneSummary') && !stack.includes('runningSceneSummary.js')) {
-      return 'generate_scene_summary';
+    if (stack.includes('generateSceneRecap') && !stack.includes('runningSceneRecap.js')) {
+      return 'generate_scene_recap';
     }
     // ... more checks ...
 
-    // Check for message summarization (AFTER scene checks!)
-    if (stack.includes('summarize_text') || stack.includes('summarization.js')) {
-      return 'summary';
+    // Check for message recap generation (AFTER scene checks!)
+    if (stack.includes('recap_text') || stack.includes('recapping.js')) {
+      return 'recap';
     }
 
     // Default for chat messages
@@ -295,13 +295,13 @@ Error: Stack trace for operation type detection
     at determineOperationType (generateRawInterceptor.js:124)
     at wrappedGenerateRaw (generateRawInterceptor.js:30)
     at Object.generateRaw (generateRawInterceptor.js:90)
-    at summarize_text (summarization.js:95)
+    at recap_text (recapping.js:95)
     at detectSceneBreak (autoSceneBreakDetection.js:332)
     at handleCharMessage (eventHandlers.js:178)
     ...
 ```
 
-The stack string contains function names that appear **below** the current execution point. This is why checking for `'summarize_text'` or `'detectSceneBreak'` works - these are **callers** of the current function.
+The stack string contains function names that appear **below** the current execution point. This is why checking for `'recap_text'` or `'detectSceneBreak'` works - these are **callers** of the current function.
 
 ### 2.2 Current Call Stack Example: Scene Break Detection
 
@@ -312,7 +312,7 @@ handleCharMessage()  (eventHandlers.js:178)
     ↓
 detectSceneBreak()  (autoSceneBreakDetection.js:332)
     ↓
-summarize_text()  (summarization.js:95)
+recap_text()  (recapping.js:95)
     ↓
 generateRaw()  [wrappedGenerateRaw] (generateRawInterceptor.js:90)
     ↓
@@ -329,7 +329,7 @@ Error: Stack trace for operation type detection
     at determineOperationType (generateRawInterceptor.js:124)
     at wrappedGenerateRaw (generateRawInterceptor.js:30)
     at Object.generateRaw (generateRawInterceptor.js:90)
-    at summarize_text (summarization.js:95)           <-- FOUND!
+    at recap_text (recapping.js:95)           <-- FOUND!
     at detectSceneBreak (autoSceneBreakDetection.js:332)  <-- FOUND!
     at handleCharMessage (eventHandlers.js:178)
     at async on_chat_event (eventHandlers.js:232)
@@ -353,7 +353,7 @@ The stack trace contains the **caller chain** - all functions that led to the cu
 ```
 detectSceneBreak()  (autoSceneBreakDetection.js:332)
     ↓
-summarize_text()  (summarization.js:95)
+recap_text()  (recapping.js:95)
     ↓
 sendLLMRequest()  [NEW FUNCTION]
     ↓
@@ -379,15 +379,15 @@ function sendLLMRequest(messages, operationType) {
     // Output:
     // Error
     //     at sendLLMRequest (NEW_FILE.js:XX)              <-- Current function
-    //     at summarize_text (summarization.js:95)          <-- Caller
+    //     at recap_text (recapping.js:95)          <-- Caller
     //     at detectSceneBreak (autoSceneBreakDetection.js:332)  <-- Caller's caller
     
-    // Problem: "summarize_text" is in the stack!
+    // Problem: "recap_text" is in the stack!
     // But we CANNOT distinguish between:
-    //   - summary operation
-    //   - detect_scene_break operation (which also calls summarize_text)
+    //   - recap operation
+    //   - detect_scene_break operation (which also calls recap_text)
     
-    // The stack only shows that summarize_text called us.
+    // The stack only shows that recap_text called us.
     // It doesn't tell us which HIGH-LEVEL operation initiated the chain.
 }
 ```
@@ -396,22 +396,22 @@ function sendLLMRequest(messages, operationType) {
 
 Stack traces contain the **call chain** (who called who), but NOT the **purpose** or **context** of the call.
 
-When `detectSceneBreak()` calls `summarize_text()` which calls `sendLLMRequest()`, the stack shows:
-- `detectSceneBreak` → `summarize_text` → `sendLLMRequest`
+When `detectSceneBreak()` calls `recap_text()` which calls `sendLLMRequest()`, the stack shows:
+- `detectSceneBreak` → `recap_text` → `sendLLMRequest`
 
-But the stack does NOT tell us that this is a "detect_scene_break" operation vs a "summary" operation.
+But the stack does NOT tell us that this is a "detect_scene_break" operation vs a "recap" operation.
 
 **Current System Works Because:**
 
 The interceptor runs INSIDE `generateRaw()`, which is called directly by the operation-specific function. The stack trace can look "backwards" at the caller:
 - If caller is `detectSceneBreak` → operation is "detect_scene_break"
-- If caller is `summarize_text` (without detectSceneBreak above it) → operation is "summary"
+- If caller is `recap_text` (without detectSceneBreak above it) → operation is "recap"
 
 **Proposed System Breaks Because:**
 
 The metadata injection happens OUTSIDE the generateRaw call, in a new `sendLLMRequest()` function. At that point:
-- The stack shows the caller is `summarize_text`
-- But `summarize_text` is called by MANY different operations
+- The stack shows the caller is `recap_text`
+- But `recap_text` is called by MANY different operations
 - We cannot determine which high-level operation initiated the call
 
 ### 2.4 Why Stack Traces Don't Include Callers' Context
@@ -453,7 +453,7 @@ The stack does NOT contain:
 async function detectSceneBreak() {
     setOperationSuffix('-42-67');  // Set global state
     try {
-        await summarize_text(prompt);
+        await recap_text(prompt);
         // ↓ calls generateRaw
         //     ↓ calls wrappedGenerateRaw
         //         ↓ calls determineOperationType()
@@ -473,16 +473,16 @@ The stack trace captures the CALLER ("detectSceneBreak"), which is used to ident
 async function sendLLMRequest(messages, operationType) {
     // At this point, the stack is:
     //   sendLLMRequest <-- Current
-    //   summarize_text <-- Caller
+    //   recap_text <-- Caller
     //   detectSceneBreak <-- Caller's caller
     
-    // We can see "summarize_text" and "detectSceneBreak" in the stack,
+    // We can see "recap_text" and "detectSceneBreak" in the stack,
     // BUT we must inject metadata NOW (before calling ConnectionManagerRequestService).
     
-    // Problem: Multiple operations call summarize_text:
-    //   - detectSceneBreak → summarize_text → sendLLMRequest
-    //   - generateSceneSummary → summarize_text → sendLLMRequest
-    //   - (direct) summarize_text → sendLLMRequest
+    // Problem: Multiple operations call recap_text:
+    //   - detectSceneBreak → recap_text → sendLLMRequest
+    //   - generateSceneRecap → recap_text → sendLLMRequest
+    //   - (direct) recap_text → sendLLMRequest
     
     // We cannot reliably determine which operation this is from the stack alone.
 }
@@ -490,14 +490,14 @@ async function sendLLMRequest(messages, operationType) {
 
 **The Real Issue:**
 
-The stack trace shows the **call hierarchy**, but when multiple operations share a common function (`summarize_text`), the stack becomes ambiguous:
+The stack trace shows the **call hierarchy**, but when multiple operations share a common function (`recap_text`), the stack becomes ambiguous:
 
 ```
-Operation A → summarize_text → sendLLMRequest
-Operation B → summarize_text → sendLLMRequest
-Operation C → summarize_text → sendLLMRequest
+Operation A → recap_text → sendLLMRequest
+Operation B → recap_text → sendLLMRequest
+Operation C → recap_text → sendLLMRequest
 
-// Inside sendLLMRequest, the stack shows "summarize_text" as the caller.
+// Inside sendLLMRequest, the stack shows "recap_text" as the caller.
 // But we cannot tell if this is Operation A, B, or C without looking FURTHER up the stack.
 
 // Current approach: Look up the stack to find the specific operation function.
@@ -520,7 +520,7 @@ Extension operation calls generateRaw()
 [Extension] Line 30: determineOperationType()
     |   const baseOperation = determineOperationType();
     |   // Examines stack trace
-    |   // Returns: "summary", "detect_scene_break", "generate_scene_summary", etc.
+    |   // Returns: "recap", "detect_scene_break", "generate_scene_recap", etc.
     ↓
 [Extension] Line 33: getOperationSuffix()
     |   const suffix = getOperationSuffix();
@@ -530,7 +530,7 @@ Extension operation calls generateRaw()
 [Extension] Line 34: Build complete operation string
     |   const operation = suffix ? `${baseOperation}${suffix}` : baseOperation;
     |   // Examples:
-    |   //   "summary-42-67"
+    |   //   "recap-42-67"
     |   //   "detect_scene_break-10-25"
     |   //   "merge_lorebook_entry-CharacterName"
     ↓
@@ -546,7 +546,7 @@ Extension operation calls generateRaw()
     |   For STRING prompts (line 92-116):
     |   --------------------------------
     |   const metadata = createMetadataBlock(options);
-    |   // Returns: { version: '1.0', chat: 'ChatName', operation: 'summary-42-67' }
+    |   // Returns: { version: '1.0', chat: 'ChatName', operation: 'recap-42-67' }
     |   
     |   const metadataStr = formatMetadataBlock(metadata);
     |   // Returns: '<ST_METADATA>\n{...JSON...}\n</ST_METADATA>\n\n'
@@ -582,7 +582,7 @@ export function formatMetadataBlock(metadata) {
     const jsonStr = JSON.stringify(metadata, null, 2);
     return `<ST_METADATA>\n${jsonStr}\n</ST_METADATA>\n\n`;
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error formatting metadata block:', err);
+    console.error('[Auto-Recap:Metadata] Error formatting metadata block:', err);
     return '';
   }
 }
@@ -595,7 +595,7 @@ export function formatMetadataBlock(metadata) {
 {
   "version": "1.0",
   "chat": "Alice - 2025-01-08@10h30m45s",
-  "operation": "summary-42-67"
+  "operation": "recap-42-67"
 }
 </ST_METADATA>
 
@@ -801,7 +801,7 @@ import { withConnectionSettings } from './connectionSettingsManager.js';
 
 export async function sendLLMRequest(messages, options) {
     const {
-        operationType,        // REQUIRED: e.g., "summary-42-67"
+        operationType,        // REQUIRED: e.g., "recap-42-67"
         connectionProfile,    // Optional: profile name to switch to
         preset,               // Optional: preset name
         maxTokens,
@@ -916,8 +916,8 @@ setOperationSuffix(`-${actualStartIdx}-${messageIndex}`);
 
 let response;
 try {
-    // Call summarize_text which calls generateRaw
-    response = await summarize_text(prompt, detectionPrefill, includePresetPrompts, preset);
+    // Call recap_text which calls generateRaw
+    response = await recap_text(prompt, detectionPrefill, includePresetPrompts, preset);
 } finally {
     clearOperationSuffix();
 }
@@ -931,9 +931,9 @@ detectSceneBreak() function runs
 Line 326: setOperationSuffix('-10-25')
     |   _context.suffix = '-10-25'  (global state set)
     ↓
-Line 332: await summarize_text(...)
+Line 332: await recap_text(...)
     ↓
-summarization.js::summarize_text (line 95)
+recapping.js::recap_text (line 95)
     |   await generateRaw({ prompt, ... })
     ↓
 generateRawInterceptor.js::wrappedGenerateRaw (line 15)
@@ -971,7 +971,7 @@ Time →
 |
 |-- setOperationSuffix('-10-25')           [Global state: suffix = '-10-25']
 |
-|-- await summarize_text()
+|-- await recap_text()
 |   |
 |   |-- await generateRaw()
 |       |
@@ -1002,9 +1002,9 @@ detectSceneBreak() function runs
     ↓
 setOperationSuffix('-10-25')               [Global state: suffix = '-10-25']
     ↓
-await summarize_text()
+await recap_text()
     ↓
-summarization.js calls NEW sendLLMRequest()
+recapping.js calls NEW sendLLMRequest()
     ↓
 sendLLMRequest MUST inject metadata NOW
     |
@@ -1016,8 +1016,8 @@ sendLLMRequest MUST inject metadata NOW
     |   const baseOp = ???;  // How do we determine base operation?
     |   
     |   // We could try stack trace, but stack shows:
-    |   //   sendLLMRequest ← summarize_text ← detectSceneBreak
-    |   // Which operation is this? "summary" or "detect_scene_break"?
+    |   //   sendLLMRequest ← recap_text ← detectSceneBreak
+    |   // Which operation is this? "recap" or "detect_scene_break"?
     |   
     |   // We'd need to parse the stack, but that's the SAME logic
     |   // as the interceptor, just in a different place!
@@ -1063,7 +1063,7 @@ Instead of:
 ```javascript
 setOperationSuffix('-42-67');
 try {
-    await summarize_text(prompt);
+    await recap_text(prompt);
 } finally {
     clearOperationSuffix();
 }
@@ -1071,7 +1071,7 @@ try {
 
 Must become:
 ```javascript
-const operation = 'summary-42-67';
+const operation = 'recap-42-67';
 await sendLLMRequest(messages, { operationType: operation });
 ```
 
@@ -1101,7 +1101,7 @@ setOperationSuffix(`-${actualStartIdx}-${messageIndex}`);
 
 let response;
 try {
-    response = await summarize_text(prompt, detectionPrefill, includePresetPrompts, preset);
+    response = await recap_text(prompt, detectionPrefill, includePresetPrompts, preset);
 } finally {
     clearOperationSuffix();
 }
@@ -1181,7 +1181,7 @@ export function createMetadataBlock(options = {}) {
 {
   "version": "1.0",
   "chat": "Alice - 2025-01-08@10h30m45s",
-  "operation": "summary-42-67"
+  "operation": "recap-42-67"
 }
 ```
 
@@ -1196,7 +1196,7 @@ export function formatMetadataBlock(metadata) {
     const jsonStr = JSON.stringify(metadata, null, 2);
     return `<ST_METADATA>\n${jsonStr}\n</ST_METADATA>\n\n`;
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error formatting metadata block:', err);
+    console.error('[Auto-Recap:Metadata] Error formatting metadata block:', err);
     return '';
   }
 }
@@ -1209,7 +1209,7 @@ export function formatMetadataBlock(metadata) {
 {
   "version": "1.0",
   "chat": "Alice - 2025-01-08@10h30m45s",
-  "operation": "summary-42-67"
+  "operation": "recap-42-67"
 }
 </ST_METADATA>
 
@@ -1240,7 +1240,7 @@ export function injectMetadata(prompt, options = {}) {
     return metadataStr + prompt;
 
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error injecting metadata:', err);
+    console.error('[Auto-Recap:Metadata] Error injecting metadata:', err);
     // Return original prompt on error
     return prompt;
   }
@@ -1251,8 +1251,8 @@ export function injectMetadata(prompt, options = {}) {
 
 **Input:**
 ```javascript
-const prompt = "Summarize the following conversation:\n\nUser: Hello\nAI: Hi there!";
-const result = injectMetadata(prompt, { operation: 'summary-42-67' });
+const prompt = "Recap the following conversation:\n\nUser: Hello\nAI: Hi there!";
+const result = injectMetadata(prompt, { operation: 'recap-42-67' });
 ```
 
 **Output:**
@@ -1261,11 +1261,11 @@ const result = injectMetadata(prompt, { operation: 'summary-42-67' });
 {
   "version": "1.0",
   "chat": "Alice - 2025-01-08@10h30m45s",
-  "operation": "summary-42-67"
+  "operation": "recap-42-67"
 }
 </ST_METADATA>
 
-Summarize the following conversation:
+Recap the following conversation:
 
 User: Hello
 AI: Hi there!
@@ -1297,19 +1297,19 @@ export function injectMetadataIntoChatArray(chatArray, options = {}) {
     if (firstSystemMessage) {
       // Prepend to existing system message
       firstSystemMessage.content = metadataStr + firstSystemMessage.content;
-      debug(SUBSYSTEM.CORE,'[Auto-Summarize:Interceptor] Injected metadata into existing system message');
+      debug(SUBSYSTEM.CORE,'[Auto-Recap:Interceptor] Injected metadata into existing system message');
     } else {
       // No system message exists, insert at beginning
       chatArray.unshift({
         role: 'system',
         content: metadataStr
       });
-      debug(SUBSYSTEM.CORE,'[Auto-Summarize:Interceptor] Created new system message with metadata');
+      debug(SUBSYSTEM.CORE,'[Auto-Recap:Interceptor] Created new system message with metadata');
     }
 
-    debug(SUBSYSTEM.CORE,'[Auto-Summarize:Interceptor] Metadata:', JSON.stringify(metadata));
+    debug(SUBSYSTEM.CORE,'[Auto-Recap:Interceptor] Metadata:', JSON.stringify(metadata));
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error injecting metadata into chat array:', err);
+    console.error('[Auto-Recap:Metadata] Error injecting metadata into chat array:', err);
   }
 }
 ```
@@ -1452,18 +1452,18 @@ async function withConnectionSettings(profileName, presetName, operation) {
 **Flow:**
 
 ```
-withConnectionSettings('SummaryProfile', 'SummaryPreset', async () => {
+withConnectionSettings('RecapProfile', 'RecapPreset', async () => {
     ↓
 Save current settings to crash recovery storage
     ↓
-Switch to 'SummaryProfile' (global state change)
+Switch to 'RecapProfile' (global state change)
     ↓
 Wait 500ms for profile to apply
     ↓
-Execute operation (e.g., await summarize_text(...))
+Execute operation (e.g., await recap_text(...))
     |   
     |   Operation uses GLOBAL connection settings
-    |   (currently set to 'SummaryProfile')
+    |   (currently set to 'RecapProfile')
     |
     ↓
 Operation completes
@@ -1560,7 +1560,7 @@ async function get_connection_profile_api(name) {
   // Get the API for the given connection profile name
   if (!check_connection_profiles_active()) {return null;}
   let profileName = name;
-  if (profileName === undefined) {profileName = await get_summary_connection_profile();}
+  if (profileName === undefined) {profileName = await get_recap_connection_profile();}
   const ctx = getContext();
   const result = await ctx.executeSlashCommandsWithOptions(`/profile-get ${profileName}`);
 
@@ -1611,7 +1611,7 @@ This is MORE complex than the current `set_connection_profile()` approach, but a
 
 ---
 
-## Summary
+## Recap
 
 All six technical issues have been traced end-to-end through actual code:
 

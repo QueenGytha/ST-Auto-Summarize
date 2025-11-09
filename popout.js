@@ -42,7 +42,7 @@ function initialize_popout() {
   dragElement($popout);
 
   // set up the popout button in the settings to toggle it
-  bind_function('#auto_summarize_popout_button', (e) => {
+  bind_function('#auto_recap_popout_button', (e) => {
     toggle_popout();
     e.stopPropagation();
   });

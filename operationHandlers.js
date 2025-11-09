@@ -10,21 +10,21 @@ import {
 './operationQueue.js';
 import { OPERATION_FETCH_TIMEOUT_MS } from './constants.js';
 import {
-  validate_summary } from
-'./summaryValidation.js';
+  validate_recap } from
+'./recapValidation.js';
 import {
   detectSceneBreak,
   isCooldownSkip } from
 './autoSceneBreakDetection.js';
 import {
-  generateSceneSummary,
+  generateSceneRecap,
   toggleSceneBreak,
-  autoGenerateSceneNameFromSummary } from
+  autoGenerateSceneNameFromRecap } from
 './sceneBreak.js';
 import {
-  generate_running_scene_summary,
-  combine_scene_with_running_summary } from
-'./runningSceneSummary.js';
+  generate_running_scene_recap,
+  combine_scene_with_running_recap } from
+'./runningSceneRecap.js';
 import {
   runLorebookEntryLookupStage,
   runLorebookEntryDeduplicateStage,
@@ -34,7 +34,7 @@ import {
   assignEntityId,
   ensureStringArray,
   buildRegistryItemsForType } from
-'./summaryToLorebookProcessor.js';
+'./recapToLorebookProcessor.js';
 import {
   mergeLorebookEntryByUid,
   mergeLorebookEntry } from
@@ -75,16 +75,16 @@ function get_message_div(index) {
 
 // eslint-disable-next-line max-lines-per-function -- Sequential operation handler registration for 10+ operation types (431 lines is acceptable for initialization)
 export function registerAllOperationHandlers() {
-  // Validate summary
-  registerOperationHandler(OperationType.VALIDATE_SUMMARY, async (operation) => {
-    const { summary, type } = operation.params;
+  // Validate recap
+  registerOperationHandler(OperationType.VALIDATE_RECAP, async (operation) => {
+    const { recap, type } = operation.params;
     const signal = getAbortSignal(operation);
-    debug(SUBSYSTEM.QUEUE, `Executing VALIDATE_SUMMARY for type ${type}`);
+    debug(SUBSYSTEM.QUEUE, `Executing VALIDATE_RECAP for type ${type}`);
 
-    const isValid = await validate_summary(summary, type);
+    const isValid = await validate_recap(recap, type);
 
     // Check if cancelled after validation (before potential side effects)
-    throwIfAborted(signal, 'VALIDATE_SUMMARY', 'validation');
+    throwIfAborted(signal, 'VALIDATE_RECAP', 'validation');
 
     return { isValid };
   });
@@ -124,13 +124,13 @@ export function registerAllOperationHandlers() {
 
       // No decrementing cooldown needed; adjacency rule enforces skip for the immediate next message
 
-      // Auto-generate scene summary if enabled - ENQUEUE as separate operation
-      if (get_settings('auto_scene_break_generate_summary')) {
-        debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_SUMMARY for message ${index}`);
+      // Auto-generate scene recap if enabled - ENQUEUE as separate operation
+      if (get_settings('auto_scene_break_generate_recap')) {
+        debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_RECAP for message ${index}`);
 
-        // Enqueue summary generation as next operation (highest priority)
-        const summaryOpId = await enqueueOperation(
-          OperationType.GENERATE_SCENE_SUMMARY,
+        // Enqueue recap generation as next operation (highest priority)
+        const recapOpId = await enqueueOperation(
+          OperationType.GENERATE_SCENE_RECAP,
           { index },
           {
             priority: 20, // Highest priority - process before all other operations
@@ -142,7 +142,7 @@ export function registerAllOperationHandlers() {
           }
         );
 
-        debug(SUBSYSTEM.QUEUE, `✓ Enqueued GENERATE_SCENE_SUMMARY (${summaryOpId ?? 'null'}) for message ${index}`);
+        debug(SUBSYSTEM.QUEUE, `✓ Enqueued GENERATE_SCENE_RECAP (${recapOpId ?? 'null'}) for message ${index}`);
       }
     } else {
       debug(SUBSYSTEM.QUEUE, `✗ No scene break for message ${index}`);
@@ -151,21 +151,21 @@ export function registerAllOperationHandlers() {
     return result;
   });
 
-  // Generate scene summary
-  registerOperationHandler(OperationType.GENERATE_SCENE_SUMMARY, async (operation) => {
+  // Generate scene recap
+  registerOperationHandler(OperationType.GENERATE_SCENE_RECAP, async (operation) => {
     const { index } = operation.params;
     const signal = getAbortSignal(operation);
-    debug(SUBSYSTEM.QUEUE, `Executing GENERATE_SCENE_SUMMARY for index ${index}`);
-    toast(`Generating scene summary for message ${index}...`, 'info');
+    debug(SUBSYSTEM.QUEUE, `Executing GENERATE_SCENE_RECAP for index ${index}`);
+    toast(`Generating scene recap for message ${index}...`, 'info');
 
-    // Set loading state in summary box
+    // Set loading state in recap box
     const $msgDiv = get_message_div(index);
-    const $summaryBox = $msgDiv.find(selectorsExtension.sceneBreak.summaryBox);
-    if ($summaryBox.length) {
-      $summaryBox.val("Generating scene summary...");
+    const $recapBox = $msgDiv.find(selectorsExtension.sceneBreak.recapBox);
+    if ($recapBox.length) {
+      $recapBox.val("Generating scene recap...");
     }
 
-    const summary = await generateSceneSummary({
+    const recap = await generateSceneRecap({
       index,
       get_message_div,
       getContext,
@@ -177,33 +177,33 @@ export function registerAllOperationHandlers() {
     });
 
     // Check if operation was cancelled during execution
-    throwIfAborted(signal, 'GENERATE_SCENE_SUMMARY', 'LLM call');
+    throwIfAborted(signal, 'GENERATE_SCENE_RECAP', 'LLM call');
 
-    toast(`✓ Scene summary generated for message ${index}`, 'success');
+    toast(`✓ Scene recap generated for message ${index}`, 'success');
 
     // Enqueue scene name generation if enabled
-    const autoGenerateSceneName = get_settings('scene_summary_auto_name') ?? true;
-    if (autoGenerateSceneName && summary) {
+    const autoGenerateSceneName = get_settings('scene_recap_auto_name') ?? true;
+    if (autoGenerateSceneName && recap) {
       debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_NAME for index ${index}`);
       enqueueOperation(OperationType.GENERATE_SCENE_NAME, {
         index,
-        summary
+        recap
       }, {
-        priority: 5, // Lower priority than summary generation
+        priority: 5, // Lower priority than recap generation
         queueVersion: operation.queueVersion,
         metadata: {
           message_index: index,
-          operation_source: 'scene_summary'
+          operation_source: 'scene_recap'
         }
       });
     }
 
-    return { summary };
+    return { recap };
   });
 
-  // Generate scene name from scene summary
+  // Generate scene name from scene recap
   registerOperationHandler(OperationType.GENERATE_SCENE_NAME, async (operation) => {
-    const { index, summary } = operation.params;
+    const { index, recap } = operation.params;
     const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing GENERATE_SCENE_NAME for index ${index}`);
 
@@ -215,8 +215,8 @@ export function registerAllOperationHandlers() {
       throw new Error(`Message at index ${index} not found`);
     }
 
-    if (!summary) {
-      debug(SUBSYSTEM.QUEUE, `No summary provided for GENERATE_SCENE_NAME at index ${index}, skipping`);
+    if (!recap) {
+      debug(SUBSYSTEM.QUEUE, `No recap provided for GENERATE_SCENE_NAME at index ${index}, skipping`);
       return { name: null };
     }
 
@@ -226,8 +226,8 @@ export function registerAllOperationHandlers() {
     // Check if cancelled during delay
     throwIfAborted(signal, 'GENERATE_SCENE_NAME', 'rate limit delay');
 
-    const name = await autoGenerateSceneNameFromSummary({
-      summary,
+    const name = await autoGenerateSceneNameFromRecap({
+      recap,
       message,
       get_data,
       set_data,
@@ -242,31 +242,31 @@ export function registerAllOperationHandlers() {
     return { name };
   });
 
-  // Generate running summary (bulk)
-  registerOperationHandler(OperationType.GENERATE_RUNNING_SUMMARY, async (operation) => {
+  // Generate running recap (bulk)
+  registerOperationHandler(OperationType.GENERATE_RUNNING_RECAP, async (operation) => {
     const signal = getAbortSignal(operation);
-    debug(SUBSYSTEM.QUEUE, `Executing GENERATE_RUNNING_SUMMARY`);
+    debug(SUBSYSTEM.QUEUE, `Executing GENERATE_RUNNING_RECAP`);
 
-    const summary = await generate_running_scene_summary(true);
+    const recap = await generate_running_scene_recap(true);
 
     // Check if cancelled after LLM call (before return)
-    throwIfAborted(signal, 'GENERATE_RUNNING_SUMMARY', 'LLM call');
+    throwIfAborted(signal, 'GENERATE_RUNNING_RECAP', 'LLM call');
 
-    return { summary };
+    return { recap };
   });
 
-  // Combine scene with running summary
+  // Combine scene with running recap
   registerOperationHandler(OperationType.COMBINE_SCENE_WITH_RUNNING, async (operation) => {
     const { index } = operation.params;
     const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing COMBINE_SCENE_WITH_RUNNING for index ${index}`);
 
-    const summary = await combine_scene_with_running_summary(index);
+    const recap = await combine_scene_with_running_recap(index);
 
     // Check if cancelled after LLM call (before return)
     throwIfAborted(signal, 'COMBINE_SCENE_WITH_RUNNING', 'LLM call');
 
-    return { summary };
+    return { recap };
   });
 
   // Merge lorebook entry (standalone operation)
@@ -302,22 +302,22 @@ export function registerAllOperationHandlers() {
 
     // Build settings from profile
     const settings = {
-      merge_connection_profile: get_settings('auto_lorebooks_summary_merge_connection_profile') || '',
-      merge_completion_preset: get_settings('auto_lorebooks_summary_merge_completion_preset') || '',
-      merge_prefill: get_settings('auto_lorebooks_summary_merge_prefill') || '',
-      merge_prompt: get_settings('auto_lorebooks_summary_merge_prompt') || '',
-      lorebook_entry_lookup_connection_profile: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_connection_profile') || '',
-      lorebook_entry_lookup_completion_preset: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_completion_preset') || '',
-      lorebook_entry_lookup_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '',
-      lorebook_entry_lookup_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prompt') || '',
-      lorebook_entry_deduplicate_connection_profile: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_connection_profile') || '',
-      lorebook_entry_deduplicate_completion_preset: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset') || '',
-      lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '',
-      lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '',
-      merge_include_preset_prompts: get_settings('auto_lorebooks_summary_merge_include_preset_prompts') ?? false,
-      lorebook_entry_lookup_include_preset_prompts: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_include_preset_prompts') ?? false,
-      lorebook_entry_deduplicate_include_preset_prompts: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_include_preset_prompts') ?? false,
-      skip_duplicates: get_settings('auto_lorebooks_summary_skip_duplicates') ?? true
+      merge_connection_profile: get_settings('auto_lorebooks_recap_merge_connection_profile') || '',
+      merge_completion_preset: get_settings('auto_lorebooks_recap_merge_completion_preset') || '',
+      merge_prefill: get_settings('auto_lorebooks_recap_merge_prefill') || '',
+      merge_prompt: get_settings('auto_lorebooks_recap_merge_prompt') || '',
+      lorebook_entry_lookup_connection_profile: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_connection_profile') || '',
+      lorebook_entry_lookup_completion_preset: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_completion_preset') || '',
+      lorebook_entry_lookup_prefill: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prefill') || '',
+      lorebook_entry_lookup_prompt: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prompt') || '',
+      lorebook_entry_deduplicate_connection_profile: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_connection_profile') || '',
+      lorebook_entry_deduplicate_completion_preset: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_completion_preset') || '',
+      lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill') || '',
+      lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prompt') || '',
+      merge_include_preset_prompts: get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false,
+      lorebook_entry_lookup_include_preset_prompts: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts') ?? false,
+      lorebook_entry_deduplicate_include_preset_prompts: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts') ?? false,
+      skip_duplicates: get_settings('auto_lorebooks_recap_skip_duplicates') ?? true
     };
 
     debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Settings - skip_duplicates: ${settings.skip_duplicates}`);
@@ -338,8 +338,8 @@ export function registerAllOperationHandlers() {
     // Enqueue next operation based on lorebook entry lookup result
     if (lorebookEntryLookupResult.needsFullContextIds && lorebookEntryLookupResult.needsFullContextIds.length > 0) {
       // Need lorebook entry deduplication - capture settings at enqueue time
-      const deduplicatePrefill = get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '';
-      const deduplicateIncludePresetPrompts = get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_include_preset_prompts') ?? false;
+      const deduplicatePrefill = get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill') || '';
+      const deduplicateIncludePresetPrompts = get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts') ?? false;
 
       await enqueueOperation(
         OperationType.RESOLVE_LOREBOOK_ENTRY,
@@ -360,8 +360,8 @@ export function registerAllOperationHandlers() {
       setLorebookEntryDeduplicateResult(entryId, { resolvedId, synopsis: lorebookEntryLookupResult.synopsis });
       markStageInProgress(entryId, 'lorebook_entry_deduplicate_complete');
 
-      const mergePrefill = get_settings('auto_lorebooks_summary_merge_prefill') || '';
-      const mergeIncludePresetPrompts = get_settings('auto_lorebooks_summary_merge_include_preset_prompts') ?? false;
+      const mergePrefill = get_settings('auto_lorebooks_recap_merge_prefill') || '';
+      const mergeIncludePresetPrompts = get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false;
 
       await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
@@ -413,22 +413,22 @@ export function registerAllOperationHandlers() {
 
     // Build settings from profile
     const settings = {
-      merge_connection_profile: get_settings('auto_lorebooks_summary_merge_connection_profile') || '',
-      merge_completion_preset: get_settings('auto_lorebooks_summary_merge_completion_preset') || '',
-      merge_prefill: get_settings('auto_lorebooks_summary_merge_prefill') || '',
-      merge_prompt: get_settings('auto_lorebooks_summary_merge_prompt') || '',
-      lorebook_entry_lookup_connection_profile: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_connection_profile') || '',
-      lorebook_entry_lookup_completion_preset: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_completion_preset') || '',
-      lorebook_entry_lookup_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '',
-      lorebook_entry_lookup_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prompt') || '',
-      lorebook_entry_deduplicate_connection_profile: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_connection_profile') || '',
-      lorebook_entry_deduplicate_completion_preset: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_completion_preset') || '',
-      lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prefill') || '',
-      lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_prompt') || '',
-      merge_include_preset_prompts: get_settings('auto_lorebooks_summary_merge_include_preset_prompts') ?? false,
-      lorebook_entry_lookup_include_preset_prompts: get_settings('auto_lorebooks_summary_lorebook_entry_lookup_include_preset_prompts') ?? false,
-      lorebook_entry_deduplicate_include_preset_prompts: get_settings('auto_lorebooks_summary_lorebook_entry_deduplicate_include_preset_prompts') ?? false,
-      skip_duplicates: get_settings('auto_lorebooks_summary_skip_duplicates') ?? true
+      merge_connection_profile: get_settings('auto_lorebooks_recap_merge_connection_profile') || '',
+      merge_completion_preset: get_settings('auto_lorebooks_recap_merge_completion_preset') || '',
+      merge_prefill: get_settings('auto_lorebooks_recap_merge_prefill') || '',
+      merge_prompt: get_settings('auto_lorebooks_recap_merge_prompt') || '',
+      lorebook_entry_lookup_connection_profile: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_connection_profile') || '',
+      lorebook_entry_lookup_completion_preset: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_completion_preset') || '',
+      lorebook_entry_lookup_prefill: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prefill') || '',
+      lorebook_entry_lookup_prompt: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prompt') || '',
+      lorebook_entry_deduplicate_connection_profile: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_connection_profile') || '',
+      lorebook_entry_deduplicate_completion_preset: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_completion_preset') || '',
+      lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill') || '',
+      lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prompt') || '',
+      merge_include_preset_prompts: get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false,
+      lorebook_entry_lookup_include_preset_prompts: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts') ?? false,
+      lorebook_entry_deduplicate_include_preset_prompts: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts') ?? false,
+      skip_duplicates: get_settings('auto_lorebooks_recap_skip_duplicates') ?? true
     };
 
     const lorebookName = getAttachedLorebook();
@@ -475,8 +475,8 @@ export function registerAllOperationHandlers() {
     // Enqueue next operation - capture settings at enqueue time
     if (lorebookEntryDeduplicateResult.resolvedId) {
       // Match found - merge
-      const mergePrefill = get_settings('auto_lorebooks_summary_merge_prefill') || '';
-      const mergeIncludePresetPrompts = get_settings('auto_lorebooks_summary_merge_include_preset_prompts') ?? false;
+      const mergePrefill = get_settings('auto_lorebooks_recap_merge_prefill') || '';
+      const mergeIncludePresetPrompts = get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false;
 
       await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,

@@ -8,7 +8,7 @@
 
 ---
 
-## ⚠️ CRITICAL FINDINGS SUMMARY
+## ⚠️ CRITICAL FINDINGS RECAP
 
 Deep investigation revealed **SIGNIFICANT ARCHITECTURAL INCOMPATIBILITIES** that were not apparent in initial analysis:
 
@@ -53,7 +53,7 @@ Deep investigation revealed **SIGNIFICANT ARCHITECTURAL INCOMPATIBILITIES** that
 ## Table of Contents
 
 1. [Scope Corrections](#-scope-corrections-2025-01-08-verification) **← READ THIS FIRST**
-2. [Executive Summary](#executive-summary)
+2. [Executive Recap](#executive-recap)
 3. [Current vs. Proposed Approach](#current-vs-proposed-approach)
 4. [CRITICAL: Event System Incompatibility](#critical-event-system-incompatibility)
 5. [CRITICAL: Operation Type Detection Incompatibility](#critical-operation-type-detection-incompatibility)
@@ -71,7 +71,7 @@ Deep investigation revealed **SIGNIFICANT ARCHITECTURAL INCOMPATIBILITIES** that
 
 ---
 
-## Executive Summary
+## Executive Recap
 
 This document analyzes migrating from our current approach (slash command profile switching + `generateRaw()`) to SillyTavern's `ConnectionManagerRequestService` API for connection profile management.
 
@@ -85,7 +85,7 @@ const result = await generateRaw({ prompt });  // Uses active profile
 ### Proposed Approach
 ```javascript
 // Metadata must be injected BEFORE calling (not during via interceptor)
-const promptWithMetadata = injectMetadata(prompt, { operation: 'summary' });
+const promptWithMetadata = injectMetadata(prompt, { operation: 'recap' });
 
 const result = await ConnectionManagerRequestService.sendRequest(
     profileId,              // Profile used for this request only
@@ -283,7 +283,7 @@ eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, async (promptData) => {
       const operationSuffix = getOperationSuffix();
 
       if (operationSuffix !== null) {
-        // Extension operation in progress (summary, scene, etc.)
+        // Extension operation in progress (recap, scene, etc.)
         // The generateRawInterceptor will handle metadata injection
         debug('[Interceptor] Extension operation in progress, skipping chat-{index} metadata');
         return;  // ← SKIP event-based injection for extension operations
@@ -340,23 +340,23 @@ function determineOperationType() {
     // Try to determine from call stack
     const stack = new Error('Stack trace for operation type detection').stack || '';
 
-    // Check for specific scene operations FIRST (before generic summarize_text check)
+    // Check for specific scene operations FIRST (before generic recap_text check)
     if (stack.includes('detectSceneBreak') || stack.includes('autoSceneBreakDetection.js')) {
       return 'detect_scene_break';
     }
-    if (stack.includes('generateSceneSummary') && !stack.includes('runningSceneSummary.js')) {
-      return 'generate_scene_summary';
+    if (stack.includes('generateSceneRecap') && !stack.includes('runningSceneRecap.js')) {
+      return 'generate_scene_recap';
     }
     if (stack.includes('SceneName') || stack.includes('sceneNamePrompt')) {
       return 'generate_scene_name';
     }
-    if (stack.includes('generate_running_scene_summary') || stack.includes('runningSceneSummary.js')) {
-      return 'generate_running_summary';
+    if (stack.includes('generate_running_scene_recap') || stack.includes('runningSceneRecap.js')) {
+      return 'generate_running_recap';
     }
 
     // Check for validation operations
-    if (stack.includes('validateSummary') || stack.includes('summaryValidation.js')) {
-      return 'validate_summary';
+    if (stack.includes('validateRecap') || stack.includes('recapValidation.js')) {
+      return 'validate_recap';
     }
 
     // Check for specific lorebook operations
@@ -368,9 +368,9 @@ function determineOperationType() {
     }
     // ... more operation types ...
 
-    // Check for message summarization (AFTER scene checks!)
-    if (stack.includes('summarize_text') || stack.includes('summarization.js')) {
-      return 'summary';
+    // Check for message recap generation (AFTER scene checks!)
+    if (stack.includes('recap_text') || stack.includes('recapping.js')) {
+      return 'recap';
     }
 
     // Default for chat messages
@@ -384,11 +384,11 @@ function determineOperationType() {
 **Why this works**: `generateRaw()` is called from within our extension functions, so their names appear in the call stack:
 
 ```
-Stack trace example when summarizing:
+Stack trace example when recapping:
   at generateRaw (script.js:3190)
   at wrappedGenerateRaw (generateRawInterceptor.js:15)
-  at summarize_text (summarization.js:15)        ← DETECTED
-  at handle_summarize_text (operationHandlers.js:...)
+  at recap_text (recapping.js:15)        ← DETECTED
+  at handle_recap_text (operationHandlers.js:...)
   ...
 ```
 
@@ -401,15 +401,15 @@ Stack trace example when summarizing:
   at ChatCompletionService.processRequest (custom-request.js:535)
   at ConnectionManagerRequestService.sendRequest (shared.js:383)
   at sendLLMRequest (llmClient.js:...)          ← ONLY THIS VISIBLE
-  at summarize_text (summarization.js:15)       ← NOT CALLED YET!
+  at recap_text (recapping.js:15)       ← NOT CALLED YET!
   ...
 ```
 
 **Problem**: By the time metadata needs to be injected (in `sendLLMRequest()`), the original caller functions are **NOT YET in the stack** because:
-1. `summarize_text()` calls `sendLLMRequest()`
+1. `recap_text()` calls `sendLLMRequest()`
 2. `sendLLMRequest()` needs to inject metadata NOW
 3. Stack only shows `sendLLMRequest → ConnectionManagerRequestService → ...`
-4. Original function names like `detectSceneBreak`, `validateSummary`, etc. are **NOT in stack yet**
+4. Original function names like `detectSceneBreak`, `validateRecap`, etc. are **NOT in stack yet**
 
 **Verified**: Stack trace only includes functions that have **already been called**, not functions that **are calling you**.
 
@@ -419,18 +419,18 @@ Stack trace example when summarizing:
 
 ```javascript
 // ❌ OLD (implicit from stack trace):
-async function summarize_text(prompt) {
+async function recap_text(prompt) {
   // ...
   await generateRaw({ prompt });
-  // Interceptor determines type from stack: 'summary'
+  // Interceptor determines type from stack: 'recap'
 }
 
 // ✅ NEW (explicit parameter):
-async function summarize_text(prompt) {
+async function recap_text(prompt) {
   // ...
   await sendLLMRequest({
     prompt,
-    operationType: 'summary',  // ← MUST SPECIFY EXPLICITLY
+    operationType: 'recap',  // ← MUST SPECIFY EXPLICITLY
     profileName,
   });
 }
@@ -441,13 +441,13 @@ async function summarize_text(prompt) {
 **EVERY LLM call site** must be updated to pass operation type explicitly.
 
 **Estimated call sites**:
-- summarization.js: 3 call sites
+- recapping.js: 3 call sites
 - lorebookEntryMerger.js: 3 call sites
 - autoSceneBreakDetection.js: 1 call site
-- runningSceneSummary.js: 2 call sites
+- runningSceneRecap.js: 2 call sites
 - sceneBreak.js: 2 call sites
-- summaryValidation.js: 1 call site
-- summaryToLorebookProcessor.js: 5+ call sites
+- recapValidation.js: 1 call site
+- recapToLorebookProcessor.js: 5+ call sites
 - **TOTAL: 30+ files, 50+ call sites minimum**
 
 **Verification required**: Grep every file to ensure all call sites updated
@@ -470,11 +470,11 @@ clearOperationType();
 ```javascript
 // operationTypes.js
 export const OperationType = {
-  SUMMARY: 'summary',
+  RECAP: 'recap',
   DETECT_SCENE_BREAK: 'detect_scene_break',
-  GENERATE_SCENE_SUMMARY: 'generate_scene_summary',
+  GENERATE_SCENE_RECAP: 'generate_scene_recap',
   GENERATE_SCENE_NAME: 'generate_scene_name',
-  VALIDATE_SUMMARY: 'validate_summary',
+  VALIDATE_RECAP: 'validate_recap',
   LOREBOOK_ENTRY_LOOKUP: 'lorebook_entry_lookup',
   MERGE_LOREBOOK_ENTRY: 'merge_lorebook_entry',
   // ... all operation types ...
@@ -487,7 +487,7 @@ import { OperationType } from './operationTypes.js';
 
 await sendLLMRequest({
   prompt,
-  operationType: OperationType.SUMMARY,  // Type-safe, discoverable
+  operationType: OperationType.RECAP,  // Type-safe, discoverable
   profileName,
 });
 ```
@@ -576,7 +576,7 @@ eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, async (promptData) => {
 ### Why Two Paths Exist
 
 **Interceptor path**:
-- Extension operations need operation-specific types (summary, scene, lorebook, etc.)
+- Extension operations need operation-specific types (recap, scene, lorebook, etc.)
 - Stack trace provides this information implicitly
 - Activated when extension calls generateRaw()
 
@@ -655,7 +655,7 @@ export function clearOperationSuffix() {
 }
 ```
 
-**Purpose**: Add context to operation type (e.g., message range for summaries)
+**Purpose**: Add context to operation type (e.g., message range for recaps)
 
 **Usage pattern**:
 ```javascript
@@ -664,7 +664,7 @@ setOperationSuffix('-42-67');  // Message range
 try {
   await generateRaw({ prompt });
   // Interceptor reads suffix via getOperationSuffix()
-  // Operation becomes: "summary-42-67"
+  // Operation becomes: "recap-42-67"
 } finally {
   clearOperationSuffix();  // Always cleanup
 }
@@ -720,7 +720,7 @@ try {
 }
 
 // ✅ NEW (explicit string):
-const operation = `summary-42-67`;  // Build full string upfront
+const operation = `recap-42-67`;  // Build full string upfront
 await sendLLMRequest({
   prompt,
   operationType: operation,  // Pass complete operation string
@@ -739,8 +739,8 @@ $ grep -r "setOperationSuffix\|getOperationSuffix\|clearOperationSuffix" *.js
 
 **Estimated**: 15+ call sites across:
 - operationHandlers.js: 8+ sites
-- summaryToLorebookProcessor.js: 3+ sites
-- runningSceneSummary.js: 2 sites
+- recapToLorebookProcessor.js: 3+ sites
+- runningSceneRecap.js: 2 sites
 - sceneBreak.js: 2 sites
 
 **Changes required**:
@@ -1091,11 +1091,11 @@ const response = await fetch('/api/backends/chat-completions/generate', {
 **Example Scenario (Verified Safe)**:
 ```javascript
 // User chatting with GPT-4
-// Simultaneously, extension runs scene summary with Claude
+// Simultaneously, extension runs scene recap with Claude
 
 Promise.all([
   ConnectionManagerRequestService.sendRequest('gpt4-profile', userChatPrompt, 2000),
-  ConnectionManagerRequestService.sendRequest('claude-profile', sceneSummaryPrompt, 4000)
+  ConnectionManagerRequestService.sendRequest('claude-profile', sceneRecapPrompt, 4000)
 ]);
 
 // Both execute concurrently
@@ -1247,30 +1247,30 @@ function determineOperationType() {
     // Try to determine from call stack
     const stack = new Error('Stack trace for operation type detection').stack || '';
 
-    // Check for specific scene operations FIRST (before generic summarize_text check)
-    // Scene operations often call summarize_text(), so must be checked first
+    // Check for specific scene operations FIRST (before generic recap_text check)
+    // Scene operations often call recap_text(), so must be checked first
     if (stack.includes('detectSceneBreak') || stack.includes('autoSceneBreakDetection.js')) {
       return 'detect_scene_break';
     }
-    if (stack.includes('generateSceneSummary') &&
-        !stack.includes('runningSceneSummary.js') &&
-        !stack.includes('generate_running_scene_summary')) {
-      return 'generate_scene_summary';
+    if (stack.includes('generateSceneRecap') &&
+        !stack.includes('runningSceneRecap.js') &&
+        !stack.includes('generate_running_scene_recap')) {
+      return 'generate_scene_recap';
     }
     if (stack.includes('SceneName') || stack.includes('sceneNamePrompt')) {
       return 'generate_scene_name';
     }
-    if (stack.includes('generate_running_scene_summary') ||
-        stack.includes('runningSceneSummary.js')) {
-      if (stack.includes('combine_scene_with_running_summary')) {
+    if (stack.includes('generate_running_scene_recap') ||
+        stack.includes('runningSceneRecap.js')) {
+      if (stack.includes('combine_scene_with_running_recap')) {
         return 'combine_scene_with_running';
       }
-      return 'generate_running_summary';
+      return 'generate_running_recap';
     }
 
     // Check for validation operations
-    if (stack.includes('validateSummary') || stack.includes('summaryValidation.js')) {
-      return 'validate_summary';
+    if (stack.includes('validateRecap') || stack.includes('recapValidation.js')) {
+      return 'validate_recap';
     }
 
     // Check for specific lorebook operations
@@ -1290,9 +1290,9 @@ function determineOperationType() {
       return 'update_lorebook_registry';
     }
 
-    // Check for message summarization (AFTER scene checks!)
-    if (stack.includes('summarize_text') || stack.includes('summarization.js')) {
-      return 'summary';
+    // Check for message recap generation (AFTER scene checks!)
+    if (stack.includes('recap_text') || stack.includes('recapping.js')) {
+      return 'recap';
     }
 
     // Default for chat messages and other operations
@@ -1318,7 +1318,7 @@ export function formatMetadataBlock(metadata) {
     const jsonStr = JSON.stringify(metadata, null, 2);
     return `<ST_METADATA>\n${jsonStr}\n</ST_METADATA>\n\n`;
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error formatting metadata block:', err);
+    console.error('[Auto-Recap:Metadata] Error formatting metadata block:', err);
     return '';
   }
 }
@@ -1343,7 +1343,7 @@ export function injectMetadata(prompt, options = {}) {
     return metadataStr + prompt;
 
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error injecting metadata:', err);
+    console.error('[Auto-Recap:Metadata] Error injecting metadata:', err);
     return prompt;
   }
 }
@@ -1381,7 +1381,7 @@ export function injectMetadataIntoChatArray(chatArray, options = {}) {
       debug(SUBSYSTEM.CORE,'[Interceptor] Created new system message with metadata');
     }
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error injecting metadata into chat array:', err);
+    console.error('[Auto-Recap:Metadata] Error injecting metadata into chat array:', err);
   }
 }
 ```
@@ -1393,7 +1393,7 @@ export function isMetadataInjectionEnabled() {
     const enabled = get_settings('first_hop_proxy_send_chat_details');
     return enabled === true;
   } catch (err) {
-    console.error('[Auto-Summarize:Metadata] Error checking if enabled:', err);
+    console.error('[Auto-Recap:Metadata] Error checking if enabled:', err);
     return false; // Default to disabled
   }
 }
@@ -1434,7 +1434,7 @@ eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, async (promptData) => {
       const operationSuffix = getOperationSuffix();
 
       if (operationSuffix !== null) {
-        // Extension operation in progress (scene break, summary, etc.)
+        // Extension operation in progress (scene break, recap, etc.)
         // The generateRawInterceptor will handle metadata injection
         debug('[Interceptor] Extension operation in progress, skipping chat-{index} metadata');
         return;  // ← CRITICAL: SKIP if extension operation
@@ -1716,20 +1716,20 @@ export function isConnectionManagerAvailable() {
  */
 
 export const OperationType = {
-  // Message summarization
-  SUMMARY: 'summary',
+  // Message recap generation
+  RECAP: 'recap',
 
   // Scene operations
   DETECT_SCENE_BREAK: 'detect_scene_break',
-  GENERATE_SCENE_SUMMARY: 'generate_scene_summary',
+  GENERATE_SCENE_RECAP: 'generate_scene_recap',
   GENERATE_SCENE_NAME: 'generate_scene_name',
 
-  // Running summary operations
-  GENERATE_RUNNING_SUMMARY: 'generate_running_summary',
+  // Running recap operations
+  GENERATE_RUNNING_RECAP: 'generate_running_recap',
   COMBINE_SCENE_WITH_RUNNING: 'combine_scene_with_running',
 
   // Validation
-  VALIDATE_SUMMARY: 'validate_summary',
+  VALIDATE_RECAP: 'validate_recap',
 
   // Lorebook operations
   LOREBOOK_ENTRY_LOOKUP: 'lorebook_entry_lookup',
@@ -1767,13 +1767,13 @@ export function isValidOperationType(value) {
 }
 ```
 
-### Update summarization.js (UPDATED)
+### Update recapping.js (UPDATED)
 
 **OLD** (Lines 8, 15-77):
 ```javascript
 import { generateRaw } from './index.js';
 
-async function summarize_text(prompt, prefill = '', include_preset_prompts = false) {
+async function recap_text(prompt, prefill = '', include_preset_prompts = false) {
   // ... validation ...
 
   result = await generateRaw({
@@ -1794,16 +1794,16 @@ import { sendLLMRequest } from './llmClient.js';
 import { OperationType, buildOperationString } from './operationTypes.js';
 import { getOperationSuffix } from './operationContext.js';  // Still needed during migration
 
-async function summarize_text(prompt, prefill = '', include_preset_prompts = false, preset_name = null) {
+async function recap_text(prompt, prefill = '', include_preset_prompts = false, preset_name = null) {
   // ... validation ...
 
   // CRITICAL: Build operation string explicitly (can't use stack trace)
   // During migration: Still read operationContext for compatibility
   const suffix = getOperationSuffix();
-  const operation = buildOperationString(OperationType.SUMMARY, suffix || '');
+  const operation = buildOperationString(OperationType.RECAP, suffix || '');
 
   // AFTER migration: Pass suffix as parameter
-  // const operation = buildOperationString(OperationType.SUMMARY, params.suffix || '');
+  // const operation = buildOperationString(OperationType.RECAP, params.suffix || '');
 
   result = await sendLLMRequest({
     prompt: prompt_input,
@@ -1820,11 +1820,11 @@ async function summarize_text(prompt, prefill = '', include_preset_prompts = fal
 
 **AFTER operationContext migration**:
 ```javascript
-async function summarize_text(prompt, prefill = '', include_preset_prompts = false, preset_name = null, suffix = '') {
+async function recap_text(prompt, prefill = '', include_preset_prompts = false, preset_name = null, suffix = '') {
   // ... validation ...
 
   // Build operation string from parameter (no global state)
-  const operation = buildOperationString(OperationType.SUMMARY, suffix);
+  const operation = buildOperationString(OperationType.RECAP, suffix);
 
   result = await sendLLMRequest({
     prompt: prompt_input,
@@ -1856,10 +1856,10 @@ const operation = OperationType.DETECT_SCENE_BREAK;
 
 // If suffix needed (during migration):
 const suffix = getOperationSuffix();
-const operation = buildOperationString(OperationType.SUMMARY, suffix || '');
+const operation = buildOperationString(OperationType.RECAP, suffix || '');
 
 // If suffix needed (after migration):
-const operation = buildOperationString(OperationType.SUMMARY, messageRange);
+const operation = buildOperationString(OperationType.RECAP, messageRange);
 ```
 
 3. **Call with explicit operation**:
@@ -1878,8 +1878,8 @@ const result = await sendLLMRequest({
 
 **Verified via grep** - all files that call `generateRaw` or use `operationContext`:
 
-1. **summarization.js** - 3 call sites
-   - `summarize_text()` → OperationType.SUMMARY
+1. **recapping.js** - 3 call sites
+   - `recap_text()` → OperationType.RECAP
 
 2. **lorebookEntryMerger.js** - 3 call sites
    - `callAIForMerge()` → OperationType.MERGE_LOREBOOK_ENTRY
@@ -1888,18 +1888,18 @@ const result = await sendLLMRequest({
 3. **autoSceneBreakDetection.js** - 1 call site
    - `detectSceneBreak()` → OperationType.DETECT_SCENE_BREAK
 
-4. **runningSceneSummary.js** - 2 call sites
-   - `generate_running_scene_summary()` → OperationType.GENERATE_RUNNING_SUMMARY
-   - `combine_scene_with_running_summary()` → OperationType.COMBINE_SCENE_WITH_RUNNING
+4. **runningSceneRecap.js** - 2 call sites
+   - `generate_running_scene_recap()` → OperationType.GENERATE_RUNNING_RECAP
+   - `combine_scene_with_running_recap()` → OperationType.COMBINE_SCENE_WITH_RUNNING
 
 5. **sceneBreak.js** - 2 call sites
-   - `generateSceneSummary()` → OperationType.GENERATE_SCENE_SUMMARY
+   - `generateSceneRecap()` → OperationType.GENERATE_SCENE_RECAP
    - `generateSceneName()` → OperationType.GENERATE_SCENE_NAME
 
-6. **summaryValidation.js** - 1 call site
-   - `validateSummary()` → OperationType.VALIDATE_SUMMARY
+6. **recapValidation.js** - 1 call site
+   - `validateRecap()` → OperationType.VALIDATE_RECAP
 
-7. **summaryToLorebookProcessor.js** - 5+ call sites
+7. **recapToLorebookProcessor.js** - 5+ call sites
    - Various lorebook operations (need detailed mapping)
 
 8. **operationHandlers.js** - All handlers that call above functions
@@ -1984,8 +1984,8 @@ const result = await sendLLMRequest({
        );
      });
 
-     // Extension summarizes message
-     await helper.summarizeMessage(0);
+     // Extension recaps message
+     await helper.recapMessage(0);
 
      eventFired = await page.evaluate(() => window.__eventFired || false);
      expect(eventFired).toBe(false);  // ← Should NOT fire for extension operations
@@ -2002,7 +2002,7 @@ const result = await sendLLMRequest({
        }
      });
 
-     await helper.summarizeMessage(0);
+     await helper.recapMessage(0);
 
      const request = requests[0];
      expect(request.messages[0].content).toContain('ST_METADATA');
@@ -2011,7 +2011,7 @@ const result = await sendLLMRequest({
      const metadataMatch = request.messages[0].content.match(/<ST_METADATA>([\s\S]*?)<\/ST_METADATA>/);
      const metadata = JSON.parse(metadataMatch[1]);
 
-     expect(metadata.operation).toBe('summary');  // ← Explicit operation type
+     expect(metadata.operation).toBe('recap');  // ← Explicit operation type
    });
    ```
 
@@ -2054,13 +2054,13 @@ const result = await sendLLMRequest({
        }
      });
 
-     await helper.summarizeMessage(0);
+     await helper.recapMessage(0);
 
      // Metadata should be present
      expect(requests[0].messages[0].content).toContain('ST_METADATA');
 
      // But event handler shouldn't have run for extension operation
-     // (verified by operation type being 'summary' not 'chat-{index}')
+     // (verified by operation type being 'recap' not 'chat-{index}')
      const metadataMatch = requests[0].messages[0].content.match(/<ST_METADATA>([\s\S]*?)<\/ST_METADATA>/);
      const metadata = JSON.parse(metadataMatch[1]);
      expect(metadata.operation).not.toMatch(/^chat-\d+/);  // Not chat-based
@@ -2082,7 +2082,7 @@ const result = await sendLLMRequest({
    ```javascript
    test('Operations use specified profile without changing global state', async ({ page }) => {
      const initialProfile = await helper.getCurrentProfile();
-     await helper.summarizeMessage(0);
+     await helper.recapMessage(0);
      const finalProfile = await helper.getCurrentProfile();
      expect(finalProfile).toBe(initialProfile);
    });
@@ -2617,13 +2617,13 @@ const result = await sendLLMRequest({
 
 **Phase 1: Module Migration** (25-30 hours, CORRECTED from 50)
 1. Update modules one at a time:
-   - summarization.js
+   - recapping.js
    - lorebookEntryMerger.js (already done in pilot)
    - autoSceneBreakDetection.js
-   - runningSceneSummary.js
+   - runningSceneRecap.js
    - sceneBreak.js
-   - summaryValidation.js
-   - summaryToLorebookProcessor.js
+   - recapValidation.js
+   - recapToLorebookProcessor.js
    - (Continue through all 30+ files)
 
 2. Remove operationContext usage:
@@ -2760,7 +2760,7 @@ const result = await sendLLMRequest({
 **Format**:
 | File | Function | Line | Operation Type | Uses operationContext? | Notes |
 |------|----------|------|----------------|----------------------|-------|
-| summarization.js | summarize_text | 58 | SUMMARY | Yes (suffix) | Main summarization |
+| recapping.js | recap_text | 58 | RECAP | Yes (suffix) | Main recap generation |
 | lorebookEntryMerger.js | callAIForMerge | 158 | MERGE_LOREBOOK_ENTRY | No | Lorebook merging |
 | ... | ... | ... | ... | ... | ... |
 
@@ -2772,17 +2772,17 @@ const result = await sendLLMRequest({
 
 **Current Operation Types** (from stack trace analysis):
 - `detect_scene_break`
-- `generate_scene_summary`
+- `generate_scene_recap`
 - `generate_scene_name`
-- `generate_running_summary`
+- `generate_running_recap`
 - `combine_scene_with_running`
-- `validate_summary`
+- `validate_recap`
 - `lorebook_entry_lookup`
 - `resolve_lorebook_entry`
 - `create_lorebook_entry`
 - `merge_lorebook_entry`
 - `update_lorebook_registry`
-- `summary`
+- `recap`
 - `chat`
 - `unknown`
 
@@ -2809,9 +2809,9 @@ async function detectSceneBreak(messageIndex) {
     await set_connection_profile(profileName);  // ← 500ms delay
   }
 
-  // Use summarize_text which calls generateRaw
+  // Use recap_text which calls generateRaw
   // Interceptor will detect 'detectSceneBreak' in stack and use 'detect_scene_break' operation type
-  const result = await summarize_text(prompt);
+  const result = await recap_text(prompt);
 
   // ... parse result ...
 }
@@ -2863,7 +2863,7 @@ async function processMessageRange(startIndex, endIndex) {
   try {
     // Call generateRaw, interceptor reads suffix from global state
     await generateRaw({ prompt });
-    // Operation becomes: "summary-42-67"
+    // Operation becomes: "recap-42-67"
   } finally {
     // Always cleanup
     clearOperationSuffix();
@@ -2879,10 +2879,10 @@ import { OperationType, buildOperationString } from './operationTypes.js';
 async function processMessageRange(startIndex, endIndex) {
   // Build operation string upfront (no global state)
   const operation = buildOperationString(
-    OperationType.SUMMARY,
+    OperationType.RECAP,
     `-${startIndex}-${endIndex}`
   );
-  // operation === "summary-42-67"
+  // operation === "recap-42-67"
 
   // Call with complete operation string
   await sendLLMRequest({
@@ -2941,7 +2941,7 @@ async function processMessageRange(startIndex, endIndex) {
 1. **Connection Management**:
    - `connectionProfiles.js:92-107` - set_connection_profile (current approach)
    - `connectionProfiles.js:44-80` - get_connection_profile_api
-   - `connectionProfiles.js:81-91` - get_summary_connection_profile
+   - `connectionProfiles.js:81-91` - get_recap_connection_profile
 
 2. **Metadata Injection**:
    - `generateRawInterceptor.js:15-74` - wrappedGenerateRaw (interceptor)
@@ -2962,17 +2962,17 @@ async function processMessageRange(startIndex, endIndex) {
    - `operationQueue.js:1-100` - Queue initialization and blocking
 
 6. **LLM Call Sites** (Primary):
-   - `summarization.js` - summarize_text
+   - `recapping.js` - recap_text
    - `lorebookEntryMerger.js` - callAIForMerge
    - `autoSceneBreakDetection.js` - detectSceneBreak
-   - `runningSceneSummary.js` - generate_running_scene_summary, combine_scene_with_running_summary
-   - `sceneBreak.js` - generateSceneSummary, generateSceneName
-   - `summaryValidation.js` - validateSummary
-   - `summaryToLorebookProcessor.js` - Various lorebook operations
+   - `runningSceneRecap.js` - generate_running_scene_recap, combine_scene_with_running_recap
+   - `sceneBreak.js` - generateSceneRecap, generateSceneName
+   - `recapValidation.js` - validateRecap
+   - `recapToLorebookProcessor.js` - Various lorebook operations
 
 ---
 
-## Final Summary
+## Final Recap
 
 **Migration is TECHNICALLY VIABLE** and **MORE FEASIBLE THAN INITIALLY ASSESSED** (scope overestimation corrected).
 

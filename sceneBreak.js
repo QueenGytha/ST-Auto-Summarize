@@ -2,7 +2,7 @@
 
 import {
   get_settings,
-  summarize_text,
+  recap_text,
   refresh_memory,
   renderSceneNavigatorBar,
   log,
@@ -16,8 +16,8 @@ import {
   selectorsSillyTavern } from
 './index.js';
 import {
-  auto_generate_running_summary } from
-'./runningSceneSummary.js';
+  auto_generate_running_recap } from
+'./runningSceneRecap.js';
 import {
   queueCombineSceneWithRunning,
   queueProcessLorebookEntry } from
@@ -26,7 +26,7 @@ import { clearCheckedFlagsInRange, setCheckedFlagsInRange } from './autoSceneBre
 import { getConfiguredEntityTypeDefinitions, formatEntityTypeListForPrompt } from './entityTypes.js';
 
 import {
-  MAX_SUMMARY_ATTEMPTS,
+  MAX_RECAP_ATTEMPTS,
   ID_GENERATION_BASE,
   LOREBOOK_ENTRY_NAME_MAX_LENGTH,
   TOAST_WARNING_DURATION_WPM,
@@ -37,33 +37,33 @@ import {
   DEFAULT_POLLING_INTERVAL
 } from './constants.js';
 
-// SCENE SUMMARY PROPERTY STRUCTURE:
-// - Scene summaries are stored on the message object as:
-//     - 'scene_summary_memory': the current scene summary text (not at the root like 'memory')
-//     - 'scene_summary_versions': array of all versions of the scene summary
-//     - 'scene_summary_current_index': index of the current version
+// SCENE RECAP PROPERTY STRUCTURE:
+// - Scene recaps are stored on the message object as:
+//     - 'scene_recap_memory': the current scene recap text (not at the root like 'memory')
+//     - 'scene_recap_versions': array of all versions of the scene recap
+//     - 'scene_recap_current_index': index of the current version
 //     - 'scene_break_visible': whether the scene break is visible
-//     - 'scene_summary_include': whether to include this scene summary in injections
-// - Do NOT expect scene summaries to be stored in the root 'memory' property.
+//     - 'scene_recap_include': whether to include this scene recap in injections
+// - Do NOT expect scene recaps to be stored in the root 'memory' property.
 
 export const SCENE_BREAK_KEY = 'scene_break';
 export const SCENE_BREAK_VISIBLE_KEY = 'scene_break_visible';
 export const SCENE_BREAK_NAME_KEY = 'scene_break_name';
-export const SCENE_BREAK_SUMMARY_KEY = 'scene_break_summary';
-export const SCENE_SUMMARY_MEMORY_KEY = 'scene_summary_memory';
-export const SCENE_SUMMARY_HASH_KEY = 'scene_summary_hash';
+export const SCENE_BREAK_RECAP_KEY = 'scene_break_recap';
+export const SCENE_RECAP_MEMORY_KEY = 'scene_recap_memory';
+export const SCENE_RECAP_HASH_KEY = 'scene_recap_hash';
 export const SCENE_BREAK_COLLAPSED_KEY = 'scene_break_collapsed';
-export const SCENE_BREAK_BUTTON_CLASS = 'auto_summarize_scene_break_button';
-export const SCENE_BREAK_DIV_CLASS = 'auto_summarize_scene_break_div';
+export const SCENE_BREAK_BUTTON_CLASS = 'auto_recap_scene_break_button';
+export const SCENE_BREAK_DIV_CLASS = 'auto_recap_scene_break_div';
 const SCENE_BREAK_SELECTED_CLASS = 'sceneBreak-selected';
 
-// Simple deterministic hash to detect when summary content changes
-function computeSummaryHash(summaryText ) {
-  const text = (summaryText || '').trim();
+// Simple deterministic hash to detect when recap content changes
+function computeRecapHash(recapText ) {
+  const text = (recapText || '').trim();
   let hash = 0;
   for (let i = 0; i < text.length; i++) {
     const charCode = text.charCodeAt(i);
-    hash = (hash << MAX_SUMMARY_ATTEMPTS) - hash + charCode;
+    hash = (hash << MAX_RECAP_ATTEMPTS) - hash + charCode;
     hash |= 0; // force 32-bit int
   }
   return Math.abs(hash).toString(ID_GENERATION_BASE);
@@ -143,7 +143,7 @@ saveChatDebounced )
       const mod = await import('./autoHide.js');
       mod.auto_hide_messages_by_command();
     } catch (err) {
-      console.error('[AutoSummarize] Failed to load autoHide module:', err);
+      console.error('[AutoRecap] Failed to load autoHide module:', err);
     }
   })();
 
@@ -151,40 +151,40 @@ saveChatDebounced )
   if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
 }
 
-// --- Helper functions for versioned scene summaries ---
-// Scene summary properties are not at the root; see file header for structure.
-function getSceneSummaryVersions(
+// --- Helper functions for versioned scene recaps ---
+// Scene recap properties are not at the root; see file header for structure.
+function getSceneRecapVersions(
 message ,
 get_data  // Returns any type - legitimate
 ) {
-  // Returns the array of summary versions, or an empty array if none
-  return get_data(message, 'scene_summary_versions') || [];
+  // Returns the array of recap versions, or an empty array if none
+  return get_data(message, 'scene_recap_versions') || [];
 }
 
-// Scene summary properties are not at the root; see file header for structure.
-function setSceneSummaryVersions(
+// Scene recap properties are not at the root; see file header for structure.
+function setSceneRecapVersions(
 message ,
 set_data , // value can be any type - legitimate
 versions )
 {
-  set_data(message, 'scene_summary_versions', versions);
+  set_data(message, 'scene_recap_versions', versions);
 }
 
-// Scene summary properties are not at the root; see file header for structure.
-function getCurrentSceneSummaryIndex(
+// Scene recap properties are not at the root; see file header for structure.
+function getCurrentSceneRecapIndex(
 message ,
 get_data  // Returns any type - legitimate
 ) {
-  return get_data(message, 'scene_summary_current_index') ?? 0;
+  return get_data(message, 'scene_recap_current_index') ?? 0;
 }
 
-// Scene summary properties are not at the root; see file header for structure.
-function setCurrentSceneSummaryIndex(
+// Scene recap properties are not at the root; see file header for structure.
+function setCurrentSceneRecapIndex(
 message ,
 set_data , // value can be any type - legitimate
 idx )
 {
-  set_data(message, 'scene_summary_current_index', idx);
+  set_data(message, 'scene_recap_current_index', idx);
 }
 
 function getSceneRangeIndexes(
@@ -215,9 +215,9 @@ sceneCount )
   return [startIdx, endIdx];
 }
 
-// Helper: Handle generate summary button click
+// Helper: Handle generate recap button click
 // eslint-disable-next-line max-params -- SillyTavern API dependency injection + UI context
-async function handleGenerateSummaryButtonClick(
+async function handleGenerateRecapButtonClick(
 index ,
 chat ,
 message ,
@@ -229,27 +229,27 @@ saveChatDebounced )
 {
   log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
 
-  // Use the queue-enabled generateSceneSummary function
-  await generateSceneSummary({ index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue: false });
+  // Use the queue-enabled generateSceneRecap function
+  await generateSceneRecap({ index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue: false });
 }
 
-// Helper: Initialize versioned summaries for backward compatibility
-function initializeSceneSummaryVersions(
+// Helper: Initialize versioned recaps for backward compatibility
+function initializeSceneRecapVersions(
 message ,
 get_data , // Returns any type - legitimate
 set_data , // value can be any type - legitimate
 saveChatDebounced )
 {
-  let versions = getSceneSummaryVersions(message, get_data);
-  let currentIdx = getCurrentSceneSummaryIndex(message, get_data);
+  let versions = getSceneRecapVersions(message, get_data);
+  let currentIdx = getCurrentSceneRecapIndex(message, get_data);
 
   if (versions.length === 0) {
-    const initialSummary = get_data(message, SCENE_BREAK_SUMMARY_KEY) || '';
-    versions = [initialSummary];
-    setSceneSummaryVersions(message, set_data, versions);
-    setCurrentSceneSummaryIndex(message, set_data, 0);
-    set_data(message, SCENE_SUMMARY_MEMORY_KEY, initialSummary);
-    set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(initialSummary));
+    const initialRecap = get_data(message, SCENE_BREAK_RECAP_KEY) || '';
+    versions = [initialRecap];
+    setSceneRecapVersions(message, set_data, versions);
+    setCurrentSceneRecapIndex(message, set_data, 0);
+    set_data(message, SCENE_RECAP_MEMORY_KEY, initialRecap);
+    set_data(message, SCENE_RECAP_HASH_KEY, computeRecapHash(initialRecap));
     saveChatDebounced();
   }
 
@@ -287,34 +287,34 @@ get_data  // Returns any type - legitimate
 
 // Helper: Build scene break HTML element
 function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - any is appropriate
-  const { startIdx, sceneMessages, sceneName, sceneSummary, isVisible, isCollapsed, versions, currentIdx } = sceneData;
+  const { startIdx, sceneMessages, sceneName, sceneRecap, isVisible, isCollapsed, versions, currentIdx } = sceneData;
 
   const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-testid="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
-  const previewIcon = `<i class="fa-solid fa-eye scene-preview-summary" data-testid="scene-preview-summary" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
+  const previewIcon = `<i class="fa-solid fa-eye scene-preview-recap" data-testid="scene-preview-recap" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
   const lorebookIcon = createSceneBreakLorebookIcon(index);
 
   const stateClass = isVisible ? "sceneBreak-visible" : "sceneBreak-hidden";
-  const borderClass = isVisible ? "auto_summarize_scene_break_border" : "";
+  const borderClass = isVisible ? "auto_recap_scene_break_border" : "";
   const collapsedClass = isCollapsed ? "sceneBreak-collapsed" : "";
   const collapseIcon = isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up';
-  const collapseTitle = isCollapsed ? 'Expand scene summary' : 'Collapse scene summary';
+  const collapseTitle = isCollapsed ? 'Expand scene recap' : 'Collapse scene recap';
 
   return $(`
     <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass} ${collapsedClass}" data-testid="scene-break-div" style="margin:0 0 5px 0;" tabindex="0">
         <div class="sceneBreak-header" style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.5em;">
-            <input type="text" class="sceneBreak-name auto_summarize_memory_text" data-testid="scene-break-name" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" style="flex:1;" />
+            <input type="text" class="sceneBreak-name auto_recap_memory_text" data-testid="scene-break-name" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" style="flex:1;" />
             <button class="scene-collapse-toggle menu_button fa-solid ${collapseIcon}" data-testid="scene-collapse-toggle" title="${collapseTitle}" style="padding:0.3em 0.6em;"></button>
         </div>
         <div class="sceneBreak-content">
             <div style="font-size:0.95em; color:inherit; margin-bottom:0.5em;">
                 Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}${lorebookIcon}
             </div>
-            <textarea class="scene-summary-box auto_summarize_memory_text" data-testid="scene-summary-box" placeholder="Scene summary...">${sceneSummary}</textarea>
-            <div class="scene-summary-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
-                <button class="scene-rollback-summary menu_button" data-testid="scene-rollback-summary" title="Go to previous summary" style="white-space:nowrap;"><i class="fa-solid fa-rotate-left"></i> Previous Summary</button>
-                <button class="scene-generate-summary menu_button" data-testid="scene-generate-summary" title="Generate summary for this scene" style="white-space:nowrap;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
-                <button class="scene-rollforward-summary menu_button" data-testid="scene-rollforward-summary" title="Go to next summary" style="white-space:nowrap;"><i class="fa-solid fa-rotate-right"></i> Next Summary</button>
-                <button class="scene-regenerate-running menu_button" data-testid="scene-regenerate-running" title="Combine this scene with current running summary" style="margin-left:auto; white-space:nowrap;"><i class="fa-solid fa-sync-alt"></i> Combine</button>
+            <textarea class="scene-recap-box auto_recap_memory_text" data-testid="scene-recap-box" placeholder="Scene recap...">${sceneRecap}</textarea>
+            <div class="scene-recap-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
+                <button class="scene-rollback-recap menu_button" data-testid="scene-rollback-recap" title="Go to previous recap" style="white-space:nowrap;"><i class="fa-solid fa-rotate-left"></i> Previous Recap</button>
+                <button class="scene-generate-recap menu_button" data-testid="scene-generate-recap" title="Generate recap for this scene" style="white-space:nowrap;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
+                <button class="scene-rollforward-recap menu_button" data-testid="scene-rollforward-recap" title="Go to next recap" style="white-space:nowrap;"><i class="fa-solid fa-rotate-right"></i> Next Recap</button>
+                <button class="scene-regenerate-running menu_button" data-testid="scene-regenerate-running" title="Combine this scene with current running recap" style="margin-left:auto; white-space:nowrap;"><i class="fa-solid fa-sync-alt"></i> Combine</button>
                 <span style="align-self:center; font-size:0.9em; color:inherit; margin-left:0.5em;">${versions.length > 1 ? `[${currentIdx + 1}/${versions.length}]` : ''}</span>
             </div>
         </div>
@@ -345,15 +345,15 @@ saveChatDebounced )
 
   if (!isSet) {return;}
 
-  // Initialize versioned summaries
-  const { versions, currentIdx } = initializeSceneSummaryVersions(message, get_data, set_data, saveChatDebounced);
+  // Initialize versioned recaps
+  const { versions, currentIdx } = initializeSceneRecapVersions(message, get_data, set_data, saveChatDebounced);
 
   const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
-  const sceneSummary = versions[currentIdx] || '';
+  const sceneRecap = versions[currentIdx] || '';
 
   let isCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
   if (isCollapsed === undefined) {
-    isCollapsed = get_settings('scene_summary_default_collapsed') ?? true;
+    isCollapsed = get_settings('scene_recap_default_collapsed') ?? true;
   }
 
   // Find scene boundaries
@@ -364,7 +364,7 @@ saveChatDebounced )
     startIdx,
     sceneMessages,
     sceneName,
-    sceneSummary,
+    sceneRecap,
     isVisible,
     isCollapsed,
     versions,
@@ -372,10 +372,10 @@ saveChatDebounced )
   };
   const $sceneBreak = buildSceneBreakElement(index, sceneData);
 
-  // === Insert after the summary box, or after message text if no summary box exists ===
-  const $summaryBox = $msgDiv.find(selectorsExtension.memory.text);
-  if ($summaryBox.length) {
-    $summaryBox.last().after($sceneBreak);
+  // === Insert after the recap box, or after message text if no recap box exists ===
+  const $recapBox = $msgDiv.find(selectorsExtension.memory.text);
+  if ($recapBox.length) {
+    $recapBox.last().after($sceneBreak);
   } else {
     const $mesText = $msgDiv.find(selectorsSillyTavern.message.text);
     if ($mesText.length) {
@@ -399,24 +399,24 @@ saveChatDebounced )
     // Use same default logic as render function
     let currentCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
     if (currentCollapsed === undefined) {
-      currentCollapsed = get_settings('scene_summary_default_collapsed') ?? true;
+      currentCollapsed = get_settings('scene_recap_default_collapsed') ?? true;
     }
     set_data(message, SCENE_BREAK_COLLAPSED_KEY, !currentCollapsed);
     saveChatDebounced();
     renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
   });
 
-  $sceneBreak.find(selectorsExtension.sceneBreak.summaryBox).on('change blur', function () {
+  $sceneBreak.find(selectorsExtension.sceneBreak.recapBox).on('change blur', function () {
     // Update the current version in the versions array
-    const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
-    const idx = getCurrentSceneSummaryIndex(message, get_data);
-    const newSummary = $(this).val();
-    updatedVersions[idx] = newSummary;
-    setSceneSummaryVersions(message, set_data, updatedVersions);
-    // Also update the legacy summary field for compatibility
-    set_data(message, SCENE_BREAK_SUMMARY_KEY, newSummary);
-    set_data(message, SCENE_SUMMARY_MEMORY_KEY, newSummary); // <-- ensure top-level property is set
-    set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(newSummary));
+    const updatedVersions = getSceneRecapVersions(message, get_data).slice();
+    const idx = getCurrentSceneRecapIndex(message, get_data);
+    const newRecap = $(this).val();
+    updatedVersions[idx] = newRecap;
+    setSceneRecapVersions(message, set_data, updatedVersions);
+    // Also update the legacy recap field for compatibility
+    set_data(message, SCENE_BREAK_RECAP_KEY, newRecap);
+    set_data(message, SCENE_RECAP_MEMORY_KEY, newRecap); // <-- ensure top-level property is set
+    set_data(message, SCENE_RECAP_HASH_KEY, computeRecapHash(newRecap));
     saveChatDebounced();
   });
 
@@ -454,12 +454,12 @@ saveChatDebounced )
   });
 
   // --- Preview scene content handler ---
-  $sceneBreak.find(selectorsExtension.sceneBreak.previewSummary).off('click').on('click', function (e) {
+  $sceneBreak.find(selectorsExtension.sceneBreak.previewRecap).off('click').on('click', function (e) {
     e.stopPropagation();
-    const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+    const sceneCount = Number(get_settings('scene_recap_history_count')) || 1;
     const [rangeStartIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
 
-    const messageTypes = get_settings('scene_summary_message_types') || "both";
+    const messageTypes = get_settings('scene_recap_message_types') || "both";
     const sceneObjects = [];
     for (let i = rangeStartIdx; i <= endIdx; i++) {
       const msg = chat[i];
@@ -491,51 +491,51 @@ saveChatDebounced )
   });
 
   // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
-  $sceneBreak.find(selectorsExtension.sceneBreak.generateSummary).off('click').on('click', async function (e) {
+  $sceneBreak.find(selectorsExtension.sceneBreak.generateRecap).off('click').on('click', async function (e) {
     e.stopPropagation();
-    await handleGenerateSummaryButtonClick(index, chat, message, $sceneBreak, get_message_div, get_data, set_data, saveChatDebounced);
+    await handleGenerateRecapButtonClick(index, chat, message, $sceneBreak, get_message_div, get_data, set_data, saveChatDebounced);
   });
 
-  $sceneBreak.find(selectorsExtension.sceneBreak.rollbackSummary).off('click').on('click', function (e) {
+  $sceneBreak.find(selectorsExtension.sceneBreak.rollbackRecap).off('click').on('click', function (e) {
     e.stopPropagation();
-    const idx = getCurrentSceneSummaryIndex(message, get_data);
+    const idx = getCurrentSceneRecapIndex(message, get_data);
     if (idx > 0) {
-      setCurrentSceneSummaryIndex(message, set_data, idx - 1);
-      const summary = getSceneSummaryVersions(message, get_data)[idx - 1];
-      set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
-      set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary); // <-- ensure top-level property is set
-      set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
+      setCurrentSceneRecapIndex(message, set_data, idx - 1);
+      const recap = getSceneRecapVersions(message, get_data)[idx - 1];
+      set_data(message, SCENE_BREAK_RECAP_KEY, recap);
+      set_data(message, SCENE_RECAP_MEMORY_KEY, recap); // <-- ensure top-level property is set
+      set_data(message, SCENE_RECAP_HASH_KEY, computeRecapHash(recap));
       saveChatDebounced();
-      refresh_memory(); // <-- refresh memory injection to use the newly selected summary
+      refresh_memory(); // <-- refresh memory injection to use the newly selected recap
       renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
     }
   });
-  $sceneBreak.find(selectorsExtension.sceneBreak.rollforwardSummary).off('click').on('click', function (e) {
+  $sceneBreak.find(selectorsExtension.sceneBreak.rollforwardRecap).off('click').on('click', function (e) {
     e.stopPropagation();
-    const currentVersions = getSceneSummaryVersions(message, get_data);
-    const idx = getCurrentSceneSummaryIndex(message, get_data);
+    const currentVersions = getSceneRecapVersions(message, get_data);
+    const idx = getCurrentSceneRecapIndex(message, get_data);
     if (idx < currentVersions.length - 1) {
-      setCurrentSceneSummaryIndex(message, set_data, idx + 1);
-      const summary = currentVersions[idx + 1];
-      set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
-      set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary); // <-- ensure top-level property is set
-      set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
+      setCurrentSceneRecapIndex(message, set_data, idx + 1);
+      const recap = currentVersions[idx + 1];
+      set_data(message, SCENE_BREAK_RECAP_KEY, recap);
+      set_data(message, SCENE_RECAP_MEMORY_KEY, recap); // <-- ensure top-level property is set
+      set_data(message, SCENE_RECAP_HASH_KEY, computeRecapHash(recap));
       saveChatDebounced();
-      refresh_memory(); // <-- refresh memory injection to use the newly selected summary
+      refresh_memory(); // <-- refresh memory injection to use the newly selected recap
       renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
     }
   });
 
-  // --- Regenerate running summary from this scene onwards ---
+  // --- Regenerate running recap from this scene onwards ---
   $sceneBreak.find(selectorsExtension.sceneBreak.regenerateRunning).off('click').on('click', async function (e) {
     e.stopPropagation();
-    const loadedSceneSummary = get_data(message, SCENE_SUMMARY_MEMORY_KEY);
-    if (!loadedSceneSummary) {
-      alert('This scene has no summary yet. Generate a scene summary first.');
+    const loadedSceneRecap = get_data(message, SCENE_RECAP_MEMORY_KEY);
+    if (!loadedSceneRecap) {
+      alert('This scene has no recap yet. Generate a scene recap first.');
       return;
     }
 
-    log(SUBSYSTEM.SCENE, "Combine scene with running summary button clicked for scene at index", index);
+    log(SUBSYSTEM.SCENE, "Combine scene with running recap button clicked for scene at index", index);
 
     // Queue the operation - this will lock the UI and process through the queue
     const opId = await queueCombineSceneWithRunning(index);
@@ -618,8 +618,8 @@ saveChatDebounced )
 }
 
 
-export async function autoGenerateSceneNameFromSummary(config) {
-  const { summary, message, get_data, set_data, ctx, index } = config;
+export async function autoGenerateSceneNameFromRecap(config) {
+  const { recap, message, get_data, set_data, ctx, index } = config;
   const existingSceneName = get_data(message, SCENE_BREAK_NAME_KEY);
 
   // Only generate if no name already exists
@@ -631,13 +631,14 @@ export async function autoGenerateSceneNameFromSummary(config) {
   try {
     debug(SUBSYSTEM.SCENE, "Auto-generating scene name...");
 
-    // Create a prompt to generate a brief scene name
-    const sceneNamePrompt = `Based on the following scene summary, generate a very brief scene name (maximum 5 words, like a chapter title).
+    // Import centralized prompt and template renderer
+    const { scene_name_generation_prompt } = await import('./defaultPrompts.js');
+    const { renderTemplate } = await import('./promptUtils.js');
 
-Scene Summary:
-${summary}
-
-Respond with ONLY the scene name, nothing else. Make it concise and descriptive, like a chapter title.`;
+    // Render the prompt template with the scene recap
+    const sceneNamePrompt = renderTemplate(scene_name_generation_prompt, {
+      scene_recap: recap
+    });
 
     ctx.deactivateSendButtons();
 
@@ -649,26 +650,16 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
 
     let sceneName;
     try {
-      const rawResponse = await summarize_text(sceneNamePrompt);
+      const rawResponse = await recap_text(sceneNamePrompt);
 
       // Parse JSON response using centralized helper
       const { extractJsonFromResponse } = await import('./utils.js');
       const parsed = extractJsonFromResponse(rawResponse, {
-        requiredFields: [], // Flexible validation - we check for scene name variants below
+        requiredFields: ['scene_name'],
         context: 'scene name generation'
       });
 
-      // Flexible scene name extraction - accept both scene_name and sceneName (case-insensitive)
-      const sceneNameKey = Object.keys(parsed).find(key => {
-        const normalizedKey = key.toLowerCase().replace(/_/g, '');
-        return normalizedKey === 'scenename';
-      });
-
-      if (!sceneNameKey) {
-        throw new Error('scene name generation: JSON missing scene name field (expected scene_name or sceneName)');
-      }
-
-      sceneName = parsed[sceneNameKey];
+      sceneName = parsed.scene_name;
     } finally {
       clearOperationSuffix();
       ctx.activateSendButtons();
@@ -705,35 +696,35 @@ Respond with ONLY the scene name, nothing else. Make it concise and descriptive,
     return cleanSceneName;
   } catch (err) {
     error(SUBSYSTEM.SCENE, "Error generating scene name:", err);
-    // Don't fail the whole summary generation if scene name fails
+    // Don't fail the whole recap generation if scene name fails
     return null;
   }
 }
 
-// Helper: Try to queue scene summary generation
-async function tryQueueSceneSummary(index ) {
-  debug(SUBSYSTEM.SCENE, `[Queue] Queueing scene summary generation for index ${index}`);
+// Helper: Try to queue scene recap generation
+async function tryQueueSceneRecap(index ) {
+  debug(SUBSYSTEM.SCENE, `[Queue] Queueing scene recap generation for index ${index}`);
 
-  const { queueGenerateSceneSummary } = await import('./queueIntegration.js');
-  const operationId = await queueGenerateSceneSummary(index);
+  const { queueGenerateSceneRecap } = await import('./queueIntegration.js');
+  const operationId = await queueGenerateSceneRecap(index);
 
   if (operationId) {
-    log(SUBSYSTEM.SCENE, `[Queue] Queued scene summary generation for index ${index}:`, operationId);
-    toast(`Queued scene summary generation for message ${index}`, 'info');
+    log(SUBSYSTEM.SCENE, `[Queue] Queued scene recap generation for index ${index}:`, operationId);
+    toast(`Queued scene recap generation for message ${index}`, 'info');
     return true;
   }
 
-  error(SUBSYSTEM.SCENE, `[Queue] Failed to enqueue scene summary generation`);
+  error(SUBSYSTEM.SCENE, `[Queue] Failed to enqueue scene recap generation`);
   return false;
 }
 
-// Helper: Collect scene objects for summary
+// Helper: Collect scene objects for recap
 function collectSceneObjects(
 startIdx ,
 endIdx ,
 chat )
 {
-  const messageTypes = get_settings('scene_summary_message_types') || "both";
+  const messageTypes = get_settings('scene_recap_message_types') || "both";
   const sceneObjects = [];
 
   for (let i = startIdx; i <= endIdx; i++) {
@@ -751,13 +742,13 @@ chat )
   return sceneObjects;
 }
 
-// Helper: Prepare scene summary prompt
+// Helper: Prepare scene recap prompt
 function prepareScenePrompt(
 sceneObjects ,
 ctx )
 {
-  const promptTemplate = get_settings('scene_summary_prompt');
-  const prefill = get_settings('scene_summary_prefill') || "";
+  const promptTemplate = get_settings('scene_recap_prompt');
+  const prefill = get_settings('scene_recap_prefill') || "";
   const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
   let lorebookTypesMacro = formatEntityTypeListForPrompt(typeDefinitions);
   if (!lorebookTypesMacro) {
@@ -769,8 +760,8 @@ ctx )
     if (obj.type === 'message') {
       const role = obj.is_user ? 'USER' : 'CHARACTER';
       return `[${role}: ${obj.name}]\n${obj.text}`;
-    } else if (obj.type === 'summary') {
-      return `[SUMMARY]\n${obj.summary}`;
+    } else if (obj.type === 'recap') {
+      return `[RECAP]\n${obj.recap}`;
     }
     return '';
   }).filter((m) => m).join('\n\n');
@@ -792,17 +783,17 @@ ctx )
   return { prompt, prefill };
 }
 
-// Helper: Switch to scene summary profile/preset
+// Helper: Switch to scene recap profile/preset
 // Legacy switching functions removed - now using withConnectionSettings() from connectionSettingsManager.js
 
 // Helper: Extract and validate JSON from AI response (REMOVED - now uses centralized helper in utils.js)
 
-// Helper: Generate summary with error handling
-async function executeSceneSummaryGeneration(llmConfig, range, ctx) {
+// Helper: Generate recap with error handling
+async function executeSceneRecapGeneration(llmConfig, range, ctx) {
   const { prompt, prefill, include_preset_prompts = false, preset_name = null } = llmConfig;
   const { startIdx, endIdx } = range;
 
-  let summary = "";
+  let recap = "";
   try {
     ctx.deactivateSendButtons();
     debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
@@ -812,82 +803,82 @@ async function executeSceneSummaryGeneration(llmConfig, range, ctx) {
     setOperationSuffix(`-${startIdx}-${endIdx}`);
 
     try {
-      const rawResponse = await summarize_text(prompt, prefill, include_preset_prompts, preset_name);
+      const rawResponse = await recap_text(prompt, prefill, include_preset_prompts, preset_name);
       debug(SUBSYSTEM.SCENE, "AI response:", rawResponse);
 
       // Extract and validate JSON using centralized helper
       const { extractJsonFromResponse } = await import('./utils.js');
       const parsed = extractJsonFromResponse(rawResponse, {
-        requiredFields: ['summary'],
-        context: 'scene summary generation'
+        requiredFields: ['recap'],
+        context: 'scene recap generation'
       });
 
-      // Additional validation specific to scene summaries
-      const summaryText = parsed.summary?.trim() || '';
-      if (summaryText === '' || summaryText === '...' || summaryText === 'TODO') {
-        throw new Error("AI returned empty or placeholder summary");
+      // Additional validation specific to scene recaps
+      const recapText = parsed.recap?.trim() || '';
+      if (recapText === '' || recapText === '...' || recapText === 'TODO') {
+        throw new Error("AI returned empty or placeholder recap");
       }
-      if (summaryText.length < DEFAULT_POLLING_INTERVAL) {
-        throw new Error("AI returned suspiciously short summary (less than 10 chars)");
+      if (recapText.length < DEFAULT_POLLING_INTERVAL) {
+        throw new Error("AI returned suspiciously short recap (less than 10 chars)");
       }
 
       // Convert back to JSON string for storage (maintains compatibility)
-      summary = JSON.stringify(parsed);
-      debug(SUBSYSTEM.SCENE, "Validated and cleaned summary");
+      recap = JSON.stringify(parsed);
+      debug(SUBSYSTEM.SCENE, "Validated and cleaned recap");
     } finally {
       clearOperationSuffix();
     }
   } catch (err) {
-    summary = "Error generating summary: " + (err?.message || err);
-    error(SUBSYSTEM.SCENE, "Error generating summary:", err);
+    recap = "Error generating recap: " + (err?.message || err);
+    error(SUBSYSTEM.SCENE, "Error generating recap:", err);
     throw err;
   } finally {
     ctx.activateSendButtons();
   }
-  return summary;
+  return recap;
 }
 
-// Helper: Save scene summary and queue lorebook entries
+// Helper: Save scene recap and queue lorebook entries
 
-async function saveSceneSummary(config) {
-  const { message, summary, get_data, set_data, saveChatDebounced, messageIndex } = config;
-  const updatedVersions = getSceneSummaryVersions(message, get_data).slice();
-  updatedVersions.push(summary);
-  setSceneSummaryVersions(message, set_data, updatedVersions);
-  setCurrentSceneSummaryIndex(message, set_data, updatedVersions.length - 1);
-  set_data(message, SCENE_BREAK_SUMMARY_KEY, summary);
-  set_data(message, SCENE_SUMMARY_MEMORY_KEY, summary);
-  set_data(message, SCENE_SUMMARY_HASH_KEY, computeSummaryHash(summary));
+async function saveSceneRecap(config) {
+  const { message, recap, get_data, set_data, saveChatDebounced, messageIndex } = config;
+  const updatedVersions = getSceneRecapVersions(message, get_data).slice();
+  updatedVersions.push(recap);
+  setSceneRecapVersions(message, set_data, updatedVersions);
+  setCurrentSceneRecapIndex(message, set_data, updatedVersions.length - 1);
+  set_data(message, SCENE_BREAK_RECAP_KEY, recap);
+  set_data(message, SCENE_RECAP_MEMORY_KEY, recap);
+  set_data(message, SCENE_RECAP_HASH_KEY, computeRecapHash(recap));
   saveChatDebounced();
   refresh_memory();
 
   // Extract and queue lorebook entries
-  if (summary) {
-    debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Calling extractAndQueueLorebookEntries for message ${messageIndex}...`);
-    await extractAndQueueLorebookEntries(summary, messageIndex);
-    debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] extractAndQueueLorebookEntries completed for message ${messageIndex}`);
+  if (recap) {
+    debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] Calling extractAndQueueLorebookEntries for message ${messageIndex}...`);
+    await extractAndQueueLorebookEntries(recap, messageIndex);
+    debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] extractAndQueueLorebookEntries completed for message ${messageIndex}`);
   } else {
-    debug(SUBSYSTEM.SCENE, `[SAVE SCENE SUMMARY] Skipping lorebook extraction - no summary available`);
+    debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] Skipping lorebook extraction - no recap available`);
   }
 }
 
-// Helper: Extract lorebooks from summary JSON and queue each as individual operation
-// Note: Summary should already be clean JSON from executeSceneSummaryGeneration()
+// Helper: Extract lorebooks from recap JSON and queue each as individual operation
+// Note: Recap should already be clean JSON from executeSceneRecapGeneration()
 async function extractAndQueueLorebookEntries(
-summary ,
+recap ,
 messageIndex )
 {
   debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Starting for message ${messageIndex}`);
   try {
-    const summaryHash = computeSummaryHash(summary);
-    debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Summary hash: ${summaryHash}`);
+    const recapHash = computeRecapHash(recap);
+    debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Recap hash: ${recapHash}`);
 
     // Parse JSON (should already be clean from generation)
-    const parsed = JSON.parse(summary);
+    const parsed = JSON.parse(recap);
 
     // Check for 'lorebooks' array (standard format)
     if (parsed.lorebooks && Array.isArray(parsed.lorebooks)) {
-      debug(SUBSYSTEM.SCENE, `Found ${parsed.lorebooks.length} lorebook entries in scene summary at index ${messageIndex}`);
+      debug(SUBSYSTEM.SCENE, `Found ${parsed.lorebooks.length} lorebook entries in scene recap at index ${messageIndex}`);
 
       // Deduplicate entries by name/comment before queueing
       const seenNames  = new Set();
@@ -915,7 +906,7 @@ messageIndex )
         // Sequential execution required: entries must be queued in order
         debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Calling queueProcessLorebookEntry for: ${entry.name || entry.comment}`);
         // eslint-disable-next-line no-await-in-loop -- Lorebook entries must be queued sequentially to maintain processing order
-        const opId = await queueProcessLorebookEntry(entry, messageIndex, summaryHash);
+        const opId = await queueProcessLorebookEntry(entry, messageIndex, recapHash);
         if (opId) {
           debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✓ Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);
         } else {
@@ -924,16 +915,16 @@ messageIndex )
       }
       debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Finished queueing all entries`);
     } else {
-      debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] No lorebooks array found in scene summary at index ${messageIndex}`);
+      debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] No lorebooks array found in scene recap at index ${messageIndex}`);
     }
   } catch (err) {
     // Not JSON or parsing failed - skip lorebook processing
-    debug(SUBSYSTEM.SCENE, `Scene summary is not JSON, skipping lorebook extraction: ${err.message}`);
+    debug(SUBSYSTEM.SCENE, `Scene recap is not JSON, skipping lorebook extraction: ${err.message}`);
   }
 }
 
 
-export async function generateSceneSummary(config) {
+export async function generateSceneRecap(config) {
   const { index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue = false, signal = null } = config;
   const ctx = getContext();
   const chat = ctx.chat;
@@ -941,61 +932,61 @@ export async function generateSceneSummary(config) {
 
   // Try queueing if not bypassed
   if (!skipQueue) {
-    const enqueued = await tryQueueSceneSummary(index);
+    const enqueued = await tryQueueSceneRecap(index);
     if (enqueued) {
       return null;
     }
     // Queue is required. If enqueue failed, abort rather than running directly.
-    error(SUBSYSTEM.SCENE, `Failed to enqueue scene summary generation for index ${index}. Aborting.`);
-    toast('Queue required: failed to enqueue scene summary generation. Aborting.', 'error');
+    error(SUBSYSTEM.SCENE, `Failed to enqueue scene recap generation for index ${index}. Aborting.`);
+    toast('Queue required: failed to enqueue scene recap generation. Aborting.', 'error');
     return null;
   }
 
   // Direct execution path is only used by queue handler (skipQueue=true)
-  debug(SUBSYSTEM.SCENE, `Executing scene summary generation directly for index ${index} (skipQueue=true)`);
+  debug(SUBSYSTEM.SCENE, `Executing scene recap generation directly for index ${index} (skipQueue=true)`);
 
   // Get scene range and collect objects
-  const sceneCount = Number(get_settings('scene_summary_history_count')) || 1;
+  const sceneCount = Number(get_settings('scene_recap_history_count')) || 1;
   const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
   const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
   // Prepare prompt
   const { prompt, prefill } = prepareScenePrompt(sceneObjects, ctx);
 
-  // Generate summary with connection profile/preset switching
+  // Generate recap with connection profile/preset switching
   const { withConnectionSettings } = await import('./connectionSettingsManager.js');
-  const profile_name = get_settings('scene_summary_connection_profile');
-  const preset_name = get_settings('scene_summary_completion_preset');
-  const include_preset_prompts = get_settings('scene_summary_include_preset_prompts');
+  const profile_name = get_settings('scene_recap_connection_profile');
+  const preset_name = get_settings('scene_recap_completion_preset');
+  const include_preset_prompts = get_settings('scene_recap_include_preset_prompts');
 
-  const summary = await withConnectionSettings(
+  const recap = await withConnectionSettings(
     profile_name,
     preset_name,
     // eslint-disable-next-line require-await -- Async wrapper required by withConnectionSettings signature
     async () => {
       const llmConfig = { prompt, prefill, include_preset_prompts, preset_name };
       const range = { startIdx, endIdx };
-      return executeSceneSummaryGeneration(llmConfig, range, ctx);
+      return executeSceneRecapGeneration(llmConfig, range, ctx);
     }
   );
 
   // Check if operation was cancelled while LLM call was in progress
   if (signal?.aborted) {
-    debug(SUBSYSTEM.SCENE, `Scene summary cancelled for index ${index}, discarding result without saving`);
+    debug(SUBSYSTEM.SCENE, `Scene recap cancelled for index ${index}, discarding result without saving`);
     throw new Error('Operation cancelled by user');
   }
 
   // Save and render
-  await saveSceneSummary({ message, summary, get_data, set_data, saveChatDebounced, messageIndex: index });
+  await saveSceneRecap({ message, recap, get_data, set_data, saveChatDebounced, messageIndex: index });
 
   // Mark all messages in this scene as checked to prevent auto-detection from splitting the scene
   const markedCount = setCheckedFlagsInRange(startIdx, endIdx);
   if (markedCount > 0) {
-    debug(SUBSYSTEM.SCENE, `Marked ${markedCount} messages in scene (${startIdx}-${endIdx}) as checked after manual summary generation`);
+    debug(SUBSYSTEM.SCENE, `Marked ${markedCount} messages in scene (${startIdx}-${endIdx}) as checked after manual recap generation`);
   }
 
-  await auto_generate_running_summary(index);
+  await auto_generate_running_recap(index);
   renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
 
-  return summary;
+  return recap;
 }

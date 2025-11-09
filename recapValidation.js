@@ -2,7 +2,7 @@
 import {
   get_settings,
   getContext,
-  summarize_text,
+  recap_text,
   debug,
   error,
   log,
@@ -12,16 +12,16 @@ import { DEBUG_OUTPUT_MEDIUM_LENGTH } from './constants.js';
 
 // Helper: Get setting key for validation type
 function getValidationKey(type , suffix ) {
-  // Only scene summaries are supported now (no more message summaries)
-  const prefix = 'scene_summary';
+  // Only scene recaps are supported now (no more message recaps)
+  const prefix = 'scene_recap';
   return `${prefix}_${suffix}`;
 }
 
-async function validate_summary(summary , type  = "scene") {
+async function validate_recap(recap , type  = "scene") {
   if (!get_settings('error_detection_enabled')) {return true;}
   if (!get_settings(getValidationKey(type, 'error_detection_enabled'))) {return true;}
 
-  debug(SUBSYSTEM.VALIDATION, `Validating ${type} summary...`);
+  debug(SUBSYSTEM.VALIDATION, `Validating ${type} recap...`);
 
   // Ensure chat is blocked during validation
   const ctx = getContext();
@@ -42,7 +42,7 @@ async function validate_summary(summary , type  = "scene") {
       async () => {
         // Get the error detection prompt
         let prompt = get_settings(getValidationKey(type, 'error_detection_prompt'));
-        prompt = prompt.replace("{{summary}}", summary);
+        prompt = prompt.replace("{{recap}}", recap);
 
         // Get prefill if configured
         const prefill = get_settings(getValidationKey(type, 'error_detection_prefill')) || '';
@@ -58,7 +58,7 @@ async function validate_summary(summary , type  = "scene") {
         try {
           // Generate validation response
           debug(SUBSYSTEM.VALIDATION, `Sending validation prompt: ${prompt.slice(0, DEBUG_OUTPUT_MEDIUM_LENGTH)}...`);
-          validation_result = await summarize_text(prompt, prefill, include_preset_prompts, validation_preset);
+          validation_result = await recap_text(prompt, prefill, include_preset_prompts, validation_preset);
           debug(SUBSYSTEM.VALIDATION, `Raw validation result: ${validation_result}`);
         } finally {
           clearOperationSuffix();
@@ -69,9 +69,9 @@ async function validate_summary(summary , type  = "scene") {
         const valid = result_upper.includes("VALID") && !result_upper.includes("INVALID");
 
         if (!valid) {
-          log(SUBSYSTEM.VALIDATION, `Summary validation FAILED: "${result_upper}"`);
+          log(SUBSYSTEM.VALIDATION, `Recap validation FAILED: "${result_upper}"`);
         } else {
-          debug(SUBSYSTEM.VALIDATION, `Summary validation passed with result: "${result_upper}"`);
+          debug(SUBSYSTEM.VALIDATION, `Recap validation passed with result: "${result_upper}"`);
         }
 
         return valid;
@@ -79,8 +79,8 @@ async function validate_summary(summary , type  = "scene") {
     );
 
   } catch (e) {
-    error(SUBSYSTEM.VALIDATION, `Error during summary validation: ${e}`);
-    // If validation fails technically, assume the summary is valid
+    error(SUBSYSTEM.VALIDATION, `Error during recap validation: ${e}`);
+    // If validation fails technically, assume the recap is valid
     return true;
   } finally {
 
@@ -88,4 +88,4 @@ async function validate_summary(summary , type  = "scene") {
     // We don't re-enable buttons here because that will be handled
     // by the calling function after all retries are complete
   }}
-export { validate_summary };
+export { validate_recap };

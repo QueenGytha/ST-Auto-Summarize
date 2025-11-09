@@ -12,7 +12,7 @@ import {
   hard_reset_settings,
   refresh_settings,
   toggle_popout,
-  get_running_summary_injection,
+  get_running_recap_injection,
   display_injection_preview,
   toast } from
 './index.js';
@@ -26,7 +26,7 @@ function initialize_slash_commands() {
   const ARGUMENT_TYPE = ctx.ARGUMENT_TYPE;
 
   SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-    name: 'auto_summarize_log_chat',
+    name: 'auto_recap_log_chat',
     callback: (_args) => {
       log(getContext());
       log(getContext().chat);
@@ -35,7 +35,7 @@ function initialize_slash_commands() {
   }));
 
   SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-    name: 'auto_summarize_log_settings',
+    name: 'auto_recap_log_settings',
     // eslint-disable-next-line require-await -- SillyTavern expects async callback
     callback: async (_args) => {
       log(extension_settings[MODULE_NAME]);
@@ -115,20 +115,20 @@ function initialize_slash_commands() {
   }));
 
   SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-    name: 'log_scene_summary_injection',
+    name: 'log_scene_recap_injection',
     callback: () => {
       const settings = {
-        running_scene_summary_position: get_settings('running_scene_summary_position'),
-        running_scene_summary_role: get_settings('running_scene_summary_role'),
-        running_scene_summary_depth: get_settings('running_scene_summary_depth'),
-        running_scene_summary_scan: get_settings('running_scene_summary_scan')
+        running_scene_recap_position: get_settings('running_scene_recap_position'),
+        running_scene_recap_role: get_settings('running_scene_recap_role'),
+        running_scene_recap_depth: get_settings('running_scene_recap_depth'),
+        running_scene_recap_scan: get_settings('running_scene_recap_scan')
       };
-      const injection = get_running_summary_injection();
-      log('[Running Scene Summary Injection] Settings:', settings);
-      log('[Running Scene Summary Injection] Injection text:', injection);
+      const injection = get_running_recap_injection();
+      log('[Running Scene Recap Injection] Settings:', settings);
+      log('[Running Scene Recap Injection] Injection text:', injection);
       return { settings, injection };
     },
-    helpString: 'Log running scene summary injection settings and injection text.'
+    helpString: 'Log running scene recap injection settings and injection text.'
   }));
 
   // Queue management commands

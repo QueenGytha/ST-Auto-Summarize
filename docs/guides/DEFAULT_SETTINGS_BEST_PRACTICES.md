@@ -2,8 +2,8 @@
 
 ## User Requirements
 
-1. **Scene-based workflow only** - No per-message summarization
-2. **Running scene summary** - Single injected memory (best practice)
+1. **Scene-based workflow only** - No per-message recap generation
+2. **Running scene recap** - Single injected memory (best practice)
 3. **Exclude latest 1 scene** - Allow validation before combining
 4. **Auto-hide old messages** - Keep last 2-3 scenes visible
 5. **Optimal injection** - Best position given most chat hidden
@@ -12,22 +12,22 @@
 
 ## Best Practices Assessment
 
-### From rentry.org/how2claude#summarization:
+### From rentry.org/how2claude#recap generation:
 
 1. ✅ **Scene-based chunking** - Superior to message-count chunking
 2. ✅ **State-focused, not event-focused** - Better LLM reasoning
-3. ✅ **Merged summaries** - Running summary vs individual fragments
+3. ✅ **Merged recaps** - Running recap vs individual fragments
 4. ✅ **Extreme brevity** - 1500-2000 token target
-5. ✅ **Proper terminology** - "memory" not "summary" in prompts
+5. ✅ **Proper terminology** - "memory" not "recap" in prompts
 6. ✅ **Active cleanup** - Remove resolved/outdated information
 
-### Prompt Structure (with auto-hide + running summary):
+### Prompt Structure (with auto-hide + running recap):
 
 ```
 ┌─────────────────────────────────────┐
 │ System Prompt                       │
 ├─────────────────────────────────────┤
-│ Running Scene Summary (Position 2)  │ ← MEMORY INJECTION
+│ Running Scene Recap (Position 2)  │ ← MEMORY INJECTION
 │ - Before main prompt                │
 │ - Provides broad context            │
 │ - All scenes except latest 1        │
@@ -44,24 +44,24 @@
 ```
 
 **Rationale:**
-- **Running summary** provides historical state/context
+- **Running recap** provides historical state/context
 - **Recent messages** provide immediate conversation flow
 - **Character card** between them ensures personality is central
-- **Old messages hidden** - already captured in running summary
+- **Old messages hidden** - already captured in running recap
 - **Memory takes priority** - injected before character definitions
 
 ---
 
 ## Settings Changes Required
 
-### 1. Disable Per-Message Summarization
+### 1. Disable Per-Message Recap Generation
 
 **Current:**
 ```javascript
-auto_summarize: false  // ✅ Already correct
+auto_recap: false  // ✅ Already correct
 ```
 
-**Reason:** Scene-based summarization is superior per best practices.
+**Reason:** Scene-based recap generation is superior per best practices.
 
 ### 2. Disable Per-Message Injection
 
@@ -77,29 +77,29 @@ short_term_position: -1,  // Do not inject
 long_term_position: -1,   // Do not inject
 ```
 
-**Reason:** Running scene summary replaces per-message memory. Injecting both would:
+**Reason:** Running scene recap replaces per-message memory. Injecting both would:
 - Waste tokens on redundant information
 - Confuse Claude with overlapping memory sources
-- Violate "merged summaries" best practice
+- Violate "merged recaps" best practice
 
-### 3. Disable Combined Summary Injection
+### 3. Disable Combined Recap Injection
 
 **Current:**
 ```javascript
-combined_summary_enabled: false,  // ✅ Already correct
-combined_summary_position: 2,
+combined_recap_enabled: false,  // ✅ Already correct
+combined_recap_position: 2,
 ```
 
 **Change to:**
 ```javascript
-combined_summary_position: -1,  // Do not inject
+combined_recap_position: -1,  // Do not inject
 ```
 
-**Reason:** Combined summary is for merging per-message summaries. Not needed when using scene-based approach.
+**Reason:** Combined recap is for merging per-message recaps. Not needed when using scene-based approach.
 
 ### 4. Individual Scene Injection
 
-Individual scene summaries are still generated (for navigator UI, lorebook extraction, and running summary input), but they are no longer injected into the prompt. The legacy `scene_summary_enabled` and `scene_summary_position` settings have been removed; the running scene summary is now the sole injection path.
+Individual scene recaps are still generated (for navigator UI, lorebook extraction, and running recap input), but they are no longer injected into the prompt. The legacy `scene_recap_enabled` and `scene_recap_position` settings have been removed; the running scene recap is now the sole injection path.
 
 ### 5. Auto-Hide by Scene Count
 
@@ -124,16 +124,16 @@ User said "auto hide messages 2 older than the latest scene":
 This keeps **3 scenes visible** = `auto_hide_scene_count: 3`
 
 **Why 3 scenes?**
-- Latest scene excluded from running summary (user validating)
+- Latest scene excluded from running recap (user validating)
 - Previous 2 scenes provide immediate context
-- Older scenes in running summary + hidden from direct context
+- Older scenes in running recap + hidden from direct context
 - Balances token usage with conversation flow
 
 **Example flow:**
 ```
 Chat with 6 scenes:
 
-Running Summary: Scenes 1-5 (Scene 6 excluded)
+Running Recap: Scenes 1-5 (Scene 6 excluded)
 Visible Messages: Scenes 4, 5, 6
 Hidden Messages: Scenes 1, 2, 3
 
@@ -143,15 +143,15 @@ Scene 4: In running + visible (recent context)
 Scenes 1-3: In running + hidden (historical context)
 ```
 
-### 6. Running Scene Summary Injection
+### 6. Running Scene Recap Injection
 
 **Current:**
 ```javascript
-running_scene_summary_enabled: true,           // ✅ Legacy (always enabled)
-running_scene_summary_exclude_latest: 1,       // ✅ Correct
-running_scene_summary_auto_generate: true,     // ✅ Correct
-running_scene_summary_position: 2,             // ✅ Correct (before main prompt)
-running_scene_summary_context_limit: 15,       // ✅ Good (slightly higher for combined)
+running_scene_recap_enabled: true,           // ✅ Legacy (always enabled)
+running_scene_recap_exclude_latest: 1,       // ✅ Correct
+running_scene_recap_auto_generate: true,     // ✅ Correct
+running_scene_recap_position: 2,             // ✅ Correct (before main prompt)
+running_scene_recap_context_limit: 15,       // ✅ Good (slightly higher for combined)
 ```
 
 **No changes needed** - Already optimal for best practices.
@@ -162,23 +162,23 @@ running_scene_summary_context_limit: 15,       // ✅ Good (slightly higher for 
 3. Injection template explicitly states this priority
 4. With auto-hide, most messages are hidden, so memory is essential foundation
 
-### 7. Scene Summary Generation Settings
+### 7. Scene Recap Generation Settings
 
 **Current:**
 ```javascript
-scene_summary_history_mode: "both",      // Messages + summaries as context
-scene_summary_message_types: "both",     // Include all message types (user + AI)
-scene_summary_history_count: 1,          // Last 1 scene
+scene_recap_history_mode: "both",      // Messages + recaps as context
+scene_recap_message_types: "both",     // Include all message types (user + AI)
+scene_recap_history_count: 1,          // Last 1 scene
 ```
 
 **Assessment:** ✅ **Keep as-is**
 
 **Reason:**
-- `scene_summary_history_mode: "both"` includes previous scene's messages AND summary as context
-- `scene_summary_message_types: "both"` includes all messages (user and AI) for full context
+- `scene_recap_history_mode: "both"` includes previous scene's messages AND recap as context
+- `scene_recap_message_types: "both"` includes all messages (user and AI) for full context
 - Helps maintain continuity across scenes
-- Running summary will deduplicate anyway
-- Provides richer context for better scene summaries
+- Running recap will deduplicate anyway
+- Provides richer context for better scene recaps
 - Users can set to "user" or "character" if they only want specific message types
 
 ---
@@ -193,7 +193,7 @@ Recommended profile settings:
 ```javascript
 auto_scene_break_on_new_message: true,     // Check new messages automatically
 auto_scene_break_on_load: false,           // Avoid scanning on chat load by default
-auto_scene_break_generate_summary: false,  // Prefer manual control of summaries
+auto_scene_break_generate_recap: false,  // Prefer manual control of recaps
 ```
 
 Users who prefer manual runs can leave both per‑event flags off and use the navbar “Scan Scene Breaks” button as needed.
@@ -203,8 +203,8 @@ Users who prefer manual runs can leave both per‑event flags off and use the na
 **Current:**
 ```javascript
 completion_preset: "",                              // Use current preset
-scene_summary_completion_preset: "",                // Use current preset
-running_scene_summary_completion_preset: "",        // Use current preset
+scene_recap_completion_preset: "",                // Use current preset
+running_scene_recap_completion_preset: "",        // Use current preset
 ```
 
 **Assessment:** ✅ **Keep empty (use current)**
@@ -215,7 +215,7 @@ running_scene_summary_completion_preset: "",        // Use current preset
 - Can be overridden per-profile if needed
 
 **Best practice recommendation:**
-- Use preset with temperature 0.7-1.0 for summaries
+- Use preset with temperature 0.7-1.0 for recaps
 - Lower temperature (0.3-0.5) for validation
 - These should be documented, not forced
 
@@ -224,8 +224,8 @@ running_scene_summary_completion_preset: "",        // Use current preset
 **Current:**
 ```javascript
 error_detection_enabled: false,                     // Validation disabled by default
-regular_summary_error_detection_enabled: true,      // Would validate if enabled
-scene_summary_error_detection_enabled: false,       // Scene validation off
+regular_recap_error_detection_enabled: true,      // Would validate if enabled
+scene_recap_error_detection_enabled: false,       // Scene validation off
 ```
 
 **Assessment:** ✅ **Keep disabled by default**
@@ -241,8 +241,8 @@ scene_summary_error_detection_enabled: false,       // Scene validation off
 **Current:**
 ```javascript
 prefill: "",                                        // No prefill
-scene_summary_prefill: "",                          // No prefill
-running_scene_summary_prefill: "",                  // No prefill
+scene_recap_prefill: "",                          // No prefill
+running_scene_recap_prefill: "",                  // No prefill
 ```
 
 **Assessment:** ✅ **Keep empty**
@@ -254,7 +254,7 @@ running_scene_summary_prefill: "",                  // No prefill
 
 ---
 
-## Summary of Changes
+## Recap of Changes
 
 ### Settings to Change:
 
@@ -265,8 +265,8 @@ running_scene_summary_prefill: "",                  // No prefill
 short_term_position: -1,              // was: 2
 long_term_position: -1,               // was: 2
 
-// Disable combined summary injection
-combined_summary_position: -1,        // was: 2
+// Disable combined recap injection
+combined_recap_position: -1,        // was: 2
 
 // Enable scene-based auto-hide
 auto_hide_scene_count: 3,             // was: -1
@@ -275,18 +275,18 @@ auto_hide_scene_count: 3,             // was: -1
 ### Settings Already Correct:
 
 ```javascript
-// Per-message summarization disabled
-auto_summarize: false,                // ✅
+// Per-message recap generation disabled
+auto_recap: false,                // ✅
 
-// Combined summary disabled
-combined_summary_enabled: false,      // ✅
+// Combined recap disabled
+combined_recap_enabled: false,      // ✅
 
-// Running scene summary optimal
-running_scene_summary_enabled: true,                // ✅ Legacy (always enabled)
-running_scene_summary_exclude_latest: 1,            // ✅
-running_scene_summary_auto_generate: true,          // ✅
-running_scene_summary_position: 2,                  // ✅
-running_scene_summary_context_limit: 15,            // ✅
+// Running scene recap optimal
+running_scene_recap_enabled: true,                // ✅ Legacy (always enabled)
+running_scene_recap_exclude_latest: 1,            // ✅
+running_scene_recap_auto_generate: true,          // ✅
+running_scene_recap_position: 2,                  // ✅
+running_scene_recap_context_limit: 15,            // ✅
 ```
 
 ---
@@ -305,18 +305,18 @@ Total: 2800 tokens
 Plus: Full chat history (could be 10k+ tokens)
 ```
 
-**After (Running Scene Summary + Auto-Hide):**
+**After (Running Scene Recap + Auto-Hide):**
 ```
-Running scene summary: 1800 tokens (all scenes combined)
+Running scene recap: 1800 tokens (all scenes combined)
 Recent messages: Last 3 scenes ≈ 2000 tokens
 Total: 3800 tokens
 
 Savings: Eliminated full chat history (8k+ tokens saved)
-Net: More efficient despite running summary being narrative
+Net: More efficient despite running recap being narrative
 ```
 
 **Why this is better:**
-1. **Better compression** - Running summary uses narrative format (30% more efficient than JSON for same info)
+1. **Better compression** - Running recap uses narrative format (30% more efficient than JSON for same info)
 2. **No redundancy** - Single memory source vs fragmented multiple sources
 3. **State-focused** - Better LLM reasoning vs event sequences
 4. **Auto-cleanup** - Old messages hidden, not wasting context
@@ -341,17 +341,17 @@ Net: More efficient despite running summary being narrative
 
 ## Migration Path for Existing Users
 
-Users with existing chats using per-message summaries:
+Users with existing chats using per-message recaps:
 
-1. **Enable running scene summary** (already default)
+1. **Enable running scene recap** (already default)
 2. **Mark a few scene breaks** in existing chat
-3. **Generate scene summaries** for marked scenes
-4. **Running summary auto-generates** from scenes
+3. **Generate scene recaps** for marked scenes
+4. **Running recap auto-generates** from scenes
 5. **Optionally disable per-message injection** (settings above)
 
-Their per-message summaries remain in messages but aren't injected. They can:
+Their per-message recaps remain in messages but aren't injected. They can:
 - Keep them for reference
-- Manually convert important ones to scene summaries
+- Manually convert important ones to scene recaps
 - Start fresh with scene-based approach
 
 ---
@@ -361,8 +361,8 @@ Their per-message summaries remain in messages but aren't injected. They can:
 The updated defaults align with best practices:
 
 ✅ **Scene-based workflow** - Superior to per-message
-✅ **Running scene summary** - Merged, state-focused, brief
-✅ **Auto-hide old messages** - Captured in running summary
+✅ **Running scene recap** - Merged, state-focused, brief
+✅ **Auto-hide old messages** - Captured in running recap
 ✅ **Single injection point** - No redundancy, clear context
 ✅ **Optimal position** - Memory before character definitions
 ✅ **Token efficient** - Narrative format, extreme brevity
@@ -370,6 +370,6 @@ The updated defaults align with best practices:
 
 This configuration provides the best balance of:
 - **Quality** - Better LLM reasoning with state-focused memory
-- **Efficiency** - Optimal token usage through auto-hide + running summary
+- **Efficiency** - Optimal token usage through auto-hide + running recap
 - **Automation** - Fully automated with validation for quality
-- **Flexibility** - User can still access/edit individual scene summaries
+- **Flexibility** - User can still access/edit individual scene recaps

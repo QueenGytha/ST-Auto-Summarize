@@ -7,7 +7,7 @@
 
 ---
 
-## Executive Summary
+## Executive Recap
 
 A comprehensive verification of all claims in the ConnectionManagerRequestService migration analysis revealed:
 
@@ -185,15 +185,15 @@ function determineOperationType() {
     if (stack.includes('detectSceneBreak') || stack.includes('autoSceneBreakDetection.js')) {
       return 'detect_scene_break';
     }
-    if (stack.includes('generateSceneSummary') && !stack.includes('runningSceneSummary.js')) {
-      return 'generate_scene_summary';
+    if (stack.includes('generateSceneRecap') && !stack.includes('runningSceneRecap.js')) {
+      return 'generate_scene_recap';
     }
     if (stack.includes('SceneName') || stack.includes('generateSceneName')) {
       return 'generate_scene_name';
     }
     // ... 10+ more checks ...
-    if (stack.includes('summarize_text') || stack.includes('summarization.js')) {
-      return 'summary';
+    if (stack.includes('recap_text') || stack.includes('recapping.js')) {
+      return 'recap';
     }
     return 'chat';
   } catch {
@@ -210,16 +210,16 @@ function determineOperationType() {
 
 Current call stack (interceptor works):
 ```
-summarize_text() → generateRaw() → wrappedGenerateRaw() → determineOperationType()
+recap_text() → generateRaw() → wrappedGenerateRaw() → determineOperationType()
                                                           ↑
-                                    Stack includes "summarize_text" ✅
+                                    Stack includes "recap_text" ✅
 ```
 
 Proposed call stack (interceptor wouldn't work):
 ```
-summarize_text() → sendLLMRequest() → ConnectionManagerRequestService.sendRequest()
+recap_text() → sendLLMRequest() → ConnectionManagerRequestService.sendRequest()
                                     ↑
-                    Stack would NOT include "summarize_text" ❌
+                    Stack would NOT include "recap_text" ❌
 ```
 
 **Reason**: Stack trace only includes functions currently on the call stack. With ConnectionManagerRequestService, the injection happens BEFORE the call, so original caller isn't in stack.
@@ -320,24 +320,24 @@ $ grep -rn "await generateRaw\|= generateRaw" --include="*.js" . | grep -v "node
 ```
 
 **Files with generateRaw calls**:
-1. summarization.js - 2 calls
+1. recapping.js - 2 calls
 2. lorebookEntryMerger.js - 3 calls
-3. summaryToLorebookProcessor.js - 3 calls
+3. recapToLorebookProcessor.js - 3 calls
 4. llmCallValidator.js - 1 call
 5. operationContext.js - 1 call (in example/test code)
 
 **Total direct calls**: ~10 calls in 5 files
 
-**However**, most code calls `summarize_text()` which then calls `generateRaw`:
+**However**, most code calls `recap_text()` which then calls `generateRaw`:
 
-**Files using summarize_text()**:
+**Files using recap_text()**:
 1. sceneBreak.js - 2 calls
 2. autoSceneBreakDetection.js - 1 call
-3. runningSceneSummary.js - 2 calls
-4. summaryValidation.js - indirect usage
+3. runningSceneRecap.js - 2 calls
+4. recapValidation.js - indirect usage
 
 **Actual refactor scope**:
-- **Primary interface**: `summarize_text()` in summarization.js
+- **Primary interface**: `recap_text()` in recapping.js
 - **Direct LLM calls**: ~10 locations in 5 files
 - **Indirect calls**: ~5 locations in 4 files
 - **Total**: ~15-20 call sites across ~8-10 files
@@ -404,10 +404,10 @@ $ grep -l "setOperationSuffix\|getOperationSuffix\|clearOperationSuffix" --inclu
 3. generateRawInterceptor.js - 4 usages (get, set)
 4. lorebookEntryMerger.js - 6 usages (set, clear)
 5. operationContext.js - 6 usages (definitions + exports)
-6. runningSceneSummary.js - 4 usages (set, clear)
+6. runningSceneRecap.js - 4 usages (set, clear)
 7. sceneBreak.js - 4 usages (set, clear)
-8. summaryToLorebookProcessor.js - 3 usages (set, clear)
-9. summaryValidation.js - 2 usages (set, clear)
+8. recapToLorebookProcessor.js - 3 usages (set, clear)
+9. recapValidation.js - 2 usages (set, clear)
 
 **Total**: 34 usage lines across 9 files
 
@@ -553,7 +553,7 @@ $ find . -name "timeline-memory" -type d
 
 ---
 
-## 📊 SUMMARY STATISTICS
+## 📊 RECAP STATISTICS
 
 | Category | Claimed | Actual | Variance | Status |
 |----------|---------|--------|----------|--------|
@@ -710,7 +710,7 @@ grep -rn "\.emit\(" --include="*.js" public/scripts/custom-request.js
 # Call site counting
 grep -rn "generateRaw" --include="*.js" . | grep -v "node_modules" | grep -v "test"
 grep -rn "await generateRaw\|= generateRaw" --include="*.js" .
-grep -l "summarize_text" --include="*.js" .
+grep -l "recap_text" --include="*.js" .
 
 # Test counting
 find tests -name "*.spec.js" -o -name "*.test.js"
@@ -737,33 +737,33 @@ grep -l "setOperationSuffix" --include="*.js" . | grep -v "node_modules"
 - generateRawInterceptor.js (lines 15-179)
 - metadataInjector.js (lines 82-164)
 - operationContext.js (entire file)
-- summarization.js (for generateRaw calls)
+- recapping.js (for generateRaw calls)
 - lorebookEntryMerger.js (for generateRaw calls)
-- sceneBreak.js (for summarize_text calls)
-- autoSceneBreakDetection.js (for summarize_text calls)
-- runningSceneSummary.js (for summarize_text calls)
+- sceneBreak.js (for recap_text calls)
+- autoSceneBreakDetection.js (for recap_text calls)
+- runningSceneRecap.js (for recap_text calls)
 
 ### C. Call Site Inventory
 
 **Direct generateRaw calls** (10 sites in 5 files):
-1. summarization.js:156 - `await generateRaw({ prompt })`
-2. summarization.js:201 - `await generateRaw({ prompt: validatedPrompt })`
+1. recapping.js:156 - `await generateRaw({ prompt })`
+2. recapping.js:201 - `await generateRaw({ prompt: validatedPrompt })`
 3. lorebookEntryMerger.js:89 - `await generateRaw({ prompt })`
 4. lorebookEntryMerger.js:142 - `await generateRaw({ prompt })`
 5. lorebookEntryMerger.js:198 - `await generateRaw({ prompt })`
-6. summaryToLorebookProcessor.js:76 - `await generateRaw({ prompt })`
-7. summaryToLorebookProcessor.js:134 - `await generateRaw({ prompt })`
-8. summaryToLorebookProcessor.js:201 - `await generateRaw({ prompt })`
+6. recapToLorebookProcessor.js:76 - `await generateRaw({ prompt })`
+7. recapToLorebookProcessor.js:134 - `await generateRaw({ prompt })`
+8. recapToLorebookProcessor.js:201 - `await generateRaw({ prompt })`
 9. llmCallValidator.js:45 - `await generateRaw({ prompt })`
 10. operationContext.js:67 - `await generateRaw({ prompt })` (example code)
 
-**Indirect calls via summarize_text()** (~5-6 sites in 4 files):
-1. sceneBreak.js:112 - `await summarize_text(...)`
-2. sceneBreak.js:178 - `await summarize_text(...)`
-3. autoSceneBreakDetection.js:87 - `await summarize_text(...)`
-4. runningSceneSummary.js:145 - `await summarize_text(...)`
-5. runningSceneSummary.js:234 - `await summarize_text(...)`
-6. summaryValidation.js - indirect via utility functions
+**Indirect calls via recap_text()** (~5-6 sites in 4 files):
+1. sceneBreak.js:112 - `await recap_text(...)`
+2. sceneBreak.js:178 - `await recap_text(...)`
+3. autoSceneBreakDetection.js:87 - `await recap_text(...)`
+4. runningSceneRecap.js:145 - `await recap_text(...)`
+5. runningSceneRecap.js:234 - `await recap_text(...)`
+6. recapValidation.js - indirect via utility functions
 
 **Total LLM call sites**: 15-20 across 8-10 files
 

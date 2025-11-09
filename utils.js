@@ -21,7 +21,7 @@ import {
 } from './constants.js';
 
 // Consistent prefix for ALL extension logs - easily searchable
-const LOG_PREFIX = '[AutoSummarize]';
+const LOG_PREFIX = '[AutoRecap]';
 
 // Subsystem prefixes for filtering specific functionality
 const SUBSYSTEM = {
@@ -84,14 +84,14 @@ function get_context_size() {
   return getMaxContextSize();
 }
 function get_short_token_limit() {
-  // Get the single message summary token limit, given the current context size and settings
-  const message_summary_context_limit = get_settings('message_summary_context_limit');
-  const number_type = get_settings('message_summary_context_type');
+  // Get the single message recap token limit, given the current context size and settings
+  const message_recap_context_limit = get_settings('message_recap_context_limit');
+  const number_type = get_settings('message_recap_context_type');
   if (number_type === "percent") {
     const context_size = get_context_size();
-    return Math.floor(context_size * message_summary_context_limit / FULL_COMPLETION_PERCENTAGE);
+    return Math.floor(context_size * message_recap_context_limit / FULL_COMPLETION_PERCENTAGE);
   } else {
-    return message_summary_context_limit;
+    return message_recap_context_limit;
   }
 }
 function get_current_character_identifier() {
@@ -272,11 +272,76 @@ function sanitizeNameSegment(text ) {
 }
 
 /**
+ * Comprehensive JSON repair helper - handles all common malformations.
+ * Multi-layer approach: brace balancing → format fixes → native parse
+ *
+ * @param {string} jsonString - Potentially malformed JSON string
+ * @param {string} context - Context for logging (e.g., "scene break detection")
+ * @returns {Object} Parsed JSON object
+ * @throws {Error} If repair attempts fail
+ */
+function repairAndParseJson(jsonString, context = 'JSON repair') {
+  let repaired = jsonString;
+
+  // Layer 1: Balance braces/brackets
+  const openBraces = (repaired.match(/{/g) || []).length;
+  const closeBraces = (repaired.match(/}/g) || []).length;
+  const openBrackets = (repaired.match(/\[/g) || []).length;
+  const closeBrackets = (repaired.match(/]/g) || []).length;
+
+  // Add missing closing braces
+  if (openBraces > closeBraces) {
+    const missing = openBraces - closeBraces;
+    repaired += '}'.repeat(missing);
+    debug(SUBSYSTEM.CORE, `[JSON Repair] Added ${missing} missing closing brace(s) in ${context}`);
+  }
+
+  // Add missing closing brackets
+  if (openBrackets > closeBrackets) {
+    const missing = openBrackets - closeBrackets;
+    repaired += ']'.repeat(missing);
+    debug(SUBSYSTEM.CORE, `[JSON Repair] Added ${missing} missing closing bracket(s) in ${context}`);
+  }
+
+  // Layer 2: Try native parse first (fastest)
+  try {
+    return JSON.parse(repaired);
+  } catch {
+    debug(SUBSYSTEM.CORE, `[JSON Repair] Native parse failed in ${context}, trying advanced repairs`);
+  }
+
+  // Layer 3: Advanced repair techniques
+  try {
+    // Remove trailing commas before } or ]
+    repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
+
+    // Fix single quotes to double quotes (but not inside strings)
+    // Simple approach: replace single quotes that are likely field delimiters
+    repaired = repaired.replace(/'/g, '"');
+
+    // Remove comments (// and /* */)
+    repaired = repaired.replace(/\/\/.*$/gm, '');
+    repaired = repaired.replace(/\/\*[\s\S]*?\*\//g, '');
+
+    // Fix unquoted keys (simple pattern: word: value)
+    repaired = repaired.replace(/(\{|,)\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":');
+
+    // Try parsing again
+    const parsed = JSON.parse(repaired);
+    debug(SUBSYSTEM.CORE, `[JSON Repair] Successfully repaired JSON using advanced techniques in ${context}`);
+    return parsed;
+  } catch (repairErr) {
+    error(SUBSYSTEM.CORE, `[JSON Repair] All repair attempts failed in ${context}:`, repairErr);
+    throw new Error(`${context}: Could not repair JSON - ${repairErr.message}`);
+  }
+}
+
+/**
  * Extract and parse JSON from AI responses, handling common issues like preambles and code fences.
  * @param {string} rawResponse - The raw AI response that should contain JSON
  * @param {Object} options - Optional validation and extraction options
  * @param {string[]} options.requiredFields - Array of field names that must exist in the parsed JSON
- * @param {string} options.context - Context string for error messages (e.g., "merge operation", "scene summary")
+ * @param {string} options.context - Context string for error messages (e.g., "merge operation", "scene recap")
  * @returns {Object} The parsed JSON object
  * @throws {Error} If JSON cannot be extracted or parsed, or if required fields are missing
  */
@@ -295,6 +360,18 @@ export function extractJsonFromResponse(rawResponse, options = {}) {
   if (codeFenceMatch) {
     cleaned = codeFenceMatch[1].trim();
     debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped code fences from ${context}`);
+  }
+
+  // Step 1.5: Detect and repair partial JSON (missing opening brace)
+  // Some LLMs return JSON without the opening { character: "field": value, ...}
+  if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
+    // Check if it looks like partial JSON (starts with a quoted field name)
+    const partialJsonMatch = cleaned.match(/^\s*"[^"]+"\s*:/);
+    if (partialJsonMatch && cleaned.includes('}')) {
+      // Likely partial JSON - prepend opening brace
+      cleaned = '{' + cleaned;
+      debug(SUBSYSTEM.CORE, `[JSON Extract] Repaired partial JSON (added opening brace) in ${context}`);
+    }
   }
 
   // Step 2: Strip text before first JSON character
@@ -318,14 +395,14 @@ export function extractJsonFromResponse(rawResponse, options = {}) {
     }
   }
 
-  // Step 4: Parse JSON
+  // Step 4: Parse JSON with comprehensive repair
   let parsed;
   try {
-    parsed = JSON.parse(cleaned);
+    parsed = repairAndParseJson(cleaned, context);
   } catch (parseErr) {
-    error(SUBSYSTEM.CORE, `[JSON Extract] Failed to parse JSON from ${context}:`, parseErr);
+    // repairAndParseJson already logged the error details
     error(SUBSYSTEM.CORE, `[JSON Extract] Attempted to parse:`, cleaned.slice(0, DEBUG_OUTPUT_MEDIUM_LENGTH));
-    throw new Error(`${context}: Invalid JSON - ${parseErr.message}`);
+    throw parseErr; // Re-throw the error from repairAndParseJson
   }
 
   // Step 5: Validate required fields

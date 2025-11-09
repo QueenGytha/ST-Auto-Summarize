@@ -79,9 +79,9 @@ export function installLorebookWrapper() {
 **Console log provided (z-console.txt):**
 - ✅ Shows `WORLD_INFO_ACTIVATED` event firing (lines 117-118, 237-238)
 - ✅ Shows metadata injection working (lines 255-256)
-- ❌ NO `[Auto-Summarize:Init] About to call installLorebookWrapper()`
-- ❌ NO `[Auto-Summarize:LorebookWrapper] MODULE LOADING`
-- ❌ NO `[Auto-Summarize:LorebookWrapper] Installing lorebook wrapper`
+- ❌ NO `[Auto-Recap:Init] About to call installLorebookWrapper()`
+- ❌ NO `[Auto-Recap:LorebookWrapper] MODULE LOADING`
+- ❌ NO `[Auto-Recap:LorebookWrapper] Installing lorebook wrapper`
 - ❌ NO `checkWorldInfo_wrapped CALLED!`
 
 **Critical Issue:**
@@ -94,31 +94,31 @@ The console log provided does NOT show page initialization - it starts mid-sessi
 
 ### At Module Load (lorebookWrapper.js:4)
 ```javascript
-console.log('[Auto-Summarize:LorebookWrapper] ===== MODULE LOADING =====');
+console.log('[Auto-Recap:LorebookWrapper] ===== MODULE LOADING =====');
 ```
 **Purpose:** Confirms the module file is executed
 
 ### Before Function Call (eventHandlers.js:253-255)
 ```javascript
-console.log('[Auto-Summarize:Init] About to call installLorebookWrapper()');
+console.log('[Auto-Recap:Init] About to call installLorebookWrapper()');
 installLorebookWrapper();
-console.log('[Auto-Summarize:Init] installLorebookWrapper() call completed');
+console.log('[Auto-Recap:Init] installLorebookWrapper() call completed');
 ```
 **Purpose:** Confirms the function is called during initialization
 
 ### Inside installLorebookWrapper (lorebookWrapper.js:380-407)
 ```javascript
-console.log('[Auto-Summarize:LorebookWrapper] ========== Installing lorebook wrapper ==========');
-console.log('[Auto-Summarize:LorebookWrapper] typeof window:', typeof window);
-console.log('[Auto-Summarize:LorebookWrapper] typeof window.checkWorldInfo:', typeof window?.checkWorldInfo);
-console.log('[Auto-Summarize:LorebookWrapper] window.checkWorldInfo exists:', !!window?.checkWorldInfo);
+console.log('[Auto-Recap:LorebookWrapper] ========== Installing lorebook wrapper ==========');
+console.log('[Auto-Recap:LorebookWrapper] typeof window:', typeof window);
+console.log('[Auto-Recap:LorebookWrapper] typeof window.checkWorldInfo:', typeof window?.checkWorldInfo);
+console.log('[Auto-Recap:LorebookWrapper] window.checkWorldInfo exists:', !!window?.checkWorldInfo);
 
 if (typeof window !== 'undefined' && typeof window.checkWorldInfo === 'function') {
-    console.log('[Auto-Summarize:LorebookWrapper] ✓ window.checkWorldInfo is a function, proceeding with wrapper');
+    console.log('[Auto-Recap:LorebookWrapper] ✓ window.checkWorldInfo is a function, proceeding with wrapper');
     // ... wrapper installation
 } else {
-    console.warn('[Auto-Summarize:LorebookWrapper] ❌ window.checkWorldInfo NOT FOUND - wrapper not installed');
-    console.warn('[Auto-Summarize:LorebookWrapper] window object keys sample:', window ? Object.keys(window).slice(0, 10) : 'window is undefined');
+    console.warn('[Auto-Recap:LorebookWrapper] ❌ window.checkWorldInfo NOT FOUND - wrapper not installed');
+    console.warn('[Auto-Recap:LorebookWrapper] window object keys sample:', window ? Object.keys(window).slice(0, 10) : 'window is undefined');
 }
 ```
 **Purpose:**
@@ -128,14 +128,14 @@ if (typeof window !== 'undefined' && typeof window.checkWorldInfo === 'function'
 
 ### Inside Wrapper Function (lorebookWrapper.js:38-66)
 ```javascript
-console.log('[Auto-Summarize:LorebookWrapper] checkWorldInfo_wrapped CALLED!');
-console.log('[Auto-Summarize:LorebookWrapper] _isWrapperActive:', _isWrapperActive, '_originalCheckWorldInfo exists:', !!_originalCheckWorldInfo);
+console.log('[Auto-Recap:LorebookWrapper] checkWorldInfo_wrapped CALLED!');
+console.log('[Auto-Recap:LorebookWrapper] _isWrapperActive:', _isWrapperActive, '_originalCheckWorldInfo exists:', !!_originalCheckWorldInfo);
 
 // ... processing ...
 
-console.log('[Auto-Summarize:LorebookWrapper] Original checkWorldInfo returned, entries count:', result?.allActivatedEntries?.size || 0);
-console.log('[Auto-Summarize:LorebookWrapper] Settings:', settings ? 'exists' : 'NULL');
-console.log('[Auto-Summarize:LorebookWrapper] wrap_lorebook_entries setting:', settings?.wrap_lorebook_entries);
+console.log('[Auto-Recap:LorebookWrapper] Original checkWorldInfo returned, entries count:', result?.allActivatedEntries?.size || 0);
+console.log('[Auto-Recap:LorebookWrapper] Settings:', settings ? 'exists' : 'NULL');
+console.log('[Auto-Recap:LorebookWrapper] wrap_lorebook_entries setting:', settings?.wrap_lorebook_entries);
 ```
 **Purpose:**
 - Confirms wrapper function is called (if monkey-patch works)
@@ -144,11 +144,11 @@ console.log('[Auto-Summarize:LorebookWrapper] wrap_lorebook_entries setting:', s
 
 ### Inside reconstructWithWrapping (lorebookWrapper.js:84-95)
 ```javascript
-console.log('[Auto-Summarize:LorebookWrapper] reconstructWithWrapping called');
-console.log('[Auto-Summarize:LorebookWrapper] result exists:', !!result);
-console.log('[Auto-Summarize:LorebookWrapper] allActivatedEntries exists:', !!result?.allActivatedEntries);
-console.log('[Auto-Summarize:LorebookWrapper] allActivatedEntries size:', result?.allActivatedEntries?.size);
-console.log('[Auto-Summarize:LorebookWrapper] Processing', entriesArray.length, 'entries for wrapping');
+console.log('[Auto-Recap:LorebookWrapper] reconstructWithWrapping called');
+console.log('[Auto-Recap:LorebookWrapper] result exists:', !!result);
+console.log('[Auto-Recap:LorebookWrapper] allActivatedEntries exists:', !!result?.allActivatedEntries);
+console.log('[Auto-Recap:LorebookWrapper] allActivatedEntries size:', result?.allActivatedEntries?.size);
+console.log('[Auto-Recap:LorebookWrapper] Processing', entriesArray.length, 'entries for wrapping');
 ```
 **Purpose:** Shows reconstruction logic executing
 
@@ -167,22 +167,22 @@ console.log('[Auto-Summarize:LorebookWrapper] Processing', entriesArray.length, 
 
 #### Pattern 1: Module Loading
 ```
-[Auto-Summarize:LorebookWrapper] ===== MODULE LOADING =====
+[Auto-Recap:LorebookWrapper] ===== MODULE LOADING =====
 ```
 - **If present:** Module file executed
 - **If missing:** Import error or module not loaded
 
 #### Pattern 2: Function Call
 ```
-[Auto-Summarize:Init] About to call installLorebookWrapper()
-[Auto-Summarize:Init] installLorebookWrapper() call completed
+[Auto-Recap:Init] About to call installLorebookWrapper()
+[Auto-Recap:Init] installLorebookWrapper() call completed
 ```
 - **If present:** Function was called
 - **If missing:** Initialization didn't reach that point (earlier error)
 
 #### Pattern 3: Installation Attempt
 ```
-[Auto-Summarize:LorebookWrapper] ========== Installing lorebook wrapper ==========
+[Auto-Recap:LorebookWrapper] ========== Installing lorebook wrapper ==========
 typeof window: object
 typeof window.checkWorldInfo: undefined (or function)
 window.checkWorldInfo exists: false (or true)
@@ -201,7 +201,7 @@ OR
 
 #### Pattern 5: Wrapper Execution (only if monkey-patch worked)
 ```
-[Auto-Summarize:LorebookWrapper] checkWorldInfo_wrapped CALLED!
+[Auto-Recap:LorebookWrapper] checkWorldInfo_wrapped CALLED!
 ```
 - **If present:** Wrapper is intercepting calls
 - **If missing:** Monkey-patch didn't work or function not called
@@ -306,7 +306,7 @@ if (settings.wrap_lorebook_entries) {
 - `settingsUI.js:76` - Binding
 
 **Setting must be enabled in UI:**
-- Auto-Summarize Settings → First-Hop Proxy Integration → Check "Wrap Lorebook Entries"
+- Auto-Recap Settings → First-Hop Proxy Integration → Check "Wrap Lorebook Entries"
 
 ## Import Chain Verification
 
@@ -344,7 +344,7 @@ if (settings.wrap_lorebook_entries) {
 - **Line 855** - `getWorldInfoPrompt()` calls `checkWorldInfo()`
 - **Line 117** - Console shows `world_info_activated` event with all entry data
 
-## Summary
+## Recap
 
 **What works:**
 - Extension loads

@@ -12,7 +12,7 @@ import { getRegexScripts } from '../../../../scripts/extensions/regex/index.js';
 import { runRegexScript } from '../../../../scripts/extensions/regex/engine.js';
 import { getContext, getApiUrl, extension_settings } from '../../../extensions.js';
 import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from '../../../utils.js';
-import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, saveSettingsDebounced, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata, activateSendButtons as _originalActivateSendButtons, deactivateSendButtons as _originalDeactivateSendButtons } from '../../../../script.js';
+import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, saveSettingsDebounced, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata, getCurrentChatId, activateSendButtons as _originalActivateSendButtons, deactivateSendButtons as _originalDeactivateSendButtons } from '../../../../script.js';
 
 // Import SillyTavern selectors (direct import since this is the barrel file)
 import { selectorsSillyTavern } from './selectorsSillyTavern.js';
@@ -149,7 +149,7 @@ export const generateRaw = wrappedGenerateRaw;
 
 export {
   // Exports from imported SillyTavern modules
-  formatInstructModeChat, getPresetManager, is_group_generating, selected_group, openGroupId, groups, loadMovingUIState, renderStoryString, power_user, dragElement, debounce_timeout, MacrosParser, commonEnumProviders, getRegexScripts, runRegexScript, getContext, getApiUrl, extension_settings, getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition, animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, saveSettingsDebounced, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata, activateSendButtons, deactivateSendButtons };
+  formatInstructModeChat, getPresetManager, is_group_generating, selected_group, openGroupId, groups, loadMovingUIState, renderStoryString, power_user, dragElement, debounce_timeout, MacrosParser, commonEnumProviders, getRegexScripts, runRegexScript, getContext, getApiUrl, extension_settings, getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition, animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, saveSettingsDebounced, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata, getCurrentChatId, activateSendButtons, deactivateSendButtons };
 
 
 // Barrel file. Implictly imports before exporting
@@ -162,8 +162,8 @@ export * from './defaultSettings.js';
 export * from './constants.js';
 export * from './sceneBreak.js';
 export * from './autoSceneBreakDetection.js';
-export * from './runningSceneSummary.js';
-export * from './runningSceneSummaryUI.js';
+export * from './runningSceneRecap.js';
+export * from './runningSceneRecapUI.js';
 export * from './utils.js';
 export * from './slashCommands.js';
 export * from './settingsManager.js';
@@ -178,8 +178,8 @@ export * from './connectionProfiles.js';
 export * from './connectionSettingsManager.js';
 export * from './promptUtils.js';
 export * from './presetPromptLoader.js';
-export * from './summarization.js';
-export * from './summaryValidation.js';
+export * from './recapping.js';
+export * from './recapValidation.js';
 export * from './presetManager.js';
 export * from './eventHandlers.js';
 export * from './styleConstants.js';
@@ -194,7 +194,7 @@ export * from './queueIntegration.js';
 export * from './lorebookManager.js';
 export * from './lorebookEntryMerger.js';
 export * from './categoryIndexes.js';
-export * from './summaryToLorebookProcessor.js';
+export * from './recapToLorebookProcessor.js';
 
 // Metadata injection for LLM requests
 export * from './metadataInjector.js';

@@ -126,7 +126,7 @@ This scans all entries and rebuilds all category indexes.
 
 ### Automatic (Recommended)
 
-Category indexes update automatically when using the entity extraction system. When a summary with entity data is processed:
+Category indexes update automatically when using the entity extraction system. When a recap with entity data is processed:
 
 1. Entity lorebook entry created (e.g., `character-Alice`)
 2. Category extracted from entity type (e.g., `character`)
@@ -200,7 +200,7 @@ Entries: (none)
 ### Step 2: First Entity Added
 
 ```javascript
-// Summary with entity
+// Recap with entity
 {
   "entities": [{
     "name": "Bob",
@@ -223,7 +223,7 @@ Entries:
 ### Step 3: More Entities Added
 
 ```javascript
-// More summaries with entities
+// More recaps with entities
 {
   "entities": [
     { "name": "Cloudsdale", "type": "location", ... },

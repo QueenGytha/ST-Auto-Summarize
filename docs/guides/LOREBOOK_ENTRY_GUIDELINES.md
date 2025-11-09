@@ -1,17 +1,17 @@
 # Lorebook Entry Guidelines
 
-**Purpose**: Define how lorebook entries handle **dynamic entity state** extracted from summaries in ST-Auto-Lorebooks.
+**Purpose**: Define how lorebook entries handle **dynamic entity state** extracted from recaps in ST-Auto-Lorebooks.
 
 ## Core Concept: Dynamic Knowledge Extraction
 
-**ST-Auto-Lorebooks manages chat-specific lorebooks that store entity information extracted from summary JSON objects.**
+**ST-Auto-Lorebooks manages chat-specific lorebooks that store entity information extracted from recap JSON objects.**
 
 ### Knowledge Extraction Pipeline
 
 ```
 1. Message occurs in chat
    ↓
-2. ST-Auto-Summarize creates JSON summary with:
+2. ST-Auto-Recap creates JSON recap with:
    - narrative (what happened)
    - entities (discovered/updated entity data)
    - locations, NPCs, items, revelations
@@ -21,14 +21,14 @@
    - Updates existing entries with new info
    - Uses chat-specific auto-created lorebook
    ↓
-4. Future summaries reference entities by name only
+4. Future recaps reference entities by name only
    ↓
 5. Lorebook provides entity details when triggered
 ```
 
 ### Division of Responsibility
 
-**SUMMARIES (ST-Auto-Summarize):**
+**RECAPS (ST-Auto-Recap):**
 - What happened (events, actions)
 - How things changed (state changes, development)
 - When things occurred (temporal sequence)
@@ -36,17 +36,17 @@
 - **References to entities by name/key only**
 
 **LOREBOOKS (ST-Auto-Lorebooks):**
-- What entities exist (discovered through summaries)
-- Entity properties and attributes (extracted from summaries)
-- Current entity state (updated from summaries)
-- Entity relationships (extracted from summaries)
+- What entities exist (discovered through recaps)
+- Entity properties and attributes (extracted from recaps)
+- Current entity state (updated from recaps)
+- Entity relationships (extracted from recaps)
 - **Full entity details in PList format**
 
-## Entity Extraction from Summaries
+## Entity Extraction from Recaps
 
-### Summary JSON Structure
+### Recap JSON Structure
 
-**Summaries will be JSON objects with sections for extraction:**
+**Recaps will be JSON objects with sections for extraction:**
 
 ```json
 {
@@ -153,7 +153,7 @@ Position: 6, Depth: 5, Order: 400
 
 ### New Entity Discovery
 
-**When summary contains new entity:**
+**When recap contains new entity:**
 1. Extract entity data from JSON
 2. Convert to PList format
 3. Create lorebook entry with:
@@ -167,7 +167,7 @@ Position: 6, Depth: 5, Order: 400
 
 ### Existing Entity Updates
 
-**When summary contains updates for existing entity:**
+**When recap contains updates for existing entity:**
 1. Find existing lorebook entry by name
 2. Extract update properties from JSON
 3. Merge with existing properties:
@@ -304,19 +304,19 @@ Low Priority: 200-400
 
 ## Entry Auto-Management
 
-### Auto-Creation from Summaries
+### Auto-Creation from Recaps
 
 **ST-Auto-Lorebooks will automatically:**
-1. Monitor for new summaries with entity data
+1. Monitor for new recaps with entity data
 2. Extract entities from JSON structure
 3. Create new lorebook entries
 4. Use chat-specific auto-created lorebook
 5. Apply appropriate depth, order, and keys
 
-### Auto-Update from Summaries
+### Auto-Update from Recaps
 
 **ST-Auto-Lorebooks will automatically:**
-1. Detect entity updates in summaries
+1. Detect entity updates in recaps
 2. Find matching lorebook entries by name
 3. Merge new properties with existing
 4. Update lorebook entry content
@@ -329,7 +329,7 @@ Low Priority: 200-400
 - Mark entries as "manual" to prevent auto-updates
 - Delete auto-created entries
 - Adjust depth, order, keys manually
-- Add properties not captured by summaries
+- Add properties not captured by recaps
 
 ## Key Generation
 
@@ -446,11 +446,11 @@ Detailed Info (nonRecursable to prevent cascade):
 - Mention "dragon" → Category + dragon PList + dragon combat
 - Prevents all combat details from activating on category mention
 
-## Summary Integration
+## Recap Integration
 
-### Strategic Entity Mentions in Summaries
+### Strategic Entity Mentions in Recaps
 
-**Summaries mention entities at high level for context and lorebook triggering:**
+**Recaps mention entities at high level for context and lorebook triggering:**
 
 ```json
 {
@@ -496,7 +496,7 @@ Detailed Info (nonRecursable to prevent cascade):
 
 ### Character State Updates
 
-**Summaries can update character states:**
+**Recaps can update character states:**
 
 ```json
 {
@@ -526,7 +526,7 @@ Detailed Info (nonRecursable to prevent cascade):
 - Review auto-created entries for quality
 - Merge duplicate entities
 - Simplify over-detailed entries
-- Add manual properties missed by summaries
+- Add manual properties missed by recaps
 - Mark important entries to prevent auto-deletion
 
 ## Entry Lifecycle
@@ -534,7 +534,7 @@ Detailed Info (nonRecursable to prevent cascade):
 ### Creation Triggers
 
 **New entry created when:**
-1. Summary contains entity not in lorebook
+1. Recap contains entity not in lorebook
 2. Entity has sufficient properties (2+)
 3. Entity type is recognized
 4. Entity name is valid (not generic)
@@ -542,7 +542,7 @@ Detailed Info (nonRecursable to prevent cascade):
 ### Update Triggers
 
 **Existing entry updated when:**
-1. Summary contains updates for known entity
+1. Recap contains updates for known entity
 2. Updates add new properties or modify existing
 3. Entity not marked as "manual override"
 
@@ -592,7 +592,7 @@ Character Filter: "Alice" (Include)
 
 ## Best Practices
 
-1. **Auto-extract from summaries** - Let system create/update entries
+1. **Auto-extract from recaps** - Let system create/update entries
 2. **PList format exclusively** - Maximum efficiency
 3. **Depth-based positioning** - More reliable than fixed positions
 4. **System role for entries** - Authoritative world data
@@ -601,11 +601,11 @@ Character Filter: "Alice" (Include)
 7. **PList Base World for 50+ entities** - Prevents bracket leakage
 8. **Use recursion for hierarchies** - Scalable architecture
 9. **Track dynamic state** - Update entity state over time
-10. **Reference by name in summaries** - Keep summaries lean
+10. **Reference by name in recaps** - Keep recaps lean
 
 ## Common Pitfalls to Avoid
 
-❌ Duplicating entity info in summaries (use references only)
+❌ Duplicating entity info in recaps (use references only)
 ❌ Creating entries for generic/temporary entities
 ❌ Not merging duplicate entities
 ❌ Over-detailed entries (keep properties concise)
@@ -626,4 +626,4 @@ Character Filter: "Alice" (Include)
 
 ---
 
-**Remember**: Lorebooks store **dynamic entity state** extracted from summaries. Summaries reference entities by name, lorebooks provide the details. This creates token-efficient, scalable context delegation.
+**Remember**: Lorebooks store **dynamic entity state** extracted from recaps. Recaps reference entities by name, lorebooks provide the details. This creates token-efficient, scalable context delegation.

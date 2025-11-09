@@ -34,11 +34,11 @@ function initialize_message_buttons() {
   });
 }
 function initialize_group_member_buttons() {
-  // Insert a button into the group member selection to disable summarization
+  // Insert a button into the group member selection to disable recap generation
   debug("Initializing group member buttons");
 
   const $template = $(selectorsSillyTavern.group.memberTemplate).find(selectorsSillyTavern.group.memberIcon);
-  const $button = $(`<div title="Toggle summarization for memory" class="right_menu_button fa-solid fa-lg fa-brain ${group_member_enable_button}"></div>`);
+  const $button = $(`<div title="Toggle recap generation for memory" class="right_menu_button fa-solid fa-lg fa-brain ${group_member_enable_button}"></div>`);
 
   // add listeners
   $(document).on("click", `.${group_member_enable_button}`, (e) => {

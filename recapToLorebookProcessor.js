@@ -1,5 +1,5 @@
 
-// summaryToLorebookProcessor.js - Extract lorebook entries from summary JSON objects and process them
+// recapToLorebookProcessor.js - Extract lorebook entries from recap JSON objects and process them
 
 import { chat_metadata, saveMetadata } from '../../../../script.js';
 // Use wrapped version from our interceptor
@@ -19,7 +19,7 @@ import {
 import { SUBSYSTEM } from './index.js';
 
 import {
-  MAX_SUMMARY_ATTEMPTS,
+  MAX_RECAP_ATTEMPTS,
   ID_GENERATION_BASE,
   FULL_COMPLETION_PERCENTAGE,
   MIN_ENTITY_SECTIONS
@@ -37,7 +37,7 @@ const REGISTRY_PREFIX  = '_registry_';
 
 // Removed getSetting helper; no settings access needed here
 
-export function initSummaryToLorebookProcessor(utils , lorebookManagerModule , entryMergerModule , connectionSettingsManager , settingsManager ) {
+export function initRecapToLorebookProcessor(utils , lorebookManagerModule , entryMergerModule , connectionSettingsManager , settingsManager ) {
   // All parameters are any type - objects with various properties - legitimate use of any
   log = utils.log;
   debug = utils.debug;
@@ -60,13 +60,13 @@ export function initSummaryToLorebookProcessor(utils , lorebookManagerModule , e
   }
 
   // Import connection settings management
-  debug(SUBSYSTEM.LOREBOOK,'[summaryToLorebookProcessor INIT] connectionSettingsManager:', connectionSettingsManager);
-  debug(SUBSYSTEM.LOREBOOK,'[summaryToLorebookProcessor INIT] connectionSettingsManager keys:', Object.keys(connectionSettingsManager || {}));
+  debug(SUBSYSTEM.LOREBOOK,'[recapToLorebookProcessor INIT] connectionSettingsManager:', connectionSettingsManager);
+  debug(SUBSYSTEM.LOREBOOK,'[recapToLorebookProcessor INIT] connectionSettingsManager keys:', Object.keys(connectionSettingsManager || {}));
 
   if (connectionSettingsManager) {
     withConnectionSettings = connectionSettingsManager.withConnectionSettings;
-    debug(SUBSYSTEM.LOREBOOK,'[summaryToLorebookProcessor INIT] withConnectionSettings after assignment:', withConnectionSettings);
-    debug(SUBSYSTEM.LOREBOOK,'[summaryToLorebookProcessor INIT] typeof withConnectionSettings:', typeof withConnectionSettings);
+    debug(SUBSYSTEM.LOREBOOK,'[recapToLorebookProcessor INIT] withConnectionSettings after assignment:', withConnectionSettings);
+    debug(SUBSYSTEM.LOREBOOK,'[recapToLorebookProcessor INIT] typeof withConnectionSettings:', typeof withConnectionSettings);
 
     if (!withConnectionSettings || typeof withConnectionSettings !== 'function') {
       error?.('Failed to import withConnectionSettings from connectionSettingsManager', {
@@ -75,104 +75,104 @@ export function initSummaryToLorebookProcessor(utils , lorebookManagerModule , e
         withConnectionSettings: typeof withConnectionSettings
       });
     } else {
-      debug(SUBSYSTEM.LOREBOOK,'[summaryToLorebookProcessor INIT] ✓ Successfully imported withConnectionSettings');
-      debug?.('[summaryToLorebookProcessor] Successfully imported withConnectionSettings');
+      debug(SUBSYSTEM.LOREBOOK,'[recapToLorebookProcessor INIT] ✓ Successfully imported withConnectionSettings');
+      debug?.('[recapToLorebookProcessor] Successfully imported withConnectionSettings');
     }
   } else {
-    console.error('[summaryToLorebookProcessor INIT] connectionSettingsManager is undefined/null!');
+    console.error('[recapToLorebookProcessor INIT] connectionSettingsManager is undefined/null!');
   }
 }
 
-function getSummaryProcessingSetting(key , defaultValue  = null) {
+function getRecapProcessingSetting(key , defaultValue  = null) {
   try {
-    // ALL summary processing settings are per-profile
-    const settingKey = `auto_lorebooks_summary_${key}`;
+    // ALL recap processing settings are per-profile
+    const settingKey = `auto_lorebooks_recap_${key}`;
     return get_settings(settingKey) ?? defaultValue;
   } catch (err) {
-    error("Error getting summary processing setting", err);
+    error("Error getting recap processing setting", err);
     return defaultValue;
   }
 }
 
 // eslint-disable-next-line no-unused-vars -- Reserved for future use in UI settings
-function setSummaryProcessingSetting(key , value ) {
+function setRecapProcessingSetting(key , value ) {
   try {
-    // ALL summary processing settings are per-profile
-    const settingKey = `auto_lorebooks_summary_${key}`;
+    // ALL recap processing settings are per-profile
+    const settingKey = `auto_lorebooks_recap_${key}`;
     set_settings(settingKey, value);
   } catch (err) {
-    error("Error setting summary processing setting", err);
+    error("Error setting recap processing setting", err);
   }
 }
 
-function getProcessedSummaries() {
-  if (!chat_metadata.auto_lorebooks_processed_summaries) {
-    chat_metadata.auto_lorebooks_processed_summaries = [];
+function getProcessedRecaps() {
+  if (!chat_metadata.auto_lorebooks_processed_recaps) {
+    chat_metadata.auto_lorebooks_processed_recaps = [];
   }
-  return new Set(chat_metadata.auto_lorebooks_processed_summaries);
+  return new Set(chat_metadata.auto_lorebooks_processed_recaps);
 }
 
-function markSummaryProcessed(summaryId ) {
-  const processed = getProcessedSummaries();
-  processed.add(summaryId);
-  chat_metadata.auto_lorebooks_processed_summaries = Array.from(processed);
+function markRecapProcessed(recapId ) {
+  const processed = getProcessedRecaps();
+  processed.add(recapId);
+  chat_metadata.auto_lorebooks_processed_recaps = Array.from(processed);
   saveMetadata();
-  debug(`Marked summary as processed: ${summaryId}`);
+  debug(`Marked recap as processed: ${recapId}`);
 }
 
-function isSummaryProcessed(summaryId ) {
-  return getProcessedSummaries().has(summaryId);
+function isRecapProcessed(recapId ) {
+  return getProcessedRecaps().has(recapId);
 }
 
-function generateSummaryId(summary ) {
+function generateRecapId(recap ) {
   // Use timestamp + content hash as ID
-  const timestamp = summary.timestamp || Date.now();
-  const content = JSON.stringify(summary.lorebook || summary);
+  const timestamp = recap.timestamp || Date.now();
+  const content = JSON.stringify(recap.lorebook || recap);
   const hash = simpleHash(content);
-  return `summary_${timestamp}_${hash}`;
+  return `recap_${timestamp}_${hash}`;
 }
 
 function simpleHash(str ) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = (hash << MAX_SUMMARY_ATTEMPTS) - hash + char;
+    hash = (hash << MAX_RECAP_ATTEMPTS) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
   return Math.abs(hash).toString(ID_GENERATION_BASE);
 }
 
-function extractLorebookData(summary ) {
+function extractLorebookData(recap ) {
   try {
-    // Check if summary has a lorebooks array (plural - standard format)
-    if (summary.lorebooks && Array.isArray(summary.lorebooks)) {
-      debug('Found lorebooks array in summary');
-      return { entries: summary.lorebooks };
+    // Check if recap has a lorebooks array (plural - standard format)
+    if (recap.lorebooks && Array.isArray(recap.lorebooks)) {
+      debug('Found lorebooks array in recap');
+      return { entries: recap.lorebooks };
     }
 
-    // Check if summary has a lorebook property (singular - legacy format)
-    if (summary.lorebook) {
-      debug('Found lorebook property in summary');
-      return summary.lorebook;
+    // Check if recap has a lorebook property (singular - legacy format)
+    if (recap.lorebook) {
+      debug('Found lorebook property in recap');
+      return recap.lorebook;
     }
 
-    // Check if summary has entries array directly
-    if (summary.entries && Array.isArray(summary.entries)) {
-      debug('Found entries array in summary');
-      return { entries: summary.entries };
+    // Check if recap has entries array directly
+    if (recap.entries && Array.isArray(recap.entries)) {
+      debug('Found entries array in recap');
+      return { entries: recap.entries };
     }
 
-    // Check if the entire summary is lorebook data
-    if (summary.comment || summary.content || summary.keys) {
-      debug('Summary appears to be a single entry');
-      return { entries: [summary] };
+    // Check if the entire recap is lorebook data
+    if (recap.comment || recap.content || recap.keys) {
+      debug('Recap appears to be a single entry');
+      return { entries: [recap] };
     }
 
-    debug('No lorebook data found in summary');
+    debug('No lorebook data found in recap');
     return null;
 
   } catch (err) {
-    error('Error extracting lorebook data from summary', err);
+    error('Error extracting lorebook data from recap', err);
     return null;
   }
 }
@@ -228,7 +228,7 @@ export function normalizeEntryData(entry ) {
   };
 }
 
-// Standalone keyword generation has been removed; entries must provide keywords in the summary JSON.
+// Standalone keyword generation has been removed; entries must provide keywords in the recap JSON.
 
 function isRegistryEntry(entry ) {
   const comment = entry?.comment;
@@ -410,7 +410,7 @@ async function runModelWithSettings(config) {
           debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] include_preset_prompts:', include_preset_prompts);
           debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] completionPreset (param):', completionPreset);
 
-          // If preset_name is empty, use the currently active preset (like summarization.js does)
+          // If preset_name is empty, use the currently active preset (like recapping.js does)
           const { get_current_preset } = await import('./index.js');
           const effectivePresetName = completionPreset || (include_preset_prompts ? get_current_preset() : '');
 
@@ -886,36 +886,36 @@ async function handleLorebookEntry(normalizedEntry , ctx ) {
   await executeCreateWorkflow(normalizedEntry, targetType, finalSynopsis, ctx);
 }
 
-function initializeSummaryProcessing(summary , options ) {
+function initializeRecapProcessing(recap , options ) {
   const { useQueue = true, skipDuplicates = true } = options;
   const entityTypeDefs = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
   const entityTypeMap = createEntityTypeMap(entityTypeDefs);
-  const summaryId = generateSummaryId(summary);
+  const recapId = generateRecapId(recap);
 
-  return { useQueue, skipDuplicates, summaryId, entityTypeDefs, entityTypeMap };
+  return { useQueue, skipDuplicates, recapId, entityTypeDefs, entityTypeMap };
 }
 
-function shouldSkipDuplicate(summaryId , skipDuplicates ) {
-  if (skipDuplicates && isSummaryProcessed(summaryId)) {
-    debug(`Summary already processed: ${summaryId}`);
+function shouldSkipDuplicate(recapId , skipDuplicates ) {
+  if (skipDuplicates && isRecapProcessed(recapId)) {
+    debug(`Recap already processed: ${recapId}`);
     return true;
   }
   return false;
 }
 
-function extractAndValidateEntities(summary ) {
-  const lorebookData = extractLorebookData(summary);
+function extractAndValidateEntities(recap ) {
+  const lorebookData = extractLorebookData(recap);
   if (!lorebookData || !lorebookData.entries) {
-    debug('No lorebook entries found in summary');
+    debug('No lorebook entries found in recap');
     return { valid: false, error: 'No lorebook data found' };
   }
   return { valid: true, entries: lorebookData.entries };
 }
 
-async function loadSummaryContext(config ) {
+async function loadRecapContext(config ) {
   const lorebookName = getAttachedLorebook();
   if (!lorebookName) {
-    error('No lorebook attached to process summary');
+    error('No lorebook attached to process recap');
     return { error: 'No lorebook attached' };
   }
 
@@ -935,37 +935,37 @@ async function loadSummaryContext(config ) {
 
   const registryState = ensureRegistryState();
 
-  // Build summarySettings from per-profile settings
-  const summarySettings = {
-    merge_connection_profile: getSummaryProcessingSetting('merge_connection_profile', ''),
-    merge_completion_preset: getSummaryProcessingSetting('merge_completion_preset', ''),
-    merge_prefill: getSummaryProcessingSetting('merge_prefill', ''),
-    merge_prompt: getSummaryProcessingSetting('merge_prompt', ''),
-    lorebook_entry_lookup_connection_profile: getSummaryProcessingSetting('lorebook_entry_lookup_connection_profile', ''),
-    lorebook_entry_lookup_completion_preset: getSummaryProcessingSetting('lorebook_entry_lookup_completion_preset', ''),
-    lorebook_entry_lookup_prefill: getSummaryProcessingSetting('lorebook_entry_lookup_prefill', ''),
-    lorebook_entry_lookup_prompt: getSummaryProcessingSetting('lorebook_entry_lookup_prompt', ''),
-    lorebook_entry_deduplicate_connection_profile: getSummaryProcessingSetting('lorebook_entry_deduplicate_connection_profile', ''),
-    lorebook_entry_deduplicate_completion_preset: getSummaryProcessingSetting('lorebook_entry_deduplicate_completion_preset', ''),
-    lorebook_entry_deduplicate_prefill: getSummaryProcessingSetting('lorebook_entry_deduplicate_prefill', ''),
-    lorebook_entry_deduplicate_prompt: getSummaryProcessingSetting('lorebook_entry_deduplicate_prompt', ''),
-    skip_duplicates: getSummaryProcessingSetting('skip_duplicates', true),
-    enabled: getSummaryProcessingSetting('enabled', false)
+  // Build recapSettings from per-profile settings
+  const recapSettings = {
+    merge_connection_profile: getRecapProcessingSetting('merge_connection_profile', ''),
+    merge_completion_preset: getRecapProcessingSetting('merge_completion_preset', ''),
+    merge_prefill: getRecapProcessingSetting('merge_prefill', ''),
+    merge_prompt: getRecapProcessingSetting('merge_prompt', ''),
+    lorebook_entry_lookup_connection_profile: getRecapProcessingSetting('lorebook_entry_lookup_connection_profile', ''),
+    lorebook_entry_lookup_completion_preset: getRecapProcessingSetting('lorebook_entry_lookup_completion_preset', ''),
+    lorebook_entry_lookup_prefill: getRecapProcessingSetting('lorebook_entry_lookup_prefill', ''),
+    lorebook_entry_lookup_prompt: getRecapProcessingSetting('lorebook_entry_lookup_prompt', ''),
+    lorebook_entry_deduplicate_connection_profile: getRecapProcessingSetting('lorebook_entry_deduplicate_connection_profile', ''),
+    lorebook_entry_deduplicate_completion_preset: getRecapProcessingSetting('lorebook_entry_deduplicate_completion_preset', ''),
+    lorebook_entry_deduplicate_prefill: getRecapProcessingSetting('lorebook_entry_deduplicate_prefill', ''),
+    lorebook_entry_deduplicate_prompt: getRecapProcessingSetting('lorebook_entry_deduplicate_prompt', ''),
+    skip_duplicates: getRecapProcessingSetting('skip_duplicates', true),
+    enabled: getRecapProcessingSetting('enabled', false)
   };
 
   const typeList = config.entityTypeDefs.map((def) => def.name).filter(Boolean).join('|') || 'character';
 
   // Validate critical settings are loaded
-  if (!summarySettings.lorebook_entry_lookup_prompt) {
+  if (!recapSettings.lorebook_entry_lookup_prompt) {
     error('CRITICAL: Auto-Lorebooks lorebook_entry_lookup_prompt not found in profile settings');
-    error('Lorebook Entry Lookup prompt type:', typeof summarySettings.lorebook_entry_lookup_prompt);
-    error('Lorebook Entry Lookup prompt length:', summarySettings.lorebook_entry_lookup_prompt?.length || 0);
+    error('Lorebook Entry Lookup prompt type:', typeof recapSettings.lorebook_entry_lookup_prompt);
+    error('Lorebook Entry Lookup prompt length:', recapSettings.lorebook_entry_lookup_prompt?.length || 0);
     toast('Auto-Lorebooks: Critical configuration error - lorebook entry lookup prompt not loaded! Check browser console for details.', 'error');
   }
-  if (!summarySettings.lorebook_entry_deduplicate_prompt) {
+  if (!recapSettings.lorebook_entry_deduplicate_prompt) {
     error('CRITICAL: Auto-Lorebooks lorebook_entry_deduplicate_prompt not found in profile settings');
-    error('LorebookEntryDeduplicate prompt type:', typeof summarySettings.lorebook_entry_deduplicate_prompt);
-    error('LorebookEntryDeduplicate prompt length:', summarySettings.lorebook_entry_deduplicate_prompt?.length || 0);
+    error('LorebookEntryDeduplicate prompt type:', typeof recapSettings.lorebook_entry_deduplicate_prompt);
+    error('LorebookEntryDeduplicate prompt length:', recapSettings.lorebook_entry_deduplicate_prompt?.length || 0);
     toast('Auto-Lorebooks: Critical configuration error - lorebook entry deduplicate prompt not loaded! Check browser console for details.', 'error');
   }
 
@@ -974,7 +974,7 @@ async function loadSummaryContext(config ) {
     existingEntries,
     existingEntriesMap,
     registryState,
-    summarySettings,
+    recapSettings,
     typeList
   };
 }
@@ -992,12 +992,12 @@ async function processBatchEntries(entries , context , config ) {
   }
 }
 
-async function finalizeSummaryProcessing(context , summaryId ) {
+async function finalizeRecapProcessing(context , recapId ) {
   await finalizeRegistryUpdates(context);
-  markSummaryProcessed(summaryId);
+  markRecapProcessed(recapId);
 }
 
-function buildSummaryResult(results , totalEntries ) {
+function buildRecapResult(results , totalEntries ) {
   const message = `Processed ${totalEntries} entries: ${results.created.length} created, ${results.merged.length} merged, ${results.failed.length} failed`;
   log(message);
 
@@ -1010,24 +1010,24 @@ function buildSummaryResult(results , totalEntries ) {
   return { success: true, results, message };
 }
 
-export async function processSummaryToLorebook(summary , options  = {}) {
+export async function processRecapToLorebook(recap , options  = {}) {
   try {
     // Initialize configuration
-    const config = initializeSummaryProcessing(summary, options);
+    const config = initializeRecapProcessing(recap, options);
 
     // Check for duplicate
-    if (shouldSkipDuplicate(config.summaryId, config.skipDuplicates)) {
+    if (shouldSkipDuplicate(config.recapId, config.skipDuplicates)) {
       return { success: true, skipped: true, message: 'Already processed' };
     }
 
     // Extract and validate entities
-    const extraction = extractAndValidateEntities(summary);
+    const extraction = extractAndValidateEntities(recap);
     if (!extraction.valid) {
       return { success: false, message: extraction.error };
     }
 
     // Load processing context
-    const ctx = await loadSummaryContext(config);
+    const ctx = await loadRecapContext(config);
     if (ctx.error) {
       return { success: false, message: ctx.error };
     }
@@ -1042,7 +1042,7 @@ export async function processSummaryToLorebook(summary , options  = {}) {
       registryState: ctx.registryState,
       entityTypeDefs: config.entityTypeDefs,
       entityTypeMap: config.entityTypeMap,
-      settings: ctx.summarySettings,
+      settings: ctx.recapSettings,
       useQueue: config.useQueue,
       results,
       typesToUpdate,
@@ -1054,13 +1054,13 @@ export async function processSummaryToLorebook(summary , options  = {}) {
     await processBatchEntries(extraction.entries, context, config);
 
     // Finalize
-    await finalizeSummaryProcessing(context, config.summaryId);
+    await finalizeRecapProcessing(context, config.recapId);
 
     // Build result
-    return buildSummaryResult(results, extraction.entries.length);
+    return buildRecapResult(results, extraction.entries.length);
 
   } catch (err) {
-    error('Error processing summary to lorebook', err);
+    error('Error processing recap to lorebook', err);
     return {
       success: false,
       message: err.message
@@ -1085,16 +1085,16 @@ async function finalizeRegistryUpdates(context ) {
   }
 }
 
-export async function processSummariesToLorebook(summaries , options  = {}) {
+export async function processRecapsToLorebook(recaps , options  = {}) {
   try {
-    if (!Array.isArray(summaries) || summaries.length === 0) {
+    if (!Array.isArray(recaps) || recaps.length === 0) {
       return {
         success: false,
-        message: 'No summaries provided'
+        message: 'No recaps provided'
       };
     }
 
-    log(`Processing ${summaries.length} summaries to lorebook...`);
+    log(`Processing ${recaps.length} recaps to lorebook...`);
 
     const allResults = {
       processed: 0,
@@ -1104,10 +1104,10 @@ export async function processSummariesToLorebook(summaries , options  = {}) {
       failed: []
     };
 
-    for (const summary of summaries) {
-      // Sequential execution required: summaries must be processed in order
-      // eslint-disable-next-line no-await-in-loop -- Summaries must be processed sequentially to maintain message order
-      const result = await processSummaryToLorebook(summary, options);
+    for (const recap of recaps) {
+      // Sequential execution required: recaps must be processed in order
+      // eslint-disable-next-line no-await-in-loop -- Recaps must be processed sequentially to maintain message order
+      const result = await processRecapToLorebook(recap, options);
 
       if (result.skipped) {
         allResults.skipped++;
@@ -1121,7 +1121,7 @@ export async function processSummariesToLorebook(summaries , options  = {}) {
       }
     }
 
-    const message = `Processed ${allResults.processed} summaries (${allResults.skipped} skipped): ${allResults.created.length} created, ${allResults.merged.length} merged, ${allResults.failed.length} failed`;
+    const message = `Processed ${allResults.processed} recaps (${allResults.skipped} skipped): ${allResults.created.length} created, ${allResults.merged.length} merged, ${allResults.failed.length} failed`;
     log(message);
     toast(message, 'info');
 
@@ -1132,7 +1132,7 @@ export async function processSummariesToLorebook(summaries , options  = {}) {
     };
 
   } catch (err) {
-    error('Error processing summaries to lorebook', err);
+    error('Error processing recaps to lorebook', err);
     return {
       success: false,
       message: err.message
@@ -1140,17 +1140,17 @@ export async function processSummariesToLorebook(summaries , options  = {}) {
   }
 }
 
-export function clearProcessedSummaries() {
-  chat_metadata.auto_lorebooks_processed_summaries = [];
+export function clearProcessedRecaps() {
+  chat_metadata.auto_lorebooks_processed_recaps = [];
   saveMetadata();
-  log('Cleared processed summaries tracker');
-  toast('Cleared processed summaries tracker', 'info');
+  log('Cleared processed recaps tracker');
+  toast('Cleared processed recaps tracker', 'info');
 }
 
 export default {
-  initSummaryToLorebookProcessor,
-  processSummaryToLorebook,
-  processSummariesToLorebook,
-  clearProcessedSummaries,
-  isSummaryProcessed
+  initRecapToLorebookProcessor,
+  processRecapToLorebook,
+  processRecapsToLorebook,
+  clearProcessedRecaps,
+  isRecapProcessed
 };

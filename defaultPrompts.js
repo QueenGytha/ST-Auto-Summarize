@@ -1,13 +1,34 @@
 
-// ST-Auto-Summarize Default Prompts
+// ST-Auto-Recap Default Prompts
 // Structure: recap (events + tone) + lorebooks (detailed entries)
-// See docs/SUMMARY_LOREBOOK_SEPARATION.md for full documentation
+// See docs/Recap_LOREBOOK_SEPARATION.md for full documentation
 
 export const default_prompt = `You are a structured data extraction system analyzing roleplay transcripts.
 Your task is to extract message information into JSON format according to the specifications below.
 You are NOT participating in the roleplay. You are analyzing completed roleplay text.
-//
-// ⚠️ CRITICAL: ONLY USE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️
+
+MANDATORY OUTPUT FORMAT:
+Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
+
+Required format (copy this structure exactly):
+{
+  "recap": "Your scene recap here (or empty string if nothing happened)",
+  "lorebooks": [
+    {
+      "type": "character",
+      "name": "Entity Name",
+      "content": "Description",
+      "keywords": ["keyword1", "keyword2"]
+    }
+  ]
+}
+
+Example valid response:
+{"recap": "Adam approached Haven's eastern gate with Senta following. Guards challenged them.", "lorebooks": [{"type": "location", "name": "Haven Eastern Gate", "content": "Main entrance to Haven city, heavily guarded", "keywords": ["haven", "gate", "eastern gate"]}]}
+
+CRITICAL: Ensure your response begins with the opening curly brace { character
+
+⚠️ CRITICAL: ONLY USE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️
 //
 // - ONLY extract information explicitly written in the message text below
 // - DO NOT use ANY information from your training data
@@ -18,7 +39,7 @@ You are NOT participating in the roleplay. You are analyzing completed roleplay 
 //
 // CRITICAL: SEPARATION OF CONCERNS
 //
-// RECAP (summary string):
+// RECAP (recap string):
 // - Use markdown headers and bullets in this order:
 //   ## Current Situation
 //   ## Key Developments
@@ -27,6 +48,7 @@ You are NOT participating in the roleplay. You are analyzing completed roleplay 
 //   ## Pending Threads
 // - One fact per bullet; be specific (names, items, places).
 // - Focus on outcomes and current state; avoid blow-by-blow narration.
+// - JSON safety: Escape all internal double quotes in values as \". Do not output any preamble or commentary.
 //
 // LOREBOOKS array:
 // - New entities or durable updates only (characters, locations, items, factions, quests, rules)
@@ -41,20 +63,22 @@ You are NOT participating in the roleplay. You are analyzing completed roleplay 
 // - Attributes: <traits/capabilities>
 // - Relationships: <X ↔ Y with stance + micro-cues>
 // - State: <status/location/owner>
+// - Access: <who/how can use without owning> (optional)
 // - Secrets/Leverage: <what/who knows>
 // - Tension/Triggers: <what escalates/defuses>
 // - Style Notes: <voice/tone anchors>
+// IMPORTANT: Use only the bullets that are relevant for the entity and scene. It is correct to omit bullets that do not apply. Do not invent entities (e.g., factions, rules) or filler to match templates.
 //
 // OUTPUT JSON SHAPE:
 // {
-//   "summary": "markdown recap string",
+//   "recap": "markdown recap string",
 //   "lorebooks": [
 //     {
 //       "name": "Entity Name",
 //       "type": "{{lorebook_entry_types}}",
 //       "keywords": ["keyword1", "keyword2"],
 //       "secondaryKeys": ["and-term"],
-//       "content": "- Identity: <Type> — <Canonical Name>\n- Synopsis: <1 line>\n- Attributes: <bullets>\n- Relationships: <bullets with specific names>\n- State: <status/location/owner>\n- Secrets/Leverage: <who knows>\n- Tension/Triggers: <micro cues>\n- Style Notes: <voice/tone anchors>"
+//       "content": "- Identity: <Type> — <Canonical Name>\n- Synopsis: <1 line>\n- Attributes: <bullets>\n- Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>\n- State: <current status/location/owner/ongoing effects with scene/time anchors when present>\n- Secrets/Leverage: <who knows>\n- Tension/Triggers: <micro cues>\n- Style Notes: <voice/tone anchors>"
 //     }
 //   ]
 // }
@@ -71,6 +95,7 @@ You are NOT participating in the roleplay. You are analyzing completed roleplay 
 // - No hard limit: include as many meaningful triggers as needed; all lowercase
 // - Prioritize canonical name, real aliases/nicknames, and distinctive identifiers likely to appear
 // - Use SIMPLE tokens that actually occur in chat (exact match required); avoid padding or redundant variants
+// - Include language variants or transliterations only when they appear in chat or are explicitly stated
 // - Avoid generic terms (e.g., "place", "city", "market", "warrior") and verbs; multi-word phrases only if consistently used together
 // - If a keyword is broad, use secondaryKeys for AND disambiguation
 // - Do NOT output regex patterns
@@ -93,7 +118,7 @@ You are NOT participating in the roleplay. You are analyzing completed roleplay 
 // EXAMPLES OF GOOD SEPARATION (bullet style):
 //
 // Example 1: Combat Scene
-// ✅ SUMMARY (Key Developments):
+// ✅ RECAP (Key Developments):
 // - Bandits ambushed Alice and Bob
 // - Alice killed two with a greatsword; Bob disabled one with a throwing knife; two fled
 // - Alice wounded in shoulder but mobile
@@ -103,48 +128,71 @@ You are NOT participating in the roleplay. You are analyzing completed roleplay 
 // - State: Shoulder wound
 //
 // Example 2: Discovery
-// ✅ SUMMARY (Key Developments):
+// ✅ RECAP (Key Developments):
 // - Found hidden chamber behind waterfall; ancient murals depicted the First War
 // ✅ LOREBOOK (Hidden Chamber):
 // - Identity: Location — Hidden Chamber
 // - Attributes: Stone walls; ancient murals (First War)
 // - State: Undisturbed for centuries; behind a waterfall
-//
-// OUTPUT FORMAT:
-// - Output ONLY valid JSON, no text before or after
-// - Summary is required (empty string if truly nothing happened)
-// - Lorebooks array is optional (can be empty: [])
-//
-// Output template:
-{
-  "summary": "",
-  "lorebooks": []
-}
+
+// REMINDER: Output must be valid JSON starting with { character. Recap is REQUIRED. Lorebooks array is OPTIONAL (can be empty: []).
 
 // Message Content:
 {{message}}`;
 
 
-export const scene_summary_prompt = `You are a structured data extraction system analyzing roleplay transcripts.
+export const scene_recap_prompt = `You are a structured data extraction system analyzing roleplay transcripts.
 Your task is to extract scene information into JSON according to the specifications below.
 You are NOT participating in the roleplay. You are analyzing completed roleplay text.
+
+MANDATORY OUTPUT FORMAT:
+Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
+
+Required format (copy this structure exactly):
+{
+  "recap": "Your scene recap here (or empty string if nothing happened)",
+  "lorebooks": [
+    {
+      "type": "character",
+      "name": "Entity Name",
+      "content": "Description",
+      "keywords": ["keyword1", "keyword2"]
+    }
+  ]
+}
+
+Example valid response:
+{"recap": "The party explored the ancient temple ruins. They discovered a hidden chamber containing murals depicting the First War.", "lorebooks": [{"type": "location", "name": "Hidden Chamber", "content": "Stone chamber behind waterfall with ancient First War murals, undisturbed for centuries", "keywords": ["hidden chamber", "chamber", "murals", "waterfall"]}]}
+
+CRITICAL: Ensure your response begins with the opening curly brace { character
+
+⚠️ CRITICAL: USE ONLY THE SCENE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️
+- If the scene does not state a fact, it does not exist
+- Do not invent motives beyond the text
+- Franchise names: ignore canon outside this transcript
 //
-// ⚠️ CRITICAL: USE ONLY THE SCENE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️
-// - If the scene does not state a fact, it does not exist
-// - Do not invent motives beyond the text
-// - Franchise names: ignore canon outside this transcript
-//
-// RECAP (summary string):
+// recap field (string):
 // Use markdown headers and bullets in this exact order:
 //   ## Current Situation   -> Where the scene ends; who is present; unresolved stakes
+//                           Include explicit time and location only if stated (e.g., "dawn", "later that night", a named place).
 //   ## Key Developments    -> One bullet per significant change/outcome in this scene
-//   ## Dialogue Highlights  -> Exact short quotes/paraphrases that set canon (promises, threats, reveals)
+//                           Optional category tag at start of bullet to aid scanning: [reveal], [decision], [travel], [combat], [transfer], [relationship], [plan], [discovery], [state]. Use at most one tag per bullet and only when it adds clarity.
+//   ## Dialogue Highlights  -> Exact short quotes/paraphrases that set canon
+//                           Include only: promises, threats, vows/oaths, explicit plans, naming/revelations, permissions/boundaries, agreements, or coded signals likely to recur.
+//                           Quote hygiene: ≤ 12 words; When multiple speakers and attribution is ambiguous in merge context, tag speaker: Name: "quote".
+//                           JSON safety: Escape all internal double quotes in values as \" (e.g., Rolan: \"Trust your instincts, Sister.\"). Do not use unescaped double quotes inside JSON strings.
 //   ## Tone & Style        -> Words/phrases that capture the vibe and voice to preserve
 //   ## Pending Threads      -> Goals, deadlines, secrets, obligations that carry forward
 // Rules:
 // - One fact per bullet; be specific (names, items, places).
 // - Do not narrate blow-by-blow; focus on durable outcomes.
 // - Avoid describing traits/backstory here—put those in lorebooks.
+// - When relationship dynamics between named entities shift, include a compact dynamic snapshot in Key Developments (tone, interaction patterns, salient past interactions). Evidence style: add EITHER a short quote (≤ 12 words) OR an explicit cue (e.g., "averts gaze"), not both. Avoid numeric scoring (no "+1 suspicion").
+// - Explicit uncertainty: When the text states uncertainty, capture it using prefixes like "Likely:" or "Uncertain:", but never invent or upgrade uncertainty to fact.
+// - Pending Threads should be actionable: verb+noun+anchor when present (e.g., "Retrieve Sunblade (before dawn)", "Meet Clara (east gate, first light)").
+// - All sections MUST be present; if a section has no content, include a single line with "—".
+// - Final check before responding: durable outcomes covered; only canon-binding quotes included; Tone & Style tokens match current vibe; dynamic snapshots updated if relationships shifted.
+// - Coherence note: If a new or updated lorebook entity is introduced, reference it by name once in recap (Current Situation or Key Developments) so context remains coherent.
 //
 // LOREBOOKS (array):
 // - Only include if this scene adds durable knowledge about an entity.
@@ -155,20 +203,116 @@ You are NOT participating in the roleplay. You are analyzing completed roleplay 
 //   - Synopsis: <1 line identity/purpose>
 //   - Attributes: <appearance/traits/capabilities>
 //   - Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>
-//   - State: <status/location/owner/ongoing effects>
+//   - State: <current status/location/owner/ongoing effects with scene/time anchors when present>
 //   - Secrets/Leverage: <what/who knows>
 //   - Tension/Triggers: <what escalates/defuses; quotes if needed>
 //   - Style Notes: <voice ticks or phrasing anchors>
 // - Use specific names (not pronouns) for all references; avoid numeric scoring (no "+1 suspicion").
 // - Add only new/changed facts; omit if unsure.
 // - Keywords: include as many meaningful triggers as needed (lowercase). Prefer canonical name, real aliases/nicknames, and distinctive identifiers; avoid generic terms. Use secondaryKeys for AND disambiguation when a token is broad.
-//
-// Output ONLY valid JSON, no text before or after.
+// - Optional: Aliases (only when truly needed; prefer keywords for indexing).
+// - Items: When relevant, include "Provenance" (origin/lineage) and "Owner change" (transfer moments); ensure State reflects current owner.
+// - Locations with subareas:
+//   * If a location is a sub‑area of a named parent (e.g., Cloudsdale → Rainbow Dash's Cloud House; Ponyville → Twilight's Library),
+//     set the entry name to "Parent-Subarea" and the Identity bullet to "Location — Parent-Subarea".
+//   * If there are multiple levels (e.g., Ponyville → Twilight's Library → Spike's Room), chain with hyphens: "Ponyville-Twilight's Library-Spike's Room".
+//     Identity: "Location — Ponyville-Twilight's Library-Spike's Room".
+//   * Include a parent link bullet referencing the immediate parent (e.g., "Located in: Twilight's Library"). Optionally include a top‑level link (e.g., "Located in: Ponyville").
+//   * Include both parent and subarea tokens in keywords (and top‑level when it appears in chat).
+//   * Chain normalization: use a single hyphen only as the chain separator; preserve internal punctuation within names; avoid double hyphens.
 
-{
-  "summary": "",
-  "lorebooks": []
-}
+// ENTITY SUBTYPE TEMPLATES (optional, use when relevant)
+// ✅ Quest Template
+// - Identity: Quest — <Name>
+// - Synopsis: <1 line>
+// - Participants: <names>
+// - Objectives: <1..n>
+// - Progress: <latest step>
+// - Deadline/Timer: <when stated>
+// - Stakes: <consequences>
+// - Status: <planned|in‑progress|completed|failed>
+// - Next Step: <concrete action if present>
+//
+// ✅ Faction Template
+// - Identity: Faction — <Name>
+// - Synopsis: <1 line purpose>
+// - Attributes: <traits/capabilities>
+// - Relations: <standing vs other factions>
+// - Members: <notable names>
+// - State: <current influence/territory/leader>
+// - Tension/Triggers: <what escalates/defuses>
+//
+// ✅ Rule Template (world rules/magic/mechanics)
+// - Identity: Rule — <Name>
+// - Synopsis: <what it governs>
+// - How It Works: <core mechanics>
+// - Exceptions/Limits: <edge cases, failures>
+// - State: <where/when it applies>
+// - Style Notes: <terminology/jargon if relevant>
+
+// EXAMPLES: Subtype Entries (compact)
+// ✅ Quest — Find the Sunblade
+// - Identity: Quest — Find the Sunblade
+// - Synopsis: Recover the Sunblade stolen from the Eastern Ruins
+// - Participants: {{user}}, Alice
+// - Objectives: track thief; locate Darkwood camp; retrieve blade
+// - Progress: learned Scarface’s gang hit caravans; map obtained
+// - Deadline/Timer: none stated
+// - Stakes: darkness spreads; rival factions gain leverage
+// - Status: in‑progress
+// - Next Step: scout Darkwood approach at dusk
+
+// ✅ Faction — Dragon Hunters Guild
+// - Identity: Faction — Dragon Hunters Guild
+// - Synopsis: Guild dedicated to hunting rogue dragons
+// - Attributes: well‑equipped; bounties; capital base
+// - Relations: tense vs Shadow Guild; cooperative with town guard
+// - Members: Guild Master Gareth; {{user}}
+// - State: influence strong near capital; patrols active
+// - Tension/Triggers: escalates if dragons threaten caravans
+
+// ✅ Rule — Weather Magic
+// - Identity: Rule — Weather Magic
+// - Synopsis: Pegasi manipulate weather through trained magic
+// - How It Works: channel vents; seed clouds; disperse storms
+// - Exceptions/Limits: fails in crystal caverns; reduced in anti‑magic fields
+// - State: taught in Cloudsdale weather factory; licensed teams
+// - Style Notes: operational jargon; timing calls (“push; hold; release”)
+
+// ✅ Item — Sunblade (Provenance / Transfer)
+// - Identity: Item — Sunblade
+// - Synopsis: Legendary radiant sword
+// - Attributes: golden blade; glows in sunlight; banishes darkness
+// - Provenance: Eastern Ruins temple vault; custodianship by Alice’s family
+// - Owner change: to {{user}} (after vault theft)
+// - State: current owner — {{user}}; sought by multiple factions
+// - Tension/Triggers: dangerous leverage if revealed
+
+// RELATIONSHIP STORAGE
+// - Store relationship snapshots under the most relevant entity; do not mirror everywhere unless independently useful. Avoid duplicate edits across entries.
+//
+// UNNAMED SUBLOCATIONS
+// - If referenced but unnamed (e.g., "alley in Old Town"), allow a canonical like "Old Town-Unnamed Alley" and include Attributes that uniquely identify it.
+
+// EXAMPLES: Location Hierarchies (content bullets)
+// ✅ Cloudsdale-Rainbow Dash's Cloud House
+// - Identity: Location — Cloudsdale-Rainbow Dash's Cloud House
+// - Located in: Cloudsdale
+// - Attributes: cloud architecture; personal residence; guest access by invite
+// - Style Notes: airy, minimal furnishings
+//
+// ✅ Ponyville-Twilight's Library-Spike's Room
+// - Identity: Location — Ponyville-Twilight's Library-Spike's Room
+// - Located in: Twilight's Library
+// - Part of: Ponyville
+// - Attributes: small loft; dragon‑sized bed; comic stack
+//
+// ✅ Old Town-Unnamed Alley
+// - Identity: Location — Old Town-Unnamed Alley
+// - Located in: Old Town
+// - Attributes: narrow; brick walls; puddles; dim lamplight
+
+// REMINDER: Output must be valid JSON starting with { character. "recap" is REQUIRED. "lorebooks" is OPTIONAL (can be empty: []).
 
 // Scene Content (oldest to newest):
 {{scene_messages}}`;
@@ -194,53 +338,81 @@ export const default_scene_template = `<!--Roleplay memory containing current st
 The information below takes priority over character and setting definitions. -->
 
 <roleplay_memory format="json">
-{{scene_summaries}}
+{{scene_recaps}}
 </roleplay_memory>`;
 
 
 // Validation prompts check format and structure
-export const message_summary_error_detection_prompt = `You are validating a roleplay memory extraction for proper format.
+export const message_recap_error_detection_prompt = `You are validating a roleplay memory extraction for proper format.
 
 Check that the JSON meets these criteria:
 1. Valid JSON structure.
-2. Has a "summary" field (string) with headers in this order: "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Tone & Style", "## Pending Threads".
-3. Each section uses bullet lines ("- ") with observable facts; no blow-by-blow narration.
+2. Has a "recap" field (string) with headers in this order: "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Tone & Style", "## Pending Threads".
+3. Each section uses bullet lines ("- ") with observable facts; Key Developments bullets may optionally start with a category tag in square brackets (e.g., [reveal]); no blow-by-blow narration.
 4. Has a "lorebooks" field (array, may be empty).
 5. Each lorebook entry includes "name", "type", "keywords" (array), and "content" as bullet points.
 6. Lorebook content begins with an identity bullet like "- Identity: <Type> — <Canonical Name>" and avoids pronouns for references.
-7. Recap focuses on events + overall tone; detailed nuance and relationships live in lorebooks.
+7. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
+8. Recap focuses on events + overall tone; detailed nuance and relationships live in lorebooks.
+9. For location entries that imply subareas via hyphenated canonical names (e.g., "Parent-Subarea" or "Parent-Child-Grandchild"), content includes a parent link bullet (e.g., "Located in: <ImmediateParent>") and uses a single hyphen as chain separators (preserving punctuation within names).
+10. Dialogue Highlights include only canon‑binding categories (promises, threats, vows/oaths, explicit plans, naming/revelations, permissions/boundaries, agreements, coded signals) and tag speakers when ambiguous.
+11. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
+12. If lorebook entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
 
 Respond with ONLY:
 - "VALID" if all criteria met
 - "INVALID: [specific issue]" if any criteria failed
 
 Memory to validate:
-{{summary}}`;
+{{recap}}`;
 
-export const scene_summary_error_detection_prompt = `You are validating a scene memory extraction for proper format.
+export const scene_recap_error_detection_prompt = `You are validating a scene memory extraction for proper format.
 
 Check that the JSON meets these criteria:
 1. Valid JSON structure.
-2. Has a "summary" field (string) using the headers "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Tone & Style", "## Pending Threads" in that order.
-3. Each section contains bullet lines with observable facts or outcomes from the scene (no speculation or biographies).
+2. Has a "recap" field (string) using the headers "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Tone & Style", "## Pending Threads" in that order.
+3. Each section contains bullet lines with observable facts or outcomes from the scene (no speculation or biographies). Key Developments bullets may optionally start with a category tag (e.g., [plan], [reveal]).
 4. Has a "lorebooks" field (array, may be empty).
 5. Every lorebook entry includes "name", "type", "keywords" (array), and bullet-point "content" that starts with an identity bullet and uses specific names.
-6. Recap covers events and overall tone; lorebooks capture nuance, relationships, and dynamics.
+6. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
+7. Recap covers events and overall tone; lorebooks capture nuance, relationships, and dynamics.
+8. For location entries with hyphenated canonical names indicating subareas (e.g., "Parent-Subarea", "Parent-Child-Grandchild"), content includes a "Located in: <ImmediateParent>" bullet and optionally a top-level link ("Part of: <TopLevel>"); chain separators are single hyphens (preserve punctuation in names).
+9. Dialogue Highlights include only canon‑binding categories and tag speakers when ambiguous.
+10. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
+11. If lorebook entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
 
 Respond with ONLY:
 - "VALID" if all criteria met
 - "INVALID: [specific issue]" if any criteria failed
 
 Scene memory to validate:
-{{summary}}`;
-// Legacy scene summary prompt (narrative style, not JSON)
-export const scene_summary_default_prompt = `Extract key facts from the following scene for roleplay memory. Focus on important events, character developments, emotional shifts, and plot points that will be useful after this scene is no longer visible. Include character names, significant decisions, relationship changes, and relevant details for future scenes. Write in past tense, avoid commentary, stay factual.
+{{recap}}`;
+// Legacy scene recap prompt (narrative style, not JSON)
+export const scene_recap_default_prompt = `Extract key facts from the following scene for roleplay memory. Focus on important events, character developments, emotional shifts, and plot points that will be useful after this scene is no longer visible. Include character names, significant decisions, relationship changes, and relevant details for future scenes. Write in past tense, avoid commentary, stay factual.
 
 Scene content:
 {{message}}`;
 
 
-export const auto_scene_break_detection_prompt = `You are segmenting a roleplay transcript into scene-sized chunks (short, chapter-like story beats). Determine whether the CURRENT message begins a new scene relative to the PREVIOUS messages. A scene break means the prior beat resolved and the story now shifts focus.
+export const auto_scene_break_detection_prompt = `You are segmenting a roleplay transcript into scene-sized chunks (short, chapter-like story beats).
+Your task is to determine whether the CURRENT message begins a new scene, outputting ONLY valid JSON.
+
+MANDATORY OUTPUT FORMAT:
+Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
+
+Required format (copy this structure exactly):
+{
+  "status": true or false,
+  "rationale": "Quote the key cue that triggered your decision"
+}
+
+Example valid response:
+{"status": true, "rationale": "Message opens with explicit time skip: 'The next morning...'"}
+
+CRITICAL: Ensure your response begins with the opening curly brace { character. Do not include any preamble or explanation. If you quote text in the rationale, escape internal double quotes as \".
+
+DECISION CRITERIA:
+A scene break means the prior beat resolved and the story now shifts focus.
 
 Scene break if the current message clearly does at least one of:
 - Moves to a new location or setting.
@@ -258,6 +430,7 @@ Natural narrative beats to watch for:
 Do NOT mark a break when:
 - The current line is a reaction, continuation, or escalation of the same exchange.
 - Minor topic shifts happen within the same setting, participants, and timeframe.
+- Movement occurs only between sublocations within the same parent location (e.g., room changes inside the same building) without a resolved beat or major shift.
 - The message is meta chatter that does not advance the narrative.
 - The current message is mid-action, mid-conversation, or mid-beat (the exchange hasn't concluded yet).
 
@@ -278,22 +451,35 @@ Previous messages (oldest to newest):
 Current message:
 {{current_message}}
 
-Return ONLY valid JSON with no code fences, no commentary, no additional text:
+REMINDER: Output must be valid JSON starting with { character.`;
+
+
+export const running_scene_recap_prompt = `You are a structured data extraction system for roleplay memory management.
+Your task is to merge scene recaps into a running narrative, outputting ONLY valid JSON.
+You are NOT participating in the roleplay. You are analyzing completed roleplay text.
+
+MANDATORY OUTPUT FORMAT:
+Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
+
+Required format (copy this structure exactly):
 {
-  "status": true or false,
-  "rationale": "Quote the key cue that triggered your decision"
-}`;
+  "recap": "# Running Narrative\n\n## Recent Events\n- Event 1\n- Event 2\n\n## Key Developments\n- Development 1"
+}
 
+Example valid response:
+{"recap": "# Current State\n\n## Location\nThe party is in Haven city, having just entered through the eastern gate.\n\n## Recent Events\n- Arrived at Haven's eastern gate with Senta\n- Guards challenged their entry\n- Negotiated passage into the city\n\n## Key NPCs\n- Gate Guards: Suspicious but professional\n- Senta: Companion, following the party"}
 
-export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
-// Update the RUNNING RECAP by merging the latest scene recap into the existing record.
-// This replaces chat history, so preserve all nuance required for future scenes.
+CRITICAL: Ensure your response begins with the opening curly brace { character
+
+UPDATE THE RUNNING RECAP by merging the latest scene recap into the existing record.
+This replaces chat history, so preserve all nuance required for future scenes.
+
+⚠️ CRITICAL: USE ONLY THE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️
+- Omit anything not present in the provided recaps
+- Never invent motives, emotions, or unseen context
 //
-// ⚠️ CRITICAL: USE ONLY THE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️
-// - Omit anything not present in the provided recaps
-// - Never invent motives, emotions, or unseen context
-//
-// TARGET STRUCTURE (markdown recap in "summary" field):
+// TARGET STRUCTURE (markdown recap in "recap" field):
+// JSON safety: Escape all internal double quotes in values as \". Do not output any preamble or explanation.
 // Maintain the same headers and bullet discipline as the scene recap output. Update or append bullets as needed.
 //   ## Current Situation   -> Active locations, who is present, unresolved stakes
 //   ## Key Developments    -> Durable outcomes and plot shifts (replace outdated bullets)
@@ -306,7 +492,13 @@ export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay 
 // - Carry forward every still-relevant fact. If something is resolved or superseded, note the change and remove the stale bullet.
 // - Integrate the new scene recap line-by-line, combining or updating bullets rather than duplicating them.
 // - Reference characters by canonical name; keep descriptive nuance inside lorebook entries, not as standalone bullets.
+// - Reflect relationship dynamics at a high level (dynamic snapshot: tone, interaction patterns, salient past interactions). If the dynamic clearly shifted in the new scene, update or replace the prior snapshot; include brief evidence or a short quote only when helpful. Avoid numeric scoring (no "+1 suspicion").
 // - When the new recap introduces lasting character or world detail, assume the scene recap already emitted a lorebook update—just reference the entity here.
+// - Treat critical state transitions (ownership/location/status/effects) as merge invariants: replace outdated bullets with the current state. If the change itself is story-important, state it once ("was X, now Y") and then compress to the current state in subsequent merges (avoid "change stacks").
+// - Dialogue Highlights: De-duplicate binding quotes; carry forward only if still binding or referenced. Prefer newer binding phrases over stale ones.
+// - Location hierarchies: When sublocations are in play, include the full chain once (e.g., "Ponyville-Twilight's Library-Spike's Room") in Current Situation or the first relevant bullet to anchor continuity; subsequent mentions may use the most specific segment so long as there is no ambiguity. Rely on lorebooks for full details.
+// - Entity mentions: Ensure any canonical names present in the new scene recap appear at least once in the merged recap (Current Situation or Key Developments) to maintain coherence.
+// - Category tags: If Key Developments bullets include category tags (e.g., [reveal], [plan]), preserve them when merging; do not invent new tags.
 // - Avoid chronological narration. Focus on the state of the world after this merge.
 // - Keep wording concise and specific (locations, items, promises) so another writer can resume play instantly.
 // - Allow short direct quotes only inside Dialogue Highlights when they set canon.
@@ -315,24 +507,38 @@ export const running_scene_summary_prompt = `// OOC REQUEST: Pause the roleplay 
 // - Every open thread, obligation, or secret mentioned in any recap still appears.
 // - No bullet restates personality traits or backstory that belongs in lorebooks.
 // - Conflicting facts are resolved in favor of the newest scene, with the current state stated clearly.
+// - Relationship dynamics read coherently with the current arc (tone/patterns preserved or updated where the scene shifted); Tone & Style tokens are replaced only when the vibe clearly changes.
+// - If sublocations are involved, the recap shows the full chain at least once, with later mentions shortened without losing clarity.
+// - Canonical names from the new scene recap are present at least once in the merged recap.
+// - Category tags (if present) are preserved and consistent; no extraneous tags added.
 // - Sections remain in the prescribed order with markdown headers and bullet lists.
 //
-{{#if current_running_summary}}
+{{#if current_running_recap}}
 // CURRENT RUNNING RECAP (edit in place):
-{{current_running_summary}}
+{{current_running_recap}}
 
 {{/if}}
 // NEW SCENE RECAP TO MERGE:
-{{scene_summaries}}
+{{scene_recaps}}
 
-// OUTPUT FORMAT:
-// You MUST respond with valid JSON in this exact format:
-{
-  "summary": "markdown recap with headers and bullets here"
-}`;
+// REMINDER: Output must be valid JSON starting with { character. Recap field is REQUIRED (markdown formatted string).`;
 
 
 export const auto_lorebook_entry_lookup_prompt = `You are the Auto-Lorebooks registry entry lookup assistant for SillyTavern.
+Your task is to validate and align new lorebook entries with existing registry, outputting ONLY valid JSON.
+
+MANDATORY OUTPUT FORMAT:
+Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
+
+Required format (copy this structure exactly):
+{
+  "type": "<one of the allowed types>",
+  "synopsis": "<short one-line recap>",
+  "sameEntityIds": ["entity_id_1"],
+  "needsFullContextIds": ["entity_id_2"]
+}
+
+CRITICAL: Ensure your response begins with the opening curly brace { character
 
 Known lorebook entry types: {{lorebook_entry_types}}
 
@@ -355,13 +561,15 @@ Tasks:
 6. Place confident matches in 'sameEntityIds'. If you need more detail before deciding, list those IDs in 'needsFullContextIds'.
 7. Craft a one-line synopsis (<=15 words) that reflects the candidate's newest or most important information.
 
-Return ONLY a JSON object in this exact shape:
-{
-  "type": "<one of the allowed types>",
-  "synopsis": "<short one-line summary>",
-  "sameEntityIds": ["entity_id_1"],
-  "needsFullContextIds": ["entity_id_2"]
-}
+Alias guidance (characters/items):
+- If the entity has many genuine aliases or nicknames, include them all as meaningful keywords (no numeric cap). Do not pad with redundant variants; prefer tokens actually used in chat. Use secondaryKeys for AND when a token is broad.
+  
+Location naming (subareas):
+- If the entity is a sub‑location within a named parent (e.g., Cloudsdale → Rainbow Dash's Cloud House; Ponyville → Twilight's Library), the canonical name MUST be "Parent-Subarea".
+- For multiple levels, chain with hyphens: "Parent-Child-Grandchild" (e.g., "Ponyville-Twilight's Library-Spike's Room").
+- The content should include a bullet linking the immediate parent (e.g., "Located in: Twilight's Library") and optionally a top‑level link (e.g., "Part of: Ponyville").
+- Keywords should include both parent and subarea tokens (and top‑level when present in chat).
+- Prefer the longest fully specified chain as the canonical name when deeper subareas are explicitly named (e.g., choose "Ponyville-Twilight's Library-Spike's Room" over a partial).
 
 Rules:
 - 'sameEntityIds' and 'needsFullContextIds' must be arrays. Use [] when empty.
@@ -369,9 +577,24 @@ Rules:
 - Always align the candidate with an existing entity when the canonical name already appears in the registry.
 - Only leave both arrays empty when you are confident the entity is brand new.
 - Even if the candidate repeats known facts, still align it with the correct entity; the merge stage will handle deduplication.
+- Prefer matches whose existing Relationships and State most closely align with the candidate's dynamic snapshot and current status; do not propose a duplicate when a plausible single identity exists.
+- For locations: if the candidate is a sub‑area, ensure the canonical name uses "Parent-Subarea" hyphenation and content links the parent (e.g., "Located in: <Parent>"). For multiple levels, canonical name should chain with hyphens ("Parent-Child-Grandchild").
+- Do NOT stretch content to fit an unrelated template (e.g., inventing faction details for a character). Use only bullets relevant to the entity; omit the rest.
 - Output STRICT JSON with double quotes and no commentary.`;
 
 export const auto_lorebook_entry_deduplicate_prompt = `You are the Auto-Lorebooks duplicate resolver for SillyTavern.
+Your task is to resolve duplicate entries by matching or creating new entries, outputting ONLY valid JSON.
+
+MANDATORY OUTPUT FORMAT:
+Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
+
+Required format (copy this structure exactly):
+{
+  "resolvedId": "<existing entity id or \\"new\\">",
+  "synopsis": "<updated one-line recap for the canonical entity>"
+}
+
+CRITICAL: Ensure your response begins with the opening curly brace { character
 
 Known lorebook entry types: {{lorebook_entry_types}}
 
@@ -386,25 +609,51 @@ Stage 1 synopsis:
 Candidate lorebook entries (full content, JSON array):
 {{candidate_entries}}
 
-Return ONLY a JSON object in this exact shape:
-{
-  "resolvedId": "<existing entity id or \\"new\\">",
-  "synopsis": "<updated one-line summary for the canonical entity>"
-}
-
 Rules:
 - Validate the new candidate is a single entity and the content uses bullet points with an identity bullet first.
 - Validate content uses specific names (not pronouns or vague references).
 - If none of the candidates match, set the resolvedId field to "new".
 - When choosing an existing entity, pick the ID that truly represents the same subject and merge the newest facts into it.
 - If the candidate adds nothing new, keep the existing content and synopsis; do not fabricate alternate copies.
+- Prefer the candidate whose Relationships and State most closely match the new dynamic snapshot and current status; consolidate into a single canonical entry rather than splitting near-duplicates.
+- For locations: if the candidate is a sub‑area, prefer the entry whose name or content indicates the same parent; normalize to "Parent-Subarea" canonical naming and ensure a "Located in: <Parent>" bullet exists. For multiple levels, normalize to hyphen chain ("Parent-Child-Grandchild") and include the immediate parent link.
+- Do NOT fabricate bullets to satisfy a template; when details are not present, omit that bullet entirely (e.g., no Relations for a faction if none are stated yet).
 - Ensure the returned synopsis reflects the most current canon after reconciliation (<=15 words).
 - Output STRICT JSON with double quotes and no commentary.`;
+
+
+export const scene_name_generation_prompt = `You are a structured data extraction system for roleplay memory management.
+Your task is to generate a brief scene name from a scene recap, outputting ONLY valid JSON.
+
+MANDATORY OUTPUT FORMAT:
+Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
+
+Required format (copy this structure exactly):
+{
+  "scene_name": "Your Brief Scene Name Here"
+}
+
+Example valid response:
+{"scene_name": "Adam Arrives at Haven"}
+
+CRITICAL: Ensure your response begins with the opening curly brace { character
+
+SCENE NAME GUIDELINES:
+- Maximum 5 words, like a chapter title
+- Concise and descriptive
+- Captures the key event or location of the scene
+- Past tense when appropriate (e.g., "Arrived at Haven" not "Arriving at Haven")
+- Avoid articles when possible (e.g., "Market Encounter" not "The Market Encounter")
+
+Scene Recap:
+{{scene_recap}}
+
+REMINDER: Output must be valid JSON starting with { character. Scene name should be brief (maximum 5 words).`;
 
 
 export const default_running_scene_template = `<!--Roleplay memory containing current state and key facts from all previous scenes, combined into a cohesive narrative.
 The information below takes priority over character and setting definitions. -->
 
 <roleplay_memory>
-{{running_summary}}
+{{running_recap}}
 </roleplay_memory>`;

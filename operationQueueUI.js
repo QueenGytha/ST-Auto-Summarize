@@ -35,10 +35,11 @@ import {
 } from './constants.js';
 
 // Constants
-const NAVBAR_ID = 'scene-summary-navigator-bar';
+const NAVBAR_ID = 'scene-recap-navigator-bar';
 const NAVBAR_TOGGLE_ID = 'queue_navbar_toggle';
 const ICON_CHEVRON_LEFT = 'fa-chevron-left';
 const ICON_CHEVRON_RIGHT = 'fa-chevron-right';
+const QUEUE_COLLAPSED_KEY = 'operation_queue_collapsed';
 
 let queueUIContainer = null;
 let isInitialized = false;
@@ -83,9 +84,14 @@ function createQueueUI() {
     return;
   }
 
+  // Check collapsed state from localStorage
+  const isCollapsed = localStorage.getItem(QUEUE_COLLAPSED_KEY) === 'true';
+  const chevronIcon = isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up';
+  const collapsedClass = isCollapsed ? ' queue-collapsed' : '';
+
   // Create shared queue container
   $queueContainer = $(`
-        <div id="shared_operation_queue_ui" data-testid="queue-panel">
+        <div id="shared_operation_queue_ui" data-testid="queue-panel"${collapsedClass}>
             <div class="queue-header" data-testid="queue-header">
                 <div id="queue_toggle_visibility" data-testid="queue-toggle-visibility" title="Collapse/Expand">
                     <h4>Operations <span id="queue_count" data-testid="queue-count">(0)</span></h4>
@@ -93,10 +99,10 @@ function createQueueUI() {
                         <button id="queue_toggle_pause" data-testid="queue-toggle-pause" class="menu_button fa-solid fa-pause" title="Pause/Resume queue"></button>
                         <button id="queue_clear_all" data-testid="queue-clear-all" class="menu_button fa-solid fa-trash" title="Clear all"></button>
                     </div>
-                    <i class="fa-solid fa-chevron-up"></i>
+                    <i class="fa-solid ${chevronIcon}"></i>
                 </div>
             </div>
-            <div id="queue_list_container" data-testid="queue-list-container" class="queue-list">
+            <div id="queue_list_container" data-testid="queue-list-container" class="queue-list" style="${isCollapsed ? 'display: none;' : ''}">
                 <div id="queue_operations_list" data-testid="queue-operations-list"></div>
             </div>
         </div>
@@ -151,7 +157,7 @@ function updateQueueHeight() {
   // Reserve space for:
   // - Bottom margin/padding (20px)
   // - Other navbar elements below queue (estimate based on presence)
-  const navbarBottomContent = $(selectorsExtension.sceneNav.bar).find('.running-summary-controls, .scene-nav-link').length > 0 ? PROGRESS_BAR_OFFSET_PX : PROGRESS_BAR_MINOR_OFFSET_PX;
+  const navbarBottomContent = $(selectorsExtension.sceneNav.bar).find('.running-recap-controls, .scene-nav-link').length > 0 ? PROGRESS_BAR_OFFSET_PX : PROGRESS_BAR_MINOR_OFFSET_PX;
 
   // Calculate available height for queue
   const availableHeight = viewportHeight - queueTop - navbarBottomContent;
@@ -182,7 +188,8 @@ function updateQueueHeight() {
 
 function bindQueueControlEvents() {
   // Pause/Resume
-  $(document).on('click', '#queue_toggle_pause', async function () {
+  $(document).on('click', '#queue_toggle_pause', async function (e) {
+    e.stopPropagation(); // Prevent toggling collapse/expand
     if (isQueuePaused()) {
       await resumeQueue();
       $(this).removeClass('fa-play').addClass('fa-pause');
@@ -195,7 +202,8 @@ function bindQueueControlEvents() {
   });
 
   // Clear all
-  $(document).on('click', '#queue_clear_all', async function () {
+  $(document).on('click', '#queue_clear_all', async function (e) {
+    e.stopPropagation(); // Prevent toggling collapse/expand
     if (confirm('Clear all operations from queue?')) {
       await clearAllOperations();
     }
@@ -211,6 +219,7 @@ function bindQueueControlEvents() {
       $list.slideUp(ANIMATION_DELAY_MS);
       $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
       $queueUI.addClass('queue-collapsed');
+      localStorage.setItem(QUEUE_COLLAPSED_KEY, 'true');
     } else {
       $list.slideDown(ANIMATION_DELAY_MS, () => {
         // After expanding, recalculate height
@@ -218,11 +227,13 @@ function bindQueueControlEvents() {
       });
       $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
       $queueUI.removeClass('queue-collapsed');
+      localStorage.setItem(QUEUE_COLLAPSED_KEY, 'false');
     }
   });
 
   // Remove individual operation
-  $(document).on('click', '.queue-operation-remove', async function () {
+  $(document).on('click', '.queue-operation-remove', async function (e) {
+    e.stopPropagation(); // Prevent toggling collapse/expand
     const operationId = $(this).data('operation-id');
     await removeOperation(operationId);
   });
@@ -456,11 +467,11 @@ function renderOperation(operation) {
 
 function formatOperationType(type) {
   const names = {
-    [OperationType.VALIDATE_SUMMARY]: 'Validate',
+    [OperationType.VALIDATE_RECAP]: 'Validate',
     [OperationType.DETECT_SCENE_BREAK]: 'Detect Scene',
-    [OperationType.GENERATE_SCENE_SUMMARY]: 'Scene Summary',
+    [OperationType.GENERATE_SCENE_RECAP]: 'Scene Recap',
     [OperationType.GENERATE_SCENE_NAME]: 'Scene Name',
-    [OperationType.GENERATE_RUNNING_SUMMARY]: 'Running Summary',
+    [OperationType.GENERATE_RUNNING_RECAP]: 'Running Recap',
     [OperationType.COMBINE_SCENE_WITH_RUNNING]: 'Combine Scene',
     [OperationType.LOREBOOK_ENTRY_LOOKUP]: 'Lorebook - Lookup',
     [OperationType.RESOLVE_LOREBOOK_ENTRY]: 'Lorebook - Dedupe',
@@ -553,14 +564,14 @@ function formatMessageOperationParams(params) {
 
 function formatOperationParams(type, params, metadata) {
   switch (type) {
-    case OperationType.VALIDATE_SUMMARY:
+    case OperationType.VALIDATE_RECAP:
     case OperationType.DETECT_SCENE_BREAK:
-    case OperationType.GENERATE_SCENE_SUMMARY:
+    case OperationType.GENERATE_SCENE_RECAP:
     case OperationType.GENERATE_SCENE_NAME:
     case OperationType.COMBINE_SCENE_WITH_RUNNING:
       return formatMessageOperationParams(params);
 
-    case OperationType.GENERATE_RUNNING_SUMMARY:
+    case OperationType.GENERATE_RUNNING_RECAP:
       return 'All messages';
 
     case OperationType.LOREBOOK_ENTRY_LOOKUP:

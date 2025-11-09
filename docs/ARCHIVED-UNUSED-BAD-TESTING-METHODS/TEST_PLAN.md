@@ -1,4 +1,4 @@
-End-to-End Test Plan for ST-Auto-Summarize
+End-to-End Test Plan for ST-Auto-Recap
 
 Scope
 - Validate core flows without a full SillyTavern runtime by using local stubs and a virtualized project.
@@ -8,18 +8,18 @@ Key Modules and Responsibilities
 - index.js: Barrel exports + ST bindings re-export.
 - utils.js: Logging, toast, settings glue, token counting helpers.
 - operationQueue.js / operationHandlers.js / queueIntegration.js: Persistent queue, op registration, helper enqueue functions.
-- summarization.js / summaryValidation.js: Message/scene summarization and validation flows.
-- autoSceneBreakDetection.js / sceneBreak.js / runningSceneSummary.js: Scene detection, toggling markers, generating running summaries.
-- lorebookManager.js / summaryToLorebookProcessor.js / lorebookEntryMerger.js / trackingEntries.js / categoryIndexes.js: Lorebook attach/ensure, process summary into entries, AI merge, index maintenance.
+- recapping.js / recapValidation.js: Message/scene recap generation and validation flows.
+- autoSceneBreakDetection.js / sceneBreak.js / runningSceneRecap.js: Scene detection, toggling markers, generating running recaps.
+- lorebookManager.js / recapToLorebookProcessor.js / lorebookEntryMerger.js / trackingEntries.js / categoryIndexes.js: Lorebook attach/ensure, process recap into entries, AI merge, index maintenance.
 - connectionProfiles.js / presetManager.js: Profile/preset coordination for calls (mapping to APIs).
 
 Test Areas and Cases
 
 1) Module Initialization Safety
 - Before-init usage should not throw:
-  - summaryToLorebookProcessor: getSetting fallback uses `extension_settings` when `get_settings` is not yet wired.
+  - recapToLorebookProcessor: getSetting fallback uses `extension_settings` when `get_settings` is not yet wired.
   - operationQueue: enqueue before init triggers lazy init and processes.
-  - runningSceneSummary: accessors work with empty chat metadata.
+  - runningSceneRecap: accessors work with empty chat metadata.
 - After-init usage should work:
   - operationQueue init twice is idempotent.
   - Registering operation handlers, then enqueuing ops runs handlers.
@@ -38,7 +38,7 @@ Test Areas and Cases
 3) API Contracts
 - generateRaw is called with object argument containing: { prompt, api: '', instructOverride: false }.
 - world-info interface stubs are invoked for load/save in lorebook modes.
-- extension_settings access shape for `autoLorebooks.summary_processing` is resilient.
+- extension_settings access shape for `autoLorebooks.recap_processing` is resilient.
 
 4) Lorebook Processing
 - executeMerge/mergeLorebookEntry:
@@ -48,17 +48,17 @@ Test Areas and Cases
 - attach/ensure lorebook (lorebookManager):
   - ensureChatLorebook creates stub structure if missing; attachLorebook sets metadata key.
 
-5) Summarization Flows (non-UI)
-- summarization pipeline calls:
+5) Recap Generation Flows (non-UI)
+- recap generation pipeline calls:
   - Use of `get_settings` toggles to block chat and batch size.
   - Calls to generateRaw constructed with prompt content (signature only; not prompt quality).
-- summaryValidation:
+- recapValidation:
   - Short-circuit paths when validation disabled/enabled flags set.
 
-6) Scene Break and Running Summary
+6) Scene Break and Running Recap
 - autoSceneBreakDetection + operation handler:
-  - DETECT_SCENE_BREAK handler toggles marker and optionally enqueues GENERATE_SCENE_SUMMARY.
-- runningSceneSummary storage:
+  - DETECT_SCENE_BREAK handler toggles marker and optionally enqueues GENERATE_SCENE_RECAP.
+- runningSceneRecap storage:
   - Initializes metadata structure; returns versions/current_version safely.
 
 7) Slash Commands and Profiles (Smoke)
@@ -68,7 +68,7 @@ Test Areas and Cases
   - Smoke import and verify exported command registration routing doesn’t throw with stubs.
 
 8) UI Integration Hooks (Planned for Playwright)
-- settingsUI, operationQueueUI, runningSceneSummaryUI, sceneNavigator, progressBar, messageVisuals:
+- settingsUI, operationQueueUI, runningSceneRecapUI, sceneNavigator, progressBar, messageVisuals:
   - Playwright tests to validate rendering, toggles, buttons, and state reflection (Phase 2).
 
 Non-Goals in Phase 1
@@ -77,10 +77,10 @@ Non-Goals in Phase 1
 
 Traceability Matrix (Module → Tests)
 - operationQueue/Handlers/Integration → Queue lifecycle, dependency/priority, pause/resume, clear, enqueue-before-init.
-- summaryToLorebookProcessor → before-init settings fallback, queue vs direct path.
+- recapToLorebookProcessor → before-init settings fallback, queue vs direct path.
 - lorebookEntryMerger → generateRaw signature, modifyLorebookEntry updates.
-- runningSceneSummary → storage init and getters.
-- summarization/summaryValidation → flag-driven paths and generateRaw call presence (signature).
+- runningSceneRecap → storage init and getters.
+- recap generation/recapValidation → flag-driven paths and generateRaw call presence (signature).
 - connectionProfiles → no-op behavior under inactive environment.
 
 Execution

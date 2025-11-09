@@ -1,10 +1,10 @@
-<div id="auto_summarize_memory_settings" data-testid="extension-settings-panel" class="auto_summarize_memory_settings_content">
+<div id="auto_recap_memory_settings" data-testid="extension-settings-panel" class="auto_recap_memory_settings_content">
     <div class="inline-drawer">
 
         <div class="inline-drawer-toggle inline-drawer-header">
             <div class="flex-container alignitemscenter margin0">
-                <b>ST-Auto-Summarize</b>
-                <i id="auto_summarize_popout_button" data-testid="extension-popout" class="fa-solid fa-window-restore menu_button margin0"></i>
+                <b>ST-Auto-Recap</b>
+                <i id="auto_recap_popout_button" data-testid="extension-popout" class="fa-solid fa-window-restore menu_button margin0"></i>
             </div>
             <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
         </div>
@@ -12,12 +12,12 @@
         <div class="inline-drawer-content">
 
             <!-- transferred to popup -->
-            <div class="auto_summarize_memory_settings_content">
+            <div class="auto_recap_memory_settings_content">
                 <hr>
 
                 <div class="flex-container justifyspacebetween alignitemscenter">
                     <button id="toggle_chat_memory" data-testid="memory-toggle" class="menu_button flex2" title="Toggle whether memory is enabled for this chat specifically (overrides all settings)."><span>Toggle Memory</span></button>
-                    <button id="refresh_memory" data-testid="memory-refresh" class="menu_button fa-solid fa-sync margin0" title="Just refreshes which memories are included and re-renders the memories under each message, doesn't change summaries. This is done automatically all the time, the button is here just in case."></button>
+                    <button id="refresh_memory" data-testid="memory-refresh" class="menu_button fa-solid fa-sync margin0" title="Just refreshes which memories are included and re-renders the memories under each message, doesn't change recaps. This is done automatically all the time, the button is here just in case."></button>
                 </div>
 
                 <hr>
@@ -77,22 +77,22 @@
                 <div class="inline-drawer">
                     <div class="inline-drawer-toggle inline-drawer-header">
                         <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Message Filtering <i class="fa-solid fa-info-circle" title="Controls which messages are included in scene summaries and other features."></i></h4>
+                            <h4 class="margin0">Message Filtering <i class="fa-solid fa-info-circle" title="Controls which messages are included in scene recaps and other features."></i></h4>
                         </div>
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
-                        <label title="Include user messages in scene summaries and other features." class="checkbox_label">
+                        <label title="Include user messages in scene recaps and other features." class="checkbox_label">
                             <input id="include_user_messages" data-testid="filter-include-user" type="checkbox" />
                             <span>Include User Messages</span>
                         </label>
 
-                        <label title="Include hidden messages in scene summaries and other features (messages excluded from context)." class="checkbox_label">
+                        <label title="Include hidden messages in scene recaps and other features (messages excluded from context)." class="checkbox_label">
                             <input id="include_system_messages" data-testid="filter-include-hidden" type="checkbox" />
                             <span>Include Hidden Messages</span>
                         </label>
 
-                        <label title="Include system messages in scene summaries and other features (e.g. messages from the /sys command)." class="checkbox_label">
+                        <label title="Include system messages in scene recaps and other features (e.g. messages from the /sys command)." class="checkbox_label">
                             <input id="include_narrator_messages" data-testid="filter-include-system" type="checkbox" />
                             <span>Include System Messages</span>
                         </label>
@@ -104,68 +104,68 @@
                     </div>
                 </div>
 
-                <!-- Scene Summary -->
+                <!-- Scene Recap -->
                 <hr>
                 <div class="inline-drawer">
                     <div class="inline-drawer-toggle inline-drawer-header">
                         <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Scene Summary <i class="fa-solid fa-info-circle" title="Summarize each scene break and use the results to build the running scene summary."></i></h4>
+                            <h4 class="margin0">Scene Recap <i class="fa-solid fa-info-circle" title="Recap each scene break and use the results to build the running scene recap."></i></h4>
                         </div>
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
                         <label title="Width of the scene navigator bar in pixels.">
                             <span>Navigator Bar Width (pixels):</span>
-                            <input id="scene_summary_navigator_width" data-testid="scene-nav-width" class="text_pole" type="number" min="30" max="500" step="1" />
+                            <input id="scene_recap_navigator_width" data-testid="scene-nav-width" class="text_pole" type="number" min="30" max="500" step="1" />
                         </label>
                         <label title="Font size for scene names in the navigator bar (in pixels).">
                             <span>Navigator Font Size (pixels):</span>
-                            <input id="scene_summary_navigator_font_size" data-testid="scene-nav-font-size" class="text_pole" type="number" min="8" max="24" step="1" />
+                            <input id="scene_recap_navigator_font_size" data-testid="scene-nav-font-size" class="text_pole" type="number" min="8" max="24" step="1" />
                         </label>
-                        <label class="checkbox_label" title="Automatically generate a brief scene name (like a chapter title) when auto-generating scene summaries (e.g., during scene break detection), if no name is already set.">
-                            <input id="scene_summary_auto_name" data-testid="scene-auto-name-detection" type="checkbox" />
+                        <label class="checkbox_label" title="Automatically generate a brief scene name (like a chapter title) when auto-generating scene recaps (e.g., during scene break detection), if no name is already set.">
+                            <input id="scene_recap_auto_name" data-testid="scene-auto-name-detection" type="checkbox" />
                             <span>Auto-generate Scene Names (Auto-Detection)</span>
                         </label>
-                        <label class="checkbox_label" title="Automatically generate a brief scene name (like a chapter title) when manually generating scene summaries via the Generate button, if no name is already set.">
-                            <input id="scene_summary_auto_name_manual" data-testid="scene-auto-name-manual" type="checkbox" />
+                        <label class="checkbox_label" title="Automatically generate a brief scene name (like a chapter title) when manually generating scene recaps via the Generate button, if no name is already set.">
+                            <input id="scene_recap_auto_name_manual" data-testid="scene-auto-name-manual" type="checkbox" />
                             <span>Auto-generate Scene Names (Manual)</span>
                         </label>
-                        <label class="checkbox_label" title="New scene summaries will start collapsed by default (showing only the scene name). Existing scenes keep their current state.">
-                            <input id="scene_summary_default_collapsed" data-testid="scene-default-collapsed" type="checkbox" />
+                        <label class="checkbox_label" title="New scene recaps will start collapsed by default (showing only the scene name). Existing scenes keep their current state.">
+                            <input id="scene_recap_default_collapsed" data-testid="scene-default-collapsed" type="checkbox" />
                             <span>Collapse New Scenes by Default</span>
                         </label>
                         <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_scene_summary_prompt" data-testid="scene-edit-prompt" class="menu_button flex1" title="Edit the scene summary prompt"><span>Edit Scene Prompt</span></button>
+                            <button id="edit_scene_recap_prompt" data-testid="scene-edit-prompt" class="menu_button flex1" title="Edit the scene recap prompt"><span>Edit Scene Prompt</span></button>
                         </div>
                         <small class="displayBlock opacity50p">Available macros: {{scene_messages}}, {{lorebook_entry_types}}, {{char}}, {{user}}</small>
-                        <input id="scene_summary_prompt" data-testid="scene-prompt" type="hidden" />
-                        <input id="scene_summary_default_prompt" data-testid="scene-default-prompt" type="hidden" value="[Default scene summary prompt here]" />
+                        <input id="scene_recap_prompt" data-testid="scene-prompt" type="hidden" />
+                        <input id="scene_recap_default_prompt" data-testid="scene-default-prompt" type="hidden" value="[Default scene recap prompt here]" />
                         <table>
                             <tr>
                                 <td><span>Scene Completion Preset</span></td>
-                                <td><select id="scene_summary_completion_preset" data-testid="scene-completion-preset" class="text_pole"></select></td>
+                                <td><select id="scene_recap_completion_preset" data-testid="scene-completion-preset" class="text_pole"></select></td>
                             </tr>
                             <tr>
                                 <td></td>
                                 <td>
                                     <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                        <input id="scene_summary_include_preset_prompts" data-testid="scene-include-preset-prompts" type="checkbox" />
+                                        <input id="scene_recap_include_preset_prompts" data-testid="scene-include-preset-prompts" type="checkbox" />
                                         <span>Include Preset Prompts</span>
                                     </label>
                                 </td>
                             </tr>
                             <tr>
                                 <td><span>Scene Connection Profile</span></td>
-                                <td><select id="scene_summary_connection_profile" data-testid="scene-connection-profile" class="text_pole"></select></td>
+                                <td><select id="scene_recap_connection_profile" data-testid="scene-connection-profile" class="text_pole"></select></td>
                             </tr>
                             <tr>
-                                <td><span>Scene Summary Prefill</span></td>
-                                <td><input id="scene_summary_prefill" data-testid="scene-prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
+                                <td><span>Scene Recap Prefill</span></td>
+                                <td><input id="scene_recap_prefill" data-testid="scene-prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
                             </tr>
                             <tr>
                                 <td><span>Include Message Types</span></td>
                                 <td>
-                                    <select id="scene_summary_message_types" data-testid="scene-message-types" class="text_pole">
+                                    <select id="scene_recap_message_types" data-testid="scene-message-types" class="text_pole">
                                         <option value="user">User Messages Only</option>
                                         <option value="character">AI Messages Only</option>
                                         <option value="both">All Messages</option>
@@ -174,86 +174,86 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <span>Summarize the last <span id="scene_summary_history_count_display" data-testid="scene-history-count-display">1</span> scenes</span>
+                                    <span>Recap the last <span id="scene_recap_history_count_display" data-testid="scene-history-count-display">1</span> scenes</span>
                                 </td>
                                 <td>
-                                    <input id="scene_summary_history_count" data-testid="scene-history-count" class="text_pole" type="number" min="1" max="99" value="1" />
+                                    <input id="scene_recap_history_count" data-testid="scene-history-count" class="text_pole" type="number" min="1" max="99" value="1" />
                                 </td>
                             </tr>
                         </table>
-                        <label title="Context limit for scene summary.">
-                            <input id="scene_summary_context_limit" data-testid="scene-context-limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
+                        <label title="Context limit for scene recap.">
+                            <input id="scene_recap_context_limit" data-testid="scene-context-limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
                             <span>Context Limit</span>
                         </label>
                         <label>
-                            <input type="radio" name="scene_summary_context_type" data-testid="scene-context-type-percent" value="percent" />
+                            <input type="radio" name="scene_recap_context_type" data-testid="scene-context-type-percent" value="percent" />
                             <span>%</span>
                         </label>
                         <label>
-                            <input type="radio" name="scene_summary_context_type" data-testid="scene-context-type-tokens" value="tokens" />
+                            <input type="radio" name="scene_recap_context_type" data-testid="scene-context-type-tokens" value="tokens" />
                             <span>tk</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- Running Scene Summary -->
+                <!-- Running Scene Recap -->
                 <hr>
                 <div class="inline-drawer">
                     <div class="inline-drawer-toggle inline-drawer-header">
                         <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Running Scene Summary <i class="fa-solid fa-info-circle" title="Combine multiple scene summaries into a single cohesive memory. This is the recommended default behavior matching best practices."></i></h4>
+                            <h4 class="margin0">Running Scene Recap <i class="fa-solid fa-info-circle" title="Combine multiple scene recaps into a single cohesive memory. This is the recommended default behavior matching best practices."></i></h4>
                         </div>
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
-                        <label title="Number of latest scene summaries to exclude from the running summary. Default: 1 (allows you to validate the latest scene summary before it's combined).">
-                            <span>Exclude Latest <span id="running_scene_summary_exclude_latest_display" data-testid="running-exclude-latest-display">1</span> Scene(s)</span>
-                            <input id="running_scene_summary_exclude_latest" data-testid="running-exclude-latest" class="text_pole" type="range" min="0" max="5" step="1" value="1" />
+                        <label title="Number of latest scene recaps to exclude from the running recap. Default: 1 (allows you to validate the latest scene recap before it's combined).">
+                            <span>Exclude Latest <span id="running_scene_recap_exclude_latest_display" data-testid="running-exclude-latest-display">1</span> Scene(s)</span>
+                            <input id="running_scene_recap_exclude_latest" data-testid="running-exclude-latest" class="text_pole" type="range" min="0" max="5" step="1" value="1" />
                         </label>
                         <small style="display:block; margin-bottom:0.5em;">Recommended: 1 (exclude latest scene to allow manual validation before combining)</small>
 
-                        <label class="checkbox_label" title="Automatically generate running scene summary when new scene summaries are created.">
-                            <input id="running_scene_summary_auto_generate" data-testid="running-auto-generate" type="checkbox" />
-                            <span>Auto-generate on New Scene Summaries</span>
+                        <label class="checkbox_label" title="Automatically generate running scene recap when new scene recaps are created.">
+                            <input id="running_scene_recap_auto_generate" data-testid="running-auto-generate" type="checkbox" />
+                            <span>Auto-generate on New Scene Recaps</span>
                         </label>
 
-                        <label class="checkbox_label" title="Show version control buttons in the navbar to switch between, edit, or delete running summary versions.">
-                            <input id="running_scene_summary_show_navbar" data-testid="running-show-navbar" type="checkbox" />
+                        <label class="checkbox_label" title="Show version control buttons in the navbar to switch between, edit, or delete running recap versions.">
+                            <input id="running_scene_recap_show_navbar" data-testid="running-show-navbar" type="checkbox" />
                             <span>Show Navbar Version Controls</span>
                         </label>
 
                         <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="view_running_scene_summary" data-testid="running-view" class="menu_button flex2" title="View/edit the current running scene summary"><span>View Running Summary</span></button>
-                            <button id="edit_running_scene_summary_prompt" data-testid="running-edit-prompt" class="menu_button flex1" title="Edit the running scene summary prompt"><span>Edit Running Summary Prompt</span></button>
+                            <button id="view_running_scene_recap" data-testid="running-view" class="menu_button flex2" title="View/edit the current running scene recap"><span>View Running Recap</span></button>
+                            <button id="edit_running_scene_recap_prompt" data-testid="running-edit-prompt" class="menu_button flex1" title="Edit the running scene recap prompt"><span>Edit Running Recap Prompt</span></button>
                         </div>
-                        <input id="running_scene_summary_prompt" data-testid="running-prompt" type="hidden" />
+                        <input id="running_scene_recap_prompt" data-testid="running-prompt" type="hidden" />
 
                         <table>
                             <tr>
-                                <td><span>Running Summary Completion Preset</span></td>
-                                <td><select id="running_scene_summary_completion_preset" data-testid="running-completion-preset" class="text_pole"></select></td>
+                                <td><span>Running Recap Completion Preset</span></td>
+                                <td><select id="running_scene_recap_completion_preset" data-testid="running-completion-preset" class="text_pole"></select></td>
                             </tr>
                             <tr>
                                 <td></td>
                                 <td>
                                     <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                        <input id="running_scene_summary_include_preset_prompts" data-testid="running-include-preset-prompts" type="checkbox" />
+                                        <input id="running_scene_recap_include_preset_prompts" data-testid="running-include-preset-prompts" type="checkbox" />
                                         <span>Include Preset Prompts</span>
                                     </label>
                                 </td>
                             </tr>
                             <tr>
-                                <td><span>Running Summary Connection Profile</span></td>
-                                <td><select id="running_scene_summary_connection_profile" data-testid="running-connection-profile" class="text_pole"></select></td>
+                                <td><span>Running Recap Connection Profile</span></td>
+                                <td><select id="running_scene_recap_connection_profile" data-testid="running-connection-profile" class="text_pole"></select></td>
                             </tr>
                             <tr>
-                                <td><span>Running Summary Prefill</span></td>
-                                <td><input id="running_scene_summary_prefill" data-testid="running-prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
+                                <td><span>Running Recap Prefill</span></td>
+                                <td><input id="running_scene_recap_prefill" data-testid="running-prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
                             </tr>
                         </table>
 
-                        <label title="Where to inject the running scene summary.">
-                            <select id="running_scene_summary_position" data-testid="running-position" class="text_pole">
+                        <label title="Where to inject the running scene recap.">
+                            <select id="running_scene_recap_position" data-testid="running-position" class="text_pole">
                                 <option value="-1">Do not inject</option>
                                 <option value="2">Before main prompt</option>
                                 <option value="0">After main prompt</option>
@@ -261,30 +261,30 @@
                             </select>
                         </label>
                         <label title="Depth for in-chat injection.">
-                            <input id="running_scene_summary_depth" data-testid="running-depth" class="text_pole inline_setting" type="number" min="0" max="99" />
+                            <input id="running_scene_recap_depth" data-testid="running-depth" class="text_pole inline_setting" type="number" min="0" max="99" />
                             <span>Depth</span>
                         </label>
                         <label title="Role for in-chat injection.">
-                            <select id="running_scene_summary_role" data-testid="running-role" class="text_pole inline_setting">
+                            <select id="running_scene_recap_role" data-testid="running-role" class="text_pole inline_setting">
                                 <option value="0">System</option>
                                 <option value="1">User</option>
                                 <option value="2">Assistant</option>
                             </select>
                         </label>
                         <label class="checkbox_label" title="Include in World Info Scanning">
-                            <input id="running_scene_summary_scan" data-testid="running-scan" type="checkbox" />
+                            <input id="running_scene_recap_scan" data-testid="running-scan" type="checkbox" />
                             <span>Include in World Info Scanning</span>
                         </label>
-                        <label title="Context limit for running scene summary.">
-                            <input id="running_scene_summary_context_limit" data-testid="running-context-limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
+                        <label title="Context limit for running scene recap.">
+                            <input id="running_scene_recap_context_limit" data-testid="running-context-limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
                             <span>Context Limit</span>
                         </label>
                         <label>
-                            <input type="radio" name="running_scene_summary_context_type" data-testid="running-context-type-percent" value="percent" />
+                            <input type="radio" name="running_scene_recap_context_type" data-testid="running-context-type-percent" value="percent" />
                             <span>%</span>
                         </label>
                         <label>
-                            <input type="radio" name="running_scene_summary_context_type" data-testid="running-context-type-tokens" value="tokens" />
+                            <input type="radio" name="running_scene_recap_context_type" data-testid="running-context-type-tokens" value="tokens" />
                             <span>tk</span>
                         </label>
                     </div>
@@ -310,9 +310,9 @@
                             <input id="auto_scene_break_on_new_message" data-testid="auto-scene-on-message" type="checkbox" />
                             <span>Auto-check on New Messages</span>
                         </label>
-                        <label class="checkbox_label" title="Automatically generate a scene summary when a scene break is detected. The summary generation will complete before checking the next message.">
-                            <input id="auto_scene_break_generate_summary" data-testid="auto-scene-generate-summary" type="checkbox" />
-                            <span>Auto-generate Scene Summary on Detection</span>
+                        <label class="checkbox_label" title="Automatically generate a scene recap when a scene break is detected. The recap generation will complete before checking the next message.">
+                            <input id="auto_scene_break_generate_recap" data-testid="auto-scene-generate-recap" type="checkbox" />
+                            <span>Auto-generate Scene Recap on Detection</span>
                         </label>
 
                         <label title="How many messages back from the latest to skip checking. 0 = check all including latest, 1 = skip latest, 2 = skip 2 latest, etc.">
@@ -374,48 +374,48 @@
                 <div class="inline-drawer">
                     <div class="inline-drawer-toggle inline-drawer-header">
                         <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Summary Validation <i class="fa-solid fa-info-circle" title="Configure validation for summaries to ensure they meet your criteria"></i></h4>
+                            <h4 class="margin0">Recap Validation <i class="fa-solid fa-info-circle" title="Configure validation for recaps to ensure they meet your criteria"></i></h4>
                         </div>
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
-                        <label class="checkbox_label" title="Enable two-step validation for summaries">
+                        <label class="checkbox_label" title="Enable two-step validation for recaps">
                             <input id="error_detection_enabled" data-testid="validation-enabled" type="checkbox" />
-                            <span>Enable Summary Validation</span>
+                            <span>Enable Recap Validation</span>
                         </label>
 
-                <!-- Scene summary validation -->
-                <label class="checkbox_label error_detection_setting" title="Enable validation for scene summaries">
-                    <input id="scene_summary_error_detection_enabled" data-testid="validation-scene-enabled" type="checkbox" />
-                    <span>Validate Scene Summaries</span>
+                <!-- Scene recap validation -->
+                <label class="checkbox_label error_detection_setting" title="Enable validation for scene recaps">
+                    <input id="scene_recap_error_detection_enabled" data-testid="validation-scene-enabled" type="checkbox" />
+                    <span>Validate Scene Recaps</span>
                 </label>
                 <div class="flex-container justifyspacebetween alignitemscenter">
-                    <button id="edit_scene_summary_error_detection_prompt" data-testid="validation-scene-edit-prompt" class="menu_button flex1 error_detection_setting" title="Edit the validation prompt for scene summaries"><span>Edit Scene Summary Validation Prompt</span></button>
+                    <button id="edit_scene_recap_error_detection_prompt" data-testid="validation-scene-edit-prompt" class="menu_button flex1 error_detection_setting" title="Edit the validation prompt for scene recaps"><span>Edit Scene Recap Validation Prompt</span></button>
                 </div>
                 <table class="scene_error_detection_container">
                     <tr>
-                        <td><span>Scene Summary Validation Preset</span></td>
-                        <td><select id="scene_summary_error_detection_preset" data-testid="validation-scene-preset" class="text_pole scene_error_detection_setting"></select></td>
+                        <td><span>Scene Recap Validation Preset</span></td>
+                        <td><select id="scene_recap_error_detection_preset" data-testid="validation-scene-preset" class="text_pole scene_error_detection_setting"></select></td>
                     </tr>
                     <tr>
                         <td></td>
                         <td>
                             <label class="checkbox_label scene_error_detection_setting" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                <input id="scene_summary_error_detection_include_preset_prompts" data-testid="validation-scene-include-preset-prompts" type="checkbox" class="scene_error_detection_setting" />
+                                <input id="scene_recap_error_detection_include_preset_prompts" data-testid="validation-scene-include-preset-prompts" type="checkbox" class="scene_error_detection_setting" />
                                 <span>Include Preset Prompts</span>
                             </label>
                         </td>
                     </tr>
                     <tr>
-                        <td><span>Scene Summary Validation Prefill</span></td>
-                        <td><input id="scene_summary_error_detection_prefill" data-testid="validation-scene-prefill" class="text_pole scene_error_detection_setting" type="text" placeholder="Start reply with..."></td>
+                        <td><span>Scene Recap Validation Prefill</span></td>
+                        <td><input id="scene_recap_error_detection_prefill" data-testid="validation-scene-prefill" class="text_pole scene_error_detection_setting" type="text" placeholder="Start reply with..."></td>
                     </tr>
                     <tr>
-                        <td><span>Scene Summary Max Retry Attempts</span></td>
-                        <td><input id="scene_summary_error_detection_retries" data-testid="validation-scene-retries" class="text_pole scene_error_detection_setting" type="number" min="1" max="10" value="3"></td>
+                        <td><span>Scene Recap Max Retry Attempts</span></td>
+                        <td><input id="scene_recap_error_detection_retries" data-testid="validation-scene-retries" class="text_pole scene_error_detection_setting" type="number" min="1" max="10" value="3"></td>
                     </tr>
                 </table>
-                <input id="scene_summary_error_detection_prompt" data-testid="validation-scene-prompt" type="hidden" />
+                <input id="scene_recap_error_detection_prompt" data-testid="validation-scene-prompt" type="hidden" />
                     </div>
                 </div>
 
@@ -505,61 +505,61 @@
 
                         <hr>
 
-                        <h4>Summary-to-Lorebook Processing</h4>
+                        <h4>Recap-to-Lorebook Processing</h4>
 
                         <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="autolorebooks-summary-skip-duplicates">
-                                <input type="checkbox" id="autolorebooks-summary-skip-duplicates" data-testid="lorebook-skip-duplicates" />
-                                <span>Skip already processed summaries</span>
+                            <label class="checkbox_label" for="autolorebooks-recap-skip-duplicates">
+                                <input type="checkbox" id="autolorebooks-recap-skip-duplicates" data-testid="lorebook-skip-duplicates" />
+                                <span>Skip already processed recaps</span>
                             </label>
                         </div>
 
                         <div class="inline-drawer margin-top-10px">
                             <div class="inline-drawer-toggle inline-drawer-header">
                                 <div class="flex-container alignitemscenter margin0">
-                                    <span>Entry Merge Settings (When Processing Summaries)</span>
+                                    <span>Entry Merge Settings (When Processing Recaps)</span>
                                 </div>
                                 <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                             </div>
                             <div class="inline-drawer-content">
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-merge-connection">
+                                    <label for="autolorebooks-recap-merge-connection">
                                         <span>Connection Profile:</span>
                                         <small class="displayBlock opacity50p">Which API to use for merging lorebook entries (empty = use main API)</small>
                                     </label>
-                                    <select id="autolorebooks-summary-merge-connection" data-testid="lorebook-merge-connection" class="text_pole">
+                                    <select id="autolorebooks-recap-merge-connection" data-testid="lorebook-merge-connection" class="text_pole">
                                         <option value="">Main API</option>
                                     </select>
                                 </div>
 
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-merge-preset">
+                                    <label for="autolorebooks-recap-merge-preset">
                                         <span>Completion Preset:</span>
                                         <small class="displayBlock opacity50p">Preset to use for merging entries (empty = use default)</small>
                                     </label>
-                                    <select id="autolorebooks-summary-merge-preset" data-testid="lorebook-merge-preset" class="text_pole">
+                                    <select id="autolorebooks-recap-merge-preset" data-testid="lorebook-merge-preset" class="text_pole">
                                         <option value="">Default</option>
                                     </select>
                                     <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                        <input id="auto_lorebooks_summary_merge_include_preset_prompts" data-testid="lorebook-merge-include-preset-prompts" type="checkbox" />
+                                        <input id="auto_lorebooks_recap_merge_include_preset_prompts" data-testid="lorebook-merge-include-preset-prompts" type="checkbox" />
                                         <span>Include Preset Prompts</span>
                                     </label>
                                 </div>
 
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-merge-prefill">
+                                    <label for="autolorebooks-recap-merge-prefill">
                                         <span>Prefill (Claude models):</span>
                                         <small class="displayBlock opacity50p">Text to prefill AI response</small>
                                     </label>
-                                    <input type="text" id="autolorebooks-summary-merge-prefill" data-testid="lorebook-merge-prefill" class="text_pole" placeholder="" />
+                                    <input type="text" id="autolorebooks-recap-merge-prefill" data-testid="lorebook-merge-prefill" class="text_pole" placeholder="" />
                                 </div>
 
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-merge-prompt">
+                                    <label for="autolorebooks-recap-merge-prompt">
                                         <span>Lorebook entry merge prompt:</span>
-                                        <small class="displayBlock opacity50p">Use {{existing_content}} and {{new_content}}. Merges new summary data with existing entry content.</small>
+                                        <small class="displayBlock opacity50p">Use {{existing_content}} and {{new_content}}. Merges new recap data with existing entry content.</small>
                                     </label>
-                                    <textarea id="autolorebooks-summary-merge-prompt" data-testid="lorebook-merge-prompt" class="text_pole textarea_compact" rows="10"></textarea>
+                                    <textarea id="autolorebooks-recap-merge-prompt" data-testid="lorebook-merge-prompt" class="text_pole textarea_compact" rows="10"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -574,80 +574,80 @@
                             <div class="inline-drawer-content">
                                 <h5 class="margin-top-0">Stage 1 – Registry Lorebook Entry Lookup</h5>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-lorebook-entry-lookup-connection">
+                                    <label for="autolorebooks-recap-lorebook-entry-lookup-connection">
                                         <span>Connection Profile:</span>
                                         <small class="displayBlock opacity50p">API profile to use when screening new entries (empty = use main API)</small>
                                     </label>
-                                    <select id="autolorebooks-summary-lorebook-entry-lookup-connection" data-testid="lorebook-lookup-connection" class="text_pole">
+                                    <select id="autolorebooks-recap-lorebook-entry-lookup-connection" data-testid="lorebook-lookup-connection" class="text_pole">
                                         <option value="">Main API</option>
                                     </select>
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-lorebook-entry-lookup-preset">
+                                    <label for="autolorebooks-recap-lorebook-entry-lookup-preset">
                                         <span>Completion Preset:</span>
                                         <small class="displayBlock opacity50p">Preset for triage calls (empty = use default)</small>
                                     </label>
-                                    <select id="autolorebooks-summary-lorebook-entry-lookup-preset" data-testid="lorebook-lookup-preset" class="text_pole">
+                                    <select id="autolorebooks-recap-lorebook-entry-lookup-preset" data-testid="lorebook-lookup-preset" class="text_pole">
                                         <option value="">Default</option>
                                     </select>
                                     <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                        <input id="auto_lorebooks_summary_lorebook_entry_lookup_include_preset_prompts" data-testid="lorebook-lookup-include-preset-prompts" type="checkbox" />
+                                        <input id="auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts" data-testid="lorebook-lookup-include-preset-prompts" type="checkbox" />
                                         <span>Include Preset Prompts</span>
                                     </label>
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-lorebook-entry-lookup-prefill">
+                                    <label for="autolorebooks-recap-lorebook-entry-lookup-prefill">
                                         <span>Prefill (Claude models):</span>
                                         <small class="displayBlock opacity50p">Optional text to prefill AI responses during triage</small>
                                     </label>
-                                    <input type="text" id="autolorebooks-summary-lorebook-entry-lookup-prefill" data-testid="lorebook-lookup-prefill" class="text_pole" placeholder="" />
+                                    <input type="text" id="autolorebooks-recap-lorebook-entry-lookup-prefill" data-testid="lorebook-lookup-prefill" class="text_pole" placeholder="" />
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-lorebook-entry-lookup-prompt" class="flex-container alignitemscenter justifyspacebetween">
+                                    <label for="autolorebooks-recap-lorebook-entry-lookup-prompt" class="flex-container alignitemscenter justifyspacebetween">
                                         <span>Lorebook Entry Lookup prompt:</span>
-                                        <button id="restore-summary-triage-prompt" data-testid="lorebook-restore-lookup-prompt" class="menu_button fa-solid fa-recycle" title="Restore default triage prompt"></button>
+                                        <button id="restore-recap-triage-prompt" data-testid="lorebook-restore-lookup-prompt" class="menu_button fa-solid fa-recycle" title="Restore default triage prompt"></button>
                                     </label>
                                     <small class="displayBlock opacity50p">Use macros: {{lorebook_entry_types}}, {{new_entry}}, {{candidate_registry}}</small>
-                                    <textarea id="autolorebooks-summary-lorebook-entry-lookup-prompt" data-testid="lorebook-lookup-prompt" class="text_pole textarea_compact" rows="10"></textarea>
+                                    <textarea id="autolorebooks-recap-lorebook-entry-lookup-prompt" data-testid="lorebook-lookup-prompt" class="text_pole textarea_compact" rows="10"></textarea>
                                 </div>
 
                                 <h5>Stage 2 – Full LorebookEntryDeduplicate</h5>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-entry-deduplicate-connection">
+                                    <label for="autolorebooks-recap-entry-deduplicate-connection">
                                         <span>Connection Profile:</span>
                                         <small class="displayBlock opacity50p">API profile when comparing full entries (empty = use main API)</small>
                                     </label>
-                                    <select id="autolorebooks-summary-entry-deduplicate-connection" data-testid="lorebook-dedupe-connection" class="text_pole">
+                                    <select id="autolorebooks-recap-entry-deduplicate-connection" data-testid="lorebook-dedupe-connection" class="text_pole">
                                         <option value="">Main API</option>
                                     </select>
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-entry-deduplicate-preset">
+                                    <label for="autolorebooks-recap-entry-deduplicate-preset">
                                         <span>Completion Preset:</span>
                                         <small class="displayBlock opacity50p">Preset for the follow-up comparison call (empty = use default)</small>
                                     </label>
-                                    <select id="autolorebooks-summary-entry-deduplicate-preset" data-testid="lorebook-dedupe-preset" class="text_pole">
+                                    <select id="autolorebooks-recap-entry-deduplicate-preset" data-testid="lorebook-dedupe-preset" class="text_pole">
                                         <option value="">Default</option>
                                     </select>
                                     <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                        <input id="auto_lorebooks_summary_lorebook_entry_deduplicate_include_preset_prompts" data-testid="lorebook-dedupe-include-preset-prompts" type="checkbox" />
+                                        <input id="auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts" data-testid="lorebook-dedupe-include-preset-prompts" type="checkbox" />
                                         <span>Include Preset Prompts</span>
                                     </label>
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-entry-deduplicate-prefill">
+                                    <label for="autolorebooks-recap-entry-deduplicate-prefill">
                                         <span>Prefill (Claude models):</span>
                                         <small class="displayBlock opacity50p">Optional text to prefill the comparison response</small>
                                     </label>
-                                    <input type="text" id="autolorebooks-summary-entry-deduplicate-prefill" data-testid="lorebook-dedupe-prefill" class="text_pole" placeholder="" />
+                                    <input type="text" id="autolorebooks-recap-entry-deduplicate-prefill" data-testid="lorebook-dedupe-prefill" class="text_pole" placeholder="" />
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-summary-entry-deduplicate-prompt" class="flex-container alignitemscenter justifyspacebetween">
+                                    <label for="autolorebooks-recap-entry-deduplicate-prompt" class="flex-container alignitemscenter justifyspacebetween">
                                         <span>LorebookEntryDeduplicate prompt:</span>
-                                        <button id="restore-summary-entry-deduplicate-prompt" data-testid="lorebook-restore-dedupe-prompt" class="menu_button fa-solid fa-recycle" title="Restore default LorebookEntryDeduplicate prompt"></button>
+                                        <button id="restore-recap-entry-deduplicate-prompt" data-testid="lorebook-restore-dedupe-prompt" class="menu_button fa-solid fa-recycle" title="Restore default LorebookEntryDeduplicate prompt"></button>
                                     </label>
                                     <small class="displayBlock opacity50p">Use macros: {{lorebook_entry_types}}, {{new_entry}}, {{triage_synopsis}}, {{candidate_entries}}</small>
-                                    <textarea id="autolorebooks-summary-entry-deduplicate-prompt" data-testid="lorebook-dedupe-prompt" class="text_pole textarea_compact" rows="10"></textarea>
+                                    <textarea id="autolorebooks-recap-entry-deduplicate-prompt" data-testid="lorebook-dedupe-prompt" class="text_pole textarea_compact" rows="10"></textarea>
                                 </div>
                             </div>
                         </div>

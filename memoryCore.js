@@ -21,21 +21,21 @@ import {
   SUBSYSTEM,
   saveChatDebounced } from
 './index.js';
-import { get_running_summary_injection, clear_running_scene_summaries } from './runningSceneSummary.js';
+import { get_running_recap_injection, clear_running_scene_recaps } from './runningSceneRecap.js';
 
 // INJECTION RECORDING FOR LOGS
 let last_scene_injection = "";
 
-// SUMMARY PROPERTY STRUCTURE:
-// - Single message summaries are stored at the root of the message object:
-//     - 'memory': the summary text
-//     - 'include': 'Summary of message(s)'
-// - Scene summaries are NOT stored at the root. Instead, they use:
-//     - 'scene_summary_memory': the summary text for the scene break
+// RECAP PROPERTY STRUCTURE:
+// - Single message recaps are stored at the root of the message object:
+//     - 'memory': the recap text
+//     - 'include': 'Recap of message(s)'
+// - Scene recaps are NOT stored at the root. Instead, they use:
+//     - 'scene_recap_memory': the recap text for the scene break
 //     - 'scene_break_visible': whether the scene break is visible
-//     - 'scene_summary_include': whether to include this scene summary in injections
-//     - 'scene_summary_versions': array of all versions of the scene summary
-//     - 'scene_summary_current_index': index of the current version
+//     - 'scene_recap_include': whether to include this scene recap in injections
+//     - 'scene_recap_versions': array of all versions of the scene recap
+//     - 'scene_recap_current_index': index of the current version
 
 // Retrieving memories
 function check_message_exclusion(message ) {
@@ -44,7 +44,7 @@ function check_message_exclusion(message ) {
   if (!message) {return false;}
 
   // system messages sent by this extension are always ignored
-  if (get_data(message, 'is_auto_summarize_system_memory')) {
+  if (get_data(message, 'is_auto_recap_system_memory')) {
     return false;
   }
 
@@ -90,18 +90,18 @@ function check_message_exclusion(message ) {
   return true;
 }
 function update_message_inclusion_flags() {
-  // Update all messages in the chat, flagging them as single message summaries or long-term memories to include in the injection.
+  // Update all messages in the chat, flagging them as single message recaps or long-term memories to include in the injection.
   // This has to be run on the entire chat since it needs to take the context limits into account.
   const context = getContext();
   const chat = context.chat;
 
   debug("Updating message inclusion flags");
 
-  // iterate through the chat in reverse order and mark the messages that should be included as single message summaries
-  let message_summary_limit_reached = false;
+  // iterate through the chat in reverse order and mark the messages that should be included as single message recaps
+  let message_recap_limit_reached = false;
   const end = chat.length - 1;
-  let summary = ""; // total concatenated summary so far
-  let new_summary = ""; // temp summary storage to check token length
+  let recap = ""; // total concatenated recap so far
+  let new_recap = ""; // temp recap storage to check token length
   for (let i = end; i >= 0; i--) {
     const message = chat[i];
 
@@ -112,21 +112,21 @@ function update_message_inclusion_flags() {
       continue;
     }
 
-    if (!message_summary_limit_reached) {// single message limit hasn't been reached yet
+    if (!message_recap_limit_reached) {// single message limit hasn't been reached yet
       const memory = get_memory(message);
       if (!memory) {// If it doesn't have a memory, mark it as excluded and move to the next
         set_data(message, 'include', null);
         continue;
       }
 
-      new_summary = concatenate_summary(summary, message); // concatenate this summary
-      const message_summary_token_size = count_tokens(new_summary);
-      if (message_summary_token_size > get_short_token_limit()) {// over context limit
-        message_summary_limit_reached = true;
-        summary = ""; // reset summary
+      new_recap = concatenate_recap(recap, message); // concatenate this recap
+      const message_recap_token_size = count_tokens(new_recap);
+      if (message_recap_token_size > get_short_token_limit()) {// over context limit
+        message_recap_limit_reached = true;
+        recap = ""; // reset recap
       } else {// under context limit
-        set_data(message, 'include', 'Summary of message(s)');
-        summary = new_summary;
+        set_data(message, 'include', 'Recap of message(s)');
+        recap = new_recap;
         continue;
       }
     }
@@ -137,67 +137,67 @@ function update_message_inclusion_flags() {
 
   update_all_message_visuals();
 }
-function concatenate_summary(existing_text , message ) {
-  // given an existing text of concatenated summaries, concatenate the next one onto it
+function concatenate_recap(existing_text , message ) {
+  // given an existing text of concatenated recaps, concatenate the next one onto it
   const memory = get_memory(message);
-  if (!memory) {// if there's no summary, do nothing
+  if (!memory) {// if there's no recap, do nothing
     return existing_text;
   }
   const separator = existing_text ? "\n" : "";
   return existing_text + separator + memory;
 }
 
-// Scene summaries are stored in 'scene_summary_memory' (not 'memory') on the message object.
-function concatenate_summaries(indexes ) {
+// Scene recaps are stored in 'scene_recap_memory' (not 'memory') on the message object.
+function concatenate_recaps(indexes ) {
   const context = getContext();
   const chat = context.chat;
-  const summaries = [];
+  const recaps = [];
   let count = 1;
   for (const i of indexes) {
     const message = chat[i];
-    let type, summary;
-    if (get_data(message, 'scene_summary_memory')) {
-      // Scene summary
-      type = 'Scene-wide Sumary';
-      summary = get_data(message, 'scene_summary_memory');
+    let type, recap;
+    if (get_data(message, 'scene_recap_memory')) {
+      // Scene recap
+      type = 'Scene-wide Recap';
+      recap = get_data(message, 'scene_recap_memory');
     } else {
-      // Single message summary
+      // Single message recap
       type = get_data(message, 'include');
-      summary = get_data(message, 'memory');
+      recap = get_data(message, 'memory');
     }
-    if (summary) {
-      summaries.push({ id: count, summary, type });
+    if (recap) {
+      recaps.push({ id: count, recap, type });
       count++;
     }
   }
-  return JSON.stringify(summaries, null, 2);
+  return JSON.stringify(recaps, null, 2);
 }
 
 // Comprehensive cleanup with detailed auditing - tracks 6 types of cleared data
 // eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Cleanup with detailed auditing of 6 data types inherently complex
-function clear_all_summaries_for_chat() {
+function clear_all_recaps_for_chat() {
   const ctx = getContext();
   const chat = ctx.chat;
 
   if (!Array.isArray(chat) || chat.length === 0) {
-    debug(SUBSYSTEM.MEMORY, 'No chat loaded while attempting to clear summaries');
+    debug(SUBSYSTEM.MEMORY, 'No chat loaded while attempting to clear recaps');
     return {
       messageMetadataCleared: 0,
-      singleSummariesCleared: 0,
-      sceneSummariesCleared: 0,
+      singleRecapsCleared: 0,
+      sceneRecapsCleared: 0,
       sceneBreaksCleared: 0,
       checkedFlagsCleared: 0,
-      swipeSummariesCleared: 0,
-      runningSummaryCleared: 0
+      swipeRecapsCleared: 0,
+      runningRecapCleared: 0
     };
   }
 
   let messageMetadataCleared = 0;
-  let singleSummariesCleared = 0;
-  let sceneSummariesCleared = 0;
+  let singleRecapsCleared = 0;
+  let sceneRecapsCleared = 0;
   let sceneBreaksCleared = 0;
   let checkedFlagsCleared = 0;
-  let swipeSummariesCleared = 0;
+  let swipeRecapsCleared = 0;
 
   for (const message of chat) {
     const moduleData = message?.extra?.[MODULE_NAME];
@@ -206,14 +206,14 @@ function clear_all_summaries_for_chat() {
       messageMetadataCleared++;
 
       if (moduleData.memory) {
-        singleSummariesCleared++;
+        singleRecapsCleared++;
       }
 
       if (
-      moduleData.scene_summary_memory ||
-      Array.isArray(moduleData.scene_summary_versions) && moduleData.scene_summary_versions.length > 0)
+      moduleData.scene_recap_memory ||
+      Array.isArray(moduleData.scene_recap_versions) && moduleData.scene_recap_versions.length > 0)
       {
-        sceneSummariesCleared++;
+        sceneRecapsCleared++;
       }
 
       if (moduleData.scene_break) {
@@ -237,34 +237,34 @@ function clear_all_summaries_for_chat() {
           if (swipe.extra && Object.keys(swipe.extra).length === 0) {
             delete swipe.extra;
           }
-          swipeSummariesCleared++;
+          swipeRecapsCleared++;
         }
       }
     }
   }
 
-  const runningSummaryCleared = clear_running_scene_summaries();
+  const runningRecapCleared = clear_running_scene_recaps();
 
   saveChatDebounced();
 
   debug(
     SUBSYSTEM.MEMORY,
-    `[Reset] Cleared summaries: messages=${messageMetadataCleared}, single=${singleSummariesCleared}, scenes=${sceneSummariesCleared}, sceneBreaks=${sceneBreaksCleared}, checked=${checkedFlagsCleared}, swipes=${swipeSummariesCleared}, runningVersions=${runningSummaryCleared}`
+    `[Reset] Cleared recaps: messages=${messageMetadataCleared}, single=${singleRecapsCleared}, scenes=${sceneRecapsCleared}, sceneBreaks=${sceneBreaksCleared}, checked=${checkedFlagsCleared}, swipes=${swipeRecapsCleared}, runningVersions=${runningRecapCleared}`
   );
 
   if (typeof window !== 'undefined') {
     // Flag scene break detector to perform a full rescan on next run
-    window.autoSummarizeForceSceneBreakRescan = true;
+    window.autoRecapForceSceneBreakRescan = true;
   }
 
   return {
     messageMetadataCleared,
-    singleSummariesCleared,
-    sceneSummariesCleared,
+    singleRecapsCleared,
+    sceneRecapsCleared,
     sceneBreaksCleared,
     checkedFlagsCleared,
-    swipeSummariesCleared,
-    runningSummaryCleared
+    swipeRecapsCleared,
+    runningRecapCleared
   };
 }
 
@@ -290,10 +290,10 @@ async function refresh_memory() {
   const ctx = getContext();
 
   // --- Declare scene injection position/role/depth/scan variables ---
-  const scene_summary_position = get_settings('running_scene_summary_position');
-  const scene_summary_role = get_settings('running_scene_summary_role');
-  const scene_summary_depth = get_settings('running_scene_summary_depth');
-  const scene_summary_scan = get_settings('running_scene_summary_scan');
+  const scene_recap_position = get_settings('running_scene_recap_position');
+  const scene_recap_role = get_settings('running_scene_recap_role');
+  const scene_recap_depth = get_settings('running_scene_recap_depth');
+  const scene_recap_scan = get_settings('running_scene_recap_scan');
 
   // --- Auto-hide/unhide messages older than X ---
   await auto_hide_messages_by_command();
@@ -309,15 +309,15 @@ async function refresh_memory() {
   // Update the UI according to the current state of the chat memories
   update_message_inclusion_flags(); // update the inclusion flags for all messages
 
-  // --- Scene Summary Injection ---
-  const scene_injection = get_running_summary_injection();
-  debug(SUBSYSTEM.MEMORY, `Using running scene summary for injection (${scene_injection.length} chars)`);
+  // --- Scene Recap Injection ---
+  const scene_injection = get_running_recap_injection();
+  debug(SUBSYSTEM.MEMORY, `Using running scene recap for injection (${scene_injection.length} chars)`);
 
   // Store for later logging
   last_scene_injection = scene_injection;
 
-  // Only inject scene summaries (message summaries are NOT injected)
-  ctx.setExtensionPrompt(`${MODULE_NAME}_scene`, scene_injection, scene_summary_position, scene_summary_depth, scene_summary_scan, scene_summary_role);
+  // Only inject scene recaps (message recaps are NOT injected)
+  ctx.setExtensionPrompt(`${MODULE_NAME}_scene`, scene_injection, scene_recap_position, scene_recap_depth, scene_recap_scan, scene_recap_role);
 
   return scene_injection; // return the scene injection
 }
@@ -327,8 +327,8 @@ const refresh_memory_debounced = debounce(refresh_memory, debounce_timeout.relax
 export {
   check_message_exclusion,
   collect_chat_messages,
-  concatenate_summaries,
-  clear_all_summaries_for_chat,
+  concatenate_recaps,
+  clear_all_recaps_for_chat,
   refresh_memory,
   refresh_memory_debounced,
   last_scene_injection };

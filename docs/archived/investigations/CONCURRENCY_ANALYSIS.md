@@ -4,9 +4,9 @@
 **Date:** 2025-11-04
 **Status:** ⚠️ **UNSAFE - Critical Race Conditions Identified**
 
-## Executive Summary
+## Executive Recap
 
-This document analyzes the safety of executing concurrent LLM operations (e.g., multiple summarizations, lorebook lookups, validations running simultaneously) across the ST-Auto-Summarize extension, SillyTavern core, and the first-hop proxy.
+This document analyzes the safety of executing concurrent LLM operations (e.g., multiple recap generations, lorebook lookups, validations running simultaneously) across the ST-Auto-Recap extension, SillyTavern core, and the first-hop proxy.
 
 **Key Findings:**
 - ✅ **HTTP/Proxy Layer:** Safe for concurrent requests
@@ -108,17 +108,17 @@ async function switchConnectionSettings(profileName, presetName) {
 **Race Condition Scenario:**
 
 ```
-Time  | Operation A (Summary)           | Operation B (Lorebook)
+Time  | Operation A (Recap)           | Operation B (Lorebook)
 ------|--------------------------------|---------------------------
 T0    | Save current: "Main/Default"   |
-T1    | Switch to: "Summary/Fast"      |
-T2    |                                | Save current: "Summary/Fast" ❌ (wrong!)
+T1    | Switch to: "Recap/Fast"      |
+T2    |                                | Save current: "Recap/Fast" ❌ (wrong!)
 T3    |                                | Switch to: "Lorebook/JSON"
 T4    | Execute generateRaw()          | ← Uses "Lorebook/JSON" ❌
 T5    | generateRaw() completes        |
 T6    | Restore to: "Main/Default"     | ← Clobbers B's settings!
 T7    |                                | Execute generateRaw() ← Uses "Main/Default" ❌
-T8    |                                | Restore to: "Summary/Fast" ❌ (wrong!)
+T8    |                                | Restore to: "Recap/Fast" ❌ (wrong!)
 ```
 
 **Impact:**
@@ -188,7 +188,7 @@ T5    |   ↓ ST_METADATA has wrong op   |
 **Code References:**
 - `operationContext.js:29-47` - Suffix getters/setters
 - `generateRawInterceptor.js:39` - Usage in interceptor
-- `runningSceneSummary.js` - Example usage with scene ranges
+- `runningSceneRecap.js` - Example usage with scene ranges
 
 ---
 
@@ -475,7 +475,7 @@ const CC_COMMANDS = [
 ```
 Time  | Profile A Application          | Profile B Application
 ------|--------------------------------|---------------------------
-T0    | Start: Apply "Summary" profile |
+T0    | Start: Apply "Recap" profile |
 T1    | /api openai ← Sets global      |
 T2    | await (yields)                 |
 T3    |                                | Start: Apply "Lorebook" profile
@@ -746,9 +746,9 @@ Responses arrive at correct caller, but **content is corrupted** due to wrong se
 ```
 Initial State: amount_gen=80, profile="Main"
 
-Operation A (Summary):
-  1. Target settings: amount_gen=100, profile="Summary"
-  2. Switch to Summary profile ← Modifies globals
+Operation A (Recap):
+  1. Target settings: amount_gen=100, profile="Recap"
+  2. Switch to Recap profile ← Modifies globals
   3. generateRaw() called
   4. [Context switch to Operation B]
 
@@ -762,7 +762,7 @@ Operation B (Lorebook):
 Operation A's request:
   ✓ Response arrives at correct promise (HTTP works)
   ✗ BUT request was built with profile="Lorebook", amount_gen=200
-  ✗ Response content wrong for Summary operation
+  ✗ Response content wrong for Recap operation
 
 Operation B's request:
   ✓ Response arrives at correct promise (HTTP works)
@@ -774,22 +774,22 @@ Operation B's request:
 
 ```javascript
 // Concurrent execution:
-const summaryPromise = queueOperation('summary', { messageIndex: 42 });
+const recapPromise = queueOperation('recap', { messageIndex: 42 });
 const lorebookPromise = queueOperation('lorebook_lookup', { entity: 'Alice' });
 
 // Both operations interleave during profile switching:
-// Summary wants: { profile: "Claude-Fast", temp: 0.3, max_tokens: 100 }
+// Recap wants: { profile: "Claude-Fast", temp: 0.3, max_tokens: 100 }
 // Lorebook wants: { profile: "GPT-4-JSON", temp: 0.0, max_tokens: 500 }
 
 // Actual execution (due to races):
-// Summary request sent with: { profile: "GPT-4-JSON", temp: 0.0, max_tokens: 500 } ❌
+// Recap request sent with: { profile: "GPT-4-JSON", temp: 0.0, max_tokens: 500 } ❌
 // Lorebook request sent with: { profile: "Claude-Fast", temp: 0.3, max_tokens: 100 } ❌
 
 // Responses:
-const summaryResponse = await summaryPromise;
+const recapResponse = await recapPromise;
 // ✓ Response arrives correctly (HTTP works)
-// ✗ BUT content is JSON-formatted from GPT-4 (wrong format for summary!)
-// ✗ AND has 500 tokens (summary only needs 100)
+// ✗ BUT content is JSON-formatted from GPT-4 (wrong format for recap!)
+// ✗ AND has 500 tokens (recap only needs 100)
 
 const lorebookResponse = await lorebookPromise;
 // ✓ Response arrives correctly (HTTP works)
@@ -798,7 +798,7 @@ const lorebookResponse = await lorebookPromise;
 ```
 
 **Impact:**
-- Summaries formatted incorrectly (expected prose, got JSON)
+- Recaps formatted incorrectly (expected prose, got JSON)
 - Lorebook lookups incomplete (expected JSON, got truncated prose)
 - Operations may fail validation
 - Downstream processing errors (e.g., JSON.parse() fails)
@@ -825,17 +825,17 @@ Extension Operation Type → Dedicated Proxy Path → Dedicated Config → Dedic
 Directory Structure:
 first-hop-proxy/
   ├── config.yaml                      # Default config (unused if using paths)
-  ├── config-summary.yaml              # Summary operations → Claude Opus
+  ├── config-recap.yaml              # Recap operations → Claude Opus
   ├── config-lorebook.yaml             # Lorebook operations → GPT-4 Turbo
   ├── config-validation.yaml           # Validation operations → Claude Sonnet
   ├── config-scene.yaml                # Scene operations → GPT-4
-  └── config-running-summary.yaml      # Running summaries → Claude Opus
+  └── config-running-recap.yaml      # Running recaps → Claude Opus
 ```
 
 **Config Files:**
 
 ```yaml
-# config-summary.yaml
+# config-recap.yaml
 target_proxy:
   url: "https://api.anthropic.com/v1/chat/completions"
 
@@ -880,10 +880,10 @@ headers:
 // In operationHandlers.js or new file: proxyRouting.js
 
 const OPERATION_PROXY_PATHS = {
-    [OperationType.SUMMARY]: '/summary',
-    [OperationType.VALIDATE_SUMMARY]: '/validation',
-    [OperationType.GENERATE_SCENE_SUMMARY]: '/scene',
-    [OperationType.GENERATE_RUNNING_SUMMARY]: '/running-summary',
+    [OperationType.RECAP]: '/recap',
+    [OperationType.VALIDATE_RECAP]: '/validation',
+    [OperationType.GENERATE_SCENE_RECAP]: '/scene',
+    [OperationType.GENERATE_RUNNING_RECAP]: '/running-recap',
     [OperationType.LOREBOOK_ENTRY_LOOKUP]: '/lorebook',
     [OperationType.RESOLVE_LOREBOOK_ENTRY]: '/lorebook',
     [OperationType.CREATE_LOREBOOK_ENTRY]: '/lorebook',
@@ -904,7 +904,7 @@ export function getProxyPathForOperation(operationType) {
 ```javascript
 // In operationHandlers.js
 
-async function handleSummaryOperation(operation) {
+async function handleRecapOperation(operation) {
     const settings = get_settings();
     const message = chat[operation.params.index];
 
@@ -922,7 +922,7 @@ async function handleSummaryOperation(operation) {
         oai_settings.reverse_proxy = fullUrl;
 
         const result = await generateRaw({
-            prompt: summaryPrompt,
+            prompt: recapPrompt,
             responseLength: settings.max_tokens,
             // ... other options
         });
@@ -937,9 +937,9 @@ async function handleSummaryOperation(operation) {
 **How This Solves Race Conditions:**
 
 ```
-Operation A (Summary):
-  ↓ generateRaw({ proxy: "http://localhost:5000/summary" })
-  ↓ Hits config-summary.yaml
+Operation A (Recap):
+  ↓ generateRaw({ proxy: "http://localhost:5000/recap" })
+  ↓ Hits config-recap.yaml
   ↓ Routes to Claude Opus
   ✓ NO profile switching
   ✓ NO global state mutation
@@ -1014,9 +1014,9 @@ function startQueueProcessor() {
    // Optimized: Variable delay based on operation type
 
    const OPERATION_DELAYS = {
-       [OperationType.SUMMARY]: 1000,              // Fast operation, short delay
+       [OperationType.RECAP]: 1000,              // Fast operation, short delay
        [OperationType.LOREBOOK_ENTRY_LOOKUP]: 2000, // Needs time for rate limit
-       [OperationType.GENERATE_SCENE_SUMMARY]: 3000, // Longer operation
+       [OperationType.GENERATE_SCENE_RECAP]: 3000, // Longer operation
        // ...
    };
 
@@ -1351,7 +1351,7 @@ async function executeOperationWithSettings(operation) {
 cd first-hop-proxy/
 
 # Copy base config as templates
-cp config.yaml config-summary.yaml
+cp config.yaml config-recap.yaml
 cp config.yaml config-lorebook.yaml
 cp config.yaml config-validation.yaml
 cp config.yaml config-scene.yaml
@@ -1359,10 +1359,10 @@ cp config.yaml config-scene.yaml
 
 #### Step 2: Configure Each Operation Type
 
-**config-summary.yaml:**
+**config-recap.yaml:**
 
 ```yaml
-# Summary operations: Use Claude Opus for high-quality narrative summaries
+# Recap operations: Use Claude Opus for high-quality narrative recaps
 target_proxy:
   url: "https://api.anthropic.com/v1/chat/completions"
 
@@ -1380,7 +1380,7 @@ logging:
   include_headers: true
   include_timing: true
 
-# Optional: Regex replacements for summary operations
+# Optional: Regex replacements for recap operations
 regex_replacement:
   enabled: false
   rules: []
@@ -1445,7 +1445,7 @@ headers:
 python -m first_hop_proxy.main
 
 # Test each endpoint (from another terminal):
-curl http://localhost:5000/summary/models
+curl http://localhost:5000/recap/models
 curl http://localhost:5000/lorebook/models
 curl http://localhost:5000/validation/models
 
@@ -1467,13 +1467,13 @@ import { OperationType } from './operationQueue.js';
  * Each path corresponds to a config-{path}.yaml file in the proxy
  */
 const OPERATION_PROXY_PATHS /*: {[key: string]: string} */ = {
-    // Summary operations → Claude Opus
-    [OperationType.SUMMARY]: '/summary',
-    [OperationType.VALIDATE_SUMMARY]: '/validation',
+    // Recap operations → Claude Opus
+    [OperationType.RECAP]: '/recap',
+    [OperationType.VALIDATE_RECAP]: '/validation',
 
     // Scene operations → GPT-4
-    [OperationType.GENERATE_SCENE_SUMMARY]: '/scene',
-    [OperationType.GENERATE_RUNNING_SUMMARY]: '/scene',
+    [OperationType.GENERATE_SCENE_RECAP]: '/scene',
+    [OperationType.GENERATE_RUNNING_RECAP]: '/scene',
     [OperationType.DETECT_SCENE_BREAK]: '/scene',
 
     // Lorebook operations → GPT-4
@@ -1487,7 +1487,7 @@ const OPERATION_PROXY_PATHS /*: {[key: string]: string} */ = {
 /**
  * Get proxy path suffix for operation type
  * @param {string} operationType - Operation type from OperationType enum
- * @returns {string} Path suffix (e.g., '/summary') or empty string for default
+ * @returns {string} Path suffix (e.g., '/recap') or empty string for default
  */
 export function getProxyPathForOperation(operationType /*: string */) /*: string */ {
     return OPERATION_PROXY_PATHS[operationType] || '';
@@ -1497,7 +1497,7 @@ export function getProxyPathForOperation(operationType /*: string */) /*: string
  * Build full proxy URL for operation
  * @param {string} operationType - Operation type
  * @param {string} baseUrl - Base proxy URL (e.g., 'http://localhost:5000')
- * @returns {string} Full URL with path (e.g., 'http://localhost:5000/summary/chat/completions')
+ * @returns {string} Full URL with path (e.g., 'http://localhost:5000/recap/chat/completions')
  */
 export function getProxyUrlForOperation(operationType /*: string */, baseUrl /*: string */) /*: string */ {
     const path = getProxyPathForOperation(operationType);
@@ -1519,7 +1519,7 @@ export function getProxyUrlForOperation(operationType /*: string */, baseUrl /*:
 import { getProxyUrlForOperation } from './proxyRouting.js';
 import { oai_settings } from './index.js';
 
-async function handleSummaryOperation(operation) {
+async function handleRecapOperation(operation) {
     const settings = get_settings();
 
     // Save original proxy URL
@@ -1531,7 +1531,7 @@ async function handleSummaryOperation(operation) {
         oai_settings.reverse_proxy = proxyUrl;
 
         // Execute operation (will use overridden proxy)
-        const result = await summarize_text(
+        const result = await recap_text(
             operation.params.index,
             // ... other params
         );
@@ -1587,20 +1587,20 @@ export async function generateRawWithProxy(
 **Usage:**
 
 ```javascript
-// In summarization.js:
+// In recapping.js:
 import { generateRawWithProxy } from './generateRawWithProxy.js';
 
-async function summarize_text(index, ...) {
+async function recap_text(index, ...) {
     // OLD:
-    // const summary = await generateRaw({ prompt: summaryPrompt });
+    // const recap = await generateRaw({ prompt: recapPrompt });
 
     // NEW:
-    const summary = await generateRawWithProxy(
-        OperationType.SUMMARY,
-        { prompt: summaryPrompt, responseLength: 150 }
+    const recap = await generateRawWithProxy(
+        OperationType.RECAP,
+        { prompt: recapPrompt, responseLength: 150 }
     );
 
-    return summary;
+    return recap;
 }
 ```
 
@@ -1626,16 +1626,16 @@ export const default_settings = {
         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
     </div>
     <div class="inline-drawer-content">
-        <label for="auto_summarize_proxy_routing_enabled">
-            <input type="checkbox" id="auto_summarize_proxy_routing_enabled" />
+        <label for="auto_recap_proxy_routing_enabled">
+            <input type="checkbox" id="auto_recap_proxy_routing_enabled" />
             <span>Enable proxy path routing</span>
         </label>
         <small>Route different operation types to different proxy configs</small>
 
-        <label for="auto_summarize_proxy_base_url">
+        <label for="auto_recap_proxy_base_url">
             <span>Proxy Base URL</span>
         </label>
-        <input type="text" id="auto_summarize_proxy_base_url" class="text_pole"
+        <input type="text" id="auto_recap_proxy_base_url" class="text_pole"
                value="http://localhost:5000" />
         <small>Base URL for first-hop proxy (default: http://localhost:5000)</small>
     </div>
@@ -1654,16 +1654,16 @@ async function testConcurrentOps() {
     console.log('Enqueueing 10 operations of different types...');
 
     const operations = [
-        enqueueOperation(OperationType.SUMMARY, { index: 0 }),
-        enqueueOperation(OperationType.SUMMARY, { index: 1 }),
+        enqueueOperation(OperationType.RECAP, { index: 0 }),
+        enqueueOperation(OperationType.RECAP, { index: 1 }),
         enqueueOperation(OperationType.LOREBOOK_ENTRY_LOOKUP, { entity: 'Alice' }),
         enqueueOperation(OperationType.LOREBOOK_ENTRY_LOOKUP, { entity: 'Bob' }),
-        enqueueOperation(OperationType.GENERATE_SCENE_SUMMARY, { index: 5 }),
-        enqueueOperation(OperationType.VALIDATE_SUMMARY, { summary: 'Test...', type: 'regular' }),
-        enqueueOperation(OperationType.SUMMARY, { index: 2 }),
+        enqueueOperation(OperationType.GENERATE_SCENE_RECAP, { index: 5 }),
+        enqueueOperation(OperationType.VALIDATE_RECAP, { recap: 'Test...', type: 'regular' }),
+        enqueueOperation(OperationType.RECAP, { index: 2 }),
         enqueueOperation(OperationType.LOREBOOK_ENTRY_LOOKUP, { entity: 'Charlie' }),
-        enqueueOperation(OperationType.SUMMARY, { index: 3 }),
-        enqueueOperation(OperationType.VALIDATE_SUMMARY, { summary: 'Test2...', type: 'scene' }),
+        enqueueOperation(OperationType.RECAP, { index: 3 }),
+        enqueueOperation(OperationType.VALIDATE_RECAP, { recap: 'Test2...', type: 'scene' }),
     ];
 
     console.log(`Enqueued ${operations.length} operations`);
@@ -1674,7 +1674,7 @@ testConcurrentOps();
 ```
 
 **Expected Behavior:**
-- Summary operations hit Claude Opus (via /summary path)
+- Recap operations hit Claude Opus (via /recap path)
 - Lorebook operations hit GPT-4 (via /lorebook path)
 - Validation operations hit Claude Sonnet (via /validation path)
 - All operations execute **sequentially** (queue still processes one at a time)
@@ -1776,8 +1776,8 @@ import { getProxyPathForOperation, getProxyUrlForOperation } from '../../proxyRo
 import { OperationType } from '../../operationQueue.js';
 
 export function test_proxyPathMapping() {
-    const summaryPath = getProxyPathForOperation(OperationType.SUMMARY);
-    expect(summaryPath).toBe('/summary');
+    const recapPath = getProxyPathForOperation(OperationType.RECAP);
+    expect(recapPath).toBe('/recap');
 
     const lorebookPath = getProxyPathForOperation(OperationType.LOREBOOK_ENTRY_LOOKUP);
     expect(lorebookPath).toBe('/lorebook');
@@ -1787,12 +1787,12 @@ export function test_proxyPathMapping() {
 }
 
 export function test_proxyUrlBuilding() {
-    const url = getProxyUrlForOperation(OperationType.SUMMARY, 'http://localhost:5000');
-    expect(url).toBe('http://localhost:5000/summary/chat/completions');
+    const url = getProxyUrlForOperation(OperationType.RECAP, 'http://localhost:5000');
+    expect(url).toBe('http://localhost:5000/recap/chat/completions');
 
     // Test with trailing slash
-    const url2 = getProxyUrlForOperation(OperationType.SUMMARY, 'http://localhost:5000/');
-    expect(url2).toBe('http://localhost:5000/summary/chat/completions');
+    const url2 = getProxyUrlForOperation(OperationType.RECAP, 'http://localhost:5000/');
+    expect(url2).toBe('http://localhost:5000/recap/chat/completions');
 }
 ```
 
@@ -1808,28 +1808,28 @@ export async function test_concurrentOperationsUseDifferentProviders() {
     await clearAllOperations();
 
     // Enqueue operations of different types
-    const summaryId = await enqueueOperation(OperationType.SUMMARY, { index: 0 });
+    const recapId = await enqueueOperation(OperationType.RECAP, { index: 0 });
     const lorebookId = await enqueueOperation(OperationType.LOREBOOK_ENTRY_LOOKUP, { entity: 'Test' });
 
     // Start processing
     resumeQueue();
 
     // Wait for completion
-    await waitForOperation(summaryId, 30000);
+    await waitForOperation(recapId, 30000);
     await waitForOperation(lorebookId, 30000);
 
     // Check proxy logs to verify different configs were used
-    const summaryLog = findProxyLogForOperation(summaryId);
+    const recapLog = findProxyLogForOperation(recapId);
     const lorebookLog = findProxyLogForOperation(lorebookId);
 
-    expect(summaryLog.config_path).toBe('summary');
+    expect(recapLog.config_path).toBe('recap');
     expect(lorebookLog.config_path).toBe('lorebook');
 
     // Verify no cross-contamination
-    const summaryOp = getOperation(summaryId);
+    const recapOp = getOperation(recapId);
     const lorebookOp = getOperation(lorebookId);
 
-    expect(summaryOp.status).toBe(OperationStatus.COMPLETED);
+    expect(recapOp.status).toBe(OperationStatus.COMPLETED);
     expect(lorebookOp.status).toBe(OperationStatus.COMPLETED);
 }
 ```
@@ -1837,8 +1837,8 @@ export async function test_concurrentOperationsUseDifferentProviders() {
 ### Manual Testing Checklist
 
 - [ ] Proxy starts successfully with all config files
-- [ ] Each proxy path returns correct model list (`/summary/models`, `/lorebook/models`, etc.)
-- [ ] Summary operations hit correct provider (check proxy logs)
+- [ ] Each proxy path returns correct model list (`/recap/models`, `/lorebook/models`, etc.)
+- [ ] Recap operations hit correct provider (check proxy logs)
 - [ ] Lorebook operations hit correct provider (check proxy logs)
 - [ ] Validation operations hit correct provider (check proxy logs)
 - [ ] Operations complete successfully with expected results
@@ -1867,7 +1867,7 @@ export async function test_concurrentOperationsUseDifferentProviders() {
 
 - **Operation Handlers:**
   - `operationHandlers.js` - Handler registration and execution
-  - `summarization.js` - Summary operation handler
+  - `recapping.js` - Recap operation handler
   - `lorebookEntryMerger.js` - Lorebook operation handlers
 
 ### SillyTavern Core References
@@ -1933,13 +1933,13 @@ Initial State:
 
 Timeline:
 T0  | Op-A: Save settings (profile="Main")
-T1  | Op-A: Switch to "Summary" profile
+T1  | Op-A: Switch to "Recap" profile
 T2  |   - oai_settings.temp_openai = 0.3
 T3  |   - oai_settings.max_tokens = 100
 T4  | Op-A: generateRaw() starts
 T5  | Op-A: Read temp_openai = 0.3 ✓
 T6  | Op-A: await eventSource.emit(...) ← YIELDS
-T7  |                                      | Op-B: Save settings (profile="Summary"!) ❌
+T7  |                                      | Op-B: Save settings (profile="Recap"!) ❌
 T8  |                                      | Op-B: Switch to "Lorebook" profile
 T9  |                                      |   - oai_settings.temp_openai = 0.0
 T10 |                                      |   - oai_settings.max_tokens = 500
@@ -1950,12 +1950,12 @@ T14 | Op-A: Send request (wrong settings)
 T15 |                                      | Op-B: Read temp_openai = 0.0 ✓
 T16 |                                      | Op-B: Read max_tokens = 500 ✓
 T17 | Op-A: Response arrives (too long, wrong temp)
-T18 | Op-A: Restore to "Summary" ❌ (clobbers B's "Lorebook")
+T18 | Op-A: Restore to "Recap" ❌ (clobbers B's "Lorebook")
 T19 |                                      | Op-B: Response arrives
-T20 |                                      | Op-B: Restore to "Summary" ❌ (wrong!)
+T20 |                                      | Op-B: Restore to "Recap" ❌ (wrong!)
 
 Final State:
-  - Current profile: "Summary" (should be "Main"!)
+  - Current profile: "Recap" (should be "Main"!)
   - oai_settings in inconsistent state
 ```
 
@@ -1996,7 +1996,7 @@ Initial State:
   - API: openai, Model: gpt-3.5-turbo
 
 Timeline:
-T0  | Profile-A: Apply "Summary" (Claude)
+T0  | Profile-A: Apply "Recap" (Claude)
 T1  |   - /api claude ← Sets API
 T2  |   - await SlashCommandParser.execute() ← YIELDS
 T3  |                                          | Profile-B: Apply "Lorebook" (GPT-4)
@@ -2033,9 +2033,9 @@ Final State:
 
 - **Profile:** Named collection of connection settings (API provider, model, temperature, etc.) in SillyTavern's connection-manager extension
 
-- **Operation:** Queued unit of work in ST-Auto-Summarize (summary, lorebook lookup, validation, etc.)
+- **Operation:** Queued unit of work in ST-Auto-Recap (recap, lorebook lookup, validation, etc.)
 
-- **Proxy Path Routing:** Using URL paths to select different proxy configurations (e.g., /summary vs /lorebook)
+- **Proxy Path Routing:** Using URL paths to select different proxy configurations (e.g., /recap vs /lorebook)
 
 **Acronyms:**
 

@@ -3,7 +3,7 @@
 **Date:** 2025-11-04
 **Objective:** Verify viability of event-driven lorebook wrapping approach
 
-## Executive Summary
+## Executive Recap
 
 ✅ **WORLD_INFO_ACTIVATED event provides complete data needed**
 ❌ **generateRaw interceptor NOT called for chat completions (uses messages array, not string prompt)**
@@ -52,7 +52,7 @@
 **Interceptor installed:** Line 108-112 in console
 **Result:** `✓ Wrapped ctx.generateRaw`
 
-**Problem:** No `[Auto-Summarize:DIAGNOSTIC] PROMPT ANALYSIS` logs found
+**Problem:** No `[Auto-Recap:DIAGNOSTIC] PROMPT ANALYSIS` logs found
 
 **Root Cause:** SillyTavern uses **Chat Completion API** (messages array), not Text Completion API (string prompt)
 

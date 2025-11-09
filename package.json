@@ -1,8 +1,8 @@
 {
-  "name": "st-auto-summarize",
+  "name": "st-auto-recap",
   "version": "1.0.0",
   "type": "module",
-  "description": "Auto-Summarize extension for SillyTavern",
+  "description": "Auto-Recap extension for SillyTavern",
   "main": "index.js",
   "scripts": {
     "lint": "eslint *.js --ignore-pattern syntax-check.js --no-warn-ignored --max-warnings 0",
@@ -13,7 +13,7 @@
     "analyze": "npm run lint && npm run syntax-check",
     "analyze:full": "npm run lint && npm run syntax-check && npm run audit",
     "validate-selectors": "node scripts/validate-selectors.js",
-    "pretest": "npm run validate-selectors && npm run lint:quiet",
+    "pretest": "npm run validate-selectors && npm run lint:quiet && npm run syntax-check && npm run audit",
     "test": "playwright test",
     "test:feature": "playwright test tests/features",
     "test:suite": "playwright test tests/suite",
@@ -25,7 +25,7 @@
   "keywords": [
     "sillytavern",
     "extension",
-    "summarization",
+    "recapping",
     "ai"
   ],
   "author": "Queen Gytha",
@@ -35,12 +35,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/QueenGytha/ST-Auto-Summarize.git"
+    "url": "https://github.com/QueenGytha/ST-Auto-Recap.git"
   },
   "bugs": {
-    "url": "https://github.com/QueenGytha/ST-Auto-Summarize/issues"
+    "url": "https://github.com/QueenGytha/ST-Auto-Recap/issues"
   },
-  "homepage": "https://github.com/QueenGytha/ST-Auto-Summarize#readme",
+  "homepage": "https://github.com/QueenGytha/ST-Auto-Recap#readme",
   "lint-staged": {
     "*.js": [
       "eslint --max-warnings 0",

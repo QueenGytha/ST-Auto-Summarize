@@ -1,6 +1,6 @@
-# Summary vs Lorebook Examples
+# Recap vs Lorebook Examples
 
-**Purpose:** Comprehensive examples demonstrating the clear separation between `summary` (timeline) and `lorebooks` (detailed entries)
+**Purpose:** Comprehensive examples demonstrating the clear separation between `recap` (timeline) and `lorebooks` (detailed entries)
 
 ---
 
@@ -25,7 +25,7 @@ Alice nodded grimly. "Any idea where they're based?"
 
 ```json
 {
-  "summary": "Alice entered The Rusty Nail tavern in merchant quarter. She paid bartender Grim for information about eastern road bandits. Grim revealed gang led by Scarface has been hitting merchant caravans for three weeks. Likely based in Darkwood Forest. Grim warned against investigating.",
+  "recap": "Alice entered The Rusty Nail tavern in merchant quarter. She paid bartender Grim for information about eastern road bandits. Grim revealed gang led by Scarface has been hitting merchant caravans for three weeks. Likely based in Darkwood Forest. Grim warned against investigating.",
   "lorebooks": [
     {
       "name": "The Rusty Nail",
@@ -57,14 +57,14 @@ Alice nodded grimly. "Any idea where they're based?"
 
 ### Why This Works:
 
-**Summary contains:**
+**Recap contains:**
 - ✅ Alice went to tavern (event)
 - ✅ She asked for information (action)
 - ✅ Grim told her about bandits (outcome)
 - ✅ Learned about Scarface and gang location (information gain)
 - ✅ Received warning (state change: Alice now knows it's dangerous)
 
-**Summary does NOT contain:**
+**Recap does NOT contain:**
 - ❌ Description of the tavern's appearance
 - ❌ Description of Grim's appearance
 - ❌ Details about the bandits beyond what's needed for timeline
@@ -102,7 +102,7 @@ Alice grimaced, feeling warm blood seeping down her left shoulder where a second
 
 ```json
 {
-  "summary": "Bandits ambushed Alice and Bob on road. Five attackers: four swordsmen, one crossbowman. Alice killed two swordsmen with greatsword. Bob disabled crossbowman with throwing knife to shoulder. Two remaining bandits fled. Alice sustained grazing crossbow wound on left shoulder. Attackers claimed to be sent by Scarface.",
+  "recap": "Bandits ambushed Alice and Bob on road. Five attackers: four swordsmen, one crossbowman. Alice killed two swordsmen with greatsword. Bob disabled crossbowman with throwing knife to shoulder. Two remaining bandits fled. Alice sustained grazing crossbow wound on left shoulder. Attackers claimed to be sent by Scarface.",
   "lorebooks": [
     {
       "name": "Alice - Combat Style",
@@ -134,7 +134,7 @@ Alice grimaced, feeling warm blood seeping down her left shoulder where a second
 
 ### Why This Works:
 
-**Summary contains:**
+**Recap contains:**
 - ✅ Ambush occurred (event)
 - ✅ Composition of attackers (context needed for timeline)
 - ✅ Combat outcomes (who did what, results)
@@ -179,7 +179,7 @@ Bob nodded slowly. "Three days. I can work with that."
 
 ```json
 {
-  "summary": "At camp, Alice confronted Bob about withholding Sunblade thief information. Bob revealed Shadow Guild membership—organization fighting corrupt nobility. He knows thief's identity through Guild intelligence but cannot reveal it yet without exposing Guild operations. Alice initially reached for sword but lowered it after Bob's explanation. She's torn between duty and sympathy for Guild's anti-corruption goals. They agreed: Bob has three days to reveal thief's identity or Alice reports him to city guard. Alliance formed despite tension.",
+  "recap": "At camp, Alice confronted Bob about withholding Sunblade thief information. Bob revealed Shadow Guild membership—organization fighting corrupt nobility. He knows thief's identity through Guild intelligence but cannot reveal it yet without exposing Guild operations. Alice initially reached for sword but lowered it after Bob's explanation. She's torn between duty and sympathy for Guild's anti-corruption goals. They agreed: Bob has three days to reveal thief's identity or Alice reports him to city guard. Alliance formed despite tension.",
   "lorebooks": [
     {
       "name": "Shadow Guild",
@@ -217,7 +217,7 @@ Bob nodded slowly. "Three days. I can work with that."
 
 ### Why This Works:
 
-**Summary contains:**
+**Recap contains:**
 - ✅ Confrontation happened (event)
 - ✅ Bob's revelation (major plot development)
 - ✅ Alice's reaction (reached for sword, then lowered it)
@@ -233,7 +233,7 @@ Bob nodded slowly. "Three days. I can work with that."
 - ✅ Alice's internal conflict: Depth and nuance of her dilemma
 
 **Key Separation Principle Demonstrated:**
-- Summary: "Alice confronted Bob. Bob revealed X. They agreed to Y."
+- Recap: "Alice confronted Bob. Bob revealed X. They agreed to Y."
 - Lorebooks: "What IS the Shadow Guild? What does Bob's membership MEAN? What is the nature of their alliance? What is Alice feeling?"
 
 ---
@@ -259,7 +259,7 @@ In an alcove at the back of the chamber sat a stone pedestal, empty save for a t
 
 ```json
 {
-  "summary": "Alice and Bob found hidden chamber behind waterfall as indicated by old map. Circular stone chamber contained ancient murals depicting the First War and golden warrior wielding sun-like sword. Bob identified murals as over 1000 years old. Murals show Sunblade's origin—used by golden warrior to seal away formless darkness. Empty stone pedestal at chamber back had disturbed dust pattern shaped like sword. Evidence someone removed sword-sized object recently. Alice concluded someone had been there recently.",
+  "recap": "Alice and Bob found hidden chamber behind waterfall as indicated by old map. Circular stone chamber contained ancient murals depicting the First War and golden warrior wielding sun-like sword. Bob identified murals as over 1000 years old. Murals show Sunblade's origin—used by golden warrior to seal away formless darkness. Empty stone pedestal at chamber back had disturbed dust pattern shaped like sword. Evidence someone removed sword-sized object recently. Alice concluded someone had been there recently.",
   "lorebooks": [
     {
       "name": "Hidden Waterfall Chamber",
@@ -291,7 +291,7 @@ In an alcove at the back of the chamber sat a stone pedestal, empty save for a t
 
 ### Why This Works:
 
-**Summary contains:**
+**Recap contains:**
 - ✅ Found chamber (event)
 - ✅ What they saw (murals, pedestal)
 - ✅ What they learned (Sunblade origin, sealing darkness)
@@ -305,7 +305,7 @@ In an alcove at the back of the chamber sat a stone pedestal, empty save for a t
 - ✅ Recent intrusion: Analysis of evidence and implications
 
 **Discovery Separation Principle:**
-- Summary: "We found X, saw Y, learned Z" (the DISCOVERY event)
+- Recap: "We found X, saw Y, learned Z" (the DISCOVERY event)
 - Lorebooks: "What IS X? What does Y depict? What does Z MEAN?" (the DISCOVERED information)
 
 ---
@@ -335,7 +335,7 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 
 ```json
 {
-  "summary": "Alice summoned to throne room of Castle Aldenmoor before King Aldric and assembled nobles. King assigned her investigation of Lord Blackmoor in eastern provinces—Blackmoor failed to pay tribute for three months. King wants determination if this is rebellion or incompetence. Alice received sealed royal scroll with orders. King assigned Lord Commander Theron and knight company to meet Alice at eastern border; Alice to lead investigation. Mission accepted. Lady Celeste (king's advisor) observed Alice leaving with unreadable expression.",
+  "recap": "Alice summoned to throne room of Castle Aldenmoor before King Aldric and assembled nobles. King assigned her investigation of Lord Blackmoor in eastern provinces—Blackmoor failed to pay tribute for three months. King wants determination if this is rebellion or incompetence. Alice received sealed royal scroll with orders. King assigned Lord Commander Theron and knight company to meet Alice at eastern border; Alice to lead investigation. Mission accepted. Lady Celeste (king's advisor) observed Alice leaving with unreadable expression.",
   "lorebooks": [
     {
       "name": "King Aldric",
@@ -385,7 +385,7 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 
 ### Why This Works:
 
-**Summary contains:**
+**Recap contains:**
 - ✅ Meeting occurred (event)
 - ✅ King's assignment (plot development)
 - ✅ Terms of mission (what Alice must do)
@@ -403,7 +403,7 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 - ✅ Alice's background: UPDATE adding her noble house and status
 
 **Political Scene Principle:**
-- Summary: "Meeting happened, mission assigned, terms set, accepted" (EVENTS and DECISIONS)
+- Recap: "Meeting happened, mission assigned, terms set, accepted" (EVENTS and DECISIONS)
 - Lorebooks: "Who IS the king? Who is Blackmoor? What's at stake? Who is Celeste?" (ENTITIES and CONTEXT)
 
 ---
@@ -412,7 +412,7 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 
 ### Pattern 1: Character First Introduction
 
-**Summary:** "Alice met [Name]. [Name] said/did [action/information]."
+**Recap:** "Alice met [Name]. [Name] said/did [action/information]."
 
 **Lorebook:**
 ```json
@@ -426,7 +426,7 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 
 ### Pattern 2: Location Discovery
 
-**Summary:** "They found/arrived at [Location]. [What they observed/did there]."
+**Recap:** "They found/arrived at [Location]. [What they observed/did there]."
 
 **Lorebook:**
 ```json
@@ -440,7 +440,7 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 
 ### Pattern 3: Item Discovery/Acquisition
 
-**Summary:** "They found/acquired/lost [Item]. [Event context]."
+**Recap:** "They found/acquired/lost [Item]. [Event context]."
 
 **Lorebook:**
 ```json
@@ -454,7 +454,7 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 
 ### Pattern 4: Secret Revealed
 
-**Summary:** "[Who] revealed [secret] to [whom]. [Reaction/consequence]."
+**Recap:** "[Who] revealed [secret] to [whom]. [Reaction/consequence]."
 
 **Lorebook:**
 ```json
@@ -468,7 +468,7 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 
 ### Pattern 5: Relationship Change
 
-**Summary:** "[Character A] and [Character B] [became allies/enemies/etc]. [Reason]."
+**Recap:** "[Character A] and [Character B] [became allies/enemies/etc]. [Reason]."
 
 **Lorebook:**
 ```json
@@ -482,7 +482,7 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 
 ### Pattern 6: Status/State Change
 
-**Summary:** "[Character] became [new status]. [Cause]."
+**Recap:** "[Character] became [new status]. [Cause]."
 
 **Lorebook:**
 ```json
@@ -498,19 +498,19 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 
 ## Anti-Patterns (What NOT to Do)
 
-### ❌ Anti-Pattern 1: Detailed Descriptions in Summary
+### ❌ Anti-Pattern 1: Detailed Descriptions in Recap
 
 **WRONG:**
 ```json
 {
-  "summary": "Alice, a tall warrior woman with flowing red hair and piercing green eyes, entered the dimly lit tavern with its heavy wooden door and smell of ale. The gruff dwarf bartender with a scarred face..."
+  "recap": "Alice, a tall warrior woman with flowing red hair and piercing green eyes, entered the dimly lit tavern with its heavy wooden door and smell of ale. The gruff dwarf bartender with a scarred face..."
 }
 ```
 
 **RIGHT:**
 ```json
 {
-  "summary": "Alice entered tavern. Dwarf bartender Grim provided information about bandits."
+  "recap": "Alice entered tavern. Dwarf bartender Grim provided information about bandits."
 }
 ```
 
@@ -530,15 +530,15 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 ```
 
 **RIGHT:**
-- That information belongs in `summary`, not `lorebooks`
+- That information belongs in `recap`, not `lorebooks`
 - Lorebooks should have entries for "Alice Combat Capabilities" and "Bob Combat Capabilities" instead
 
-### ❌ Anti-Pattern 3: Redundancy Between Summary and Lorebooks
+### ❌ Anti-Pattern 3: Redundancy Between Recap and Lorebooks
 
 **WRONG:**
 ```json
 {
-  "summary": "Grim is a dwarf bartender with a scarred face who knows everything happening in the area.",
+  "recap": "Grim is a dwarf bartender with a scarred face who knows everything happening in the area.",
   "lorebooks": [
     {
       "name": "Grim",
@@ -551,7 +551,7 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 **RIGHT:**
 ```json
 {
-  "summary": "Bartender Grim provided information about bandits.",
+  "recap": "Bartender Grim provided information about bandits.",
   "lorebooks": [
     {
       "name": "Grim",
@@ -606,10 +606,10 @@ As she rose and left the throne room, she caught sight of a familiar face in the
 Is this information...
 
 ├─ About WHAT HAPPENED?
-│  ├─ An event? → SUMMARY
-│  ├─ A state change? → SUMMARY
-│  ├─ An action? → SUMMARY
-│  └─ An outcome? → SUMMARY
+│  ├─ An event? → RECAP
+│  ├─ A state change? → RECAP
+│  ├─ An action? → RECAP
+│  └─ An outcome? → RECAP
 │
 └─ About WHAT SOMETHING IS?
    ├─ A description? → LOREBOOK
@@ -620,15 +620,15 @@ Is this information...
 Special cases:
 
 ├─ Information appears in BOTH forms?
-│  └─ Timeline part → SUMMARY
+│  └─ Timeline part → RECAP
 │      Detail part → LOREBOOK
 │
 ├─ Minor/trivial entity?
-│  └─ Mention in SUMMARY only
+│  └─ Mention in RECAP only
 │      No LOREBOOK entry needed
 │
 └─ UPDATE to existing entity?
-   └─ State change → SUMMARY
+   └─ State change → RECAP
        Updated details → LOREBOOK (mark as UPDATE)
 ```
 
@@ -639,9 +639,9 @@ Special cases:
 **For any given piece of information, ask:**
 
 1. **Could this be a question about WHAT HAPPENED?**
-   - "What did Alice do?" → Summary
-   - "What happened in the fight?" → Summary
-   - "What did Bob reveal?" → Summary
+   - "What did Alice do?" → Recap
+   - "What happened in the fight?" → Recap
+   - "What did Bob reveal?" → Recap
 
 2. **Could this be a question about WHO/WHAT someone/something IS?**
    - "Who is Grim?" → Lorebook
@@ -650,14 +650,14 @@ Special cases:
 
 3. **Does this information describe a PROCESS or an OUTCOME?**
    - Process: "Alice dodged left, charged, swung her sword..." → NEITHER (too detailed)
-   - Outcome: "Alice killed two bandits" → Summary
+   - Outcome: "Alice killed two bandits" → Recap
 
 4. **Would I need this information if [entity] is mentioned 10 scenes later?**
    - Yes → Lorebook
-   - No → Don't include, or summary only
+   - No → Don't include, or recap only
 
 5. **Does this help me understand WHAT'S HAPPENING NOW vs WHAT THINGS ARE?**
-   - What's happening now → Summary
+   - What's happening now → Recap
    - What things are → Lorebook
 
 ---

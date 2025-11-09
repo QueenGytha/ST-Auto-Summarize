@@ -8,7 +8,7 @@ The operation queue needs to block chat sends during processing to prevent users
 
 ### Initial Issue
 - Chat blocked correctly when operation enqueued ✓
-- Chat unblocked somewhere during scene summary generation ✗
+- Chat unblocked somewhere during scene recap generation ✗
 - Chat remained unblocked during subsequent lorebook processing ✗
 - No "Chat UNBLOCKED" log appeared, indicating our code never called unblock
 
@@ -42,7 +42,7 @@ function setSendButtonState(value /*: boolean */) {
     const stack = new Error().stack;
     const caller = stack?.split('\n')[2]?.trim() || 'unknown';
     const callerFile = caller.match(/\/([^/]+\.js):/)?.[1] || 'unknown';
-    console.log(`[AutoSummarize] [DEBUG] [Queue] [TRACE] setSendButtonState(${value}) called from: ${callerFile} - ${caller}`);
+    console.log(`[AutoRecap] [DEBUG] [Queue] [TRACE] setSendButtonState(${value}) called from: ${callerFile} - ${caller}`);
     return _originalSetSendButtonState(value);
 }
 ```
@@ -50,8 +50,8 @@ function setSendButtonState(value /*: boolean */) {
 **Test Results**:
 ```
 [TRACE] setSendButtonState(true) called from: operationQueue.js - at setQueueChatBlocking
-[LIFECYCLE] About to call handler for generate_scene_summary, queue state: blocked=true, queueLength=1
-... (scene summary generation happens)
+[LIFECYCLE] About to call handler for generate_scene_recap, queue state: blocked=true, queueLength=1
+... (scene recap generation happens)
 ... (chat becomes unblocked)
 NO [TRACE] setSendButtonState(false) log!
 ```
@@ -89,7 +89,7 @@ export function replaceSendButton() {
     // Find the original send button
     originalSendButton = document.getElementById('send_but');
     if (!originalSendButton) {
-        console.warn('[AutoSummarize] Could not find #send_but to replace');
+        console.warn('[AutoRecap] Could not find #send_but to replace');
         return;
     }
 
@@ -97,13 +97,13 @@ export function replaceSendButton() {
     if (window.sendTextareaMessage) {
         originalSendTextareaMessage = window.sendTextareaMessage;
     } else {
-        console.warn('[AutoSummarize] Could not find sendTextareaMessage function');
+        console.warn('[AutoRecap] Could not find sendTextareaMessage function');
         return;
     }
 
     // Create our replacement button with the same styling
     replacementSendButton = document.createElement('div');
-    replacementSendButton.id = 'send_but_autosummarize';
+    replacementSendButton.id = 'send_but_autorecap';
     replacementSendButton.className = originalSendButton.className;
     replacementSendButton.title = originalSendButton.title;
     replacementSendButton.innerHTML = originalSendButton.innerHTML;
@@ -123,7 +123,7 @@ export function replaceSendButton() {
         // Check if queue is active
         const { isQueueActive } = await import('./operationQueue.js');
         if (isQueueActive()) {
-            console.log('[AutoSummarize] [Queue] Blocked send - queue is processing operations');
+            console.log('[AutoRecap] [Queue] Blocked send - queue is processing operations');
             const { toast } = await import('./index.js');
             toast('Please wait - queue operations in progress', 'warning');
             return;
@@ -139,7 +139,7 @@ export function replaceSendButton() {
     originalSendButton.parentNode?.insertBefore(replacementSendButton, originalSendButton);
     originalSendButton.style.display = 'none';
 
-    console.log('[AutoSummarize] Send button replaced with queue-aware version');
+    console.log('[AutoRecap] Send button replaced with queue-aware version');
 }
 
 export function updateReplacementSendButton(enabled /*: boolean */) {
@@ -188,7 +188,7 @@ function setQueueChatBlocking(blocked /*: boolean */) {
 
 **How It Works**:
 1. On extension load, find ST's `#send_but` button
-2. Create identical replacement button with ID `send_but_autosummarize`
+2. Create identical replacement button with ID `send_but_autorecap`
 3. Hide original button (`display: none`)
 4. Insert replacement button in same DOM position
 5. Replacement button click handler checks `isQueueActive()`
@@ -274,24 +274,24 @@ Current debug logs available:
 
 ```javascript
 // In browser console:
-[AutoSummarize] [DEBUG] [Queue] [TRACE] setSendButtonState(true/false) called from: ...
-[AutoSummarize] [DEBUG] [Queue] Chat BLOCKED/UNBLOCKED by operation queue
-[AutoSummarize] [DEBUG] [Queue] [LOOP] Start of iteration, queue state: blocked=X, queueLength=Y
-[AutoSummarize] [DEBUG] [Queue] [LOOP] Found operation: TYPE, id: ID
-[AutoSummarize] [DEBUG] [Queue] [LOOP] About to execute operation, queue state: ...
-[AutoSummarize] [DEBUG] [Queue] [LIFECYCLE] About to call handler for TYPE, queue state: ...
-[AutoSummarize] [DEBUG] [Queue] [LIFECYCLE] Handler returned for TYPE, queue state: ...
-[AutoSummarize] [DEBUG] [Queue] [LIFECYCLE] About to remove operation ID, queue state: ...
-[AutoSummarize] [DEBUG] [Queue] [LIFECYCLE] After removeOperation, queue state: ...
-[AutoSummarize] [Queue] Blocked send - queue is processing operations
-[AutoSummarize] Send message interceptor installed
+[AutoRecap] [DEBUG] [Queue] [TRACE] setSendButtonState(true/false) called from: ...
+[AutoRecap] [DEBUG] [Queue] Chat BLOCKED/UNBLOCKED by operation queue
+[AutoRecap] [DEBUG] [Queue] [LOOP] Start of iteration, queue state: blocked=X, queueLength=Y
+[AutoRecap] [DEBUG] [Queue] [LOOP] Found operation: TYPE, id: ID
+[AutoRecap] [DEBUG] [Queue] [LOOP] About to execute operation, queue state: ...
+[AutoRecap] [DEBUG] [Queue] [LIFECYCLE] About to call handler for TYPE, queue state: ...
+[AutoRecap] [DEBUG] [Queue] [LIFECYCLE] Handler returned for TYPE, queue state: ...
+[AutoRecap] [DEBUG] [Queue] [LIFECYCLE] About to remove operation ID, queue state: ...
+[AutoRecap] [DEBUG] [Queue] [LIFECYCLE] After removeOperation, queue state: ...
+[AutoRecap] [Queue] Blocked send - queue is processing operations
+[AutoRecap] Send message interceptor installed
 ```
 
 ## Known Issues & Future Considerations
 
 ### Current Implementation Notes
 - The `setSendButtonState` wrapper in `index.js` (lines 27-35) is kept for debug tracing but is no longer used for blocking
-- Our replacement button has ID `send_but_autosummarize` to avoid conflicts
+- Our replacement button has ID `send_but_autorecap` to avoid conflicts
 - Original button is hidden with `display: none` rather than removed from DOM
 
 ### Potential Improvements

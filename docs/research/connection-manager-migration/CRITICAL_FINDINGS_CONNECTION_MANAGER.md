@@ -4,7 +4,7 @@
 **Date**: 2025-01-08
 **Severity**: HIGH - Event system incompatibility found
 
-## Executive Summary
+## Executive Recap
 
 During deep-dive investigation, a **CRITICAL INCOMPATIBILITY** was discovered with ConnectionManagerRequestService:
 
@@ -201,7 +201,7 @@ eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, async (promptData) => {
 
 ### Why Two Paths?
 
-1. **Extension operations**: Use stack trace to identify operation type (summary, scene, lorebook, etc.)
+1. **Extension operations**: Use stack trace to identify operation type (recap, scene, lorebook, etc.)
 2. **User chat messages**: Use message index to identify which chat message
 
 **Both paths** ultimately call `injectMetadataIntoChatArray()` from metadataInjector.js.
@@ -276,10 +276,10 @@ function determineOperationType() {
 
     // Check for specific operations (order matters!)
     if (stack.includes('detectSceneBreak')) return 'detect_scene_break';
-    if (stack.includes('generateSceneSummary')) return 'generate_scene_summary';
+    if (stack.includes('generateSceneRecap')) return 'generate_scene_recap';
     if (stack.includes('SceneName')) return 'generate_scene_name';
     // ... more checks ...
-    if (stack.includes('summarize_text')) return 'summary';
+    if (stack.includes('recap_text')) return 'recap';
 
     return 'chat';
   } catch {
@@ -303,7 +303,7 @@ ChatCompletionService.processRequest()
 Backend
 ```
 
-**Problem**: Original caller (`detectSceneBreak`, `summarize_text`, etc.) **NOT in stack** because:
+**Problem**: Original caller (`detectSceneBreak`, `recap_text`, etc.) **NOT in stack** because:
 - They called `sendLLMRequest()`
 - `sendLLMRequest()` called ConnectionManagerRequestService
 - ConnectionManagerRequestService doesn't call back into our code
@@ -355,7 +355,7 @@ export function clearOperationSuffix() {
 }
 ```
 
-**Used for**: Adding context to operation type (e.g., `summary-42-67` for message range)
+**Used for**: Adding context to operation type (e.g., `recap-42-67` for message range)
 
 **Pattern**:
 ```javascript
@@ -377,7 +377,7 @@ await generateRaw(...);
 clearOperationSuffix();
 
 // NEW:
-const operation = `summary${'-42-67'}`;  // Build full operation string
+const operation = `recap${'-42-67'}`;  // Build full operation string
 await sendLLMRequest({ operationType: operation, ... });
 // No context management needed
 ```
@@ -523,8 +523,8 @@ If pilot reveals more issues → Re-assess or abort (15-20 hours sunk, NOT 40)
 
 Need to map all call sites and their operation types:
 
-**summarization.js**:
-- `summarize_text()` → operation: `summary` (with optional suffix)
+**recapping.js**:
+- `recap_text()` → operation: `recap` (with optional suffix)
 
 **lorebookEntryMerger.js**:
 - `callAIForMerge()` → operation: `merge_lorebook_entry`
@@ -534,19 +534,19 @@ Need to map all call sites and their operation types:
 **autoSceneBreakDetection.js**:
 - `detectSceneBreak()` → operation: `detect_scene_break`
 
-**runningSceneSummary.js**:
-- `generate_running_scene_summary()` → operation: `generate_running_summary`
-- `combine_scene_with_running_summary()` → operation: `combine_scene_with_running`
+**runningSceneRecap.js**:
+- `generate_running_scene_recap()` → operation: `generate_running_recap`
+- `combine_scene_with_running_recap()` → operation: `combine_scene_with_running`
 
 **sceneBreak.js**:
-- `generateSceneSummary()` → operation: `generate_scene_summary`
+- `generateSceneRecap()` → operation: `generate_scene_recap`
 - `generateSceneName()` → operation: `generate_scene_name`
 
-**summaryValidation.js**:
-- `validateSummary()` → operation: `validate_summary`
+**recapValidation.js**:
+- `validateRecap()` → operation: `validate_recap`
 
-**summaryToLorebookProcessor.js**:
-- Various → operation: `summary_to_lorebook_*` (need to map)
+**recapToLorebookProcessor.js**:
+- Various → operation: `recap_to_lorebook_*` (need to map)
 
 **(Continue mapping remaining modules...)**
 

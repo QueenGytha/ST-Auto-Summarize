@@ -1,8 +1,8 @@
-# Summary and Lorebook Separation - Design Document
+# Recap and Lorebook Separation - Design Document
 
 **Version:** 2.0
 **Date:** 2025-01-20
-**Purpose:** Define the clear separation between timeline summaries and lorebook-worthy details
+**Purpose:** Define the clear separation between timeline recaps and lorebook-worthy details
 
 ---
 
@@ -10,11 +10,11 @@
 
 The new JSON structure separates memory into two distinct concerns:
 
-1. **Summary** - High-level timeline of what happened (minimal tokens, no nuance)
+1. **Recap** - High-level timeline of what happened (minimal tokens, no nuance)
 2. **Lorebooks** - Detailed reference information with nuance (lorebook entries with keywords)
 
 This separation allows the AI to:
-- Quickly understand "what happened" from the summary (low token cost)
+- Quickly understand "what happened" from the recap (low token cost)
 - Retrieve detailed information only when keywords are triggered (efficient context usage)
 - Manage context more effectively by separating timeline from reference data
 
@@ -24,7 +24,7 @@ This separation allows the AI to:
 
 ```json
 {
-  "summary": "High-level timeline of what occurred in this scene/message",
+  "recap": "High-level timeline of what occurred in this scene/message",
   "lorebooks": [
     {
       "name": "Entity Name",
@@ -40,7 +40,7 @@ This separation allows the AI to:
 
 ## Field Definitions
 
-### Summary (string, required)
+### Recap (string, required)
 
 **Purpose:** Minimal-token timeline of what happened
 
@@ -89,7 +89,7 @@ This separation allows the AI to:
 - Personality traits, appearances, capabilities
 
 **What NOT to include:**
-- Pure timeline events (those go in summary)
+- Pure timeline events (those go in recap)
 - Temporary one-time mentions
 - Information that won't be relevant again
 
@@ -165,7 +165,7 @@ The detailed description WITH nuance
 
 ## Separation Guidelines
 
-### What Goes in Summary
+### What Goes in Recap
 
 **Questions to ask:**
 - Did something HAPPEN?
@@ -173,7 +173,7 @@ The detailed description WITH nuance
 - Is this part of the TIMELINE?
 - Does the AI need to know this happened to understand what's going on NOW?
 
-**If YES → Goes in Summary**
+**If YES → Goes in Recap**
 
 **Examples:**
 - "Alice revealed her true identity as Princess Elara"
@@ -203,15 +203,15 @@ The detailed description WITH nuance
 ### Edge Cases
 
 **Relationship changes:**
-- **Timeline part → Summary:** "Alice became suspicious of Bob"
+- **Timeline part → Recap:** "Alice became suspicious of Bob"
 - **Detail part → Lorebook:** Entry for "Alice & Bob relationship" with context
 
 **Status changes:**
-- **Timeline part → Summary:** "The king was assassinated"
+- **Timeline part → Recap:** "The king was assassinated"
 - **Detail part → Lorebook:** Entry for "King [Name]" with status: deceased
 
 **Discoveries:**
-- **Timeline part → Summary:** "They discovered the temple had been ransacked"
+- **Timeline part → Recap:** "They discovered the temple had been ransacked"
 - **Detail part → Lorebook:** Entry for "Eastern Ruins" with details about the ransacking
 
 ---
@@ -221,24 +221,24 @@ The detailed description WITH nuance
 ### For AI Context Management
 
 1. **Token Efficiency**
-   - Summary provides complete timeline context in minimal tokens
+   - Recap provides complete timeline context in minimal tokens
    - Detailed information only loaded when keywords are triggered
    - Reduces bloat from including unused details
 
 2. **Better Recall**
-   - AI can quickly scan summary to understand what happened
+   - AI can quickly scan recap to understand what happened
    - Keyword-triggered lorebook entries provide depth when needed
    - Clear separation prevents confusion between "what happened" and "what things are"
 
 3. **Scalability**
-   - Summaries can cover long timelines concisely
+   - Recaps can cover long timelines concisely
    - Lorebook entries don't clutter the timeline
    - Easy to prune irrelevant lorebook entries without losing timeline coherence
 
 ### For Context Injection
 
 **Short-term memory (recent timeline):**
-- Include summaries from last N messages
+- Include recaps from last N messages
 - Provides immediate context for current situation
 - Minimal token cost
 
@@ -259,16 +259,16 @@ The detailed description WITH nuance
 ### For Extraction Prompts
 
 **Instructions must emphasize:**
-1. Summary = timeline only, minimal tokens, no descriptions
+1. Recap = timeline only, minimal tokens, no descriptions
 2. Lorebooks = detailed entries only, no timeline events
 3. Don't duplicate information between the two sections
-4. If something is described in lorebooks, just MENTION it in summary
+4. If something is described in lorebooks, just MENTION it in recap
 
 **Example instruction:**
 ```
 CRITICAL SEPARATION OF CONCERNS:
 
-SUMMARY field:
+RECAP field:
 - Timeline of what happened (events, state changes, outcomes)
 - MENTION entities by name for context
 - DO NOT describe entities (that goes in lorebooks)
@@ -279,24 +279,24 @@ LOREBOOKS array:
 - NEW entities discovered OR updates to existing entities
 - Full descriptions WITH nuance
 - Each entry: name, type, keywords, content
-- DO NOT include timeline events (that goes in summary)
+- DO NOT include timeline events (that goes in recap)
 - Only entities worth remembering for later
 ```
 
 ### For Validation
 
 **Structural validation must check:**
-- Summary is a string (not object or array)
-- Summary is not too long (hard limit: 500 tokens)
+- Recap is a string (not object or array)
+- Recap is not too long (hard limit: 500 tokens)
 - Lorebooks is an array (may be empty)
 - Each lorebook entry has required fields: name, type, keywords, content
 - No duplicate entries (same name + type)
 
 **Semantic validation must check:**
-- Summary doesn't contain detailed descriptions
-- Summary focuses on events and state changes
+- Recap doesn't contain detailed descriptions
+- Recap focuses on events and state changes
 - Lorebook entries don't contain timeline narratives
-- No redundancy between summary and lorebook content
+- No redundancy between recap and lorebook content
 
 ---
 
@@ -309,16 +309,16 @@ LOREBOOKS array:
 ```javascript
 // Old structure had 14+ fields blurring the distinction
 {
-  "narrative": "...",           // → summary
+  "narrative": "...",           // → recap
   "npcs_facts": {...},          // → lorebooks (type: character)
   "visited_locations": {...},   // → lorebooks (type: location)
   "objects": {...},             // → lorebooks (type: item)
   "factions": {...},            // → lorebooks (type: faction)
   "lore": {...},                // → lorebooks (type: lore)
   "secrets": {...},             // → lorebooks (type: concept)
-  "npcs_status": {...},         // → summary OR lorebooks (depends on context)
-  "current_relationships": {...}, // → summary (changes) + lorebooks (details)
-  "memorable_events": [...],    // → summary (outcomes only)
+  "npcs_status": {...},         // → recap OR lorebooks (depends on context)
+  "current_relationships": {...}, // → recap (changes) + lorebooks (details)
+  "memorable_events": [...],    // → recap (outcomes only)
   // ... and more
 }
 ```
@@ -327,7 +327,7 @@ LOREBOOKS array:
 
 ```json
 {
-  "summary": "Combines narrative + status changes + relationship changes + event outcomes into one concise timeline",
+  "recap": "Combines narrative + status changes + relationship changes + event outcomes into one concise timeline",
   "lorebooks": [
     // All the detailed descriptions from npcs_facts, locations, objects, etc.
     // Each as a separate entry with keywords
@@ -341,7 +341,7 @@ LOREBOOKS array:
 - `narrative`, `npcs_facts`, `npcs_status`, `visited_locations`, `objects`, `factions`, `lore`, `secrets`, `current_relationships`, `memorable_events`, etc.
 
 **ADDED fields:**
-- `summary` (string) - replaces `narrative` but more comprehensive
+- `recap` (string) - replaces `narrative` but more comprehensive
 - `lorebooks` (array) - consolidates ALL detailed entries into keyword-based format
 
 **Benefits of migration:**
@@ -364,7 +364,7 @@ LOREBOOKS array:
 
 ```json
 {
-  "summary": "Alice and Bob entered a tavern. The bartender Grim told them about bandits on the eastern road, led by someone called Scarface who has been terrorizing travelers.",
+  "recap": "Alice and Bob entered a tavern. The bartender Grim told them about bandits on the eastern road, led by someone called Scarface who has been terrorizing travelers.",
   "lorebooks": [
     {
       "name": "Grim",
@@ -383,10 +383,10 @@ LOREBOOKS array:
 ```
 
 **Why this separation works:**
-- Summary tells you WHAT HAPPENED: They went to tavern, learned about bandits
+- Recap tells you WHAT HAPPENED: They went to tavern, learned about bandits
 - Lorebooks tell you WHO/WHAT things ARE: Grim's description, bandit group details
 - No redundancy: Information appears in only one place
-- Efficient: Summary is minimal (2 sentences), lorebooks only contain new entities
+- Efficient: Recap is minimal (2 sentences), lorebooks only contain new entities
 
 ### Example 2: Complex Scene with Multiple Events
 
@@ -397,7 +397,7 @@ LOREBOOKS array:
 
 ```json
 {
-  "summary": "Alice confronted Bob about his suspicious behavior. Bob revealed he works for the Shadow Guild and knows the Sunblade thief's identity through Guild intelligence. He refused to reveal it immediately to protect Guild operations. Alice gave him three days to share the information. They agreed to work together despite the tension. Alice is conflicted between her duty and sympathy for Bob's anti-nobility cause.",
+  "recap": "Alice confronted Bob about his suspicious behavior. Bob revealed he works for the Shadow Guild and knows the Sunblade thief's identity through Guild intelligence. He refused to reveal it immediately to protect Guild operations. Alice gave him three days to share the information. They agreed to work together despite the tension. Alice is conflicted between her duty and sympathy for Bob's anti-nobility cause.",
   "lorebooks": [
     {
       "name": "Shadow Guild",
@@ -422,11 +422,11 @@ LOREBOOKS array:
 ```
 
 **Why this separation works:**
-- Summary captures the TIMELINE: Confrontation → Revelation → Negotiation → Agreement
-- Summary captures STATE CHANGES: Bob's secret is now known, they have an alliance, there's a deadline
+- Recap captures the TIMELINE: Confrontation → Revelation → Negotiation → Agreement
+- Recap captures STATE CHANGES: Bob's secret is now known, they have an alliance, there's a deadline
 - Lorebooks capture DETAILS: What is Shadow Guild? What does Bob's membership mean? What's the nature of their alliance?
 - No redundancy: Timeline events aren't repeated in lorebook details
-- Efficient: Summary gives complete picture of what happened, lorebooks add depth when needed
+- Efficient: Recap gives complete picture of what happened, lorebooks add depth when needed
 
 ### Example 3: Combat Scene
 
@@ -437,7 +437,7 @@ LOREBOOKS array:
 
 ```json
 {
-  "summary": "Bandits ambushed Alice and Bob on the eastern road. Five attackers: four swordsmen, one crossbowman. Alice killed two, Bob disabled the crossbowman, two fled. Alice was wounded in the shoulder by an arrow. They recovered a map from the dead bandits showing the bandit camp location in Darkwood Forest.",
+  "recap": "Bandits ambushed Alice and Bob on the eastern road. Five attackers: four swordsmen, one crossbowman. Alice killed two, Bob disabled the crossbowman, two fled. Alice was wounded in the shoulder by an arrow. They recovered a map from the dead bandits showing the bandit camp location in Darkwood Forest.",
   "lorebooks": [
     {
       "name": "Alice - Combat Capabilities",
@@ -468,11 +468,11 @@ LOREBOOKS array:
 ```
 
 **Why this separation works:**
-- Summary is pure ACTION TIMELINE: Ambush occurred, here's what happened, here's the outcome
+- Recap is pure ACTION TIMELINE: Ambush occurred, here's what happened, here's the outcome
 - Lorebooks capture CAPABILITIES and STATUS: What can Alice/Bob do in combat? What's Alice's injury status? What's this map?
-- Combat results in summary, combat abilities in lorebooks
-- Injury EVENT in summary, injury STATUS in lorebooks
-- Found map in summary, map DETAILS in lorebooks
+- Combat results in recap, combat abilities in lorebooks
+- Injury EVENT in recap, injury STATUS in lorebooks
+- Found map in recap, map DETAILS in lorebooks
 
 ---
 
@@ -481,42 +481,42 @@ LOREBOOKS array:
 ### For Prompt Updates
 
 - [ ] Update `default_prompt` to use new structure
-- [ ] Update `scene_summary_prompt` to use new structure
-- [ ] Update `default_combined_summary_prompt` to use new structure
-- [ ] Add clear instructions for summary vs lorebooks separation
+- [ ] Update `scene_recap_prompt` to use new structure
+- [ ] Update `default_combined_recap_prompt` to use new structure
+- [ ] Add clear instructions for recap vs lorebooks separation
 - [ ] Include examples in prompts to guide AI behavior
 - [ ] Add token targets for both sections
 
 ### For Validation
 
 - [ ] Update structural validation for new JSON schema
-- [ ] Validate summary is string, not too long
+- [ ] Validate recap is string, not too long
 - [ ] Validate lorebooks is array with correct entry format
 - [ ] Validate keywords are meaningful (not empty or generic)
-- [ ] Check for redundancy between summary and lorebooks
+- [ ] Check for redundancy between recap and lorebooks
 
 ### For Documentation
 
 - [ ] Update README to explain new structure
 - [ ] Create migration guide for users with existing memories
-- [ ] Document best practices for summary vs lorebooks
+- [ ] Document best practices for recap vs lorebooks
 - [ ] Provide examples of good separation
 
 ### For Code
 
 - [ ] Update `memoryCore.js` to handle new structure
-- [ ] Update `messageVisuals.js` to display both summary and lorebook count
-- [ ] Update `summaryValidation.js` with new validation rules
+- [ ] Update `messageVisuals.js` to display both recap and lorebook count
+- [ ] Update `recapValidation.js` with new validation rules
 - [ ] Support lorebook export functionality
 - [ ] Maintain backward compatibility with old structure (optional)
 
 ---
 
-## Combining Workflow: Summary-Only Extraction
+## Combining Workflow: Recap-Only Extraction
 
-**CRITICAL:** When combining or reviewing multiple scene memories, the system should extract ONLY the `summary` fields, NOT the lorebook entries.
+**CRITICAL:** When combining or reviewing multiple scene memories, the system should extract ONLY the `recap` fields, NOT the lorebook entries.
 
-### Why Summary-Only?
+### Why Recap-Only?
 
 1. **Token Efficiency**: Lorebook entries can be hundreds of tokens each. When combining 10 scenes with 5 lorebook entries each, you'd send 50 lorebook entries to the AI unnecessarily.
 
@@ -526,29 +526,29 @@ LOREBOOKS array:
 
 ### Implementation
 
-**Step 1: Extract Summary Fields**
+**Step 1: Extract Recap Fields**
 ```javascript
-// Parse each scene memory and extract ONLY the summary field
+// Parse each scene memory and extract ONLY the recap field
 const scene_memories = [
-    {"summary": "Alice met Bob at tavern...", "lorebooks": [...]},
-    {"summary": "Traveled to Eastern Ruins...", "lorebooks": [...]},
-    {"summary": "Bandits ambushed them...", "lorebooks": [...]}
+    {"recap": "Alice met Bob at tavern...", "lorebooks": [...]},
+    {"recap": "Traveled to Eastern Ruins...", "lorebooks": [...]},
+    {"recap": "Bandits ambushed them...", "lorebooks": [...]}
 ];
 
-// Extract only summaries
-const summaries_only = scene_memories.map(m => m.summary);
+// Extract only recaps
+const recaps_only = scene_memories.map(m => m.recap);
 // Result: ["Alice met Bob at tavern...", "Traveled to Eastern Ruins...", "Bandits ambushed them..."]
 ```
 
-**Step 2: Send Only Summaries to AI**
+**Step 2: Send Only Recaps to AI**
 ```javascript
 // Format for prompt
-const formatted = summaries_only.map((s, i) => `Scene ${i+1} summary:\n${s}`).join('\n\n');
+const formatted = recaps_only.map((s, i) => `Scene ${i+1} recap:\n${s}`).join('\n\n');
 
 // Send to AI with combining prompt
 const combined = await generate_with_ai(combining_prompt + formatted);
 
-// AI returns: Combined timeline string (NOT JSON)
+// AI returns: JSON with a 'recap' field containing the combined timeline markdown
 ```
 
 **Step 3: Handle Lorebooks Separately**
@@ -577,12 +577,12 @@ const merged_lorebooks = Array.from(lorebook_map.values());
 
 **OLD (sending full JSON):**
 ```
-3 scenes × (200 token summary + 5 lorebook entries × 100 tokens each) = 2,100 tokens
+3 scenes × (200 token recap + 5 lorebook entries × 100 tokens each) = 2,100 tokens
 ```
 
-**NEW (summary-only):**
+**NEW (recap-only):**
 ```
-3 scenes × 200 token summary = 600 tokens
+3 scenes × 200 token recap = 600 tokens
 ```
 
 **Savings: 71% reduction!**
@@ -593,16 +593,16 @@ After combining:
 
 ```javascript
 {
-    "summary": "Combined timeline from all scenes (AI-generated)",
+    "recap": "Combined timeline from all scenes (AI-generated)",
     "lorebooks": [
         // Programmatically merged lorebook entries (deduped by name+type)
         // OR all lorebook entries from all scenes
-        // OR completely new set based on combined summary
+        // OR completely new set based on combined recap
     ]
 }
 ```
 
-**See `docs/IMPLEMENTATION_SUMMARY_EXTRACTION.md` for complete implementation details.**
+**See `docs/IMPLEMENTATION_RECAP_EXTRACTION.md` for complete implementation details.**
 
 ---
 
@@ -611,12 +611,12 @@ After combining:
 This structure makes automated lorebook creation trivial:
 
 ```javascript
-// Convert lorebook entries from summary to actual lorebook entries
-function exportToLorebook(summaries) {
+// Convert lorebook entries from recap to actual lorebook entries
+function exportToLorebook(recaps) {
   const lorebook = { entries: [] };
 
-  for (const summary of summaries) {
-    for (const entry of summary.lorebooks) {
+  for (const recap of recaps) {
+    for (const entry of recap.lorebooks) {
       lorebook.entries.push({
         keys: entry.keywords,
         content: entry.content,

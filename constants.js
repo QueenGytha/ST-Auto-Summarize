@@ -140,8 +140,8 @@ export const STANDARD_QUEUE_POSITION = 15;
 // Feature-Specific Constants
 // ============================================================================
 
-/** Maximum summary generation attempts */
-export const MAX_SUMMARY_ATTEMPTS = 5;
+/** Maximum recap generation attempts */
+export const MAX_RECAP_ATTEMPTS = 5;
 
 /** Lorebook entry name maximum characters */
 export const LOREBOOK_ENTRY_NAME_MAX_LENGTH = 20;

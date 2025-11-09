@@ -10,8 +10,8 @@ import {
 } from './constants.js';
 
 export function renderSceneNavigatorBar() {
-  const width = get_settings('scene_summary_navigator_width') ?? NAVIGATION_TIME_LIMIT_SECONDS;
-  const fontSize = get_settings('scene_summary_navigator_font_size') ?? NAVIGATION_DATE_THRESHOLD_MONTHS;
+  const width = get_settings('scene_recap_navigator_width') ?? NAVIGATION_TIME_LIMIT_SECONDS;
+  const fontSize = get_settings('scene_recap_navigator_font_size') ?? NAVIGATION_DATE_THRESHOLD_MONTHS;
 
   // In headless/test environments the jQuery stub may be minimal. If required
   // DOM methods (like after) are missing, gracefully skip rendering.
@@ -23,7 +23,7 @@ export function renderSceneNavigatorBar() {
   let $bar = $(selectorsExtension.sceneNav.bar);
   // If not present or in the wrong place, move it after chat holder (main chat container)
   if (!$bar.length) {
-    $bar = $('<div id="scene-summary-navigator-bar" data-testid="scene-navigator-bar"></div>');
+    $bar = $('<div id="scene-recap-navigator-bar" data-testid="scene-navigator-bar"></div>');
     $(selectorsSillyTavern.chat.holder).after($bar);
   } else if (!$bar.parent().is('body')) {
     // Move to correct place if needed
@@ -42,7 +42,7 @@ export function renderSceneNavigatorBar() {
   const ctx = getContext();
   if (!ctx?.chat) {return;}
 
-  // Save running summary controls and queue UI before clearing
+  // Save running recap controls and queue UI before clearing
   const $runningControls = $bar.find(selectorsExtension.runningUI.controls).detach();
   const $queueUI = $bar.find(selectorsExtension.queue.panel).detach();
   $bar.empty();
@@ -87,7 +87,7 @@ export function renderSceneNavigatorBar() {
   // Append scene links container to navbar
   $bar.append($sceneLinksContainer);
 
-  // Restore running summary controls if they existed
+  // Restore running recap controls if they existed
   if ($runningControls.length) {
     $bar.append($runningControls);
   }
@@ -96,9 +96,9 @@ export function renderSceneNavigatorBar() {
   $bar.show();
   $(selectorsExtension.queue.navbarToggle).show();
 
-  // Update running summary controls after rendering
-  if (window.updateRunningSceneSummaryNavbar) {
-    window.updateRunningSceneSummaryNavbar();
+  // Update running recap controls after rendering
+  if (window.updateRunningSceneRecapNavbar) {
+    window.updateRunningSceneRecapNavbar();
   }
 }
 

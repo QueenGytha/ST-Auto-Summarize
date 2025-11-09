@@ -1,6 +1,6 @@
 # SillyTavern Playwright MCP Reference
 
-**Documentation for interacting with SillyTavern via Playwright MCP for testing the ST-Auto-Summarize extension.**
+**Documentation for interacting with SillyTavern via Playwright MCP for testing the ST-Auto-Recap extension.**
 
 ## Critical Testing Requirements
 
@@ -74,30 +74,30 @@ const swipeId = lastMessage.swipe_id;
 const totalSwipes = lastMessage.swipes?.length;
 
 // Swipe-specific data
-const swipeData = lastMessage.swipe_info?.[swipeId]?.extra?.auto_summarize_memory;
+const swipeData = lastMessage.swipe_info?.[swipeId]?.extra?.auto_recap_memory;
 
 // Root data (shared across all swipes for non-swipe-local keys)
-const rootData = lastMessage.extra?.auto_summarize_memory;
+const rootData = lastMessage.extra?.auto_recap_memory;
 ```
 
 **Swipe-Local vs Shared Data:**
 - **Swipe-local keys**: Stored only in `message.swipe_info[swipe_index].extra`
 - **Shared keys**: Stored in `message.extra` and synchronized to all swipes
-- For ST-Auto-Summarize: `scene_summary_*` keys are swipe-local, `scene_break*` keys are shared
+- For ST-Auto-Recap: `scene_recap_*` keys are swipe-local, `scene_break*` keys are shared
 
 ### Extension-Specific UI Elements
 
-**ST-Auto-Summarize Message Buttons:**
-- `.auto_summarize_scene_break_button` - Mark end of scene
-- `.auto_summarize_memory_remember_button` - Remember (toggle long-term memory)
-- `.auto_summarize_memory_forget_button` - Force exclude from memory
-- `.auto_summarize_memory_edit_button` - Edit summary
-- `.auto_summarize_memory_summarize_button` - Summarize (AI)
+**ST-Auto-Recap Message Buttons:**
+- `.auto_recap_scene_break_button` - Mark end of scene
+- `.auto_recap_memory_remember_button` - Remember (toggle long-term memory)
+- `.auto_recap_memory_forget_button` - Force exclude from memory
+- `.auto_recap_memory_edit_button` - Edit recap
+- `.auto_recap_memory_recap_button` - Recap (AI)
 
 **Scene Break UI:**
 - Scene name input: `textbox "Scene name..."`
-- Scene summary textarea: `textbox "Scene summary..."`
-- Scene controls: `.scene-rollback-summary`, `.scene-generate-summary`, `.scene-rollforward-summary`
+- Scene recap textarea: `textbox "Scene recap..."`
+- Scene controls: `.scene-rollback-recap`, `.scene-generate-recap`, `.scene-rollforward-recap`
 
 **Accessing Scene Break Data:**
 
@@ -106,10 +106,10 @@ const message = ctx.chat[messageIndex];
 const swipeId = message.swipe_id;
 
 // Scene break marker (shared across swipes)
-const hasSceneBreak = message.swipe_info?.[swipeId]?.extra?.auto_summarize_memory?.scene_break;
+const hasSceneBreak = message.swipe_info?.[swipeId]?.extra?.auto_recap_memory?.scene_break;
 
-// Scene summary (swipe-specific)
-const sceneSummary = message.swipe_info?.[swipeId]?.extra?.auto_summarize_memory?.scene_summary_memory;
+// Scene recap (swipe-specific)
+const sceneRecap = message.swipe_info?.[swipeId]?.extra?.auto_recap_memory?.scene_recap_memory;
 ```
 
 ## Console Logs for Debugging
@@ -120,18 +120,18 @@ The extension always emits detailed console logs to aid debugging.
 **Key Log Patterns:**
 
 ```
-[get_data] key="scene_summary_memory", swipe_id=X, swipes.length=Y
+[get_data] key="scene_recap_memory", swipe_id=X, swipes.length=Y
 [get_data] swipe_data=EXISTS/undefined, root_data=EXISTS/undefined
 [get_data] Swipe-local key: returning swipe data only (no root fallback)
-[SCENE SUMMARY] Skipping index X: no summary
-[SCENE SUMMARY] Including index X: summary present
+[SCENE RECAP] Skipping index X: no recap
+[SCENE RECAP] Including index X: recap present
 ```
 
 **Interpreting Logs:**
 - `swipe_data=undefined` means the swipe doesn't have this data stored
 - `root_data=EXISTS` means the key exists in root storage
 - For swipe-local keys, root data should be ignored even if it exists
-- `[SCENE SUMMARY] Final collected indexes: [X, Y, Z]` shows which messages have scene summaries being injected
+- `[SCENE RECAP] Final collected indexes: [X, Y, Z]` shows which messages have scene recaps being injected
 
 ## Testing Patterns
 
@@ -149,10 +149,10 @@ await page.waitForTimeout(5000);
 const ctx = window.SillyTavern.getContext();
 const msg = ctx.chat[ctx.chat.length - 1];
 const newSwipeId = msg.swipe_id;
-const newSwipeData = msg.swipe_info?.[newSwipeId]?.extra?.auto_summarize_memory?.scene_summary_memory;
+const newSwipeData = msg.swipe_info?.[newSwipeId]?.extra?.auto_recap_memory?.scene_recap_memory;
 
-// New swipes should NOT inherit scene summaries
-console.log('New swipe has scene summary:', !!newSwipeData);
+// New swipes should NOT inherit scene recaps
+console.log('New swipe has scene recap:', !!newSwipeData);
 ```
 
 ### Clean Up Test Data
@@ -161,16 +161,16 @@ console.log('New swipe has scene summary:', !!newSwipeData);
 // Remove swipe-local keys from root storage
 const ctx = window.SillyTavern.getContext();
 const SWIPE_LOCAL_KEYS = [
-  'scene_summary_versions',
-  'scene_summary_current_index',
-  'scene_summary_memory',
-  'scene_summary_include'
+  'scene_recap_versions',
+  'scene_recap_current_index',
+  'scene_recap_memory',
+  'scene_recap_include'
 ];
 
 for (let msg of ctx.chat) {
-  if (msg.extra?.auto_summarize_memory) {
+  if (msg.extra?.auto_recap_memory) {
     for (let key of SWIPE_LOCAL_KEYS) {
-      delete msg.extra.auto_summarize_memory[key];
+      delete msg.extra.auto_recap_memory[key];
     }
   }
 }
@@ -209,7 +209,7 @@ return ctx.chat[ctx.chat.length - 1];
 return {
   swipe_id: msg.swipe_id,
   total_swipes: msg.swipes?.length,
-  has_summary: !!msg.swipe_info?.[msg.swipe_id]?.extra?.auto_summarize_memory?.scene_summary_memory
+  has_recap: !!msg.swipe_info?.[msg.swipe_id]?.extra?.auto_recap_memory?.scene_recap_memory
 };
 ```
 
@@ -224,8 +224,8 @@ return {
 
 ## Module Name
 
-The extension stores data under the key: `'auto_summarize_memory'`
+The extension stores data under the key: `'auto_recap_memory'`
 
 All extension data is accessed via:
-- `message.extra.auto_summarize_memory` (root storage)
-- `message.swipe_info[swipe_index].extra.auto_summarize_memory` (swipe storage)
+- `message.extra.auto_recap_memory` (root storage)
+- `message.swipe_info[swipe_index].extra.auto_recap_memory` (swipe storage)

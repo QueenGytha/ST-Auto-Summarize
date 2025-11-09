@@ -5,7 +5,7 @@
 
 ---
 
-## Executive Summary
+## Executive Recap
 
 Load real SillyTavern code in a browser test page via standard `<script>` tags. Tests run in actual browser with actual ST functions. Zero mocks. Zero modifications to SillyTavern core.
 
@@ -44,7 +44,7 @@ Load real SillyTavern code in a browser test page via standard `<script>` tags. 
 ```
 1. ST server runs (node server.js) - SAME
    ↓
-2. Browser requests http://localhost:8000/scripts/extensions/third-party/ST-Auto-Summarize/tests/test.html
+2. Browser requests http://localhost:8000/scripts/extensions/third-party/ST-Auto-Recap/tests/test.html
    ↓
 3. Server returns test.html from extension directory
    ↓
@@ -78,7 +78,7 @@ SillyTavern Server (localhost:8000)
 │   ├── lib/
 │   │   ├── jquery-3.5.1.min.js
 │   │   └── ...
-│   └── scripts/extensions/third-party/ST-Auto-Summarize/
+│   └── scripts/extensions/third-party/ST-Auto-Recap/
 │       ├── index.js (extension code)
 │       ├── generateRawInterceptor.js
 │       ├── ...
@@ -106,7 +106,7 @@ Tests call real ST functions
 ### Extension Directory Layout
 
 ```
-ST-Auto-Summarize/
+ST-Auto-Recap/
 ├── index.js
 ├── generateRawInterceptor.js
 ├── ... (all extension files)
@@ -120,8 +120,8 @@ ST-Auto-Summarize/
 
 ### Where Files Live
 
-- **Extension files:** `public/scripts/extensions/third-party/ST-Auto-Summarize/`
-- **Test files:** `public/scripts/extensions/third-party/ST-Auto-Summarize/tests/`
+- **Extension files:** `public/scripts/extensions/third-party/ST-Auto-Recap/`
+- **Test files:** `public/scripts/extensions/third-party/ST-Auto-Recap/tests/`
 - **ST files:** `public/` (script.js, lib/, etc.)
 
 ### Zero Changes to ST
@@ -141,7 +141,7 @@ All test files are in extension's directory. ST server already serves everything
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ST-Auto-Summarize Tests</title>
+    <title>ST-Auto-Recap Tests</title>
 
     <!-- Mocha test framework from CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mocha@10/mocha.css">
@@ -214,7 +214,7 @@ All test files are in extension's directory. ST server already serves everything
 describe('Settings Management', () => {
     beforeEach(() => {
         // Reset extension settings to clean state
-        window.extension_settings.auto_summarize = {
+        window.extension_settings.auto_recap = {
             profiles: {
                 default: { max_tokens: 100 }
             },
@@ -232,10 +232,10 @@ describe('Settings Management', () => {
 
     it('changing profile switches settings reference', () => {
         // Add alternate profile
-        window.extension_settings.auto_summarize.profiles.alternate = {
+        window.extension_settings.auto_recap.profiles.alternate = {
             max_tokens: 200
         };
-        window.extension_settings.auto_summarize.profile = 'alternate';
+        window.extension_settings.auto_recap.profile = 'alternate';
 
         const settings = window.get_settings();
 
@@ -251,11 +251,11 @@ describe('UI Element Wiring', () => {
     beforeEach(() => {
         // Create container for UI elements
         const container = document.createElement('div');
-        container.id = 'auto_summarize_settings';
+        container.id = 'auto_recap_settings';
         document.body.appendChild(container);
 
         // Reset settings
-        window.extension_settings.auto_summarize = {
+        window.extension_settings.auto_recap = {
             profiles: { default: {} },
             profile: 'default'
         };
@@ -263,7 +263,7 @@ describe('UI Element Wiring', () => {
 
     afterEach(() => {
         // Clean up DOM
-        const container = document.getElementById('auto_summarize_settings');
+        const container = document.getElementById('auto_recap_settings');
         if (container) container.remove();
     });
 
@@ -273,7 +273,7 @@ describe('UI Element Wiring', () => {
         if (typeof window.setupExtensionUI === 'function') {
             window.setupExtensionUI();
 
-            const container = document.getElementById('auto_summarize_settings');
+            const container = document.getElementById('auto_recap_settings');
             expect(container.children.length).to.be.greaterThan(0);
         }
     });
@@ -293,7 +293,7 @@ describe('UI Element Wiring', () => {
 
         // Attach handler (same pattern extension uses)
         dropdown.addEventListener('change', (e) => {
-            window.extension_settings.auto_summarize.profiles.default.test_setting = e.target.value;
+            window.extension_settings.auto_recap.profiles.default.test_setting = e.target.value;
         });
 
         document.body.appendChild(dropdown);
@@ -303,7 +303,7 @@ describe('UI Element Wiring', () => {
         dropdown.dispatchEvent(new Event('change'));
 
         // Verify setting was updated
-        expect(window.extension_settings.auto_summarize.profiles.default.test_setting)
+        expect(window.extension_settings.auto_recap.profiles.default.test_setting)
             .to.equal('value2');
 
         dropdown.remove();
@@ -317,11 +317,11 @@ describe('UI Element Wiring', () => {
 describe('Integration with First-Hop Proxy', () => {
     beforeEach(() => {
         window.chat = [{
-            mes: 'Test message for summarization',
+            mes: 'Test message for recap generation',
             extra: {}
         }];
 
-        window.extension_settings.auto_summarize = {
+        window.extension_settings.auto_recap = {
             profiles: {
                 default: {
                     max_tokens: 150,
@@ -441,7 +441,7 @@ def handle_request(request):
 
 2. **Open test page in browser:**
    ```
-   http://localhost:8000/scripts/extensions/third-party/ST-Auto-Summarize/tests/test.html
+   http://localhost:8000/scripts/extensions/third-party/ST-Auto-Recap/tests/test.html
    ```
 
 3. **View results:**
@@ -472,7 +472,7 @@ async function runTests() {
 
     // Navigate to test page
     console.log('Loading test page...');
-    await page.goto('http://localhost:8000/scripts/extensions/third-party/ST-Auto-Summarize/tests/test.html', {
+    await page.goto('http://localhost:8000/scripts/extensions/third-party/ST-Auto-Recap/tests/test.html', {
         waitUntil: 'networkidle0'
     });
 
@@ -527,7 +527,7 @@ runTests().catch(err => {
 {
   "scripts": {
     "test": "node tests/runner.js",
-    "test:ui": "echo 'Open http://localhost:8000/scripts/extensions/third-party/ST-Auto-Summarize/tests/test.html in browser'"
+    "test:ui": "echo 'Open http://localhost:8000/scripts/extensions/third-party/ST-Auto-Recap/tests/test.html in browser'"
   },
   "devDependencies": {
     "puppeteer": "^21.0.0"
@@ -715,7 +715,7 @@ npm test
 
 ---
 
-## Summary
+## Recap
 
 **This approach:**
 - ✅ Loads real SillyTavern code via script tags

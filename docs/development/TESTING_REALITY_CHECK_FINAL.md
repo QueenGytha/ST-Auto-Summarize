@@ -6,7 +6,7 @@
 
 ---
 
-## Executive Summary
+## Executive Recap
 
 This document records every testing approach attempted, the proof-of-concept implementations, actual error messages encountered, and technical reasons for failure.
 
@@ -123,7 +123,7 @@ ReferenceError: Cannot access 'SlashCommandParser' before initialization
 ```
 
 **Full test page:** `tests/minimal-test.html`
-**Run:** `http://localhost:8000/scripts/extensions/third-party/ST-Auto-Summarize/tests/minimal-test.html`
+**Run:** `http://localhost:8000/scripts/extensions/third-party/ST-Auto-Recap/tests/minimal-test.html`
 
 ### Why This Can't Be Fixed
 
@@ -182,7 +182,7 @@ Loading non-module scripts (jQuery, etc.) worked fine, but ES6 modules still loa
 ### Proof of Concept
 
 **File:** `tests/full-load-test.html`
-**Run:** `http://localhost:8000/scripts/extensions/third-party/ST-Auto-Summarize/tests/full-load-test.html`
+**Run:** `http://localhost:8000/scripts/extensions/third-party/ST-Auto-Recap/tests/full-load-test.html`
 
 ---
 
@@ -276,7 +276,7 @@ From debug output, only browser globals and non-module scripts are on window:
 ### Proof of Concept
 
 **File:** `tests/injected-test.html`
-**Run:** `http://localhost:8000/scripts/extensions/third-party/ST-Auto-Summarize/tests/injected-test.html`
+**Run:** `http://localhost:8000/scripts/extensions/third-party/ST-Auto-Recap/tests/injected-test.html`
 
 **Console:** Check for `[TEST]` prefixed debug logs
 
@@ -438,7 +438,7 @@ Use Playwright to navigate real SillyTavern UI and verify behavior through actua
 ### How It Works
 
 ```javascript
-test('user creates summary', async ({ page }) => {
+test('user creates recap', async ({ page }) => {
     await page.goto('http://localhost:8000');
     await page.waitForSelector('#send_textarea');
 
@@ -446,12 +446,12 @@ test('user creates summary', async ({ page }) => {
     await page.fill('#send_textarea', 'Test message');
     await page.click('#send_but');
 
-    // Wait for summary to appear
-    await page.waitForSelector('.summary');
+    // Wait for recap to appear
+    await page.waitForSelector('.recap');
 
     // Verify
-    const summary = await page.locator('.summary').textContent();
-    expect(summary).toContain('Test');
+    const recap = await page.locator('.recap').textContent();
+    expect(recap).toContain('Test');
 });
 ```
 
@@ -484,7 +484,7 @@ From user feedback:
 ```javascript
 // To test dropdown setting:
 await page.click('#extensions_menu');          // 500ms
-await page.click('#auto_summarize_settings');  // 500ms
+await page.click('#auto_recap_settings');  // 500ms
 await page.waitForSelector('#prompt_selector'); // 200ms
 await page.selectOption('#prompt_selector', 'detailed'); // 100ms
 
@@ -611,7 +611,7 @@ describe('sample', () => {
 
 ---
 
-## Evidence Summary
+## Evidence Recap
 
 ### Proof of Concept Files Created
 
@@ -654,7 +654,7 @@ AssertionError: expected 'undefined' to equal 'function'
 ### Console Validation
 
 All tests run at:
-- `http://localhost:8000/scripts/extensions/third-party/ST-Auto-Summarize/tests/*.html`
+- `http://localhost:8000/scripts/extensions/third-party/ST-Auto-Recap/tests/*.html`
 
 Requires ST server running:
 ```bash
@@ -834,13 +834,13 @@ describe('Extension Tests', () => {
 ## Test: Prompt Template Selection
 
 1. Open ST
-2. Navigate to Extensions → Auto-Summarize
+2. Navigate to Extensions → Auto-Recap
 3. Change "Prompt Template" dropdown to "Detailed"
 4. Send a test message
-5. Verify summary uses detailed template
+5. Verify recap uses detailed template
 6. Check console for errors
 
-Expected: Summary generated with detailed prompt
+Expected: Recap generated with detailed prompt
 ```
 
 **Then:**
@@ -1007,7 +1007,7 @@ All approaches attempted, validated, and failed:
 
 All tests accessible at:
 ```
-http://localhost:8000/scripts/extensions/third-party/ST-Auto-Summarize/tests/[filename]
+http://localhost:8000/scripts/extensions/third-party/ST-Auto-Recap/tests/[filename]
 ```
 
 Requires ST server running:

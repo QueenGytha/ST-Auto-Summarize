@@ -1,4 +1,4 @@
-# Testing Strategy for ST-Auto-Summarize
+# Testing Strategy for ST-Auto-Recap
 
 ✅ **SOLUTION VALIDATED: IN-BROWSER TESTING** ✅
 
@@ -173,14 +173,14 @@ describe('Prompt Selector', () => {
     dropdown.dispatchEvent(new Event('change'));
 
     // Did the wiring work?
-    expect(extension_settings.auto_summarize.profiles.default.prompt)
+    expect(extension_settings.auto_recap.profiles.default.prompt)
       .to.equal('custom');
   });
 
   it('code uses the selected prompt', async () => {
-    extension_settings.auto_summarize.profiles.default.prompt = 'custom';
+    extension_settings.auto_recap.profiles.default.prompt = 'custom';
 
-    await generateSummary(0);
+    await generateRecap(0);
 
     // Did the code actually use the setting?
     expect(window.generateRaw.calls[0].prompt).to.include('custom');

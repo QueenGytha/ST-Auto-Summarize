@@ -12,10 +12,10 @@ import {
 './index.js';
 
 // eslint-disable-next-line complexity -- LLM call with multiple conditional branches for preset handling
-async function summarize_text(prompt, prefill = '', include_preset_prompts = false, preset_name = null) {
+async function recap_text(prompt, prefill = '', include_preset_prompts = false, preset_name = null) {
   // Test override: allow tests to inject a fixed response
   if (typeof globalThis !== 'undefined') {
-    const __override = globalThis.__TEST_SUMMARIZE_TEXT_RESPONSE;
+    const __override = globalThis.__TEST_RECAP_TEXT_RESPONSE;
     if (typeof __override === 'string') {
       return __override;
     }
@@ -130,5 +130,5 @@ async function summarize_text(prompt, prefill = '', include_preset_prompts = fal
 }
 
 export {
-  summarize_text // Used by scene summaries
+  recap_text // Used by scene recaps
 };

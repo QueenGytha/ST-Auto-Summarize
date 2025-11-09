@@ -39,7 +39,7 @@ export function initLorebookEntryMerger(utils , lorebookManagerModule , settings
 }
 
 function getDefaultMergePrompt() {
-  return `You are updating a lorebook entry. You have the existing entry content and new information from a summary.
+  return `You are updating a lorebook entry. You have the existing entry content and new information from a recap.
 
 Your task:
 1. Compare the existing content with the new information
@@ -53,7 +53,7 @@ Your task:
 Existing Entry Content:
 {{existing_content}}
 
-New Information from Summary:
+New Information from Recap:
 {{new_content}}
 
 You MUST respond with valid JSON in this format:
@@ -63,21 +63,21 @@ You MUST respond with valid JSON in this format:
 }`;
 }
 
-function getSummaryProcessingSetting(key , defaultValue  = null) {
+function getRecapProcessingSetting(key , defaultValue  = null) {
   // defaultValue and return value are any type - can be various types - legitimate use of any
   try {
-    // ALL summary processing settings are per-profile
-    const settingKey = `auto_lorebooks_summary_${key}`;
+    // ALL recap processing settings are per-profile
+    const settingKey = `auto_lorebooks_recap_${key}`;
     return get_settings(settingKey) ?? defaultValue;
   } catch (err) {
-    error("Error getting summary processing setting", err);
+    error("Error getting recap processing setting", err);
     return defaultValue;
   }
 }
 
 function createMergePrompt(existingContent , newContent , entryName  = '') {
-  const template = getSummaryProcessingSetting('merge_prompt') || getDefaultMergePrompt();
-  const prefill = getSummaryProcessingSetting('merge_prefill') || '';
+  const template = getRecapProcessingSetting('merge_prompt') || getDefaultMergePrompt();
+  const prefill = getRecapProcessingSetting('merge_prefill') || '';
 
   // DEBUG: Log what template we got
   debug('Merge prompt template first 300 chars:', template.slice(0, DEBUG_OUTPUT_LONG_LENGTH));
@@ -101,13 +101,13 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
     debug('Prompt:', prompt.slice(0, DEBUG_OUTPUT_MEDIUM_LENGTH) + '...');
 
     // Get include_preset_prompts setting
-    const include_preset_prompts = getSummaryProcessingSetting('merge_include_preset_prompts', false);
+    const include_preset_prompts = getRecapProcessingSetting('merge_include_preset_prompts', false);
 
     debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] entryName:', entryName);
     debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] include_preset_prompts:', include_preset_prompts);
     debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] completionPreset (param):', completionPreset);
 
-    // If preset_name is empty, use the currently active preset (like summarization.js does)
+    // If preset_name is empty, use the currently active preset (like recapping.js does)
     const { setOperationSuffix, clearOperationSuffix, withConnectionSettings, get_current_preset } = await import('./index.js');
     const effectivePresetName = completionPreset || (include_preset_prompts ? get_current_preset() : '');
 
@@ -422,8 +422,8 @@ export async function executeMerge(lorebookName , existingEntry , newEntryData )
     debug(`Executing merge for entry: ${existingEntry.comment}`);
 
     // Get connection settings for merge operation
-    const connectionProfile = getSummaryProcessingSetting('merge_connection_profile', '');
-    const completionPreset = getSummaryProcessingSetting('merge_completion_preset', '');
+    const connectionProfile = getRecapProcessingSetting('merge_connection_profile', '');
+    const completionPreset = getRecapProcessingSetting('merge_completion_preset', '');
 
     // Call AI to merge content (now returns object with mergedContent and optional canonicalName)
     const mergeResult = await callAIForMerge(

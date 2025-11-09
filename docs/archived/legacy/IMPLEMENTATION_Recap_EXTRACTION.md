@@ -1,6 +1,6 @@
-# Implementation Guide: Summary Extraction for Combining
+# Implementation Guide: Recap Extraction for Combining
 
-**Purpose:** Implementation details for extracting ONLY the `summary` field when combining/reviewing memories
+**Purpose:** Implementation details for extracting ONLY the `recap` field when combining/reviewing memories
 
 ---
 
@@ -8,8 +8,8 @@
 
 When combining or reviewing multiple scene memories, the system should:
 1. Parse each scene memory JSON
-2. Extract ONLY the `summary` field (timeline)
-3. Pass ONLY those summaries to the combination prompt
+2. Extract ONLY the `recap` field (timeline)
+3. Pass ONLY those recaps to the combination prompt
 4. Handle lorebook entries separately (if at all)
 
 **Why?**
@@ -20,22 +20,22 @@ When combining or reviewing multiple scene memories, the system should:
 
 ---
 
-## Implementation in combinedSummary.js
+## Implementation in combinedRecap.js
 
 ### Current Behavior (OLD):
 ```javascript
 // OLD - sends entire JSON including lorebooks
-async function generate_combined_summary() {
-    const summaries = collect_summaries_to_combine();
+async function generate_combined_recap() {
+    const recaps = collect_recaps_to_combine();
 
-    // summaries is array of full JSON objects:
+    // recaps is array of full JSON objects:
     // [
-    //   { "summary": "...", "lorebooks": [...] },
-    //   { "summary": "...", "lorebooks": [...] },
+    //   { "recap": "...", "lorebooks": [...] },
+    //   { "recap": "...", "lorebooks": [...] },
     // ]
 
     const prompt = fill_template(combined_prompt, {
-        message: JSON.stringify(summaries, null, 2)  // ❌ Sends everything
+        message: JSON.stringify(recaps, null, 2)  // ❌ Sends everything
     });
 
     // ... generate
@@ -44,60 +44,60 @@ async function generate_combined_summary() {
 
 ### New Behavior (RECOMMENDED):
 ```javascript
-// NEW - extracts only summary fields
-async function generate_combined_summary() {
-    const summaries = collect_summaries_to_combine();
+// NEW - extracts only recap fields
+async function generate_combined_recap() {
+    const recaps = collect_recaps_to_combine();
 
-    // Extract ONLY summary fields
-    const timeline_summaries = extract_summary_fields(summaries);
+    // Extract ONLY recap fields
+    const timeline_recaps = extract_recap_fields(recaps);
 
     const prompt = fill_template(combined_prompt, {
-        message: format_summaries_for_combining(timeline_summaries)  // ✅ Only timelines
+        message: format_recaps_for_combining(timeline_recaps)  // ✅ Only timelines
     });
 
     // ... generate
 }
 
 /**
- * Extract only the summary (timeline) field from each memory
+ * Extract only the recap (timeline) field from each memory
  * @param {Array} memories - Array of memory objects (may be JSON strings or objects)
- * @returns {Array} Array of summary strings
+ * @returns {Array} Array of recap strings
  */
-function extract_summary_fields(memories) {
-    const summaries = [];
+function extract_recap_fields(memories) {
+    const recaps = [];
 
     for (const memory of memories) {
         try {
             // Parse if string
             const parsed = typeof memory === 'string' ? JSON.parse(memory) : memory;
 
-            // Extract summary field
-            if (parsed && parsed.summary) {
-                summaries.push(parsed.summary);
+            // Extract recap field
+            if (parsed && parsed.recap) {
+                recaps.push(parsed.recap);
             } else if (typeof parsed === 'string') {
                 // Legacy: if it's just a string (old format), use as-is
-                summaries.push(parsed);
+                recaps.push(parsed);
             } else {
-                debug('[Extract Summaries] Memory has no summary field:', parsed);
+                debug('[Extract Recaps] Memory has no recap field:', parsed);
             }
         } catch (err) {
-            error('[Extract Summaries] Failed to parse memory:', err);
+            error('[Extract Recaps] Failed to parse memory:', err);
             // Skip this memory
         }
     }
 
-    return summaries;
+    return recaps;
 }
 
 /**
- * Format extracted summaries for combining prompt
- * @param {Array<string>} summaries - Array of summary strings
+ * Format extracted recaps for combining prompt
+ * @param {Array<string>} recaps - Array of recap strings
  * @returns {string} Formatted text for prompt
  */
-function format_summaries_for_combining(summaries) {
+function format_recaps_for_combining(recaps) {
     // Simple numbered list
-    return summaries.map((summary, idx) => {
-        return `Scene ${idx + 1} summary:\n${summary}`;
+    return recaps.map((recap, idx) => {
+        return `Scene ${idx + 1} recap:\n${recap}`;
     }).join('\n\n');
 }
 ```
@@ -111,21 +111,21 @@ function format_summaries_for_combining(summaries) {
 ```javascript
 const scene_memories = [
     {
-        "summary": "Alice and Bob met at tavern. Bartender Grim told them about eastern road bandits.",
+        "recap": "Alice and Bob met at tavern. Bartender Grim told them about eastern road bandits.",
         "lorebooks": [
             {"name": "Grim", "type": "character", "keywords": ["Grim", "bartender"], "content": "Dwarf bartender..."},
             {"name": "Rusty Nail", "type": "location", "keywords": ["tavern"], "content": "Dimly lit tavern..."}
         ]
     },
     {
-        "summary": "Traveled to Eastern Ruins. Temple ransacked, Sunblade stolen. Bob revealed Shadow Guild membership.",
+        "recap": "Traveled to Eastern Ruins. Temple ransacked, Sunblade stolen. Bob revealed Shadow Guild membership.",
         "lorebooks": [
             {"name": "Eastern Ruins", "type": "location", "keywords": ["ruins"], "content": "Ancient temple..."},
             {"name": "Bob - Shadow Guild", "type": "concept", "keywords": ["Bob secret"], "content": "Bob is Guild member..."}
         ]
     },
     {
-        "summary": "Bandits ambushed on eastern road. Alice killed two, Bob disabled one. Alice wounded in shoulder.",
+        "recap": "Bandits ambushed on eastern road. Alice killed two, Bob disabled one. Alice wounded in shoulder.",
         "lorebooks": [
             {"name": "Alice - Status", "type": "concept", "keywords": ["Alice wounded"], "content": "Arrow wound..."}
         ]
@@ -133,10 +133,10 @@ const scene_memories = [
 ];
 ```
 
-### Step 1: Extract Summary Fields
+### Step 1: Extract Recap Fields
 
 ```javascript
-const timeline_summaries = extract_summary_fields(scene_memories);
+const timeline_recaps = extract_recap_fields(scene_memories);
 
 // Result:
 // [
@@ -149,37 +149,37 @@ const timeline_summaries = extract_summary_fields(scene_memories);
 ### Step 2: Format for Prompt
 
 ```javascript
-const formatted = format_summaries_for_combining(timeline_summaries);
+const formatted = format_recaps_for_combining(timeline_recaps);
 
 // Result:
-// "Scene 1 summary:
+// "Scene 1 recap:
 // Alice and Bob met at tavern. Bartender Grim told them about eastern road bandits.
 //
-// Scene 2 summary:
+// Scene 2 recap:
 // Traveled to Eastern Ruins. Temple ransacked, Sunblade stolen. Bob revealed Shadow Guild membership.
 //
-// Scene 3 summary:
+// Scene 3 recap:
 // Bandits ambushed on eastern road. Alice killed two, Bob disabled one. Alice wounded in shoulder."
 ```
 
 ### Step 3: Send to AI
 
 ```javascript
-const prompt = `// OOC REQUEST: Combine these scene summaries into one unified timeline...
+const prompt = `// OOC REQUEST: Combine these scene recaps into one unified timeline...
 //
-// NEW SCENE SUMMARIES TO MERGE:
+// NEW SCENE RECAPS TO MERGE:
 ${formatted}
 
-// Output the UPDATED combined summary as a plain string:
+// Output the UPDATED combined recap as a plain string:
 `;
 
-const combined_summary = await generate_with_ai(prompt);
+const combined_recap = await generate_with_ai(prompt);
 
-// AI receives ONLY the timeline summaries, not the lorebook entries
+// AI receives ONLY the timeline recaps, not the lorebook entries
 // Result: Combined timeline string
 ```
 
-### Step 4: AI Returns Combined Summary
+### Step 4: AI Returns Combined Recap
 
 ```javascript
 // AI output (plain string):
@@ -194,7 +194,7 @@ const result = "Alice and Bob met at tavern where bartender Grim warned about ea
 ```javascript
 // Input to AI (all 3 scenes with lorebooks):
 {
-  "summary": "Alice and Bob met at tavern...",
+  "recap": "Alice and Bob met at tavern...",
   "lorebooks": [
     {"name": "Grim", "type": "character", "keywords": ["Grim", "bartender"], "content": "Dwarf bartender at Rusty Nail. Gruff demeanor but helpful. Has knowledge of local rumors..."},
     {"name": "Rusty Nail", "type": "location", "keywords": ["tavern", "Rusty Nail"], "content": "Dimly lit tavern in merchant quarter. Heavy wooden door. Smells of ale and pipe smoke..."}
@@ -205,16 +205,16 @@ const result = "Alice and Bob met at tavern where bartender Grim warned about ea
 // Estimated tokens: ~1,500 tokens
 ```
 
-### NEW Approach (summary fields only):
+### NEW Approach (recap fields only):
 ```javascript
-// Input to AI (just summaries):
-Scene 1 summary:
+// Input to AI (just recaps):
+Scene 1 recap:
 Alice and Bob met at tavern. Bartender Grim told them about eastern road bandits.
 
-Scene 2 summary:
+Scene 2 recap:
 Traveled to Eastern Ruins. Temple ransacked, Sunblade stolen. Bob revealed Shadow Guild membership.
 
-Scene 3 summary:
+Scene 3 recap:
 Bandits ambushed on eastern road. Alice killed two, Bob disabled one. Alice wounded in shoulder.
 
 // Estimated tokens: ~150 tokens
@@ -282,18 +282,18 @@ function merge_lorebook_entries(memories) {
 
 ```javascript
 async function generate_combined_memory() {
-    const scene_memories = collect_summaries_to_combine();
+    const scene_memories = collect_recaps_to_combine();
 
     // 1. Combine timelines (AI-assisted)
-    const timeline_summaries = extract_summary_fields(scene_memories);
-    const combined_timeline = await combine_summaries_with_ai(timeline_summaries);
+    const timeline_recaps = extract_recap_fields(scene_memories);
+    const combined_timeline = await combine_recaps_with_ai(timeline_recaps);
 
     // 2. Merge lorebook entries (programmatic)
     const merged_lorebooks = merge_lorebook_entries(scene_memories);
 
     // 3. Return combined memory structure
     return {
-        summary: combined_timeline,
+        recap: combined_timeline,
         lorebooks: merged_lorebooks
     };
 }
@@ -303,11 +303,11 @@ async function generate_combined_memory() {
 
 ## Backward Compatibility
 
-Handle old format (string summaries without JSON):
+Handle old format (string recaps without JSON):
 
 ```javascript
-function extract_summary_fields(memories) {
-    const summaries = [];
+function extract_recap_fields(memories) {
+    const recaps = [];
 
     for (const memory of memories) {
         try {
@@ -315,33 +315,33 @@ function extract_summary_fields(memories) {
             const parsed = typeof memory === 'string' ? JSON.parse(memory) : memory;
 
             if (parsed && typeof parsed === 'object') {
-                // New format: JSON with summary field
-                if (parsed.summary) {
-                    summaries.push(parsed.summary);
+                // New format: JSON with recap field
+                if (parsed.recap) {
+                    recaps.push(parsed.recap);
                 }
                 // Old format: JSON with other fields (legacy)
                 else if (parsed.narrative) {
-                    summaries.push(parsed.narrative);  // Old field name
+                    recaps.push(parsed.narrative);  // Old field name
                 }
-                // Very old format: entire JSON was the summary
+                // Very old format: entire JSON was the recap
                 else {
-                    summaries.push(JSON.stringify(parsed));
+                    recaps.push(JSON.stringify(parsed));
                 }
             } else if (typeof parsed === 'string') {
                 // Plain string format
-                summaries.push(parsed);
+                recaps.push(parsed);
             }
         } catch (err) {
             // Not JSON - treat as plain string
             if (typeof memory === 'string') {
-                summaries.push(memory);
+                recaps.push(memory);
             } else {
-                error('[Extract Summaries] Failed to process memory:', err);
+                error('[Extract Recaps] Failed to process memory:', err);
             }
         }
     }
 
-    return summaries;
+    return recaps;
 }
 ```
 
@@ -352,22 +352,22 @@ function extract_summary_fields(memories) {
 Update validation to handle new structure:
 
 ```javascript
-// In summaryValidation.js
+// In recapValidation.js
 
-async function validate_combined_summary(summary) {
-    // Combined summary should be a plain string now, not JSON
+async function validate_combined_recap(recap) {
+    // Combined recap should be a plain string now, not JSON
 
-    if (typeof summary !== 'string') {
-        debug('[Validation] Combined summary should be plain string, got:', typeof summary);
+    if (typeof recap !== 'string') {
+        debug('[Validation] Combined recap should be plain string, got:', typeof recap);
         return false;
     }
 
     // Check token count
-    const token_count = count_tokens(summary);
+    const token_count = count_tokens(recap);
     const hard_limit = 1500;
 
     if (token_count > hard_limit) {
-        debug(`[Validation] Combined summary exceeds limit: ${token_count} > ${hard_limit}`);
+        debug(`[Validation] Combined recap exceeds limit: ${token_count} > ${hard_limit}`);
         return false;
     }
 
@@ -379,8 +379,8 @@ async function validate_combined_summary(summary) {
     ];
 
     for (const pattern of redundancy_patterns) {
-        if (pattern.test(summary)) {
-            debug(`[Validation] Combined summary has redundancy: ${pattern}`);
+        if (pattern.test(recap)) {
+            debug(`[Validation] Combined recap has redundancy: ${pattern}`);
             // Warning, not failure
         }
     }
@@ -401,10 +401,10 @@ Add settings for this behavior:
 export const default_settings = {
     // ... existing settings
 
-    // Combined summary behavior
-    "combined_summary_extraction_mode": "summary_only",  // "summary_only" | "full_json"
-    "combined_summary_merge_lorebooks": false,  // If true, merge lorebooks programmatically
-    "combined_summary_output_format": "string",  // "string" | "json"
+    // Combined recap behavior
+    "combined_recap_extraction_mode": "recap_only",  // "recap_only" | "full_json"
+    "combined_recap_merge_lorebooks": false,  // If true, merge lorebooks programmatically
+    "combined_recap_output_format": "string",  // "string" | "json"
 
     // ... other settings
 };
@@ -417,10 +417,10 @@ export const default_settings = {
 Add logging to track extraction:
 
 ```javascript
-function extract_summary_fields(memories) {
-    debug(`[Extract Summaries] Processing ${memories.length} memories`);
+function extract_recap_fields(memories) {
+    debug(`[Extract Recaps] Processing ${memories.length} memories`);
 
-    const summaries = [];
+    const recaps = [];
     let extracted_count = 0;
     let failed_count = 0;
 
@@ -428,28 +428,28 @@ function extract_summary_fields(memories) {
         try {
             const parsed = typeof memory === 'string' ? JSON.parse(memory) : memory;
 
-            if (parsed && parsed.summary) {
-                summaries.push(parsed.summary);
+            if (parsed && parsed.recap) {
+                recaps.push(parsed.recap);
                 extracted_count++;
-                debug(`[Extract Summaries] Scene ${idx + 1}: Extracted summary (${count_tokens(parsed.summary)} tokens)`);
+                debug(`[Extract Recaps] Scene ${idx + 1}: Extracted recap (${count_tokens(parsed.recap)} tokens)`);
 
                 // Log what was excluded
                 if (parsed.lorebooks && parsed.lorebooks.length > 0) {
-                    debug(`[Extract Summaries] Scene ${idx + 1}: Excluded ${parsed.lorebooks.length} lorebook entries`);
+                    debug(`[Extract Recaps] Scene ${idx + 1}: Excluded ${parsed.lorebooks.length} lorebook entries`);
                 }
             } else {
                 failed_count++;
-                debug(`[Extract Summaries] Scene ${idx + 1}: No summary field found`);
+                debug(`[Extract Recaps] Scene ${idx + 1}: No recap field found`);
             }
         } catch (err) {
             failed_count++;
-            error(`[Extract Summaries] Scene ${idx + 1}: Parse error:`, err);
+            error(`[Extract Recaps] Scene ${idx + 1}: Parse error:`, err);
         }
     }
 
-    debug(`[Extract Summaries] Complete: ${extracted_count} extracted, ${failed_count} failed`);
+    debug(`[Extract Recaps] Complete: ${extracted_count} extracted, ${failed_count} failed`);
 
-    return summaries;
+    return recaps;
 }
 ```
 
@@ -462,29 +462,29 @@ Test the extraction:
 ```javascript
 // Test case 1: New format
 const test_memory_1 = {
-    summary: "Alice fought bandits.",
+    recap: "Alice fought bandits.",
     lorebooks: [
         {name: "Alice", type: "character", keywords: ["Alice"], content: "Warrior..."}
     ]
 };
 
-const extracted_1 = extract_summary_fields([test_memory_1]);
+const extracted_1 = extract_recap_fields([test_memory_1]);
 console.assert(extracted_1[0] === "Alice fought bandits.");
 console.assert(extracted_1.length === 1);
 
 // Test case 2: Old format (string)
 const test_memory_2 = "Alice fought bandits.";
-const extracted_2 = extract_summary_fields([test_memory_2]);
+const extracted_2 = extract_recap_fields([test_memory_2]);
 console.assert(extracted_2[0] === "Alice fought bandits.");
 
 // Test case 3: Mixed formats
 const mixed = [
-    {summary: "Scene 1", lorebooks: []},
+    {recap: "Scene 1", lorebooks: []},
     "Scene 2 plain text",
-    {summary: "Scene 3", lorebooks: [{name: "X", type: "character", keywords: ["X"], content: "..."}]}
+    {recap: "Scene 3", lorebooks: [{name: "X", type: "character", keywords: ["X"], content: "..."}]}
 ];
 
-const extracted_mixed = extract_summary_fields(mixed);
+const extracted_mixed = extract_recap_fields(mixed);
 console.assert(extracted_mixed.length === 3);
 console.assert(extracted_mixed[0] === "Scene 1");
 console.assert(extracted_mixed[1] === "Scene 2 plain text");
@@ -493,20 +493,20 @@ console.assert(extracted_mixed[2] === "Scene 3");
 
 ---
 
-## Summary
+## Recap
 
 **Implementation Checklist:**
 
-- [ ] Update `combinedSummary.js` to extract only summary fields
-- [ ] Implement `extract_summary_fields()` function
-- [ ] Implement `format_summaries_for_combining()` function
+- [ ] Update `combinedRecap.js` to extract only recap fields
+- [ ] Implement `extract_recap_fields()` function
+- [ ] Implement `format_recaps_for_combining()` function
 - [ ] Update validation to expect string output (not JSON)
 - [ ] Add backward compatibility for old formats
 - [ ] Optional: Implement programmatic lorebook merging
 - [ ] Add debug logging for extraction process
 - [ ] Update settings to control extraction behavior
 - [ ] Test with mixed old/new format memories
-- [ ] Update combined summary prompt (already done in defaultPrompts_v2.js)
+- [ ] Update combined recap prompt (already done in defaultPrompts_v2.js)
 
 **Benefits:**
 - 90% token reduction when combining

@@ -21,14 +21,14 @@ export class ExtensionHelper {
 
   async getSettings() {
     return await this.page.evaluate(() => {
-      const MODULE_NAME = 'auto-summarize';
+      const MODULE_NAME = 'auto-recap';
       return window.extension_settings?.[MODULE_NAME];
     });
   }
 
   async setSettings(settings) {
     await this.page.evaluate((newSettings) => {
-      const MODULE_NAME = 'auto-summarize';
+      const MODULE_NAME = 'auto-recap';
       if (!window.extension_settings) {
         window.extension_settings = {};
       }
@@ -41,7 +41,7 @@ export class ExtensionHelper {
 
   async setDefaultSettings() {
     await this.page.evaluate(() => {
-      const MODULE_NAME = 'auto-summarize';
+      const MODULE_NAME = 'auto-recap';
       // Note: Default settings should match defaultSettings.js
       window.extension_settings[MODULE_NAME] = {
         enabled: false,
@@ -63,10 +63,10 @@ export class ExtensionHelper {
   }
 
   // ============================================================================
-  // Memory/Summary Methods
+  // Memory/Recap Methods
   // ============================================================================
 
-  async getSummaryForMessage(messageIndex) {
+  async getRecapForMessage(messageIndex) {
     return await this.page.evaluate((idx) => {
       const message = window.chat?.[idx];
       return message?.extra?.memory || null;
@@ -99,7 +99,7 @@ export class ExtensionHelper {
 
   async waitForExtensionLoaded() {
     await this.page.waitForFunction(() => {
-      return window.extension_settings && window.extension_settings['auto-summarize'];
+      return window.extension_settings && window.extension_settings['auto-recap'];
     }, { timeout: 10000 });
   }
 

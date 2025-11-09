@@ -15,14 +15,14 @@ export function addLorebookViewerButton() {
 `;
 
   // Insert after the scene break button (which is the first button via prepend)
-  const sceneBreakButton = $(`${selectorsSillyTavern.message.template} ${selectorsSillyTavern.message.buttons} ${selectorsSillyTavern.message.extraButtons} .auto_summarize_scene_break_button`);
+  const sceneBreakButton = $(`${selectorsSillyTavern.message.template} ${selectorsSillyTavern.message.buttons} ${selectorsSillyTavern.message.extraButtons} .auto_recap_scene_break_button`);
   if (sceneBreakButton.length > 0) {
     sceneBreakButton.after(html);
-    debug(SUBSYSTEM.LOREBOOK,'[Auto-Summarize:LorebookViewer] Added lorebook viewer button after scene break button');
+    debug(SUBSYSTEM.LOREBOOK,'[Auto-Recap:LorebookViewer] Added lorebook viewer button after scene break button');
   } else {
     // Fallback: append to end if scene break button not found
     $(`${selectorsSillyTavern.message.template} ${selectorsSillyTavern.message.buttons} ${selectorsSillyTavern.message.extraButtons}`).append(html);
-    debug(SUBSYSTEM.LOREBOOK,'[Auto-Summarize:LorebookViewer] Added lorebook viewer button to message template (fallback)');
+    debug(SUBSYSTEM.LOREBOOK,'[Auto-Recap:LorebookViewer] Added lorebook viewer button to message template (fallback)');
   }
 }
 
@@ -31,11 +31,11 @@ export function bindLorebookViewerButton() {
     const message_block = $(this).closest(selectorsSillyTavern.message.block);
     const message_id = Number(message_block.attr("mesid"));
 
-    debug(SUBSYSTEM.LOREBOOK,`[Auto-Summarize:LorebookViewer] Clicked for message ${message_id}`);
+    debug(SUBSYSTEM.LOREBOOK,`[Auto-Recap:LorebookViewer] Clicked for message ${message_id}`);
     showLorebookEntriesModal(message_id);
   });
 
-  debug(SUBSYSTEM.LOREBOOK,'[Auto-Summarize:LorebookViewer] Bound click handler for lorebook viewer buttons');
+  debug(SUBSYSTEM.LOREBOOK,'[Auto-Recap:LorebookViewer] Bound click handler for lorebook viewer buttons');
 }
 
 export function showLorebookEntriesModal(messageIndex) {
@@ -155,7 +155,7 @@ export function showLorebookEntriesModal(messageIndex) {
     entriesHtml = entries.map((entry, i) => buildEntryHtml(entry, i + 1)).join('');
   }
 
-  // Build summary with strategy breakdown
+  // Build recap with strategy breakdown
   const strategyCounts = {
     constant: entries.filter(e => e.strategy === 'constant').length,
     vectorized: entries.filter(e => e.strategy === 'vectorized').length,
@@ -197,9 +197,9 @@ export function bindSceneBreakLorebookIcons() {
   $(`div${selectorsSillyTavern.chat.container}`).on("click", ".scene-lorebook-viewer", function (e) {
     e.stopPropagation();
     const messageIndex = Number($(this).attr("data-message-index"));
-    debug(SUBSYSTEM.LOREBOOK,`[Auto-Summarize:LorebookViewer] Scene break icon clicked for message ${messageIndex}`);
+    debug(SUBSYSTEM.LOREBOOK,`[Auto-Recap:LorebookViewer] Scene break icon clicked for message ${messageIndex}`);
     showLorebookEntriesModal(messageIndex);
   });
 
-  debug(SUBSYSTEM.LOREBOOK,'[Auto-Summarize:LorebookViewer] Bound click handler for scene break lorebook icons');
+  debug(SUBSYSTEM.LOREBOOK,'[Auto-Recap:LorebookViewer] Bound click handler for scene break lorebook icons');
 }

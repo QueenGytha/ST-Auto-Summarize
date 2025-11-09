@@ -3,7 +3,7 @@
 **Status:** Proposed Solution
 **Last Updated:** 2025-01-05
 
-## Executive Summary
+## Executive Recap
 
 ### What This Is
 
@@ -110,7 +110,7 @@ In-browser unit testing that loads **real SillyTavern code** and tests extension
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>ST-Auto-Summarize Tests</title>
+    <title>ST-Auto-Recap Tests</title>
 
     <!-- Mocha test framework -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mocha@10/mocha.css">
@@ -136,7 +136,7 @@ In-browser unit testing that loads **real SillyTavern code** and tests extension
         window.this_chid = 0;
         window.name2 = 'TestChar';
         window.extension_settings = {
-            auto_summarize: {
+            auto_recap: {
                 profiles: { default: {} },
                 profile: 'default'
             }
@@ -160,7 +160,7 @@ In-browser unit testing that loads **real SillyTavern code** and tests extension
         Object.assign(window, extensionsExports);
 
         // Now load extension
-        const extensionModule = await import('../scripts/extensions/third-party/ST-Auto-Summarize/index.js');
+        const extensionModule = await import('../scripts/extensions/third-party/ST-Auto-Recap/index.js');
         window.extensionAPI = extensionModule;
     </script>
 
@@ -200,10 +200,10 @@ In-browser unit testing that loads **real SillyTavern code** and tests extension
 describe('Prompt Selector UI', () => {
     beforeEach(() => {
         // Create container
-        document.body.innerHTML = '<div id="auto_summarize_settings"></div>';
+        document.body.innerHTML = '<div id="auto_recap_settings"></div>';
 
         // Reset settings
-        window.extension_settings.auto_summarize.profiles.default = {
+        window.extension_settings.auto_recap.profiles.default = {
             prompt_template: 'default'
         };
     });
@@ -238,8 +238,8 @@ describe('Prompt Selector UI', () => {
 ```javascript
 describe('Prompt Selector Wiring', () => {
     beforeEach(() => {
-        document.body.innerHTML = '<div id="auto_summarize_settings"></div>';
-        window.extension_settings.auto_summarize.profiles.default = {};
+        document.body.innerHTML = '<div id="auto_recap_settings"></div>';
+        window.extension_settings.auto_recap.profiles.default = {};
     });
 
     it('updates setting when dropdown changes', () => {
@@ -252,13 +252,13 @@ describe('Prompt Selector Wiring', () => {
         dropdown.dispatchEvent(new Event('change'));
 
         // Verify setting was updated (wiring works!)
-        const settings = window.extension_settings.auto_summarize.profiles.default;
+        const settings = window.extension_settings.auto_recap.profiles.default;
         expect(settings.prompt_template).to.equal('detailed');
     });
 
     it('loads current setting value on init', () => {
         // Pre-set a value
-        window.extension_settings.auto_summarize.profiles.default.prompt_template = 'brief';
+        window.extension_settings.auto_recap.profiles.default.prompt_template = 'brief';
 
         // Setup UI
         window.extensionAPI.setupPromptSelector();
@@ -278,7 +278,7 @@ describe('Prompt Selector Wiring', () => {
 // specs/settings.test.js
 describe('Settings Management', () => {
     beforeEach(() => {
-        window.extension_settings.auto_summarize = {
+        window.extension_settings.auto_recap = {
             profiles: {
                 default: { max_tokens: 100 },
                 custom: { max_tokens: 200 }
@@ -291,13 +291,13 @@ describe('Settings Management', () => {
         const settings = window.extensionAPI.get_settings();
 
         expect(settings).to.equal(
-            window.extension_settings.auto_summarize.profiles.default
+            window.extension_settings.auto_recap.profiles.default
         );
         expect(settings.max_tokens).to.equal(100);
     });
 
     it('changing profile changes settings reference', () => {
-        window.extension_settings.auto_summarize.profile = 'custom';
+        window.extension_settings.auto_recap.profile = 'custom';
 
         const settings = window.extensionAPI.get_settings();
 
@@ -312,37 +312,37 @@ describe('Settings Management', () => {
 
 ```javascript
 // specs/integration.test.js
-describe('Summary Generation Integration', () => {
+describe('Recap Generation Integration', () => {
     beforeEach(() => {
         window.chat = [{
             mes: 'This is a test message',
             extra: {}
         }];
 
-        window.extension_settings.auto_summarize.profiles.default = {
+        window.extension_settings.auto_recap.profiles.default = {
             prompt_template: 'default',
             max_tokens: 100
         };
     });
 
-    it('generates summary with test response', async () => {
+    it('generates recap with test response', async () => {
         // Call real extension function
         // It will call wrappedGenerateRaw with test_mode flag
         const result = await window.extensionAPI.generateRaw({
-            prompt: 'Summarize: This is a test message',
+            prompt: 'Recap: This is a test message',
             max_tokens: 100,
             __test_metadata: {
                 test_mode: true,
-                test_response: 'Test summary: The message discusses testing.'
+                test_response: 'Test recap: The message discusses testing.'
             }
         });
 
         // Verify we got the test response
-        expect(result.content).to.equal('Test summary: The message discusses testing.');
+        expect(result.content).to.equal('Test recap: The message discusses testing.');
     });
 
     it('uses correct prompt template', async () => {
-        window.extension_settings.auto_summarize.profiles.default.prompt_template = 'detailed';
+        window.extension_settings.auto_recap.profiles.default.prompt_template = 'detailed';
 
         // This would test the full flow:
         // 1. Extension builds prompt with template
@@ -353,7 +353,7 @@ describe('Summary Generation Integration', () => {
         // 6. Extension processes response
 
         // For now, just verify the function exists and can be called
-        expect(window.extensionAPI.summarize_text).to.be.a('function');
+        expect(window.extensionAPI.recap_text).to.be.a('function');
     });
 });
 ```
@@ -411,10 +411,10 @@ it('full workflow with proxy test mode', async () => {
     window.chat = [{ mes: 'User message', extra: {} }];
 
     // Call extension function that internally uses generateRaw
-    const result = await window.extensionAPI.generateSummary(0, {
+    const result = await window.extensionAPI.generateRecap(0, {
         __test_metadata: {
             test_mode: true,
-            test_response: 'Summary: User sent a message about testing.'
+            test_response: 'Recap: User sent a message about testing.'
         }
     });
 
@@ -428,7 +428,7 @@ it('full workflow with proxy test mode', async () => {
     // 7. Extension processed response
     // 8. Saved to chat metadata
 
-    expect(result).to.include('Summary: User sent a message');
+    expect(result).to.include('Recap: User sent a message');
     expect(window.chat[0].extra.memory).to.exist;
 });
 ```
@@ -445,11 +445,11 @@ describe('Prompt Selector Feature - Complete Test', () => {
     beforeEach(() => {
         // 1. Setup DOM
         document.body.innerHTML = `
-            <div id="auto_summarize_settings"></div>
+            <div id="auto_recap_settings"></div>
         `;
 
         // 2. Reset settings to known state
-        window.extension_settings.auto_summarize.profiles.default = {
+        window.extension_settings.auto_recap.profiles.default = {
             prompt_template: 'default'
         };
     });
@@ -479,7 +479,7 @@ describe('Prompt Selector Feature - Complete Test', () => {
         dropdown.dispatchEvent(new Event('change'));
 
         // STEP 5: Verify the setting was updated (proves wiring works!)
-        const settings = window.extension_settings.auto_summarize.profiles.default;
+        const settings = window.extension_settings.auto_recap.profiles.default;
         expect(settings.prompt_template, 'Setting should be updated').to.equal('detailed');
 
         // STEP 6: Verify it persists (can read back)
@@ -489,7 +489,7 @@ describe('Prompt Selector Feature - Complete Test', () => {
 
     it('loads existing setting on init', () => {
         // SETUP: Pre-configure a setting
-        window.extension_settings.auto_summarize.profiles.default.prompt_template = 'brief';
+        window.extension_settings.auto_recap.profiles.default.prompt_template = 'brief';
 
         // ACTION: Create UI
         window.extensionAPI.setupPromptSelector();
@@ -501,7 +501,7 @@ describe('Prompt Selector Feature - Complete Test', () => {
 
     it('handles missing setting gracefully', () => {
         // SETUP: Don't set prompt_template (undefined)
-        window.extension_settings.auto_summarize.profiles.default = {};
+        window.extension_settings.auto_recap.profiles.default = {};
 
         // ACTION: Create UI (should not crash)
         expect(() => {
@@ -821,7 +821,7 @@ export function setupRetryLimit() {
 describe('Retry Limit Setting', () => {
     beforeEach(() => {
         document.body.innerHTML = '<div id="operation_settings"></div>';
-        window.extension_settings.auto_summarize.profiles.default = {};
+        window.extension_settings.auto_recap.profiles.default = {};
     });
 
     it('creates input element', () => {
@@ -839,12 +839,12 @@ describe('Retry Limit Setting', () => {
         input.value = '5';
         input.dispatchEvent(new Event('input'));
 
-        const settings = window.extension_settings.auto_summarize.profiles.default;
+        const settings = window.extension_settings.auto_recap.profiles.default;
         expect(settings.max_retries).to.equal(5);
     });
 
     it('loads current value on init', () => {
-        window.extension_settings.auto_summarize.profiles.default.max_retries = 7;
+        window.extension_settings.auto_recap.profiles.default.max_retries = 7;
 
         setupRetryLimit();
 
@@ -954,7 +954,7 @@ git commit -m "Add retry limit setting with tests"
 
 ---
 
-## Summary
+## Recap
 
 ### The Solution
 

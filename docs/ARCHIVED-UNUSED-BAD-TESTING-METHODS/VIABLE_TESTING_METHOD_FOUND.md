@@ -6,7 +6,7 @@
 
 ---
 
-## Executive Summary
+## Executive Recap
 
 A viable testing approach was discovered that meets ALL requirements:
 - ✅ **NO MOCKS** - Uses real SillyTavern code
@@ -279,7 +279,7 @@ cd SillyTavern-New
 node server.js  # In one terminal
 
 # In another terminal, from extension directory
-cd public/scripts/extensions/third-party/ST-Auto-Summarize
+cd public/scripts/extensions/third-party/ST-Auto-Recap
 node tests/validate-dynamic-imports.js
 ```
 
@@ -305,7 +305,7 @@ Step 5: Performance test (10 rapid calls)...
 ✓ Performance results: avg 0.5ms
 
 ============================================================
-VALIDATION SUMMARY
+VALIDATION RECAP
 ============================================================
 ✓✓✓ APPROACH VALIDATED ✓✓✓
 

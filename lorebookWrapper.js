@@ -10,7 +10,7 @@ let isListenerRegistered  = false;
 
 export function installLorebookWrapper() {
   if (isListenerRegistered) {
-    debug(SUBSYSTEM.LOREBOOK,'[Auto-Summarize:LorebookWrapper] Listener already installed, skipping');
+    debug(SUBSYSTEM.LOREBOOK,'[Auto-Recap:LorebookWrapper] Listener already installed, skipping');
     return;
   }
 
@@ -20,15 +20,15 @@ export function installLorebookWrapper() {
     const event_types = ctx?.event_types;
 
     if (!eventSource || !event_types?.WORLDINFO_ENTRIES_LOADED) {
-      console.warn('[Auto-Summarize:LorebookWrapper] Unable to install wrapper listener (missing eventSource or event type)');
+      console.warn('[Auto-Recap:LorebookWrapper] Unable to install wrapper listener (missing eventSource or event type)');
       return;
     }
 
     eventSource.on(event_types.WORLDINFO_ENTRIES_LOADED, handleWorldInfoEntriesLoaded);
     isListenerRegistered = true;
-    debug(SUBSYSTEM.LOREBOOK,'[Auto-Summarize:LorebookWrapper] ✓ Registered WORLDINFO_ENTRIES_LOADED listener');
+    debug(SUBSYSTEM.LOREBOOK,'[Auto-Recap:LorebookWrapper] ✓ Registered WORLDINFO_ENTRIES_LOADED listener');
   } catch (err) {
-    console.error('[Auto-Summarize:LorebookWrapper] Failed to install wrapper listener:', err);
+    console.error('[Auto-Recap:LorebookWrapper] Failed to install wrapper listener:', err);
   }
 }
 
@@ -53,7 +53,7 @@ function handleWorldInfoEntriesLoaded(payload ) {
       applyWrapperToCollection(collection);
     }
   } catch (err) {
-    console.error('[Auto-Summarize:LorebookWrapper] Error handling WORLDINFO_ENTRIES_LOADED:', err);
+    console.error('[Auto-Recap:LorebookWrapper] Error handling WORLDINFO_ENTRIES_LOADED:', err);
   }
 }
 

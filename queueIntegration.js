@@ -13,17 +13,17 @@ import {
   debug,
   SUBSYSTEM } from
 './index.js';
-import { MAX_SUMMARY_ATTEMPTS, HIGH_PRIORITY_OFFSET, STANDARD_QUEUE_POSITION, OPERATION_ID_LENGTH } from './constants.js';
+import { MAX_RECAP_ATTEMPTS, HIGH_PRIORITY_OFFSET, STANDARD_QUEUE_POSITION, OPERATION_ID_LENGTH } from './constants.js';
 
-export function queueValidateSummary(summary , type , options  = {}) {
+export function queueValidateRecap(recap , type , options  = {}) {
   // Capture settings at enqueue time for tooltip display
-  const includePresetPrompts = get_settings('scene_summary_error_detection_include_preset_prompts') ?? false;
+  const includePresetPrompts = get_settings('scene_recap_error_detection_include_preset_prompts') ?? false;
 
   return enqueueOperation(
-    OperationType.VALIDATE_SUMMARY,
-    { summary, type },
+    OperationType.VALIDATE_RECAP,
+    { recap, type },
     {
-      priority: options.priority ?? MAX_SUMMARY_ATTEMPTS, // Medium priority - nice-to-have enhancement
+      priority: options.priority ?? MAX_RECAP_ATTEMPTS, // Medium priority - nice-to-have enhancement
       dependencies: options.dependencies ?? [],
       metadata: {
         validation_type: type,
@@ -54,19 +54,19 @@ export function queueDetectSceneBreaks(indexes , options  = {}) {
   return indexes.map((index) => queueDetectSceneBreak(index, options));
 }
 
-export function queueGenerateSceneSummary(index , options  = {}) {
+export function queueGenerateSceneRecap(index , options  = {}) {
   // Capture settings at enqueue time for tooltip display
-  const includePresetPrompts = get_settings('scene_summary_include_preset_prompts') ?? false;
+  const includePresetPrompts = get_settings('scene_recap_include_preset_prompts') ?? false;
 
   return enqueueOperation(
-    OperationType.GENERATE_SCENE_SUMMARY,
+    OperationType.GENERATE_SCENE_RECAP,
     { index },
     {
       priority: options.priority ?? 0,
       dependencies: options.dependencies ?? [],
       metadata: {
         scene_index: index,
-        hasPrefill: false, // Scene summary operations don't use prefills
+        hasPrefill: false, // Scene recap operations don't use prefills
         includePresetPrompts,
         ...options.metadata
       }
@@ -74,18 +74,18 @@ export function queueGenerateSceneSummary(index , options  = {}) {
   );
 }
 
-export function queueGenerateRunningSummary(options  = {}) {
+export function queueGenerateRunningRecap(options  = {}) {
   // Capture settings at enqueue time for tooltip display
-  const includePresetPrompts = get_settings('running_scene_summary_include_preset_prompts') ?? false;
+  const includePresetPrompts = get_settings('running_scene_recap_include_preset_prompts') ?? false;
 
   return enqueueOperation(
-    OperationType.GENERATE_RUNNING_SUMMARY,
+    OperationType.GENERATE_RUNNING_RECAP,
     {},
     {
       priority: options.priority ?? STANDARD_QUEUE_POSITION, // High priority - important narrative synthesis
       dependencies: options.dependencies ?? [],
       metadata: {
-        hasPrefill: false, // Running summary operations don't use prefills
+        hasPrefill: false, // Running recap operations don't use prefills
         includePresetPrompts,
         ...options.metadata
       }
@@ -116,8 +116,8 @@ function extractEntryName(entryData ) {
   return String(entryData.name || entryData.comment || 'Unknown').toLowerCase().trim();
 }
 
-async function cancelSupersededOperations(lowerName , messageIndex , summaryHash ) {
-  if (!summaryHash) {return;}
+async function cancelSupersededOperations(lowerName , messageIndex , recapHash ) {
+  if (!recapHash) {return;}
 
   try {
     const ops = getAllOperations();
@@ -127,16 +127,16 @@ async function cancelSupersededOperations(lowerName , messageIndex , summaryHash
       const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
       if (metaName !== lowerName) {continue;}
       if (op?.metadata?.message_index !== messageIndex) {continue;}
-      const opHash = op.metadata?.summary_hash || null;
-      if (opHash && opHash === summaryHash) {continue;}
+      const opHash = op.metadata?.recap_hash || null;
+      if (opHash && opHash === recapHash) {continue;}
       // Sequential execution required: operations must be updated in order
       // eslint-disable-next-line no-await-in-loop -- Operations must be updated sequentially to maintain queue state
-      await updateOperationStatus(op.id, OperationStatus.CANCELLED, 'Replaced by newer summary version');
+      await updateOperationStatus(op.id, OperationStatus.CANCELLED, 'Replaced by newer recap version');
     }
   } catch {/* best effort dedup */}
 }
 
-function hasActiveDuplicate(lowerName , messageIndex , summaryHash ) {
+function hasActiveDuplicate(lowerName , messageIndex , recapHash ) {
   try {
     const ops = getAllOperations();
     return ops.some((op) => {
@@ -148,8 +148,8 @@ function hasActiveDuplicate(lowerName , messageIndex , summaryHash ) {
         const metaName = String(op?.metadata?.entry_name || '').toLowerCase().trim();
         const sameMsg = op?.metadata?.message_index === messageIndex;
         if (!sameMsg || metaName !== lowerName) {return false;}
-        const opHash = op.metadata?.summary_hash || null;
-        if (summaryHash && opHash && opHash !== summaryHash) {return false;}
+        const opHash = op.metadata?.recap_hash || null;
+        if (recapHash && opHash && opHash !== recapHash) {return false;}
         return true;
       }
 
@@ -162,7 +162,7 @@ function hasActiveDuplicate(lowerName , messageIndex , summaryHash ) {
 
 async function prepareLorebookEntryLookupContext(entryData ) {
   const { generateEntryId, createPendingEntry } = await import('./lorebookPendingOps.js');
-  const { ensureRegistryState, buildRegistryListing, normalizeEntryData } = await import('./summaryToLorebookProcessor.js');
+  const { ensureRegistryState, buildRegistryListing, normalizeEntryData } = await import('./recapToLorebookProcessor.js');
   const { getConfiguredEntityTypeDefinitions } = await import('./entityTypes.js');
 
   const entryId = generateEntryId();
@@ -181,12 +181,12 @@ function enqueueLorebookEntryLookupOperation(
 context ,
 entryName ,
 messageIndex ,
-summaryHash ,
+recapHash ,
 options )
 {
   // Capture settings at enqueue time for tooltip display
-  const prefill = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_prefill') || '';
-  const includePresetPrompts = get_settings('auto_lorebooks_summary_lorebook_entry_lookup_include_preset_prompts') ?? false;
+  const prefill = get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prefill') || '';
+  const includePresetPrompts = get_settings('auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts') ?? false;
 
   return enqueueOperation(
     OperationType.LOREBOOK_ENTRY_LOOKUP,
@@ -198,7 +198,7 @@ options )
         entry_name: entryName,
         entry_comment: context.normalizedEntry.comment,
         message_index: messageIndex,
-        summary_hash: summaryHash || null,
+        recap_hash: recapHash || null,
         hasPrefill: Boolean(prefill && prefill.trim().length > 0),
         includePresetPrompts,
         ...options.metadata
@@ -207,9 +207,9 @@ options )
   );
 }
 
-export async function queueProcessLorebookEntry(entryData , messageIndex , summaryHash , options  = {}) {
+export async function queueProcessLorebookEntry(entryData , messageIndex , recapHash , options  = {}) {
   const entryName = entryData.name || entryData.comment || 'Unknown';
-  debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Called for entry: ${entryName}, messageIndex: ${messageIndex}, summaryHash: ${summaryHash || 'none'}`);
+  debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Called for entry: ${entryName}, messageIndex: ${messageIndex}, recapHash: ${recapHash || 'none'}`);
 
   if (!validateQueueStatus()) {
     debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Queue validation failed - queue not enabled or not ready`);
@@ -220,10 +220,10 @@ export async function queueProcessLorebookEntry(entryData , messageIndex , summa
   debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Extracted name: ${lowerName}, queueing lorebook entry (new pipeline): ${entryName} from message ${messageIndex}`);
 
   debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Checking for superseded operations...`);
-  await cancelSupersededOperations(lowerName, messageIndex, summaryHash);
+  await cancelSupersededOperations(lowerName, messageIndex, recapHash);
 
   debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Checking for active duplicates...`);
-  if (hasActiveDuplicate(lowerName, messageIndex, summaryHash)) {
+  if (hasActiveDuplicate(lowerName, messageIndex, recapHash)) {
     debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ✗ Skipping duplicate lorebook op for: ${entryName}`);
     return null;
   }
@@ -232,17 +232,17 @@ export async function queueProcessLorebookEntry(entryData , messageIndex , summa
   const context = await prepareLorebookEntryLookupContext(entryData);
 
   debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Enqueueing LOREBOOK_ENTRY_LOOKUP operation...`);
-  const opId = await enqueueLorebookEntryLookupOperation(context, entryName, messageIndex, summaryHash, options);
+  const opId = await enqueueLorebookEntryLookupOperation(context, entryName, messageIndex, recapHash, options);
   debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ${opId ? '✓' : '✗'} Operation ${opId ? 'enqueued with ID: ' + opId : 'failed to enqueue'}`);
   return opId;
 }
 
 export default {
-  queueValidateSummary,
+  queueValidateRecap,
   queueDetectSceneBreak,
   queueDetectSceneBreaks,
-  queueGenerateSceneSummary,
-  queueGenerateRunningSummary,
+  queueGenerateSceneRecap,
+  queueGenerateRunningRecap,
   queueCombineSceneWithRunning,
   queueProcessLorebookEntry
 };

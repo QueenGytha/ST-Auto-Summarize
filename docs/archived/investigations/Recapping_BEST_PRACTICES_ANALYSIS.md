@@ -1,15 +1,15 @@
-# Summarization Best Practices Analysis
-## Assessment of ST-Auto-Summarize Against rentry.org/how2claude Guidelines
+# Recap Generation Best Practices Analysis
+## Assessment of ST-Auto-Recap Against rentry.org/how2claude Guidelines
 
 **Document Version:** 2.0 (Automated Workflow Edition)
 **Date:** 2025-10-19
-**Source:** Analysis of rentry.org/how2claude#summarization section
+**Source:** Analysis of rentry.org/how2claude#recap generation section
 
 ---
 
-## Executive Summary
+## Executive Recap
 
-This document analyzes the ST-Auto-Summarize extension against Claude best practices from the rentry guide. While the extension's architecture is fundamentally sound, several prompt design decisions conflict with evidence-based best practices for long-context roleplay with Claude.
+This document analyzes the ST-Auto-Recap extension against Claude best practices from the rentry guide. While the extension's architecture is fundamentally sound, several prompt design decisions conflict with evidence-based best practices for long-context roleplay with Claude.
 
 **IMPORTANT CONTEXT:** This extension is designed for **fully automated** memory management. While the rentry guide emphasizes manual review (reflecting the state of the art when it was written), this extension automates the entire pipeline through robust validation and self-correction mechanisms.
 
@@ -24,7 +24,7 @@ This document analyzes the ST-Auto-Summarize extension against Claude best pract
 - **Better recall:** Focus on state vs events improves Claude's reasoning ability
 - **Token efficiency:** Removing verbosity requirements reduces bloat by 30-50%
 - **Automation-ready:** Scene-based chunking works seamlessly without user intervention
-- **Reduced hallucination:** Proper terminology prevents Claude's default summarization behavior
+- **Reduced hallucination:** Proper terminology prevents Claude's default recap generation behavior
 - **Future-proof:** JSON format enables planned lorebook extraction features
 
 ---
@@ -41,8 +41,8 @@ This document analyzes the ST-Auto-Summarize extension against Claude best pract
 
 Present in:
 - `default_prompt`
-- `scene_summary_prompt`
-- `default_combined_summary_prompt`
+- `scene_recap_prompt`
+- `default_combined_recap_prompt`
 
 ### The Problem
 
@@ -130,9 +130,9 @@ From rentry.org/how2claude:
 ### Validation Enhancement
 
 ```javascript
-// In summaryValidation.js - add event validation
-async function validate_event_usage(summary) {
-    const parsed = JSON.parse(summary);
+// In recapValidation.js - add event validation
+async function validate_event_usage(recap) {
+    const parsed = JSON.parse(recap);
     const events = parsed.memorable_events || parsed.events || [];
 
     // Fail if events array is bloated
@@ -156,7 +156,7 @@ async function validate_event_usage(summary) {
 
 ---
 
-## Issue 2: "Summary" Terminology Problem
+## Issue 2: "Recap" Terminology Problem
 
 ### Current Implementation
 
@@ -164,27 +164,27 @@ async function validate_event_usage(summary) {
 
 ```javascript
 // Analyze the provided Roleplay History. Fill out the JSON template below...
-export const default_long_template = `<roleplay_summary>...</roleplay_summary>`;
-export const scene_summary_default_prompt = `Summarize the following scene...`;
+export const default_long_template = `<roleplay_recap>...</roleplay_recap>`;
+export const scene_recap_default_prompt = `Recap the following scene...`;
 ```
 
 ### The Problem
 
 From rentry.org/how2claude:
 
-> "Never ask for the actual summary in the summarization prompt, and never mention that word at all. Summarization is one of the typical uses of LLMs, and Claude is trained to give summaries in a specific format, which is probably not what you want."
+> "Never ask for the actual recap in the recap generation prompt, and never mention that word at all. Recap Generation is one of the typical uses of LLMs, and Claude is trained to give recaps in a specific format, which is probably not what you want."
 
 **Why This Matters for Automation:**
 
-1. **Training Bias:** Claude has specific RLHF training for "summarization" tasks that produces generic, formatted summaries
+1. **Training Bias:** Claude has specific RLHF training for "recap generation" tasks that produces generic, formatted recaps
 
-2. **Format Lock-in:** Using "summary" triggers Claude's default summarization behavior (often bullet points, topic sentences, etc.) which may conflict with our JSON template
+2. **Format Lock-in:** Using "recap" triggers Claude's default recap generation behavior (often bullet points, topic sentences, etc.) which may conflict with our JSON template
 
-3. **Lost Customization:** Carefully crafted template gets partially overridden by Claude's summarization training
+3. **Lost Customization:** Carefully crafted template gets partially overridden by Claude's recap generation training
 
-4. **Semantic Confusion:** "Summary" implies compression, not structured fact extraction
+4. **Semantic Confusion:** "Recap" implies compression, not structured fact extraction
 
-5. **Validation Conflicts:** Claude may output "Summary:" prefixes or other default formatting that breaks JSON parsing
+5. **Validation Conflicts:** Claude may output "Recap:" prefixes or other default formatting that breaks JSON parsing
 
 ### Recommended Changes
 
@@ -192,18 +192,18 @@ From rentry.org/how2claude:
 
 | Current Term | Replace With | Context |
 |--------------|--------------|---------|
-| "summary" in prompts | "memory", "facts", "state" | Instructions to Claude |
-| "Summarize" | "Extract facts from", "Analyze and record", "Track" | Instructions |
-| `<roleplay_summary>` | `<roleplay_memory>` | XML tags |
+| "recap" in prompts | "memory", "facts", "state" | Instructions to Claude |
+| "Recap" | "Extract facts from", "Analyze and record", "Track" | Instructions |
+| `<roleplay_recap>` | `<roleplay_memory>` | XML tags |
 | "Roleplay History" | "Roleplay Scene" or "Scene Content" | Acceptable as-is |
 | Variable names (internal) | Keep as-is | Code doesn't affect Claude |
-| UI labels (user-facing) | Keep as-is | Users understand "summary" |
+| UI labels (user-facing) | Keep as-is | Users understand "recap" |
 
 **Example Revisions:**
 
 ❌ **Current:**
 ```javascript
-export const scene_summary_default_prompt = `Summarize the following scene as if you are writing a concise chapter summary for a roleplay story.`;
+export const scene_recap_default_prompt = `Recap the following scene as if you are writing a concise chapter recap for a roleplay story.`;
 ```
 
 ✅ **Revised:**
@@ -213,9 +213,9 @@ export const scene_memory_extraction_prompt = `Extract key facts from the follow
 
 ❌ **Current:**
 ```javascript
-export const default_long_template = `<roleplay_summary>
+export const default_long_template = `<roleplay_recap>
 {{memories}}
-</roleplay_summary>`;
+</roleplay_recap>`;
 ```
 
 ✅ **Revised:**
@@ -231,20 +231,20 @@ export const default_long_template = `<roleplay_memory>
 **Validation Enhancement:**
 
 ```javascript
-// In summaryValidation.js - detect summarization artifacts
-async function validate_no_summary_artifacts(summary) {
-    // Detect if Claude used default summarization format
-    const summary_artifacts = [
-        /^Summary:/i,
-        /^In summary,/i,
-        /^To summarize,/i,
-        /^The following is a summary/i,
-        /^Here(?:'s| is) a summary/i
+// In recapValidation.js - detect recap generation artifacts
+async function validate_no_recap_artifacts(recap) {
+    // Detect if Claude used default recap generation format
+    const recap_artifacts = [
+        /^Recap:/i,
+        /^In recap,/i,
+        /^To recap,/i,
+        /^The following is a recap/i,
+        /^Here(?:'s| is) a recap/i
     ];
 
-    for (const pattern of summary_artifacts) {
-        if (pattern.test(summary)) {
-            debug(`[Validation] Summary contains artifact: ${pattern}`);
+    for (const pattern of recap_artifacts) {
+        if (pattern.test(recap)) {
+            debug(`[Validation] Recap contains artifact: ${pattern}`);
             return false; // Trigger retry
         }
     }
@@ -253,7 +253,7 @@ async function validate_no_summary_artifacts(summary) {
 }
 ```
 
-**Important:** Keep "summary" in UI labels, variable names, and user-facing documentation. Only remove it from prompts sent to Claude.
+**Important:** Keep "recap" in UI labels, variable names, and user-facing documentation. Only remove it from prompts sent to Claude.
 
 ---
 
@@ -264,21 +264,21 @@ async function validate_no_summary_artifacts(summary) {
 **File:** `defaultSettings.js` (inferred from code)
 
 ```javascript
-auto_summarize_message_limit: 10,  // Summarize every N messages
-auto_summarize_batch_size: 3,      // Batch multiple messages
-summarization_delay: 2,            // Delay by message count
+auto_recap_message_limit: 10,  // Recap every N messages
+auto_recap_batch_size: 3,      // Batch multiple messages
+recap generation_delay: 2,            // Delay by message count
 ```
 
-**File:** `summarization.js:560-574`
+**File:** `recapping.js:560-574`
 
 ```javascript
-async function auto_summarize_chat() {
-    let messages_to_summarize = collect_messages_to_auto_summarize()
-    let messages_to_batch = get_settings('auto_summarize_batch_size');
-    if (messages_to_summarize.length < messages_to_batch) {
-        messages_to_summarize = []
+async function auto_recap_chat() {
+    let messages_to_recap = collect_messages_to_auto_recap()
+    let messages_to_batch = get_settings('auto_recap_batch_size');
+    if (messages_to_recap.length < messages_to_batch) {
+        messages_to_recap = []
     }
-    await summarize_messages(messages_to_summarize, show_progress);
+    await recap_messages(messages_to_recap, show_progress);
 }
 ```
 
@@ -286,19 +286,19 @@ async function auto_summarize_chat() {
 
 From rentry.org/how2claude:
 
-> "Chunking is a surprisingly non-trivial problem for arbitrary documents. It can't be done mechanically, and **automatic summarization each X words or each Y messages will never work properly.**"
+> "Chunking is a surprisingly non-trivial problem for arbitrary documents. It can't be done mechanically, and **automatic recap generation each X words or each Y messages will never work properly.**"
 
 > "You must align your chunks with the logical breakpoints in the story."
 
 **Why This Matters for Automation:**
 
 1. **Arbitrary Chunking Breaks Coherence:**
-   - Summarizing mid-scene captures incomplete information
+   - Recapping mid-scene captures incomplete information
    - Claude doesn't know how the scene ends, producing poor extractions
-   - Example: Summarizing during combat vs after combat completion yields different outcomes
+   - Example: Recapping during combat vs after combat completion yields different outcomes
 
 2. **Batch Size is Semantically Meaningless:**
-   - Whether you summarize 3 messages or 5 messages is irrelevant
+   - Whether you recap 3 messages or 5 messages is irrelevant
    - What matters is whether the **scene** is complete
 
 3. **Automated Quality Depends on Chunking:**
@@ -340,7 +340,7 @@ This is **exactly the right approach!** Scene breaks are logical chunking points
   "message_based_enabled": true,  // Keep as fallback, not primary
 
   // DEPRECATED: Batch size (remove)
-  "auto_summarize_batch_size": 0  // No longer used
+  "auto_recap_batch_size": 0  // No longer used
 }
 ```
 
@@ -470,22 +470,22 @@ Respond with JSON:
 
 From rentry.org/how2claude:
 
-> "Make sure you don't ask for too much detail; remember that realistically you only have 2-4k tokens total for the entire summary, if you want it to remain useful for the model."
+> "Make sure you don't ask for too much detail; remember that realistically you only have 2-4k tokens total for the entire recap, if you want it to remain useful for the model."
 
-> "If your summary is small, you can inject it into the chat history at a depth of 3-4. If it's large, keep it in the system prompt."
+> "If your recap is small, you can inject it into the chat history at a depth of 3-4. If it's large, keep it in the system prompt."
 
-> "Your summary can sometimes leak into your roleplay... if your summary is **terse**, it will usually lack Claudeisms."
+> "Your recap can sometimes leak into your roleplay... if your recap is **terse**, it will usually lack Claudeisms."
 
 **Why This Matters for Automation:**
 
-1. **Token Bloat:** Forcing "at least 3 sentences" for every location/relationship creates massive summaries
+1. **Token Bloat:** Forcing "at least 3 sentences" for every location/relationship creates massive recaps
    - 10 locations × 3 sentences × ~15 tokens = 450 tokens just for locations
    - This compounds quickly across all fields
    - Automated systems can't judge "is this worth 3 sentences?"
 
-2. **Reduced Usable Context:** Large summaries push chat history into the "lost in the middle" zone
+2. **Reduced Usable Context:** Large recaps push chat history into the "lost in the middle" zone
 
-3. **Increased Repetition:** Verbose summaries form strong patterns that trigger in-context learning
+3. **Increased Repetition:** Verbose recaps form strong patterns that trigger in-context learning
 
 4. **Claudeism Amplification:** More text = more opportunities for Claude to insert purple prose
 
@@ -567,19 +567,19 @@ From rentry.org/how2claude:
 **Automated Token Budget Enforcement:**
 
 ```javascript
-// In summaryValidation.js - strict token limit validation
-async function validate_token_limit(summary) {
-    const token_count = count_tokens(summary);
+// In recapValidation.js - strict token limit validation
+async function validate_token_limit(recap) {
+    const token_count = count_tokens(recap);
     const soft_limit = get_settings('memory_soft_token_limit') || 2000;
     const hard_limit = get_settings('memory_hard_token_limit') || 2500;
 
     if (token_count > hard_limit) {
-        debug(`[Validation] Summary exceeds hard limit: ${token_count} > ${hard_limit}`);
+        debug(`[Validation] Recap exceeds hard limit: ${token_count} > ${hard_limit}`);
         return false; // Fail validation, trigger retry with additional brevity instruction
     }
 
     if (token_count > soft_limit) {
-        debug(`[Validation] Summary exceeds soft limit: ${token_count} > ${soft_limit} (warning)`);
+        debug(`[Validation] Recap exceeds soft limit: ${token_count} > ${soft_limit} (warning)`);
         // Don't fail, but log for monitoring
     }
 
@@ -638,11 +638,11 @@ Remove ALL unnecessary words. Use fragments. Be terse.
 export const default_prompt = `...JSON template...`;
 
 // Lines 43-82
-export const scene_summary_prompt = `...JSON template...`;
+export const scene_recap_prompt = `...JSON template...`;
 // ☝️ IDENTICAL to default_prompt!
 
 // Lines 180
-export const scene_summary_default_prompt = `Summarize the following scene as if you are writing a concise chapter summary...`;
+export const scene_recap_default_prompt = `Recap the following scene as if you are writing a concise chapter recap...`;
 // ☝️ Completely different approach (narrative style)
 ```
 
@@ -651,11 +651,11 @@ export const scene_summary_default_prompt = `Summarize the following scene as if
 **Three prompts, two approaches, unclear purposes:**
 
 1. `default_prompt` - JSON structured (for individual messages?)
-2. `scene_summary_prompt` - JSON structured, **identical to #1** (for scenes?)
-3. `scene_summary_default_prompt` - Narrative prose (for scenes?)
+2. `scene_recap_prompt` - JSON structured, **identical to #1** (for scenes?)
+3. `scene_recap_default_prompt` - Narrative prose (for scenes?)
 
 **Confusion for Automation:**
-- Why are `default_prompt` and `scene_summary_prompt` identical?
+- Why are `default_prompt` and `scene_recap_prompt` identical?
 - When should the system use JSON vs narrative approach?
 - What triggers which prompt?
 - Which prompt is validated by which validation prompt?
@@ -738,9 +738,9 @@ function select_memory_extraction_prompt(context) {
 **Remove Duplicate Prompts:**
 
 ```javascript
-// REMOVE: scene_summary_prompt (identical to default_prompt)
+// REMOVE: scene_recap_prompt (identical to default_prompt)
 // REMOVE: default_prompt (rename to message_memory_extraction_prompt)
-// KEEP: scene_summary_default_prompt (rename to narrative_memory_prompt)
+// KEEP: scene_recap_default_prompt (rename to narrative_memory_prompt)
 // ADD: scene_memory_extraction_prompt (primary)
 // ADD: persistent_memory_update_prompt (for updates)
 ```
@@ -846,13 +846,13 @@ const MEMORY_SCHEMA_V1 = {
 **Validation Enhancement for JSON:**
 
 ```javascript
-// In summaryValidation.js
-async function validate_json_structure(summary) {
+// In recapValidation.js
+async function validate_json_structure(recap) {
     let parsed;
 
     // 1. Parse JSON
     try {
-        parsed = JSON.parse(summary);
+        parsed = JSON.parse(recap);
     } catch (e) {
         debug(`[Validation] Invalid JSON: ${e.message}`);
         return false;
@@ -1038,12 +1038,12 @@ From rentry.org/how2claude:
 **Automated Pruning Validation:**
 
 ```javascript
-// In summaryValidation.js
-async function validate_pruning_rules(summary, previous_summary) {
-    const current = JSON.parse(summary);
-    const previous = previous_summary ? JSON.parse(previous_summary) : null;
+// In recapValidation.js
+async function validate_pruning_rules(recap, previous_recap) {
+    const current = JSON.parse(recap);
+    const previous = previous_recap ? JSON.parse(previous_recap) : null;
 
-    if (!previous) return true; // First summary, nothing to prune
+    if (!previous) return true; // First recap, nothing to prune
 
     const warnings = [];
 
@@ -1143,26 +1143,26 @@ function auto_prune_stale_entries(memory_with_metadata) {
 
 ---
 
-## Issue 8: "Combined Summary" → "Persistent Memory" Clarification
+## Issue 8: "Combined Recap" → "Persistent Memory" Clarification
 
 ### Current Implementation
 
-**File:** `combinedSummary.js`
+**File:** `combinedRecap.js`
 
 ```javascript
-async function generate_combined_summary() {
-    // Collects individual message summaries
-    // Merges them into a combined summary
-    // Updates existing combined summary with new data
+async function generate_combined_recap() {
+    // Collects individual message recaps
+    // Merges them into a combined recap
+    // Updates existing combined recap with new data
 }
 ```
 
-**Trigger:** After N new summaries are created
+**Trigger:** After N new recaps are created
 
 ### The Problem
 
 **Conceptual Clarity for Automation:**
-- "Combined" suggests merging separate summaries
+- "Combined" suggests merging separate recaps
 - Reality: Should be **updating** a single persistent memory
 - Each scene should **update** the same memory structure
 - Not "combining" but "maintaining"
@@ -1174,16 +1174,16 @@ async function generate_combined_summary() {
 
 ### Current Strengths
 
-✅ **Your `default_combined_summary_prompt` Already Does This Correctly:**
+✅ **Your `default_combined_recap_prompt` Already Does This Correctly:**
 
 ```javascript
 // You are being given multiple pieces of a single roleplay. Analyze and combine them while avoiding redundancy and repetition.
 
-{{#if previous_combined_summary}}
+{{#if previous_combined_recap}}
 // The current roleplay history template. Use this as the basis of your analysis,
 // updating it with any new or changed information, removing anything which is
 // no longer relevant and fully resolved:
-{{previous_combined_summary}}
+{{previous_combined_recap}}
 {{/if}}
 ```
 
@@ -1195,19 +1195,19 @@ This **IS** an update operation! Just needs clearer naming and documentation.
 
 | Current Term | Better Term | Why |
 |--------------|-------------|-----|
-| "Combined Summary" | "Persistent Memory" | Clearer purpose |
-| "Generate combined summary" | "Update persistent memory" | Describes operation |
-| "Combine summaries" | "Merge new facts into memory" | More accurate |
-| `combinedSummary.js` | `persistentMemory.js` | Clearer file purpose |
+| "Combined Recap" | "Persistent Memory" | Clearer purpose |
+| "Generate combined recap" | "Update persistent memory" | Describes operation |
+| "Combine recaps" | "Merge new facts into memory" | More accurate |
+| `combinedRecap.js` | `persistentMemory.js` | Clearer file purpose |
 
 **Workflow Clarity:**
 
 ```
 ❌ OLD MENTAL MODEL:
-Scene 1 → Summary A
-Scene 2 → Summary B
-Scene 3 → Summary C
-Combine A+B+C → Combined Summary
+Scene 1 → Recap A
+Scene 2 → Recap B
+Scene 3 → Recap C
+Combine A+B+C → Combined Recap
 
 ✅ NEW MENTAL MODEL:
 Scene 1 → Extract facts → Initialize persistent memory
@@ -1219,7 +1219,7 @@ Scene 3 → Extract facts → Update persistent memory (add/modify/remove)
 **Updated Prompt Name:**
 
 ```javascript
-// Previously: default_combined_summary_prompt
+// Previously: default_combined_recap_prompt
 // Now: persistent_memory_update_prompt
 
 export const persistent_memory_update_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
@@ -1282,10 +1282,10 @@ Output the COMPLETE updated persistent memory:
 ```javascript
 // Old settings:
 {
-  "combined_summary_enabled": true,
-  "combined_summary_run_interval": 3,
-  "combined_summary_new_count": 0,
-  "combined_summary_prompt": "default_combined_summary_prompt"
+  "combined_recap_enabled": true,
+  "combined_recap_run_interval": 3,
+  "combined_recap_new_count": 0,
+  "combined_recap_prompt": "default_combined_recap_prompt"
 }
 
 // New settings:
@@ -1300,7 +1300,7 @@ Output the COMPLETE updated persistent memory:
 **Automated Update Logic:**
 
 ```javascript
-// In persistentMemory.js (renamed from combinedSummary.js)
+// In persistentMemory.js (renamed from combinedRecap.js)
 
 async function should_update_persistent_memory() {
     const frequency = get_settings('persistent_memory_update_frequency');
@@ -1352,7 +1352,7 @@ async function update_persistent_memory() {
 
     // Validate
     if (get_settings('error_detection_enabled')) {
-        const is_valid = await validate_summary(updated_memory, "persistent");
+        const is_valid = await validate_recap(updated_memory, "persistent");
         if (!is_valid) {
             error('[Persistent Memory] Validation failed');
             return null;
@@ -1370,7 +1370,7 @@ async function update_persistent_memory() {
 
 ### Implementation Plan
 
-1. **Phase 1:** Rename "combined summary" → "persistent memory" in code
+1. **Phase 1:** Rename "combined recap" → "persistent memory" in code
 2. **Phase 2:** Update prompts to clarify UPDATE vs COMBINE operation
 3. **Phase 3:** Rename files and functions for clarity
 4. **Phase 4:** Update settings and migration
@@ -1399,7 +1399,7 @@ async function update_persistent_memory() {
 
 From rentry.org/how2claude:
 
-> "If you keep the summary to track secrets, the best way to keep them from leaking (characters casually mentioning supposed secrets as if they were known) is to mark who keeps the secret from whom."
+> "If you keep the recap to track secrets, the best way to keep them from leaking (characters casually mentioning supposed secrets as if they were known) is to mark who keeps the secret from whom."
 
 **Current format is good, but can be more explicit for automation.**
 
@@ -1423,9 +1423,9 @@ From rentry.org/how2claude:
 **Automated Secret Leak Detection:**
 
 ```javascript
-// In summaryValidation.js
-async function validate_secret_format(summary) {
-    const parsed = JSON.parse(summary);
+// In recapValidation.js
+async function validate_secret_format(recap) {
+    const parsed = JSON.parse(recap);
     const secrets = parsed.secrets || {};
 
     for (const [secret_content, secret_info] of Object.entries(secrets)) {
@@ -1511,9 +1511,9 @@ async function validate_secret_format(summary) {
 
 ### Current Implementation
 
-**File:** `summaryValidation.js`
+**File:** `recapValidation.js`
 
-- Separate validation prompts (`regular_summary_error_detection_prompt`, etc.)
+- Separate validation prompts (`regular_recap_error_detection_prompt`, etc.)
 - Retry logic with configurable max retries
 - Additional LLM calls for each validation
 - Auto-exclusion on repeated failures
@@ -1529,10 +1529,10 @@ async function validate_secret_format(summary) {
 
 1. **No Human Oversight:** Without manual review, validation is the only quality control
 2. **Catches Format Errors:** JSON parsing errors, missing fields, wrong types
-3. **Prevents Bad Memory:** Invalid summaries corrupt the entire memory system
+3. **Prevents Bad Memory:** Invalid recaps corrupt the entire memory system
 4. **Enables Self-Correction:** Retry logic allows Claude to fix mistakes automatically
-5. **Cost-Effective:** 1-3 validation calls per summary cheaper than manual labor
-6. **Scalable:** Can process unlimited summaries without human bottleneck
+5. **Cost-Effective:** 1-3 validation calls per recap cheaper than manual labor
+6. **Scalable:** Can process unlimited recaps without human bottleneck
 
 ### Recommended Enhancements
 
@@ -1543,18 +1543,18 @@ async function validate_secret_format(summary) {
 // Stage 2: Heuristic content validation (no LLM call)
 // Stage 3: LLM semantic validation (expensive, only if needed)
 
-async function validate_summary_pipeline(summary, type = "regular") {
-    debug(`[Validation] Starting pipeline for ${type} summary...`);
+async function validate_recap_pipeline(recap, type = "regular") {
+    debug(`[Validation] Starting pipeline for ${type} recap...`);
 
     // STAGE 1: Structural validation (fast, free)
-    const structural = await validate_structural(summary);
+    const structural = await validate_structural(recap);
     if (!structural.valid) {
         debug(`[Validation] Structural validation failed: ${structural.reason}`);
         return { valid: false, stage: 'structural', reason: structural.reason };
     }
 
     // STAGE 2: Heuristic validation (fast, free)
-    const heuristic = await validate_heuristic(summary, type);
+    const heuristic = await validate_heuristic(recap, type);
     if (!heuristic.valid) {
         debug(`[Validation] Heuristic validation failed: ${heuristic.reason}`);
         return { valid: false, stage: 'heuristic', reason: heuristic.reason };
@@ -1562,7 +1562,7 @@ async function validate_summary_pipeline(summary, type = "regular") {
 
     // STAGE 3: LLM validation (slow, expensive) - only if enabled and heuristics passed
     if (get_settings('llm_validation_enabled')) {
-        const llm = await validate_with_llm(summary, type);
+        const llm = await validate_with_llm(recap, type);
         if (!llm.valid) {
             debug(`[Validation] LLM validation failed: ${llm.reason}`);
             return { valid: false, stage: 'llm', reason: llm.reason };
@@ -1577,11 +1577,11 @@ async function validate_summary_pipeline(summary, type = "regular") {
 **Stage 1: Structural Validation (Fast, Free):**
 
 ```javascript
-async function validate_structural(summary) {
+async function validate_structural(recap) {
     // 1. Valid JSON?
     let parsed;
     try {
-        parsed = JSON.parse(summary);
+        parsed = JSON.parse(recap);
     } catch (e) {
         return { valid: false, reason: `Invalid JSON: ${e.message}` };
     }
@@ -1635,11 +1635,11 @@ async function validate_structural(summary) {
 **Stage 2: Heuristic Validation (Fast, Free):**
 
 ```javascript
-async function validate_heuristic(summary, type) {
-    const parsed = JSON.parse(summary);
+async function validate_heuristic(recap, type) {
+    const parsed = JSON.parse(recap);
 
     // 1. Token count check
-    const token_count = count_tokens(summary);
+    const token_count = count_tokens(recap);
     const soft_limit = 2000;
     const hard_limit = 2500;
 
@@ -1665,16 +1665,16 @@ async function validate_heuristic(summary, type) {
         }
     }
 
-    // 3. Check for summary artifacts
-    const summary_artifacts = [
-        /^Summary:/i,
-        /In summary,/i,
-        /To summarize,/i
+    // 3. Check for recap artifacts
+    const recap_artifacts = [
+        /^Recap:/i,
+        /In recap,/i,
+        /To recap,/i
     ];
 
-    for (const pattern of summary_artifacts) {
+    for (const pattern of recap_artifacts) {
         if (pattern.test(full_text)) {
-            return { valid: false, reason: `Contains summary artifact: ${pattern}` };
+            return { valid: false, reason: `Contains recap artifact: ${pattern}` };
         }
     }
 
@@ -1722,15 +1722,15 @@ async function validate_heuristic(summary, type) {
 **Stage 3: LLM Validation (Slow, Expensive, Optional):**
 
 ```javascript
-async function validate_with_llm(summary, type) {
-    // Use existing validation logic from summaryValidation.js
+async function validate_with_llm(recap, type) {
+    // Use existing validation logic from recapValidation.js
     // This is expensive, so only run if heuristics passed
 
     if (!get_settings('llm_validation_enabled')) {
         return { valid: true, reason: 'LLM validation disabled' };
     }
 
-    const is_valid = await validate_summary(summary, type);
+    const is_valid = await validate_recap(recap, type);
 
     if (!is_valid) {
         return { valid: false, reason: 'LLM validation failed' };
@@ -1750,15 +1750,15 @@ async function generate_memory_with_validation(index) {
 
     while (retry_count <= max_retries) {
         // Generate
-        const prompt = await create_summary_prompt(index) + additional_instructions;
-        const summary = await summarize_text(prompt);
+        const prompt = await create_recap_prompt(index) + additional_instructions;
+        const recap = await recap_text(prompt);
 
         // Validate
-        const validation = await validate_summary_pipeline(summary, "regular");
+        const validation = await validate_recap_pipeline(recap, "regular");
 
         if (validation.valid) {
             debug(`[Generation] Success on attempt ${retry_count + 1}`);
-            return { success: true, summary: summary };
+            return { success: true, recap: recap };
         }
 
         // Failed validation - prepare for retry
@@ -1830,8 +1830,8 @@ Ensure output follows ALL instructions and contains only factual information.`;
   "auto_exclude_on_failure": true,  // Exclude message if all retries fail
 
   // Validation presets (for LLM validation)
-  "regular_summary_error_detection_preset": "...",
-  "scene_summary_error_detection_preset": "...",
+  "regular_recap_error_detection_preset": "...",
+  "scene_recap_error_detection_preset": "...",
   "persistent_memory_error_detection_preset": "..."
 }
 ```
@@ -1848,7 +1848,7 @@ Ensure output follows ALL instructions and contains only factual information.`;
 
 ## Rentry-Aligned Workflow (Automated Edition)
 
-### The Fully Automated Summarization Flow
+### The Fully Automated Recap Generation Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -1937,7 +1937,7 @@ Ensure output follows ALL instructions and contains only factual information.`;
 ### Current Scene Prompt
 
 ```javascript
-export const scene_summary_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
+export const scene_recap_prompt = `// OOC REQUEST: Pause the roleplay and step out of character for this reply.
 // Analyze the provided Roleplay History. Fill out the JSON template below, following the instructions for each field. Do not speculate or invent details.
 // Output only a single, correctly formatted JSON object. Do not include any text outside the JSON object.
 // If a field has no relevant information, leave it empty ({} for objects, [] for arrays).
@@ -2116,22 +2116,22 @@ export const scene_memory_extraction_prompt = `// OOC REQUEST: Pause the rolepla
 ```javascript
 {
   // Message-based (PROBLEMATIC)
-  "auto_summarize_message_limit": 10,
-  "auto_summarize_batch_size": 3,
-  "summarization_delay": 2,
+  "auto_recap_message_limit": 10,
+  "auto_recap_batch_size": 3,
+  "recap generation_delay": 2,
 
-  // Combined summary
-  "combined_summary_enabled": true,
-  "combined_summary_run_interval": 3,
+  // Combined recap
+  "combined_recap_enabled": true,
+  "combined_recap_run_interval": 3,
 
   // Validation
   "error_detection_enabled": true,
-  "regular_summary_error_detection_enabled": true,
-  "regular_summary_error_detection_retries": 3,
+  "regular_recap_error_detection_enabled": true,
+  "regular_recap_error_detection_retries": 3,
 
   // Prompts
   "prompt": "default_prompt",
-  "scene_summary_prompt": "scene_summary_prompt"
+  "scene_recap_prompt": "scene_recap_prompt"
 }
 ```
 
@@ -2181,9 +2181,9 @@ export const scene_memory_extraction_prompt = `// OOC REQUEST: Pause the rolepla
   "persistent_validation_prompt": "persistent_validation_prompt",
 
   // DEPRECATED (keep for migration, show warnings)
-  "auto_summarize_message_limit": 0,  // Disabled
-  "auto_summarize_batch_size": 0,     // Disabled
-  "combined_summary_enabled": false,  // Use persistent_memory_enabled instead
+  "auto_recap_message_limit": 0,  // Disabled
+  "auto_recap_batch_size": 0,     // Disabled
+  "combined_recap_enabled": false,  // Use persistent_memory_enabled instead
   "legacy_mode_enabled": false
 }
 ```
@@ -2198,16 +2198,16 @@ export const scene_memory_extraction_prompt = `// OOC REQUEST: Pause the rolepla
 
 1. **Remove Event Tracking**
    - [ ] Update `default_prompt`: Remove `events` array
-   - [ ] Update `scene_summary_prompt`: Remove `events` array
-   - [ ] Update `default_combined_summary_prompt`: Remove `events` array
+   - [ ] Update `scene_recap_prompt`: Remove `events` array
+   - [ ] Update `default_combined_recap_prompt`: Remove `events` array
    - [ ] Add `memorable_events` with strict guidance (max 5, rare usage)
    - [ ] Add validation for event count and sequential language
 
 2. **Fix Terminology**
-   - [ ] Rename XML tags: `<roleplay_summary>` → `<roleplay_memory format="json">`
-   - [ ] Update prompt instructions: "Summarize" → "Extract facts"
+   - [ ] Rename XML tags: `<roleplay_recap>` → `<roleplay_memory format="json">`
+   - [ ] Update prompt instructions: "Recap" → "Extract facts"
    - [ ] Update prompt instructions: "Roleplay History" → "Scene Content"
-   - [ ] Keep "summary" in UI/variable names (internal)
+   - [ ] Keep "recap" in UI/variable names (internal)
 
 3. **Remove Verbosity Requirements**
    - [ ] Remove all "at least X sentences" from all prompts
@@ -2244,17 +2244,17 @@ export const scene_memory_extraction_prompt = `// OOC REQUEST: Pause the rolepla
    - [ ] Create `scene_memory_extraction_prompt` (primary)
    - [ ] Create `persistent_memory_update_prompt` (combines scenes)
    - [ ] Keep `narrative_memory_prompt` as alternative
-   - [ ] Remove duplicate `scene_summary_prompt`
+   - [ ] Remove duplicate `scene_recap_prompt`
    - [ ] Implement prompt selection logic
 
 ### Phase 3: Persistent Memory (Weeks 5-6)
 
 **Medium Priority - Long-term Memory**
 
-8. **Rename Combined Summary → Persistent Memory**
-   - [ ] Rename `combinedSummary.js` → `persistentMemory.js`
-   - [ ] Rename all "combined summary" settings → "persistent memory"
-   - [ ] Update `default_combined_summary_prompt` → `persistent_memory_update_prompt`
+8. **Rename Combined Recap → Persistent Memory**
+   - [ ] Rename `combinedRecap.js` → `persistentMemory.js`
+   - [ ] Rename all "combined recap" settings → "persistent memory"
+   - [ ] Update `default_combined_recap_prompt` → `persistent_memory_update_prompt`
    - [ ] Clarify UPDATE vs COMBINE operation in prompts
    - [ ] Implement per-scene or every-N-scenes update frequency
 
@@ -2372,7 +2372,7 @@ export const scene_memory_extraction_prompt = `// OOC REQUEST: Pause the rolepla
 
 ## Conclusion
 
-The ST-Auto-Summarize extension has a solid foundation for **fully automated** memory management. The recommended changes align with rentry best practices while maintaining the automation-first philosophy:
+The ST-Auto-Recap extension has a solid foundation for **fully automated** memory management. The recommended changes align with rentry best practices while maintaining the automation-first philosophy:
 
 ### Critical Changes:
 

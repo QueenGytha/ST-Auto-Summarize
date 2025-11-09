@@ -48,11 +48,11 @@ export const OperationStatus  = {
 
 // Operation type constants
 export const OperationType  = {
-  VALIDATE_SUMMARY: 'validate_summary',
+  VALIDATE_RECAP: 'validate_recap',
   DETECT_SCENE_BREAK: 'detect_scene_break',
-  GENERATE_SCENE_SUMMARY: 'generate_scene_summary',
+  GENERATE_SCENE_RECAP: 'generate_scene_recap',
   GENERATE_SCENE_NAME: 'generate_scene_name',
-  GENERATE_RUNNING_SUMMARY: 'generate_running_summary',
+  GENERATE_RUNNING_RECAP: 'generate_running_recap',
   COMBINE_SCENE_WITH_RUNNING: 'combine_scene_with_running',
   // Multi-stage lorebook operations
   LOREBOOK_ENTRY_LOOKUP: 'lorebook_entry_lookup',
@@ -73,6 +73,7 @@ let uiUpdateCallback  = null;
 let isClearing  = false; // Flag to prevent enqueuing during clear
 let queueVersion  = 0; // Incremented on clear to invalidate in-flight operations
 let isChatBlocked  = false; // Tracks whether chat is currently blocked by queue
+let isProcessorActive  = false; // CRITICAL: Prevents concurrent processor loops (reentrancy protection)
 const activeOperationControllers  = new Map(); // Tracks active operations for abortion: opId -> { reject }
 
 function setQueueChatBlocking(blocked ) {
@@ -148,11 +149,11 @@ export async function reloadQueue() {
   // Start queue processor if there are pending operations and not paused
   const pending = getPendingOperations();
   if (pending.length > 0 && !currentQueue.paused) {
-    if (!queueProcessor) {
+    if (!isProcessorActive) {
       log(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations, starting processor`);
       startQueueProcessor();
     } else {
-      debug(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations but processor already running`);
+      debug(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations but processor already active`);
     }
   } else if (pending.length > 0) {
     debug(SUBSYSTEM.QUEUE, `Found ${pending.length} pending operations (paused: ${String(currentQueue?.paused ?? 'unknown')})`);
@@ -446,8 +447,8 @@ export async function enqueueOperation(type , params , options  = {}) {
     setQueueChatBlocking(true);
   }
 
-  // Auto-start processing if not paused
-  if (!currentQueue.paused && !queueProcessor) {
+  // Auto-start processing if not paused and processor not already active
+  if (!currentQueue.paused && !isProcessorActive) {
     startQueueProcessor();
   }
 
@@ -683,13 +684,17 @@ export async function resumeQueue() {
   log(SUBSYSTEM.QUEUE, 'Queue resumed');
   toast('Operation queue resumed', 'info');
 
-  if (!queueProcessor) {
+  if (!isProcessorActive) {
     startQueueProcessor();
   }
 }
 
 export function isQueuePaused() {
   return currentQueue.paused;
+}
+
+export function isQueueProcessorActive() {
+  return isProcessorActive;
 }
 
 function getNextOperation() {
@@ -932,38 +937,45 @@ async function executeOperation(operation ) {
 }
 
 function startQueueProcessor() {
-  if (queueProcessor) {
-    debug(SUBSYSTEM.QUEUE, 'Queue processor already running');
+  // CRITICAL: Reentrancy guard - prevent multiple processor loops from running concurrently
+  if (isProcessorActive) {
+    debug(SUBSYSTEM.QUEUE, 'Queue processor already active, skipping start (reentrancy protection)');
     return;
   }
 
-  debug(SUBSYSTEM.QUEUE, 'Starting queue processor');
+  // Set flag BEFORE starting async IIFE to prevent race conditions
+  isProcessorActive = true;
+  debug(SUBSYSTEM.QUEUE, 'Starting queue processor (isProcessorActive = true)');
+
   // Ensure chat is blocked for entire queue processing duration (safety fallback)
   setQueueChatBlocking(true);
 
   queueProcessor = (async () => {
-    while (true) {
-      debug(SUBSYSTEM.QUEUE, `[LOOP] Start of iteration, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
+    try {
+      while (true) {
+        debug(SUBSYSTEM.QUEUE, `[LOOP] Start of iteration, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
 
-      // Check if paused
-      if (currentQueue.paused) {
-        debug(SUBSYSTEM.QUEUE, 'Queue paused, stopping processor (chat remains blocked)');
-        // Do NOT unblock chat - it stays blocked even when paused
-        queueProcessor = null;
-        return;
-      }
+        // Check if paused
+        if (currentQueue.paused) {
+          debug(SUBSYSTEM.QUEUE, 'Queue paused, stopping processor (chat remains blocked)');
+          // Do NOT unblock chat - it stays blocked even when paused
+          queueProcessor = null;
+          isProcessorActive = false; // CRITICAL: Clear flag on exit
+          return;
+        }
 
-      // Get next operation
-      const operation = getNextOperation();
+        // Get next operation
+        const operation = getNextOperation();
 
-      if (!operation) {
-        debug(SUBSYSTEM.QUEUE, 'No operations to process, stopping processor');
-        // Only unblock when queue is fully empty
-        setQueueChatBlocking(false);
-        queueProcessor = null;
-        notifyUIUpdate();
-        return;
-      }
+        if (!operation) {
+          debug(SUBSYSTEM.QUEUE, 'No operations to process, stopping processor');
+          // Only unblock when queue is fully empty
+          setQueueChatBlocking(false);
+          queueProcessor = null;
+          isProcessorActive = false; // CRITICAL: Clear flag on exit
+          notifyUIUpdate();
+          return;
+        }
 
       debug(SUBSYSTEM.QUEUE, `[LOOP] Found operation: ${operation.type}, id: ${operation.id}`);
 
@@ -993,6 +1005,12 @@ function startQueueProcessor() {
       // eslint-disable-next-line no-await-in-loop -- Rate limiting delay required between operations
       await new Promise((resolve) => setTimeout(resolve, OPERATION_FETCH_TIMEOUT_MS));
       debug(SUBSYSTEM.QUEUE, `[LOOP] After 5-second delay, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
+    }
+    } finally {
+      // CRITICAL: Always clear the active flag when processor exits (safety net)
+      isProcessorActive = false;
+      queueProcessor = null;
+      debug(SUBSYSTEM.QUEUE, 'Queue processor exiting (isProcessorActive = false)');
     }
   })();
 }
@@ -1040,6 +1058,7 @@ export default {
   pauseQueue,
   resumeQueue,
   isQueuePaused,
+  isQueueProcessorActive,
   registerOperationHandler,
   registerUIUpdateCallback,
   getQueueStats,

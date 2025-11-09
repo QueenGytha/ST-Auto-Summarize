@@ -1240,7 +1240,7 @@ function getProcessedContent(rawContent) {
 
 ---
 
-## Code Reference Summary
+## Code Reference Recap
 
 | Component | File | Lines | Purpose |
 |-----------|------|-------|---------|
@@ -2104,7 +2104,7 @@ By intercepting at the return point and reconstructing from `allActivatedEntries
 
 **Document Version**: 3.0
 **Last Updated**: 2025-11-04
-**Author**: Auto-Summarize Extension Development
+**Author**: Auto-Recap Extension Development
 
 ## Version History
 

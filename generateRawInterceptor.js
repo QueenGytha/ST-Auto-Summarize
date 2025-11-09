@@ -123,28 +123,28 @@ function determineOperationType() {
     // Try to determine from call stack
     const stack = new Error('Stack trace for operation type detection').stack || '';
 
-    // Check for specific scene operations FIRST (before generic summarize_text check)
-    // Scene operations often call summarize_text(), so must be checked first
+    // Check for specific scene operations FIRST (before generic recap_text check)
+    // Scene operations often call recap_text(), so must be checked first
     if (stack.includes('detectSceneBreak') || stack.includes('autoSceneBreakDetection.js')) {
       return 'detect_scene_break';
     }
-    if (stack.includes('generateSceneSummary') && !stack.includes('runningSceneSummary.js') && !stack.includes('generate_running_scene_summary') && !stack.includes('combine_scene_with_running_summary')) {
-      return 'generate_scene_summary';
+    if (stack.includes('generateSceneRecap') && !stack.includes('runningSceneRecap.js') && !stack.includes('generate_running_scene_recap') && !stack.includes('combine_scene_with_running_recap')) {
+      return 'generate_scene_recap';
     }
     if (stack.includes('SceneName') || stack.includes('sceneNamePrompt')) {
       return 'generate_scene_name';
     }
-    if (stack.includes('generate_running_scene_summary') || stack.includes('runningSceneSummary.js') || stack.includes('combine_scene_with_running_summary')) {
-      // Check for specific running summary operations
-      if (stack.includes('combine_scene_with_running_summary')) {
+    if (stack.includes('generate_running_scene_recap') || stack.includes('runningSceneRecap.js') || stack.includes('combine_scene_with_running_recap')) {
+      // Check for specific running recap operations
+      if (stack.includes('combine_scene_with_running_recap')) {
         return 'combine_scene_with_running';
       }
-      return 'generate_running_summary';
+      return 'generate_running_recap';
     }
 
     // Check for validation operations
-    if (stack.includes('validateSummary') || stack.includes('summaryValidation.js')) {
-      return 'validate_summary';
+    if (stack.includes('validateRecap') || stack.includes('recapValidation.js')) {
+      return 'validate_recap';
     }
 
     // Check for specific lorebook operations
@@ -165,10 +165,10 @@ function determineOperationType() {
       return 'update_lorebook_registry';
     }
 
-    // Check for message summarization (AFTER scene checks!)
+    // Check for message recap generation (AFTER scene checks!)
     // This is generic and will match many operations, so must be last
-    if (stack.includes('summarize_text') || stack.includes('summarization.js')) {
-      return 'summary';
+    if (stack.includes('recap_text') || stack.includes('recapping.js')) {
+      return 'recap';
     }
 
     // Default for chat messages and other operations

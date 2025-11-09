@@ -1,12 +1,12 @@
 # First-Hop Proxy Integration
 
-This document explains how the ST-Auto-Summarize extension adds metadata to LLM requests for downstream proxy logging.
+This document explains how the ST-Auto-Recap extension adds metadata to LLM requests for downstream proxy logging.
 
 ## Overview
 
 The extension injects structured metadata into **ALL LLM requests**, including:
 - Normal chat messages from SillyTavern core
-- Extension-generated requests (summaries, lorebook operations, etc.)
+- Extension-generated requests (recaps, lorebook operations, etc.)
 
 The metadata is added as XML-tagged JSON blocks that proxies can parse and strip before forwarding to the LLM.
 
@@ -52,7 +52,7 @@ We cannot modify ST core files, so we use event hooks for chat and function wrap
 
 - `version`: Schema version ("1.0")
 - `chat`: Full chat identifier with timestamp (e.g., "CharacterName - 2025-11-03@16h32m59s") or group name. Matches the `{{chat}}` macro value used in Auto-Lorebooks naming.
-- `operation`: Operation type (chat, message_summary, scene_summary, lorebook, etc.)
+- `operation`: Operation type (chat, message_recap, scene_recap, lorebook, etc.)
 - `timestamp`: (optional) ISO 8601 timestamp
 - `custom`: (optional) Custom operation-specific data
 
@@ -131,9 +131,9 @@ Located in: "First-Hop Proxy Integration" section
 
 Check console logs on extension load:
 ```
-[Auto-Summarize:Interceptor] Installing generateRaw interceptor...
-[Auto-Summarize:Interceptor] ✓ Wrapped ctx.generateRaw
-[Auto-Summarize:Interceptor] ✓ Interceptor installed successfully
+[Auto-Recap:Interceptor] Installing generateRaw interceptor...
+[Auto-Recap:Interceptor] ✓ Wrapped ctx.generateRaw
+[Auto-Recap:Interceptor] ✓ Interceptor installed successfully
 ```
 
 ### Verify Chat Interception
@@ -141,18 +141,18 @@ Check console logs on extension load:
 Enable checkbox, send a message, check console:
 ```
 [Interceptor] Processing chat array for CHAT_COMPLETION_PROMPT_READY
-[Auto-Summarize:Interceptor] Injected metadata into existing system message
-[Auto-Summarize:Interceptor] Metadata: {"version":"1.0","chat":"Anonfilly - 2025-11-03@16h32m59s","operation":"chat"}
+[Auto-Recap:Interceptor] Injected metadata into existing system message
+[Auto-Recap:Interceptor] Metadata: {"version":"1.0","chat":"Anonfilly - 2025-11-03@16h32m59s","operation":"chat"}
 ```
 
 ### Verify Extension Operations
 
-Trigger a summary, check console:
+Trigger a recap, check console:
 ```
-[Auto-Summarize:Interceptor] wrappedGenerateRaw called!
-[Auto-Summarize:Interceptor] Processing prompt (first 100 chars): ...
-[Auto-Summarize:Interceptor] Operation type: summary
-[Auto-Summarize:Interceptor] Processed prompt (first 200 chars): <ST_METADATA>...
+[Auto-Recap:Interceptor] wrappedGenerateRaw called!
+[Auto-Recap:Interceptor] Processing prompt (first 100 chars): ...
+[Auto-Recap:Interceptor] Operation type: recap
+[Auto-Recap:Interceptor] Processed prompt (first 200 chars): <ST_METADATA>...
 ```
 
 ## Proxy Implementation

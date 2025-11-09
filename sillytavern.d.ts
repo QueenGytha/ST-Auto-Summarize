@@ -1,4 +1,4 @@
-// Type definitions for SillyTavern exports used by ST-Auto-Summarize
+// Type definitions for SillyTavern exports used by ST-Auto-Recap
 // Generated from actual SillyTavern source code (script.js, st-context.js, events.js)
 // This file provides TypeScript type checking to catch errors like calling variables as functions
 

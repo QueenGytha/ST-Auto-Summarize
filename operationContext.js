@@ -2,7 +2,7 @@
 // operationContext.js - Thread-local context storage for ST_METADATA operation suffixes
 //
 // This module provides a simple way to pass contextual information from high-level
-// operations (e.g., scene summaries, lorebook lookups) down to the low-level
+// operations (e.g., scene recaps, lorebook lookups) down to the low-level
 // generateRaw interceptor without modifying function signatures.
 //
 // Usage pattern:

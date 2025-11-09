@@ -24,11 +24,11 @@ function refresh_character_select() {
   character_options.push({ id: "user", name: "User (you)" });
 
   // set the current value (default if empty)
-  const current_selection = get_settings('characters_to_summarize');
+  const current_selection = get_settings('characters_to_recap');
   log(current_selection);
 
   // register the element as a select2 widget
-  refresh_select2_element('characters_to_summarize', current_selection, character_options, 'No characters filtered - all will be summarized.');
+  refresh_select2_element('characters_to_recap', current_selection, character_options, 'No characters filtered - all will be recapped.');
 }
 
 /*

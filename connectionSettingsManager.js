@@ -44,11 +44,11 @@ presetName )
 
 function saveConnectionSettingsState(state ) {
   try {
-    if (!chat_metadata.autoSummarize) {
-      chat_metadata.autoSummarize = {} ;
+    if (!chat_metadata.autoRecap) {
+      chat_metadata.autoRecap = {} ;
     }
 
-    chat_metadata.autoSummarize.savedConnectionSettings = state;
+    chat_metadata.autoRecap.savedConnectionSettings = state;
     saveMetadata();
 
     debug('Saved connection settings state', state);
@@ -59,7 +59,7 @@ function saveConnectionSettingsState(state ) {
 
 function getSavedConnectionSettingsState() {
   try {
-    const saved = chat_metadata?.autoSummarize?.savedConnectionSettings;
+    const saved = chat_metadata?.autoRecap?.savedConnectionSettings;
     if (saved && typeof saved === 'object') {
       return saved;
     }
@@ -71,8 +71,8 @@ function getSavedConnectionSettingsState() {
 
 function clearSavedConnectionSettingsState() {
   try {
-    if (chat_metadata?.autoSummarize?.savedConnectionSettings) {
-      delete chat_metadata.autoSummarize.savedConnectionSettings;
+    if (chat_metadata?.autoRecap?.savedConnectionSettings) {
+      delete chat_metadata.autoRecap.savedConnectionSettings;
       saveMetadata();
       debug('Cleared saved connection settings state');
     }

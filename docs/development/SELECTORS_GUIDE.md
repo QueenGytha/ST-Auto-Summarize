@@ -103,7 +103,7 @@ SillyTavern Update:
 ## File Structure
 
 ```
-ST-Auto-Summarize/
+ST-Auto-Recap/
 ├── index.js                      # Barrel: exports both selector files
 ├── selectorsExtension.js         # Our HTML (data-testid based)
 ├── selectorsSillyTavern.js       # ST's HTML (ID/class based)
@@ -321,8 +321,8 @@ export class ExtensionHelper {
     await this.page.click(selectorsExtension.memory.toggleButton);
   }
 
-  async clickSummarize() {
-    await this.page.click(selectorsExtension.summarization.summarizeButton);
+  async clickRecap() {
+    await this.page.click(selectorsExtension.recap generation.recapButton);
   }
 }
 ```
@@ -657,7 +657,7 @@ Token cost: ~2k tokens (checked file, used selector)
 - NO duplication
 ```
 
-### Summary: Check Files First
+### Recap: Check Files First
 
 **ALWAYS:**
 1. Check `selectorsExtension.js` or `selectorsSillyTavern.js`
@@ -732,11 +732,11 @@ export const selectorsExtension = {
     globalToggleCheckbox: '[data-testid="setting-global-toggle"]'
   },
 
-  // Summarization
-  summarization: {
-    summarizeButton: '[data-testid="summarize-btn"]',
+  // Recap Generation
+  recap generation: {
+    recapButton: '[data-testid="recap-btn"]',
     validateButton: '[data-testid="validate-btn"]',
-    progressBar: '[data-testid="summary-progress"]'
+    progressBar: '[data-testid="recap-progress"]'
   },
 
   // Scene management
@@ -963,7 +963,7 @@ Fix any violations found, then run tests to ensure everything works.
 
 ---
 
-## Summary
+## Recap
 
 **This strategy ensures:**
 - ✅ Single source of truth for all selectors

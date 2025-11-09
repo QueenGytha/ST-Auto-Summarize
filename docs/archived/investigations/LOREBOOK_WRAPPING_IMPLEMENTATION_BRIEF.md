@@ -623,7 +623,7 @@ checkWorldInfo = checkWorldInfo_wrapped;
 
 ```javascript
 // In browser console after enabling setting:
-const settings = extension_settings['auto-summarize'];
+const settings = extension_settings['auto-recap'];
 settings.profiles[settings.profile].wrap_lorebook_entries = true;
 
 // Send a message to trigger lorebook activation
@@ -748,7 +748,7 @@ wrapEntryBlock(entries.join('\n'))  // ❌ Block
 ## File Paths Reference
 
 ### Extension Files (Your Code)
-- `/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/`
+- `/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Recap/`
   - `lorebookWrapper.js` (CREATE)
   - `defaultSettings.js` (MODIFY)
   - `settings.html` (MODIFY)
@@ -761,7 +761,7 @@ wrapEntryBlock(entries.join('\n'))  // ❌ Block
   - `extensions/regex/engine.js` (REFERENCED)
 
 ### Proxy Files (Will Need Updates)
-- `/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize/first-hop-proxy/src/first_hop_proxy/`
+- `/mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Recap/first-hop-proxy/src/first_hop_proxy/`
   - `utils.py` (ADD `strip_lorebook_tags`)
   - `main.py` (CALL stripping function)
 
@@ -771,7 +771,7 @@ wrapEntryBlock(entries.join('\n'))  // ❌ Block
 
 ---
 
-## Summary Checklist
+## Recap Checklist
 
 **Pre-Implementation**:
 - [ ] Read `SILLYTAVERN_LOREBOOK_INJECTION.md` sections on reconstruction approach
@@ -804,7 +804,7 @@ wrapEntryBlock(entries.join('\n'))  // ❌ Block
 ## Quick Start Command for Fresh Session
 
 ```
-I need to implement lorebook entry wrapping for the ST-Auto-Summarize extension.
+I need to implement lorebook entry wrapping for the ST-Auto-Recap extension.
 
 Read /docs/LOREBOOK_WRAPPING_IMPLEMENTATION_BRIEF.md for complete context.
 

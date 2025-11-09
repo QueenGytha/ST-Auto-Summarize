@@ -1,6 +1,6 @@
 # Research Documentation
 
-This directory contains research and analysis for various technical investigations and proposed changes to the ST-Auto-Summarize extension.
+This directory contains research and analysis for various technical investigations and proposed changes to the ST-Auto-Recap extension.
 
 ## Research Topics
 
@@ -14,10 +14,10 @@ Investigation of migrating from slash command profile switching + `generateRaw()
 - [Migration Analysis](connection-manager-migration/CONNECTION_MANAGER_REQUEST_SERVICE_MIGRATION_ANALYSIS.md) (3,010 lines) - Main analysis with cost-benefit and recommendations
 - [Technical Issue Traces](connection-manager-migration/TECHNICAL_ISSUE_TRACES.md) (1,638 lines) - End-to-end code traces of all issues
 - [Verification Report](connection-manager-migration/VERIFICATION_REPORT.md) (350+ lines) - Audit of all claims with evidence
-- [Critical Findings](connection-manager-migration/CRITICAL_FINDINGS_CONNECTION_MANAGER.md) (557 lines) - Summary of blocking issues
+- [Critical Findings](connection-manager-migration/CRITICAL_FINDINGS_CONNECTION_MANAGER.md) (557 lines) - Recap of blocking issues
 - [README](connection-manager-migration/README.md) - Complete index and reading guide
 
-**Summary:**
+**Recap:**
 - ✅ Technically viable but architecturally complex
 - ✅ Effort: 50-65 hours (corrected from initial 120 hour estimate)
 - ⚠️ Requires 15-20 hour pilot phase first
@@ -37,8 +37,8 @@ Analysis of the Timeline-Memory extension's architecture and techniques.
 **Key Document:**
 - [ANALYSIS.md](timeline-memory/ANALYSIS.md) (1,000+ lines)
 
-**Summary:**
-- Compared chapter-based (Timeline-Memory) vs. per-message (ST-Auto-Summarize) approaches
+**Recap:**
+- Compared chapter-based (Timeline-Memory) vs. per-message (ST-Auto-Recap) approaches
 - Cataloged 4 prompt types and techniques worth considering
 - Identified ConnectionManagerRequestService usage (sparked migration investigation)
 
@@ -59,12 +59,12 @@ When adding new research topics:
 2. Add primary documents to the subdirectory
 3. Create a README.md in the subdirectory with:
    - Document index
-   - Key findings summary
+   - Key findings recap
    - Recommendations
 4. Update this top-level README with:
    - Link to new research topic
    - Status and last updated date
-   - Brief summary
+   - Brief recap
 
 ---
 

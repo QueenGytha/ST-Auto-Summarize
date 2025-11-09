@@ -1,6 +1,6 @@
 # Prompts Reference Guide
 
-This document contains all LLM prompts used by the ST-Auto-Summarize extension, organized in the order they typically execute during operation.
+This document contains all LLM prompts used by the ST-Auto-Recap extension, organized in the order they typically execute during operation.
 
 ---
 
@@ -60,22 +60,22 @@ Return ONLY valid JSON:
 
 ---
 
-## 2. Scene Summary
+## 2. Scene Recap
 
-**Prompt Name:** `scene_summary_prompt`
+**Prompt Name:** `scene_recap_prompt`
 
 **When It Runs:** At scene breaks (manual or auto-detected). Generates a comprehensive recap of the scene.
 
-**What It Does:** Creates a structured markdown recap with specific headers, plus optional lorebook entries for entities introduced or updated in the scene. Uses JSON format to separate timeline (summary) from entity knowledge (lorebooks).
+**What It Does:** Creates a structured markdown recap with specific headers, plus optional lorebook entries for entities introduced or updated in the scene. Uses JSON format to separate timeline (recap) from entity knowledge (lorebooks).
 
 **Macros Used:**
-- `{{scene_messages}}` - Formatted messages from the scene (includes [USER: name] / [CHARACTER: name] labels and any existing summaries)
+- `{{scene_messages}}` - Formatted messages from the scene (includes [USER: name] / [CHARACTER: name] labels and any existing recaps)
 - `{{lorebook_entry_types}}` - Dynamically inserted list of allowed entity types (character, location, item, faction, quest, rule)
 
-**Expected Output:** JSON with summary (markdown) and lorebooks (array)
+**Expected Output:** JSON with recap (markdown) and lorebooks (array)
 ```json
 {
-  "summary": "## Current Situation\n...\n## Key Developments\n...\n## Dialogue Highlights\n...\n## Pending Threads\n...",
+  "recap": "## Current Situation\n...\n## Key Developments\n...\n## Dialogue Highlights\n...\n## Pending Threads\n...",
   "lorebooks": [
     {
       "name": "Entity Name",
@@ -97,7 +97,7 @@ Return ONLY valid JSON:
 // - Do not invent motives, emotions, or extrapolated outcomes
 // - Franchise names: ignore canon outside this transcript
 //
-// SUMMARY field (markdown recap):
+// RECAP field (markdown recap):
 // - Structure exactly in this order with markdown headers:
 //   ## Current Situation  -> Where the scene ends, who is present, unresolved stakes
 //   ## Key Developments   -> Bullet each significant change or result from this scene
@@ -146,11 +146,11 @@ Return ONLY valid JSON:
 //
 // OUTPUT FORMAT:
 // - Output ONLY valid JSON, no text before or after
-// - Summary is required
+// - Recap is required
 // - Lorebooks array is optional (empty array if no new entities)
 
 {
-  "summary": "",
+  "recap": "",
   "lorebooks": []
 }
 
@@ -159,25 +159,25 @@ Return ONLY valid JSON:
 // [USER: name] or [CHARACTER: name]
 // message text
 //
-// [SUMMARY] (if any)
-// summary text
+// [RECAP] (if any)
+// recap text
 
 {{scene_messages}}
 ```
 
 ---
 
-## 3. Running Scene Summary
+## 3. Running Scene Recap
 
-**Prompt Name:** `running_scene_summary_prompt`
+**Prompt Name:** `running_scene_recap_prompt`
 
-**When It Runs:** When new scene summaries are created (if auto-generate is enabled). Merges the latest scene recap into the existing running narrative.
+**When It Runs:** When new scene recaps are created (if auto-generate is enabled). Merges the latest scene recap into the existing running narrative.
 
-**What It Does:** Updates the running recap by integrating the newest scene summary. Maintains the same markdown structure as scene summaries. Resolves conflicts in favor of the newest information and removes outdated bullets.
+**What It Does:** Updates the running recap by integrating the newest scene recap. Maintains the same markdown structure as scene recaps. Resolves conflicts in favor of the newest information and removes outdated bullets.
 
 **Macros Used:**
-- `{{current_running_summary}}` - Existing running recap (conditionally included, may be empty on first run)
-- `{{scene_summaries}}` - New scene recap to merge in
+- `{{current_running_recap}}` - Existing running recap (conditionally included, may be empty on first run)
+- `{{scene_recaps}}` - New scene recap to merge in
 
 **Expected Output:** Updated markdown recap with same header structure
 ```markdown
@@ -227,13 +227,13 @@ Return ONLY valid JSON:
 // - Conflicting facts are resolved in favor of the newest scene, with the current state stated clearly.
 // - Sections remain in the prescribed order with markdown headers and bullet lists.
 //
-{{#if current_running_summary}}
+{{#if current_running_recap}}
 // CURRENT RUNNING RECAP (edit in place):
-{{current_running_summary}}
+{{current_running_recap}}
 
 {{/if}}
 // NEW SCENE RECAP TO MERGE:
-{{scene_summaries}}
+{{scene_recaps}}
 ```
 
 ---
@@ -242,7 +242,7 @@ Return ONLY valid JSON:
 
 **Prompt Name:** `auto_lorebook_entry_lookup_prompt`
 
-**When It Runs:** During lorebook processing (Stage 1). When scene summaries generate new lorebook entries, this prompt matches them against the existing registry to find duplicates.
+**When It Runs:** During lorebook processing (Stage 1). When scene recaps generate new lorebook entries, this prompt matches them against the existing registry to find duplicates.
 
 **What It Does:** First-pass deduplication. Determines the correct entity type, validates format, and identifies potential duplicate entries by comparing against a registry listing (id, name, aliases, synopsis). Creates a short synopsis for the entry.
 
@@ -255,7 +255,7 @@ Return ONLY valid JSON:
 ```json
 {
   "type": "character",
-  "synopsis": "short one-line summary",
+  "synopsis": "short one-line recap",
   "sameEntityIds": ["entity_123"],
   "needsFullContextIds": ["entity_456"]
 }
@@ -289,7 +289,7 @@ Tasks:
 Return ONLY a JSON object in this exact shape:
 {
   "type": "<one of the allowed types>",
-  "synopsis": "<short one-line summary>",
+  "synopsis": "<short one-line recap>",
   "sameEntityIds": ["entity_id_1"],
   "needsFullContextIds": ["entity_id_2"]
 }
@@ -323,7 +323,7 @@ Rules:
 ```json
 {
   "resolvedId": "entity_123",
-  "synopsis": "updated one-line summary"
+  "synopsis": "updated one-line recap"
 }
 ```
 (Use `"resolvedId": "new"` if no match found)
@@ -348,7 +348,7 @@ Candidate lorebook entries (full content, JSON array):
 Return ONLY a JSON object in this exact shape:
 {
   "resolvedId": "<existing entity id or \"new\">",
-  "synopsis": "<updated one-line summary for the canonical entity>"
+  "synopsis": "<updated one-line recap for the canonical entity>"
 }
 
 Rules:
@@ -365,16 +365,16 @@ Rules:
 
 ## 6. Lorebook Entry Merge
 
-**Prompt Name:** `auto_lorebooks_summary_merge_prompt`
+**Prompt Name:** `auto_lorebooks_recap_merge_prompt`
 
-**When It Runs:** During lorebook processing (Stage 3). When an entry is being updated with new information from a scene summary.
+**When It Runs:** During lorebook processing (Stage 3). When an entry is being updated with new information from a scene recap.
 
 **What It Does:** Intelligently merges new information with existing lorebook entry content. Maintains PList format, adds new details, updates changed information, removes contradictions. Can also detect when entries with vague names (like "amelia's sister") should be renamed to proper names (like "Victoria").
 
 **Macros Used:**
 - `{{entry_name}}` - Current entry name
 - `{{existing_content}}` - Current entry content (PList format)
-- `{{new_content}}` - New information from summary (PList format)
+- `{{new_content}}` - New information from recap (PList format)
 
 **Expected Output:** Either plain text (merged content) OR JSON (when renaming)
 
@@ -393,7 +393,7 @@ Rules:
 
 **Full Prompt:**
 ```
-You are updating a lorebook entry. You have the existing entry content and new information from a summary.
+You are updating a lorebook entry. You have the existing entry content and new information from a recap.
 
 Current Entry Name: {{entry_name}}
 
@@ -425,7 +425,7 @@ Your task:
 Existing Entry Content:
 {{existing_content}}
 
-New Information from Summary:
+New Information from Recap:
 {{new_content}}
 
 OUTPUT INSTRUCTIONS:
@@ -468,8 +468,8 @@ SPECIFICITY EXAMPLE:
 | Prompt Name | When It Runs | Purpose |
 |-------------|--------------|---------|
 | `auto_scene_break_detection_prompt` | On each new message | Detect if message starts new scene |
-| `scene_summary_prompt` | At scene breaks | Generate structured scene recap + extract entities |
-| `running_scene_summary_prompt` | When new scenes created | Merge latest scene into running narrative |
+| `scene_recap_prompt` | At scene breaks | Generate structured scene recap + extract entities |
+| `running_scene_recap_prompt` | When new scenes created | Merge latest scene into running narrative |
 | `auto_lorebook_entry_lookup_prompt` | Lorebook Stage 1 | Match new entries against registry, find duplicates |
 | `auto_lorebook_entry_deduplicate_prompt` | Lorebook Stage 2 | Resolve uncertain matches with full context |
-| `auto_lorebooks_summary_merge_prompt` | Lorebook Stage 3 | Merge new info with existing entry content |
+| `auto_lorebooks_recap_merge_prompt` | Lorebook Stage 3 | Merge new info with existing entry content |

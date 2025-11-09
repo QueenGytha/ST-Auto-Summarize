@@ -123,7 +123,7 @@ node test-import.mjs
 ### Step 3: Test All Required Imports
 
 ```bash
-cd /mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Summarize
+cd /mnt/c/Users/sarah/OneDrive/Desktop/personal/SillyTavern-New/public/scripts/extensions/third-party/ST-Auto-Recap
 
 # Find all ST imports your extension uses
 grep -h "from ['\"]\.\./" *.js | sort -u
@@ -306,7 +306,7 @@ Before proceeding:
 
 ---
 
-## Summary
+## Recap
 
 **Start here, not with infrastructure:**
 

@@ -27,7 +27,7 @@ function check_connection_profiles_active() {
                 module.refresh_settings();
               }
             } catch (err) {
-              console.error('[AutoSummarize] Failed to load profileUI module:', err);
+              console.error('[AutoRecap] Failed to load profileUI module:', err);
             }
           })();
         }
@@ -44,10 +44,10 @@ async function get_current_connection_profile() {
   return result.pipe;
 }
 async function get_connection_profile_api(name ) {
-  // Get the API for the given connection profile name. If not given, get the current summary profile.
+  // Get the API for the given connection profile name. If not given, get the current recap profile.
   if (!check_connection_profiles_active()) {return null;} // if the extension isn't active, return
   let profileName = name;
-  if (profileName === undefined) {profileName = await get_summary_connection_profile();}
+  if (profileName === undefined) {profileName = await get_recap_connection_profile();}
   const ctx = getContext();
   const result = await ctx.executeSlashCommandsWithOptions(`/profile-get ${profileName}`);
 
@@ -80,7 +80,7 @@ async function get_connection_profile_api(name ) {
   }
   return CONNECT_API_MAP[data.api].selected;
 }
-async function get_summary_connection_profile() {
+async function get_recap_connection_profile() {
   // get the current connection profile OR the default if it isn't valid for the current API
   let name = get_settings('connection_profile');
 
@@ -131,12 +131,12 @@ async function verify_connection_profile(name ) {
   return names?.includes(name) ?? false;
 }
 async function check_connection_profile_valid() {
-  // check whether the current connection profile selected for summarization is valid
+  // check whether the current connection profile selected for recap generation is valid
   if (!check_connection_profiles_active()) {return false;} // if the extension isn't active, return
-  const summary_connection = get_settings('connection_profile');
-  const valid = await verify_connection_profile(summary_connection);
+  const recap_connection = get_settings('connection_profile');
+  const valid = await verify_connection_profile(recap_connection);
   if (!valid) {
-    toast_debounced(`Your selected summary connection profile "${summary_connection}" is not valid.`, "warning");
+    toast_debounced(`Your selected recap connection profile "${recap_connection}" is not valid.`, "warning");
   }
   return valid;
 }
@@ -145,7 +145,7 @@ export {
   check_connection_profiles_active,
   get_current_connection_profile,
   get_connection_profile_api,
-  get_summary_connection_profile,
+  get_recap_connection_profile,
   set_connection_profile,
   get_connection_profiles,
   verify_connection_profile,

@@ -499,7 +499,7 @@ async function test_extensionLoaded(page) {
         const ext = await import('/scripts/extensions.js');
 
         // Check if extension settings exist
-        const extensionName = 'auto-summarize'; // Your extension's name
+        const extensionName = 'auto-recap'; // Your extension's name
         const isLoaded = ext.extension_settings[extensionName] !== undefined;
 
         return {
@@ -612,7 +612,7 @@ async function test_extensionEventHandlers(page) {
 async function test_extensionSettings(page) {
     const result = await page.evaluate(async () => {
         const ext = await import('/scripts/extensions.js');
-        const extensionName = 'auto-summarize';
+        const extensionName = 'auto-recap';
 
         // Get current settings
         const currentSettings = ext.extension_settings[extensionName];
@@ -1253,7 +1253,7 @@ runTests().catch(console.error);
 // tests/extension-suite.js
 import puppeteer from 'puppeteer';
 
-const EXTENSION_NAME = 'auto-summarize'; // Your extension name
+const EXTENSION_NAME = 'auto-recap'; // Your extension name
 
 async function runExtensionTests() {
     console.log(`Testing extension: ${EXTENSION_NAME}\n`);
@@ -1342,7 +1342,7 @@ async function test_extensionFunctions(page) {
     const result = await page.evaluate(async () => {
         try {
             // Try to import extension module
-            const extModule = await import('/scripts/extensions/third-party/auto-summarize/index.js');
+            const extModule = await import('/scripts/extensions/third-party/auto-recap/index.js');
 
             return {
                 success: true,
@@ -1475,7 +1475,7 @@ async function runBenchmarks() {
         console.log(`   Total: ${evalTime}ms`);
         console.log(`   Avg: ${(evalTime / 100).toFixed(2)}ms per call\n`);
 
-        // Summary
+        // Recap
         console.log('='.repeat(60));
         console.log('Estimated Test Performance');
         console.log('='.repeat(60));
@@ -1495,7 +1495,7 @@ runBenchmarks().catch(console.error);
 
 ---
 
-## Summary
+## Recap
 
 This testing method provides:
 
