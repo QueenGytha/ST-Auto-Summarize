@@ -1,0 +1,8 @@
+[submodule "timeline-memory"]
+	path = docs/research/timeline-memory
+	url = ./docs/research/timeline-memory
+	ignore = dirty
+[submodule "SillyTavern-WorldInfoInfo"]
+	path = reference-externsions/SillyTavern-WorldInfoInfo
+	ignore = dirty
+	url = ./reference-externsions/SillyTavern-WorldInfoInfo
