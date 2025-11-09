@@ -14,7 +14,8 @@ import {
 './recapValidation.js';
 import {
   detectSceneBreak,
-  isCooldownSkip } from
+  validateSceneBreakResponse,
+  messageMatchesType } from
 './autoSceneBreakDetection.js';
 import { generateSceneRecap, toggleSceneBreak } from './sceneBreak.js';
 import {
@@ -60,6 +61,7 @@ import {
   saveChatDebounced,
   get_settings,
   debug,
+  error,
   log,
   toast,
   SUBSYSTEM,
@@ -67,6 +69,8 @@ import {
 './index.js';
 import { saveMetadata } from '../../../../script.js';
 import { queueCombineSceneWithRunning } from './queueIntegration.js';
+
+const DEFAULT_MINIMUM_SCENE_LENGTH = 4;
 
 function get_message_div(index) {
   return $(`div[mesid="${index}"]`);
@@ -88,63 +92,113 @@ export function registerAllOperationHandlers() {
     return { isValid };
   });
 
-  // Detect scene break
+  // Detect scene break (range-based)
   registerOperationHandler(OperationType.DETECT_SCENE_BREAK, async (operation) => {
-    const { index } = operation.params;
+    const { startIndex, endIndex } = operation.params;
     const signal = getAbortSignal(operation);
     const ctx = getContext();
     const chat = ctx.chat;
 
-    // Check cooldown at execution time (scene breaks may have been added after queueing)
-    if (isCooldownSkip(chat, index, false)) {
-      debug(SUBSYSTEM.QUEUE, `Skipping DETECT_SCENE_BREAK at index ${index} - cooldown (execution-time check)`);
-      return {
-        isSceneBreak: false,
-        rationale: 'Skipped due to cooldown - immediately follows a scene break'
-      };
-    }
-
-    const message = chat[index];
-    const previousMessage = index > 0 ? chat[index - 1] : null;
-
-    debug(SUBSYSTEM.QUEUE, `Executing DETECT_SCENE_BREAK for index ${index}`);
-    const result = await detectSceneBreak(message, index, previousMessage);
+    debug(SUBSYSTEM.QUEUE, `Executing DETECT_SCENE_BREAK for range ${startIndex} to ${endIndex}`);
+    const result = await detectSceneBreak(startIndex, endIndex);
 
     // Check if cancelled after detection (before side effects)
     throwIfAborted(signal, 'DETECT_SCENE_BREAK', 'LLM call');
 
-    // If scene break detected, actually set it on the message
-    if (result.isSceneBreak) {
-      debug(SUBSYSTEM.QUEUE, `✓ Scene break detected for message ${index}, setting scene break marker`);
-      const rationaleText = result.rationale ? ` - ${result.rationale}` : '';
-      toast(`✓ Scene break at message ${index}${rationaleText}`, 'success');
+    const { sceneBreakAt, rationale, filteredIndices } = result;
+    const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
 
-      toggleSceneBreak(index, get_message_div, getContext, set_data, get_data, saveChatDebounced);
+    // Validate the response
+    const validation = validateSceneBreakResponse(sceneBreakAt, startIndex, endIndex, filteredIndices, minimumSceneLength);
 
-      // No decrementing cooldown needed; adjacency rule enforces skip for the immediate next message
+    if (!validation.valid) {
+      // Invalid response - don't mark as checked (allows retry)
+      error(SUBSYSTEM.QUEUE, `Invalid scene break response for range ${startIndex}-${endIndex}: ${validation.reason}`);
+      error(SUBSYSTEM.QUEUE, `  sceneBreakAt: ${sceneBreakAt}, rationale: ${rationale}`);
+      toast(`⚠ Invalid scene break detection response - will retry`, 'warning');
+      return { sceneBreakAt: false, rationale: `Invalid: ${validation.reason}` };
+    }
 
-      // Auto-generate scene recap if enabled - ENQUEUE as separate operation
-      if (get_settings('auto_scene_break_generate_recap')) {
-        debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_RECAP for message ${index}`);
+    if (sceneBreakAt === false) {
+      // No scene break found - mark entire range as checked
+      debug(SUBSYSTEM.QUEUE, `✗ No scene break found in range ${startIndex} to ${endIndex}`);
+      for (let i = startIndex; i <= endIndex; i++) {
+        const msg = chat[i];
+        if (msg) {
+          set_data(msg, 'auto_scene_break_checked', true);
+        }
+      }
+      saveChatDebounced();
+      return result;
+    }
 
-        // Enqueue recap generation as next operation (highest priority)
-        const recapOpId = await enqueueOperation(
-          OperationType.GENERATE_SCENE_RECAP,
-          { index },
+    // Valid scene break detected at sceneBreakAt
+    debug(SUBSYSTEM.QUEUE, `✓ Scene break detected at message ${sceneBreakAt}`);
+    const rationaleText = rationale ? ` - ${rationale}` : '';
+    toast(`✓ Scene break at message ${sceneBreakAt}${rationaleText}`, 'success');
+
+    // Place the scene break marker
+    toggleSceneBreak(sceneBreakAt, get_message_div, getContext, set_data, get_data, saveChatDebounced);
+
+    // Mark messages from startIndex to sceneBreakAt (inclusive) as checked
+    for (let i = startIndex; i <= sceneBreakAt; i++) {
+      const msg = chat[i];
+      if (msg) {
+        set_data(msg, 'auto_scene_break_checked', true);
+      }
+    }
+    saveChatDebounced();
+
+    // Queue new detection for remaining range if there are enough messages
+    if (sceneBreakAt < endIndex) {
+      const remainingStart = sceneBreakAt + 1;
+      const remainingEnd = endIndex;
+
+      // Count filtered messages in remaining range
+      const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
+      let remainingFiltered = 0;
+      for (let i = remainingStart; i <= remainingEnd; i++) {
+        const msg = chat[i];
+        if (msg && messageMatchesType(msg, checkWhich)) {
+          remainingFiltered++;
+        }
+      }
+
+      // Only queue if we have enough messages (minimum + 1)
+      if (remainingFiltered >= minimumSceneLength + 1) {
+        debug(SUBSYSTEM.QUEUE, `Enqueueing DETECT_SCENE_BREAK for remaining range ${remainingStart} to ${remainingEnd}`);
+        await enqueueOperation(
+          OperationType.DETECT_SCENE_BREAK,
+          { startIndex: remainingStart, endIndex: remainingEnd },
           {
-            priority: 20, // Highest priority - process before all other operations
+            priority: 5, // Same priority as scene break detection
             queueVersion: operation.queueVersion,
             metadata: {
-              scene_index: index,
-              triggered_by: 'auto_scene_break_detection'
+              triggered_by: 'scene_break_found_in_range'
             }
           }
         );
-
-        debug(SUBSYSTEM.QUEUE, `✓ Enqueued GENERATE_SCENE_RECAP (${recapOpId ?? 'null'}) for message ${index}`);
+      } else {
+        debug(SUBSYSTEM.QUEUE, `Not enough remaining messages (${remainingFiltered} < ${minimumSceneLength + 1}) - not queuing new detection`);
       }
-    } else {
-      debug(SUBSYSTEM.QUEUE, `✗ No scene break for message ${index}`);
+    }
+
+    // Auto-generate scene recap if enabled
+    if (get_settings('auto_scene_break_generate_recap')) {
+      debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_RECAP for message ${sceneBreakAt}`);
+      const recapOpId = await enqueueOperation(
+        OperationType.GENERATE_SCENE_RECAP,
+        { index: sceneBreakAt },
+        {
+          priority: 20, // Highest priority
+          queueVersion: operation.queueVersion,
+          metadata: {
+            scene_index: sceneBreakAt,
+            triggered_by: 'auto_scene_break_detection'
+          }
+        }
+      );
+      debug(SUBSYSTEM.QUEUE, `✓ Enqueued GENERATE_SCENE_RECAP (${recapOpId ?? 'null'}) for message ${sceneBreakAt}`);
     }
 
     return result;

@@ -152,6 +152,12 @@ export const LOREBOOK_MERGE_THRESHOLD = 300;
 /** Lorebook description character limit */
 export const LOREBOOK_DESCRIPTION_MAX_LENGTH = 200;
 
+/** Default minimum scene length for auto scene break detection */
+export const DEFAULT_MINIMUM_SCENE_LENGTH = 4;
+
+/** Maximum scene length setting value */
+export const MAX_SCENE_LENGTH_SETTING = 50;
+
 // ============================================================================
 // Debug Output Constants
 // ============================================================================

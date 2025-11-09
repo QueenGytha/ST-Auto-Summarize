@@ -323,16 +323,10 @@
                         </label>
 
                         <label title="How many messages back from the latest to skip checking. 0 = check all including latest, 1 = skip latest, 2 = skip 2 latest, etc.">
-                            <span>Message Offset (skip latest N messages): <span id="auto_scene_break_message_offset_value" data-testid="auto-scene-offset-display">1</span></span>
-                            <input id="auto_scene_break_message_offset" data-testid="auto-scene-message-offset" class="text_pole" type="range" min="0" max="10" step="1" value="1" />
+                            <span>Message Offset (skip latest N messages): <span id="auto_scene_break_message_offset_value" data-testid="auto-scene-offset-display">2</span></span>
+                            <input id="auto_scene_break_message_offset" data-testid="auto-scene-message-offset" class="text_pole" type="range" min="0" max="10" step="1" value="2" />
                         </label>
-                        <small style="display:block; margin-bottom:0.5em;">Recommended: 1 (skip latest message since you may not like it yet)</small>
-
-                        <label title="How many recent messages of the selected type to check for scene breaks when new messages arrive. Set to 0 to scan the entire history.">
-                            <span>Recent Messages to Check:</span>
-                            <input id="auto_scene_break_recent_message_count" data-testid="auto-scene-recent-count" class="text_pole" type="number" min="0" max="50" step="1" />
-                        </label>
-                        <small style="display:block; margin-bottom:0.5em;">Counts messages that match the selected message type filter.</small>
+                        <small style="display:block; margin-bottom:0.5em;">Recommended: 2 (skip 2 latest messages to allow for swipes/regeneration)</small>
 
                         <label title="Which message types to check for scene breaks.">
                             <span>Check Which Messages:</span>
@@ -343,6 +337,12 @@
                             </select>
                         </label>
                         <small style="display:block; margin-bottom:0.5em;">Scene breaks typically occur in AI responses, but some users write them in their inputs too.</small>
+
+                        <label title="Minimum number of filtered messages required before allowing the LLM to choose a scene break point. This prevents breaking too early in a scene.">
+                            <span>Minimum Scene Length: <span id="auto_scene_break_minimum_scene_length_value" data-testid="auto-scene-min-length-display">4</span> messages</span>
+                            <input id="auto_scene_break_minimum_scene_length" data-testid="auto-scene-min-length" class="text_pole" type="number" min="1" max="50" step="1" value="4" />
+                        </label>
+                        <small style="display:block; margin-bottom:0.5em;">Counts only messages matching the selected message type filter above.</small>
 
                         <div class="flex-container justifyspacebetween alignitemscenter">
                             <button id="edit_auto_scene_break_prompt" data-testid="auto-scene-edit-prompt" class="menu_button flex1" title="Edit the auto scene break detection prompt"><span>Edit Detection Prompt</span></button>

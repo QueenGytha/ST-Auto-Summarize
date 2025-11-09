@@ -71,9 +71,9 @@ export const default_settings = {
   // --- Auto Scene Break Detection Settings --- (always available; governed by per-event settings)
   auto_scene_break_on_load: false,
   auto_scene_break_on_new_message: true,
-  auto_scene_break_message_offset: 1,
+  auto_scene_break_message_offset: 2,
   auto_scene_break_check_which_messages: "both", // "user", "character", "both"
-  auto_scene_break_recent_message_count: 3,
+  auto_scene_break_minimum_scene_length: 4, // Minimum number of filtered messages required before allowing a scene break
   auto_scene_break_prompt: auto_scene_break_detection_prompt,
   auto_scene_break_prefill: JSON_EXTRACTION_PREFILL,
   auto_scene_break_connection_profile: "",

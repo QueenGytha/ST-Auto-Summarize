@@ -436,31 +436,43 @@ Scene content:
 
 
 export const auto_scene_break_detection_prompt = `You are segmenting a roleplay transcript into scene-sized chunks (short, chapter-like story beats).
-Your task is to determine whether the CURRENT message begins a new scene, outputting ONLY valid JSON.
+Your task is to analyze the provided messages and determine if ANY of them marks the start of a new scene, outputting ONLY valid JSON.
 
 MANDATORY OUTPUT FORMAT:
 Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
 
 Required format (copy this structure exactly):
 {
-  "status": true or false,
+  "sceneBreakAt": false OR a message number (e.g., 5),
   "rationale": "Quote the key cue that triggered your decision"
 }
 
-Example valid response:
-{"status": true, "rationale": "Message opens with explicit time skip: 'The next morning...'"}
+Example valid responses:
+{"sceneBreakAt": 5, "rationale": "Message #5 opens with explicit time skip: 'The next morning...'"}
+{"sceneBreakAt": false, "rationale": "All messages are part of the same continuous scene"}
 
-CRITICAL: Ensure your response begins with the opening curly brace { character. Do not include any preamble or explanation. If you quote text in the rationale, escape internal double quotes as \".
+CRITICAL:
+- Ensure your response begins with the opening curly brace { character
+- Do not include any preamble or explanation
+- If you quote text in the rationale, escape internal double quotes as \"
+- If a scene break exists, return the message NUMBER where the new scene begins (not an index, but the actual number shown)
+- Return ONLY ONE message number - the FIRST message that starts a new scene
+- If no scene break exists, return false
+
+MINIMUM SCENE LENGTH RULE:
+- At least {{minimum_scene_length}} messages must occur before you can mark a scene break
+- This ensures scenes are not broken too early
+- Count only the messages of the type being analyzed (user/character/both as configured)
 
 DECISION CRITERIA:
 A scene break means the prior beat resolved and the story now shifts focus.
 
-Scene break if the current message clearly does at least one of:
-- Moves to a new location or setting.
-- Skips time with explicit cues ("Later...", "The next morning...", timestamps).
-- Switches primary characters or point of view to a different group.
-- Starts a new objective or major conflict after the previous one concluded.
-- Includes explicit separators or OOC markers ("---", "Scene Break", "Chapter 3", GM notes resetting play).
+Scene break if a message clearly does at least one of:
+- Moves to a new location or setting
+- Skips time with explicit cues ("Later...", "The next morning...", timestamps)
+- Switches primary characters or point of view to a different group
+- Starts a new objective or major conflict after the previous one concluded
+- Includes explicit separators or OOC markers ("---", "Scene Break", "Chapter 3", GM notes resetting play)
 
 Natural narrative beats to watch for:
 - Resolution or decision that concludes the prior exchange
@@ -469,31 +481,34 @@ Natural narrative beats to watch for:
 - Clear pause or transition point in the narrative flow
 
 Do NOT mark a break when:
-- The current line is a reaction, continuation, or escalation of the same exchange.
-- Minor topic shifts happen within the same setting, participants, and timeframe.
-- Movement occurs only between sublocations within the same parent location (e.g., room changes inside the same building) without a resolved beat or major shift.
-- Movement between districts/neighborhoods inside the same city is an immediate continuation (no explicit time skip, no resolved beat) and the objective/cast remains the same.
-- The message is meta chatter that does not advance the narrative.
-- The current message is mid-action, mid-conversation, or mid-beat (the exchange hasn't concluded yet).
+- The message is a reaction, continuation, or escalation of the same exchange
+- Minor topic shifts happen within the same setting, participants, and timeframe
+- Movement occurs only between sublocations within the same parent location (e.g., room changes inside the same building) without a resolved beat or major shift
+- Movement between districts/neighborhoods inside the same city is an immediate continuation (no explicit time skip, no resolved beat) and the objective/cast remains the same
+- The message is meta chatter that does not advance the narrative
+- The message is mid-action, mid-conversation, or mid-beat (the exchange hasn't concluded yet)
+- Fewer than {{minimum_scene_length}} messages have occurred
 
 Decision process:
-1. Check for explicit separators or time/scene headers and mark a break if present.
-2. Otherwise compare setting, time, cast, and objective; mark a break only if there is a clear change.
-3. Consider narrative flow: Has the prior beat concluded? Is this starting a new beat?
-4. If evidence is ambiguous, treat it as a continuation (status false).
+1. Check if at least {{minimum_scene_length}} messages have passed
+2. Check for explicit separators or time/scene headers and mark that message as a break if present
+3. Otherwise compare setting, time, cast, and objective across messages; mark a break only if there is a clear change
+4. Consider narrative flow: Has the prior beat concluded? Is the marked message starting a new beat?
+5. If evidence is ambiguous, treat it as a continuation (sceneBreakAt: false)
+6. Return the FIRST message number that qualifies as a scene break
 
 CRITICAL: Base your decision ONLY on the provided messages below.
-- Never invent details, context, or relationships not explicitly stated in the text.
-- Do not assume narrative patterns based on genre expectations.
-- If a detail is not mentioned in the messages, it does not exist for this decision.
+- Never invent details, context, or relationships not explicitly stated in the text
+- Do not assume narrative patterns based on genre expectations
+- If a detail is not mentioned in the messages, it does not exist for this decision
 
-Previous messages (oldest to newest):
-{{previous_message}}
+Messages to analyze (with SillyTavern message numbers):
+{{messages}}
 
-Current message:
-{{current_message}}
-
-REMINDER: Output must be valid JSON starting with { character.`;
+REMINDER:
+- Output must be valid JSON starting with { character
+- Return the message NUMBER (as shown above) or false
+- Return ONLY the FIRST qualifying scene break`;
 
 
 export const running_scene_recap_prompt = `You are a structured data extraction system for roleplay memory management.

@@ -17,7 +17,7 @@ import {
   get_current_connection_profile } from
 './index.js';
 
-const DEFAULT_RECENT_MESSAGE_COUNT = 3;
+const DEFAULT_MINIMUM_SCENE_LENGTH = 4;
 
 function shouldCheckMessage(
 message ,
@@ -94,38 +94,6 @@ function messageMatchesType(message, checkWhich ) {
   return true; // 'both' or any other value defaults to all non-system messages
 }
 
-// Helper: Collect matching messages before the current index for prompt context
-function collectContextMessages(chat , index , checkWhich , count ) {
-  const contextMessages = [];
-  if (!chat || chat.length === 0) {
-    return contextMessages;
-  }
-
-  const limit = count > 0 ? count : Number.POSITIVE_INFINITY;
-
-  for (let i = index - 1; i >= 0; i--) {
-    const message = chat[i];
-    // Stop at the most recent VISIBLE scene break and exclude it from context
-    try {
-      const hasSceneBreak = get_data(message, 'scene_break');
-      const isVisible = get_data(message, 'scene_break_visible');
-      if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
-        break;
-      }
-    } catch {/* ignore lookup errors */}
-    if (!messageMatchesType(message, checkWhich)) {
-      continue;
-    }
-
-    contextMessages.push(message);
-    if (contextMessages.length >= limit) {
-      break;
-    }
-  }
-
-  return contextMessages.reverse();
-}
-
 // Helper: Hard rule — always skip the immediate message after any scene break
 // This is non-consuming: if the previous message has a scene break marker, the current is skipped.
 function isCooldownSkip(chat , index , _consume  = false) {
@@ -141,99 +109,129 @@ function isCooldownSkip(chat , index , _consume  = false) {
   }
 }
 
-// Helper: Format messages for the detection prompt
-function formatContextMessagesForPrompt(messages ) {
-  if (!messages || messages.length === 0) {
-    return '(No previous messages available for comparison)';
+// Helper: Format messages for range-based detection (all messages with their ST indices)
+function formatMessagesForRangeDetection(chat, startIndex, endIndex, checkWhich) {
+  if (!chat || chat.length === 0) {
+    return { formatted: '(No messages available)', filteredIndices: [] };
   }
 
-  return messages.map((msg, idx) => {
-    const speaker = msg.is_user ? '[USER]' : '[CHARACTER]';
-    const numbering = messages.length > 1 ? `${idx + 1}. ` : '';
-    return `${numbering}${speaker} ${msg.mes}`;
-  }).join('\n\n');
+  const formattedMessages = [];
+  const filteredIndices = [];
+
+  for (let i = startIndex; i <= endIndex; i++) {
+    const message = chat[i];
+    if (!message) {continue;}
+
+    if (messageMatchesType(message, checkWhich)) {
+      const speaker = message.is_user ? '[USER]' : '[CHARACTER]';
+      formattedMessages.push(`Message #${i} ${speaker}: ${message.mes}`);
+      filteredIndices.push(i);
+    }
+  }
+
+  if (formattedMessages.length === 0) {
+    return { formatted: '(No messages match the selected type filter)', filteredIndices: [] };
+  }
+
+  return {
+    formatted: formattedMessages.join('\n\n'),
+    filteredIndices
+  };
 }
 
-// Helper: Parse scene break detection response
-async function parseSceneBreakResponse(response, messageIndex) {
+// Helper: Parse scene break detection response (extracts message number or false)
+async function parseSceneBreakResponse(response, _startIndex, _endIndex, _filteredIndices) {
   // Try to parse as JSON first using centralized helper
   try {
     const { extractJsonFromResponse } = await import('./utils.js');
     const parsed = extractJsonFromResponse(response, {
-      requiredFields: ['status'],
+      requiredFields: ['sceneBreakAt'],
       context: 'scene break detection'
     });
-    const isSceneBreak = parsed.status === true || parsed.status === 'true';
+    const sceneBreakAt = parsed.sceneBreakAt === false || parsed.sceneBreakAt === 'false' || parsed.sceneBreakAt === null
+      ? false
+      : Number(parsed.sceneBreakAt);
     const rationale = parsed.rationale || '';
-    debug('Parsed JSON for message', messageIndex, '- Status:', isSceneBreak, '- Rationale:', rationale);
-    return { isSceneBreak, rationale };
+    debug('Parsed JSON - sceneBreakAt:', sceneBreakAt, '- Rationale:', rationale);
+    return { sceneBreakAt, rationale };
   } catch (jsonErr) {
     // JSON parsing failed, try structured fallback patterns
-    debug('JSON parsing failed for message', messageIndex, ', using fallback:', jsonErr.message);
+    debug('JSON parsing failed, using fallback:', jsonErr.message);
 
     const lower = response.toLowerCase();
     const original = response.trim();
-    let isSceneBreak = false;
-    let rationale = '';
 
-    // Pattern 1: Key-value extraction (status: true/false or status = true/false)
-    const statusMatch = lower.match(/status\s*[:=]\s*(true|false)/i);
-    if (statusMatch) {
-      isSceneBreak = statusMatch[1] === 'true';
-      // Try to extract rationale
+    // Pattern 1: Key-value extraction (sceneBreakAt: X or sceneBreakAt = X)
+    const keyValueMatch = original.match(/sceneBreakAt\s*[:=]\s*(?:false|(\d+))/i);
+    if (keyValueMatch) {
+      const sceneBreakAt = keyValueMatch[1] ? Number(keyValueMatch[1]) : false;
       const rationaleMatch = original.match(/rationale\s*[:=]\s*["']?([^"'\n]+)["']?/i);
-      rationale = rationaleMatch ? rationaleMatch[1].trim() : 'Extracted from key-value pattern';
-      debug(`Fallback pattern 1 matched for message ${messageIndex}: status=${isSceneBreak}, rationale="${rationale}"`);
-      return { isSceneBreak, rationale };
+      const rationale = rationaleMatch ? rationaleMatch[1].trim() : 'Extracted from key-value pattern';
+      debug(`Fallback pattern 1 matched: sceneBreakAt=${sceneBreakAt}, rationale="${rationale}"`);
+      return { sceneBreakAt, rationale };
     }
 
-    // Pattern 2: Explicit declarations (IS/is NOT a scene break)
-    const explicitMatch = lower.match(/\b(is|is\s+not)\s+(a\s+)?scene\s+break\b/);
-    if (explicitMatch) {
-      isSceneBreak = !explicitMatch[0].includes('not');
-      rationale = 'Explicit scene break declaration found';
-      debug(`Fallback pattern 2 matched for message ${messageIndex}: status=${isSceneBreak}`);
-      return { isSceneBreak, rationale };
+    // Pattern 2: Message number patterns (message #5, message 5, #5)
+    const messageNumMatch = original.match(/\b(?:message\s*#?|#)(\d+)\b/i);
+    if (messageNumMatch) {
+      const sceneBreakAt = Number(messageNumMatch[1]);
+      const rationale = 'Extracted message number from response';
+      debug(`Fallback pattern 2 matched: message #${sceneBreakAt}`);
+      return { sceneBreakAt, rationale };
     }
 
-    // Pattern 3: YES/NO responses at start
-    const yesNoMatch = lower.match(/^(yes|no)\b/);
-    if (yesNoMatch) {
-      isSceneBreak = yesNoMatch[1] === 'yes';
-      // Extract rationale from rest of response
-      rationale = original.replace(/^(yes|no)[,:\s]*/i, '').trim() || 'Based on yes/no response';
-      debug(`Fallback pattern 3 matched for message ${messageIndex}: status=${isSceneBreak}, rationale="${rationale}"`);
-      return { isSceneBreak, rationale };
+    // Pattern 3: Explicit false/no break statements
+    if (lower.includes('false') || lower.includes('no break') || lower.includes('no scene break')) {
+      debug('Fallback pattern 3 matched: explicit false');
+      return { sceneBreakAt: false, rationale: 'No scene break found' };
     }
 
-    // Pattern 4: Explicit "SCENE BREAK:" prefix (test-specific)
-    if (lower.startsWith('scene break')) {
-      isSceneBreak = true;
-      rationale = original.split(':').slice(1).join(':').trim() || 'Scene break prefix found';
-      debug(`Fallback pattern 4 matched for message ${messageIndex}`);
-      return { isSceneBreak, rationale };
+    // Pattern 4: Just a number (if response is mostly just a number)
+    const justNumberMatch = original.match(/^\s*(\d+)\s*$/);
+    if (justNumberMatch) {
+      const sceneBreakAt = Number(justNumberMatch[1]);
+      debug(`Fallback pattern 4 matched: just number ${sceneBreakAt}`);
+      return { sceneBreakAt, rationale: 'Message number extracted from simple response' };
     }
 
-    // Pattern 5: Look for scene break indicators (conservative - require multiple)
-    const indicators = [
-      /\b(new|different)\s+(location|setting|place)\b/i,
-      /\b(time|temporal)\s+(skip|jump|shift)\b/i,
-      /\b(chapter|scene)\s+\d+\b/i,
-      /\b(later|next\s+day|next\s+morning|hours\s+later)\b/i,
-      /\b(major\s+shift|transition|new\s+objective)\b/i
-    ];
-    const indicatorCount = indicators.filter(pattern => pattern.test(lower)).length;
-    if (indicatorCount >= 2) {
-      isSceneBreak = true;
-      rationale = `Multiple scene break indicators detected (${indicatorCount})`;
-      debug(`Fallback pattern 5 matched for message ${messageIndex}: ${indicatorCount} indicators`);
-      return { isSceneBreak, rationale };
-    }
-
-    // Default: conservative fallback (assume continuation if uncertain)
-    debug(`No fallback patterns matched for message ${messageIndex}, defaulting to false`);
-    return { isSceneBreak: false, rationale: 'No clear scene break indicators found in fallback analysis' };
+    // Default: conservative fallback (assume no break if uncertain)
+    debug('No fallback patterns matched, defaulting to false');
+    return { sceneBreakAt: false, rationale: 'Could not parse scene break information from response' };
   }
+}
+
+// Helper: Validate scene break response
+function validateSceneBreakResponse(sceneBreakAt, startIndex, endIndex, filteredIndices, minimumSceneLength) {
+  // If false, that's valid
+  if (sceneBreakAt === false) {
+    return { valid: true };
+  }
+
+  // Must be a number
+  if (typeof sceneBreakAt !== 'number' || Number.isNaN(sceneBreakAt)) {
+    return { valid: false, reason: `not a valid number: ${sceneBreakAt}` };
+  }
+
+  // Must be in the range we sent
+  if (sceneBreakAt < startIndex || sceneBreakAt > endIndex) {
+    return { valid: false, reason: `out of range (${startIndex}-${endIndex}): ${sceneBreakAt}` };
+  }
+
+  // Must be one of the filtered message indices we sent to LLM
+  if (!filteredIndices.includes(sceneBreakAt)) {
+    return { valid: false, reason: `not in filtered message set: ${sceneBreakAt}` };
+  }
+
+  // Must have at least minimumSceneLength filtered messages before it
+  const filteredBeforeBreak = filteredIndices.filter(i => i < sceneBreakAt).length;
+  if (filteredBeforeBreak < minimumSceneLength) {
+    return {
+      valid: false,
+      reason: `below minimum scene length (${filteredBeforeBreak} < ${minimumSceneLength}): ${sceneBreakAt}`
+    };
+  }
+
+  return { valid: true };
 }
 
 // Helper: Switch to detection profile/preset using PresetManager API
@@ -295,36 +293,14 @@ async function restoreSettings(ctx, saved) {
   }
 }
 
-// Helper: Build detection prompt
-function buildDetectionPrompt(ctx, promptTemplate, message, contextMessages, prefill) {
-  const previousText = formatContextMessagesForPrompt(contextMessages);
-
-  let prompt = promptTemplate;
-  if (ctx.substituteParamsExtended) {
-    prompt = ctx.substituteParamsExtended(prompt, {
-      previous_messages: previousText,
-      previous_message: previousText,
-      current_message: message.mes,
-      message: message.mes,
-      prefill
-    }) || prompt;
-  }
-
-  prompt = prompt.replace(/\{\{previous_messages\}\}/g, previousText);
-  prompt = prompt.replace(/\{\{previous_message\}\}/g, previousText);
-  prompt = prompt.replace(/\{\{current_message\}\}/g, message.mes);
-  prompt = prompt.replace(/\{\{message\}\}/g, message.mes);
-  return { prompt, prefill };
-}
-
 async function detectSceneBreak(
-message ,
-messageIndex )
+startIndex ,
+endIndex )
 {
   const ctx = getContext();
 
   try {
-    debug('Checking message', messageIndex, 'for scene break');
+    debug('Checking message range', startIndex, 'to', endIndex, 'for scene break');
 
     // Get settings
     const promptTemplate = get_settings('auto_scene_break_prompt');
@@ -333,55 +309,51 @@ messageIndex )
     const preset = get_settings('auto_scene_break_completion_preset');
     const includePresetPrompts = get_settings('auto_scene_break_include_preset_prompts') ?? false;
     const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
-    const contextCountRaw = Number(get_settings('auto_scene_break_recent_message_count'));
-    const contextCount = Number.isFinite(contextCountRaw) ? Math.max(0, contextCountRaw) : DEFAULT_RECENT_MESSAGE_COUNT;
+    const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
 
     const chat = ctx.chat || [];
-    const contextMessages = collectContextMessages(chat, messageIndex, checkWhich, contextCount);
 
-    // Guard: Skip detection if no context messages available
-    // This happens when the message immediately follows a scene break or is at the start of chat
-    if (contextMessages.length === 0) {
-      debug('Skipping scene break detection for message', messageIndex, '- no previous context available');
-      set_data(message, 'auto_scene_break_checked', true);
-      saveChatDebounced();
+    // Format all messages in range with their ST indices
+    const { formatted, filteredIndices } = formatMessagesForRangeDetection(chat, startIndex, endIndex, checkWhich);
+
+    // Guard: Need at least (minimum + 1) filtered messages to analyze
+    if (filteredIndices.length < minimumSceneLength + 1) {
+      debug('Skipping scene break detection - not enough filtered messages:', filteredIndices.length, '< minimum + 1:', minimumSceneLength + 1);
       return {
-        isSceneBreak: false,
-        rationale: 'Skipped - no previous messages available for comparison'
+        sceneBreakAt: false,
+        rationale: `Not enough messages (${filteredIndices.length} < ${minimumSceneLength + 1} required)`,
+        filteredIndices
       };
     }
 
-    // Calculate actual range based on collected context messages
-    // This accounts for scene breaks that limit the context window
-    let actualStartIdx = messageIndex;
-    if (contextMessages.length > 0) {
-      // Find the index of the first (oldest) context message in the chat array
-      const firstContextMsg = contextMessages[0];
-      actualStartIdx = chat.indexOf(firstContextMsg);
-      if (actualStartIdx === -1) {
-        // Fallback if not found (shouldn't happen)
-        actualStartIdx = Math.max(0, messageIndex - contextCount);
-      }
+    // Build prompt with macro replacements
+    let prompt = promptTemplate;
+    if (ctx.substituteParamsExtended) {
+      prompt = ctx.substituteParamsExtended(prompt, {
+        messages: formatted,
+        minimum_scene_length: String(minimumSceneLength),
+        prefill
+      }) || prompt;
     }
 
-    // Build prompt
-    const { prompt, prefill: detectionPrefill } = buildDetectionPrompt(ctx, promptTemplate, message, contextMessages, prefill);
+    prompt = prompt.replace(/\{\{messages\}\}/g, formatted);
+    prompt = prompt.replace(/\{\{minimum_scene_length\}\}/g, String(minimumSceneLength));
 
     // Switch to detection profile/preset and save current
     const saved = await switchToDetectionSettings(ctx, profile, preset);
 
     ctx.deactivateSendButtons();
 
-    // Set operation context for ST_METADATA with actual range
+    // Set operation context for ST_METADATA with range
     const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
-    setOperationSuffix(`-${actualStartIdx}-${messageIndex}`);
+    setOperationSuffix(`-${startIndex}-${endIndex}`);
 
     let response;
     try {
       // Call LLM using the configured API
-      debug('Sending prompt to AI for message', messageIndex);
-      response = await recap_text(prompt, detectionPrefill, includePresetPrompts, preset);
-      debug('AI raw response for message', messageIndex, ':', response);
+      debug('Sending range detection prompt to AI for range', startIndex, 'to', endIndex);
+      response = await recap_text(prompt, prefill, includePresetPrompts, preset);
+      debug('AI raw response for range', startIndex, 'to', endIndex, ':', response);
     } finally {
       clearOperationSuffix();
     }
@@ -390,21 +362,21 @@ messageIndex )
     ctx.activateSendButtons();
     await restoreSettings(ctx, saved);
 
-    // Parse response
-    const { isSceneBreak, rationale } = await parseSceneBreakResponse(response, messageIndex);
+    // Parse response for message number or false
+    const { sceneBreakAt, rationale } = await parseSceneBreakResponse(response, startIndex, endIndex, filteredIndices);
 
     // Log the decision
-    debug(isSceneBreak ? '✓ SCENE BREAK DETECTED' : '✗ No scene break', 'for message', messageIndex);
+    if (sceneBreakAt === false) {
+      debug('✗ No scene break found in range', startIndex, 'to', endIndex);
+    } else {
+      debug('✓ SCENE BREAK DETECTED at message', sceneBreakAt);
+    }
     debug('  Rationale:', rationale);
 
-    // Mark message as checked
-    set_data(message, 'auto_scene_break_checked', true);
-    saveChatDebounced();
-
-    return { isSceneBreak, rationale };
+    return { sceneBreakAt, rationale, filteredIndices };
 
   } catch (err) {
-    error('ERROR in detectSceneBreak for message', messageIndex);
+    error('ERROR in detectSceneBreak for range', startIndex, 'to', endIndex);
     error('Error message:', err?.message || String(err));
     throw err;
   }
@@ -442,42 +414,52 @@ function findAndMarkExistingSceneBreaks(chat) {
 
 // Helper: Try to queue scene break detections
 async function tryQueueSceneBreaks(config) {
-  const { chat, start, end, latestIndex, offset, checkWhich } = config;
+  const { chat, start, end, checkWhich } = config;
 
-  log(SUBSYSTEM.SCENE, '[Queue] Queueing scene break detections instead of executing directly');
+  log(SUBSYSTEM.SCENE, '[Queue] Queueing range-based scene break detection');
 
   // Import queue integration
-  const { queueDetectSceneBreaks } = await import('./queueIntegration.js');
+  const { enqueueOperation, OperationType } = await import('./operationQueue.js');
 
-  // Collect indexes to check
-  const indexesToCheck = [];
+  // Get minimum scene length setting
+  const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
+
+  // Count filtered messages in range
+  let filteredCount = 0;
   for (let i = start; i <= end; i++) {
-    if (!shouldCheckMessage(chat[i], i, latestIndex, offset, checkWhich)) {
-      continue;
+    const message = chat[i];
+    if (message && messageMatchesType(message, checkWhich)) {
+      filteredCount++;
     }
-    // Apply cooldown: if previous message has an unconsumed cooldown, skip and consume it
-    if (isCooldownSkip(chat, i, true)) {
-      debug(SUBSYSTEM.SCENE, 'Skipping index', i, 'due to scene-break cooldown');
-      continue;
-    }
-    indexesToCheck.push(i);
   }
 
-  if (indexesToCheck.length === 0) {
-    toast(`No messages to check (all already scanned or filtered out)`, 'info');
+  // Check if we have enough messages (minimum + 1)
+  if (filteredCount < minimumSceneLength + 1) {
+    toast(`Not enough messages for scene break detection (${filteredCount} < ${minimumSceneLength + 1} required)`, 'info');
     return { queued: true, count: 0 };
   }
 
-  // Queue all scene break detections
-  const operationIds = await queueDetectSceneBreaks(indexesToCheck);
+  // Queue single range-based detection operation
+  const operationId = await enqueueOperation(
+    OperationType.DETECT_SCENE_BREAK,
+    { startIndex: start, endIndex: end },
+    {
+      priority: 5, // Normal priority for scene break detection
+      metadata: {
+        filtered_count: filteredCount,
+        minimum_required: minimumSceneLength + 1,
+        triggered_by: 'auto_scene_break_detection'
+      }
+    }
+  );
 
-  if (operationIds && operationIds.length > 0) {
-    log(SUBSYSTEM.SCENE, `[Queue] Queued ${operationIds.length} scene break detection operations`);
-    toast(`Queued ${operationIds.length} scene break detection(s)`, 'info');
-    return { queued: true, count: operationIds.length };
+  if (operationId) {
+    log(SUBSYSTEM.SCENE, `[Queue] Queued range-based scene break detection for ${start}-${end} (${filteredCount} filtered messages)`);
+    toast(`Queued scene break detection for range ${start}-${end}`, 'info');
+    return { queued: true, count: 1 };
   }
 
-  error(SUBSYSTEM.SCENE, '[Queue] Failed to enqueue scene break detections');
+  error(SUBSYSTEM.SCENE, '[Queue] Failed to enqueue scene break detection');
   return null;
 }
 
@@ -528,8 +510,6 @@ export async function manualSceneBreakDetection() {
   await processAutoSceneBreakDetection();
 }
 
-// Complex range calculation algorithm with multiple constraints - inherent complexity
-// eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Range calculation with multiple constraints inherently complex
 export async function processNewMessageForSceneBreak(messageIndex ) {
   const enabled = get_settings('auto_scene_break_on_new_message');
   if (!enabled) {
@@ -551,7 +531,7 @@ export async function processNewMessageForSceneBreak(messageIndex ) {
   }
 
   const endIndexRaw = messageIndex - offset;
-  let endIndex = Math.min(endIndexRaw, chat.length - 1);
+  const endIndex = Math.min(endIndexRaw, chat.length - 1);
 
   if (endIndex < 0) {
     debug(SUBSYSTEM.SCENE, 'No messages to check based on offset - messageIndex:', messageIndex, 'offset:', offset);
@@ -559,62 +539,26 @@ export async function processNewMessageForSceneBreak(messageIndex ) {
   }
 
   const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
-  const recentCountRaw = Number(get_settings('auto_scene_break_recent_message_count'));
-  const recentCount = Number.isFinite(recentCountRaw) ? Math.max(0, recentCountRaw) : DEFAULT_RECENT_MESSAGE_COUNT;
 
   const forceFullRescan = typeof window !== 'undefined' && window.autoRecapForceSceneBreakRescan === true;
 
   let rangeStart = 0;
-  if (!forceFullRescan && recentCount > 0) {
-    let matchedCount = 0;
-    rangeStart = endIndex;
+  if (!forceFullRescan) {
+    // Find the latest visible scene break
+    let latestVisibleSceneBreakIndex = -1;
     for (let i = endIndex; i >= 0; i--) {
-      if (messageMatchesType(chat[i], checkWhich)) {
-        matchedCount++;
-        rangeStart = i;
-        if (matchedCount >= recentCount) {
+      try {
+        const hasSceneBreak = get_data(chat[i], 'scene_break');
+        const isVisible = get_data(chat[i], 'scene_break_visible');
+        if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
+          latestVisibleSceneBreakIndex = i;
           break;
         }
-      }
-
-      if (i === 0) {
-        rangeStart = 0;
-      }
+      } catch {/* ignore lookup errors */}
     }
 
-    if (matchedCount < recentCount) {
-      rangeStart = 0;
-    }
-  }
-
-  const latestIndex = chat.length - 1;
-
-  if (!forceFullRescan) {
-    // Determine the newest message that needs checking within the window
-    const windowStart = rangeStart;
-    let targetIndex = -1;
-    for (let i = endIndex; i >= windowStart; i--) {
-      const candidate = chat[i];
-      if (shouldCheckMessage(candidate, i, latestIndex, offset, checkWhich) && !isCooldownSkip(chat, i, false)) {
-        targetIndex = i;
-        break;
-      }
-    }
-
-    if (targetIndex === -1) {
-      debug(
-        SUBSYSTEM.SCENE,
-        'No eligible messages to check after window evaluation (end:',
-        endIndex,
-        ', window start:',
-        windowStart,
-        ')'
-      );
-      return;
-    }
-
-    rangeStart = targetIndex;
-    endIndex = targetIndex;
+    // Start scanning from the message after the latest scene break
+    rangeStart = latestVisibleSceneBreakIndex + 1;
   }
 
   debug(
@@ -625,8 +569,8 @@ export async function processNewMessageForSceneBreak(messageIndex ) {
     rangeStart,
     'to',
     endIndex,
-    '(recent count:',
-    forceFullRescan ? 'full-rescan' : recentCount,
+    '(mode:',
+    forceFullRescan ? 'full-rescan' : 'to-last-scene-break',
     ', type:',
     checkWhich,
     ')'
@@ -743,4 +687,6 @@ export function clearAllCheckedFlags() {
 export {
   shouldCheckMessage,
   detectSceneBreak,
-  isCooldownSkip };
+  isCooldownSkip,
+  validateSceneBreakResponse,
+  messageMatchesType };

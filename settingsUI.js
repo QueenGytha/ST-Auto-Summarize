@@ -39,7 +39,9 @@ import {
   UI_UPDATE_DELAY_MS,
   MAX_DISPLAY_PERCENTAGE,
   MAX_RECAP_ATTEMPTS,
-  DEFAULT_POLLING_INTERVAL
+  DEFAULT_POLLING_INTERVAL,
+  DEFAULT_MINIMUM_SCENE_LENGTH,
+  MAX_SCENE_LENGTH_SETTING
 } from './constants.js';
 
 // UI initialization
@@ -283,7 +285,25 @@ Available Macros:
   bind_setting(selectorsExtension.autoScene.onMessage, 'auto_scene_break_on_new_message', 'boolean');
   bind_setting(selectorsExtension.autoScene.generateRecap, 'auto_scene_break_generate_recap', 'boolean');
   bind_setting(selectorsExtension.autoScene.checkWhich, 'auto_scene_break_check_which_messages', 'text');
-  bind_setting(selectorsExtension.autoScene.recentCount, 'auto_scene_break_recent_message_count', 'number');
+
+  // Minimum scene length with live display update
+  const $autoSceneMinLength = $(selectorsExtension.autoScene.minLength);
+  const $autoSceneMinLengthDisplay = $(selectorsExtension.autoScene.minLengthDisplay);
+  if (get_settings('auto_scene_break_minimum_scene_length') === undefined) {
+    set_settings('auto_scene_break_minimum_scene_length', DEFAULT_MINIMUM_SCENE_LENGTH);
+  }
+  $autoSceneMinLength.val(get_settings('auto_scene_break_minimum_scene_length') ?? DEFAULT_MINIMUM_SCENE_LENGTH);
+  $autoSceneMinLengthDisplay.text($autoSceneMinLength.val());
+  $autoSceneMinLength.on('input change', function () {
+    let val = Number($(this).val());
+    if (Number.isNaN(val)) {val = DEFAULT_MINIMUM_SCENE_LENGTH;}
+    val = Math.max(1, Math.min(MAX_SCENE_LENGTH_SETTING, val));
+    set_settings('auto_scene_break_minimum_scene_length', val);
+    save_profile();
+    $autoSceneMinLength.val(val);
+    $autoSceneMinLengthDisplay.text(val);
+  });
+
   bind_setting(selectorsExtension.autoScene.prompt, 'auto_scene_break_prompt', 'text');
   bind_setting(selectorsExtension.autoScene.prefill, 'auto_scene_break_prefill', 'text');
   bind_setting(selectorsExtension.autoScene.connectionProfile, 'auto_scene_break_connection_profile', 'text');
