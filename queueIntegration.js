@@ -13,7 +13,11 @@ import {
   debug,
   SUBSYSTEM } from
 './index.js';
-import { MAX_RECAP_ATTEMPTS, HIGH_PRIORITY_OFFSET, OPERATION_ID_LENGTH, MEDIUM_PRIORITY_POSITION } from './constants.js';
+import { MAX_RECAP_ATTEMPTS, HIGH_PRIORITY_OFFSET, OPERATION_ID_LENGTH } from './constants.js';
+
+// Priority for running recap operations - must run AFTER all lorebook operations
+// HIGHER numbers run FIRST, so running recap needs LOWER priority than lorebooks (lookup=11, resolve=12, create=14)
+const RUNNING_RECAP_PRIORITY = 10;
 
 export function queueValidateRecap(recap , type , options  = {}) {
   // Capture settings at enqueue time for tooltip display
@@ -82,7 +86,7 @@ export function queueGenerateRunningRecap(options  = {}) {
     OperationType.GENERATE_RUNNING_RECAP,
     {},
     {
-      priority: options.priority ?? MEDIUM_PRIORITY_POSITION, // Medium priority - runs after lorebook operations
+      priority: options.priority ?? RUNNING_RECAP_PRIORITY,
       dependencies: options.dependencies ?? [],
       metadata: {
         hasPrefill: false, // Running recap operations don't use prefills
@@ -98,7 +102,7 @@ export function queueCombineSceneWithRunning(index , options  = {}) {
     OperationType.COMBINE_SCENE_WITH_RUNNING,
     { index },
     {
-      priority: options.priority ?? MEDIUM_PRIORITY_POSITION, // Medium priority - runs after lorebook operations
+      priority: options.priority ?? RUNNING_RECAP_PRIORITY,
       dependencies: options.dependencies ?? [],
       metadata: {
         scene_index: index,

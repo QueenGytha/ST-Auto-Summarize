@@ -63,6 +63,7 @@ import {
   selectorsExtension } from
 './index.js';
 import { saveMetadata } from '../../../../script.js';
+import { queueCombineSceneWithRunning } from './queueIntegration.js';
 
 function get_message_div(index) {
   return $(`div[mesid="${index}"]`);
@@ -160,7 +161,7 @@ export function registerAllOperationHandlers() {
       $recapBox.val("Generating scene recap...");
     }
 
-    const recap = await generateSceneRecap({
+    const result = await generateSceneRecap({
       index,
       get_message_div,
       getContext,
@@ -178,7 +179,16 @@ export function registerAllOperationHandlers() {
 
     // Scene naming is now embedded in the scene recap output (scene_name field)
 
-    return { recap };
+    // Queue running recap combine as a separate operation, depending on lorebook operations
+    if (get_settings('running_scene_recap_auto_generate')) {
+      debug(SUBSYSTEM.QUEUE, `Queueing COMBINE_SCENE_WITH_RUNNING for scene at index ${index} (depends on ${result.lorebookOpIds.length} lorebook operations)`);
+      await queueCombineSceneWithRunning(index, {
+        dependencies: result.lorebookOpIds,
+        queueVersion: operation.queueVersion
+      });
+    }
+
+    return { recap: result.recap };
   });
 
   // Standalone scene name generation operation removed.

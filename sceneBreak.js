@@ -13,11 +13,10 @@ import {
   extension_settings,
   createSceneBreakLorebookIcon,
   selectorsExtension,
-  selectorsSillyTavern } from
+  selectorsSillyTavern,
+  convertLiteralNewlinesToActual,
+  convertActualNewlinesToLiteral } from
 './index.js';
-import {
-  auto_generate_running_recap } from
-'./runningSceneRecap.js';
 import {
   queueCombineSceneWithRunning,
   queueProcessLorebookEntry } from
@@ -347,9 +346,8 @@ saveChatDebounced )
 
   // Initialize versioned recaps
   const { versions, currentIdx } = initializeSceneRecapVersions(message, get_data, set_data, saveChatDebounced);
-
   const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
-  const sceneRecap = versions[currentIdx] || '';
+  const sceneRecap = convertLiteralNewlinesToActual(versions[currentIdx] || '');
 
   let isCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
   if (isCollapsed === undefined) {
@@ -410,7 +408,7 @@ saveChatDebounced )
     // Update the current version in the versions array
     const updatedVersions = getSceneRecapVersions(message, get_data).slice();
     const idx = getCurrentSceneRecapIndex(message, get_data);
-    const newRecap = $(this).val();
+    const newRecap = convertActualNewlinesToLiteral($(this).val());
     updatedVersions[idx] = newRecap;
     setSceneRecapVersions(message, set_data, updatedVersions);
     // Also update the legacy recap field for compatibility
@@ -791,13 +789,15 @@ async function saveSceneRecap(config) {
   } catch {/* non-JSON recap or parse failed; ignore */}
 
   // Extract and queue lorebook entries
+  let lorebookOpIds = [];
   if (recap) {
     debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] Calling extractAndQueueLorebookEntries for message ${messageIndex}...`);
-    await extractAndQueueLorebookEntries(recap, messageIndex);
+    lorebookOpIds = await extractAndQueueLorebookEntries(recap, messageIndex);
     debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] extractAndQueueLorebookEntries completed for message ${messageIndex}`);
   } else {
     debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] Skipping lorebook extraction - no recap available`);
   }
+  return lorebookOpIds;
 }
 
 // Helper: Extract lorebooks from recap JSON and queue each as individual operation
@@ -838,8 +838,9 @@ messageIndex )
 
       debug(SUBSYSTEM.SCENE, `After deduplication: ${uniqueEntries.length} unique entries (removed ${parsed.lorebooks.length - uniqueEntries.length} duplicates)`);
 
-      // Queue each unique entry individually
+      // Queue each unique entry individually and collect operation IDs
       debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Queueing ${uniqueEntries.length} unique entries...`);
+      const lorebookOpIds = [];
       for (const entry of uniqueEntries) {
         // Sequential execution required: entries must be queued in order
         debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Calling queueProcessLorebookEntry for: ${entry.name || entry.comment}`);
@@ -847,11 +848,13 @@ messageIndex )
         const opId = await queueProcessLorebookEntry(entry, messageIndex, recapHash);
         if (opId) {
           debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✓ Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);
+          lorebookOpIds.push(opId);
         } else {
           debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✗ Failed to queue lorebook entry: ${entry.name || entry.comment} (returned null/undefined)`);
         }
       }
       debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Finished queueing all entries`);
+      return lorebookOpIds;
     } else {
       debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] No lorebooks array found in scene recap at index ${messageIndex}`);
     }
@@ -859,6 +862,7 @@ messageIndex )
     // Not JSON or parsing failed - skip lorebook processing
     debug(SUBSYSTEM.SCENE, `Scene recap is not JSON, skipping lorebook extraction: ${err.message}`);
   }
+  return [];
 }
 
 
@@ -914,8 +918,8 @@ export async function generateSceneRecap(config) {
     throw new Error('Operation cancelled by user');
   }
 
-  // Save and render
-  await saveSceneRecap({ message, recap, get_data, set_data, saveChatDebounced, messageIndex: index });
+  // Save and render (returns lorebook operation IDs)
+  const lorebookOpIds = await saveSceneRecap({ message, recap, get_data, set_data, saveChatDebounced, messageIndex: index });
 
   // Mark all messages in this scene as checked to prevent auto-detection from splitting the scene
   const markedCount = setCheckedFlagsInRange(startIdx, endIdx);
@@ -923,8 +927,7 @@ export async function generateSceneRecap(config) {
     debug(SUBSYSTEM.SCENE, `Marked ${markedCount} messages in scene (${startIdx}-${endIdx}) as checked after manual recap generation`);
   }
 
-  await auto_generate_running_recap(index);
   renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
 
-  return recap;
+  return { recap, lorebookOpIds };
 }

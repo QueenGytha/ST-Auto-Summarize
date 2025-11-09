@@ -173,6 +173,18 @@ function unescape_string(text ) {
     }
   });
 }
+
+function convertLiteralNewlinesToActual(text ) {
+  // Convert literal \n strings to actual newline characters for display
+  if (!text) {return text;}
+  return text.replace(/\\n/g, '\n');
+}
+
+function convertActualNewlinesToLiteral(text ) {
+  // Convert actual newline characters to literal \n strings for storage
+  if (!text) {return text;}
+  return text.replace(/\n/g, '\\n');
+}
 function check_st_version() {
   // Check to see if the current version of ST is acceptable.
   // Currently checks for the "symbols" property of the global context,
@@ -255,6 +267,8 @@ export {
   clean_string_for_title,
   escape_string,
   unescape_string,
+  convertLiteralNewlinesToActual,
+  convertActualNewlinesToLiteral,
   check_st_version,
   display_injection_preview,
   display_text_modal,
