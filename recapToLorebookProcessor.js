@@ -199,6 +199,105 @@ function buildEntryName(entry ) {
   return baseName;
 }
 
+const POSSESSIVE_SUFFIX_LENGTH = 2;
+const MIN_WORD_LENGTH_FOR_PLURAL = 3;
+
+function singularize(token) {
+  try {
+    if (!token) {return token;}
+    // very light singularization for simple possessives/plurals
+    if (token.endsWith("'s")) {return token.slice(0, -POSSESSIVE_SUFFIX_LENGTH);}
+    if (token.endsWith("'s")) {return token.slice(0, -POSSESSIVE_SUFFIX_LENGTH);}
+    if (token.endsWith('s') && token.length > MIN_WORD_LENGTH_FOR_PLURAL) {return token.slice(0, -1);}
+    return token;
+  } catch { return token; }
+}
+
+// Helper: normalize string to lowercase and trim
+const norm = (s) => String(s).toLowerCase().trim();
+// Helper: replace hyphens with spaces
+const dehyphen = (s) => s.replace(/[–—-]+/g, ' ');
+// Helper: remove apostrophes
+const deapos = (s) => s.replace(/['']/g, '');
+
+/* eslint-disable complexity, sonarjs/cognitive-complexity, max-depth -- Complex keyword refinement logic requires deep nesting and branching */
+function refineKeywords(rawKeys = [], rawSecondary = []) {
+  const finalKeysSet = new Set();
+  const finalSecondarySet = new Set(Array.isArray(rawSecondary) ? rawSecondary.map(String).map((s) => s.toLowerCase().trim()).filter(Boolean) : []);
+
+  const LOCATION_GENERIC = new Set(['gate', 'bell', 'tavern', 'inn', 'row', 'grounds', 'alley', 'square', 'market']);
+  const GENERIC_NOUNS = new Set(['city','neighborhood','district','room','building','street','road','lane','place','hall','house','yard','garden','shop','store','pub','bar','market','square','ground','grounds','eyes','eye','hair','horse','man','woman','boy','girl','male','female']);
+  const STOPWORDS = new Set(['the','a','an','of','and','or','to','for','in','on','at','by','from','into','through','over','after','before','between','under','against','during','without','within','along','across','behind','beyond','about','above','below','near','with','is','are','was','were','be','been','being','this','that','these','those','it','its']);
+
+  const maybeAdd = (set, token) => {
+    const t = norm(token);
+    if (!t) {return;}
+    if (STOPWORDS.has(t)) {return;}
+    set.add(t);
+  };
+
+  for (const raw of Array.isArray(rawKeys) ? rawKeys : []) {
+    const base = norm(raw);
+    if (!base) {continue;}
+
+    // Always include the original token
+    maybeAdd(finalKeysSet, base);
+
+    // Normalized variants
+    const noHyphen = dehyphen(base);
+    const noApos = deapos(noHyphen);
+    if (noHyphen !== base) {maybeAdd(finalKeysSet, noHyphen);}
+    if (noApos !== base) {maybeAdd(finalKeysSet, noApos);}
+
+    // Tokenize and analyze multi-word phrases
+    const parts = noHyphen.split(/[^a-z0-9]+/g).filter(Boolean);
+    if (parts.length >= 2) {
+      const specificParts = [];
+      for (const p of parts) {
+        const sing = singularize(p);
+        const candidates = [p, sing].map(norm).filter(Boolean);
+        const isGeneric = candidates.some((c) => STOPWORDS.has(c) || GENERIC_NOUNS.has(c));
+        if (isGeneric) {
+          for (const c of candidates) {
+            if (LOCATION_GENERIC.has(c)) {finalSecondarySet.add(c);}
+          }
+        } else {
+          for (const c of candidates) {specificParts.push(c);}
+        }
+      }
+
+      // If phrase is of the form <specific> + <generic location>, gate generic must co-occur
+      if (specificParts.length >= 1 && [...finalSecondarySet].length > 0) {
+        // Choose the longest specific token as the anchor
+        const anchor = specificParts.sort((a, b) => b.length - a.length)[0];
+        maybeAdd(finalKeysSet, anchor);
+      }
+
+      // Keep punctuation-free phrase when useful (e.g., "exiles gate", "sapphire blue eyes")
+      if (noApos.includes(' ')) {
+        // Avoid phrases that are purely generic words
+        const allGeneric = noApos.split(/\s+/).every((w) => STOPWORDS.has(w) || GENERIC_NOUNS.has(w));
+        if (!allGeneric) {maybeAdd(finalKeysSet, noApos);}
+      }
+
+      // Special: permit adjective+noun trait like "sapphire eyes"
+      if (parts.includes('sapphire') && (parts.includes('eyes') || parts.includes('eye'))) {
+        maybeAdd(finalKeysSet, 'sapphire eyes');
+      }
+    }
+  }
+
+  // Remove standalone broad generics from primary keys if we also required them as secondary
+  for (const g of finalSecondarySet) {
+    if (LOCATION_GENERIC.has(g) || GENERIC_NOUNS.has(g)) {
+      finalKeysSet.delete(g);
+    }
+  }
+
+  return { keys: Array.from(finalKeysSet), secondary: Array.from(finalSecondarySet) };
+}
+/* eslint-enable complexity, sonarjs/cognitive-complexity, max-depth -- End complex keyword refinement logic */
+
 export function normalizeEntryData(entry ) {
   const comment = buildEntryName(entry);
   let content = entry.content || entry.description || '';
@@ -213,12 +312,16 @@ export function normalizeEntryData(entry ) {
     }
   }
 
+  // Accept "keywords" (from prompt JSON), "keys" (internal), or "key" (WI format)
+  const rawKeys = entry.keys || entry.keywords || entry.key || [];
+  const rawSecondary = entry.secondaryKeys || entry.keysecondary || [];
+  const refined = refineKeywords(rawKeys, rawSecondary);
+
   return {
     comment,
     content,
-    // Accept "keywords" (from prompt JSON), "keys" (internal), or "key" (WI format)
-    keys: entry.keys || entry.keywords || entry.key || [],
-    secondaryKeys: entry.secondaryKeys || entry.keysecondary || [],
+    keys: refined.keys,
+    secondaryKeys: refined.secondary,
     constant: entry.constant,
     disable: entry.disable ?? false,
     order: entry.order ?? FULL_COMPLETION_PERCENTAGE,
@@ -697,12 +800,58 @@ entityTypeDefs )
   return { targetType, typeDef };
 }
 
+function stripTypePrefix(name) {
+  if (!name || typeof name !== 'string') {return '';}
+  return name.replace(/^[^-]+-/, '').toLowerCase().trim();
+}
+
+function deterministicMatchIds(normalizedEntry, targetType, registryState) {
+  const ids = [];
+  try {
+    const wantType = (targetType || '').toLowerCase();
+    const entryComment = String(normalizedEntry.comment || '').toLowerCase().trim();
+    const entryStub = stripTypePrefix(entryComment);
+
+    for (const [id, record] of Object.entries(registryState.index || {})) {
+      if (!record) {continue;}
+      const recType = String(record.type || '').toLowerCase();
+      if (wantType && recType && recType !== wantType) {continue;}
+
+      const recComment = String(record.comment || record.name || '').toLowerCase().trim();
+      const recStub = stripTypePrefix(recComment);
+
+      if (recComment && recComment === entryComment) {
+        ids.push(id);
+        continue;
+      }
+      if (recStub && recStub === entryStub) {
+        ids.push(id);
+        continue;
+      }
+
+      const aliases = Array.isArray(record.aliases) ? record.aliases.map((a) => String(a).toLowerCase().trim()) : [];
+      if (entryStub && aliases.includes(entryStub)) {
+        ids.push(id);
+      }
+    }
+  } catch {/* ignore deterministic matching errors */}
+  return ids;
+}
+
 async function buildCandidateListAndResolve(ctx) {
   const { lorebookEntryLookup, registryState, existingEntriesMap, normalizedEntry, targetType, settings } = ctx;
 
   const candidateIdSet  = new Set();
+
+  // 1) Deterministic pre-match on canonical name/aliases to avoid duplicates when the LLM misses an obvious match
+  for (const id of deterministicMatchIds(normalizedEntry, targetType, registryState)) {
+    candidateIdSet.add(String(id));
+  }
+
+  // 2) Include LLM-proposed matches
   for (const id of lorebookEntryLookup.sameEntityIds) {candidateIdSet.add(String(id));}
   for (const id of lorebookEntryLookup.needsFullContextIds) {candidateIdSet.add(String(id));}
+
   const candidateIds = Array.from(candidateIdSet).filter((id) => registryState.index?.[id]);
 
   let lorebookEntryDeduplicate = null;

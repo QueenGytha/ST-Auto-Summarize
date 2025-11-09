@@ -18,13 +18,14 @@ Required format (copy this structure exactly):
       "type": "character",
       "name": "Entity Name",
       "content": "Description",
-      "keywords": ["keyword1", "keyword2"]
+      "keywords": ["keyword1", "keyword2"],
+      "secondaryKeys": ["and-term"]
     }
   ]
 }
 
 Example valid response:
-{"recap": "Adam approached Haven's eastern gate with Senta following. Guards challenged them.", "lorebooks": [{"type": "location", "name": "Haven Eastern Gate", "content": "Main entrance to Haven city, heavily guarded", "keywords": ["haven", "gate", "eastern gate"]}]}
+{"recap": "Adam approached Haven's eastern gate with Senta following. Guards challenged them.", "lorebooks": [{"type": "location", "name": "Haven Eastern Gate", "content": "Main entrance to Haven city, heavily guarded", "keywords": ["haven", "eastern gate"], "secondaryKeys": ["gate"]}]}
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
@@ -56,6 +57,15 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Content uses bullet points and must begin with an Identity bullet: "- Identity: <Type> — <Canonical Name>"
 // - Use specific names for all references; avoid pronouns
 // - Do NOT include timeline narration here; keep that in the recap
+// - Entity inclusion: Only add named or durable entities. Do NOT create entries for one-off/ephemeral groups (e.g., "three thugs") unless canon makes them persistent. If a recurring unnamed group acts as a standing hazard in an area, prefer a faction entry (e.g., "Exile's Gate Predators") over a character entry.
+// - Emission criteria by type:
+//   * character: Introduced by name or clearly recurring with stable traits/relationships; new durable facts emerged.
+//   * location: Named place or clearly defined area with persistent features/ownership; avoid scene-event history.
+//   * item: Named object with capabilities/constraints or transfer of ownership that matters.
+//   * faction: Named group or stable unnamed collective that acts repeatedly in the same role/location.
+//   * quest: Ongoing objective with explicit actor+goal (and optional anchor/deadline) still in play.
+//   * rule: Mechanics or world constraint stated explicitly (how it works, limits, exceptions).
+// - Quest creation rule: When the recap's Pending Threads include a clear, ongoing objective (actor + goal + anchor), add/refresh a "quest" entry with concise "Synopsis" and a "State" bullet tracking current status. Keywords should include the primary actor (e.g., "adam") plus a specific token for the objective (e.g., "homestead contest"); place broad tokens (e.g., "elders", "legal") in secondaryKeys.
 //
 // CONTENT FORMAT (bullet style for lorebooks):
 // - Identity: <Type> — <Canonical Name>
@@ -68,6 +78,13 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Tension/Triggers: <what escalates/defuses>
 // - Style Notes: <voice/tone anchors>
 // IMPORTANT: Use only the bullets that are relevant for the entity and scene. It is correct to omit bullets that do not apply. Do not invent entities (e.g., factions, rules) or filler to match templates.
+//
+// QUALITY CHECK BEFORE RESPONDING:
+// - Recap includes all five sections (headers present); no blow‑by‑blow; quotes escaped.
+// - For each lorebook: Identity bullet present; content is durable facts only.
+// - Location entries contain no transient scene events; those belong in the recap.
+// - Keywords are normalized: possessives/hyphens handled; include punctuation‑free variants; avoid standalone generics.
+// - Broad tokens appear only in secondaryKeys (AND gating) with a specific primary token.
 //
 // OUTPUT JSON SHAPE:
 // {
@@ -92,19 +109,29 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - rule: World mechanics, magic systems, game rules (how it works, limitations, exceptions)
 //
 // KEYWORDS GUIDELINES:
-// - No hard limit: include as many meaningful triggers as needed; all lowercase
-// - Prioritize canonical name, real aliases/nicknames, and distinctive identifiers likely to appear
-// - Use SIMPLE tokens that actually occur in chat (exact match required); avoid padding or redundant variants
-// - Include language variants or transliterations only when they appear in chat or are explicitly stated
-// - Avoid generic terms (e.g., "place", "city", "market", "warrior") and verbs; multi-word phrases only if consistently used together
-// - If a keyword is broad, use secondaryKeys for AND disambiguation
-// - Do NOT output regex patterns
+// - Lowercase. No hard numeric cap — include all genuinely useful triggers.
+// - Prefer SIMPLE tokens that actually appear in chat. Exact substring match is used.
+// - Prioritize canonical names, real aliases/nicknames, and distinctive identifiers.
+// - Avoid generic nouns alone (e.g., "city", "tavern", "neighborhood", "gate", "eyes", "horse").
+// - Multi‑word phrases are OK when commonly used (e.g., "gilded acorn", "white horse").
+// - If a token is broad (e.g., "gate", "bell", "tavern"), pair it with a specific token via secondaryKeys for AND disambiguation.
+// - Normalization rules (apply when choosing keywords):
+//   * Strip apostrophes/hyphens variants by also adding a punctuation‑free variant when applicable.
+//   * For possessives: include the base form (e.g., "exile's gate" → add "exiles gate" and "exile").
+//   * For hyphenated adjectives: include the space variant ("sapphire-blue eyes" → "sapphire blue eyes").
+//   * Do not include bare generic nouns as standalone keywords; if used, place them only in secondaryKeys (AND with a specific token).
+// - Use secondaryKeys to require co‑occurrence with a specific token when a keyword is broad.
+// - Do NOT output regex patterns or anchors.
 //
 // Examples:
-// ✅ GOOD: ["sunblade", "sword"] - simple words that appear in any mention
-// ❌ BAD: ["who stole sunblade", "find the thief"] - won't match unless exact phrase used
-// ✅ GOOD: ["alice"] - will trigger when Alice is mentioned
-// ❌ BAD: ["skilled warrior alice", "alice the brave"] - too specific, won't trigger reliably
+// ✅ GOOD: ["sunblade", "sword"] — simple words that appear in chat
+// ❌ BAD: ["who stole sunblade", "find the thief"] — too specific
+// ✅ GOOD: ["alice"] — will trigger when Alice is mentioned
+// ❌ BAD: ["skilled warrior alice", "alice the brave"] — too specific
+// ✅ GOOD (location): name: "Exile's Gate" → keywords: ["exiles gate", "exile"], secondaryKeys: ["gate"]
+// ✅ GOOD (establishment): name: "Companion's Bell" → keywords: ["companions bell", "companion"], secondaryKeys: ["bell"]
+// ✅ GOOD (trait): name: "Senta" → keywords: ["senta", "companion", "sapphire blue eyes"]
+// ❌ BAD: ["city", "neighborhood", "gate", "eyes", "horse"] — generic alone
 //
 // CONTENT GUIDELINES (bullet style for lorebooks):
 // ⚠️ ONLY THE "content" FIELD IS PRESERVED IN CONTEXT ⚠️
@@ -114,6 +141,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Use specific names for relationships (not pronouns)
 // - Include micro-moments and short quotes when they lock in dynamics
 // - Keep bullets crisp and factual; one fact per bullet
+// - Location entries must describe durable properties (layout, control, features). Do NOT include transient scene events (e.g., "Adam entered through it", "was attacked here yesterday"). Keep history/events in the recap, not in the location entry.
 //
 // EXAMPLES OF GOOD SEPARATION (bullet style):
 //
@@ -150,20 +178,21 @@ Your response MUST start with { and end with }. No code fences, no commentary, n
 
 Required format (copy this structure exactly):
 {
-  "scene_name": "A brief, descriptive scene title (3–60 chars)",
+  "scene_name": "A brief, descriptive scene title",
   "recap": "Your scene recap here (or empty string if nothing happened)",
   "lorebooks": [
     {
       "type": "character",
       "name": "Entity Name",
       "content": "Description",
-      "keywords": ["keyword1", "keyword2"]
+      "keywords": ["keyword1", "keyword2"],
+      "secondaryKeys": ["and-term"]
     }
   ]
 }
 
 Example valid response:
-{"scene_name": "Hidden Chamber Revelation", "recap": "## Current Situation\n- At the waterfall, party stands by a newly found chamber\n\n## Key Developments\n- [discovery] Hidden chamber found behind waterfall; murals show the First War\n\n## Dialogue Highlights\n- Alice: \"Murals mention the First War.\"\n\n## Tone & Style\n- curious; reverent; ancient mystery\n\n## Pending Threads\n- Return with tools to study murals", "lorebooks": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: Secret chamber behind waterfall with First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "chamber", "murals", "waterfall"]}]}
+{"scene_name": "Hidden Chamber Revelation", "recap": "## Current Situation\n- At the waterfall, party stands by a newly found chamber\n\n## Key Developments\n- [discovery] Hidden chamber found behind waterfall; murals show the First War\n\n## Dialogue Highlights\n- Alice: \"Murals mention the First War.\"\n\n## Tone & Style\n- curious; reverent; ancient mystery\n\n## Pending Threads\n- Return with tools to study murals", "lorebooks": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: Secret chamber behind waterfall with First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "murals", "waterfall"], "secondaryKeys": ["chamber"]}]}
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
@@ -180,7 +209,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //                           Optional category tag at start of bullet to aid scanning: [reveal], [decision], [travel], [combat], [transfer], [relationship], [plan], [discovery], [state]. Use at most one tag per bullet and only when it adds clarity.
 //   ## Dialogue Highlights  -> Exact short quotes/paraphrases that set canon
 //                           Include only: promises, threats, vows/oaths, explicit plans, naming/revelations, permissions/boundaries, agreements, or coded signals likely to recur.
-//                           Quote hygiene: ≤ 12 words; When multiple speakers and attribution is ambiguous in merge context, tag speaker: Name: "quote".
+//                           Quote hygiene: Keep concise. When multiple speakers and attribution is ambiguous in merge context, tag speaker: Name: "quote".
 //                           JSON safety: Escape all internal double quotes in values as \" (e.g., Rolan: \"Trust your instincts, Sister.\"). Do not use unescaped double quotes inside JSON strings.
 //   ## Tone & Style        -> Words/phrases that capture the vibe and voice to preserve
 //   ## Pending Threads      -> Goals, deadlines, secrets, obligations that carry forward
@@ -208,9 +237,11 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //   - Secrets/Leverage: <what/who knows>
 //   - Tension/Triggers: <what escalates/defuses; quotes if needed>
 //   - Style Notes: <voice ticks or phrasing anchors>
+//   - Location rule: State should be durable (control, features, access). Do NOT include transient scene events (e.g., "X entered/exited", "fight happened here"). Keep one-off events in the recap.
+// - Quest creation rule: If Pending Threads contain an explicit ongoing objective, create/update a "quest" entry with a concise Synopsis and State (status/owner). Use the actor and objective tokens in keywords; put broad tokens only in secondaryKeys.
 // - Use specific names (not pronouns) for all references; avoid numeric scoring (no "+1 suspicion").
 // - Add only new/changed facts; omit if unsure.
-// - Keywords: include as many meaningful triggers as needed (lowercase). Prefer canonical name, real aliases/nicknames, and distinctive identifiers; avoid generic terms. Use secondaryKeys for AND disambiguation when a token is broad.
+// - Keywords: include as many meaningful triggers as needed (lowercase). Prefer canonical name, real aliases/nicknames, and distinctive identifiers; avoid generic terms. Use secondaryKeys for AND disambiguation when a token is broad. Normalize possessives/hyphens: e.g., Exile's Gate → keywords: ["exiles gate", "exile"], secondaryKeys: ["gate"].
 // - Optional: Aliases (only when truly needed; prefer keywords for indexing).
 // - Items: When relevant, include "Provenance" (origin/lineage) and "Owner change" (transfer moments); ensure State reflects current owner.
 // - Locations with subareas:
@@ -432,6 +463,7 @@ Do NOT mark a break when:
 - The current line is a reaction, continuation, or escalation of the same exchange.
 - Minor topic shifts happen within the same setting, participants, and timeframe.
 - Movement occurs only between sublocations within the same parent location (e.g., room changes inside the same building) without a resolved beat or major shift.
+- Movement between districts/neighborhoods inside the same city is an immediate continuation (no explicit time skip, no resolved beat) and the objective/cast remains the same.
 - The message is meta chatter that does not advance the narrative.
 - The current message is mid-action, mid-conversation, or mid-beat (the exchange hasn't concluded yet).
 
@@ -464,11 +496,11 @@ Your response MUST start with { and end with }. No code fences, no commentary, n
 
 Required format (copy this structure exactly):
 {
-  "recap": "# Running Narrative\n\n## Recent Events\n- Event 1\n- Event 2\n\n## Key Developments\n- Development 1"
+  "recap": "# Running Narrative\n\n## Current Situation\n- Where the story stands now\n\n## Key Developments\n- Durable outcomes and plot shifts\n\n## Dialogue Highlights\n- Binding quotes that still matter\n\n## Tone & Style\n- Vibe tokens to preserve\n\n## Pending Threads\n- Goals, timers, secrets, obligations in play"
 }
 
 Example valid response:
-{"recap": "# Current State\n\n## Location\nThe party is in Haven city, having just entered through the eastern gate.\n\n## Recent Events\n- Arrived at Haven's eastern gate with Senta\n- Guards challenged their entry\n- Negotiated passage into the city\n\n## Key NPCs\n- Gate Guards: Suspicious but professional\n- Senta: Companion, following the party"}
+{"recap": "# Running Narrative\n\n## Current Situation\n- Haven-Eastern Gate; Adam present; Senta nearby (unseen).\n\n## Key Developments\n- [travel] Entered Haven via eastern gate.\n- [relationship] Senta follows Adam at a distance (unresolved).\n\n## Dialogue Highlights\n- Rolan: \"Trust your instincts, Sister.\"\n\n## Tone & Style\n- dusty arrival; measured mindspeak; wary city edges\n\n## Pending Threads\n- Find lodging at Companion's Bell (Tailor's Row)."}
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
@@ -481,22 +513,23 @@ This replaces chat history, so preserve all nuance required for future scenes.
 //
 // TARGET STRUCTURE (markdown recap in "recap" field):
 // JSON safety: Escape all internal double quotes in values as \". Do not output any preamble or explanation.
-// Maintain the same headers and bullet discipline as the scene recap output. Update or append bullets as needed.
-//   ## Current Situation   -> Active locations, who is present, unresolved stakes
-//   ## Key Developments    -> Durable outcomes and plot shifts (replace outdated bullets)
-//   ## Dialogue Highlights  -> Quotes or paraphrases that continue to matter
-//   ## Tone & Style         -> Vibe/style anchors that must persist
+// Use these exact headers and update/append bullets as needed:
+//   ## Current Situation     -> Active locations, who is present, unresolved stakes
+//   ## Key Developments      -> Durable outcomes and plot shifts (replace outdated bullets)
+//   ## Dialogue Highlights   -> Quotes or paraphrases that continue to matter
+//   ## Tone & Style          -> Vibe/style anchors that must persist
 //   ## Pending Threads       -> Goals, timers, secrets, obligations in play
 //
 // MERGE RULES:
 // - Start from the existing running recap and edit it; do not rewrite from scratch unless necessary.
 // - Carry forward every still-relevant fact. If something is resolved or superseded, note the change and remove the stale bullet.
 // - Integrate the new scene recap line-by-line, combining or updating bullets rather than duplicating them.
+// - Idempotence: If the latest scene introduces no durable change (state, relationships, open threads, tone shift that persists), leave the corresponding sections unchanged; do not add filler.
 // - Reference characters by canonical name; keep descriptive nuance inside lorebook entries, not as standalone bullets.
 // - Reflect relationship dynamics at a high level (dynamic snapshot: tone, interaction patterns, salient past interactions). If the dynamic clearly shifted in the new scene, update or replace the prior snapshot; include brief evidence or a short quote only when helpful. Avoid numeric scoring (no "+1 suspicion").
 // - When the new recap introduces lasting character or world detail, assume the scene recap already emitted a lorebook update—just reference the entity here.
 // - Treat critical state transitions (ownership/location/status/effects) as merge invariants: replace outdated bullets with the current state. If the change itself is story-important, state it once ("was X, now Y") and then compress to the current state in subsequent merges (avoid "change stacks").
-// - Dialogue Highlights: De-duplicate binding quotes; carry forward only if still binding or referenced. Prefer newer binding phrases over stale ones.
+// - Dialogue Highlights: De-duplicate binding quotes; carry forward only if still binding or referenced. Prefer newer binding phrases over stale ones. Keep concise.
 // - Location hierarchies: When sublocations are in play, include the full chain once (e.g., "Ponyville-Twilight's Library-Spike's Room") in Current Situation or the first relevant bullet to anchor continuity; subsequent mentions may use the most specific segment so long as there is no ambiguity. Rely on lorebooks for full details.
 // - Entity mentions: Ensure any canonical names present in the new scene recap appear at least once in the merged recap (Current Situation or Key Developments) to maintain coherence.
 // - Category tags: If Key Developments bullets include category tags (e.g., [reveal], [plan]), preserve them when merging; do not invent new tags.
@@ -560,7 +593,12 @@ Tasks:
 4. Validate content uses specific names/references (not pronouns like "him", "her", "it", or vague terms like "the protagonist").
 5. Compare the candidate against the registry listing and identify any entries that already cover this entity.
 6. Place confident matches in 'sameEntityIds'. If you need more detail before deciding, list those IDs in 'needsFullContextIds'.
-7. Craft a one-line synopsis (<=15 words) that reflects the candidate's newest or most important information.
+7. Craft a concise one-line synopsis that reflects the candidate's newest or most important information.
+
+Deterministic alignment rules:
+- If the candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix) exactly matches a registry entry's name, include that ID in 'sameEntityIds'.
+- If a registry entry's aliases include the candidate's canonical name (same normalization), include that ID in 'sameEntityIds'.
+- Prefer exact canonical name matches over fuzzy/semantic similarity.
 
 Alias guidance (characters/items):
 - If the entity has many genuine aliases or nicknames, include them all as meaningful keywords (no numeric cap). Do not pad with redundant variants; prefer tokens actually used in chat. Use secondaryKeys for AND when a token is broad.
@@ -617,9 +655,11 @@ Rules:
 - When choosing an existing entity, pick the ID that truly represents the same subject and merge the newest facts into it.
 - If the candidate adds nothing new, keep the existing content and synopsis; do not fabricate alternate copies.
 - Prefer the candidate whose Relationships and State most closely match the new dynamic snapshot and current status; consolidate into a single canonical entry rather than splitting near-duplicates.
+- Entity type normalization: If multiple candidates differ only by type for an unnamed collective (e.g., "thugs"), prefer "faction" over "character" when the group is a recurring hazard tied to a location; otherwise treat it as ephemeral and resolve as "new" only if truly durable.
+- Deterministic tie‑breaker: If any candidate's canonical name exactly matches the new candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix), choose that ID over others.
 - For locations: if the candidate is a sub‑area, prefer the entry whose name or content indicates the same parent; normalize to "Parent-Subarea" canonical naming and ensure a "Located in: <Parent>" bullet exists. For multiple levels, normalize to hyphen chain ("Parent-Child-Grandchild") and include the immediate parent link.
 - Do NOT fabricate bullets to satisfy a template; when details are not present, omit that bullet entirely (e.g., no Relations for a faction if none are stated yet).
-- Ensure the returned synopsis reflects the most current canon after reconciliation (<=15 words).
+- Ensure the returned synopsis reflects the most current canon after reconciliation (concise, one line).
 - Output STRICT JSON with double quotes and no commentary.`;
 
 
