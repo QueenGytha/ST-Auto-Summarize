@@ -23,6 +23,8 @@ import {
 './index.js';
 import { ensureEntityTypesSetting, renderEntityTypesList } from './entityTypeSettingsUI.js';
 
+const DEFAULT_STICKY_ROUNDS = 4;
+
 function update_profile_section() {
   const context = getContext();
 
@@ -293,6 +295,10 @@ function refreshRecapProcessingUI() {
   $(selectorsExtension.lorebook.dedupePrefill).val(get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill') || '');
   $(selectorsExtension.lorebook.dedupePrompt).val(get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prompt') || '');
   $(selectorsExtension.lorebook.dedupeIncludePresetPrompts).prop('checked', get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts') ?? false);
+  $(selectorsExtension.lorebook.entryExcludeRecursion).prop('checked', get_settings('auto_lorebooks_entry_exclude_recursion') ?? false);
+  $(selectorsExtension.lorebook.entryPreventRecursion).prop('checked', get_settings('auto_lorebooks_entry_prevent_recursion') ?? false);
+  $(selectorsExtension.lorebook.entryIgnoreBudget).prop('checked', get_settings('auto_lorebooks_entry_ignore_budget') ?? true);
+  $(selectorsExtension.lorebook.entrySticky).val(get_settings('auto_lorebooks_entry_sticky') ?? DEFAULT_STICKY_ROUNDS);
 }
 
 function refreshEntityTypesUI() {

@@ -25,6 +25,8 @@ import {
   MIN_ENTITY_SECTIONS
 } from './constants.js';
 
+const DEFAULT_STICKY_ROUNDS = 4;
+
 // Will be imported from index.js via barrel exports
 let log , debug , error , toast ; // Utility functions - any type is legitimate
 let getAttachedLorebook , getLorebookEntries , addLorebookEntry ; // Lorebook functions - any type is legitimate
@@ -327,7 +329,11 @@ export function normalizeEntryData(entry ) {
     order: entry.order ?? FULL_COMPLETION_PERCENTAGE,
     position: entry.position ?? 0,
     depth: entry.depth ?? MIN_ENTITY_SECTIONS,
-    type: typeof entry.type === 'string' ? sanitizeEntityTypeName(entry.type) : ''
+    type: typeof entry.type === 'string' ? sanitizeEntityTypeName(entry.type) : '',
+    excludeRecursion: get_settings('auto_lorebooks_entry_exclude_recursion') ?? false,
+    preventRecursion: get_settings('auto_lorebooks_entry_prevent_recursion') ?? false,
+    ignoreBudget: get_settings('auto_lorebooks_entry_ignore_budget') ?? true,
+    sticky: get_settings('auto_lorebooks_entry_sticky') ?? DEFAULT_STICKY_ROUNDS
   };
 }
 
@@ -452,7 +458,11 @@ function buildNewEntryPayload(entry ) {
     secondaryKeys: ensureStringArray(entry.secondaryKeys),
     type: entry.type || '',
     constant: Boolean(entry.constant),
-    disable: Boolean(entry.disable)
+    disable: Boolean(entry.disable),
+    excludeRecursion: entry.excludeRecursion ?? false,
+    preventRecursion: entry.preventRecursion ?? false,
+    ignoreBudget: entry.ignoreBudget ?? true,
+    sticky: entry.sticky ?? DEFAULT_STICKY_ROUNDS
   };
 }
 

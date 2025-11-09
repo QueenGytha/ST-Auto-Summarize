@@ -657,10 +657,82 @@ chat )
   return sceneObjects;
 }
 
+// Helper: Get active lorebook entries at a specific message position
+async function getActiveLorebooksAtPosition(endIdx, ctx) {
+  const includeActiveLorebooks = get_settings('scene_recap_include_active_lorebooks');
+  if (!includeActiveLorebooks) {
+    return [];
+  }
+
+  try {
+    const { checkWorldInfo } = await import('../../../world-info.js');
+    const chat = ctx.chat;
+
+    const MAX_CONTEXT_FOR_WI_CHECK = 999999;
+    const wiResult = await checkWorldInfo(chat, MAX_CONTEXT_FOR_WI_CHECK, true, { chat });
+
+    if (!wiResult || !wiResult.allActivatedEntries) {
+      return [];
+    }
+
+    const entries = Array.from(wiResult.allActivatedEntries);
+    return entries.filter(entry => {
+      if (entry.comment && entry.comment.startsWith('_registry_')) {
+        return false;
+      }
+      if (entry.tags && entry.tags.includes('auto_lorebooks_registry')) {
+        return false;
+      }
+      if (entry.comment === 'Auto-Recap Operations Queue') {
+        return false;
+      }
+      return true;
+    });
+  } catch (err) {
+    debug(SUBSYSTEM.SCENE, `Failed to get active lorebooks: ${err.message}`);
+    return [];
+  }
+}
+
+// Helper: Format lorebook entries for prompt with inline instructions
+function formatLorebooksForPrompt(entries) {
+  if (!entries || entries.length === 0) {
+    return '';
+  }
+
+  const wrapEnabled = get_settings('wrap_lorebook_entries');
+
+  let formattedEntries = '';
+  let instructions = '';
+
+  if (wrapEnabled) {
+    instructions = `INSTRUCTIONS: The following <setting_lore> entries contain context that is active for this scene. Only include information from these entries that is new or has changed in the scene. If the scene rehashes something already captured in these entries, omit it to avoid duplication.\n\n`;
+    formattedEntries = entries.map(e => {
+      const name = e.comment || 'Unnamed Entry';
+      const uid = e.uid || '';
+      const world = e.world || '';
+      const position = e.position !== undefined ? e.position : '';
+      const order = e.order !== undefined ? e.order : '';
+      const keys = (e.key || []).join('|');
+
+      return `<setting_lore name="${name}" uid="${uid}" world="${world}" position="${position}" order="${order}" keys="${keys}">\n${e.content}\n</setting_lore>`;
+    }).join('\n\n');
+  } else {
+    instructions = `INSTRUCTIONS: The following entries contain context that is active for this scene. Only include information from these entries that is new or has changed in the scene. If the scene rehashes something already captured in these entries, omit it to avoid duplication.\n\n`;
+    formattedEntries = entries.map(e => {
+      const name = e.comment || 'Unnamed Entry';
+      return `[${name}]\n${e.content}`;
+    }).join('\n\n');
+  }
+
+  return instructions + formattedEntries;
+}
+
 // Helper: Prepare scene recap prompt
-function prepareScenePrompt(
+async function prepareScenePrompt(
 sceneObjects ,
-ctx )
+ctx ,
+endIdx )
 {
   const promptTemplate = get_settings('scene_recap_prompt');
   const prefill = get_settings('scene_recap_prefill') || "";
@@ -669,6 +741,10 @@ ctx )
   if (!lorebookTypesMacro) {
     lorebookTypesMacro = formatEntityTypeListForPrompt(getConfiguredEntityTypeDefinitions());
   }
+
+  // Get active lorebooks if enabled
+  const activeEntries = await getActiveLorebooksAtPosition(endIdx, ctx);
+  const activeLorebooksText = formatLorebooksForPrompt(activeEntries);
 
   // Format scene messages with speaker labels to prevent substituteParamsExtended from stripping them
   const formattedMessages = sceneObjects.map((obj) => {
@@ -687,13 +763,15 @@ ctx )
       scene_messages: formattedMessages,
       message: JSON.stringify(sceneObjects, null, 2), // Keep for backward compatibility
       prefill,
-      lorebook_entry_types: lorebookTypesMacro
+      lorebook_entry_types: lorebookTypesMacro,
+      active_lorebooks: activeLorebooksText
     }) || prompt;
   }
   // Fallback replacements
   prompt = prompt.replace(/\{\{scene_messages\}\}/g, formattedMessages);
   prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
   prompt = prompt.replace(/\{\{lorebook_entry_types\}\}/g, lorebookTypesMacro);
+  prompt = prompt.replace(/\{\{active_lorebooks\}\}/g, activeLorebooksText);
 
   return { prompt, prefill };
 }
@@ -893,7 +971,7 @@ export async function generateSceneRecap(config) {
   const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
   // Prepare prompt
-  const { prompt, prefill } = prepareScenePrompt(sceneObjects, ctx);
+  const { prompt, prefill } = await prepareScenePrompt(sceneObjects, ctx, endIdx);
 
   // Generate recap with connection profile/preset switching
   const { withConnectionSettings } = await import('./connectionSettingsManager.js');

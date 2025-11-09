@@ -75,6 +75,7 @@ async function ensureRegistryEntriesForLorebook(lorebookName ) {
       entry.constant = hasConstantFlag ? true : false;
       entry.disable = hasConstantFlag ? false : true;
       entry.preventRecursion = true;
+      entry.ignoreBudget = true;
       entry.tags = Array.isArray(entry.tags) ? entry.tags : [];
       if (!entry.tags.includes(REGISTRY_TAG)) {
         entry.tags.push(REGISTRY_TAG);
@@ -118,6 +119,7 @@ async function ensureRegistryEntryRecord(lorebookName , type ) {
   ensuredEntry.constant = hasConstantFlag ? true : false;
   ensuredEntry.disable = hasConstantFlag ? false : true;
   ensuredEntry.preventRecursion = true;
+  ensuredEntry.ignoreBudget = true;
   ensuredEntry.useProbability = false;
   ensuredEntry.probability = FULL_COMPLETION_PERCENTAGE;
   ensuredEntry.tags = Array.isArray(ensuredEntry.tags) ? ensuredEntry.tags : [];
@@ -502,6 +504,18 @@ export async function addLorebookEntry(lorebookName , entryData  = {}) {
     }
     if (typeof entryData.depth === 'number') {
       newEntry.depth = entryData.depth;
+    }
+    if (typeof entryData.excludeRecursion === 'boolean') {
+      newEntry.excludeRecursion = entryData.excludeRecursion;
+    }
+    if (typeof entryData.preventRecursion === 'boolean') {
+      newEntry.preventRecursion = entryData.preventRecursion;
+    }
+    if (typeof entryData.ignoreBudget === 'boolean') {
+      newEntry.ignoreBudget = entryData.ignoreBudget;
+    }
+    if (typeof entryData.sticky === 'number') {
+      newEntry.sticky = entryData.sticky;
     }
 
     // Save the lorebook

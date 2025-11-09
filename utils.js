@@ -286,8 +286,71 @@ function sanitizeNameSegment(text ) {
 }
 
 /**
+ * Escape literal control characters in JSON string values.
+ * LLMs sometimes return JSON with literal newlines/tabs instead of escaped sequences.
+ * This function preprocesses the JSON to escape those control characters.
+ *
+ * @param {string} jsonString - JSON string that may contain literal control characters
+ * @returns {string} JSON string with control characters properly escaped
+ */
+function escapeControlCharactersInJsonStrings(jsonString) {
+  const CHAR_CODE_LF = 0x0A;
+  const CHAR_CODE_CR = 0x0D;
+  const CHAR_CODE_TAB = 0x09;
+  const CHAR_CODE_BACKSPACE = 0x08;
+  const CHAR_CODE_FORM_FEED = 0x0C;
+
+  let result = '';
+  let insideString = false;
+  let escaped = false;
+
+  for (let i = 0; i < jsonString.length; i++) {
+    const char = jsonString[i];
+    const charCode = jsonString.charCodeAt(i);
+
+    if (escaped) {
+      result += char;
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      result += char;
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      result += char;
+      insideString = !insideString;
+      continue;
+    }
+
+    if (insideString) {
+      if (charCode === CHAR_CODE_LF) {
+        result += '\\n';
+      } else if (charCode === CHAR_CODE_CR) {
+        result += '\\r';
+      } else if (charCode === CHAR_CODE_TAB) {
+        result += '\\t';
+      } else if (charCode === CHAR_CODE_BACKSPACE) {
+        result += '\\b';
+      } else if (charCode === CHAR_CODE_FORM_FEED) {
+        result += '\\f';
+      } else {
+        result += char;
+      }
+    } else {
+      result += char;
+    }
+  }
+
+  return result;
+}
+
+/**
  * Comprehensive JSON repair helper - handles all common malformations.
- * Multi-layer approach: brace balancing → format fixes → native parse
+ * Multi-layer approach: control char escaping → brace balancing → format fixes → native parse
  *
  * @param {string} jsonString - Potentially malformed JSON string
  * @param {string} context - Context for logging (e.g., "scene break detection")
@@ -296,6 +359,9 @@ function sanitizeNameSegment(text ) {
  */
 function repairAndParseJson(jsonString, context = 'JSON repair') {
   let repaired = jsonString;
+
+  // Layer 0: Escape literal control characters in string values
+  repaired = escapeControlCharactersInJsonStrings(repaired);
 
   // Layer 1: Balance braces/brackets
   const openBraces = (repaired.match(/{/g) || []).length;

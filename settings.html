@@ -130,7 +130,7 @@
                         <div class="flex-container justifyspacebetween alignitemscenter">
                             <button id="edit_scene_recap_prompt" data-testid="scene-edit-prompt" class="menu_button flex1" title="Edit the scene recap prompt"><span>Edit Scene Prompt</span></button>
                         </div>
-                        <small class="displayBlock opacity50p">Available macros: {{scene_messages}}, {{lorebook_entry_types}}, {{char}}, {{user}}</small>
+                        <small class="displayBlock opacity50p">Available macros: {{scene_messages}}, {{lorebook_entry_types}}, {{active_lorebooks}}, {{char}}, {{user}}</small>
                         <input id="scene_recap_prompt" data-testid="scene-prompt" type="hidden" />
                         <input id="scene_recap_default_prompt" data-testid="scene-default-prompt" type="hidden" value="[Default scene recap prompt here]" />
                         <table>
@@ -144,6 +144,15 @@
                                     <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
                                         <input id="scene_recap_include_preset_prompts" data-testid="scene-include-preset-prompts" type="checkbox" />
                                         <span>Include Preset Prompts</span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td>
+                                    <label class="checkbox_label" title="Include active lorebook entries in the scene recap prompt to provide context. Only new or changed information from lorebooks will be included.">
+                                        <input id="scene_recap_include_active_lorebooks" data-testid="scene-include-active-lorebooks" type="checkbox" />
+                                        <span>Include Active Lorebook Entries</span>
                                     </label>
                                 </td>
                             </tr>
@@ -505,6 +514,48 @@
                                 <input type="checkbox" id="autolorebooks-recap-skip-duplicates" data-testid="lorebook-skip-duplicates" />
                                 <span>Skip already processed recaps</span>
                             </label>
+                        </div>
+
+                        <div class="inline-drawer margin-top-10px">
+                            <div class="inline-drawer-toggle inline-drawer-header">
+                                <div class="flex-container alignitemscenter margin0">
+                                    <span>Default Entry Properties (for new entries from recaps)</span>
+                                </div>
+                                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+                            </div>
+                            <div class="inline-drawer-content">
+                                <div class="margin-bot-10px">
+                                    <label class="checkbox_label" for="autolorebooks-entry-exclude-recursion">
+                                        <input type="checkbox" id="autolorebooks-entry-exclude-recursion" data-testid="lorebook-entry-exclude-recursion" />
+                                        <span>Exclude Recursion (Non-recursable)</span>
+                                    </label>
+                                    <small class="displayBlock opacity50p">When checked, this entry will not trigger other entries recursively</small>
+                                </div>
+
+                                <div class="margin-bot-10px">
+                                    <label class="checkbox_label" for="autolorebooks-entry-prevent-recursion">
+                                        <input type="checkbox" id="autolorebooks-entry-prevent-recursion" data-testid="lorebook-entry-prevent-recursion" />
+                                        <span>Prevent Further Recursion</span>
+                                    </label>
+                                    <small class="displayBlock opacity50p">When checked, this entry will not activate other entries recursively</small>
+                                </div>
+
+                                <div class="margin-bot-10px">
+                                    <label class="checkbox_label" for="autolorebooks-entry-ignore-budget">
+                                        <input type="checkbox" id="autolorebooks-entry-ignore-budget" data-testid="lorebook-entry-ignore-budget" />
+                                        <span>Ignore Budget</span>
+                                    </label>
+                                    <small class="displayBlock opacity50p">When checked, this entry will be included ignoring budget constraints</small>
+                                </div>
+
+                                <div class="margin-bot-10px">
+                                    <label for="autolorebooks-entry-sticky">
+                                        <span>Sticky (rounds):</span>
+                                        <small class="displayBlock opacity50p">Number of message rounds to keep entry active</small>
+                                    </label>
+                                    <input type="number" id="autolorebooks-entry-sticky" data-testid="lorebook-entry-sticky" class="text_pole" min="0" max="10000" />
+                                </div>
+                            </div>
                         </div>
 
                         <div class="inline-drawer margin-top-10px">

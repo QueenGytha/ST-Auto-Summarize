@@ -161,6 +161,7 @@ Available Macros:
     <li><b>{{history}}:</b> The message history as configured by the "Scene Message History Mode" setting.</li>
     <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset.</li>
     <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
+    <li><b>{{active_lorebooks}}:</b> Active lorebook entries at the time of the scene summary (if enabled in settings).</li>
 </ul>
 `;
     await get_user_setting_text_input('scene_recap_prompt', 'Edit Scene Recap Prompt', description);
@@ -173,6 +174,7 @@ Available Macros:
   // Scene recap preset and connection profile
   bind_setting(selectorsExtension.scene.completionPreset, 'scene_recap_completion_preset', 'text');
   bind_setting(selectorsExtension.scene.includePresetPrompts, 'scene_recap_include_preset_prompts', 'boolean');
+  bind_setting(selectorsExtension.scene.includeActiveLorebooks, 'scene_recap_include_active_lorebooks', 'boolean');
   bind_setting(selectorsExtension.scene.connectionProfile, 'scene_recap_connection_profile', 'text');
 
   // --- Running Scene Recap Settings ---
@@ -492,6 +494,30 @@ function initialize_lorebooks_settings_listeners() {
     $(selectorsExtension.lorebook.dedupePrompt).val(auto_lorebook_entry_deduplicate_prompt);
     $(selectorsExtension.lorebook.dedupePrompt).trigger('input');
     toast('LorebookEntryDeduplicate prompt restored to default', 'success');
+  });
+
+  $(document).on('change', '#autolorebooks-entry-exclude-recursion', function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_entry_exclude_recursion', value);
+    save_profile();
+  });
+
+  $(document).on('change', '#autolorebooks-entry-prevent-recursion', function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_entry_prevent_recursion', value);
+    save_profile();
+  });
+
+  $(document).on('change', '#autolorebooks-entry-ignore-budget', function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_entry_ignore_budget', value);
+    save_profile();
+  });
+
+  $(document).on('input', '#autolorebooks-entry-sticky', function () {
+    const value = Number($(this).val());
+    set_settings('auto_lorebooks_entry_sticky', value);
+    save_profile();
   });
 
   debug("Auto-Lorebooks settings event listeners initialized");

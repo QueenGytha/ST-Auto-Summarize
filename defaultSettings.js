@@ -52,6 +52,7 @@ export const default_settings = {
   scene_recap_context_type: 'percent',
   scene_recap_completion_preset: "",
   scene_recap_include_preset_prompts: false, // Include completion preset prompts (main, jailbreak, etc.) before extension prompt
+  scene_recap_include_active_lorebooks: true, // Include active lorebook entries in scene recap prompt
   scene_recap_message_types: "both", // "user", "character", "both" - which message types to include
   scene_recap_navigator_width: 240, // Width of scene navigator bar in pixels (default: 240px, double the original 48px)
   scene_recap_navigator_font_size: 12, // Font size for scene navigator links in pixels (default: 12px)
@@ -177,6 +178,12 @@ Rules for canonicalName:
   auto_lorebooks_recap_lorebook_entry_deduplicate_connection_profile: '',
   auto_lorebooks_recap_lorebook_entry_deduplicate_completion_preset: '',
   auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts: false, // Include completion preset prompts for lorebook deduplicate operations
+
+  // --- Auto-Lorebooks Entry Creation Defaults ---
+  auto_lorebooks_entry_exclude_recursion: false, // Default: allow entry to trigger other entries
+  auto_lorebooks_entry_prevent_recursion: false, // Default: allow entry in recursion scans
+  auto_lorebooks_entry_ignore_budget: true, // Default: don't count against token budget
+  auto_lorebooks_entry_sticky: 4, // Default: stay active for 4 message rounds
 
   // (Removed) Auto-Lorebooks Keyword Generation Settings – keywords now come from recap JSON
 
