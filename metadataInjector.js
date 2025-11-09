@@ -130,12 +130,14 @@ export function hasExistingMetadata(chatArray ) {
       return false;
     }
 
-    const firstSystemMessage = chatArray.find((msg) => msg.role === 'system');
-    if (!firstSystemMessage || typeof firstSystemMessage.content !== 'string') {
-      return false;
+    // Check ALL messages, not just system messages
+    for (const msg of chatArray) {
+      if (typeof msg.content === 'string' && /<ST_METADATA>[\s\S]*?<\/ST_METADATA>/.test(msg.content)) {
+        return true;
+      }
     }
 
-    return /<ST_METADATA>[\s\S]*?<\/ST_METADATA>/.test(firstSystemMessage.content);
+    return false;
   } catch (err) {
     console.error('[Auto-Recap:Metadata] Error checking existing metadata:', err);
     return false;
@@ -148,18 +150,18 @@ export function getExistingOperation(chatArray ) {
       return null;
     }
 
-    const firstSystemMessage = chatArray.find((msg) => msg.role === 'system');
-    if (!firstSystemMessage || typeof firstSystemMessage.content !== 'string') {
-      return null;
+    // Check ALL messages, not just system messages
+    for (const msg of chatArray) {
+      if (typeof msg.content === 'string') {
+        const match = msg.content.match(/<ST_METADATA>([\s\S]*?)<\/ST_METADATA>/);
+        if (match) {
+          const metadata = JSON.parse(match[1]);
+          return metadata?.operation || null;
+        }
+      }
     }
 
-    const match = firstSystemMessage.content.match(/<ST_METADATA>([\s\S]*?)<\/ST_METADATA>/);
-    if (!match) {
-      return null;
-    }
-
-    const metadata = JSON.parse(match[1]);
-    return metadata?.operation || null;
+    return null;
   } catch (err) {
     console.error('[Auto-Recap:Metadata] Error getting existing operation:', err);
     return null;
