@@ -39,7 +39,14 @@ export function createPendingEntry(entryId , entryData ) {
       secondaryKeys: Array.isArray(entryData.secondaryKeys) ? entryData.secondaryKeys : [],
       type: entryData.type || '',
       constant: Boolean(entryData.constant),
-      disable: Boolean(entryData.disable)
+      disable: Boolean(entryData.disable),
+      order: typeof entryData.order === 'number' ? entryData.order : undefined,
+      position: typeof entryData.position === 'number' ? entryData.position : undefined,
+      depth: typeof entryData.depth === 'number' ? entryData.depth : undefined,
+      excludeRecursion: typeof entryData.excludeRecursion === 'boolean' ? entryData.excludeRecursion : undefined,
+      preventRecursion: typeof entryData.preventRecursion === 'boolean' ? entryData.preventRecursion : undefined,
+      ignoreBudget: typeof entryData.ignoreBudget === 'boolean' ? entryData.ignoreBudget : undefined,
+      sticky: typeof entryData.sticky === 'number' ? entryData.sticky : undefined
     }
   };
 
