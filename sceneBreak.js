@@ -854,7 +854,7 @@ get_data )
   prompt = prompt.replace(/\{\{lorebook_entry_types\}\}/g, lorebookTypesMacro);
   prompt = prompt.replace(/\{\{active_lorebooks\}\}/g, activeLorebooksText);
 
-  return { prompt, prefill, lorebookMetadata };
+  return { prompt, prefill, lorebookMetadata: { ...lorebookMetadata, entries: activeEntries } };
 }
 
 // Helper: Switch to scene recap profile/preset
