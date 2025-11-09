@@ -6,7 +6,8 @@ import {
   running_scene_recap_prompt,
   default_running_scene_template,
   auto_lorebook_entry_lookup_prompt,
-  auto_lorebook_entry_deduplicate_prompt } from
+  auto_lorebook_entry_deduplicate_prompt,
+  auto_lorebook_bulk_populate_prompt } from
 './defaultPrompts.js';
 
 // Standard prefill for all JSON extraction operations
@@ -178,6 +179,11 @@ Rules for canonicalName:
   auto_lorebooks_recap_lorebook_entry_deduplicate_connection_profile: '',
   auto_lorebooks_recap_lorebook_entry_deduplicate_completion_preset: '',
   auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts: false, // Include completion preset prompts for lorebook deduplicate operations
+  auto_lorebooks_bulk_populate_prompt: auto_lorebook_bulk_populate_prompt,
+  auto_lorebooks_bulk_populate_prefill: JSON_EXTRACTION_PREFILL,
+  auto_lorebooks_bulk_populate_connection_profile: '',
+  auto_lorebooks_bulk_populate_completion_preset: '',
+  auto_lorebooks_bulk_populate_include_preset_prompts: false, // Include completion preset prompts for bulk registry population operations
 
   // --- Auto-Lorebooks Entry Creation Defaults ---
   auto_lorebooks_entry_exclude_recursion: false, // Default: allow entry to trigger other entries
@@ -194,5 +200,6 @@ Rules for canonicalName:
 
   // --- First-Hop Proxy Integration Settings ---
   first_hop_proxy_send_chat_details: false, // Send chat details in LLM requests for proxy logging
-  wrap_lorebook_entries: true // Wrap each lorebook entry individually with XML tags for downstream parsing
+  wrap_lorebook_entries: true, // Wrap each lorebook entry individually with XML tags for downstream parsing
+  suppress_other_lorebooks: true // Suppress global/character/persona lorebooks during generation (only chat lorebooks included)
 };

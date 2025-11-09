@@ -42,6 +42,7 @@ export const selectorsExtension = {
   proxy: {
     sendChatDetails: '[data-testid="proxy-send-chat-details"]',  // #first_hop_proxy_send_chat_details
     wrapLorebook: '[data-testid="proxy-wrap-lorebook"]',  // #wrap_lorebook_entries
+    suppressOtherLorebooks: '[data-testid="proxy-suppress-other-lorebooks"]',  // #suppress_other_lorebooks
   },
 
   // Message Filtering

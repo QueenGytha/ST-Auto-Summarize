@@ -34,11 +34,19 @@ export function installLorebookWrapper() {
 
 function handleWorldInfoEntriesLoaded(payload ) {
   try {
-    if (!get_settings('wrap_lorebook_entries')) {
+    if (!payload || typeof payload !== 'object') {
       return;
     }
 
-    if (!payload || typeof payload !== 'object') {
+    // Suppress global/character/persona lorebooks if setting is enabled
+    if (get_settings('suppress_other_lorebooks')) {
+      payload.globalLore.length = 0;
+      payload.characterLore.length = 0;
+      payload.personaLore.length = 0;
+      debug(SUBSYSTEM.LOREBOOK,'[Auto-Recap:LorebookWrapper] Suppressed global/character/persona lorebooks (only chat lorebooks active)');
+    }
+
+    if (!get_settings('wrap_lorebook_entries')) {
       return;
     }
 

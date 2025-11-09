@@ -44,7 +44,6 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Use markdown headers and bullets in this order:
 //   ## Current Situation
 //   ## Key Developments
-//   ## Dialogue Highlights
 //   ## Tone & Style
 //   ## Pending Threads
 // - One fact per bullet; be specific (names, items, places).
@@ -80,7 +79,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // IMPORTANT: Use only the bullets that are relevant for the entity and scene. It is correct to omit bullets that do not apply. Do not invent entities (e.g., factions, rules) or filler to match templates.
 //
 // QUALITY CHECK BEFORE RESPONDING:
-// - Recap includes all five sections (headers present); no blow‑by‑blow; quotes escaped.
+// - Recap includes all four sections (headers present); no blow‑by‑blow; quotes escaped.
 // - For each lorebook: Identity bullet present; content is durable facts only.
 // - Location entries contain no transient scene events; those belong in the recap.
 // - Keywords are normalized: possessives/hyphens handled; include punctuation‑free variants; avoid standalone generics.
@@ -192,7 +191,7 @@ Required format (copy this structure exactly):
 }
 
 Example valid response:
-{"scene_name": "Hidden Chamber Revelation", "recap": "## Current Situation\n- At the waterfall, party stands by a newly found chamber\n\n## Key Developments\n- [discovery] Hidden chamber found behind waterfall; murals show the First War\n\n## Dialogue Highlights\n- Alice: \"Murals mention the First War.\"\n\n## Tone & Style\n- curious; reverent; ancient mystery\n\n## Pending Threads\n- Return with tools to study murals", "lorebooks": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: Secret chamber behind waterfall with First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "murals", "waterfall"], "secondaryKeys": ["chamber"]}]}
+{"scene_name": "Hidden Chamber Revelation", "recap": "## Current Situation\n- At the waterfall, party stands by a newly found chamber\n\n## Key Developments\n- [discovery] Hidden chamber found behind waterfall; murals show the First War\n\n## Tone & Style\n- curious; reverent; ancient mystery\n\n## Pending Threads\n- Return with tools to study murals", "lorebooks": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: Secret chamber behind waterfall with First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "murals", "waterfall"], "secondaryKeys": ["chamber"]}]}
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
@@ -207,10 +206,6 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //                           Include explicit time and location only if stated (e.g., "dawn", "later that night", a named place).
 //   ## Key Developments    -> One bullet per significant change/outcome in this scene
 //                           Optional category tag at start of bullet to aid scanning: [reveal], [decision], [travel], [combat], [transfer], [relationship], [plan], [discovery], [state]. Use at most one tag per bullet and only when it adds clarity.
-//   ## Dialogue Highlights  -> Exact short quotes/paraphrases that set canon
-//                           Include only: promises, threats, vows/oaths, explicit plans, naming/revelations, permissions/boundaries, agreements, or coded signals likely to recur.
-//                           Quote hygiene: Keep concise. When multiple speakers and attribution is ambiguous in merge context, tag speaker: Name: "quote".
-//                           JSON safety: Escape all internal double quotes in values as \" (e.g., Rolan: \"Trust your instincts, Sister.\"). Do not use unescaped double quotes inside JSON strings.
 //   ## Tone & Style        -> Capture the ROLEPLAY's writing style and genre (NOT character emotions)
 //                           Focus on: genre/subgenre, narrative voice (POV, tense), prose patterns, dialogue style, recurring motifs
 //                           Examples of GOOD Tone & Style bullets:
@@ -235,7 +230,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Explicit uncertainty: When the text states uncertainty, capture it using prefixes like "Likely:" or "Uncertain:", but never invent or upgrade uncertainty to fact.
 // - Pending Threads should be actionable: verb+noun+anchor when present (e.g., "Retrieve Sunblade (before dawn)", "Meet Clara (east gate, first light)").
 // - All sections MUST be present; if a section has no content, include a single line with "—".
-// - Final check before responding: durable outcomes covered; only canon-binding quotes included; Tone & Style describes WRITING STYLE (genre, POV, prose patterns, dialogue format, motifs) NOT character emotions; dynamic snapshots updated if relationships shifted.
+// - Final check before responding: durable outcomes covered; Tone & Style describes WRITING STYLE (genre, POV, prose patterns, dialogue format, motifs) NOT character emotions; dynamic snapshots updated if relationships shifted.
 // - Coherence note: If a new or updated lorebook entity is introduced, reference it by name once in recap (Current Situation or Key Developments) so context remains coherent.
 //
 // LOREBOOKS (array):
@@ -251,7 +246,9 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //   - Secrets/Leverage: <what/who knows>
 //   - Tension/Triggers: <what escalates/defuses; quotes if needed>
 //   - Style Notes: <voice ticks or phrasing anchors>
+//   - Notable Dialogue: <significant quotes WITH recipient context; speech patterns>
 //   - Location rule: State should be durable (control, features, access). Do NOT include transient scene events (e.g., "X entered/exited", "fight happened here"). Keep one-off events in the recap.
+//   - Notable Dialogue rule (character entities only): Capture significant dialogue and voice patterns (idioms, formality level, verbal tics, characteristic phrases). Format as "To [Recipient]: \"quote\"" or "To [Recipient] (context): \"quote\"". Include dialogue that demonstrates character voice/personality. Do NOT capture dialogue spoken by {{user}}. Compare with existing entity content; omit duplicate quotes/patterns already captured. Only add if it provides new information about voice/style or significant content.
 // - Quest creation rule: If Pending Threads contain an explicit ongoing objective, create/update a "quest" entry with a concise Synopsis and State (status/owner). Use the actor and objective tokens in keywords; put broad tokens only in secondaryKeys.
 // - Use specific names (not pronouns) for all references; avoid numeric scoring (no "+1 suspicion").
 // - Add only new/changed facts; omit if unsure.
@@ -393,7 +390,7 @@ export const message_recap_error_detection_prompt = `You are validating a rolepl
 
 Check that the JSON meets these criteria:
 1. Valid JSON structure.
-2. Has a "recap" field (string) with headers in this order: "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Tone & Style", "## Pending Threads".
+2. Has a "recap" field (string) with headers in this order: "## Current Situation", "## Key Developments", "## Tone & Style", "## Pending Threads".
 3. Each section uses bullet lines ("- ") with observable facts; Key Developments bullets may optionally start with a category tag in square brackets (e.g., [reveal]); no blow-by-blow narration.
 4. Has a "lorebooks" field (array, may be empty).
 5. Each lorebook entry includes "name", "type", "keywords" (array), and "content" as bullet points.
@@ -401,9 +398,8 @@ Check that the JSON meets these criteria:
 7. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
 8. Recap focuses on events + overall tone; detailed nuance and relationships live in lorebooks.
 9. For location entries that imply subareas via hyphenated canonical names (e.g., "Parent-Subarea" or "Parent-Child-Grandchild"), content includes a parent link bullet (e.g., "Located in: <ImmediateParent>") and uses a single hyphen as chain separators (preserving punctuation within names).
-10. Dialogue Highlights include only canon‑binding categories (promises, threats, vows/oaths, explicit plans, naming/revelations, permissions/boundaries, agreements, coded signals) and tag speakers when ambiguous.
-11. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
-12. If lorebook entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
+10. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
+11. If lorebook entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
 
 Respond with ONLY:
 - "VALID" if all criteria met
@@ -416,16 +412,15 @@ export const scene_recap_error_detection_prompt = `You are validating a scene me
 
 Check that the JSON meets these criteria:
 1. Valid JSON structure.
-2. Has a "recap" field (string) using the headers "## Current Situation", "## Key Developments", "## Dialogue Highlights", "## Tone & Style", "## Pending Threads" in that order.
+2. Has a "recap" field (string) using the headers "## Current Situation", "## Key Developments", "## Tone & Style", "## Pending Threads" in that order.
 3. Each section contains bullet lines with observable facts or outcomes from the scene (no speculation or biographies). Key Developments bullets may optionally start with a category tag (e.g., [plan], [reveal]).
 4. Has a "lorebooks" field (array, may be empty).
 5. Every lorebook entry includes "name", "type", "keywords" (array), and bullet-point "content" that starts with an identity bullet and uses specific names.
 6. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
 7. Recap covers events and overall tone; lorebooks capture nuance, relationships, and dynamics.
 8. For location entries with hyphenated canonical names indicating subareas (e.g., "Parent-Subarea", "Parent-Child-Grandchild"), content includes a "Located in: <ImmediateParent>" bullet and optionally a top-level link ("Part of: <TopLevel>"); chain separators are single hyphens (preserve punctuation in names).
-9. Dialogue Highlights include only canon‑binding categories and tag speakers when ambiguous.
-10. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
-11. If lorebook entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
+9. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
+10. If lorebook entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
 
 Respond with ONLY:
 - "VALID" if all criteria met
@@ -510,11 +505,11 @@ Your response MUST start with { and end with }. No code fences, no commentary, n
 
 Required format (copy this structure exactly):
 {
-  "recap": "# Running Narrative\n\n## Current Situation\n- Where the story stands now\n\n## Key Developments\n- Durable outcomes and plot shifts\n\n## Dialogue Highlights\n- Binding quotes that still matter\n\n## Tone & Style\n- Genre, narrative voice, prose patterns, dialogue format, recurring motifs\n\n## Pending Threads\n- Goals, timers, secrets, obligations in play"
+  "recap": "# Running Narrative\n\n## Current Situation\n- Where the story stands now\n\n## Key Developments\n- Durable outcomes and plot shifts\n\n## Tone & Style\n- Genre, narrative voice, prose patterns, dialogue format, recurring motifs\n\n## Pending Threads\n- Goals, timers, secrets, obligations in play"
 }
 
 Example valid response:
-{"recap": "# Running Narrative\n\n## Current Situation\n- Haven-Eastern Gate; Adam present; Senta nearby (unseen).\n\n## Key Developments\n- [travel] Entered Haven via eastern gate.\n- [relationship] Senta follows Adam at a distance (unresolved).\n\n## Dialogue Highlights\n- Rolan: \"Trust your instincts, Sister.\"\n\n## Tone & Style\n- Genre: high fantasy; cultural conflict narrative\n- Narrative voice: close third-person; alternating Senta/Adam POV\n- Format: mindspeak in italics with colons (*:text:*); mental dialogue parallel to speech\n- Prose: sensory grounding (hooves on cobblestones, sapphire eyes); urban geography as labyrinth\n- Motifs: \"demon horses\" vs \"Companions\" (language of fear vs reverence)\n\n## Pending Threads\n- Find lodging at Companion's Bell (Tailor's Row)."}
+{"recap": "# Running Narrative\n\n## Current Situation\n- Haven-Eastern Gate; Adam present; Senta nearby (unseen).\n\n## Key Developments\n- [travel] Entered Haven via eastern gate.\n- [relationship] Senta follows Adam at a distance (unresolved).\n\n## Tone & Style\n- Genre: high fantasy; cultural conflict narrative\n- Narrative voice: close third-person; alternating Senta/Adam POV\n- Format: mindspeak in italics with colons (*:text:*); mental dialogue parallel to speech\n- Prose: sensory grounding (hooves on cobblestones, sapphire eyes); urban geography as labyrinth\n- Motifs: \"demon horses\" vs \"Companions\" (language of fear vs reverence)\n\n## Pending Threads\n- Find lodging at Companion's Bell (Tailor's Row)."}
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
@@ -530,7 +525,6 @@ This replaces chat history, so preserve all nuance required for future scenes.
 // Use these exact headers and update/append bullets as needed:
 //   ## Current Situation     -> Active locations, who is present, unresolved stakes
 //   ## Key Developments      -> Durable outcomes and plot shifts (replace outdated bullets)
-//   ## Dialogue Highlights   -> Quotes or paraphrases that continue to matter
 //   ## Tone & Style          -> Roleplay's genre, writing style, and narrative patterns (NOT character emotions)
 //                             Capture: genre/subgenre, narrative voice (POV, tense), prose patterns, dialogue format, recurring motifs
 //                             Update ONLY when the writing style itself changes (new POV introduced, genre shift, new narrative device)
@@ -546,14 +540,12 @@ This replaces chat history, so preserve all nuance required for future scenes.
 // - Reflect relationship dynamics at a high level (dynamic snapshot: tone, interaction patterns, salient past interactions). If the dynamic clearly shifted in the new scene, update or replace the prior snapshot; include brief evidence or a short quote only when helpful. Avoid numeric scoring (no "+1 suspicion").
 // - When the new recap introduces lasting character or world detail, assume the scene recap already emitted a lorebook update—just reference the entity here.
 // - Treat critical state transitions (ownership/location/status/effects) as merge invariants: replace outdated bullets with the current state. If the change itself is story-important, state it once ("was X, now Y") and then compress to the current state in subsequent merges (avoid "change stacks").
-// - Dialogue Highlights: De-duplicate binding quotes; carry forward only if still binding or referenced. Prefer newer binding phrases over stale ones. Keep concise.
 // - Tone & Style: Describes the ROLEPLAY's writing style (genre, POV, prose patterns, dialogue format, motifs). Update ONLY when writing style changes (new POV, genre shift, narrative device added). Do NOT accumulate character emotions from scenes. If the new scene maintains existing style, keep Tone & Style unchanged. Format as bullets covering: genre/subgenre, narrative voice, prose patterns, dialogue conventions, recurring motifs.
 // - Location hierarchies: When sublocations are in play, include the full chain once (e.g., "Ponyville-Twilight's Library-Spike's Room") in Current Situation or the first relevant bullet to anchor continuity; subsequent mentions may use the most specific segment so long as there is no ambiguity. Rely on lorebooks for full details.
 // - Entity mentions: Ensure any canonical names present in the new scene recap appear at least once in the merged recap (Current Situation or Key Developments) to maintain coherence.
 // - Category tags: If Key Developments bullets include category tags (e.g., [reveal], [plan]), preserve them when merging; do not invent new tags.
 // - Avoid chronological narration. Focus on the state of the world after this merge.
 // - Keep wording concise and specific (locations, items, promises) so another writer can resume play instantly.
-// - Allow short direct quotes only inside Dialogue Highlights when they set canon.
 //
 // QUALITY CHECK BEFORE RESPONDING:
 // - Every open thread, obligation, or secret mentioned in any recap still appears.
@@ -609,9 +601,10 @@ Tasks:
 2. Confirm the candidate represents ONE concrete entity. Its 'name' is its canonical name.
 3. Validate the content uses BULLET POINTS and begins with an identity bullet like "- Identity: <Type> — <Canonical Name>".
 4. Validate content uses specific names/references (not pronouns like "him", "her", "it", or vague terms like "the protagonist").
-5. Compare the candidate against the registry listing and identify any entries that already cover this entity.
-6. Place confident matches in 'sameEntityIds'. If you need more detail before deciding, list those IDs in 'needsFullContextIds'.
-7. Craft a concise one-line synopsis that reflects the candidate's newest or most important information.
+5. For character entities with a Notable Dialogue bullet, ensure it does not contain dialogue spoken by {{user}}.
+6. Compare the candidate against the registry listing and identify any entries that already cover this entity.
+7. Place confident matches in 'sameEntityIds'. If you need more detail before deciding, list those IDs in 'needsFullContextIds'.
+8. Craft a concise one-line synopsis that reflects the candidate's newest or most important information.
 
 Deterministic alignment rules:
 - If the candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix) exactly matches a registry entry's name, include that ID in 'sameEntityIds'.
@@ -676,12 +669,52 @@ Rules:
 - Entity type normalization: If multiple candidates differ only by type for an unnamed collective (e.g., "thugs"), prefer "faction" over "character" when the group is a recurring hazard tied to a location; otherwise treat it as ephemeral and resolve as "new" only if truly durable.
 - Deterministic tie‑breaker: If any candidate's canonical name exactly matches the new candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix), choose that ID over others.
 - For locations: if the candidate is a sub‑area, prefer the entry whose name or content indicates the same parent; normalize to "Parent-Subarea" canonical naming and ensure a "Located in: <Parent>" bullet exists. For multiple levels, normalize to hyphen chain ("Parent-Child-Grandchild") and include the immediate parent link.
+- For character entities with Notable Dialogue bullets: When merging, compare dialogue content; remove exact duplicate quotes; consolidate similar voice pattern descriptions; preserve unique quotes showing different aspects of speech style or significant content; maintain recipient context (who the character was speaking to).
 - Do NOT fabricate bullets to satisfy a template; when details are not present, omit that bullet entirely (e.g., no Relations for a faction if none are stated yet).
 - Ensure the returned synopsis reflects the most current canon after reconciliation (concise, one line).
 - Output STRICT JSON with double quotes and no commentary.`;
 
 
 // Standalone scene name generation prompt removed. Scene name is now part of scene_recap_prompt output.
+
+export const auto_lorebook_bulk_populate_prompt = `You are the Auto-Lorebooks bulk registry population assistant for SillyTavern.
+Your task is to classify and summarize multiple lorebook entries that have been imported from existing lorebooks, outputting ONLY valid JSON.
+
+MANDATORY OUTPUT FORMAT:
+Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
+
+Required format (copy this structure exactly):
+{
+  "results": [
+    {
+      "entry_id": "<entry_id from input>",
+      "type": "<one of the allowed types>",
+      "synopsis": "<short one-line summary>"
+    }
+  ]
+}
+
+CRITICAL: Ensure your response begins with the opening curly brace { character
+
+Known lorebook entry types: {{lorebook_entry_types}}
+
+You will be given an array of lorebook entries that have been imported from the user's manually-created lorebooks (global, character, or persona lorebooks). These entries have already been vetted by the user and do not need deduplication.
+
+Entries to process:
+{{new_entries}}
+
+Tasks for EACH entry:
+1. Determine which entry type best fits the entry based on its name, keywords, and content. The type MUST be one of the allowed types listed above.
+2. Create a concise one-line synopsis that captures the essence of the entry.
+
+Rules:
+- Process ALL entries in the input array
+- Output MUST include a result for every entry_id provided
+- Use the exact entry_id from the input for each result
+- If uncertain about type, choose the most reasonable fit from the allowed types
+- If content is minimal or unclear, create a basic synopsis from the entry name and keywords
+- Output STRICT JSON with double quotes and no commentary
+- The results array must have the same length as the input entries array`;
 
 
 export const default_running_scene_template = `<!--Roleplay memory containing current state and key facts from all previous scenes, combined into a cohesive narrative.

@@ -79,6 +79,7 @@ async function initialize_settings_listeners() {
   // First-Hop Proxy Integration Settings
   bind_setting(selectorsExtension.proxy.sendChatDetails, 'first_hop_proxy_send_chat_details', 'boolean');
   bind_setting(selectorsExtension.proxy.wrapLorebook, 'wrap_lorebook_entries', 'boolean');
+  bind_setting(selectorsExtension.proxy.suppressOtherLorebooks, 'suppress_other_lorebooks', 'boolean');
 
   // Lorebook Viewer Settings
   bind_setting(selectorsExtension.lorebookViewer.groupByWorld, 'lorebook_viewer_group_by_world', 'boolean');

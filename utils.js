@@ -272,7 +272,8 @@ export {
   check_st_version,
   display_injection_preview,
   display_text_modal,
-  get_user_setting_text_input };
+  get_user_setting_text_input,
+  get_settings };
 
 
 // Name helpers for Auto‑Lorebooks

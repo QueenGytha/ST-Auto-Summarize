@@ -799,6 +799,107 @@ function stripTypePrefix(name) {
   return name.replace(/^[^-]+-/, '').toLowerCase().trim();
 }
 
+export async function runBulkRegistryPopulation(entriesArray , typeList , settings ) {
+  const promptTemplate = settings?.bulk_populate_prompt || '';
+  if (!promptTemplate) {
+    error?.('Bulk populate prompt is missing. Cannot process imported entries.');
+    return [];
+  }
+
+  const prompt = promptTemplate.
+  replace(/\{\{lorebook_entry_types\}\}/g, typeList).
+  replace(/\{\{new_entries\}\}/g, JSON.stringify(entriesArray, null, 2));
+
+  const config = {
+    prompt,
+    prefill: settings?.bulk_populate_prefill || '',
+    connectionProfile: settings?.bulk_populate_connection_profile || '',
+    completionPreset: settings?.bulk_populate_completion_preset || '',
+    include_preset_prompts: settings?.bulk_populate_include_preset_prompts || false,
+    label: 'bulk_registry_populate'
+  };
+
+  const response = await runModelWithSettings(config);
+
+  let parsed;
+  try {
+    const { extractJsonFromResponse } = await import('./utils.js');
+    parsed = extractJsonFromResponse(response, {
+      requiredFields: ['results'],
+      context: 'bulk registry population'
+    });
+  } catch (err) {
+    error?.('Failed to parse bulk registry population response:', err);
+    return [];
+  }
+
+  if (!Array.isArray(parsed.results)) {
+    error?.('Bulk populate response missing results array');
+    return [];
+  }
+
+  return parsed.results;
+}
+
+export async function processBulkPopulateResults(results , lorebookName , existingEntriesMap ) {
+  if (!Array.isArray(results) || results.length === 0) {
+    debug?.('No results to process from bulk populate');
+    return;
+  }
+
+  const registryState = ensureRegistryState();
+  let updated = false;
+
+  for (const result of results) {
+    if (!result || !result.entry_id) {continue;}
+
+    const entryId = String(result.entry_id);
+    const entry = existingEntriesMap.get(entryId);
+    if (!entry) {
+      debug?.(`Entry ${entryId} not found in entries map, skipping registry update`);
+      continue;
+    }
+
+    const type = result.type || 'character';
+    const synopsis = result.synopsis || '';
+    const entryName = entry.comment || 'Unnamed';
+    const aliases = ensureStringArray(entry.key);
+
+    updateRegistryRecord(registryState, entryId, {
+      type,
+      name: entryName,
+      comment: entryName,
+      aliases,
+      synopsis
+    });
+
+    debug?.(`Updated registry for ${entryId}: type=${type}, synopsis=${synopsis}`);
+    updated = true;
+  }
+
+  if (updated) {
+    if (!chat_metadata.auto_lorebooks) {
+      chat_metadata.auto_lorebooks = {};
+    }
+    chat_metadata.auto_lorebooks.registry = registryState;
+
+    const typeSet = new Set(
+      Object.values(registryState.index || {}).
+      map((r) => r?.type).
+      filter(Boolean)
+    );
+
+    for (const type of typeSet) {
+      const items = buildRegistryItemsForType(registryState, type);
+      // eslint-disable-next-line no-await-in-loop -- Sequential execution required: each call modifies and saves the same lorebook
+      await updateRegistryEntryContent(lorebookName, type, items);
+    }
+
+    saveMetadata();
+    log?.(`Bulk populated ${results.length} registry entries`);
+  }
+}
+
 function deterministicMatchIds(normalizedEntry, targetType, registryState) {
   const ids = [];
   try {

@@ -28,7 +28,9 @@ import {
   ensureRegistryState,
   updateRegistryRecord,
   ensureStringArray,
-  buildRegistryItemsForType } from
+  buildRegistryItemsForType,
+  runBulkRegistryPopulation,
+  processBulkPopulateResults } from
 './recapToLorebookProcessor.js';
 import {
   mergeLorebookEntryByUid,
@@ -50,6 +52,7 @@ import {
   updateRegistryEntryContent,
   reorderLorebookEntriesAlphabetically } from
 './lorebookManager.js';
+import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
 import {
   getContext,
   get_data,
@@ -615,6 +618,37 @@ export function registerAllOperationHandlers() {
     toast(`✓ Lorebook ${action}: ${comment}`, 'success');
 
     return { success: true };
+  });
+
+  registerOperationHandler(OperationType.POPULATE_REGISTRIES, async (operation) => {
+    const { entries, lorebookName } = operation.params;
+    const signal = getAbortSignal(operation);
+
+    debug(SUBSYSTEM.QUEUE, `Executing POPULATE_REGISTRIES for ${entries.length} entries`);
+
+    const settings = {
+      bulk_populate_prompt: get_settings('auto_lorebooks_bulk_populate_prompt'),
+      bulk_populate_prefill: get_settings('auto_lorebooks_bulk_populate_prefill'),
+      bulk_populate_connection_profile: get_settings('auto_lorebooks_bulk_populate_connection_profile'),
+      bulk_populate_completion_preset: get_settings('auto_lorebooks_bulk_populate_completion_preset'),
+      bulk_populate_include_preset_prompts: get_settings('auto_lorebooks_bulk_populate_include_preset_prompts')
+    };
+
+    const typeList = getConfiguredEntityTypeDefinitions().
+    map((def) => def.name).
+    filter(Boolean).
+    join('|');
+
+    const results = await runBulkRegistryPopulation(entries, typeList, settings);
+
+    throwIfAborted(signal, 'POPULATE_REGISTRIES', 'LLM call');
+
+    const entriesMap = new Map(entries.map((e) => [e.id, e]));
+    await processBulkPopulateResults(results, lorebookName, entriesMap);
+
+    debug(SUBSYSTEM.QUEUE, `✓ Populated registries for ${results.length} entries`);
+
+    return { success: true, processedCount: results.length };
   });
 
   log(SUBSYSTEM.QUEUE, 'Registered all operation handlers');

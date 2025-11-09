@@ -64,6 +64,11 @@
                             <span>Wrap Lorebook Entries</span>
                         </label>
 
+                        <label title="When enabled, suppress global/character/persona lorebooks during generation (only chat lorebooks will be included). This prevents conflicts between auto-generated lorebooks and manually-created ones." class="checkbox_label">
+                            <input id="suppress_other_lorebooks" data-testid="proxy-suppress-other-lorebooks" type="checkbox" />
+                            <span>Suppress Non-Chat Lorebooks</span>
+                        </label>
+
                         <div class="note-block">
                             <i class="fa-solid fa-info-circle"></i>
                             <span>When enabled, metadata is added to LLM requests that your proxy can parse and strip before forwarding to the LLM. This allows your proxy to log requests with chat context.</span>

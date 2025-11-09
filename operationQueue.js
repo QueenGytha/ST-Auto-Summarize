@@ -58,7 +58,8 @@ export const OperationType  = {
   RESOLVE_LOREBOOK_ENTRY: 'resolve_lorebook_entry',
   CREATE_LOREBOOK_ENTRY: 'create_lorebook_entry',
   MERGE_LOREBOOK_ENTRY: 'merge_lorebook_entry',
-  UPDATE_LOREBOOK_REGISTRY: 'update_lorebook_registry'
+  UPDATE_LOREBOOK_REGISTRY: 'update_lorebook_registry',
+  POPULATE_REGISTRIES: 'populate_registries'
 } ;
 
 // Flow type definitions
