@@ -131,9 +131,7 @@ function determineOperationType() {
     if (stack.includes('generateSceneRecap') && !stack.includes('runningSceneRecap.js') && !stack.includes('generate_running_scene_recap') && !stack.includes('combine_scene_with_running_recap')) {
       return 'generate_scene_recap';
     }
-    if (stack.includes('SceneName') || stack.includes('sceneNamePrompt')) {
-      return 'generate_scene_name';
-    }
+    // Standalone scene-name operation removed; scene name is part of scene recap output
     if (stack.includes('generate_running_scene_recap') || stack.includes('runningSceneRecap.js') || stack.includes('combine_scene_with_running_recap')) {
       // Check for specific running recap operations
       if (stack.includes('combine_scene_with_running_recap')) {

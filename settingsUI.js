@@ -95,8 +95,7 @@ async function initialize_settings_listeners() {
   bind_setting(selectorsExtension.misc.globalToggle, 'use_global_toggle_state', 'boolean');
 
   // --- Scene Recap Settings ---
-  bind_setting(selectorsExtension.scene.autoNameDetection, 'scene_recap_auto_name', 'boolean');
-  bind_setting(selectorsExtension.scene.autoNameManual, 'scene_recap_auto_name_manual', 'boolean');
+  // Scene names are now provided by the recap output itself (scene_name field)
   bind_setting(selectorsExtension.scene.navWidth, 'scene_recap_navigator_width', 'number', (value ) => {
     // Enforce min/max constraints (30-500 pixels)
     const clampedValue = Math.max(MAX_LINE_LENGTH, Math.min(UI_UPDATE_DELAY_MS, value));

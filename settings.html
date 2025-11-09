@@ -122,14 +122,7 @@
                             <span>Navigator Font Size (pixels):</span>
                             <input id="scene_recap_navigator_font_size" data-testid="scene-nav-font-size" class="text_pole" type="number" min="8" max="24" step="1" />
                         </label>
-                        <label class="checkbox_label" title="Automatically generate a brief scene name (like a chapter title) when auto-generating scene recaps (e.g., during scene break detection), if no name is already set.">
-                            <input id="scene_recap_auto_name" data-testid="scene-auto-name-detection" type="checkbox" />
-                            <span>Auto-generate Scene Names (Auto-Detection)</span>
-                        </label>
-                        <label class="checkbox_label" title="Automatically generate a brief scene name (like a chapter title) when manually generating scene recaps via the Generate button, if no name is already set.">
-                            <input id="scene_recap_auto_name_manual" data-testid="scene-auto-name-manual" type="checkbox" />
-                            <span>Auto-generate Scene Names (Manual)</span>
-                        </label>
+                        <!-- Standalone scene-name auto-generation removed. Scene name is part of the recap output. -->
                         <label class="checkbox_label" title="New scene recaps will start collapsed by default (showing only the scene name). Existing scenes keep their current state.">
                             <input id="scene_recap_default_collapsed" data-testid="scene-default-collapsed" type="checkbox" />
                             <span>Collapse New Scenes by Default</span>

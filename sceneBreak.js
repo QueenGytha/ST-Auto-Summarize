@@ -618,89 +618,6 @@ saveChatDebounced )
 }
 
 
-export async function autoGenerateSceneNameFromRecap(config) {
-  const { recap, message, get_data, set_data, ctx, index } = config;
-  const existingSceneName = get_data(message, SCENE_BREAK_NAME_KEY);
-
-  // Only generate if no name already exists
-  if (existingSceneName) {
-    debug(SUBSYSTEM.SCENE, "Scene name already exists, skipping auto-generation");
-    return null;
-  }
-
-  try {
-    debug(SUBSYSTEM.SCENE, "Auto-generating scene name...");
-
-    // Import centralized prompt and template renderer
-    const { scene_name_generation_prompt } = await import('./defaultPrompts.js');
-    const { renderTemplate } = await import('./promptUtils.js');
-
-    // Render the prompt template with the scene recap
-    const sceneNamePrompt = renderTemplate(scene_name_generation_prompt, {
-      scene_recap: recap
-    });
-
-    ctx.deactivateSendButtons();
-
-    // Set operation context for ST_METADATA
-    const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
-    if (index != null) {
-      setOperationSuffix(`-${index}`);
-    }
-
-    let sceneName;
-    try {
-      const rawResponse = await recap_text(sceneNamePrompt);
-
-      // Parse JSON response using centralized helper
-      const { extractJsonFromResponse } = await import('./utils.js');
-      const parsed = extractJsonFromResponse(rawResponse, {
-        requiredFields: ['scene_name'],
-        context: 'scene name generation'
-      });
-
-      sceneName = parsed.scene_name;
-    } finally {
-      clearOperationSuffix();
-      ctx.activateSendButtons();
-    }
-
-    // Clean up the scene name (remove quotes, trim, limit length)
-    let cleanSceneName = sceneName.trim().
-    replace(/^["']|["']$/g, '') // Remove leading/trailing quotes
-    .replace(/\n/g, ' ') // Replace newlines with spaces
-    .trim();
-
-    // Limit to ~50 characters max
-    if (cleanSceneName.length > SCENE_BREAK_CHARS) {
-      cleanSceneName = cleanSceneName.slice(0, SCENE_BREAK_MIN_CHARS) + '...';
-    }
-
-    debug(SUBSYSTEM.SCENE, "Generated scene name:", cleanSceneName);
-    set_data(message, SCENE_BREAK_NAME_KEY, cleanSceneName);
-
-    // Update the scene break UI element to show the new name immediately
-    const $messageDiv = $(`${selectorsSillyTavern.message.block}[mesid="${index}"]`);
-    if ($messageDiv.length > 0) {
-      const $sceneBreakDiv = $messageDiv.find(selectorsExtension.sceneBreak.div);
-      const $nameInput = $sceneBreakDiv.find(selectorsExtension.sceneBreak.name);
-      if ($nameInput.length > 0) {
-        $nameInput.val(cleanSceneName);
-        debug(SUBSYSTEM.SCENE, "Updated scene break name input for message", index);
-      }
-    }
-
-    // Refresh the scene navigator bar to show the new name immediately
-    renderSceneNavigatorBar();
-
-    return cleanSceneName;
-  } catch (err) {
-    error(SUBSYSTEM.SCENE, "Error generating scene name:", err);
-    // Don't fail the whole recap generation if scene name fails
-    return null;
-  }
-}
-
 // Helper: Try to queue scene recap generation
 async function tryQueueSceneRecap(index ) {
   debug(SUBSYSTEM.SCENE, `[Queue] Queueing scene recap generation for index ${index}`);
@@ -851,6 +768,27 @@ async function saveSceneRecap(config) {
   set_data(message, SCENE_RECAP_HASH_KEY, computeRecapHash(recap));
   saveChatDebounced();
   refresh_memory();
+
+  // If the recap is JSON and contains a scene_name, use it (standardized format)
+  try {
+    const parsed = JSON.parse(recap);
+    const maybeName = typeof parsed.scene_name === 'string' ? parsed.scene_name : '';
+    const existing = get_data(message, SCENE_BREAK_NAME_KEY);
+    if (maybeName && !existing) {
+      let clean = maybeName.trim()
+        .replace(/^["']|["']$/g, '')
+        .replace(/\n/g, ' ')
+        .trim();
+      if (clean.length > SCENE_BREAK_CHARS) {
+        clean = clean.slice(0, SCENE_BREAK_MIN_CHARS) + '...';
+      }
+      if (clean) {
+        set_data(message, SCENE_BREAK_NAME_KEY, clean);
+        // Update scene navigator immediately if available
+        try { renderSceneNavigatorBar(); } catch {}
+      }
+    }
+  } catch {/* non-JSON recap or parse failed; ignore */}
 
   // Extract and queue lorebook entries
   if (recap) {

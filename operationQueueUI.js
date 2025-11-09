@@ -470,7 +470,6 @@ function formatOperationType(type) {
     [OperationType.VALIDATE_RECAP]: 'Validate',
     [OperationType.DETECT_SCENE_BREAK]: 'Detect Scene',
     [OperationType.GENERATE_SCENE_RECAP]: 'Scene Recap',
-    [OperationType.GENERATE_SCENE_NAME]: 'Scene Name',
     [OperationType.GENERATE_RUNNING_RECAP]: 'Running Recap',
     [OperationType.COMBINE_SCENE_WITH_RUNNING]: 'Combine Scene',
     [OperationType.LOREBOOK_ENTRY_LOOKUP]: 'Lorebook - Lookup',
@@ -567,7 +566,6 @@ function formatOperationParams(type, params, metadata) {
     case OperationType.VALIDATE_RECAP:
     case OperationType.DETECT_SCENE_BREAK:
     case OperationType.GENERATE_SCENE_RECAP:
-    case OperationType.GENERATE_SCENE_NAME:
     case OperationType.COMBINE_SCENE_WITH_RUNNING:
       return formatMessageOperationParams(params);
 

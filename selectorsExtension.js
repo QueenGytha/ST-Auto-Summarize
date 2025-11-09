@@ -80,8 +80,6 @@ export const selectorsExtension = {
   scene: {
     navWidth: '[data-testid="scene-nav-width"]',                     // #scene_recap_navigator_width
     navFontSize: '[data-testid="scene-nav-font-size"]',              // #scene_recap_navigator_font_size
-    autoNameDetection: '[data-testid="scene-auto-name-detection"]',  // #scene_recap_auto_name
-    autoNameManual: '[data-testid="scene-auto-name-manual"]',        // #scene_recap_auto_name_manual
     defaultCollapsed: '[data-testid="scene-default-collapsed"]',     // #scene_recap_default_collapsed
     editPrompt: '[data-testid="scene-edit-prompt"]',                 // #edit_scene_recap_prompt
     prompt: '[data-testid="scene-prompt"]',                          // #scene_recap_prompt

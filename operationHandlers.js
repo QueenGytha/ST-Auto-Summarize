@@ -8,7 +8,7 @@ import {
   getAbortSignal,
   throwIfAborted } from
 './operationQueue.js';
-import { OPERATION_FETCH_TIMEOUT_MS } from './constants.js';
+// Note: OPERATION_FETCH_TIMEOUT_MS no longer used after removing scene-name operation
 import {
   validate_recap } from
 './recapValidation.js';
@@ -16,11 +16,7 @@ import {
   detectSceneBreak,
   isCooldownSkip } from
 './autoSceneBreakDetection.js';
-import {
-  generateSceneRecap,
-  toggleSceneBreak,
-  autoGenerateSceneNameFromRecap } from
-'./sceneBreak.js';
+import { generateSceneRecap, toggleSceneBreak } from './sceneBreak.js';
 import {
   generate_running_scene_recap,
   combine_scene_with_running_recap } from
@@ -181,66 +177,12 @@ export function registerAllOperationHandlers() {
 
     toast(`✓ Scene recap generated for message ${index}`, 'success');
 
-    // Enqueue scene name generation if enabled
-    const autoGenerateSceneName = get_settings('scene_recap_auto_name') ?? true;
-    if (autoGenerateSceneName && recap) {
-      debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_NAME for index ${index}`);
-      enqueueOperation(OperationType.GENERATE_SCENE_NAME, {
-        index,
-        recap
-      }, {
-        priority: 5, // Lower priority than recap generation
-        queueVersion: operation.queueVersion,
-        metadata: {
-          message_index: index,
-          operation_source: 'scene_recap'
-        }
-      });
-    }
+    // Scene naming is now embedded in the scene recap output (scene_name field)
 
     return { recap };
   });
 
-  // Generate scene name from scene recap
-  registerOperationHandler(OperationType.GENERATE_SCENE_NAME, async (operation) => {
-    const { index, recap } = operation.params;
-    const signal = getAbortSignal(operation);
-    debug(SUBSYSTEM.QUEUE, `Executing GENERATE_SCENE_NAME for index ${index}`);
-
-    const ctx = getContext();
-    const chat = ctx.chat;
-    const message = chat[index];
-
-    if (!message) {
-      throw new Error(`Message at index ${index} not found`);
-    }
-
-    if (!recap) {
-      debug(SUBSYSTEM.QUEUE, `No recap provided for GENERATE_SCENE_NAME at index ${index}, skipping`);
-      return { name: null };
-    }
-
-    // Wait 5 seconds before generating scene name (rate limiting)
-    await new Promise((resolve) => setTimeout(resolve, OPERATION_FETCH_TIMEOUT_MS));
-
-    // Check if cancelled during delay
-    throwIfAborted(signal, 'GENERATE_SCENE_NAME', 'rate limit delay');
-
-    const name = await autoGenerateSceneNameFromRecap({
-      recap,
-      message,
-      get_data,
-      set_data,
-      ctx,
-      _savedProfiles: null, // savedProfiles not needed, function handles its own profile switching
-      index // Pass index for context suffix
-    });
-
-    // Check if cancelled after LLM call (before return)
-    throwIfAborted(signal, 'GENERATE_SCENE_NAME', 'LLM call');
-
-    return { name };
-  });
+  // Standalone scene name generation operation removed.
 
   // Generate running recap (bulk)
   registerOperationHandler(OperationType.GENERATE_RUNNING_RECAP, async (operation) => {

@@ -150,6 +150,7 @@ Your response MUST start with { and end with }. No code fences, no commentary, n
 
 Required format (copy this structure exactly):
 {
+  "scene_name": "A brief, descriptive scene title (3–60 chars)",
   "recap": "Your scene recap here (or empty string if nothing happened)",
   "lorebooks": [
     {
@@ -162,7 +163,7 @@ Required format (copy this structure exactly):
 }
 
 Example valid response:
-{"recap": "The party explored the ancient temple ruins. They discovered a hidden chamber containing murals depicting the First War.", "lorebooks": [{"type": "location", "name": "Hidden Chamber", "content": "Stone chamber behind waterfall with ancient First War murals, undisturbed for centuries", "keywords": ["hidden chamber", "chamber", "murals", "waterfall"]}]}
+{"scene_name": "Hidden Chamber Revelation", "recap": "## Current Situation\n- At the waterfall, party stands by a newly found chamber\n\n## Key Developments\n- [discovery] Hidden chamber found behind waterfall; murals show the First War\n\n## Dialogue Highlights\n- Alice: \"Murals mention the First War.\"\n\n## Tone & Style\n- curious; reverent; ancient mystery\n\n## Pending Threads\n- Return with tools to study murals", "lorebooks": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: Secret chamber behind waterfall with First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "chamber", "murals", "waterfall"]}]}
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
@@ -622,33 +623,7 @@ Rules:
 - Output STRICT JSON with double quotes and no commentary.`;
 
 
-export const scene_name_generation_prompt = `You are a structured data extraction system for roleplay memory management.
-Your task is to generate a brief scene name from a scene recap, outputting ONLY valid JSON.
-
-MANDATORY OUTPUT FORMAT:
-Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
-
-Required format (copy this structure exactly):
-{
-  "scene_name": "Your Brief Scene Name Here"
-}
-
-Example valid response:
-{"scene_name": "Adam Arrives at Haven"}
-
-CRITICAL: Ensure your response begins with the opening curly brace { character
-
-SCENE NAME GUIDELINES:
-- Maximum 5 words, like a chapter title
-- Concise and descriptive
-- Captures the key event or location of the scene
-- Past tense when appropriate (e.g., "Arrived at Haven" not "Arriving at Haven")
-- Avoid articles when possible (e.g., "Market Encounter" not "The Market Encounter")
-
-Scene Recap:
-{{scene_recap}}
-
-REMINDER: Output must be valid JSON starting with { character. Scene name should be brief (maximum 5 words).`;
+// Standalone scene name generation prompt removed. Scene name is now part of scene_recap_prompt output.
 
 
 export const default_running_scene_template = `<!--Roleplay memory containing current state and key facts from all previous scenes, combined into a cohesive narrative.
