@@ -166,6 +166,9 @@ function determineOperationType() {
     if (stack.includes('updateRegistryRecord') || stack.includes('updateRegistryEntryContent') || stack.includes('updateLorebookRegistry') || stack.includes('updateRegistry')) {
       return 'update_lorebook_registry';
     }
+    if (stack.includes('runBulkRegistryPopulation') || stack.includes('bulk_registry_populate')) {
+      return 'populate_registries';
+    }
 
     // Check for message recap generation (AFTER scene checks!)
     // This is generic and will match many operations, so must be last
