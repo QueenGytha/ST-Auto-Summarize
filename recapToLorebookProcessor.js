@@ -527,6 +527,8 @@ function buildIndexFromRegistryEntries(entriesArray ) {
 
 export async function refreshRegistryStateFromEntries(existingEntriesRaw ) {
   try {
+    // Keep async semantics for lint rule and future IO expansion
+    await Promise.resolve();
     const registryState = ensureRegistryState();
     const built = buildIndexFromRegistryEntries(existingEntriesRaw || []);
     if (Object.keys(built).length > 0) {

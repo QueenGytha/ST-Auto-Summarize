@@ -571,10 +571,8 @@ export function registerAllOperationHandlers() {
       // Defensive refresh: hydrate registry state from lorebook and retry lookup once
       await refreshRegistryStateFromEntries(existingEntriesRaw);
       record = registryState.index?.[resolvedId];
-      if (!record) {
-        // Reload entries in case they changed
-        existingEntriesRaw = await contextGetLorebookEntries(lorebookName);
-      }
+      // Reload entries in case they changed
+      existingEntriesRaw = await contextGetLorebookEntries(lorebookName);
       existingEntry = record ? existingEntriesRaw?.find((e) => e.uid === record.uid) : null;
     }
 
