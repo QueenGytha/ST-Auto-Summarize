@@ -412,6 +412,10 @@ export function updateRegistryRecord(state , uid , updates ) {
     state.index[uid] = {};
   }
   const record = state.index[uid];
+  // Ensure uid/id are present on records for downstream consumers
+  const parsedUid = Number(uid);
+  record.uid = Number.isNaN(parsedUid) ? uid : parsedUid;
+  record.id = String(uid);
   if (updates.type) {record.type = updates.type;}
   if (updates.name !== undefined) {record.name = updates.name;}
   if (updates.comment !== undefined) {record.comment = updates.comment;}
@@ -466,6 +470,78 @@ export function buildRegistryItemsForType(state , type ) {
   }
   items.sort((a, b) => (a.name || a.comment || '').localeCompare(b.name || b.comment || ''));
   return items;
+}
+
+// ---------------------------------
+// Registry hydration from lorebook
+// ---------------------------------
+
+function parseRegistryHeader(line) {
+  const m = /^\s*\[Registry:\s*([^\]]+)\]\s*$/i.exec(String(line || ''));
+  return m ? String(m[1]).trim() : '';
+}
+
+function parseRegistryItemLine(line) {
+  const text = String(line || '').trim();
+  if (!/^\-\s*/.test(text)) {return null;}
+  const parts = text.replace(/^\-\s*/, '').split('|').map((p) => p.trim());
+  const getVal = (label) => {
+    const p = parts.find((s) => s.toLowerCase().startsWith(label + ':'));
+    return p ? p.slice(p.indexOf(':') + 1).trim() : '';
+  };
+  const id = getVal('id');
+  if (!id) {return null;}
+  const name = getVal('name');
+  const aliasesRaw = getVal('aliases');
+  const synopsis = getVal('synopsis');
+  const aliases = aliasesRaw && aliasesRaw !== '—' ? aliasesRaw.split(';').map((a) => a.trim()).filter(Boolean) : [];
+  return { id: String(id), name, aliases, synopsis };
+}
+
+function buildIndexFromRegistryEntries(entriesArray ) {
+  const index = {};
+  for (const entry of entriesArray || []) {
+    if (!entry || typeof entry.comment !== 'string') {continue;}
+    if (!isRegistryEntry(entry)) {continue;}
+    const lines = String(entry.content || '').split(/\r?\n/);
+    const type = parseRegistryHeader(lines[0]);
+    if (!type) {continue;}
+    for (let i = 1; i < lines.length; i++) {
+      const item = parseRegistryItemLine(lines[i]);
+      if (!item) {continue;}
+      const uidStr = String(item.id);
+      const uidNum = Number(uidStr);
+      index[uidStr] = {
+        uid: Number.isNaN(uidNum) ? uidStr : uidNum,
+        id: uidStr,
+        type,
+        name: item.name || '',
+        comment: item.name || '',
+        aliases: ensureStringArray(item.aliases),
+        synopsis: item.synopsis || ''
+      };
+    }
+  }
+  return index;
+}
+
+export async function refreshRegistryStateFromEntries(existingEntriesRaw ) {
+  try {
+    const registryState = ensureRegistryState();
+    const built = buildIndexFromRegistryEntries(existingEntriesRaw || []);
+    if (Object.keys(built).length > 0) {
+      registryState.index = built;
+      if (!chat_metadata.auto_lorebooks) {chat_metadata.auto_lorebooks = {};}
+      chat_metadata.auto_lorebooks.registry = registryState;
+      debug?.(SUBSYSTEM?.LOREBOOK || SUBSYSTEM, '[refreshRegistryStateFromEntries] Hydrated registry from lorebook entries', { count: Object.keys(built).length });
+    } else {
+      debug?.(SUBSYSTEM?.LOREBOOK || SUBSYSTEM, '[refreshRegistryStateFromEntries] No registry items parsed from entries');
+    }
+    return registryState;
+  } catch (err) {
+    try { error?.('[refreshRegistryStateFromEntries] Failed to hydrate registry from entries', err); } catch {}
+    return ensureRegistryState();
+  }
 }
 
 export function buildCandidateEntriesData(candidateIds , registryState , existingEntriesMap ) {
@@ -1218,6 +1294,9 @@ async function loadRecapContext(config ) {
     error('Failed to get existing entries');
     return { error: 'Failed to load lorebook' };
   }
+
+  // Hydrate registry state from any persisted registry entries in the lorebook
+  await refreshRegistryStateFromEntries(existingEntriesRaw);
 
   const existingEntries = existingEntriesRaw.filter((entry) => !isRegistryEntry(entry));
   const existingEntriesMap  = new Map();

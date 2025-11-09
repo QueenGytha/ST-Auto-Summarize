@@ -6,7 +6,8 @@ import {
   OperationType,
   enqueueOperation,
   getAbortSignal,
-  throwIfAborted } from
+  throwIfAborted,
+  pauseQueue } from
 './operationQueue.js';
 // Note: OPERATION_FETCH_TIMEOUT_MS no longer used after removing scene-name operation
 import {
@@ -30,6 +31,7 @@ import {
   updateRegistryRecord,
   ensureStringArray,
   buildRegistryItemsForType,
+  refreshRegistryStateFromEntries,
   runBulkRegistryPopulation,
   processBulkPopulateResults } from
 './recapToLorebookProcessor.js';
@@ -561,12 +563,27 @@ export function registerAllOperationHandlers() {
     const { resolvedId, entryData, lorebookName, registryState, finalType, finalSynopsis,
       contextGetLorebookEntries, contextMergeLorebookEntry, contextUpdateRegistryRecord, contextEnsureStringArray, entryId, signal } = context;
 
-    const existingEntriesRaw = await contextGetLorebookEntries(lorebookName);
-    const record = registryState.index?.[resolvedId];
-    const existingEntry = record ? existingEntriesRaw?.find((e) => e.uid === record.uid) : null;
+    let existingEntriesRaw = await contextGetLorebookEntries(lorebookName);
+    let record = registryState.index?.[resolvedId];
+    let existingEntry = record ? existingEntriesRaw?.find((e) => e.uid === record.uid) : null;
 
     if (!record || !existingEntry) {
-      return { success: false, fallbackToCreate: true };
+      // Defensive refresh: hydrate registry state from lorebook and retry lookup once
+      await refreshRegistryStateFromEntries(existingEntriesRaw);
+      record = registryState.index?.[resolvedId];
+      if (!record) {
+        // Reload entries in case they changed
+        existingEntriesRaw = await contextGetLorebookEntries(lorebookName);
+      }
+      existingEntry = record ? existingEntriesRaw?.find((e) => e.uid === record.uid) : null;
+    }
+
+    if (!record || !existingEntry) {
+      // Hard fail: do NOT fallback to create — prevents duplicates
+      debug(SUBSYSTEM.QUEUE, `MERGE failed to locate resolvedId=${resolvedId}. Registry keys: ${Object.keys(registryState.index || {}).join(', ')}`);
+      // Pause the queue to prevent further corruption
+      await pauseQueue();
+      throw new Error(`DUPLICATE/STATE ERROR: Cannot merge into id ${resolvedId} — registry/entry not found after hydration.`);
     }
 
     const mergeResult = await contextMergeLorebookEntry(lorebookName, existingEntry, entryData, { useQueue: false });
@@ -593,7 +610,30 @@ export function registerAllOperationHandlers() {
 
   async function executeCreateAction(context ) {
     const { entryData, lorebookName, registryState, finalType, finalSynopsis,
-      contextAddLorebookEntry, contextUpdateRegistryRecord, contextEnsureStringArray, entryId } = context;
+      contextAddLorebookEntry, contextUpdateRegistryRecord, contextEnsureStringArray, entryId, contextGetLorebookEntries } = context;
+
+    // HARD DUPLICATE GUARD: Check existing entries for a matching entity name
+    const existingEntriesRaw = await contextGetLorebookEntries(lorebookName);
+    const targetName = String(entryData.comment || '').trim();
+    const typePrefix = String(finalType || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const prefixedTarget = typePrefix && targetName ? `${typePrefix}-${targetName}` : targetName;
+    const targetLower = targetName.toLowerCase();
+    const prefixedLower = prefixedTarget.toLowerCase();
+
+    const dup = (existingEntriesRaw || []).find((e) => {
+      if (!e || typeof e.comment !== 'string') {return false;}
+      const c = e.comment.trim();
+      if (c.startsWith('_registry_')) {return false;}
+      const cLower = c.toLowerCase();
+      const cStub = cLower.replace(/^[^-]+-/, '');
+      return cLower === prefixedLower || cLower === targetLower || cStub === targetLower;
+    });
+
+    if (dup) {
+      // Pause the queue and throw an explicit error
+      await pauseQueue();
+      throw new Error(`DUPLICATE DETECTED: Cannot create entry for "${targetName}" (${finalType}). Existing entry UID=${dup.uid}, comment="${dup.comment}"`);
+    }
 
     const createdEntry = await contextAddLorebookEntry(lorebookName, entryData);
 

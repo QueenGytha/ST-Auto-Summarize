@@ -123,7 +123,105 @@ class RequestLogger:
     def _sanitize_headers(self, headers: Dict[str, str]) -> Dict[str, str]:
         """Sanitize headers for logging by obfuscating sensitive values"""
         return sanitize_headers_for_logging(headers)
-    
+
+    def _format_parsed_response_data(self, response_data: Dict[str, Any]) -> Optional[List[str]]:
+        """
+        Extract and format JSON from response content field into collapsible markdown sections.
+
+        Args:
+            response_data: Response body dictionary
+
+        Returns:
+            List of markdown lines if successfully parsed, None if JSON not present or malformed
+        """
+        try:
+            # Try to extract content from choices[0].message.content
+            if not isinstance(response_data, dict):
+                return None
+
+            choices = response_data.get('choices')
+            if not choices or not isinstance(choices, list) or len(choices) == 0:
+                return None
+
+            message = choices[0].get('message')
+            if not message or not isinstance(message, dict):
+                return None
+
+            content = message.get('content')
+            if not content or not isinstance(content, str):
+                return None
+
+            # Try to parse the content as JSON
+            try:
+                parsed_content = json.loads(content)
+            except json.JSONDecodeError:
+                # JSON not present or malformed - skip section
+                return None
+
+            # Build the formatted section
+            lines = []
+            lines.append("## Response Data (Parsed)")
+            lines.append("")
+
+            # Scene name (if present)
+            scene_name = parsed_content.get('scene_name')
+            if scene_name:
+                lines.append(f"**Scene Name:** {scene_name}")
+                lines.append("")
+
+            # Recap/Summary
+            recap = parsed_content.get('recap')
+            if recap:
+                lines.append("### Summary")
+                lines.append("")
+                lines.append(recap)
+                lines.append("")
+
+            # Lorebook entries
+            lorebooks = parsed_content.get('lorebooks')
+            if lorebooks and isinstance(lorebooks, list) and len(lorebooks) > 0:
+                entry_count = len(lorebooks)
+                plural = "entries" if entry_count != 1 else "entry"
+                lines.append(f"*{entry_count} {plural}*")
+                lines.append("")
+
+                for i, entry in enumerate(lorebooks):
+                    if not isinstance(entry, dict):
+                        continue
+
+                    entry_name = entry.get('name', f'Entry {i+1}')
+                    entry_type = entry.get('type', 'unknown')
+
+                    lines.append(f"### {entry_name} ({entry_type})")
+                    lines.append("")
+
+                    # Entry content
+                    content = entry.get('content', '')
+                    if content:
+                        lines.append("```text")
+                        lines.append(content)
+                        lines.append("```")
+                        lines.append("")
+
+                    # Keywords
+                    keywords = entry.get('keywords')
+                    if keywords and isinstance(keywords, list):
+                        lines.append(f"**Keywords:** {', '.join(keywords)}")
+                        lines.append("")
+
+                    # Secondary keys
+                    secondary_keys = entry.get('secondaryKeys')
+                    if secondary_keys and isinstance(secondary_keys, list):
+                        lines.append(f"**Secondary Keys:** {', '.join(secondary_keys)}")
+                        lines.append("")
+
+            return lines
+
+        except Exception as e:
+            # If any error occurs, log it and return None to skip the section
+            logger.debug(f"Failed to parse response data for formatted section: {e}")
+            return None
+
     def log_complete_request(self, request_id: str, endpoint: str, request_data: Dict[str, Any],
                             headers: Dict[str, str], response_data: Any = None,
                             response_headers: Dict[str, str] = None, start_time: float = None,
@@ -301,6 +399,11 @@ class RequestLogger:
                     log_content.append(cleaned_json)
                     log_content.append("```")
                     log_content.append("")
+
+                    # Response Data (parsed) - extract and format JSON from content field
+                    parsed_section = self._format_parsed_response_data(response_data)
+                    if parsed_section:
+                        log_content.extend(parsed_section)
 
             if self.include_headers and response_headers:
                 log_content.append("## Response Headers")
