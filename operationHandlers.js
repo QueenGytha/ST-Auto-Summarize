@@ -27,7 +27,6 @@ import {
   buildCandidateEntriesData,
   ensureRegistryState,
   updateRegistryRecord,
-  assignEntityId,
   ensureStringArray,
   buildRegistryItemsForType } from
 './recapToLorebookProcessor.js';
@@ -479,7 +478,7 @@ export function registerAllOperationHandlers() {
       entryId, action, resolvedId, entryData, lorebookName,
       registryState, finalType, finalSynopsis, signal,
       contextGetLorebookEntries: getLorebookEntries, contextAddLorebookEntry: addLorebookEntry, contextMergeLorebookEntry: mergeLorebookEntry,
-      contextUpdateRegistryRecord: updateRegistryRecord, contextAssignEntityId: assignEntityId, contextEnsureStringArray: ensureStringArray
+      contextUpdateRegistryRecord: updateRegistryRecord, contextEnsureStringArray: ensureStringArray
     };
   }
 
@@ -505,7 +504,6 @@ export function registerAllOperationHandlers() {
     }
 
     contextUpdateRegistryRecord(registryState, resolvedId, {
-      uid: existingEntry.uid,
       type: finalType,
       name: entryData.comment || existingEntry.comment || '',
       comment: entryData.comment || existingEntry.comment || '',
@@ -520,7 +518,7 @@ export function registerAllOperationHandlers() {
 
   async function executeCreateAction(context ) {
     const { entryData, lorebookName, registryState, finalType, finalSynopsis,
-      contextAddLorebookEntry, contextUpdateRegistryRecord, contextAssignEntityId, contextEnsureStringArray, entryId } = context;
+      contextAddLorebookEntry, contextUpdateRegistryRecord, contextEnsureStringArray, entryId } = context;
 
     const createdEntry = await contextAddLorebookEntry(lorebookName, entryData);
 
@@ -528,10 +526,9 @@ export function registerAllOperationHandlers() {
       throw new Error('Failed to create lorebook entry');
     }
 
-    const entityId = contextAssignEntityId(registryState, finalType);
+    const entityId = createdEntry.uid;
 
     contextUpdateRegistryRecord(registryState, entityId, {
-      uid: createdEntry.uid,
       type: finalType,
       name: entryData.comment || createdEntry.comment || '',
       comment: entryData.comment || createdEntry.comment || '',
@@ -557,7 +554,7 @@ export function registerAllOperationHandlers() {
       result = await executeCreateAction(context);
     }
 
-    if (!result.success || !result.entityId || !result.entityUid) {
+    if (!result.success || !result.entityId || result.entityUid === undefined || result.entityUid === null) {
       throw new Error('Failed to create or merge entry');
     }
 

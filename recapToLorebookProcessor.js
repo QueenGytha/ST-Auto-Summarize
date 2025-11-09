@@ -347,28 +347,13 @@ export function ensureRegistryState() {
   const registry = autoLorebooks.registry;
   if (registry && typeof registry === 'object') {
     if (!registry.index || typeof registry.index !== 'object') {registry.index = {};}
-    if (!registry.counters || typeof registry.counters !== 'object') {registry.counters = {};}
     return registry;
   }
-  const newState = { index: {}, counters: {} };
+  const newState = { index: {} };
   autoLorebooks.registry = newState;
   return newState;
 }
 
-function buildTypePrefix(type ) {
-  const base = sanitizeEntityTypeName(type) || 'type';
-  if (base.length >= MIN_ENTITY_SECTIONS) {return base.slice(0, MIN_ENTITY_SECTIONS);}
-  return base.padEnd(MIN_ENTITY_SECTIONS, 'x');
-}
-
-export function assignEntityId(state , type ) {
-  const counters = state.counters || {};
-  const current = Number(counters[type]) || 0;
-  const next = current + 1;
-  counters[type] = next;
-  const prefix = buildTypePrefix(type);
-  return `${prefix}_${String(next).padStart(MIN_ENTITY_SECTIONS, '0')}`;
-}
 
 export function ensureStringArray(value ) {
   if (Array.isArray(value)) {
@@ -377,12 +362,11 @@ export function ensureStringArray(value ) {
   return [];
 }
 
-export function updateRegistryRecord(state , id , updates ) {
-  if (!state.index[id]) {
-    state.index[id] = {};
+export function updateRegistryRecord(state , uid , updates ) {
+  if (!state.index[uid]) {
+    state.index[uid] = {};
   }
-  const record = state.index[id];
-  if (updates.uid !== undefined) {record.uid = updates.uid;}
+  const record = state.index[uid];
   if (updates.type) {record.type = updates.type;}
   if (updates.name !== undefined) {record.name = updates.name;}
   if (updates.comment !== undefined) {record.comment = updates.comment;}
@@ -444,11 +428,11 @@ export function buildCandidateEntriesData(candidateIds , registryState , existin
   for (const id of candidateIds) {
     const record = registryState.index?.[id];
     if (!record) {continue;}
-    const entry = existingEntriesMap.get(String(record.uid));
+    const entry = existingEntriesMap.get(String(id));
     if (!entry) {continue;}
     data.push({
       id,
-      uid: record.uid,
+      uid: id,
       comment: entry.comment || '',
       content: entry.content || '',
       keys: Array.isArray(entry.key) ? entry.key : [],
@@ -900,7 +884,7 @@ async function executeMergeWorkflow(config) {
   const { resolvedId, normalizedEntry, targetType, previousType, finalSynopsis, lorebookName, existingEntriesMap, registryState, useQueue, results, typesToUpdate, ctx } = config;
 
   const record = registryState.index?.[resolvedId];
-  const existingEntry = record ? existingEntriesMap.get(String(record.uid)) : null;
+  const existingEntry = record ? existingEntriesMap.get(String(resolvedId)) : null;
 
   if (!record || !existingEntry) {
     return false;
@@ -927,7 +911,6 @@ async function executeMergeWorkflow(config) {
 
       results.merged.push({ comment: finalComment, uid: existingEntry.uid, id: resolvedId });
       updateRegistryRecord(registryState, resolvedId, {
-        uid: existingEntry.uid,
         type: targetType,
         name: finalComment,
         comment: finalComment,
@@ -962,9 +945,8 @@ ctx )
   try {
     const createdEntry = await addLorebookEntry(lorebookName, normalizedEntry);
     if (createdEntry) {
-      const newId = assignEntityId(registryState, targetType);
+      const newId = createdEntry.uid;
       updateRegistryRecord(registryState, newId, {
-        uid: createdEntry.uid,
         type: targetType,
         name: normalizedEntry.comment || createdEntry.comment || '',
         comment: normalizedEntry.comment || createdEntry.comment || '',
