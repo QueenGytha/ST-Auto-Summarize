@@ -4,7 +4,7 @@
 //           Non-empty profile = separate connection = DON'T BLOCK (concurrent operation)
 
 import { OperationType } from './operationTypes.js';
-import { get_settings } from './index.js';
+import { get_settings, getContext } from './index.js';
 
 const OPERATION_PROFILE_MAP = {
   [OperationType.VALIDATE_RECAP]: 'scene_recap_error_detection_connection_profile',
@@ -27,9 +27,18 @@ export function getProfileForOperation(operationType) {
   return get_settings(settingKey) || '';
 }
 
+export function resolveProfileId(profileId) {
+  if (!profileId || profileId === '') {
+    return getContext().extensionSettings.connectionProfile;
+  }
+  return profileId;
+}
+
 export function shouldOperationBlockChat(operationType) {
   const profileId = getProfileForOperation(operationType);
-  return !profileId || profileId === '';
+  const resolvedProfile = resolveProfileId(profileId);
+  const currentProfile = getContext().extensionSettings.connectionProfile;
+  return resolvedProfile === currentProfile;
 }
 
 export function operationUsesSeparateProfile(operationType) {

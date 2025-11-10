@@ -1103,7 +1103,8 @@ export async function generateSceneRecap(config) {
   const include_preset_prompts = get_settings('scene_recap_include_preset_prompts');
 
   const { OperationType } = await import('./operationTypes.js');
-  const effectiveProfile = profile_name || ctx.extensionSettings.connectionProfile;
+  const { resolveProfileId } = await import('./profileResolution.js');
+  const effectiveProfile = resolveProfileId(profile_name);
   const llmConfig = { prompt, prefill, include_preset_prompts, preset_name };
   const range = { startIdx, endIdx };
   const recap = await executeSceneRecapGeneration(llmConfig, range, ctx, effectiveProfile, OperationType.GENERATE_SCENE_RECAP);

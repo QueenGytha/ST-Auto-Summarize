@@ -135,13 +135,12 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
     }
 
     let response;
-    const normalizedProfile = connectionProfile || '';
 
     try {
       const { sendLLMRequest } = await import('./llmClient.js');
       const { OperationType: OpType } = await import('./operationTypes.js');
-      const { getContext } = await import('./index.js');
-      const effectiveProfile = normalizedProfile || getContext().extensionSettings.connectionProfile;
+      const { resolveProfileId } = await import('./profileResolution.js');
+      const effectiveProfile = resolveProfileId(connectionProfile);
 
       debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] Using sendLLMRequest');
 

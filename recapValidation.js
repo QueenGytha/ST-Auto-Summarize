@@ -53,7 +53,8 @@ async function validate_recap(recap , type  = "scene") {
 
       const { sendLLMRequest } = await import('./llmClient.js');
       const { OperationType } = await import('./operationTypes.js');
-      const effectiveProfile = validation_profile || ctx.extensionSettings.connectionProfile;
+      const { resolveProfileId } = await import('./profileResolution.js');
+      const effectiveProfile = resolveProfileId(validation_profile);
 
       const options = {
         maxTokens: DEFAULT_MAX_TOKENS,

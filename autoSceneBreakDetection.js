@@ -438,8 +438,9 @@ endIndex )
       // Use ConnectionManager for ALL requests (handles profile switching internally)
       const { sendLLMRequest } = await import('./llmClient.js');
       const { OperationType } = await import('./operationTypes.js');
+      const { resolveProfileId } = await import('./profileResolution.js');
 
-      const effectiveProfile = profile || ctx.extensionSettings.connectionProfile;
+      const effectiveProfile = resolveProfileId(profile);
 
       debug('Sending range detection prompt to AI for range', startIndex, 'to', endIndex);
 

@@ -565,7 +565,7 @@ async function runModelWithSettings(config) {
     debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] Called with label:', label);
 
     // Set operation context for ST_METADATA
-    const { setOperationSuffix, clearOperationSuffix, getContext } = await import('./index.js');
+    const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
     if (entryComment) {
       setOperationSuffix(`-${entryComment}`);
     }
@@ -575,8 +575,8 @@ async function runModelWithSettings(config) {
     try {
       const { sendLLMRequest } = await import('./llmClient.js');
       const { OperationType } = await import('./operationTypes.js');
-      const normalizedProfile = connectionProfile || '';
-      const effectiveProfile = normalizedProfile || getContext().extensionSettings.connectionProfile;
+      const { resolveProfileId } = await import('./profileResolution.js');
+      const effectiveProfile = resolveProfileId(connectionProfile);
 
       debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] label:', label);
       debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] include_preset_prompts:', include_preset_prompts);

@@ -318,7 +318,8 @@ async function generate_running_scene_recap(skipQueue  = false) {
     try {
       const { sendLLMRequest } = await import('./llmClient.js');
       const { OperationType } = await import('./operationTypes.js');
-      const effectiveProfile = running_profile || getContext().extensionSettings.connectionProfile;
+      const { resolveProfileId } = await import('./profileResolution.js');
+      const effectiveProfile = resolveProfileId(running_profile);
 
       debug(SUBSYSTEM.RUNNING, 'Sending running scene recap prompt to LLM');
 
@@ -445,7 +446,8 @@ async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index
   try {
     const { sendLLMRequest } = await import('./llmClient.js');
     const { OperationType } = await import('./operationTypes.js');
-    const effectiveProfile = running_profile || getContext().extensionSettings.connectionProfile;
+    const { resolveProfileId } = await import('./profileResolution.js');
+    const effectiveProfile = resolveProfileId(running_profile);
 
     const options = {
       maxTokens: DEFAULT_MAX_TOKENS,
