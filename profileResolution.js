@@ -28,16 +28,32 @@ export function getProfileForOperation(operationType) {
 }
 
 export function resolveProfileId(profileId) {
-  if (!profileId || profileId === '') {
-    return getContext().extensionSettings.connectionProfile;
+  if (profileId && profileId !== '') {
+    return profileId;
   }
-  return profileId;
+
+  const ctx = getContext();
+
+  // Fallback 1: Use stored current profile
+  const storedProfile = ctx.extensionSettings.connectionProfile;
+  if (storedProfile && storedProfile !== '') {
+    return storedProfile;
+  }
+
+  // Fallback 2: Query Connection Manager for active/first profile
+  const profiles = ctx.extensionSettings.connectionManager?.profiles || [];
+  if (profiles.length > 0) {
+    return profiles[0].id;
+  }
+
+  // Fallback 3: Fatal error - no profiles available
+  throw new Error('No connection profiles available. Please configure Connection Manager.');
 }
 
 export function shouldOperationBlockChat(operationType) {
   const profileId = getProfileForOperation(operationType);
   const resolvedProfile = resolveProfileId(profileId);
-  const currentProfile = getContext().extensionSettings.connectionProfile;
+  const currentProfile = resolveProfileId('');
   return resolvedProfile === currentProfile;
 }
 
