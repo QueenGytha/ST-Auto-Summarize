@@ -50,6 +50,24 @@ Your task:
    - Preserve important existing information
    - Maintain consistent formatting and tone
 
+⚠️ EXPLICIT CONTENT HANDLING ⚠️
+When merging intimate, sexual, or adult content:
+- BE SPECIFIC about physical acts, positions, body parts involved
+- NEVER use vague euphemisms like "intimate contact", "sexual contact", "engaged sexually", "made love"
+- State what actually happened: kissing, touching (where), penetration (type), orgasms, etc.
+- Track sexual progression: what acts they've done vs haven't done together
+- Include kink/preference details when present (dominance/submission, specific acts, dirty talk, roleplay scenarios)
+- Preserve explicit terminology; do not sanitize or soften language
+- In "Intimacy & Romance" section: list SPECIFIC ACTS performed (oral, penetrative, manual, positions, kink acts)
+- Examples of GOOD explicit capture:
+  ✅ "Intimacy & Romance: Adam penetrated Selenay with fingers; she guided his hand; breast touching; no penetrative sex yet"
+  ✅ "Intimacy & Romance: oral sex (Bob→Alice, Alice→Bob); penetrative sex with Alice on top; Bob prefers gentle pace"
+- Examples of BAD vague euphemisms to AVOID:
+  ❌ "intimate contact" - USELESS
+  ❌ "sexually engaged" - USELESS
+  ❌ "made love" - USELESS
+  ❌ "physical intimacy" - USELESS
+
 Existing Entry Content:
 {{existing_content}}
 
