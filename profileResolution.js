@@ -33,21 +33,13 @@ export function resolveProfileId(profileId) {
   }
 
   const ctx = getContext();
-
-  // Fallback 1: Use stored current profile
   const storedProfile = ctx.extensionSettings.connectionProfile;
-  if (storedProfile && storedProfile !== '') {
-    return storedProfile;
+
+  if (!storedProfile || storedProfile === '') {
+    throw new Error('FATAL: ctx.extensionSettings.connectionProfile is not set. Empty profile = "same as current" but current profile is undefined. This is a configuration error.');
   }
 
-  // Fallback 2: Query Connection Manager for active/first profile
-  const profiles = ctx.extensionSettings.connectionManager?.profiles || [];
-  if (profiles.length > 0) {
-    return profiles[0].id;
-  }
-
-  // Fallback 3: Fatal error - no profiles available
-  throw new Error('No connection profiles available. Please configure Connection Manager.');
+  return storedProfile;
 }
 
 export function shouldOperationBlockChat(operationType) {

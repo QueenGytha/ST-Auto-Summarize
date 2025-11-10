@@ -120,6 +120,28 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
       options.overridePayload || {}
     );
 
+    // DEBUG: Log raw response structure
+    const DEBUG_PREVIEW_LENGTH = 100;
+    debug(SUBSYSTEM.CORE, `[LLMClient] Raw response type: ${typeof result}`);
+    if (result && typeof result === 'object') {
+      debug(SUBSYSTEM.CORE, `[LLMClient] Response keys: ${Object.keys(result).join(', ')}`);
+      debug(SUBSYSTEM.CORE, `[LLMClient] Response.content: ${typeof result.content} = ${JSON.stringify(result.content)?.slice(0, DEBUG_PREVIEW_LENGTH)}`);
+      if ('reasoning' in result) {
+        debug(SUBSYSTEM.CORE, `[LLMClient] Response.reasoning: ${typeof result.reasoning} = ${JSON.stringify(result.reasoning)?.slice(0, DEBUG_PREVIEW_LENGTH)}`);
+      }
+      if ('text' in result) {
+        debug(SUBSYSTEM.CORE, `[LLMClient] Response.text: ${typeof result.text} = ${JSON.stringify(result.text)?.slice(0, DEBUG_PREVIEW_LENGTH)}`);
+      }
+      if ('response' in result) {
+        debug(SUBSYSTEM.CORE, `[LLMClient] Response.response: ${typeof result.response} = ${JSON.stringify(result.response)?.slice(0, DEBUG_PREVIEW_LENGTH)}`);
+      }
+      if ('message' in result) {
+        debug(SUBSYSTEM.CORE, `[LLMClient] Response.message: ${typeof result.message} = ${JSON.stringify(result.message)?.slice(0, DEBUG_PREVIEW_LENGTH)}`);
+      }
+    } else if (typeof result === 'string') {
+      debug(SUBSYSTEM.CORE, `[LLMClient] Response string length: ${result.length}, preview: ${result.slice(0, DEBUG_PREVIEW_LENGTH)}`);
+    }
+
     // 8. NORMALIZE RESPONSE FORMAT
     // ConnectionManager with reasoning returns {content, reasoning}
     // Normalize to always return string content
