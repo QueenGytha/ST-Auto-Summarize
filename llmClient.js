@@ -120,11 +120,19 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
       options.overridePayload || {}
     );
 
-    // 8. SENTENCE TRIMMING (if enabled in ST settings)
+    // 8. NORMALIZE RESPONSE FORMAT
+    // ConnectionManager with reasoning returns {content, reasoning}
+    // Normalize to always return string content
     let finalResult = result;
-    if (options.trimSentences !== false && typeof result === 'string') {
+    if (finalResult && typeof finalResult === 'object' && 'content' in finalResult) {
+      finalResult = finalResult.content || '';
+      debug(SUBSYSTEM.CORE, `[LLMClient] Extracted content from object response (reasoning was included)`);
+    }
+
+    // 9. SENTENCE TRIMMING (if enabled in ST settings)
+    if (options.trimSentences !== false && typeof finalResult === 'string') {
       if (ctx.powerUserSettings.trim_sentences) {
-        finalResult = trimToEndSentence(result);
+        finalResult = trimToEndSentence(finalResult);
         debug(SUBSYSTEM.CORE, `[LLMClient] Trimmed result to complete sentence`);
       }
     }
