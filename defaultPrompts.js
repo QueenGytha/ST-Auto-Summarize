@@ -40,6 +40,25 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Incomplete information is CORRECT - do not fill gaps
 // - When in doubt, OMIT the detail entirely
 //
+// ⚠️ EXPLICIT CONTENT HANDLING ⚠️
+// When the message contains intimate, sexual, or adult content:
+// - BE SPECIFIC about physical acts, positions, body parts involved
+// - NEVER use vague euphemisms like "intimate contact", "sexual contact", "engaged sexually", "made love"
+// - State what actually happened: kissing, touching (where), penetration (type), orgasms, etc.
+// - Capture consent dynamics, comfort levels, who initiated, boundaries respected or tested
+// - Include kink/preference details when present (dominance/submission, specific acts, dirty talk, roleplay scenarios)
+// - Track sexual progression: what acts they've done vs haven't done together
+// - Preserve the explicit terminology from the source text; do not sanitize
+// - Purpose: Future LLM needs to know EXACTLY what sexual history exists to maintain consistency
+// - Examples of GOOD explicit capture:
+//   ✅ "Adam touched Selenay's breast; she guided his hand lower; he penetrated her with fingers while maintaining eye contact"
+//   ✅ "Bob performed oral sex on Alice until orgasm; she reciprocated; penetrative sex followed with Alice on top"
+// - Examples of BAD vague euphemisms to AVOID:
+//   ❌ "intimate contact" - USELESS, says nothing
+//   ❌ "sexually engaged" - USELESS, says nothing
+//   ❌ "made love" - USELESS, says nothing
+//   ❌ "physical intimacy" - USELESS, says nothing
+//
 // CRITICAL: SEPARATION OF CONCERNS
 //
 // RECAP (recap string):
@@ -89,7 +108,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Psychology: <core drives, fears, contradictions, defense mechanisms, patterns of thought> (character entities only; durable psychological profile)
 // - Relationships: <X ↔ Y with stance + micro-cues>
 // - Interaction Defaults: <address forms/pet names, formality, distance/comfort gestures, boundaries>
-// - Intimacy & Romance: <preferences/patterns as stated (roles, initiations, pace, acts, aftercare), with brief quotes/cues when helpful; only include if present>
+// - Intimacy & Romance: <preferences/patterns as stated (roles, initiations, pace, SPECIFIC ACTS - oral, penetrative, manual, positions, kink acts - NO EUPHEMISMS, aftercare), with brief quotes/cues when helpful; only include if present>
 // - Current Emotional State: <mood/emotional state with triggers or evidence from this scene> (character entities only; temporary, updates with scenes)
 // - State: <status/location/owner/ongoing effects> (current, temporary conditions)
 // - Access: <who/how can use without owning> (optional)
@@ -119,7 +138,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //       "type": "{{lorebook_entry_types}}",
 //       "keywords": ["keyword1", "keyword2"],
 //       "secondaryKeys": ["and-term"],
-//       "content": "- Identity: <Type> — <Canonical Name>\n- Synopsis: <1 line>\n- Attributes: <bullets>\n- Psychology: <core drives, fears, contradictions, defense mechanisms> (character entities only)\n- Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>\n- Interaction Defaults: <address forms/pet names, formality, distance/comfort gestures, boundaries>\n- Intimacy & Romance: <preferences/patterns as stated; brief quotes/cues when helpful (if present)>\n- Micro‑Moments: <1–2 short quotes + cues from this scene that set an ongoing pattern>\n- Current Emotional State: <mood/emotional state with triggers> (character entities only; temporary)\n- State: <current status/location/owner/ongoing effects with scene/time anchors when present>\n- Secrets/Leverage: <who knows>\n- Tension/Triggers: <micro cues>\n- Style Notes: <voice & diction anchors>\n- Notable Dialogue: <short quotes with recipient/context that lock in voice>"
+//       "content": "- Identity: <Type> — <Canonical Name>\n- Synopsis: <1 line>\n- Attributes: <bullets>\n- Psychology: <core drives, fears, contradictions, defense mechanisms> (character entities only)\n- Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>\n- Interaction Defaults: <address forms/pet names, formality, distance/comfort gestures, boundaries>\n- Intimacy & Romance: <preferences/patterns, SPECIFIC ACTS performed (oral, penetrative, manual, positions, kink acts), NO EUPHEMISMS; brief quotes/cues when helpful (if present)>\n- Micro‑Moments: <1–2 short quotes + cues from this scene that set an ongoing pattern>\n- Current Emotional State: <mood/emotional state with triggers> (character entities only; temporary)\n- State: <current status/location/owner/ongoing effects with scene/time anchors when present>\n- Secrets/Leverage: <who knows>\n- Tension/Triggers: <micro cues>\n- Style Notes: <voice & diction anchors>\n- Notable Dialogue: <short quotes with recipient/context that lock in voice>"
 //     }
 //   ]
 // }
@@ -236,6 +255,25 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 - Do not invent motives beyond the text
 - Franchise names: ignore canon outside this transcript
 //
+// ⚠️ EXPLICIT CONTENT HANDLING ⚠️
+// When the scene contains intimate, sexual, or adult content:
+// - BE SPECIFIC about physical acts, positions, body parts involved
+// - NEVER use vague euphemisms like "intimate contact", "sexual contact", "engaged sexually", "made love"
+// - State what actually happened: kissing, touching (where), penetration (type), orgasms, etc.
+// - Capture consent dynamics, comfort levels, who initiated, boundaries respected or tested
+// - Include kink/preference details when present (dominance/submission, specific acts, dirty talk, roleplay scenarios)
+// - Track sexual progression: what acts they've done vs haven't done together
+// - Preserve the explicit terminology from the source text; do not sanitize
+// - Purpose: Future LLM needs to know EXACTLY what sexual history exists to maintain consistency
+// - Examples of GOOD explicit capture:
+//   ✅ "Adam touched Selenay's breast; she guided his hand lower; he penetrated her with fingers while maintaining eye contact"
+//   ✅ "Bob performed oral sex on Alice until orgasm; she reciprocated; penetrative sex followed with Alice on top"
+// - Examples of BAD vague euphemisms to AVOID:
+//   ❌ "intimate contact" - USELESS, says nothing
+//   ❌ "sexually engaged" - USELESS, says nothing
+//   ❌ "made love" - USELESS, says nothing
+//   ❌ "physical intimacy" - USELESS, says nothing
+//
 // recap field (string):
 // Use markdown headers and bullets in this exact order:
 //   ## Current Situation   -> Where the scene ends; who is present; unresolved stakes
@@ -316,7 +354,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //   - Psychology: <core drives, fears, contradictions, defense mechanisms, patterns of thought> (character entities only; durable psychological profile)
 //   - Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>
 //   - Interaction Defaults: <for key counterpart(s), how this entity typically addresses/engages> (address forms/pet names, formality level, physical distance/comfort gestures, boundaries/consent norms).
-//   - Intimacy & Romance: <preferences/patterns as stated when present — roles, initiations, pace, acts, aftercare, jealousy/possessiveness patterns, gifting rituals; use short quotes/cues as evidence; add only if new vs active entries>
+//   - Intimacy & Romance: <preferences/patterns as stated when present — roles, initiations, pace, SPECIFIC ACTS (oral, penetrative, manual, positions, kink acts), aftercare, jealousy/possessiveness patterns, gifting rituals; use short quotes/cues as evidence; NO EUPHEMISMS - state actual acts performed; add only if new vs active entries>
 //   - Micro‑Moments (limit 1–2): <short quotes + cues from THIS scene that established an ongoing pattern> (prune older duplicates; prefer pattern‑setting beats over one‑offs).
 //   - Current Emotional State: <mood/emotional state with triggers or evidence from this scene> (character entities only; temporary, updates with scenes)
 //   - State: <current status/location/owner/ongoing effects with scene/time anchors when present> (current, temporary conditions)
