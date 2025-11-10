@@ -795,13 +795,26 @@ function formatSettingLoreForPrompt(entries) {
       const order = e.order !== undefined ? e.order : '';
       const keys = (e.key || []).join('|');
 
-      return `<setting_lore name="${name}" uid="${uid}" world="${world}" position="${position}" order="${order}" keys="${keys}">\n${e.content}\n</setting_lore>`;
+      // Strip existing <setting_lore> tags from content if present to prevent double-wrapping
+      const unwrappedContent = (e.content || '')
+        .trim()
+        .replace(/^<setting_lore[^>]*>\s*/i, '')
+        .replace(/\s*<\/setting_lore>$/i, '')
+        .trim();
+
+      return `<setting_lore name="${name}" uid="${uid}" world="${world}" position="${position}" order="${order}" keys="${keys}">\n${unwrappedContent}\n</setting_lore>`;
     }).join('\n\n');
   } else {
     instructions = `INSTRUCTIONS: The following entries contain context that is active for this scene. Only include information from these entries that is new or has changed in the scene. If the scene rehashes something already captured in these entries, omit it to avoid duplication.\n\n`;
     formattedEntries = entries.map(e => {
       const name = e.comment || 'Unnamed Entry';
-      return `[${name}]\n${e.content}`;
+      // Strip existing <setting_lore> tags from content if present
+      const unwrappedContent = (e.content || '')
+        .trim()
+        .replace(/^<setting_lore[^>]*>\s*/i, '')
+        .replace(/\s*<\/setting_lore>$/i, '')
+        .trim();
+      return `[${name}]\n${unwrappedContent}`;
     }).join('\n\n');
   }
 
