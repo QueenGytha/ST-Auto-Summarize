@@ -5,6 +5,7 @@ export const DEFAULT_ENTITY_TYPES  = [
 'location',
 'item',
 'faction',
+'lore',
 'quest(entry:constant)',
 'rule(entry:constant)'];
 

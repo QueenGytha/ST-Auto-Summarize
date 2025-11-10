@@ -13,6 +13,8 @@ Your response MUST start with { and end with }. No code fences, no commentary, n
 Required format (copy this structure exactly):
 {
   "recap": "Your scene recap here (or empty string if nothing happened)",
+  "atmosphere": "Brief mood/sensory context (time, lighting, tension level, weather when significant)",
+  "emotional_beats": "Key emotional moments with character names and triggers (e.g., 'Senta: conflicted hope vs self-doubt from Companion teasing; Adam: defensive hostility masking curiosity after Shakespeare quote')",
   "setting_lore": [
     {
       "type": "character",
@@ -25,7 +27,7 @@ Required format (copy this structure exactly):
 }
 
 Example valid response:
-{"recap": "Adam approached Haven's eastern gate with Senta following. Guards challenged them.", "setting_lore": [{"type": "location", "name": "Haven Eastern Gate", "content": "Main entrance to Haven city, heavily guarded", "keywords": ["haven", "eastern gate"], "secondaryKeys": ["gate"]}]}
+{"recap": "Adam approached Haven's eastern gate with Senta following. Guards challenged them.", "atmosphere": "Dawn; cold morning air; tense anticipation", "emotional_beats": "Adam: defensive wariness at authority figures; Senta: quiet determination despite rejection", "setting_lore": [{"type": "location", "name": "Haven Eastern Gate", "content": "Main entrance to Haven city, heavily guarded", "keywords": ["haven", "eastern gate"], "secondaryKeys": ["gate"]}]}
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
@@ -51,6 +53,19 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - JSON safety: Escape all internal double quotes in values as \". Do not output any preamble or commentary.
 // - Tone & Style detail: include Voice Anchors (per‑character address forms, idioms, formatting conventions) and, when warranted, 1–2 Moment Anchors (≤12‑word exact quotes + micro‑cues that set ongoing vibe) formatted like: "Moment anchors: '<exact words>' (cue) — <who ↔ who>".
 //
+// atmosphere field (string):
+// - Brief sensory and mood context to ground the scene in a specific feeling and time
+// - Include: time of day when significant, lighting, weather if notable, tension level
+// - Keep concise (one short phrase or semicolon-separated list)
+// - Purpose: Helps future LLM recreate the environmental mood when original messages are gone
+//
+// emotional_beats field (string):
+// - Key emotional moments for named characters with triggers/motivations
+// - Format: "CharacterName: emotion/internal state with brief trigger; NextCharacter: emotion with trigger"
+// - Focus on internal emotional states, psychological complexity, and motivations (the "why" behind actions)
+// - Capture contradictions, conflicting feelings, and emotional nuance
+// - Purpose: Preserves character psychology and emotional continuity
+//
 // SETTING_LORE array:
 // - Update character entries for any named participants whose relationship dynamics, voice, or concrete interactions changed in THIS scene. Use the provided active lorebook entries (below) to compare and only add new information; omit duplicates.
 // - Also add/update entities of other types (locations, items, factions, quests, rules) when relevant.
@@ -71,9 +86,11 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Identity: <Type> — <Canonical Name>
 // - Synopsis: <1 line>
 // - Attributes: <appearance/traits/capabilities> (permanent, defining features)
+// - Psychology: <core drives, fears, contradictions, defense mechanisms, patterns of thought> (character entities only; durable psychological profile)
 // - Relationships: <X ↔ Y with stance + micro-cues>
 // - Interaction Defaults: <address forms/pet names, formality, distance/comfort gestures, boundaries>
 // - Intimacy & Romance: <preferences/patterns as stated (roles, initiations, pace, acts, aftercare), with brief quotes/cues when helpful; only include if present>
+// - Current Emotional State: <mood/emotional state with triggers or evidence from this scene> (character entities only; temporary, updates with scenes)
 // - State: <status/location/owner/ongoing effects> (current, temporary conditions)
 // - Access: <who/how can use without owning> (optional)
 // - Secrets/Leverage: <what/who knows>
@@ -102,7 +119,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //       "type": "{{lorebook_entry_types}}",
 //       "keywords": ["keyword1", "keyword2"],
 //       "secondaryKeys": ["and-term"],
-//       "content": "- Identity: <Type> — <Canonical Name>\n- Synopsis: <1 line>\n- Attributes: <bullets>\n- Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>\n- Interaction Defaults: <address forms/pet names, formality, distance/comfort gestures, boundaries>\n- Intimacy & Romance: <preferences/patterns as stated; brief quotes/cues when helpful (if present)>\n- Micro‑Moments: <1–2 short quotes + cues from this scene that set an ongoing pattern>\n- State: <current status/location/owner/ongoing effects with scene/time anchors when present>\n- Secrets/Leverage: <who knows>\n- Tension/Triggers: <micro cues>\n- Style Notes: <voice & diction anchors>\n- Notable Dialogue: <short quotes with recipient/context that lock in voice>"
+//       "content": "- Identity: <Type> — <Canonical Name>\n- Synopsis: <1 line>\n- Attributes: <bullets>\n- Psychology: <core drives, fears, contradictions, defense mechanisms> (character entities only)\n- Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>\n- Interaction Defaults: <address forms/pet names, formality, distance/comfort gestures, boundaries>\n- Intimacy & Romance: <preferences/patterns as stated; brief quotes/cues when helpful (if present)>\n- Micro‑Moments: <1–2 short quotes + cues from this scene that set an ongoing pattern>\n- Current Emotional State: <mood/emotional state with triggers> (character entities only; temporary)\n- State: <current status/location/owner/ongoing effects with scene/time anchors when present>\n- Secrets/Leverage: <who knows>\n- Tension/Triggers: <micro cues>\n- Style Notes: <voice & diction anchors>\n- Notable Dialogue: <short quotes with recipient/context that lock in voice>"
 //     }
 //   ]
 // }
@@ -112,6 +129,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - location: Significant places (description, features, who controls it)
 // - item: Objects, artifacts, equipment (capabilities, ownership, significance)
 // - faction: Organizations, groups (members, goals, relationships with other factions)
+// - lore: Cultural beliefs, folklore, world knowledge, social conventions (what cultures believe, how reliable, narrative impact)
 // - quest: Active objectives, missions (participants, deadline, stakes, status)
 // - rule: World mechanics, magic systems, game rules (how it works, limitations, exceptions)
 //
@@ -195,6 +213,8 @@ Required format (copy this structure exactly):
 {
   "scene_name": "A brief, descriptive scene title",
   "recap": "Your scene recap here (or empty string if nothing happened)",
+  "atmosphere": "Brief mood/sensory context (time, lighting, tension level, weather when significant)",
+  "emotional_beats": "Key emotional moments with character names and triggers (e.g., 'Senta: conflicted hope vs self-doubt from Companion teasing; Adam: defensive hostility masking curiosity after Shakespeare quote')",
   "setting_lore": [
     {
       "type": "character",
@@ -207,7 +227,7 @@ Required format (copy this structure exactly):
 }
 
 Example valid response:
-{"scene_name": "Hidden Chamber Revelation", "recap": "## Current Situation\n- At the waterfall, party stands by a newly found chamber\n\n## Key Developments\n- [discovery] Hidden chamber found behind waterfall; murals show the First War\n\n## Tone & Style\n- curious; reverent; ancient mystery\n\n## Pending Threads\n- Return with tools to study murals", "setting_lore": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: Secret chamber behind waterfall with First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "murals", "waterfall"], "secondaryKeys": ["chamber"]}]}
+{"scene_name": "Hidden Chamber Revelation", "recap": "## Current Situation\n- At the waterfall, party stands by a newly found chamber\n\n## Key Developments\n- [discovery] Hidden chamber found behind waterfall; murals show the First War\n\n## Tone & Style\n- curious; reverent; ancient mystery\n\n## Pending Threads\n- Return with tools to study murals", "atmosphere": "Late afternoon; golden light through mist; tense anticipation", "emotional_beats": "Alice: awe mixed with apprehension at ancient history discovery; Bob: cautious excitement, driven by artifact obsession", "setting_lore": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: Secret chamber behind waterfall with First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "murals", "waterfall"], "secondaryKeys": ["chamber"]}]}
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
@@ -261,6 +281,30 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Final check before responding: durable outcomes covered; Tone & Style describes WRITING STYLE (genre, POV, prose patterns, dialogue format, motifs) NOT character emotions; dynamic snapshots updated if relationships shifted.
 // - Coherence note: If a new or updated lorebook entity is introduced, reference it by name once in recap (Current Situation or Key Developments) so context remains coherent.
 //
+// atmosphere field (string):
+// - Brief sensory and mood context to ground the scene in a specific feeling and time
+// - Include: time of day when significant (dawn, dusk, night), lighting (golden hour, shadows, artificial light), weather if notable (rain, fog, heat), tension level (tense anticipation, relaxed calm, charged atmosphere)
+// - Keep concise (one short phrase or semicolon-separated list)
+// - Purpose: Helps future LLM recreate the environmental mood when original messages are gone
+// - Examples:
+//   ✅ "Night; Haven streets emptying; practice field under stars; tense vigil"
+//   ✅ "Late afternoon; golden light through mist; tense anticipation"
+//   ✅ "Morning in royal chambers; formal atmosphere; underlying political tension"
+//   ✅ "Quiet tavern; warm firelight; intimate conversation mood"
+//
+// emotional_beats field (string):
+// - Key emotional moments for named characters with triggers/motivations that explain the feeling
+// - Format: "CharacterName: emotion/internal state with brief trigger or motivation; NextCharacter: emotion with trigger"
+// - Focus on internal emotional states, psychological complexity, and motivations (the "why" behind actions)
+// - Capture contradictions, conflicting feelings, and emotional evolution within the scene
+// - Include what drives the emotion (past events, social pressure, fears, desires, internal conflicts)
+// - Purpose: Preserves character psychology and emotional continuity when original messages scroll out
+// - Examples:
+//   ✅ "Senta: conflicted hope vs self-doubt from Companion teasing about being 'Choosy One'; Adam: defensive hostility masking curiosity after recognizing Companion intelligence"
+//   ✅ "Alice: awe mixed with apprehension at ancient history discovery; Bob: cautious excitement driven by artifact obsession overriding safety concerns"
+//   ✅ "Marcus: wary trust building after payment received; vulnerability showing when mentioning daughter; {{user}}: protective instinct triggered"
+// - Store detailed per-character psychology in setting_lore character entries (Psychology bullet); this field is for scene-specific emotional moments
+//
 // SETTING_LORE (array):
 // - Only include if this scene adds durable knowledge about an entity (new/changed vs active entries below).
 // - Each object updates ONE concrete entity (character, location, item, faction, quest, rule).
@@ -269,10 +313,12 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //   - Identity: <Type> — <Canonical Name>
 //   - Synopsis: <1 line identity/purpose>
 //   - Attributes: <appearance/traits/capabilities> (permanent, defining features)
+//   - Psychology: <core drives, fears, contradictions, defense mechanisms, patterns of thought> (character entities only; durable psychological profile)
 //   - Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>
 //   - Interaction Defaults: <for key counterpart(s), how this entity typically addresses/engages> (address forms/pet names, formality level, physical distance/comfort gestures, boundaries/consent norms).
 //   - Intimacy & Romance: <preferences/patterns as stated when present — roles, initiations, pace, acts, aftercare, jealousy/possessiveness patterns, gifting rituals; use short quotes/cues as evidence; add only if new vs active entries>
 //   - Micro‑Moments (limit 1–2): <short quotes + cues from THIS scene that established an ongoing pattern> (prune older duplicates; prefer pattern‑setting beats over one‑offs).
+//   - Current Emotional State: <mood/emotional state with triggers or evidence from this scene> (character entities only; temporary, updates with scenes)
 //   - State: <current status/location/owner/ongoing effects with scene/time anchors when present> (current, temporary conditions)
 //   - Secrets/Leverage: <what/who knows>
 //   - Tension/Triggers: <what escalates/defuses; quotes if needed>
@@ -326,6 +372,17 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Exceptions/Limits: <edge cases, failures>
 // - State: <where/when it applies>
 // - Style Notes: <terminology/jargon if relevant>
+//
+// ✅ Lore Template (cultural beliefs/folklore/world knowledge)
+// - Identity: Lore — <Name>
+// - Synopsis: <1 line summary of the concept>
+// - Category: <cultural belief|world mechanic|folklore|social convention|historical event|prophecy>
+// - Content: <core concept, belief, or knowledge>
+// - Scope: <who follows/believes this> (which cultures, groups, or individuals)
+// - Reliability: <established fact|disputed|legend|propaganda> (how reliable is this information)
+// - Narrative Impact: <how it influences character behavior, plot, or world state>
+// - Related Entities: <characters/factions/locations connected to this lore>
+// - Contradictions: <conflicting beliefs or interpretations if present>
 
 // EXAMPLES: Subtype Entries (compact)
 // ✅ Quest — Find the Sunblade
@@ -360,10 +417,32 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Identity: Item — Sunblade
 // - Synopsis: Legendary radiant sword
 // - Attributes: golden blade; glows in sunlight; banishes darkness
-// - Provenance: Eastern Ruins temple vault; custodianship by Alice’s family
+// - Provenance: Eastern Ruins temple vault; custodianship by Alice's family
 // - Owner change: to {{user}} (after vault theft)
 // - State: current owner — {{user}}; sought by multiple factions
 // - Tension/Triggers: dangerous leverage if revealed
+//
+// ✅ Lore — Holderkin Gender Roles
+// - Identity: Lore — Holderkin Gender Roles
+// - Synopsis: Holderkin cultural beliefs about women's place in society
+// - Category: cultural belief
+// - Content: Women expected to be silent, obedient, serve proper station; wives should be virgin at marriage; systematic conditioning through isolated communities
+// - Scope: Holderkin communities; Adam's worldview shaped by these beliefs
+// - Reliability: established fact within Holderkin culture; considered oppressive by Valdemaran mainstream
+// - Narrative Impact: Drives Adam's initial attitudes toward women and Heralds; creates internal conflict as beliefs challenged
+// - Related Entities: Adam, Holderkin communities, Valdemaran culture (contrasts)
+// - Contradictions: Conflicts with Valdemaran equality norms; Adam intellectually questions but emotionally clings to framework
+//
+// ✅ Lore — Companion Choosing Bond
+// - Identity: Lore — Companion Choosing Bond
+// - Synopsis: Mystical process where Companions select their Heralds
+// - Category: world mechanic
+// - Content: Companions are sapient spirit-beings who Choose individuals to become Heralds; bond is telepathic and lifelong; unchosen Companions face social pressure
+// - Scope: Kingdom of Valdemar; Companion's Bell as meeting place
+// - Reliability: established fact
+// - Narrative Impact: Drives Senta's motivation to Choose Adam despite his hostility; "Choosy One" nickname creates social pressure
+// - Related Entities: Senta, Adam, Companion's Bell, other Companions
+// - Contradictions: Adam believes Companions are enslaved spirit-beasts vs reality of willing partnership
 
 // RELATIONSHIP STORAGE
 // - Store relationship snapshots under the most relevant entity; do not mirror everywhere unless independently useful. Avoid duplicate edits across entries.
@@ -427,15 +506,17 @@ export const message_recap_error_detection_prompt = `You are validating a rolepl
 Check that the JSON meets these criteria:
 1. Valid JSON structure.
 2. Has a "recap" field (string) with headers in this order: "## Current Situation", "## Key Developments", "## Tone & Style", "## Pending Threads".
-3. Each section uses bullet lines ("- ") with observable facts; Key Developments bullets may optionally start with a category tag in square brackets (e.g., [reveal]); no blow-by-blow narration.
-4. Has a "setting_lore" field (array, may be empty).
-5. Each setting_lore entry includes "name", "type", "keywords" (array), and "content" as bullet points.
-6. Content begins with an identity bullet like "- Identity: <Type> — <Canonical Name>" and avoids pronouns for references; content may include Interaction Defaults and Micro‑Moments bullets when relevant.
-7. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
-8. Recap focuses on events + overall tone. Tone & Style may include brief Voice Anchors (per‑character speech patterns, address forms, dialogue conventions) and Moment Anchors (micro‑moments with ≤12‑word quotes + cues) to preserve vibe; detailed biographies belong in setting_lore entries.
-9. For location entries that imply subareas via hyphenated canonical names (e.g., "Parent-Subarea" or "Parent-Child-Grandchild"), content includes a parent link bullet (e.g., "Located in: <ImmediateParent>") and uses a single hyphen as chain separators (preserving punctuation within names).
-10. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
-11. If setting_lore entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
+3. Has an "atmosphere" field (string) with brief sensory/mood context.
+4. Has an "emotional_beats" field (string) with character emotional moments and triggers.
+5. Each section uses bullet lines ("- ") with observable facts; Key Developments bullets may optionally start with a category tag in square brackets (e.g., [reveal]); no blow-by-blow narration.
+6. Has a "setting_lore" field (array, may be empty).
+7. Each setting_lore entry includes "name", "type", "keywords" (array), and "content" as bullet points.
+8. Content begins with an identity bullet like "- Identity: <Type> — <Canonical Name>" and avoids pronouns for references; content may include Interaction Defaults, Psychology, Current Emotional State, and Micro‑Moments bullets when relevant.
+9. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
+10. Recap focuses on events + overall tone. Tone & Style may include brief Voice Anchors (per‑character speech patterns, address forms, dialogue conventions) and Moment Anchors (micro‑moments with ≤12‑word quotes + cues) to preserve vibe; detailed biographies belong in setting_lore entries.
+11. For location entries that imply subareas via hyphenated canonical names (e.g., "Parent-Subarea" or "Parent-Child-Grandchild"), content includes a parent link bullet (e.g., "Located in: <ImmediateParent>") and uses a single hyphen as chain separators (preserving punctuation within names).
+12. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
+13. If setting_lore entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
 
 Respond with ONLY:
 - "VALID" if all criteria met
@@ -448,15 +529,18 @@ export const scene_recap_error_detection_prompt = `You are validating a scene me
 
 Check that the JSON meets these criteria:
 1. Valid JSON structure.
-2. Has a "recap" field (string) using the headers "## Current Situation", "## Key Developments", "## Tone & Style", "## Pending Threads" in that order.
-3. Each section contains bullet lines with observable facts or outcomes from the scene (no speculation or biographies). Key Developments bullets may optionally start with a category tag (e.g., [plan], [reveal]).
-4. Has a "setting_lore" field (array, may be empty).
-5. Every setting_lore entry includes "name", "type", "keywords" (array), and bullet-point "content" that starts with an identity bullet and uses specific names; content may include Interaction Defaults and Micro‑Moments when relevant.
-6. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
-7. Recap covers events and overall tone. Tone & Style may include brief Voice Anchors (per‑character speech patterns, address forms, dialogue conventions) and Moment Anchors (micro‑moments with ≤12‑word quotes + cues) that help preserve writing voice and vibe; detailed nuance lives in setting_lore entries.
-8. For location entries with hyphenated canonical names indicating subareas (e.g., "Parent-Subarea", "Parent-Child-Grandchild"), content includes a "Located in: <ImmediateParent>" bullet and optionally a top-level link ("Part of: <TopLevel>"); chain separators are single hyphens (preserve punctuation in names).
-9. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
-10. If setting_lore entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
+2. Has a "scene_name" field (string) with a brief descriptive title.
+3. Has a "recap" field (string) using the headers "## Current Situation", "## Key Developments", "## Tone & Style", "## Pending Threads" in that order.
+4. Has an "atmosphere" field (string) with brief sensory/mood context.
+5. Has an "emotional_beats" field (string) with character emotional moments and triggers.
+6. Each section contains bullet lines with observable facts or outcomes from the scene (no speculation or biographies). Key Developments bullets may optionally start with a category tag (e.g., [plan], [reveal]).
+7. Has a "setting_lore" field (array, may be empty).
+8. Every setting_lore entry includes "name", "type", "keywords" (array), and bullet-point "content" that starts with an identity bullet and uses specific names; content may include Interaction Defaults, Psychology, Current Emotional State, and Micro‑Moments when relevant.
+9. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
+10. Recap covers events and overall tone. Tone & Style may include brief Voice Anchors (per‑character speech patterns, address forms, dialogue conventions) and Moment Anchors (micro‑moments with ≤12‑word quotes + cues) that help preserve writing voice and vibe; detailed nuance lives in setting_lore entries.
+11. For location entries with hyphenated canonical names indicating subareas (e.g., "Parent-Subarea", "Parent-Child-Grandchild"), content includes a "Located in: <ImmediateParent>" bullet and optionally a top-level link ("Part of: <TopLevel>"); chain separators are single hyphens (preserve punctuation in names).
+12. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
+13. If setting_lore entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
 
 Respond with ONLY:
 - "VALID" if all criteria met
@@ -472,7 +556,7 @@ Scene content:
 
 
 export const auto_scene_break_detection_prompt = `You are segmenting a roleplay transcript into scene-sized chunks (short, chapter-like story beats).
-Your task is to analyze the provided messages and determine if ANY of them marks the start of a new scene, outputting ONLY valid JSON.
+Your task is to analyze the provided messages and identify where the current scene ENDS (the last message before a new scene begins), outputting ONLY valid JSON.
 
 MANDATORY OUTPUT FORMAT:
 Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
@@ -484,15 +568,15 @@ Required format (copy this structure exactly):
 }
 
 Example valid responses:
-{"sceneBreakAt": 5, "rationale": "Message #5 opens with explicit time skip: 'The next morning...'"}
+{"sceneBreakAt": 5, "rationale": "Scene ends at message #5; next message #6 opens with explicit time skip: 'The next morning...'"}
 {"sceneBreakAt": false, "rationale": "All messages are part of the same continuous scene"}
 
 CRITICAL:
 - Ensure your response begins with the opening curly brace { character
 - Do not include any preamble or explanation
 - If you quote text in the rationale, escape internal double quotes as \"
-- If a scene break exists, return the message NUMBER where the new scene begins (not an index, but the actual number shown)
-- Return ONLY ONE message number - the FIRST message that starts a new scene
+- If a scene break exists, return the message NUMBER of the LAST message in the current scene (the message immediately BEFORE the new scene starts)
+- Return ONLY ONE message number - where the current scene ENDS
 - If no scene break exists, return false
 
 STRICT CONTENT-ONLY RULES:
@@ -552,29 +636,67 @@ Do NOT mark a break when:
 - Decorative separators or headings ("---", "***", "===", "Scene Break", "Chapter X", etc.) appear without an accompanying content change
 
 EXCEPTION: Same location + explicit time skip (night → dawn) = SCENE BREAK
-Example: If characters sleep in a field at night and a message begins with "Dawn arrived" in the same field, mark the dawn message as a break.
+Example: If characters sleep in a field at night (message #35) and the next message begins with "Dawn arrived" (message #36), return 35 as the end of the night scene.
 
 Decision process:
 1. Check if at least {{minimum_scene_length}} messages have passed
 2. Check for EXPLICIT TIME TRANSITIONS first (dawn/morning/evening/next day/hours later/etc.) - these override location continuity and are scene breaks. If the time cue is measured in seconds/minutes or simply reaffirms the current hour, it is NOT a qualifying transition.
 3. Ignore decorative separators and formatting; do not treat them as breaks
 4. Compare setting, time, cast, and objective across messages; mark a break only if there is a clear change
-5. Consider narrative flow: Has the prior beat concluded? Is the marked message starting a new beat?
+5. Consider narrative flow: Has the prior beat concluded? Is the next message starting a new beat?
 6. If evidence is ambiguous, treat it as a continuation (sceneBreakAt: false)
-7. Return the FIRST message number that qualifies as a scene break
+7. Return the LAST message number of the current scene (the message immediately before the new scene begins)
+
+EVALUATION STRATEGY:
+- Scan through ALL eligible messages in the range - do not stop at the first potential break
+- Look for messages where the NEXT message represents a scene change
+- Rate the strength of each potential scene ending:
+
+STRONG scene endings (these are valid):
+  • Next message opens with explicit time transitions: "Dawn arrived", "The next morning", "Hours later", "That evening"
+  • Next message shows characters physically arrived in a completely new location (not just traveling toward it)
+  • Next message introduces completely new cast of characters with prior scene resolved
+  • Current message provides clear resolution, next message starts new objective
+
+WEAK scene endings (treat as continuations, return false instead):
+  • Next message contains "for the second time in as many minutes", "seconds later", "moments later"
+  • Next message is direct response to question/dialogue from current message
+  • Next message continues mid-conversation, mid-action, mid-beat
+  • Next message still in same location mentioned in current/prior messages
+  • Next message shows character arriving somewhere that current message mentioned going to
+
+Decision rule: Return the message number immediately BEFORE the first STRONG scene change. If only weak candidates exist, return false.
 
 CRITICAL: Base your decision ONLY on the provided messages below.
 - Never invent details, context, or relationships not explicitly stated in the text
 - Do not assume narrative patterns based on genre expectations
 - If a detail is not mentioned in the messages, it does not exist for this decision
 
+CONCRETE COUNTER-EXAMPLES (based on actual errors):
+
+❌ WRONG: Returning message #40 when #41 starts with "For the second time in as many minutes, Senta found herself..."
+   Bad rationale: "Scene ends at #40; next message has time transition"
+   Why wrong: "For the second time in as many minutes" marks repetition WITHIN the same beat, explicitly prohibited
+
+❌ WRONG: Returning message #46 when #47 contains "...breakfast you have earned"
+   Bad rationale: "Scene ends at #46; transition to breakfast in dining hall"
+   Why wrong: Message #47 still on practice field, TALKING ABOUT going to eat, not THERE yet
+
+❌ WRONG: Returning message #51 when #52 responds to question asked in #51
+   Bad rationale: "Scene ends at #51; new interaction with different characters"
+   Why wrong: Message #52 is mid-conversation that started at #50-51, not start of new scene
+
+✓ CORRECT: Returning message #49 when #50 reads "The youth had just settled at an empty table when..."
+   Good rationale: "Scene ends at #49; message #50 shows characters physically present in dining hall, seated and beginning new interaction"
+   Why right: Message #50 actually IN the new location, starting new beat
+
 Messages to analyze (with SillyTavern message numbers):
 {{messages}}
 
 REMINDER:
 - Output must be valid JSON starting with { character
-- Return the message NUMBER (as shown above) or false
-- Return ONLY the FIRST qualifying scene break`;
+- Return the message NUMBER of the LAST message in the current scene (immediately before the new scene starts)
+- Return ONLY the FIRST qualifying scene ending, or false if no strong scene break exists`;
 
 
 export const running_scene_recap_prompt = `You are a structured data extraction system for roleplay memory management.
