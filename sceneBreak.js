@@ -661,7 +661,7 @@ chat )
 
 // Helper: Get active lorebook entries at a specific message position
 async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
-  const includeActiveLorebooks = get_settings('scene_recap_include_active_lorebooks');
+  const includeActiveLorebooks = get_settings('scene_recap_include_active_setting_lore');
   if (!includeActiveLorebooks) {
     return { entries: [], metadata: { startIdx: endIdx, endIdx, sceneMessageCount: 0 } };
   }
@@ -775,12 +775,12 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
 }
 
 // Helper: Format lorebook entries for prompt with inline instructions
-function formatLorebooksForPrompt(entries) {
+function formatSettingLoreForPrompt(entries) {
   if (!entries || entries.length === 0) {
     return '';
   }
 
-  const wrapEnabled = get_settings('wrap_lorebook_entries');
+  const wrapEnabled = get_settings('wrap_setting_lore_entries');
 
   let formattedEntries = '';
   let instructions = '';
@@ -825,7 +825,7 @@ get_data )
 
   // Get active lorebooks if enabled (now returns { entries, metadata })
   const { entries: activeEntries, metadata: lorebookMetadata } = await getActiveLorebooksAtPosition(endIdx, ctx, get_data);
-  const activeLorebooksText = formatLorebooksForPrompt(activeEntries);
+  const activeSettingLoreText = formatSettingLoreForPrompt(activeEntries);
 
   // Format scene messages with speaker labels to prevent substituteParamsExtended from stripping them
   const formattedMessages = sceneObjects.map((obj) => {
@@ -845,14 +845,15 @@ get_data )
       message: JSON.stringify(sceneObjects, null, 2), // Keep for backward compatibility
       prefill,
       lorebook_entry_types: lorebookTypesMacro,
-      active_lorebooks: activeLorebooksText
+      active_setting_lore: activeSettingLoreText
     }) || prompt;
   }
   // Fallback replacements
   prompt = prompt.replace(/\{\{scene_messages\}\}/g, formattedMessages);
   prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
   prompt = prompt.replace(/\{\{lorebook_entry_types\}\}/g, lorebookTypesMacro);
-  prompt = prompt.replace(/\{\{active_lorebooks\}\}/g, activeLorebooksText);
+  // Support both legacy and new macro names
+  prompt = prompt.replace(/\{\{active_setting_lore\}\}/g, activeSettingLoreText);
 
   return { prompt, prefill, lorebookMetadata: { ...lorebookMetadata, entries: activeEntries } };
 }
@@ -995,15 +996,16 @@ messageIndex )
     // Parse JSON (should already be clean from generation)
     const parsed = JSON.parse(recap);
 
-    // Check for 'lorebooks' array (standard format)
-    if (parsed.lorebooks && Array.isArray(parsed.lorebooks)) {
-      debug(SUBSYSTEM.SCENE, `Found ${parsed.lorebooks.length} lorebook entries in scene recap at index ${messageIndex}`);
+    // Expect canonical 'setting_lore' field only (no legacy compatibility)
+    const entriesArray = Array.isArray(parsed.setting_lore) ? parsed.setting_lore : null;
+    if (entriesArray) {
+      debug(SUBSYSTEM.SCENE, `Found ${entriesArray.length} setting_lore entries in scene recap at index ${messageIndex}`);
 
       // Deduplicate entries by name/comment before queueing
       const seenNames  = new Set();
       const uniqueEntries = [];
 
-      for (const entry of parsed.lorebooks) {
+      for (const entry of entriesArray) {
         if (entry && (entry.name || entry.comment)) {
           const entryName = (entry.name || entry.comment).toLowerCase().trim();
 
@@ -1017,7 +1019,7 @@ messageIndex )
         }
       }
 
-      debug(SUBSYSTEM.SCENE, `After deduplication: ${uniqueEntries.length} unique entries (removed ${parsed.lorebooks.length - uniqueEntries.length} duplicates)`);
+      debug(SUBSYSTEM.SCENE, `After deduplication: ${uniqueEntries.length} unique entries (removed ${entriesArray.length - uniqueEntries.length} duplicates)`);
 
       // Queue each unique entry individually and collect operation IDs
       debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Queueing ${uniqueEntries.length} unique entries...`);
@@ -1037,7 +1039,7 @@ messageIndex )
       debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Finished queueing all entries`);
       return lorebookOpIds;
     } else {
-      debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] No lorebooks array found in scene recap at index ${messageIndex}`);
+      debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] No setting_lore array found in scene recap at index ${messageIndex}`);
     }
   } catch (err) {
     // Not JSON or parsing failed - skip lorebook processing

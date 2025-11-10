@@ -147,11 +147,13 @@ function simpleHash(str ) {
 
 function extractLorebookData(recap ) {
   try {
-    // Check if recap has a lorebooks array (plural - standard format)
-    if (recap.lorebooks && Array.isArray(recap.lorebooks)) {
-      debug('Found lorebooks array in recap');
-      return { entries: recap.lorebooks };
+    // Check if recap has setting_lore (new canonical field)
+    if (recap.setting_lore && Array.isArray(recap.setting_lore)) {
+      debug('Found setting_lore array in recap');
+      return { entries: recap.setting_lore };
     }
+
+    // No legacy support
 
     // Check if recap has a lorebook property (singular - legacy format)
     if (recap.lorebook) {

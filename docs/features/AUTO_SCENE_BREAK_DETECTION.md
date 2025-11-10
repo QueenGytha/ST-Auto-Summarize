@@ -74,7 +74,13 @@ REMINDER:
 - Return ONLY the FIRST qualifying scene break
 ```
 
-> **Macros:** `{{messages}}` expands to all messages in the range formatted with their SillyTavern message numbers (e.g., "Message #5 [USER]: text"). `{{minimum_scene_length}}` expands to the configured minimum scene length setting.
+> Macros:
+> - `{{messages}}` expands to all messages in the range formatted with their SillyTavern message numbers (e.g., "Message #5 [USER]: text").
+> - `{{minimum_scene_length}}` expands to the configured minimum scene length setting.
+> - `{{earliest_allowed_break}}` expands to the earliest message number in the analyzed range that can legally start a new scene under the minimum-scene-length rule (i.e., the first message with at least `minimum_scene_length` filtered messages before it).
+
+Notes:
+- Messages before the earliest allowed break are labeled as `Message #invalid choice` in the provided context to discourage selecting ineligible candidates.
 
 **Response Format:**
 The LLM returns a JSON object with:
@@ -94,6 +100,7 @@ Responses are validated to ensure:
 2. Message number is in the filtered set (matches the configured message type filter)
 3. At least `minimum_scene_length` messages exist before the break point
 4. Invalid responses trigger automatic retry
+   - If the model returns a break before the minimum-scene-length threshold, the system marks messages before the earliest-allowed index as checked and immediately re-queues detection starting at `earliest_allowed_break` through the range end.
 
 ### Default Prefill
 ```

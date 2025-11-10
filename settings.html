@@ -60,7 +60,7 @@
                         </label>
 
                         <label title="Wraps each lorebook entry individually with &lt;lorebook&gt; tags for downstream parsing. Supports multi-line entries. Tags are stripped by proxy before sending to LLM." class="checkbox_label">
-                            <input id="wrap_lorebook_entries" data-testid="proxy-wrap-lorebook" type="checkbox" />
+                            <input id="wrap_setting_lore_entries" data-testid="proxy-wrap-setting-lore" type="checkbox" />
                             <span>Wrap Lorebook Entries</span>
                         </label>
 
@@ -135,7 +135,7 @@
                         <div class="flex-container justifyspacebetween alignitemscenter">
                             <button id="edit_scene_recap_prompt" data-testid="scene-edit-prompt" class="menu_button flex1" title="Edit the scene recap prompt"><span>Edit Scene Prompt</span></button>
                         </div>
-                        <small class="displayBlock opacity50p">Available macros: {{scene_messages}}, {{lorebook_entry_types}}, {{active_lorebooks}}, {{char}}, {{user}}</small>
+                        <small class="displayBlock opacity50p">Available macros: {{scene_messages}}, {{lorebook_entry_types}}, {{active_setting_lore}}, {{char}}, {{user}}</small>
                         <input id="scene_recap_prompt" data-testid="scene-prompt" type="hidden" />
                         <input id="scene_recap_default_prompt" data-testid="scene-default-prompt" type="hidden" value="[Default scene recap prompt here]" />
                         <table>
@@ -156,8 +156,8 @@
                                 <td></td>
                                 <td>
                                     <label class="checkbox_label" title="Include active lorebook entries in the scene recap prompt to provide context. Only new or changed information from lorebooks will be included.">
-                                        <input id="scene_recap_include_active_lorebooks" data-testid="scene-include-active-lorebooks" type="checkbox" />
-                                        <span>Include Active Lorebook Entries</span>
+                                        <input id="scene_recap_include_active_setting_lore" data-testid="scene-include-active-setting-lore" type="checkbox" />
+                                        <span>Include Active setting_lore Entries</span>
                                     </label>
                                 </td>
                             </tr>

@@ -19,6 +19,136 @@ import {
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 4;
 
+// Disallow rationale that references formatting/separators instead of content
+export function validateRationaleNoFormatting(rationale) {
+  const text = String(rationale || '');
+  const lower = text.toLowerCase();
+
+  // Patterns for common decorative separators / formatting mentions
+  const patterns = [
+    /(^|[^-])-{3,}([^\w-]|$)/, // --- (not part of a word/hyphen chain)
+    /\*{3,}/,                  // ***
+    /_{3,}/,                   // ___
+    /= {3,}|={3,}/,            // === or spaced variants
+    /\bchapter\s+[\wivx]+\b/i, // "Chapter X" (numbers or roman numerals)
+    /\bseparator\b/i,
+    /\bseparators\b/i,
+    /\bdivider\b/i,
+    /\bhorizontal\s+rule\b/i,
+    /\bheading(s)?\b/i,
+    /\bmarkdown\b/i
+  ];
+
+  for (const p of patterns) {
+    if (p.test(text) || p.test(lower)) {
+      return { valid: false, reason: 'rationale references formatting markers (decorative separators/headings) which are disallowed' };
+    }
+  }
+
+  return { valid: true };
+}
+
+// Objective-only rationale detection (no time/location/cast anchors)
+export function rationaleSuggestsOnlyObjectiveShift(rationale) {
+  const text = String(rationale || '').toLowerCase();
+  if (!text) { return false; }
+  const objectiveHints = [
+    'objective', 'plan', 'decision', 'decides', 'decided', 'agree', 'agrees',
+    'agreement', 'team up', 'team-up', 'partner', 'partnership', 'dynamic',
+    'shift in', 'reframe', 'pivot', 'blindsided', 'relationship'
+  ];
+  const transitionAnchors = [
+    // time
+    'the next morning', 'next morning', 'the next day', 'next day', 'hours later',
+    'later that night', 'later that evening', 'dawn', 'at dawn', 'sunrise', 'by morning', 'by evening',
+    // location
+    'arrived', 'arrives', 'entered', 'enters', 'exited', 'exits', 'left', 'departed', 'returned', 'back to',
+    'made their way', 'reached', 'headed to', 'walked to', 'went to', 'came to',
+    // cast
+    'joined', 'only', 'alone', 'the others', 'remained', 'entered the room'
+  ];
+  const hasObjectiveOnly = objectiveHints.some(k => text.includes(k));
+  const hasAnchor = transitionAnchors.some(k => text.includes(k));
+  return hasObjectiveOnly && !hasAnchor;
+}
+
+function hasExplicitTimeTransition(text) {
+  const t = String(text || '').toLowerCase();
+  if (!t) { return false; }
+  const patterns = [
+    /\bthe next (morning|day|evening|night)\b/i,
+    /\bnext (morning|day|evening|night)\b/i,
+    /\bhours later\b/i,
+    /\blater that (night|evening|day)\b/i,
+    /\bat (dawn|sunrise)\b/i,
+    /\bdawn arrived\b/i,
+    /\bby (morning|evening|night)\b/i
+  ];
+  return patterns.some(p => p.test(t));
+}
+
+function hasExplicitLocationTransition(text) {
+  const t = String(text || '').toLowerCase();
+  if (!t) { return false; }
+  const patterns = [
+    /\b(arrived|arrives|entered|enters|exited|exits|left|departed|returned)\b/i,
+    /\b(back to|made (?:their|his|her) way to|reached|headed to|walked to|went to|came to)\b/i
+  ];
+  return patterns.some(p => p.test(t));
+}
+
+function hasCastChangeIndicators(text) {
+  const t = String(text || '').toLowerCase();
+  if (!t) { return false; }
+  const patterns = [
+    /\bjoined\b/i,
+    /\bonly\b/i,
+    /\balone\b/i,
+    /\bthe others\b/i,
+    /\bremained\b/i
+  ];
+  return patterns.some(p => p.test(t));
+}
+
+// Continuity veto: if no time/location/cast transition around candidate, prefer continuation
+export function shouldVetoByContinuityAndObjective(chat, candidateIndex, rationale, forwardWindow = 2) {
+  if (!Array.isArray(chat) || typeof candidateIndex !== 'number') {
+    return false;
+  }
+
+  const candidate = chat[candidateIndex];
+  const texts = [];
+  if (candidate?.mes) { texts.push(candidate.mes); }
+  for (let i = 1; i <= forwardWindow; i++) {
+    const next = chat[candidateIndex + i];
+    if (next?.mes) { texts.push(next.mes); }
+  }
+
+  const hasTransition = texts.some((tx) => (
+    hasExplicitTimeTransition(tx) || hasExplicitLocationTransition(tx) || hasCastChangeIndicators(tx)
+  ));
+
+  const objectiveOnly = rationaleSuggestsOnlyObjectiveShift(rationale);
+
+  // Veto when rationale is objective-only AND no clear transition cues present nearby
+  return objectiveOnly && !hasTransition;
+}
+
+// Remove decorative-only separator lines from a message to reduce LLM bias
+function stripDecorativeSeparators(text) {
+  if (!text) { return text; }
+  const lines = String(text).split(/\r?\n/);
+  const cleaned = lines.filter((line) => {
+    const l = line.trim();
+    if (l === '') { return true; }
+    // pure separators or heading-only labels
+    if (/^(?:-{3,}|\*{3,}|_{3,}|={3,})$/.test(l)) { return false; }
+    if (/^(?:scene\s*break|chapter\s+[\wivx]+)\.?$/i.test(l)) { return false; }
+    return true;
+  });
+  return cleaned.join('\n');
+}
+
 function shouldCheckMessage(
 message ,
 messageIndex ,
@@ -124,7 +254,8 @@ function formatMessagesForRangeDetection(chat, startIndex, endIndex, checkWhich)
 
     if (messageMatchesType(message, checkWhich)) {
       const speaker = message.is_user ? '[USER]' : '[CHARACTER]';
-      formattedMessages.push(`Message #${i} ${speaker}: ${message.mes}`);
+      const cleaned = stripDecorativeSeparators(message.mes);
+      formattedMessages.push(`Message #${i} ${speaker}: ${cleaned}`);
       filteredIndices.push(i);
     }
   }
@@ -314,7 +445,7 @@ endIndex )
     const chat = ctx.chat || [];
 
     // Format all messages in range with their ST indices
-    const { formatted, filteredIndices } = formatMessagesForRangeDetection(chat, startIndex, endIndex, checkWhich);
+    const { filteredIndices } = formatMessagesForRangeDetection(chat, startIndex, endIndex, checkWhich);
 
     // Guard: Need at least (minimum + 1) filtered messages to analyze
     if (filteredIndices.length < minimumSceneLength + 1) {
@@ -326,18 +457,37 @@ endIndex )
       };
     }
 
+    // Compute the earliest allowed message number that could start a new scene under the minimum rule
+    // This is the (minimumSceneLength)th element in filteredIndices (0-based), i.e., the first index with at least N before it
+    const earliestAllowedBreak = filteredIndices[minimumSceneLength];
+    debug('Earliest allowed scene break index by minimum rule:', earliestAllowedBreak);
+
+    // Rebuild formatted messages with an explicit ineligibility marker for too-early candidates
+    // Replace the message number for any message before earliestAllowedBreak with 'invalid choice'
+    const formattedForPrompt = filteredIndices.map((i) => {
+      const m = chat[i];
+      const speaker = m?.is_user ? '[USER]' : '[CHARACTER]';
+      const header = (i < earliestAllowedBreak)
+        ? `Message #invalid choice ${speaker}:`
+        : `Message #${i} ${speaker}:`;
+      const cleaned = stripDecorativeSeparators(m?.mes ?? '');
+      return `${header} ${cleaned}`;
+    }).join('\n\n');
+
     // Build prompt with macro replacements
     let prompt = promptTemplate;
     if (ctx.substituteParamsExtended) {
       prompt = ctx.substituteParamsExtended(prompt, {
-        messages: formatted,
+        messages: formattedForPrompt,
         minimum_scene_length: String(minimumSceneLength),
+        earliest_allowed_break: String(earliestAllowedBreak),
         prefill
       }) || prompt;
     }
 
-    prompt = prompt.replace(/\{\{messages\}\}/g, formatted);
+    prompt = prompt.replace(/\{\{messages\}\}/g, formattedForPrompt);
     prompt = prompt.replace(/\{\{minimum_scene_length\}\}/g, String(minimumSceneLength));
+    prompt = prompt.replace(/\{\{earliest_allowed_break\}\}/g, String(earliestAllowedBreak));
 
     // Switch to detection profile/preset and save current
     const saved = await switchToDetectionSettings(ctx, profile, preset);
@@ -504,10 +654,43 @@ endIndex  = null)
 
 export async function manualSceneBreakDetection() {
   debug('Manual scene break detection triggered');
-  toast('Scanning messages for scene breaks...', 'info');
 
-  // Process all messages
-  await processAutoSceneBreakDetection();
+  const ctx = getContext();
+  const chat = ctx.chat;
+
+  if (!chat || chat.length === 0) {
+    debug(SUBSYSTEM.SCENE, 'No messages to process - chat is empty');
+    toast('No messages to scan for scene breaks', 'info');
+    return;
+  }
+
+  // Find the latest VISIBLE scene break and start scanning after it
+  // This intentionally ignores any "checked" flags so we can rescan the tail
+  let latestVisibleSceneBreakIndex = -1;
+  for (let i = chat.length - 1; i >= 0; i--) {
+    try {
+      const hasSceneBreak = get_data(chat[i], 'scene_break');
+      const isVisible = get_data(chat[i], 'scene_break_visible');
+      if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
+        latestVisibleSceneBreakIndex = i;
+        break;
+      }
+    } catch {/* ignore lookup errors */}
+  }
+
+  const startIndex = latestVisibleSceneBreakIndex + 1;
+  const endIndex = chat.length - 1;
+
+  if (startIndex > endIndex) {
+    debug(SUBSYSTEM.SCENE, 'No messages after the latest visible scene break to scan');
+    toast('No new messages after the last visible scene break', 'info');
+    return;
+  }
+
+  toast(`Scanning messages ${startIndex}-${endIndex} for scene breaks...`, 'info');
+
+  // Only process the range AFTER the last visible scene break
+  await processAutoSceneBreakDetection(startIndex, endIndex);
 }
 
 export async function processNewMessageForSceneBreak(messageIndex ) {

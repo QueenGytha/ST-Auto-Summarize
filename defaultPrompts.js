@@ -1,6 +1,6 @@
 
 // ST-Auto-Recap Default Prompts
-// Structure: recap (events + tone) + lorebooks (detailed entries)
+// Structure: recap (events + tone) + setting_lore entries (detailed entity updates)
 // See docs/Recap_LOREBOOK_SEPARATION.md for full documentation
 
 export const default_prompt = `You are a structured data extraction system analyzing roleplay transcripts.
@@ -13,7 +13,7 @@ Your response MUST start with { and end with }. No code fences, no commentary, n
 Required format (copy this structure exactly):
 {
   "recap": "Your scene recap here (or empty string if nothing happened)",
-  "lorebooks": [
+  "setting_lore": [
     {
       "type": "character",
       "name": "Entity Name",
@@ -25,7 +25,7 @@ Required format (copy this structure exactly):
 }
 
 Example valid response:
-{"recap": "Adam approached Haven's eastern gate with Senta following. Guards challenged them.", "lorebooks": [{"type": "location", "name": "Haven Eastern Gate", "content": "Main entrance to Haven city, heavily guarded", "keywords": ["haven", "eastern gate"], "secondaryKeys": ["gate"]}]}
+{"recap": "Adam approached Haven's eastern gate with Senta following. Guards challenged them.", "setting_lore": [{"type": "location", "name": "Haven Eastern Gate", "content": "Main entrance to Haven city, heavily guarded", "keywords": ["haven", "eastern gate"], "secondaryKeys": ["gate"]}]}
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
@@ -49,53 +49,60 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - One fact per bullet; be specific (names, items, places).
 // - Focus on outcomes and current state; avoid blow-by-blow narration.
 // - JSON safety: Escape all internal double quotes in values as \". Do not output any preamble or commentary.
+// - Tone & Style detail: include Voice Anchors (per‑character address forms, idioms, formatting conventions) and, when warranted, 1–2 Moment Anchors (≤12‑word exact quotes + micro‑cues that set ongoing vibe) formatted like: "Moment anchors: '<exact words>' (cue) — <who ↔ who>".
 //
-// LOREBOOKS array:
-// - New entities or durable updates only (characters, locations, items, factions, quests, rules)
+// SETTING_LORE array:
+// - Update character entries for any named participants whose relationship dynamics, voice, or concrete interactions changed in THIS scene. Use the provided active lorebook entries (below) to compare and only add new information; omit duplicates.
+// - Also add/update entities of other types (locations, items, factions, quests, rules) when relevant.
 // - Each entry needs: name, type, keywords, optional secondaryKeys, content
 // - Content uses bullet points and must begin with an Identity bullet: "- Identity: <Type> — <Canonical Name>"
 // - Use specific names for all references; avoid pronouns
-// - Do NOT include timeline narration here; keep that in the recap
-// - Entity inclusion: Only add named or durable entities. Do NOT create entries for one-off/ephemeral groups (e.g., "three thugs") unless canon makes them persistent. If a recurring unnamed group acts as a standing hazard in an area, prefer a faction entry (e.g., "Exile's Gate Predators") over a character entry.
-// - Emission criteria by type:
-//   * character: Introduced by name or clearly recurring with stable traits/relationships; new durable facts emerged.
-//   * location: Named place or clearly defined area with persistent features/ownership; avoid scene-event history.
+// - Keep chronology in the recap, but DO include scene-specific interaction snapshots inside entries as Micro‑Moments/Event Snapshots when they establish dynamics or tone. Preserve the wording and content of the scene; do not alter phrasing.
+// - Entity inclusion guidance:
+//   * character: Any named participant whose dynamics/voice/actions changed in this scene. Update Relationships (dynamic snapshot with concrete cues) and include Micro‑Moments/Event Snapshots that capture what actually happened between counterparts.
+//   * location: Named place or clearly defined area with persistent features/ownership; avoid scene‑event history.
 //   * item: Named object with capabilities/constraints or transfer of ownership that matters.
 //   * faction: Named group or stable unnamed collective that acts repeatedly in the same role/location.
 //   * quest: Ongoing objective with explicit actor+goal (and optional anchor/deadline) still in play.
 //   * rule: Mechanics or world constraint stated explicitly (how it works, limits, exceptions).
 // - Quest creation rule: When the recap's Pending Threads include a clear, ongoing objective (actor + goal + anchor), add/refresh a "quest" entry with concise "Synopsis" and a "State" bullet tracking current status. Keywords should include the primary actor (e.g., "adam") plus a specific token for the objective (e.g., "homestead contest"); place broad tokens (e.g., "elders", "legal") in secondaryKeys.
 //
-// CONTENT FORMAT (bullet style for lorebooks):
+// CONTENT FORMAT (bullet style for setting_lore entries):
 // - Identity: <Type> — <Canonical Name>
 // - Synopsis: <1 line>
 // - Attributes: <appearance/traits/capabilities> (permanent, defining features)
 // - Relationships: <X ↔ Y with stance + micro-cues>
+// - Interaction Defaults: <address forms/pet names, formality, distance/comfort gestures, boundaries>
+// - Intimacy & Romance: <preferences/patterns as stated (roles, initiations, pace, acts, aftercare), with brief quotes/cues when helpful; only include if present>
 // - State: <status/location/owner/ongoing effects> (current, temporary conditions)
 // - Access: <who/how can use without owning> (optional)
 // - Secrets/Leverage: <what/who knows>
 // - Tension/Triggers: <what escalates/defuses>
-// - Style Notes: <voice/tone anchors>
-// IMPORTANT: Use only the bullets that are relevant for the entity and scene. It is correct to omit bullets that do not apply. Do not invent entities (e.g., factions, rules) or filler to match templates.
+// - Style Notes: <voice & diction anchors> (idioms, syntax quirks, punctuation, emoji/emotes)
+// - Notable Dialogue: <short quotes with recipient/context that lock in voice>
+
+// IMPORTANT: Use only the bullets that are relevant for the entity and scene. It is correct to omit bullets that do not apply. Do not invent entities (e.g., factions, rules) or filler to match templates. Do not soften or reinterpret scene content—store it as written when it defines dynamics or tone.
 // - Appearance guidance (character entities): Attributes captures PERMANENT appearance (height, build, eye color, distinctive scars, typical clothing style). State captures TEMPORARY appearance changes (current injuries, dirt/blood, torn clothing, current outfit if different from typical).
 //
 // QUALITY CHECK BEFORE RESPONDING:
 // - Recap includes all four sections (headers present); no blow‑by‑blow; quotes escaped.
-// - For each lorebook: Identity bullet present; content is durable facts only.
+// - For each setting_lore entry: Identity bullet present; Relationships capture interpersonal dynamics from this scene; include Micro‑Moments/Event Snapshots when they lock in tone or behavior; only include when new/changed vs active entries.
 // - Location entries contain no transient scene events; those belong in the recap.
+// - Every named participant whose dynamics/voice/actions changed in this scene has a character entry updated.
 // - Keywords are normalized: possessives/hyphens handled; include punctuation‑free variants; avoid standalone generics.
 // - Broad tokens appear only in secondaryKeys (AND gating) with a specific primary token.
+
 //
 // OUTPUT JSON SHAPE:
 // {
 //   "recap": "markdown recap string",
-//   "lorebooks": [
+//   "setting_lore": [
 //     {
 //       "name": "Entity Name",
 //       "type": "{{lorebook_entry_types}}",
 //       "keywords": ["keyword1", "keyword2"],
 //       "secondaryKeys": ["and-term"],
-//       "content": "- Identity: <Type> — <Canonical Name>\n- Synopsis: <1 line>\n- Attributes: <bullets>\n- Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>\n- State: <current status/location/owner/ongoing effects with scene/time anchors when present>\n- Secrets/Leverage: <who knows>\n- Tension/Triggers: <micro cues>\n- Style Notes: <voice/tone anchors>"
+//       "content": "- Identity: <Type> — <Canonical Name>\n- Synopsis: <1 line>\n- Attributes: <bullets>\n- Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>\n- Interaction Defaults: <address forms/pet names, formality, distance/comfort gestures, boundaries>\n- Intimacy & Romance: <preferences/patterns as stated; brief quotes/cues when helpful (if present)>\n- Micro‑Moments: <1–2 short quotes + cues from this scene that set an ongoing pattern>\n- State: <current status/location/owner/ongoing effects with scene/time anchors when present>\n- Secrets/Leverage: <who knows>\n- Tension/Triggers: <micro cues>\n- Style Notes: <voice & diction anchors>\n- Notable Dialogue: <short quotes with recipient/context that lock in voice>"
 //     }
 //   ]
 // }
@@ -133,7 +140,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // ✅ GOOD (trait): name: "Senta" → keywords: ["senta", "companion", "sapphire blue eyes"]
 // ❌ BAD: ["city", "neighborhood", "gate", "eyes", "horse"] — generic alone
 //
-// CONTENT GUIDELINES (bullet style for lorebooks):
+// CONTENT GUIDELINES (bullet style for setting_lore entries):
 // ⚠️ ONLY THE "content" FIELD IS PRESERVED IN CONTEXT ⚠️
 // - The "name", "type", and "keywords" fields are ONLY for indexing/triggering
 // - The AI will NEVER see those fields; it ONLY sees the "content" text
@@ -171,7 +178,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Attributes: Middle-aged; scarred face (burn marks on left cheek); gray-streaked beard; weathered brown cloak; gruff manner; information broker
 // - Relationships: Marcus ↔ {{user}} — cautious; transactional; "I don't give information for free, friend"
 
-// REMINDER: Output must be valid JSON starting with { character. Recap is REQUIRED. Lorebooks array is OPTIONAL (can be empty: []).
+// REMINDER: Output must be valid JSON starting with { character. Recap is REQUIRED. setting_lore array is OPTIONAL (can be empty: []).
 
 // Message Content:
 {{message}}`;
@@ -188,7 +195,7 @@ Required format (copy this structure exactly):
 {
   "scene_name": "A brief, descriptive scene title",
   "recap": "Your scene recap here (or empty string if nothing happened)",
-  "lorebooks": [
+  "setting_lore": [
     {
       "type": "character",
       "name": "Entity Name",
@@ -200,7 +207,7 @@ Required format (copy this structure exactly):
 }
 
 Example valid response:
-{"scene_name": "Hidden Chamber Revelation", "recap": "## Current Situation\n- At the waterfall, party stands by a newly found chamber\n\n## Key Developments\n- [discovery] Hidden chamber found behind waterfall; murals show the First War\n\n## Tone & Style\n- curious; reverent; ancient mystery\n\n## Pending Threads\n- Return with tools to study murals", "lorebooks": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: Secret chamber behind waterfall with First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "murals", "waterfall"], "secondaryKeys": ["chamber"]}]}
+{"scene_name": "Hidden Chamber Revelation", "recap": "## Current Situation\n- At the waterfall, party stands by a newly found chamber\n\n## Key Developments\n- [discovery] Hidden chamber found behind waterfall; murals show the First War\n\n## Tone & Style\n- curious; reverent; ancient mystery\n\n## Pending Threads\n- Return with tools to study murals", "setting_lore": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: Secret chamber behind waterfall with First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "murals", "waterfall"], "secondaryKeys": ["chamber"]}]}
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
@@ -217,6 +224,18 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //                           Optional category tag at start of bullet to aid scanning: [reveal], [decision], [travel], [combat], [transfer], [relationship], [plan], [discovery], [state]. Use at most one tag per bullet and only when it adds clarity.
 //   ## Tone & Style        -> Capture the ROLEPLAY's writing style and genre (NOT character emotions)
 //                           Focus on: genre/subgenre, narrative voice (POV, tense), prose patterns, dialogue style, recurring motifs
+//                           Voice Anchors: include brief, concrete markers to preserve character voice when history scrolls out.
+//                             - Keep per‑character anchors concise and evidence‑based (address forms/pet names, idioms/slang, punctuation habits, formatting like mindspeech italics or stage‑directions).
+//                             - Allow up to 2 short quote anchors (≤ 12 words each) total only when they lock in voice.
+//                           Moment Anchors (vibe micro‑moments): capture 1–2 pivotal, low‑word‑count moments from THIS scene that set dynamic or tension.
+//                             - Format: "Moment anchors: '<exact words>' (cue) — <who ↔ who>"
+//                             - Use only when the moment defines ongoing vibe (first pet‑name, boundary test, double‑meaning touch, rule‑of‑three banter beat).
+//                             - Keep quotes ≤ 12 words; prefer micro‑cues (e.g., [averts gaze], [presses closer]).
+//                             - These anchors help re‑establish tone after messages roll out; do not narrate chronology.
+//                             - Examples:
+//                               - "Dialogue conventions: Senta uses mindspeech in italics (*:text:*); stage cues in [brackets]"
+//                               - "Voice anchors: Adam addresses Senta as 'horsie'; biblical citations in admonitions; ellipses for hesitation"
+//                               - "Moment anchors: 'We change the game.' (reframe) — Selenay ↔ Adam"
 //                           Examples of GOOD Tone & Style bullets:
 //                             - "Genre: cyberpunk noir; corporate espionage with body horror elements"
 //                             - "Narrative voice: first-person present tense; unreliable narrator; stream of consciousness"
@@ -226,7 +245,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //                             - "Format: mindspeak in italics with colons (*:text:*); alternating POV chapters; letters/journal entries"
 //                           Examples of BAD Tone & Style bullets (these are character states, NOT writing style):
 //                             ❌ "tense; conflicted; determined" - these are emotions, belong in Key Developments
-//                             ❌ "Alice distrusts Bob" - this is relationship, belongs in Key Developments or lorebooks
+//                             ❌ "Alice distrusts Bob" - this is relationship, belongs in Key Developments or setting_lore entries
 //                             ❌ "mounting pressure" - this is plot state, belongs in Current Situation
 //                           Purpose: Give future LLM the context needed to WRITE in the same style when old messages scroll out of context
 //                           Update only when writing style itself changes (new POV, genre shift, new narrative device introduced)
@@ -234,16 +253,16 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // Rules:
 // - One fact per bullet; be specific (names, items, places).
 // - Do not narrate blow-by-blow; focus on durable outcomes.
-// - Avoid describing traits/backstory here—put those in lorebooks.
-// - When relationship dynamics between named entities shift, include a compact dynamic snapshot in Key Developments (tone, interaction patterns, salient past interactions). Evidence style: add EITHER a short quote (≤ 12 words) OR an explicit cue (e.g., "averts gaze"), not both. Avoid numeric scoring (no "+1 suspicion").
+// - Avoid describing traits/backstory here—put those in setting_lore entries.
+// - When relationship dynamics between named entities shift, include a compact dynamic snapshot in Key Developments (tone, interaction patterns, salient past interactions). Evidence style: add EITHER a short quote (≤ 12 words) OR an explicit cue (e.g., "averts gaze"), not both. Avoid numeric scoring (no "+1 suspicion"). Include how they address each other if it changes (pet names, titles, honorifics). If the shift hinged on a single micro‑moment, reflect it as a Moment Anchor in Tone & Style.
 // - Explicit uncertainty: When the text states uncertainty, capture it using prefixes like "Likely:" or "Uncertain:", but never invent or upgrade uncertainty to fact.
 // - Pending Threads should be actionable: verb+noun+anchor when present (e.g., "Retrieve Sunblade (before dawn)", "Meet Clara (east gate, first light)").
 // - All sections MUST be present; if a section has no content, include a single line with "—".
 // - Final check before responding: durable outcomes covered; Tone & Style describes WRITING STYLE (genre, POV, prose patterns, dialogue format, motifs) NOT character emotions; dynamic snapshots updated if relationships shifted.
 // - Coherence note: If a new or updated lorebook entity is introduced, reference it by name once in recap (Current Situation or Key Developments) so context remains coherent.
 //
-// LOREBOOKS (array):
-// - Only include if this scene adds durable knowledge about an entity.
+// SETTING_LORE (array):
+// - Only include if this scene adds durable knowledge about an entity (new/changed vs active entries below).
 // - Each object updates ONE concrete entity (character, location, item, faction, quest, rule).
 // - Fields: name, type (one of {{lorebook_entry_types}}), keywords, optional secondaryKeys, content.
 // - Content MUST be bullet points. Start with identity so it stands alone without the title:
@@ -251,18 +270,23 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //   - Synopsis: <1 line identity/purpose>
 //   - Attributes: <appearance/traits/capabilities> (permanent, defining features)
 //   - Relationships: <X ↔ Y — dynamic snapshot (tone, patterns, salient past interactions); brief evidence or short quote if helpful>
+//   - Interaction Defaults: <for key counterpart(s), how this entity typically addresses/engages> (address forms/pet names, formality level, physical distance/comfort gestures, boundaries/consent norms).
+//   - Intimacy & Romance: <preferences/patterns as stated when present — roles, initiations, pace, acts, aftercare, jealousy/possessiveness patterns, gifting rituals; use short quotes/cues as evidence; add only if new vs active entries>
+//   - Micro‑Moments (limit 1–2): <short quotes + cues from THIS scene that established an ongoing pattern> (prune older duplicates; prefer pattern‑setting beats over one‑offs).
 //   - State: <current status/location/owner/ongoing effects with scene/time anchors when present> (current, temporary conditions)
 //   - Secrets/Leverage: <what/who knows>
 //   - Tension/Triggers: <what escalates/defuses; quotes if needed>
-//   - Style Notes: <voice ticks or phrasing anchors>
-//   - Notable Dialogue: <significant quotes WITH recipient context; speech patterns>
+//   - Style Notes: <voice & diction anchors> (idioms, syntax quirks, punctuation habits, emoji/emote usage, mindspeech formatting)
+//   - Notable Dialogue: <significant quotes WITH recipient context; speech patterns>. Prefer ≤ 2 quotes per entity per scene, ≤ 12 words each.
 //   - Appearance guidance (character entities): Attributes captures PERMANENT appearance (height, build, eye color, hair, distinctive scars/marks, typical clothing style). State captures TEMPORARY appearance changes (current injuries, dirt/blood, torn clothing, current outfit if notably different from typical).
 //   - Location rule: State should be durable (control, features, access). Do NOT include transient scene events (e.g., "X entered/exited", "fight happened here"). Keep one-off events in the recap.
-//   - Notable Dialogue rule (character entities only): Capture significant dialogue and voice patterns (idioms, formality level, verbal tics, characteristic phrases). Format as "To [Recipient]: \"quote\"" or "To [Recipient] (context): \"quote\"". Include dialogue that demonstrates character voice/personality. Do NOT capture dialogue spoken by {{user}}. Compare with existing entity content; omit duplicate quotes/patterns already captured. Only add if it provides new information about voice/style or significant content.
+//   - Notable Dialogue rule (character entities only): Capture significant dialogue and voice patterns (idioms, formality level, verbal tics, characteristic phrases). Format as "To [Recipient]: \"quote\"" or "To [Recipient] (context): \"quote\"". Include dialogue that demonstrates character voice/personality. Do NOT capture dialogue spoken by {{user}}. Compare with existing entity content; omit duplicate quotes/patterns already captured. Only add if it provides new information about voice/style or significant content. Keep quotes short (≤ 12 words) and limited (≤ 2 per entity per scene).
 // - Quest creation rule: If Pending Threads contain an explicit ongoing objective, create/update a "quest" entry with a concise Synopsis and State (status/owner). Use the actor and objective tokens in keywords; put broad tokens only in secondaryKeys.
 // - Use specific names (not pronouns) for all references; avoid numeric scoring (no "+1 suspicion").
+// - Prune guidance: When adding Micro‑Moments/Notable Dialogue, remove duplicates and keep at most the 2 freshest per counterpart that demonstrate different facets.
 // - Add only new/changed facts; omit if unsure.
 // - Keywords: include as many meaningful triggers as needed (lowercase). Prefer canonical name, real aliases/nicknames, and distinctive identifiers; avoid generic terms. Use secondaryKeys for AND disambiguation when a token is broad. Normalize possessives/hyphens: e.g., Exile's Gate → keywords: ["exiles gate", "exile"], secondaryKeys: ["gate"].
+//   Prefer scene‑tied triggers that preserve vibe (e.g., "poison game", "concealed dagger", "royal we", "horsie") over broad roles (e.g., "assassin").
 // - Optional: Aliases (only when truly needed; prefer keywords for indexing).
 // - Items: When relevant, include "Provenance" (origin/lineage) and "Owner change" (transfer moments); ensure State reflects current owner.
 // - Locations with subareas:
@@ -365,9 +389,9 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Located in: Old Town
 // - Attributes: narrow; brick walls; puddles; dim lamplight
 
-// REMINDER: Output must be valid JSON starting with { character. "recap" is REQUIRED. "lorebooks" is OPTIONAL (can be empty: []).
+// REMINDER: Output must be valid JSON starting with { character. "recap" is REQUIRED. "setting_lore" is OPTIONAL (can be empty: []).
 
-{{active_lorebooks}}
+{{active_setting_lore}}
 
 // Scene Content (oldest to newest):
 {{scene_messages}}`;
@@ -404,14 +428,14 @@ Check that the JSON meets these criteria:
 1. Valid JSON structure.
 2. Has a "recap" field (string) with headers in this order: "## Current Situation", "## Key Developments", "## Tone & Style", "## Pending Threads".
 3. Each section uses bullet lines ("- ") with observable facts; Key Developments bullets may optionally start with a category tag in square brackets (e.g., [reveal]); no blow-by-blow narration.
-4. Has a "lorebooks" field (array, may be empty).
-5. Each lorebook entry includes "name", "type", "keywords" (array), and "content" as bullet points.
-6. Lorebook content begins with an identity bullet like "- Identity: <Type> — <Canonical Name>" and avoids pronouns for references.
+4. Has a "setting_lore" field (array, may be empty).
+5. Each setting_lore entry includes "name", "type", "keywords" (array), and "content" as bullet points.
+6. Content begins with an identity bullet like "- Identity: <Type> — <Canonical Name>" and avoids pronouns for references; content may include Interaction Defaults and Micro‑Moments bullets when relevant.
 7. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
-8. Recap focuses on events + overall tone; detailed nuance and relationships live in lorebooks.
+8. Recap focuses on events + overall tone. Tone & Style may include brief Voice Anchors (per‑character speech patterns, address forms, dialogue conventions) and Moment Anchors (micro‑moments with ≤12‑word quotes + cues) to preserve vibe; detailed biographies belong in setting_lore entries.
 9. For location entries that imply subareas via hyphenated canonical names (e.g., "Parent-Subarea" or "Parent-Child-Grandchild"), content includes a parent link bullet (e.g., "Located in: <ImmediateParent>") and uses a single hyphen as chain separators (preserving punctuation within names).
 10. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
-11. If lorebook entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
+11. If setting_lore entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
 
 Respond with ONLY:
 - "VALID" if all criteria met
@@ -426,13 +450,13 @@ Check that the JSON meets these criteria:
 1. Valid JSON structure.
 2. Has a "recap" field (string) using the headers "## Current Situation", "## Key Developments", "## Tone & Style", "## Pending Threads" in that order.
 3. Each section contains bullet lines with observable facts or outcomes from the scene (no speculation or biographies). Key Developments bullets may optionally start with a category tag (e.g., [plan], [reveal]).
-4. Has a "lorebooks" field (array, may be empty).
-5. Every lorebook entry includes "name", "type", "keywords" (array), and bullet-point "content" that starts with an identity bullet and uses specific names.
+4. Has a "setting_lore" field (array, may be empty).
+5. Every setting_lore entry includes "name", "type", "keywords" (array), and bullet-point "content" that starts with an identity bullet and uses specific names; content may include Interaction Defaults and Micro‑Moments when relevant.
 6. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
-7. Recap covers events and overall tone; lorebooks capture nuance, relationships, and dynamics.
+7. Recap covers events and overall tone. Tone & Style may include brief Voice Anchors (per‑character speech patterns, address forms, dialogue conventions) and Moment Anchors (micro‑moments with ≤12‑word quotes + cues) that help preserve writing voice and vibe; detailed nuance lives in setting_lore entries.
 8. For location entries with hyphenated canonical names indicating subareas (e.g., "Parent-Subarea", "Parent-Child-Grandchild"), content includes a "Located in: <ImmediateParent>" bullet and optionally a top-level link ("Part of: <TopLevel>"); chain separators are single hyphens (preserve punctuation in names).
 9. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
-10. If lorebook entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
+10. If setting_lore entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
 
 Respond with ONLY:
 - "VALID" if all criteria met
@@ -471,10 +495,19 @@ CRITICAL:
 - Return ONLY ONE message number - the FIRST message that starts a new scene
 - If no scene break exists, return false
 
+STRICT CONTENT-ONLY RULES:
+- Ignore formatting entirely. Decorative separators and headings (e.g., "---", "***", "___", "===", "Scene Break", "Chapter X") MUST NOT influence your decision.
+- Do NOT mention formatting in your rationale. Quote only content-based cues (time, location, cast, or objective changes).
+- Responses that reference formatting will be rejected.
+
 MINIMUM SCENE LENGTH RULE:
 - At least {{minimum_scene_length}} messages must occur before you can mark a scene break
 - This ensures scenes are not broken too early
 - Count only the messages of the type being analyzed (user/character/both as configured)
+- The earliest allowed scene break in this range is message #{{earliest_allowed_break}}
+- Do NOT return any message number lower than {{earliest_allowed_break}} under any circumstance
+- If a candidate before {{earliest_allowed_break}} looks compelling (e.g., explicit time skip), you MUST return false unless there is a qualifying candidate at or after {{earliest_allowed_break}}
+ - Some lines may be labeled as "Message #invalid choice" to indicate they are ineligible by this rule; never select those as a scene break
 
 DECISION CRITERIA:
 A scene break means the prior beat resolved and the story now shifts focus.
@@ -484,17 +517,21 @@ PRIORITY SIGNALS (check these FIRST, in order):
    - "Dawn arrived", "the next morning", "hours later", "that evening", "the next day", "later that night"
    - Time skips from night → morning, morning → evening, or any explicit passage of hours/days
    - These are ALWAYS scene breaks, even if characters remain in the same location
+   - Do NOT infer time from vague progressions (e.g., "as he left", "they watched him go", "afterwards") unless paired with explicit time-of-day or elapsed-time language
+   - References to clocks, minutes, or flavor text about time ("seconds later", "for the second time in as many minutes", "it was nearly noon") describe the SAME beat unless they explicitly contrast with a previously stated timeframe; do NOT treat them as automatic scene breaks. Example: "'For the second time in as many minutes' is still the same moment—no scene break."
+   - Time-of-day labels only count when they show a clear shift from the prior message (night → dawn, afternoon → evening, "hours passed", etc.). Simply stating what time it currently is does NOT indicate a time skip.
 
-2. EXPLICIT SEPARATORS or OOC MARKERS
-   - "---", "Scene Break", "Chapter X", GM notes resetting play
-   - These are ALWAYS scene breaks
+2. IGNORE DECORATIVE SEPARATORS AND PURE FORMATTING
+  - Lines like "---", "***", "___", "===", centered rules, or other stylistic flourishes DO NOT indicate a scene break by themselves
+  - Headings or labels such as "Scene Break" or "Chapter X" count ONLY if they coincide with a content-based transition (time skip, new setting/cast/objective)
+  - Treat formatting as non-semantic; base decisions on content cues only
 
 Scene break if a message clearly does at least one of:
 - Moves to a new location or setting
 - Skips time with explicit cues (see PRIORITY SIGNALS above)
 - Switches primary characters or point of view to a different group
 - Starts a new objective or major conflict after the previous one concluded
-- Includes explicit separators or OOC markers (see PRIORITY SIGNALS above)
+- Includes an explicit OOC reset that changes time/location/objective (e.g., GM note that the scene advances or resets)
 
 Natural narrative beats to watch for:
 - Resolution or decision that concludes the prior exchange
@@ -509,16 +546,19 @@ Do NOT mark a break when:
 - Movement between districts/neighborhoods inside the same city is an immediate continuation (no explicit time skip, no resolved beat) and the objective/cast remains the same
 - The message is meta chatter that does not advance the narrative
 - The message is mid-action, mid-conversation, or mid-beat (the exchange hasn't concluded yet)
+- A message only restates the current time, clock readings, or very short gaps ("moments later", "as minutes passed") while everyone remains in the same ongoing exchange
+- Phrases like "for the second time in as many minutes", "seconds later", or "within the next few minutes" merely show repetition within the same beat; treat them as continuations
 - Fewer than {{minimum_scene_length}} messages have occurred
+- Decorative separators or headings ("---", "***", "===", "Scene Break", "Chapter X", etc.) appear without an accompanying content change
 
 EXCEPTION: Same location + explicit time skip (night → dawn) = SCENE BREAK
 Example: If characters sleep in a field at night and a message begins with "Dawn arrived" in the same field, mark the dawn message as a break.
 
 Decision process:
 1. Check if at least {{minimum_scene_length}} messages have passed
-2. Check for EXPLICIT TIME TRANSITIONS first (dawn/morning/evening/next day/hours later/etc.) - these override location continuity and are scene breaks
-3. Check for explicit separators or OOC markers ("---"/"Scene Break"/"Chapter X"/etc.) - these are scene breaks
-4. Otherwise compare setting, time, cast, and objective across messages; mark a break only if there is a clear change
+2. Check for EXPLICIT TIME TRANSITIONS first (dawn/morning/evening/next day/hours later/etc.) - these override location continuity and are scene breaks. If the time cue is measured in seconds/minutes or simply reaffirms the current hour, it is NOT a qualifying transition.
+3. Ignore decorative separators and formatting; do not treat them as breaks
+4. Compare setting, time, cast, and objective across messages; mark a break only if there is a clear change
 5. Consider narrative flow: Has the prior beat concluded? Is the marked message starting a new beat?
 6. If evidence is ambiguous, treat it as a continuation (sceneBreakAt: false)
 7. Return the FIRST message number that qualifies as a scene break
@@ -568,6 +608,8 @@ This replaces chat history, so preserve all nuance required for future scenes.
 //   ## Key Developments      -> Durable outcomes and plot shifts (replace outdated bullets)
 //   ## Tone & Style          -> Roleplay's genre, writing style, and narrative patterns (NOT character emotions)
 //                             Capture: genre/subgenre, narrative voice (POV, tense), prose patterns, dialogue format, recurring motifs
+//                             Voice Anchors: when needed, include brief per‑character anchors that preserve dialogue conventions (address forms/pet names, idioms/slang, punctuation/formatting like mindspeech italics). Allow up to 2 short quote anchors total (≤ 12 words each) only when they lock in voice. Remove outdated anchors only when the style actually changes.
+//                             Moment Anchors (vibe micro‑moments): carry forward 1–2 pivotal, low‑word‑count moments from the newest scene when they set ongoing dynamic/tension. Format as: "Moment anchors: '<exact words>' (cue) — <who ↔ who>".
 //                             Update ONLY when the writing style itself changes (new POV introduced, genre shift, new narrative device)
 //                             DO NOT list character emotions (tense, conflicted) - those belong in Key Developments
 //   ## Pending Threads       -> Goals, timers, secrets, obligations in play
@@ -577,12 +619,12 @@ This replaces chat history, so preserve all nuance required for future scenes.
 // - Carry forward every still-relevant fact. If something is resolved or superseded, note the change and remove the stale bullet.
 // - Integrate the new scene recap line-by-line, combining or updating bullets rather than duplicating them.
 // - Idempotence: If the latest scene introduces no durable change (state, relationships, open threads, tone shift that persists), leave the corresponding sections unchanged; do not add filler.
-// - Reference characters by canonical name; keep descriptive nuance inside lorebook entries, not as standalone bullets.
+// - Reference characters by canonical name; keep descriptive nuance inside setting_lore entries, not as standalone bullets.
 // - Reflect relationship dynamics at a high level (dynamic snapshot: tone, interaction patterns, salient past interactions). If the dynamic clearly shifted in the new scene, update or replace the prior snapshot; include brief evidence or a short quote only when helpful. Avoid numeric scoring (no "+1 suspicion").
 // - When the new recap introduces lasting character or world detail, assume the scene recap already emitted a lorebook update—just reference the entity here.
 // - Treat critical state transitions (ownership/location/status/effects) as merge invariants: replace outdated bullets with the current state. If the change itself is story-important, state it once ("was X, now Y") and then compress to the current state in subsequent merges (avoid "change stacks").
 // - Tone & Style: Describes the ROLEPLAY's writing style (genre, POV, prose patterns, dialogue format, motifs). Update ONLY when writing style changes (new POV, genre shift, narrative device added). Do NOT accumulate character emotions from scenes. If the new scene maintains existing style, keep Tone & Style unchanged. Format as bullets covering: genre/subgenre, narrative voice, prose patterns, dialogue conventions, recurring motifs.
-// - Location hierarchies: When sublocations are in play, include the full chain once (e.g., "Ponyville-Twilight's Library-Spike's Room") in Current Situation or the first relevant bullet to anchor continuity; subsequent mentions may use the most specific segment so long as there is no ambiguity. Rely on lorebooks for full details.
+// - Location hierarchies: When sublocations are in play, include the full chain once (e.g., "Ponyville-Twilight's Library-Spike's Room") in Current Situation or the first relevant bullet to anchor continuity; subsequent mentions may use the most specific segment so long as there is no ambiguity. Rely on setting_lore entries for full details.
 // - Entity mentions: Ensure any canonical names present in the new scene recap appear at least once in the merged recap (Current Situation or Key Developments) to maintain coherence.
 // - Category tags: If Key Developments bullets include category tags (e.g., [reveal], [plan]), preserve them when merging; do not invent new tags.
 // - Avoid chronological narration. Focus on the state of the world after this merge.
@@ -590,7 +632,7 @@ This replaces chat history, so preserve all nuance required for future scenes.
 //
 // QUALITY CHECK BEFORE RESPONDING:
 // - Every open thread, obligation, or secret mentioned in any recap still appears.
-// - No bullet restates personality traits or backstory that belongs in lorebooks.
+// - No bullet restates personality traits or backstory that belongs in setting_lore entries.
 // - Conflicting facts are resolved in favor of the newest scene, with the current state stated clearly.
 // - Relationship dynamics read coherently with the current arc (tone/patterns preserved or updated where the scene shifted); Tone & Style describes WRITING STYLE (genre, POV, prose patterns, motifs) NOT character emotions, and is updated only when narrative style changes.
 // - If sublocations are involved, the recap shows the full chain at least once, with later mentions shortened without losing clarity.
@@ -710,7 +752,7 @@ Rules:
 - Entity type normalization: If multiple candidates differ only by type for an unnamed collective (e.g., "thugs"), prefer "faction" over "character" when the group is a recurring hazard tied to a location; otherwise treat it as ephemeral and resolve as "new" only if truly durable.
 - Deterministic tie‑breaker: If any candidate's canonical name exactly matches the new candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix), choose that ID over others.
 - For locations: if the candidate is a sub‑area, prefer the entry whose name or content indicates the same parent; normalize to "Parent-Subarea" canonical naming and ensure a "Located in: <Parent>" bullet exists. For multiple levels, normalize to hyphen chain ("Parent-Child-Grandchild") and include the immediate parent link.
-- For character entities with Notable Dialogue bullets: When merging, compare dialogue content; remove exact duplicate quotes; consolidate similar voice pattern descriptions; preserve unique quotes showing different aspects of speech style or significant content; maintain recipient context (who the character was speaking to).
+- For character entities with Notable Dialogue and Micro‑Moments bullets: When merging, compare quotes; remove exact duplicates; consolidate similar voice‑pattern descriptions; preserve unique, pattern‑setting quotes that show different facets; maintain recipient/context. Keep at most the 2 freshest Micro‑Moments per counterpart.
 - Do NOT fabricate bullets to satisfy a template; when details are not present, omit that bullet entirely (e.g., no Relations for a faction if none are stated yet).
 - Ensure the returned synopsis reflects the most current canon after reconciliation (concise, one line).
 - Output STRICT JSON with double quotes and no commentary.`;

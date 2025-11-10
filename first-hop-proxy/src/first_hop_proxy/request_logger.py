@@ -177,15 +177,15 @@ class RequestLogger:
                 lines.append(recap)
                 lines.append("")
 
-            # Lorebook entries
-            lorebooks = parsed_content.get('lorebooks')
-            if lorebooks and isinstance(lorebooks, list) and len(lorebooks) > 0:
-                entry_count = len(lorebooks)
+            # setting_lore entries
+            setting_lore = parsed_content.get('setting_lore')
+            if setting_lore and isinstance(setting_lore, list) and len(setting_lore) > 0:
+                entry_count = len(setting_lore)
                 plural = "entries" if entry_count != 1 else "entry"
                 lines.append(f"*{entry_count} {plural}*")
                 lines.append("")
 
-                for i, entry in enumerate(lorebooks):
+                for i, entry in enumerate(setting_lore):
                     if not isinstance(entry, dict):
                         continue
 
@@ -288,11 +288,11 @@ class RequestLogger:
             log_content.append("```")
             log_content.append("")
 
-        # Lorebook Entries
+        # setting_lore Entries (active entries included in the prompt)
         if lorebook_entries:
             entry_count = len(lorebook_entries)
             plural = "entries" if entry_count != 1 else "entry"
-            log_content.append(f"## Lorebook Entries")
+            log_content.append(f"## setting_lore Entries")
             log_content.append("")
             log_content.append(f"*{entry_count} {plural}*")
             log_content.append("")

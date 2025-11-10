@@ -53,7 +53,7 @@ export const default_settings = {
   scene_recap_context_type: 'percent',
   scene_recap_completion_preset: "",
   scene_recap_include_preset_prompts: false, // Include completion preset prompts (main, jailbreak, etc.) before extension prompt
-  scene_recap_include_active_lorebooks: true, // Include active lorebook entries in scene recap prompt
+  scene_recap_include_active_setting_lore: true, // Include active setting_lore entries in scene recap prompt
   scene_recap_message_types: "both", // "user", "character", "both" - which message types to include
   scene_recap_navigator_width: 240, // Width of scene navigator bar in pixels (default: 240px, double the original 48px)
   scene_recap_navigator_font_size: 12, // Font size for scene navigator links in pixels (default: 12px)
@@ -200,6 +200,6 @@ Rules for canonicalName:
 
   // --- First-Hop Proxy Integration Settings ---
   first_hop_proxy_send_chat_details: false, // Send chat details in LLM requests for proxy logging
-  wrap_lorebook_entries: true, // Wrap each lorebook entry individually with XML tags for downstream parsing
+  wrap_setting_lore_entries: true, // Wrap each setting_lore entry individually with XML tags for downstream parsing
   suppress_other_lorebooks: true // Suppress global/character/persona lorebooks during generation (only chat lorebooks included)
 };

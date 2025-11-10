@@ -41,7 +41,7 @@ export const selectorsExtension = {
   // First-Hop Proxy Integration
   proxy: {
     sendChatDetails: '[data-testid="proxy-send-chat-details"]',  // #first_hop_proxy_send_chat_details
-    wrapLorebook: '[data-testid="proxy-wrap-lorebook"]',  // #wrap_lorebook_entries
+    wrapSettingLore: '[data-testid="proxy-wrap-setting-lore"]',  // #wrap_setting_lore_entries
     suppressOtherLorebooks: '[data-testid="proxy-suppress-other-lorebooks"]',  // #suppress_other_lorebooks
   },
 
@@ -87,7 +87,7 @@ export const selectorsExtension = {
     defaultPrompt: '[data-testid="scene-default-prompt"]',           // #scene_recap_default_prompt
     completionPreset: '[data-testid="scene-completion-preset"]',     // #scene_recap_completion_preset
     includePresetPrompts: '[data-testid="scene-include-preset-prompts"]',  // #scene_recap_include_preset_prompts
-    includeActiveLorebooks: '[data-testid="scene-include-active-lorebooks"]',  // #scene_recap_include_active_lorebooks
+    includeActiveSettingLore: '[data-testid="scene-include-active-setting-lore"]',  // #scene_recap_include_active_setting_lore
     connectionProfile: '[data-testid="scene-connection-profile"]',   // #scene_recap_connection_profile
     prefill: '[data-testid="scene-prefill"]',                        // #scene_recap_prefill
     messageTypes: '[data-testid="scene-message-types"]',             // #scene_recap_message_types

@@ -80,7 +80,7 @@ async function initialize_settings_listeners() {
 
   // First-Hop Proxy Integration Settings
   bind_setting(selectorsExtension.proxy.sendChatDetails, 'first_hop_proxy_send_chat_details', 'boolean');
-  bind_setting(selectorsExtension.proxy.wrapLorebook, 'wrap_lorebook_entries', 'boolean');
+  bind_setting(selectorsExtension.proxy.wrapSettingLore, 'wrap_setting_lore_entries', 'boolean');
   bind_setting(selectorsExtension.proxy.suppressOtherLorebooks, 'suppress_other_lorebooks', 'boolean');
 
   // Lorebook Viewer Settings
@@ -164,7 +164,7 @@ Available Macros:
     <li><b>{{history}}:</b> The message history as configured by the "Scene Message History Mode" setting.</li>
     <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset.</li>
     <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
-    <li><b>{{active_lorebooks}}:</b> Active lorebook entries at the time of the scene summary (if enabled in settings).</li>
+    <li><b>{{active_setting_lore}}:</b> Active setting_lore entries at the time of the scene summary (if enabled in settings).</li>
 </ul>
 `;
     await get_user_setting_text_input('scene_recap_prompt', 'Edit Scene Recap Prompt', description);
@@ -177,7 +177,7 @@ Available Macros:
   // Scene recap preset and connection profile
   bind_setting(selectorsExtension.scene.completionPreset, 'scene_recap_completion_preset', 'text');
   bind_setting(selectorsExtension.scene.includePresetPrompts, 'scene_recap_include_preset_prompts', 'boolean');
-  bind_setting(selectorsExtension.scene.includeActiveLorebooks, 'scene_recap_include_active_lorebooks', 'boolean');
+  bind_setting(selectorsExtension.scene.includeActiveSettingLore, 'scene_recap_include_active_setting_lore', 'boolean');
   bind_setting(selectorsExtension.scene.connectionProfile, 'scene_recap_connection_profile', 'text');
 
   // --- Running Scene Recap Settings ---
@@ -445,13 +445,15 @@ function initialize_lorebooks_settings_listeners() {
     save_profile();
   });
 
-  $(document).on('change', '#autolorebooks-recap-triage-connection', function () {
+  // Duplicate Detection – Stage 1: Registry Lorebook Entry Lookup
+  // Bind to correct IDs from settings.html to ensure selections persist
+  $(document).on('change', '#autolorebooks-recap-lorebook-entry-lookup-connection', function () {
     const value = $(this).val();
     set_settings('auto_lorebooks_recap_lorebook_entry_lookup_connection_profile', value);
     save_profile();
   });
 
-  $(document).on('change', '#autolorebooks-recap-triage-preset', function () {
+  $(document).on('change', '#autolorebooks-recap-lorebook-entry-lookup-preset', function () {
     const value = $(this).val();
     set_settings('auto_lorebooks_recap_lorebook_entry_lookup_completion_preset', value);
     save_profile();
@@ -463,13 +465,13 @@ function initialize_lorebooks_settings_listeners() {
     save_profile();
   });
 
-  $(document).on('input', '#autolorebooks-recap-triage-prefill', function () {
+  $(document).on('input', '#autolorebooks-recap-lorebook-entry-lookup-prefill', function () {
     const value = $(this).val();
     set_settings('auto_lorebooks_recap_lorebook_entry_lookup_prefill', value);
     save_profile();
   });
 
-  $(document).on('input', '#autolorebooks-recap-triage-prompt', function () {
+  $(document).on('input', '#autolorebooks-recap-lorebook-entry-lookup-prompt', function () {
     const value = $(this).val();
     set_settings('auto_lorebooks_recap_lorebook_entry_lookup_prompt', value);
     save_profile();
