@@ -140,8 +140,8 @@
                         <input id="scene_recap_default_prompt" data-testid="scene-default-prompt" type="hidden" value="[Default scene recap prompt here]" />
                         <table>
                             <tr>
-                                <td><span>Scene Completion Preset</span></td>
-                                <td><select id="scene_recap_completion_preset" data-testid="scene-completion-preset" class="text_pole"></select></td>
+                                <td><span>Scene Connection Profile</span></td>
+                                <td><select id="scene_recap_connection_profile" data-testid="scene-connection-profile" class="text_pole"></select></td>
                             </tr>
                             <tr>
                                 <td></td>
@@ -162,8 +162,8 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td><span>Scene Connection Profile</span></td>
-                                <td><select id="scene_recap_connection_profile" data-testid="scene-connection-profile" class="text_pole"></select></td>
+                                <td><span>Scene Completion Preset</span></td>
+                                <td><select id="scene_recap_completion_preset" data-testid="scene-completion-preset" class="text_pole"></select></td>
                             </tr>
                             <tr>
                                 <td><span>Scene Recap Prefill</span></td>
@@ -237,8 +237,8 @@
 
                         <table>
                             <tr>
-                                <td><span>Running Recap Completion Preset</span></td>
-                                <td><select id="running_scene_recap_completion_preset" data-testid="running-completion-preset" class="text_pole"></select></td>
+                                <td><span>Running Recap Connection Profile</span></td>
+                                <td><select id="running_scene_recap_connection_profile" data-testid="running-connection-profile" class="text_pole"></select></td>
                             </tr>
                             <tr>
                                 <td></td>
@@ -250,8 +250,8 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td><span>Running Recap Connection Profile</span></td>
-                                <td><select id="running_scene_recap_connection_profile" data-testid="running-connection-profile" class="text_pole"></select></td>
+                                <td><span>Running Recap Completion Preset</span></td>
+                                <td><select id="running_scene_recap_completion_preset" data-testid="running-completion-preset" class="text_pole"></select></td>
                             </tr>
                             <tr>
                                 <td><span>Running Recap Prefill</span></td>
@@ -355,10 +355,6 @@
                                 <td><span>Detection Connection Profile</span></td>
                                 <td><select id="auto_scene_break_connection_profile" data-testid="auto-scene-connection-profile" class="text_pole"></select></td>
                             </tr>
-                            <tr title="The completion preset to use for scene break detection. Leave empty to use current preset.">
-                                <td><span>Detection Completion Preset</span></td>
-                                <td><select id="auto_scene_break_completion_preset" data-testid="auto-scene-completion-preset" class="text_pole"></select></td>
-                            </tr>
                             <tr>
                                 <td></td>
                                 <td>
@@ -367,6 +363,10 @@
                                         <span>Include Preset Prompts</span>
                                     </label>
                                 </td>
+                            </tr>
+                            <tr title="The completion preset to use for scene break detection. Leave empty to use current preset.">
+                                <td><span>Detection Completion Preset</span></td>
+                                <td><select id="auto_scene_break_completion_preset" data-testid="auto-scene-completion-preset" class="text_pole"></select></td>
                             </tr>
                             <tr title="Start the detection with this prefilled text to enforce true/false output.">
                                 <td><span>Detection Prefill</span></td>
@@ -401,10 +401,6 @@
                 </div>
                 <table class="scene_error_detection_container">
                     <tr>
-                        <td><span>Scene Recap Validation Preset</span></td>
-                        <td><select id="scene_recap_error_detection_preset" data-testid="validation-scene-preset" class="text_pole scene_error_detection_setting"></select></td>
-                    </tr>
-                    <tr>
                         <td></td>
                         <td>
                             <label class="checkbox_label scene_error_detection_setting" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
@@ -412,6 +408,10 @@
                                 <span>Include Preset Prompts</span>
                             </label>
                         </td>
+                    </tr>
+                    <tr>
+                        <td><span>Scene Recap Validation Preset</span></td>
+                        <td><select id="scene_recap_error_detection_preset" data-testid="validation-scene-preset" class="text_pole scene_error_detection_setting"></select></td>
                     </tr>
                     <tr>
                         <td><span>Scene Recap Validation Prefill</span></td>
