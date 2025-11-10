@@ -1,11 +1,8 @@
 
 // lorebookEntryMerger.js - AI-powered merging of new lorebook content with existing entries
 
-// Use wrapped version from our interceptor
-import { wrappedGenerateRaw as generateRaw } from './generateRawInterceptor.js';
-import { loadPresetPrompts } from './presetPromptLoader.js';
 import { SUBSYSTEM } from './index.js';
-import { DEBUG_OUTPUT_LONG_LENGTH, DEBUG_OUTPUT_MEDIUM_LENGTH } from './constants.js';
+import { DEBUG_OUTPUT_LONG_LENGTH, DEBUG_OUTPUT_MEDIUM_LENGTH, DEFAULT_MAX_TOKENS } from './constants.js';
 
 // Will be imported from index.js via barrel exports
 let log , debug , error ; // Logging functions - any type is legitimate
@@ -126,7 +123,7 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
     debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] completionPreset (param):', completionPreset);
 
     // If preset_name is empty, use the currently active preset (like recapping.js does)
-    const { setOperationSuffix, clearOperationSuffix, withConnectionSettings, get_current_preset } = await import('./index.js');
+    const { setOperationSuffix, clearOperationSuffix, get_current_preset } = await import('./index.js');
     const effectivePresetName = completionPreset || (include_preset_prompts ? get_current_preset() : '');
 
     debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] effectivePresetName:', effectivePresetName);
@@ -138,72 +135,24 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
     }
 
     let response;
+    const normalizedProfile = connectionProfile || '';
+
     try {
-      // Wrap with connection settings to switch profile/preset
-      response = await withConnectionSettings(
-        connectionProfile,
-        effectivePresetName,
-        // eslint-disable-next-line complexity -- Prompt construction with multiple conditional branches inherently complex
-        async () => {
-          let prompt_input;
+      const { sendLLMRequest } = await import('./llmClient.js');
+      const { OperationType: OpType } = await import('./operationTypes.js');
+      const { getContext } = await import('./index.js');
+      const effectiveProfile = normalizedProfile || getContext().extensionSettings.connectionProfile;
 
-          if (include_preset_prompts && effectivePresetName) {
-            // Load preset prompts and preset settings
-            const { getPresetManager } = await import('../../../preset-manager.js');
-            const presetManager = getPresetManager('openai');
-            const preset = presetManager?.getCompletionPresetByName(effectivePresetName);
-            const presetMessages = await loadPresetPrompts(effectivePresetName);
+      debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] Using sendLLMRequest');
 
-            debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] presetMessages loaded:', presetMessages?.length || 0, 'prompts');
-            if (presetMessages && presetMessages.length > 0) {
-              debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] First preset prompt role:', presetMessages[0]?.role);
-              debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] First preset prompt content length:', presetMessages[0]?.content?.length || 0);
-            }
+      const options = {
+        maxTokens: DEFAULT_MAX_TOKENS,
+        includePreset: include_preset_prompts,
+        preset: effectivePresetName,
+        prefill: prefill || ''
+      };
 
-            // Use extension's prefill if set, otherwise use preset's prefill
-            const effectivePrefill = prefill || preset?.assistant_prefill || '';
-            debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] effectivePrefill source:', prefill ? 'extension' : (preset?.assistant_prefill ? 'preset' : 'empty'));
-
-            // Only use messages array if we actually got preset prompts
-            if (presetMessages && presetMessages.length > 0) {
-              debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] Using messages array format with preset prompts');
-
-              prompt_input = [
-                ...presetMessages,
-                { role: 'user', content: prompt }
-              ];
-
-              // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
-              return generateRaw({
-                prompt: prompt_input,
-                instructOverride: false,
-                quietToLoud: false,
-                prefill: effectivePrefill
-              });
-            } else {
-              console.warn('[callAIForMerge] include_preset_prompts enabled but no preset prompts loaded, falling back to string format');
-              // Fall back to string format
-              // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
-              return generateRaw({
-                prompt: prompt,
-                instructOverride: false,
-                quietToLoud: false,
-                prefill: prefill || ''
-              });
-            }
-          } else {
-            debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] Using string format (include_preset_prompts not enabled or no preset)');
-            // Current behavior - string prompt only
-            // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
-            return generateRaw({
-              prompt: prompt,
-              instructOverride: false,
-              quietToLoud: false,
-              prefill: prefill || ''
-            });
-          }
-        }
-      );
+      response = await sendLLMRequest(effectiveProfile, prompt, OpType.MERGE_LOREBOOK_ENTRY, options);
     } finally {
       clearOperationSuffix();
     }

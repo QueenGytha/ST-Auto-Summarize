@@ -46,6 +46,13 @@ export const MAX_DISPLAY_PERCENTAGE = 99;
 export const FULL_COMPLETION_PERCENTAGE = 100;
 
 // ============================================================================
+// LLM API Constants
+// ============================================================================
+
+/** Default maximum tokens for LLM requests */
+export const DEFAULT_MAX_TOKENS = 4000;
+
+// ============================================================================
 // UI Dimension Constants (in pixels)
 // ============================================================================
 

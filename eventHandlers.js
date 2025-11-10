@@ -59,17 +59,6 @@ let lastMessageReceivedReason  = null;
 async function handleChatChanged() {
   const context = getContext();
 
-  // Restore connection settings if they were left in a switched state (crash recovery)
-  try {
-    const { restoreConnectionSettingsIfNeeded } = await import('./connectionSettingsManager.js');
-    const restored = await restoreConnectionSettingsIfNeeded();
-    if (restored) {
-      log(SUBSYSTEM.CORE, 'Restored connection settings after interruption');
-    }
-  } catch (err) {
-    debug('[ConnectionSettings] Failed to restore connection settings:', String(err));
-  }
-
   auto_load_profile(); // load the profile for the current chat or character
   refresh_memory(); // refresh the memory state
   if (context?.chat?.length) {
@@ -443,7 +432,6 @@ async function initializeExtension() {
     const categoryIndexes = await import('./categoryIndexes.js');
     const lorebookEntryMerger = await import('./lorebookEntryMerger.js');
     const recapToLorebookProcessor = await import('./recapToLorebookProcessor.js');
-    const connectionSettingsManager = await import('./connectionSettingsManager.js');
     debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] All modules imported successfully');
 
     // Initialize lorebooks modules
@@ -460,9 +448,8 @@ async function initializeExtension() {
       lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, null);
     }
 
-    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] About to init recapToLorebookProcessor with connectionSettingsManager:', connectionSettingsManager);
-    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] connectionSettingsManager.withConnectionSettings:', connectionSettingsManager?.withConnectionSettings);
-    recapToLorebookProcessor.initRecapToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger, connectionSettingsManager, { get_settings, set_settings });
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing recapToLorebookProcessor...');
+    recapToLorebookProcessor.initRecapToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger, { get_settings, set_settings });
     debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] ✓ recapToLorebookProcessor initialized');
 
     log('[Lorebooks] ✓ Auto-Lorebooks functionality initialized');

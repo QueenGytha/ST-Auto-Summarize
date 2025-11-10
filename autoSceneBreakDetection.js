@@ -4,18 +4,14 @@ import {
   getContext,
   get_data,
   set_data,
-  recap_text,
   debug,
   error,
   toast,
   log,
   SUBSYSTEM,
-  saveChatDebounced,
-  get_connection_profile_api,
-  getPresetManager,
-  set_connection_profile,
-  get_current_connection_profile } from
+  saveChatDebounced } from
 './index.js';
+import { DEFAULT_MAX_TOKENS } from './constants.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 4;
 
@@ -365,65 +361,6 @@ function validateSceneBreakResponse(sceneBreakAt, startIndex, endIndex, filtered
   return { valid: true };
 }
 
-// Helper: Switch to detection profile/preset using PresetManager API
-async function switchToDetectionSettings(ctx, profile, preset) {
-  // Save current connection profile
-  const savedProfile = await get_current_connection_profile();
-
-  // Switch to configured connection profile if specified
-  if (profile) {
-    await set_connection_profile(profile);
-    debug(`Switched connection profile to: ${profile}`);
-  }
-
-  // Get API from connection profile
-  const api = await get_connection_profile_api(profile);
-  if (!api) {
-    debug('No API found for connection profile, using defaults');
-    return { savedProfile };
-  }
-
-  // Get PresetManager for that API
-  const presetManager = getPresetManager(api);
-  if (!presetManager) {
-    debug(`No PresetManager found for API: ${api}`);
-    return { savedProfile };
-  }
-
-  // Save current preset for this API
-  const savedPreset = presetManager.getSelectedPreset();
-
-  // Switch to configured preset if specified
-  if (preset) {
-    const presetValue = presetManager.findPreset(preset);
-    if (presetValue) {
-      debug(`Switching ${api} preset to: ${preset}`);
-      presetManager.selectPreset(presetValue);
-    } else {
-      debug(`Preset '${preset}' not found for API ${api}`);
-    }
-  }
-
-  return { savedProfile, api, presetManager, savedPreset };
-}
-
-// Helper: Restore previous profile/preset using PresetManager API
-async function restoreSettings(ctx, saved) {
-  if (!saved) {return;}
-
-  // Restore preset if it was changed
-  if (saved.presetManager && saved.savedPreset) {
-    debug(`Restoring ${saved.api} preset to original`);
-    saved.presetManager.selectPreset(saved.savedPreset);
-  }
-
-  // Restore connection profile if it was changed
-  if (saved.savedProfile) {
-    await set_connection_profile(saved.savedProfile);
-    debug(`Restored connection profile to: ${saved.savedProfile}`);
-  }
-}
-
 async function detectSceneBreak(
 startIndex ,
 endIndex )
@@ -489,9 +426,6 @@ endIndex )
     prompt = prompt.replace(/\{\{minimum_scene_length\}\}/g, String(minimumSceneLength));
     prompt = prompt.replace(/\{\{earliest_allowed_break\}\}/g, String(earliestAllowedBreak));
 
-    // Switch to detection profile/preset and save current
-    const saved = await switchToDetectionSettings(ctx, profile, preset);
-
     ctx.deactivateSendButtons();
 
     // Set operation context for ST_METADATA with range
@@ -499,18 +433,27 @@ endIndex )
     setOperationSuffix(`-${startIndex}-${endIndex}`);
 
     let response;
+
     try {
-      // Call LLM using the configured API
+      // Use ConnectionManager for ALL requests (handles profile switching internally)
+      const { sendLLMRequest } = await import('./llmClient.js');
+      const { OperationType } = await import('./operationTypes.js');
+
+      const effectiveProfile = profile || ctx.extensionSettings.connectionProfile;
+
       debug('Sending range detection prompt to AI for range', startIndex, 'to', endIndex);
-      response = await recap_text(prompt, prefill, includePresetPrompts, preset);
+
+      response = await sendLLMRequest(effectiveProfile, prompt, OperationType.DETECT_SCENE_BREAK, {
+        prefill,
+        includePreset: includePresetPrompts,
+        preset: preset,
+        maxTokens: DEFAULT_MAX_TOKENS
+      });
+
       debug('AI raw response for range', startIndex, 'to', endIndex, ':', response);
     } finally {
       clearOperationSuffix();
     }
-
-    // Re-enable input and restore settings
-    ctx.activateSendButtons();
-    await restoreSettings(ctx, saved);
 
     // Parse response for message number or false
     const { sceneBreakAt, rationale } = await parseSceneBreakResponse(response, startIndex, endIndex, filteredIndices);

@@ -175,7 +175,6 @@ export * from './messageData.js';
 export * from './popout.js';
 export * from './buttonBindings.js';
 export * from './connectionProfiles.js';
-export * from './connectionSettingsManager.js';
 export * from './promptUtils.js';
 export * from './presetPromptLoader.js';
 export * from './recapping.js';
@@ -200,6 +199,12 @@ export * from './recapToLorebookProcessor.js';
 export * from './metadataInjector.js';
 export * from './generateRawInterceptor.js';
 export * from './operationContext.js';
+
+// ConnectionManager integration
+export * from './operationTypes.js';
+export * from './profileResolution.js';
+export * from './llmClient.js';
+export * from './settingsMigration.js';
 
 // Lorebook entry wrapping for downstream parsing
 export * from './lorebookWrapper.js';

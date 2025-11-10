@@ -50,6 +50,7 @@ export default [
       jQuery: 'readonly',
 
       // SillyTavern globals
+      SillyTavern: 'readonly',
       toastr: 'readonly',
       eventSource: 'readonly',
       event_types: 'readonly',
@@ -280,5 +281,12 @@ export default [
     'sonarjs/prefer-object-literal': 'warn', // Suggest object literal over Object()
     'sonarjs/prefer-single-boolean-return': 'warn', // Simplify boolean returns
     'sonarjs/prefer-while': 'warn' // Suggest while over for when appropriate
+  }
+},
+{
+  // Test file overrides
+  files: ['tests/**/*.spec.js', 'tests/**/*.test.js'],
+  rules: {
+    'max-lines-per-function': ['warn', { max: 500 }] // Tests often have long setup/assertion blocks
   }
 }];

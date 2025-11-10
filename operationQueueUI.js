@@ -483,16 +483,8 @@ function formatOperationType(type) {
 }
 
 // UI formatting: displays all available operation metadata fields
-// eslint-disable-next-line complexity -- Tooltip builder formats all available operation metadata fields
 function buildOperationTooltip(operation) {
   const lines = [];
-
-  // Connection settings
-  const profile = operation.executionSettings?.connectionProfile || 'Default';
-  const preset = operation.executionSettings?.completionPreset || 'Default';
-
-  lines.push(`Profile: ${profile}`);
-  lines.push(`Preset: ${preset}`);
 
   // Add operation-specific metadata
   const metadata = operation.metadata || {};

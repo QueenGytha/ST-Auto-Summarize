@@ -11,9 +11,8 @@ import {
   toast,
   SUBSYSTEM,
   setQueueBlocking,
-  getCurrentConnectionSettings,
-  switchConnectionSettings,
-  get_settings } from
+  get_settings,
+  shouldOperationBlockChat } from
 './index.js';
 
 import {
@@ -110,10 +109,16 @@ export async function initOperationQueue() {
     log(SUBSYSTEM.QUEUE, '⚠ No lorebook attached yet, queue entry will be created when lorebook is available');
   }
 
-  // Restore chat blocking state based on queue contents
+  // CONDITIONAL BLOCKING: Restore chat blocking state based on queue contents
   if (currentQueue && currentQueue.queue.length > 0) {
-    log(SUBSYSTEM.QUEUE, `Restoring chat block state - ${currentQueue.queue.length} operations in queue`);
-    setQueueChatBlocking(true);
+    // Check if any operations need blocking (use "same as current" profile)
+    const needsBlocking = currentQueue.queue.some(op => shouldOperationBlockChat(op.type));
+    if (needsBlocking) {
+      log(SUBSYSTEM.QUEUE, `Restoring chat block state - ${currentQueue.queue.length} operations in queue, at least one uses same profile`);
+      setQueueChatBlocking(true);
+    } else {
+      log(SUBSYSTEM.QUEUE, `NOT blocking chat - ${currentQueue.queue.length} operations in queue, all use separate profiles`);
+    }
   }
 
   // Install button and Enter key interceptors
@@ -137,10 +142,16 @@ export async function reloadQueue() {
   // Load queue from storage
   await loadQueue();
 
-  // Restore chat blocking state based on queue contents
+  // CONDITIONAL BLOCKING: Restore chat blocking state based on queue contents
   if (currentQueue && currentQueue.queue.length > 0) {
-    log(SUBSYSTEM.QUEUE, `Restoring chat block state on reload - ${currentQueue.queue.length} operations in queue`);
-    setQueueChatBlocking(true);
+    const needsBlocking = currentQueue.queue.some(op => shouldOperationBlockChat(op.type));
+    if (needsBlocking) {
+      log(SUBSYSTEM.QUEUE, `Restoring chat block state on reload - ${currentQueue.queue.length} operations in queue`);
+      setQueueChatBlocking(true);
+    } else {
+      log(SUBSYSTEM.QUEUE, `NOT blocking on reload - ${currentQueue.queue.length} operations use separate profiles`);
+      setQueueChatBlocking(false);
+    }
   } else {
     // Queue is empty, ensure chat is unblocked
     setQueueChatBlocking(false);
@@ -429,8 +440,6 @@ export async function enqueueOperation(type , params , options  = {}) {
     dependencies: options.dependencies ?? [],
     metadata: options.metadata ?? {},
     queueVersion: queueVersion, // Stamp with current version
-    executionSettings: options.executionSettings, // Connection settings to use during execution
-    restoreSettings: options.restoreSettings, // Connection settings to restore after execution
     abortController: new AbortController() // For cancelling operations (not serialized to storage)
   } ;
 
@@ -442,9 +451,14 @@ export async function enqueueOperation(type , params , options  = {}) {
 
   debug(SUBSYSTEM.QUEUE, `Enqueued ${type} operation:`, operation.id);
 
-  // Block chat if queue was empty before this enqueue
-  if (wasEmpty) {
+  // CONDITIONAL BLOCKING: Only block if operation uses "same as current" profile
+  // Empty profile = same as user's profile = MUST BLOCK (conflict risk)
+  // Non-empty profile = separate connection = DON'T BLOCK (concurrent operation)
+  if (wasEmpty && shouldOperationBlockChat(type)) {
     setQueueChatBlocking(true);
+    debug(SUBSYSTEM.QUEUE, `Chat BLOCKED - operation ${type} uses same profile as user`);
+  } else if (wasEmpty) {
+    debug(SUBSYSTEM.QUEUE, `Chat NOT blocked - operation ${type} uses separate profile`);
   }
 
   // Auto-start processing if not paused and processor not already active
@@ -571,9 +585,24 @@ export async function removeOperation(operationId ) {
 
   debug(SUBSYSTEM.QUEUE, `Removed operation ${operationId}`);
 
-  // Unblock chat if queue is now empty
+  // CONDITIONAL BLOCKING: Check if any remaining operations need blocking
   if (currentQueue.queue.length === 0) {
+    // Queue empty - always unblock
     setQueueChatBlocking(false);
+    debug(SUBSYSTEM.QUEUE, 'Chat UNBLOCKED - queue empty');
+  } else {
+    // Queue not empty - check if any remaining operations use "same as current" profile
+    const needsBlocking = currentQueue.queue.some(op => shouldOperationBlockChat(op.type));
+
+    if (!needsBlocking && isChatBlocked) {
+      // All remaining operations use separate profiles - unblock chat
+      setQueueChatBlocking(false);
+      debug(SUBSYSTEM.QUEUE, 'Chat UNBLOCKED - remaining operations use separate profiles');
+    } else if (needsBlocking && !isChatBlocked) {
+      // At least one operation needs blocking - block chat
+      setQueueChatBlocking(true);
+      debug(SUBSYSTEM.QUEUE, 'Chat BLOCKED - remaining operations use same profile as user');
+    }
   }
 
   return true;
@@ -741,8 +770,8 @@ export function registerOperationHandler(operationType , handler ) {
   debug(SUBSYSTEM.QUEUE, `Registered handler for ${operationType}`);
 }
 
-// Core queue processor: abort handling, profile switching, retry logic, error recovery
-// eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Queue processor handles abort, profile switching, retry, and error recovery
+// Core queue processor: abort handling, retry logic, error recovery
+// eslint-disable-next-line complexity -- Queue processor handles abort, retry, and error recovery
 async function executeOperation(operation ) {
   // returns any because different operations return different result types - legitimate use of any
   const handler = operationHandlers.get(operation.type);
@@ -762,39 +791,7 @@ async function executeOperation(operation ) {
   });
   activeOperationControllers.set(operation.id, { reject: abortReject });
 
-  // Capture current settings before any switching (only if functions available and execution settings specified)
-  let originalSettings = null;
-  let presetBeforeProfileSwitch = null;
-
   try {
-    // Handle execution settings switching
-    if (operation.executionSettings && getCurrentConnectionSettings && switchConnectionSettings) {
-      // Capture original settings so we can restore later
-      originalSettings = await getCurrentConnectionSettings();
-      const executionSettings  = operation.executionSettings; // Flow type cast
-      const connectionProfile  = executionSettings?.connectionProfile;
-      const completionPreset  = executionSettings?.completionPreset;
-
-      // If changing profile, capture current preset FIRST (before profile switch)
-      if (connectionProfile) {
-        presetBeforeProfileSwitch = originalSettings?.completionPreset;
-        debug(SUBSYSTEM.QUEUE, `Switching to execution profile: ${connectionProfile}`);
-        await switchConnectionSettings(connectionProfile);
-      }
-
-      // If preset specified, switch to it (overrides profile's default)
-      // If preset NOT specified but we switched profiles, restore the captured preset
-      if (completionPreset) {
-        debug(SUBSYSTEM.QUEUE, `Switching to execution preset: ${completionPreset}`);
-        await switchConnectionSettings(undefined, completionPreset);
-      } else if (connectionProfile && presetBeforeProfileSwitch) {
-        // Edge case: Only profile changed, preset is "same as current"
-        // Must explicitly restore it because profile switch auto-loads default
-        debug(SUBSYSTEM.QUEUE, `Restoring preset after profile switch: ${presetBeforeProfileSwitch}`);
-        await switchConnectionSettings(undefined, presetBeforeProfileSwitch);
-      }
-    }
-
     debug(SUBSYSTEM.QUEUE, `[LIFECYCLE] About to call handler for ${operation.type}, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
     // Race between handler completion and manual abort
     // If user removes operation while IN_PROGRESS, abort wins and throws
@@ -891,44 +888,6 @@ async function executeOperation(operation ) {
     debug(SUBSYSTEM.QUEUE, `Retrying ${operation.type} after backoff (retry ${operation.retries})...`);
     return await executeOperation(operation);
   } finally {
-    // CRITICAL: If we switched to execution settings, we MUST restore (whether operation succeeded or failed)
-    // Wrap in try-catch to prevent errors from breaking operation flow
-    try {
-      if (operation.executionSettings && getCurrentConnectionSettings && switchConnectionSettings) {
-        // Determine what settings to restore to
-        const targetSettings  = operation.restoreSettings || originalSettings;
-        if (targetSettings) { // Only restore if settings available
-
-          const connectionProfile  = targetSettings?.connectionProfile;
-          const completionPreset  = targetSettings?.completionPreset;
-          let presetBeforeRestoreProfileSwitch = null;
-
-          // If changing profile, capture current preset FIRST (before profile switch)
-          if (connectionProfile) {
-            const currentSettings = await getCurrentConnectionSettings();
-            presetBeforeRestoreProfileSwitch = currentSettings?.completionPreset;
-            debug(SUBSYSTEM.QUEUE, `Restoring to profile: ${connectionProfile}`);
-            await switchConnectionSettings(connectionProfile);
-          }
-
-          // If preset specified, switch to it (overrides profile's default)
-          // If preset NOT specified but we switched profiles, restore the captured preset
-          if (completionPreset) {
-            debug(SUBSYSTEM.QUEUE, `Restoring to preset: ${completionPreset}`);
-            await switchConnectionSettings(undefined, completionPreset);
-          } else if (connectionProfile && presetBeforeRestoreProfileSwitch) {
-            // Edge case: Only profile changed, preset is "same as current"
-            // Must explicitly restore it because profile switch auto-loads default
-            debug(SUBSYSTEM.QUEUE, `Restoring preset after profile switch: ${presetBeforeRestoreProfileSwitch}`);
-            await switchConnectionSettings(undefined, presetBeforeRestoreProfileSwitch);
-          }
-        }
-      }
-    } catch (err) {
-      // Log but don't throw - restoration errors shouldn't break operation processing
-      debug(SUBSYSTEM.QUEUE, `Failed to restore connection settings: ${String(err)}`);
-    }
-
     // Cleanup: Remove abort controller for this operation
     // This happens whether operation succeeded, failed, or was aborted
     activeOperationControllers.delete(operation.id);
@@ -947,8 +906,14 @@ function startQueueProcessor() {
   isProcessorActive = true;
   debug(SUBSYSTEM.QUEUE, 'Starting queue processor (isProcessorActive = true)');
 
-  // Ensure chat is blocked for entire queue processing duration (safety fallback)
-  setQueueChatBlocking(true);
+  // CONDITIONAL BLOCKING: Check if any operations need blocking (safety fallback)
+  const needsBlocking = currentQueue.queue.some(op => shouldOperationBlockChat(op.type));
+  if (needsBlocking) {
+    setQueueChatBlocking(true);
+    debug(SUBSYSTEM.QUEUE, 'Chat blocked - at least one operation uses same profile');
+  } else {
+    debug(SUBSYSTEM.QUEUE, 'Chat NOT blocked - all operations use separate profiles');
+  }
 
   queueProcessor = (async () => {
     try {

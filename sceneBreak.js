@@ -2,7 +2,6 @@
 
 import {
   get_settings,
-  recap_text,
   refresh_memory,
   renderSceneNavigatorBar,
   log,
@@ -17,6 +16,7 @@ import {
   convertLiteralNewlinesToActual,
   convertActualNewlinesToLiteral } from
 './index.js';
+import { DEFAULT_MAX_TOKENS } from './constants.js';
 import {
   queueCombineSceneWithRunning,
   queueProcessLorebookEntry } from
@@ -871,13 +871,10 @@ get_data )
   return { prompt, prefill, lorebookMetadata: { ...lorebookMetadata, entries: activeEntries } };
 }
 
-// Helper: Switch to scene recap profile/preset
-// Legacy switching functions removed - now using withConnectionSettings() from connectionSettingsManager.js
-
 // Helper: Extract and validate JSON from AI response (REMOVED - now uses centralized helper in utils.js)
 
 // Helper: Generate recap with error handling
-async function executeSceneRecapGeneration(llmConfig, range, ctx) {
+async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, operationType) {
   const { prompt, prefill, include_preset_prompts = false, preset_name = null } = llmConfig;
   const { startIdx, endIdx } = range;
 
@@ -891,7 +888,16 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx) {
     setOperationSuffix(`-${startIdx}-${endIdx}`);
 
     try {
-      const rawResponse = await recap_text(prompt, prefill, include_preset_prompts, preset_name);
+      const { sendLLMRequest } = await import('./llmClient.js');
+
+      const options = {
+        maxTokens: DEFAULT_MAX_TOKENS,
+        includePreset: include_preset_prompts,
+        preset: preset_name,
+        prefill
+      };
+
+      const rawResponse = await sendLLMRequest(profileId, prompt, operationType, options);
       debug(SUBSYSTEM.SCENE, "AI response:", rawResponse);
 
       // Extract and validate JSON using centralized helper
@@ -1092,21 +1098,15 @@ export async function generateSceneRecap(config) {
   const { prompt, prefill, lorebookMetadata } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data);
 
   // Generate recap with connection profile/preset switching
-  const { withConnectionSettings } = await import('./connectionSettingsManager.js');
-  const profile_name = get_settings('scene_recap_connection_profile');
+  const profile_name = get_settings('scene_recap_connection_profile') || '';
   const preset_name = get_settings('scene_recap_completion_preset');
   const include_preset_prompts = get_settings('scene_recap_include_preset_prompts');
 
-  const recap = await withConnectionSettings(
-    profile_name,
-    preset_name,
-    // eslint-disable-next-line require-await -- Async wrapper required by withConnectionSettings signature
-    async () => {
-      const llmConfig = { prompt, prefill, include_preset_prompts, preset_name };
-      const range = { startIdx, endIdx };
-      return executeSceneRecapGeneration(llmConfig, range, ctx);
-    }
-  );
+  const { OperationType } = await import('./operationTypes.js');
+  const effectiveProfile = profile_name || ctx.extensionSettings.connectionProfile;
+  const llmConfig = { prompt, prefill, include_preset_prompts, preset_name };
+  const range = { startIdx, endIdx };
+  const recap = await executeSceneRecapGeneration(llmConfig, range, ctx, effectiveProfile, OperationType.GENERATE_SCENE_RECAP);
 
   // Check if operation was cancelled while LLM call was in progress
   if (signal?.aborted) {

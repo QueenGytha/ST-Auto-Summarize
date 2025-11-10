@@ -2,10 +2,7 @@
 // recapToLorebookProcessor.js - Extract lorebook entries from recap JSON objects and process them
 
 import { chat_metadata, saveMetadata } from '../../../../script.js';
-// Use wrapped version from our interceptor
-import { wrappedGenerateRaw as generateRaw } from './generateRawInterceptor.js';
 import { extension_settings } from '../../../extensions.js';
-import { loadPresetPrompts } from './presetPromptLoader.js';
 
 import {
   getConfiguredEntityTypeDefinitions,
@@ -23,7 +20,7 @@ import {
   ID_GENERATION_BASE,
   FULL_COMPLETION_PERCENTAGE,
   MIN_ENTITY_SECTIONS
-} from './constants.js';
+,  DEFAULT_MAX_TOKENS } from './constants.js';
 
 const DEFAULT_STICKY_ROUNDS = 4;
 
@@ -32,14 +29,13 @@ let log , debug , error , toast ; // Utility functions - any type is legitimate
 let getAttachedLorebook , getLorebookEntries , addLorebookEntry , modifyLorebookEntry ; // Lorebook functions - any type is legitimate
 let mergeLorebookEntry ; // Entry merger function - any type is legitimate
 let updateRegistryEntryContent ;
-let withConnectionSettings ; // Connection settings management - any type is legitimate
 let get_settings , set_settings ; // Profile settings functions - any type is legitimate
 
 const REGISTRY_PREFIX  = '_registry_';
 
 // Removed getSetting helper; no settings access needed here
 
-export function initRecapToLorebookProcessor(utils , lorebookManagerModule , entryMergerModule , connectionSettingsManager , settingsManager ) {
+export function initRecapToLorebookProcessor(utils , lorebookManagerModule , entryMergerModule , settingsManager ) {
   // All parameters are any type - objects with various properties - legitimate use of any
   log = utils.log;
   debug = utils.debug;
@@ -60,29 +56,6 @@ export function initRecapToLorebookProcessor(utils , lorebookManagerModule , ent
   // Import entry merger function
   if (entryMergerModule) {
     mergeLorebookEntry = entryMergerModule.mergeLorebookEntry;
-  }
-
-  // Import connection settings management
-  debug(SUBSYSTEM.LOREBOOK,'[recapToLorebookProcessor INIT] connectionSettingsManager:', connectionSettingsManager);
-  debug(SUBSYSTEM.LOREBOOK,'[recapToLorebookProcessor INIT] connectionSettingsManager keys:', Object.keys(connectionSettingsManager || {}));
-
-  if (connectionSettingsManager) {
-    withConnectionSettings = connectionSettingsManager.withConnectionSettings;
-    debug(SUBSYSTEM.LOREBOOK,'[recapToLorebookProcessor INIT] withConnectionSettings after assignment:', withConnectionSettings);
-    debug(SUBSYSTEM.LOREBOOK,'[recapToLorebookProcessor INIT] typeof withConnectionSettings:', typeof withConnectionSettings);
-
-    if (!withConnectionSettings || typeof withConnectionSettings !== 'function') {
-      error?.('Failed to import withConnectionSettings from connectionSettingsManager', {
-        hasManager: !!connectionSettingsManager,
-        exports: Object.keys(connectionSettingsManager || {}),
-        withConnectionSettings: typeof withConnectionSettings
-      });
-    } else {
-      debug(SUBSYSTEM.LOREBOOK,'[recapToLorebookProcessor INIT] ✓ Successfully imported withConnectionSettings');
-      debug?.('[recapToLorebookProcessor] Successfully imported withConnectionSettings');
-    }
-  } else {
-    console.error('[recapToLorebookProcessor INIT] connectionSettingsManager is undefined/null!');
   }
 }
 
@@ -590,110 +563,42 @@ async function runModelWithSettings(config) {
 
   try {
     debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] Called with label:', label);
-    debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] withConnectionSettings:', withConnectionSettings);
-    debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] typeof withConnectionSettings:', typeof withConnectionSettings);
 
-    // Validate that withConnectionSettings is available
-    if (!withConnectionSettings || typeof withConnectionSettings !== 'function') {
-      const errorMsg = 'withConnectionSettings is not available. Module may not be initialized properly.';
-      console.error('[runModelWithSettings] ERROR:', errorMsg);
-      console.error('[runModelWithSettings] Stack trace:', new Error('Stack trace for debugging withConnectionSettings availability').stack);
-      error?.(errorMsg, {
-        typeofWithConnectionSettings: typeof withConnectionSettings,
-        initialized: !!withConnectionSettings
-      });
-      throw new Error(errorMsg);
+    // Set operation context for ST_METADATA
+    const { setOperationSuffix, clearOperationSuffix, getContext } = await import('./index.js');
+    if (entryComment) {
+      setOperationSuffix(`-${entryComment}`);
     }
 
-    // Metadata injection now handled by global generateRaw interceptor
-    // Use centralized connection settings management
-    const response = await withConnectionSettings(
-      connectionProfile,
-      completionPreset,
-      // eslint-disable-next-line complexity -- LLM call with multiple conditional branches for prompt construction
-      async () => {
-        // Set operation context for ST_METADATA
-        const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
-        if (entryComment) {
-          setOperationSuffix(`-${entryComment}`);
-        }
+    let response;
 
-        try {
-          // Build prompt input - either string (current behavior) or messages array (with preset prompts)
-          let prompt_input;
+    try {
+      const { sendLLMRequest } = await import('./llmClient.js');
+      const { OperationType } = await import('./operationTypes.js');
+      const normalizedProfile = connectionProfile || '';
+      const effectiveProfile = normalizedProfile || getContext().extensionSettings.connectionProfile;
 
-          debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] label:', label);
-          debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] include_preset_prompts:', include_preset_prompts);
-          debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] completionPreset (param):', completionPreset);
+      debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] label:', label);
+      debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] include_preset_prompts:', include_preset_prompts);
+      debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] completionPreset (param):', completionPreset);
 
-          // If preset_name is empty, use the currently active preset (like recapping.js does)
-          const { get_current_preset } = await import('./index.js');
-          const effectivePresetName = completionPreset || (include_preset_prompts ? get_current_preset() : '');
+      // Determine operation type based on label
+      const operationType = label === 'lorebook_entry_lookup' ? OperationType.LOREBOOK_ENTRY_LOOKUP :
+                            label === 'lorebookEntryDeduplicate' ? OperationType.RESOLVE_LOREBOOK_ENTRY :
+                            label === 'bulk_registry_populate' ? OperationType.POPULATE_REGISTRIES :
+                            OperationType.RESOLVE_LOREBOOK_ENTRY;
 
-          debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] effectivePresetName:', effectivePresetName);
-          debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] Condition check (include && preset):', include_preset_prompts && effectivePresetName);
+      const options = {
+        maxTokens: DEFAULT_MAX_TOKENS,
+        includePreset: include_preset_prompts,
+        preset: completionPreset,
+        prefill: prefill || ''
+      };
 
-          if (include_preset_prompts && effectivePresetName) {
-            // Load preset prompts and get preset settings
-            const { getPresetManager } = await import('../../../preset-manager.js');
-            const presetManager = getPresetManager('openai');
-            const preset = presetManager?.getCompletionPresetByName(effectivePresetName);
-            const presetMessages = await loadPresetPrompts(effectivePresetName);
-
-            debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] presetMessages loaded:', presetMessages?.length || 0, 'prompts');
-            if (presetMessages && presetMessages.length > 0) {
-              debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] First preset prompt role:', presetMessages[0]?.role);
-              debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] First preset prompt content length:', presetMessages[0]?.content?.length || 0);
-            }
-
-            // Use extension's prefill if set, otherwise use preset's prefill
-            const effectivePrefill = prefill || preset?.assistant_prefill || '';
-            debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] effectivePrefill source:', prefill ? 'extension' : (preset?.assistant_prefill ? 'preset' : 'empty'));
-
-            // Only use messages array if we actually got preset prompts
-            if (presetMessages && presetMessages.length > 0) {
-              debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] Using messages array format with preset prompts');
-
-              // Build messages array: preset prompts FIRST, then extension prompt
-              prompt_input = [
-                ...presetMessages,
-                { role: 'user', content: prompt }
-              ];
-
-              // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
-              return generateRaw({
-                prompt: prompt_input,
-                instructOverride: false,  // Let preset prompts control formatting
-                quietToLoud: false,
-                prefill: effectivePrefill
-              });
-            } else {
-              console.warn('[runModelWithSettings] include_preset_prompts enabled but no preset prompts loaded, falling back to string format');
-              // Fall back to string format
-              // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
-              return generateRaw({
-                prompt: prompt,
-                instructOverride: false,
-                quietToLoud: false,
-                prefill: prefill || ''
-              });
-            }
-          } else {
-            debug(SUBSYSTEM.LOREBOOK,'[runModelWithSettings] Using string format (include_preset_prompts not enabled or no preset)');
-            // Current behavior - string prompt only
-            // eslint-disable-next-line no-restricted-syntax -- Internal call within operation handler (already in queue context)
-            return generateRaw({
-              prompt: prompt,
-              instructOverride: false,
-              quietToLoud: false,
-              prefill: prefill || ''
-            });
-          }
-        } finally {
-          clearOperationSuffix();
-        }
-      }
-    );
+      response = await sendLLMRequest(effectiveProfile, prompt, operationType, options);
+    } finally {
+      clearOperationSuffix();
+    }
 
     if (typeof response === 'string') {
       debug?.(`Auto-Lorebooks ${label} response length: ${response.length}`);

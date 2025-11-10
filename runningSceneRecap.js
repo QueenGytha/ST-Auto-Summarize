@@ -9,11 +9,11 @@ import {
   log,
   toast,
   get_data,
-  recap_text,
   saveChatDebounced,
   saveMetadata,
   getCurrentChatId } from
 './index.js';
+import { DEFAULT_MAX_TOKENS } from './constants.js';
 import { running_scene_recap_prompt } from './defaultPrompts.js';
 // Lorebook processing for running recap has been disabled; no queue integration needed here.
 
@@ -302,38 +302,38 @@ async function generate_running_scene_recap(skipQueue  = false) {
 
   // Get connection profile and preset settings
   const running_preset = get_settings('running_scene_recap_completion_preset');
-  const running_profile = get_settings('running_scene_recap_connection_profile');
+  const running_profile = get_settings('running_scene_recap_connection_profile') || '';
   const include_preset_prompts = get_settings('running_scene_recap_include_preset_prompts');
-
-  // Execute with connection profile/preset switching
-  const { withConnectionSettings } = await import('./connectionSettingsManager.js');
 
   try {
     // Add new version - for bulk generation, track from 0 to last scene index
     const last_scene_idx = indexes.length > 0 ? indexes[indexes.length - 1] : 0;
 
-    const result = await withConnectionSettings(
-      running_profile,
-      running_preset,
-      async () => {
-        debug(SUBSYSTEM.RUNNING, 'Sending running scene recap prompt to LLM');
+    let result;
 
-        // Set operation context for ST_METADATA
-        const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
-        setOperationSuffix(`-0-${last_scene_idx}`);
+    // Set operation context for ST_METADATA
+    const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+    setOperationSuffix(`-0-${last_scene_idx}`);
 
-        try {
-          // Generate recap using the configured API
-          const recapResult = await recap_text(prompt, prefill, include_preset_prompts, running_preset);
+    try {
+      const { sendLLMRequest } = await import('./llmClient.js');
+      const { OperationType } = await import('./operationTypes.js');
+      const effectiveProfile = running_profile || getContext().extensionSettings.connectionProfile;
 
-          debug(SUBSYSTEM.RUNNING, `Generated running recap (${recapResult.length} chars)`);
+      debug(SUBSYSTEM.RUNNING, 'Sending running scene recap prompt to LLM');
 
-          return recapResult;
-        } finally {
-          clearOperationSuffix();
-        }
-      }
-    );
+      const options = {
+        maxTokens: DEFAULT_MAX_TOKENS,
+        includePreset: include_preset_prompts,
+        preset: running_preset,
+        prefill
+      };
+
+      result = await sendLLMRequest(effectiveProfile, prompt, OperationType.GENERATE_RUNNING_RECAP, options);
+      debug(SUBSYSTEM.RUNNING, `Generated running recap (${result.length} chars)`);
+    } finally {
+      clearOperationSuffix();
+    }
 
     // Parse JSON response using centralized helper
     const { extractJsonFromResponse } = await import('./utils.js');
@@ -394,7 +394,7 @@ function extractRecapFromJSON(scene_recap ) {
     if (parsed && typeof parsed === 'object') {
       if (parsed.recap) {
         extracted_text = parsed.recap;
-        debug(SUBSYSTEM.RUNNING, `Extracted recap field from JSON (${recap_text.length} chars, excluding lorebooks)`);
+        debug(SUBSYSTEM.RUNNING, `Extracted recap field from JSON (${extracted_text.length} chars, excluding lorebooks)`);
       } else {
         extracted_text = "";
         debug(SUBSYSTEM.RUNNING, `Scene recap is JSON but missing 'recap' property, using empty string`);
@@ -431,42 +431,44 @@ function buildCombinePrompt(current_recap , scene_recaps_text ) {
 async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index ) {
   // Get connection profile and preset settings
   const running_preset = get_settings('running_scene_recap_completion_preset');
-  const running_profile = get_settings('running_scene_recap_connection_profile');
+  const running_profile = get_settings('running_scene_recap_connection_profile') || '';
   const include_preset_prompts = get_settings('running_scene_recap_include_preset_prompts');
 
-  // Execute with connection profile/preset switching
-  const { withConnectionSettings } = await import('./connectionSettingsManager.js');
+  debug(SUBSYSTEM.RUNNING, `Sending prompt to LLM to combine with ${scene_name}`);
 
-  return withConnectionSettings(
-    running_profile,
-    running_preset,
-    async () => {
-      debug(SUBSYSTEM.RUNNING, `Sending prompt to LLM to combine with ${scene_name}`);
+  // Set operation context for ST_METADATA
+  const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+  const prev_version = get_running_recap(get_current_running_recap_version());
+  const prev_scene_idx = prev_version ? prev_version.new_scene_index : 0;
+  setOperationSuffix(`-${prev_scene_idx}-${scene_index}`);
 
-      // Set operation context for ST_METADATA
-      const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
-      const prev_version = get_running_recap(get_current_running_recap_version());
-      const prev_scene_idx = prev_version ? prev_version.new_scene_index : 0;
-      setOperationSuffix(`-${prev_scene_idx}-${scene_index}`);
+  try {
+    const { sendLLMRequest } = await import('./llmClient.js');
+    const { OperationType } = await import('./operationTypes.js');
+    const effectiveProfile = running_profile || getContext().extensionSettings.connectionProfile;
 
-      try {
-        const result = await recap_text(prompt, prefill, include_preset_prompts, running_preset);
+    const options = {
+      maxTokens: DEFAULT_MAX_TOKENS,
+      includePreset: include_preset_prompts,
+      preset: running_preset,
+      prefill
+    };
 
-        // Parse JSON response using centralized helper
-        const { extractJsonFromResponse } = await import('./utils.js');
-        const parsed = extractJsonFromResponse(result, {
-          requiredFields: ['recap'],
-          context: 'running scene recap combine'
-        });
+    const result = await sendLLMRequest(effectiveProfile, prompt, OperationType.COMBINE_SCENE_WITH_RUNNING, options);
 
-        debug(SUBSYSTEM.RUNNING, `Combined running recap with scene (${parsed.recap.length} chars)`);
+    // Parse JSON response using centralized helper
+    const { extractJsonFromResponse } = await import('./utils.js');
+    const parsed = extractJsonFromResponse(result, {
+      requiredFields: ['recap'],
+      context: 'running scene recap combine'
+    });
 
-        return parsed.recap;
-      } finally {
-        clearOperationSuffix();
-      }
-    }
-  );
+    debug(SUBSYSTEM.RUNNING, `Combined running recap with scene (${parsed.recap.length} chars)`);
+
+    return parsed.recap;
+  } finally {
+    clearOperationSuffix();
+  }
 }
 
 function storeRunningRecap(result , scene_index , scene_name , _scene_recap ) {
