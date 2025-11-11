@@ -127,8 +127,7 @@ function determineOperationType() {
     // Try to determine from call stack
     const stack = new Error('Stack trace for operation type detection').stack || '';
 
-    // Check for specific scene operations FIRST (before generic recap_text check)
-    // Scene operations often call recap_text(), so must be checked first
+    // Check for specific scene operations FIRST
     if (stack.includes('detectSceneBreak') || stack.includes('autoSceneBreakDetection.js')) {
       return 'detect_scene_break';
     }
@@ -168,12 +167,6 @@ function determineOperationType() {
     }
     if (stack.includes('runBulkRegistryPopulation') || stack.includes('bulk_registry_populate')) {
       return 'populate_registries';
-    }
-
-    // Check for message recap generation (AFTER scene checks!)
-    // This is generic and will match many operations, so must be last
-    if (stack.includes('recap_text') || stack.includes('recapping.js')) {
-      return 'recap';
     }
 
     // Default for chat messages and other operations

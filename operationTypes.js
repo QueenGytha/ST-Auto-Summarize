@@ -2,7 +2,6 @@
 // Centralized operation type constants for LLM operations
 
 export const OperationType = {
-  RECAP: 'recap',
   VALIDATE_RECAP: 'validate_recap',
   DETECT_SCENE_BREAK: 'detect_scene_break',
   GENERATE_SCENE_RECAP: 'generate_scene_recap',

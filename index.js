@@ -177,7 +177,6 @@ export * from './buttonBindings.js';
 export * from './connectionProfiles.js';
 export * from './promptUtils.js';
 export * from './presetPromptLoader.js';
-export * from './recapping.js';
 export * from './recapValidation.js';
 export * from './presetManager.js';
 export * from './eventHandlers.js';

@@ -1,6 +1,5 @@
 // llmClient.js
 // LLM client wrapper for ConnectionManagerRequestService
-// Complete replacement for recap_text with ALL functionality
 
 import { getContext } from '../../../extensions.js';
 import { injectMetadataIntoChatArray } from './metadataInjector.js';
@@ -29,7 +28,7 @@ async function getPresetOverridePayload(presetName) {
   return payload;
 }
 
-// eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Complete LLM wrapper with all recap_text functionality
+// eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Complete LLM wrapper
 export async function sendLLMRequest(profileId, prompt, operationType, options = {}) {
   if (!profileId || profileId === '') {
     throw new Error('sendLLMRequest requires explicit profileId. Empty string not allowed.');
