@@ -5,7 +5,6 @@ import { getContext } from '../../../extensions.js';
 import { injectMetadataIntoChatArray } from './metadataInjector.js';
 import { getOperationSuffix } from './operationContext.js';
 import { debug, error, SUBSYSTEM, count_tokens, get_context_size, main_api, trimToEndSentence, loadPresetPrompts, get_current_preset } from './index.js';
-import { DEFAULT_MAX_TOKENS } from './constants.js';
 
 // eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Complete LLM wrapper
 export async function sendLLMRequest(profileId, prompt, operationType, options = {}) {
@@ -43,28 +42,41 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
 
   // 4. LOAD GENERATION PARAMETERS FROM PROFILE PRESET
   let generationParams = {};
-  if (profile.preset) {
-    const { getPresetManager } = await import('../../../preset-manager.js');
-    const presetManager = getPresetManager('openai');
-    const presetData = presetManager?.getCompletionPresetByName(profile.preset);
-    if (presetData) {
-      generationParams = {
-        temperature: presetData.temperature >= 0 ? Number(presetData.temperature) : undefined,
-        top_p: presetData.top_p >= 0 ? Number(presetData.top_p) : undefined,
-        min_p: presetData.min_p >= 0 ? Number(presetData.min_p) : undefined,
-        presence_penalty: presetData.presence_penalty >= 0 ? Number(presetData.presence_penalty) : undefined,
-        frequency_penalty: presetData.frequency_penalty >= 0 ? Number(presetData.frequency_penalty) : undefined,
-        repetition_penalty: presetData.repetition_penalty >= 0 ? Number(presetData.repetition_penalty) : undefined,
-        top_k: presetData.top_k >= 0 ? Number(presetData.top_k) : undefined,
-      };
-      for (const key of Object.keys(generationParams)) {
-        if (generationParams[key] === undefined) {
-          delete generationParams[key];
-        }
-      }
-      debug(SUBSYSTEM.CORE, `[LLMClient] Loaded generation params from preset "${profile.preset}":`, generationParams);
+
+  if (!profile.preset) {
+    throw new Error(`FATAL: Connection profile "${profile.name}" (${profileId}) has no preset configured. Every connection profile MUST have a completion preset configured.`);
+  }
+
+  const { getPresetManager } = await import('../../../preset-manager.js');
+  const presetManager = getPresetManager('openai');
+  const presetData = presetManager?.getCompletionPresetByName(profile.preset);
+
+  if (!presetData) {
+    throw new Error(`FATAL: Preset "${profile.preset}" configured in connection profile "${profile.name}" not found. Preset must exist and be valid.`);
+  }
+
+  generationParams = {
+    temperature: presetData.temperature >= 0 ? Number(presetData.temperature) : undefined,
+    top_p: presetData.top_p >= 0 ? Number(presetData.top_p) : undefined,
+    min_p: presetData.min_p >= 0 ? Number(presetData.min_p) : undefined,
+    presence_penalty: presetData.presence_penalty >= 0 ? Number(presetData.presence_penalty) : undefined,
+    frequency_penalty: presetData.frequency_penalty >= 0 ? Number(presetData.frequency_penalty) : undefined,
+    repetition_penalty: presetData.repetition_penalty >= 0 ? Number(presetData.repetition_penalty) : undefined,
+    top_k: presetData.top_k >= 0 ? Number(presetData.top_k) : undefined,
+  };
+  for (const key of Object.keys(generationParams)) {
+    if (generationParams[key] === undefined) {
+      delete generationParams[key];
     }
   }
+
+  const presetMaxTokens = presetData.genamt || presetData.openai_max_tokens;
+  if (!presetMaxTokens || presetMaxTokens <= 0) {
+    throw new Error(`FATAL: Preset "${profile.preset}" has no valid max_tokens (genamt or openai_max_tokens). Preset must have max_tokens > 0 configured.`);
+  }
+
+  debug(SUBSYSTEM.CORE, `[LLMClient] Loaded generation params from preset "${profile.preset}":`, generationParams);
+  debug(SUBSYSTEM.CORE, `[LLMClient] Loaded max_tokens from preset: ${presetMaxTokens}`);
 
   // 5. LOAD PRESET PROMPTS + PREFILL (ConnectionManager doesn't do this)
   let messages;
@@ -76,10 +88,10 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     const presetMessages = await loadPresetPrompts(presetName);
 
     // Load preset prefill
-    const { getPresetManager } = await import('../../../preset-manager.js');
-    const presetManager = getPresetManager('openai');
-    const presetData = presetManager?.getCompletionPresetByName(presetName);
-    const presetPrefill = presetData?.assistant_prefill || '';
+    const { getPresetManager: getPresetManager2 } = await import('../../../preset-manager.js');
+    const presetManager2 = getPresetManager2('openai');
+    const presetData2 = presetManager2?.getCompletionPresetByName(presetName);
+    const presetPrefill = presetData2?.assistant_prefill || '';
 
     // Prefill priority: explicit option > preset
     effectivePrefill = options.prefill || presetPrefill;
@@ -132,7 +144,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     const result = await ctx.ConnectionManagerRequestService.sendRequest(
       profileId,
       messagesWithMetadata,
-      options.maxTokens || DEFAULT_MAX_TOKENS,
+      options.maxTokens ?? presetMaxTokens,
       {
         stream: options.stream ?? false,
         signal: options.signal ?? null,
