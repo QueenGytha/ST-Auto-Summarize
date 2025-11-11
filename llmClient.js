@@ -19,6 +19,12 @@ async function getPresetOverridePayload(presetName) {
 
   const payload = {
     temperature: preset.temperature >= 0 ? Number(preset.temperature) : undefined,
+    top_p: preset.top_p >= 0 ? Number(preset.top_p) : undefined,
+    top_k: preset.top_k >= 0 ? Number(preset.top_k) : undefined,
+    min_p: preset.min_p >= 0 ? Number(preset.min_p) : undefined,
+    repetition_penalty: preset.repetition_penalty >= 0 ? Number(preset.repetition_penalty) : undefined,
+    frequency_penalty: preset.frequency_penalty >= 0 ? Number(preset.frequency_penalty) : undefined,
+    presence_penalty: preset.presence_penalty >= 0 ? Number(preset.presence_penalty) : undefined,
   };
 
   for (const key of Object.keys(payload)) {

@@ -262,6 +262,12 @@ async function initializeExtension() {
   // load settings html
   await load_settings_html();
 
+  // Migrate connection profile settings from names to UUIDs
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Migrating connection profile settings...');
+  const { migrateConnectionProfileSettings } = await import('./settingsMigration.js');
+  await migrateConnectionProfileSettings();
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Connection profile migration complete');
+
   // initialize UI stuff
   await initialize_settings_listeners();
   initialize_popout();
