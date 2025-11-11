@@ -12,7 +12,7 @@ import {
   saveChatDebounced } from
 './index.js';
 
-const DEFAULT_MINIMUM_SCENE_LENGTH = 4;
+const DEFAULT_MINIMUM_SCENE_LENGTH = 3;
 
 // Disallow rationale that references formatting/separators instead of content
 export function validateRationaleNoFormatting(rationale) {
@@ -287,7 +287,9 @@ async function parseSceneBreakResponse(response, _startIndex, _endIndex, _filter
 }
 
 // Helper: Validate scene break response
-function validateSceneBreakResponse(sceneBreakAt, startIndex, endIndex, filteredIndices, minimumSceneLength) {
+function validateSceneBreakResponse(sceneBreakAt, config) {
+  const { startIndex, endIndex, filteredIndices, minimumSceneLength, maxEligibleIndex = null } = config;
+
   // If false, that's valid
   if (sceneBreakAt === false) {
     return { valid: true };
@@ -308,6 +310,14 @@ function validateSceneBreakResponse(sceneBreakAt, startIndex, endIndex, filtered
     return { valid: false, reason: `not in filtered message set: ${sceneBreakAt}` };
   }
 
+  // Must not be in the offset zone (if maxEligibleIndex is provided)
+  if (maxEligibleIndex !== null && sceneBreakAt > maxEligibleIndex) {
+    return {
+      valid: false,
+      reason: `in offset zone (${sceneBreakAt} > ${maxEligibleIndex}): ${sceneBreakAt}`
+    };
+  }
+
   // Must have at least minimumSceneLength filtered messages before it
   const filteredBeforeBreak = filteredIndices.filter(i => i < sceneBreakAt).length;
   if (filteredBeforeBreak < minimumSceneLength) {
@@ -322,12 +332,13 @@ function validateSceneBreakResponse(sceneBreakAt, startIndex, endIndex, filtered
 
 async function detectSceneBreak(
 startIndex ,
-endIndex )
+endIndex ,
+offset  = 0)
 {
   const ctx = getContext();
 
   try {
-    debug('Checking message range', startIndex, 'to', endIndex, 'for scene break');
+    debug('Checking message range', startIndex, 'to', endIndex, 'for scene break (offset:', offset, ')');
 
     // Get settings
     const promptTemplate = get_settings('auto_scene_break_prompt');
@@ -340,30 +351,55 @@ endIndex )
 
     const chat = ctx.chat || [];
 
+    // Calculate max eligible index (messages after this are in offset zone)
+    const maxEligibleIndex = endIndex - offset;
+
     // Format all messages in range with their ST indices
     const { filteredIndices } = formatMessagesForRangeDetection(chat, startIndex, endIndex, checkWhich);
 
-    // Guard: Need at least (minimum + 1) filtered messages to analyze
-    if (filteredIndices.length < minimumSceneLength + 1) {
-      debug('Skipping scene break detection - not enough filtered messages:', filteredIndices.length, '< minimum + 1:', minimumSceneLength + 1);
+    // Count eligible filtered messages (excluding offset zone)
+    const eligibleFilteredIndices = filteredIndices.filter(i => i <= maxEligibleIndex);
+
+    // Guard: Need at least (minimum + 1) eligible filtered messages to analyze
+    if (eligibleFilteredIndices.length < minimumSceneLength + 1) {
+      debug('Skipping scene break detection - not enough eligible filtered messages:', eligibleFilteredIndices.length, '< minimum + 1:', minimumSceneLength + 1);
       return {
         sceneBreakAt: false,
-        rationale: `Not enough messages (${filteredIndices.length} < ${minimumSceneLength + 1} required)`,
-        filteredIndices
+        rationale: `Not enough eligible messages (${eligibleFilteredIndices.length} < ${minimumSceneLength + 1} required)`,
+        filteredIndices,
+        maxEligibleIndex
       };
     }
 
     // Compute the earliest allowed message number that could start a new scene under the minimum rule
-    // This is the (minimumSceneLength)th element in filteredIndices (0-based), i.e., the first index with at least N before it
-    const earliestAllowedBreak = filteredIndices[minimumSceneLength];
+    // This is the (minimumSceneLength)th element in eligibleFilteredIndices (0-based)
+    const earliestAllowedBreak = eligibleFilteredIndices[minimumSceneLength];
     debug('Earliest allowed scene break index by minimum rule:', earliestAllowedBreak);
+    debug('Max eligible index by offset rule:', maxEligibleIndex);
 
-    // Rebuild formatted messages with an explicit ineligibility marker for too-early candidates
-    // Replace the message number for any message before earliestAllowedBreak with 'invalid choice'
+    // Count how many messages are actually valid choices (not marked as "invalid choice")
+    // A message is valid if: earliestAllowedBreak <= i <= maxEligibleIndex
+    const validChoices = filteredIndices.filter(i => i >= earliestAllowedBreak && i <= maxEligibleIndex);
+    if (validChoices.length === 0) {
+      debug('No valid choices after applying minimum scene length and offset rules');
+      return {
+        sceneBreakAt: false,
+        rationale: 'No valid scene break choices (all messages ineligible due to minimum length + offset)',
+        filteredIndices,
+        maxEligibleIndex
+      };
+    }
+    debug('Valid choices for scene break:', validChoices.length, 'messages');
+
+    // Rebuild formatted messages with explicit ineligibility markers
+    // Mark messages as 'invalid choice' if:
+    // 1. Before earliestAllowedBreak (minimum scene length rule)
+    // 2. After maxEligibleIndex (offset rule)
     const formattedForPrompt = filteredIndices.map((i) => {
       const m = chat[i];
       const speaker = m?.is_user ? '[USER]' : '[CHARACTER]';
-      const header = (i < earliestAllowedBreak)
+      const isIneligible = (i < earliestAllowedBreak) || (i > maxEligibleIndex);
+      const header = isIneligible
         ? `Message #invalid choice ${speaker}:`
         : `Message #${i} ${speaker}:`;
       const cleaned = stripDecorativeSeparators(m?.mes ?? '');
@@ -425,7 +461,7 @@ endIndex )
     }
     debug('  Rationale:', rationale);
 
-    return { sceneBreakAt, rationale, filteredIndices };
+    return { sceneBreakAt, rationale, filteredIndices, maxEligibleIndex };
 
   } catch (err) {
     error('ERROR in detectSceneBreak for range', startIndex, 'to', endIndex);
@@ -466,7 +502,7 @@ function findAndMarkExistingSceneBreaks(chat) {
 
 // Helper: Try to queue scene break detections
 async function tryQueueSceneBreaks(config) {
-  const { chat, start, end, checkWhich } = config;
+  const { chat, start, end, offset, checkWhich } = config;
 
   log(SUBSYSTEM.SCENE, '[Queue] Queueing range-based scene break detection');
 
@@ -476,37 +512,41 @@ async function tryQueueSceneBreaks(config) {
   // Get minimum scene length setting
   const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
 
-  // Count filtered messages in range
+  // Calculate max eligible index (messages after this are in the offset zone)
+  const maxEligibleIndex = end - (offset || 0);
+
+  // Count filtered messages in eligible range only
   let filteredCount = 0;
-  for (let i = start; i <= end; i++) {
+  for (let i = start; i <= maxEligibleIndex; i++) {
     const message = chat[i];
     if (message && messageMatchesType(message, checkWhich)) {
       filteredCount++;
     }
   }
 
-  // Check if we have enough messages (minimum + 1)
+  // Check if we have enough eligible messages (minimum + 1)
   if (filteredCount < minimumSceneLength + 1) {
-    toast(`Not enough messages for scene break detection (${filteredCount} < ${minimumSceneLength + 1} required)`, 'info');
+    toast(`Not enough eligible messages for scene break detection (${filteredCount} < ${minimumSceneLength + 1} required)`, 'info');
     return { queued: true, count: 0 };
   }
 
   // Queue single range-based detection operation
   const operationId = await enqueueOperation(
     OperationType.DETECT_SCENE_BREAK,
-    { startIndex: start, endIndex: end },
+    { startIndex: start, endIndex: end, offset: offset || 0 },
     {
       priority: 5, // Normal priority for scene break detection
       metadata: {
         filtered_count: filteredCount,
         minimum_required: minimumSceneLength + 1,
+        offset: offset || 0,
         triggered_by: 'auto_scene_break_detection'
       }
     }
   );
 
   if (operationId) {
-    log(SUBSYSTEM.SCENE, `[Queue] Queued range-based scene break detection for ${start}-${end} (${filteredCount} filtered messages)`);
+    log(SUBSYSTEM.SCENE, `[Queue] Queued range-based scene break detection for ${start}-${end} (${filteredCount} eligible filtered messages, offset: ${offset || 0})`);
     toast(`Queued scene break detection for range ${start}-${end}`, 'info');
     return { queued: true, count: 1 };
   }
@@ -515,13 +555,93 @@ async function tryQueueSceneBreaks(config) {
   return null;
 }
 
+// Core unified scene break detection function
+async function detectSceneBreaksInRange(chat, options = {}) {
+  const {
+    startIndex = null,
+    endIndex = null
+  } = options;
+
+  if (!chat || chat.length === 0) {
+    debug(SUBSYSTEM.SCENE, 'No messages to process - chat is empty');
+    return;
+  }
+
+  // Get settings
+  const offset = Number(get_settings('auto_scene_break_message_offset')) ?? 0;
+  const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
+
+  // Determine the raw end index (will include offset messages in prompt, marked as ineligible)
+  const latestIndex = chat.length - 1;
+  const rawEnd = endIndex !== null ? endIndex : latestIndex;
+
+  // Calculate the maximum eligible index (messages beyond this are marked as ineligible due to offset)
+  const maxEligibleIndex = rawEnd - offset;
+
+  // If no messages are eligible after applying offset, nothing to check
+  if (maxEligibleIndex < 0) {
+    debug(SUBSYSTEM.SCENE, 'No messages eligible after applying offset');
+    return;
+  }
+
+  // Find the latest visible scene break to determine start
+  let latestVisibleSceneBreakIndex = -1;
+  for (let i = maxEligibleIndex; i >= 0; i--) {
+    try {
+      const hasSceneBreak = get_data(chat[i], 'scene_break');
+      const isVisible = get_data(chat[i], 'scene_break_visible');
+      if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
+        latestVisibleSceneBreakIndex = i;
+        break;
+      }
+    } catch {/* ignore lookup errors */}
+  }
+
+  // Determine actual start index
+  const actualStart = startIndex !== null ? startIndex : (latestVisibleSceneBreakIndex + 1);
+
+  // Validate range
+  if (actualStart > maxEligibleIndex) {
+    debug(SUBSYSTEM.SCENE, 'No eligible messages in range after applying offset and finding scene break');
+    return;
+  }
+
+  log(
+    SUBSYSTEM.SCENE,
+    'Processing scene break detection - eligible range:',
+    actualStart,
+    'to',
+    maxEligibleIndex,
+    ', full range:',
+    actualStart,
+    'to',
+    rawEnd,
+    '(offset:',
+    offset,
+    ', checking:',
+    checkWhich,
+    ')'
+  );
+
+  // Queue the detection operation
+  // Pass rawEnd (includes offset messages) and offset value so detection can mark them as ineligible
+  const rangeConfig = { chat, start: actualStart, end: rawEnd, offset, checkWhich };
+  const queueResult = await tryQueueSceneBreaks(rangeConfig);
+
+  if (!queueResult) {
+    error(SUBSYSTEM.SCENE, 'Failed to enqueue scene break detection operations');
+    toast('Failed to queue scene break detection. Check console for details.', 'error');
+    return;
+  }
+
+  log(SUBSYSTEM.SCENE, `Successfully queued ${queueResult.count} scene break detection(s)`);
+}
+
 export async function processAutoSceneBreakDetection(
 startIndex  = null,
 endIndex  = null)
 {
   log(SUBSYSTEM.SCENE, '=== processAutoSceneBreakDetection called with startIndex:', startIndex, 'endIndex:', endIndex, '===');
-
-  // Detection is always available; behavior is controlled by per-event settings
 
   const ctx = getContext();
   const chat = ctx.chat;
@@ -533,25 +653,8 @@ endIndex  = null)
   // Find and mark existing scene breaks
   findAndMarkExistingSceneBreaks(chat);
 
-  // Get settings and determine range
-  const offset = Number(get_settings('auto_scene_break_message_offset')) ?? 0;
-  const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
-  const latestIndex = chat.length - 1;
-  const start = startIndex !== null ? startIndex : 0;
-  const end = endIndex !== null ? endIndex : latestIndex;
-
-  log(SUBSYSTEM.SCENE, 'Processing messages', start, 'to', end, '(latest:', latestIndex, ', offset:', offset, ', checking:', checkWhich, ')');
-
-  // Queue is required - enqueue operations instead of executing directly
-  const rangeConfig = { start, end, latestIndex, offset, checkWhich };
-  const queueResult = await tryQueueSceneBreaks({ chat, ...rangeConfig });
-  if (!queueResult) {
-    error(SUBSYSTEM.SCENE, 'Failed to enqueue scene break detection operations');
-    toast('Failed to queue scene break detection. Check console for details.', 'error');
-    return;
-  }
-
-  log(SUBSYSTEM.SCENE, `Successfully queued ${queueResult.count} scene break detection(s)`);
+  // Delegate to unified core function
+  await detectSceneBreaksInRange(chat, { startIndex, endIndex });
 }
 
 export async function manualSceneBreakDetection() {
@@ -566,33 +669,11 @@ export async function manualSceneBreakDetection() {
     return;
   }
 
-  // Find the latest VISIBLE scene break and start scanning after it
-  // This intentionally ignores any "checked" flags so we can rescan the tail
-  let latestVisibleSceneBreakIndex = -1;
-  for (let i = chat.length - 1; i >= 0; i--) {
-    try {
-      const hasSceneBreak = get_data(chat[i], 'scene_break');
-      const isVisible = get_data(chat[i], 'scene_break_visible');
-      if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
-        latestVisibleSceneBreakIndex = i;
-        break;
-      }
-    } catch {/* ignore lookup errors */}
-  }
+  toast('Scanning for scene breaks...', 'info');
 
-  const startIndex = latestVisibleSceneBreakIndex + 1;
-  const endIndex = chat.length - 1;
-
-  if (startIndex > endIndex) {
-    debug(SUBSYSTEM.SCENE, 'No messages after the latest visible scene break to scan');
-    toast('No new messages after the last visible scene break', 'info');
-    return;
-  }
-
-  toast(`Scanning messages ${startIndex}-${endIndex} for scene breaks...`, 'info');
-
-  // Only process the range AFTER the last visible scene break
-  await processAutoSceneBreakDetection(startIndex, endIndex);
+  // Delegate to unified core function
+  // It will find the latest scene break, apply offset, and queue detection
+  await detectSceneBreaksInRange(chat, {});
 }
 
 export async function processNewMessageForSceneBreak(messageIndex ) {
@@ -602,11 +683,6 @@ export async function processNewMessageForSceneBreak(messageIndex ) {
     return;
   }
 
-  const offset = Number(get_settings('auto_scene_break_message_offset')) || 0;
-
-  // Calculate range based on offset
-  // If offset = 1 and new message is at index 10, check messages 0 to 9
-  // If offset = 0 and new message is at index 10, check messages 0 to 10
   const ctx = getContext();
   const chat = ctx.chat;
 
@@ -615,54 +691,24 @@ export async function processNewMessageForSceneBreak(messageIndex ) {
     return;
   }
 
-  const endIndexRaw = messageIndex - offset;
-  const endIndex = Math.min(endIndexRaw, chat.length - 1);
-
-  if (endIndex < 0) {
-    debug(SUBSYSTEM.SCENE, 'No messages to check based on offset - messageIndex:', messageIndex, 'offset:', offset);
-    return;
-  }
-
-  const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
-
   const forceFullRescan = typeof window !== 'undefined' && window.autoRecapForceSceneBreakRescan === true;
-
-  let rangeStart = 0;
-  if (!forceFullRescan) {
-    // Find the latest visible scene break
-    let latestVisibleSceneBreakIndex = -1;
-    for (let i = endIndex; i >= 0; i--) {
-      try {
-        const hasSceneBreak = get_data(chat[i], 'scene_break');
-        const isVisible = get_data(chat[i], 'scene_break_visible');
-        if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
-          latestVisibleSceneBreakIndex = i;
-          break;
-        }
-      } catch {/* ignore lookup errors */}
-    }
-
-    // Start scanning from the message after the latest scene break
-    rangeStart = latestVisibleSceneBreakIndex + 1;
-  }
 
   debug(
     SUBSYSTEM.SCENE,
     'New message at index',
     messageIndex,
-    ', checking range',
-    rangeStart,
-    'to',
-    endIndex,
     '(mode:',
     forceFullRescan ? 'full-rescan' : 'to-last-scene-break',
-    ', type:',
-    checkWhich,
     ')'
   );
 
-  log(SUBSYSTEM.SCENE, 'Processing auto scene break detection for range', rangeStart, 'to', endIndex);
-  await processAutoSceneBreakDetection(rangeStart, endIndex);
+  // Delegate to unified core function
+  // Pass messageIndex as endIndex - core function will apply offset automatically
+  // For forceFullRescan, explicitly set startIndex to 0
+  await detectSceneBreaksInRange(chat, {
+    startIndex: forceFullRescan ? 0 : null,
+    endIndex: messageIndex
+  });
 
   if (forceFullRescan && typeof window !== 'undefined') {
     window.autoRecapForceSceneBreakRescan = false;

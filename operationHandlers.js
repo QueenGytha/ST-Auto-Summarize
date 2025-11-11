@@ -222,18 +222,18 @@ export function registerAllOperationHandlers() {
 
   // Detect scene break (range-based)
   registerOperationHandler(OperationType.DETECT_SCENE_BREAK, async (operation) => {
-    const { startIndex, endIndex } = operation.params;
+    const { startIndex, endIndex, offset = 0 } = operation.params;
     const signal = getAbortSignal(operation);
     const ctx = getContext();
     const chat = ctx.chat;
 
-    debug(SUBSYSTEM.QUEUE, `Executing DETECT_SCENE_BREAK for range ${startIndex} to ${endIndex}`);
-    const result = await detectSceneBreak(startIndex, endIndex);
+    debug(SUBSYSTEM.QUEUE, `Executing DETECT_SCENE_BREAK for range ${startIndex} to ${endIndex} (offset: ${offset})`);
+    const result = await detectSceneBreak(startIndex, endIndex, offset);
 
     // Check if cancelled after detection (before side effects)
     throwIfAborted(signal, 'DETECT_SCENE_BREAK', 'LLM call');
 
-    const { sceneBreakAt, rationale, filteredIndices } = result;
+    const { sceneBreakAt, rationale, filteredIndices, maxEligibleIndex } = result;
 
     // Enforce content-only rationale (no formatting references like '---')
     const rationaleCheck = validateRationaleNoFormatting(rationale);
@@ -243,8 +243,14 @@ export function registerAllOperationHandlers() {
 
     const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
 
-    // Validate the response
-    const validation = validateSceneBreakResponse(sceneBreakAt, startIndex, endIndex, filteredIndices, minimumSceneLength);
+    // Validate the response (including offset check via maxEligibleIndex)
+    const validation = validateSceneBreakResponse(sceneBreakAt, {
+      startIndex,
+      endIndex,
+      filteredIndices,
+      minimumSceneLength,
+      maxEligibleIndex
+    });
 
     if (!validation.valid) {
       const isBelowMinimum = validation.reason.includes('below minimum scene length');

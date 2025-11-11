@@ -2,6 +2,7 @@ import os
 import json
 import time
 import re
+import threading
 from datetime import datetime
 from typing import Dict, Any, Optional, Union, Tuple
 import logging
@@ -27,6 +28,9 @@ class ErrorLogger:
         self.include_timing = self.config.get("include_timing", True)
         self.max_file_size_mb = self.config.get("max_file_size_mb", 10)
         self.max_files = self.config.get("max_files", 100)
+
+        # Thread-safe log number generation
+        self._log_number_lock = threading.Lock()
 
         # Create base error logs directory if enabled
         if self.enabled:
@@ -85,19 +89,34 @@ class ErrorLogger:
 
         return max_num + 1
 
-    def _get_sequenced_error_filename(self, operation: str, folder: str) -> str:
+    def _get_sequenced_error_filename(self, operation: str, folder: str) -> Tuple[str, str]:
         """
         Generate filename with sequential numbering, operation type, and ERROR suffix.
+        Thread-safe: Uses lock to prevent race conditions in log numbering.
+        Creates an empty file immediately to claim the number.
 
         Args:
             operation: Operation type (e.g., 'chat', 'lorebook')
             folder: Error log folder path to check for existing logs
 
         Returns:
+            Tuple of (filename, full_filepath)
             Filename in format: <number>-<operation>-ERROR.md (e.g., 00019-chat-ERROR.md)
         """
-        log_number = self._get_next_error_log_number(folder, operation)
-        return f"{log_number:05d}-{operation}-ERROR.md"
+        with self._log_number_lock:
+            log_number = self._get_next_error_log_number(folder, operation)
+            filename = f"{log_number:05d}-{operation}-ERROR.md"
+            filepath = os.path.join(folder, filename)
+
+            # Create empty file immediately to claim this log number
+            try:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(f"# Error Log - {datetime.now().isoformat()}\n\n")
+                    f.write("**Status:** Logging error...\n\n")
+            except Exception as e:
+                logger.error(f"Failed to create initial error log file {filepath}: {e}")
+
+            return filename, filepath
 
     def _get_error_filename(self, error_code: Union[int, str], timestamp: Optional[float] = None) -> str:
         """Generate filename for error log based on error code and timestamp (legacy/unsorted)"""
@@ -224,11 +243,10 @@ class ErrorLogger:
         # Use sequenced filename if we have character_chat_info, otherwise use error code + timestamp
         if character_chat_info:
             character, timestamp, operation = character_chat_info
-            filename = self._get_sequenced_error_filename(operation, folder)
+            filename, filepath = self._get_sequenced_error_filename(operation, folder)
         else:
             filename = self._get_error_filename(error_code)
-
-        filepath = os.path.join(folder, filename)
+            filepath = os.path.join(folder, filename)
 
         # Create log content in markdown format
         log_content = []

@@ -624,14 +624,30 @@ STRICT CONTENT-ONLY RULES:
 - Do NOT mention formatting in your rationale. Quote only content-based cues (time, location, cast, or objective changes).
 - Responses that reference formatting will be rejected.
 
-MINIMUM SCENE LENGTH RULE:
-- At least {{minimum_scene_length}} messages must occur before you can mark a scene break
-- This ensures scenes are not broken too early
-- Count only the messages of the type being analyzed (user/character/both as configured)
-- The earliest allowed scene break in this range is message #{{earliest_allowed_break}}
-- Do NOT return any message number lower than {{earliest_allowed_break}} under any circumstance
-- If a candidate before {{earliest_allowed_break}} looks compelling (e.g., explicit time skip), you MUST return false unless there is a qualifying candidate at or after {{earliest_allowed_break}}
- - Some lines may be labeled as "Message #invalid choice" to indicate they are ineligible by this rule; never select those as a scene break
+INELIGIBILITY RULES (TWO TYPES):
+Messages may be marked as "Message #invalid choice" for two reasons:
+
+1. MINIMUM SCENE LENGTH RULE:
+   - At least {{minimum_scene_length}} messages must occur before you can mark a scene break
+   - This ensures scenes are not broken too early
+   - Count only the messages of the type being analyzed (user/character/both as configured)
+   - The earliest allowed scene break in this range is message #{{earliest_allowed_break}}
+   - Do NOT return any message number lower than {{earliest_allowed_break}} under any circumstance
+   - Messages before {{earliest_allowed_break}} are marked as "invalid choice"
+
+2. OFFSET ZONE RULE (messages at the END):
+   - Some recent messages at the end of the range may be marked as "invalid choice"
+   - These messages are shown for CONTEXT ONLY to help you evaluate whether a scene break is approaching
+   - They are intentionally excluded from being selected as breaks on this pass
+   - CRITICAL: If the best/only scene break candidate is in the offset zone (marked "invalid choice" at the end), you MUST return false
+   - Returning false allows those messages to become eligible on the next detection attempt
+   - Example: If message #47 (marked "invalid choice") opens with "The next morning..." but all eligible messages before it are continuous, return false
+   - This ensures you don't select a suboptimal break just because the optimal break isn't eligible yet
+
+DECISION LOGIC FOR OFFSET ZONE:
+- If you find a STRONG scene break in the eligible messages → return that message number
+- If the only STRONG scene break is in the offset zone (marked "invalid choice" at the end) → return false (wait for next attempt)
+- If no STRONG scene breaks exist anywhere → return false (treat as continuous scene)
 
 DECISION CRITERIA:
 A scene break means the prior beat resolved and the story now shifts focus.

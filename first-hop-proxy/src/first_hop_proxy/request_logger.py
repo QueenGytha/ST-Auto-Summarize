@@ -2,6 +2,7 @@ import os
 import json
 import time
 import re
+import threading
 from datetime import datetime
 from typing import Dict, Any, Optional, Tuple, List
 import logging
@@ -23,6 +24,9 @@ class RequestLogger:
         self.include_headers = self.config.get("include_headers", True)
         self.include_timing = self.config.get("include_timing", True)
         self.error_logger = error_logger
+
+        # Thread-safe log number generation
+        self._log_number_lock = threading.Lock()
 
         # Create base logs directory if it doesn't exist
         if self.enabled:
@@ -81,9 +85,11 @@ class RequestLogger:
 
         return max_num + 1
 
-    def _get_sequenced_filename(self, operation: str, folder: str, error: Exception = None) -> str:
+    def _get_sequenced_filename(self, operation: str, folder: str, error: Exception = None) -> Tuple[str, str]:
         """
         Generate filename with sequential numbering, operation type, and optional error suffix.
+        Thread-safe: Uses lock to prevent race conditions in log numbering.
+        Creates an empty file immediately to claim the number.
 
         Args:
             operation: Operation type (e.g., 'chat', 'lorebook')
@@ -91,27 +97,41 @@ class RequestLogger:
             error: Exception if request failed (determines suffix)
 
         Returns:
+            Tuple of (filename, full_filepath)
             Filename in format: <number>-<operation>[-STATUS].md
             Examples:
                 00001-chat.md (success)
                 00002-lorebook-RATELIMIT.md (rate limited)
                 00003-summary-FAILED.md (other error)
         """
-        log_number = self._get_next_log_number(folder, operation)
+        with self._log_number_lock:
+            log_number = self._get_next_log_number(folder, operation)
 
-        # Determine status suffix based on error type
-        status_suffix = ""
-        if error:
-            error_str = str(error).lower()
-            error_type = type(error).__name__
+            # Determine status suffix based on error type
+            status_suffix = ""
+            if error:
+                error_str = str(error).lower()
+                error_type = type(error).__name__
 
-            # Check for rate limit errors (429)
-            if "429" in error_str or "rate limit" in error_str or "quota" in error_str:
-                status_suffix = "-RATELIMIT"
-            else:
-                status_suffix = "-FAILED"
+                # Check for rate limit errors (429)
+                if "429" in error_str or "rate limit" in error_str or "quota" in error_str:
+                    status_suffix = "-RATELIMIT"
+                else:
+                    status_suffix = "-FAILED"
 
-        return f"{log_number:05d}-{operation}{status_suffix}.md"
+            filename = f"{log_number:05d}-{operation}{status_suffix}.md"
+            filepath = os.path.join(folder, filename)
+
+            # Create empty file immediately to claim this log number
+            # This prevents race conditions where multiple threads get the same number
+            try:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(f"# Request Log - {datetime.now().isoformat()}\n\n")
+                    f.write("**Status:** In Progress...\n\n")
+            except Exception as e:
+                logger.error(f"Failed to create initial log file {filepath}: {e}")
+
+            return filename, filepath
 
     def _get_timestamp_filename(self, request_id: str = None) -> str:
         """Generate filename with timestamp and optional request ID (legacy/unsorted)"""
@@ -123,6 +143,281 @@ class RequestLogger:
     def _sanitize_headers(self, headers: Dict[str, str]) -> Dict[str, str]:
         """Sanitize headers for logging by obfuscating sensitive values"""
         return sanitize_headers_for_logging(headers)
+
+    def start_request_log(self, request_id: str, endpoint: str, request_data: Dict[str, Any],
+                          headers: Dict[str, str], start_time: float,
+                          character_chat_info: Optional[Tuple[str, str, str]] = None,
+                          original_request_data: Optional[Dict[str, Any]] = None,
+                          stripped_metadata: Optional[List[Dict[str, Any]]] = None,
+                          lorebook_entries: Optional[List[Dict[str, Any]]] = None) -> str:
+        """Create initial log file when request is received
+
+        Args:
+            request_id: Unique request identifier
+            endpoint: API endpoint
+            request_data: Request body data (after processing/stripping)
+            headers: Request headers
+            start_time: Request start timestamp
+            character_chat_info: Optional tuple of (character, timestamp, operation) for organized logging
+            original_request_data: Original request data before ST_METADATA stripping
+            stripped_metadata: List of ST_METADATA dicts that were stripped
+            lorebook_entries: List of lorebook entry dicts extracted from messages
+
+        Returns:
+            Path to log file if successful, empty string otherwise
+        """
+        if not self.enabled:
+            return ""
+
+        folder = self._get_log_folder(character_chat_info)
+
+        # Use sequenced filename if we have character_chat_info, otherwise use timestamp
+        if character_chat_info:
+            character, timestamp, operation = character_chat_info
+            filename, filepath = self._get_sequenced_filename(operation, folder, error=None)
+        else:
+            filename = self._get_timestamp_filename(request_id)
+            filepath = os.path.join(folder, filename)
+
+        log_content = []
+
+        # Title and metadata
+        log_content.append(f"# Request Log - {datetime.now().isoformat()}")
+        log_content.append("")
+        log_content.append("**Status:** In Progress...")
+        log_content.append("")
+        log_content.append(f"**Request ID:** `{request_id}`  ")
+        log_content.append(f"**Endpoint:** `{endpoint}`  ")
+        log_content.append(f"**Timestamp:** {datetime.now().isoformat()}  ")
+        if start_time and self.include_timing:
+            log_content.append(f"**Start Time:** {start_time}  ")
+        log_content.append("")
+
+        # Request Headers
+        if self.include_headers and headers:
+            log_content.append("## Request Headers")
+            log_content.append("")
+            log_content.append("```text")
+            sanitized_headers = self._sanitize_headers(headers)
+            for key, value in sanitized_headers.items():
+                log_content.append(f"{key}: {value}")
+            log_content.append("```")
+            log_content.append("")
+
+        # setting_lore Entries (active entries included in the prompt)
+        if lorebook_entries:
+            entry_count = len(lorebook_entries)
+            plural = "entries" if entry_count != 1 else "entry"
+            log_content.append(f"## setting_lore Entries")
+            log_content.append("")
+            log_content.append(f"*{entry_count} {plural}*")
+            log_content.append("")
+            for i, entry in enumerate(lorebook_entries):
+                entry_name = entry.get('name')
+                if not entry_name:
+                    content = entry.get('formatted', entry.get('raw', ''))
+                    match = re.search(r'name="([^"]*)"', content)
+                    if match:
+                        entry_name = match.group(1)
+                    else:
+                        entry_name = f"Entry {i+1}"
+
+                log_content.append(f"### {entry_name}")
+                log_content.append("")
+                log_content.append("```text")
+                log_content.append(entry.get('formatted', entry.get('raw', 'No content')))
+                log_content.append("```")
+                log_content.append("")
+
+        # Stripped ST_METADATA
+        if stripped_metadata:
+            log_content.append("## Stripped ST_METADATA")
+            log_content.append("")
+            if isinstance(stripped_metadata, list):
+                block_count = len(stripped_metadata)
+                plural = "blocks" if block_count != 1 else "block"
+                log_content.append(f"*{block_count} {plural}*")
+                log_content.append("")
+            log_content.append("```json")
+            log_content.append(json.dumps(stripped_metadata, indent=2))
+            log_content.append("```")
+            log_content.append("")
+
+        # Original Request Data (as received)
+        if self.include_request_data and original_request_data and stripped_metadata:
+            log_content.append("## Original Request Data (As Received)")
+            log_content.append("")
+            log_content.append("```json")
+            log_content.append(json.dumps(original_request_data, indent=2))
+            log_content.append("```")
+            log_content.append("")
+
+            log_content.append("## Original Request Data (Cleaned)")
+            log_content.append("")
+            log_content.append("*Logging only - not sent like this*")
+            log_content.append("")
+            log_content.append("```json")
+            cleaned_json = json.dumps(original_request_data, indent=2).replace('\\n', '\n')
+            log_content.append(cleaned_json)
+            log_content.append("```")
+            log_content.append("")
+
+        # Forwarded/Request Data
+        if self.include_request_data and request_data:
+            if stripped_metadata:
+                log_content.append("## Forwarded Request Data")
+                log_content.append("")
+                log_content.append("*After stripping ST_METADATA*")
+            else:
+                log_content.append("## Request Data")
+            log_content.append("")
+            log_content.append("```json")
+            log_content.append(json.dumps(request_data, indent=2))
+            log_content.append("```")
+            log_content.append("")
+
+        log_content.append("---")
+        log_content.append("")
+        log_content.append("*Waiting for response...*")
+
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(log_content))
+            logger.info(f"Started request log: {filepath}")
+            return filepath
+        except Exception as e:
+            logger.error(f"Failed to create initial log {filepath}: {e}")
+            if hasattr(self, 'error_logger') and self.error_logger:
+                self.error_logger.log_error(e, {
+                    "context": "request_logger_start_error",
+                    "filepath": filepath,
+                    "log_type": "start_request"
+                })
+            return ""
+
+    def complete_request_log(self, filepath: str, response_data: Any = None,
+                            response_headers: Dict[str, str] = None, end_time: float = None,
+                            duration: float = None, error: Exception = None) -> bool:
+        """Append response data to an existing log file
+
+        Args:
+            filepath: Path to existing log file
+            response_data: Response body data
+            response_headers: Response headers
+            end_time: Request end timestamp
+            duration: Request duration in seconds
+            error: Exception if request failed
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.enabled or not filepath or not os.path.exists(filepath):
+            return False
+
+        try:
+            # Read existing content
+            with open(filepath, 'r', encoding='utf-8') as f:
+                existing_content = f.read()
+
+            # Replace status line
+            if error:
+                existing_content = existing_content.replace(
+                    "**Status:** In Progress...",
+                    f"**Status:** ❌ Failed - {type(error).__name__}"
+                )
+            else:
+                existing_content = existing_content.replace(
+                    "**Status:** In Progress...",
+                    "**Status:** ✅ Success"
+                )
+
+            # Build response sections
+            response_content = []
+            response_content.append("")
+
+            # Error Response or Response Data
+            if error:
+                response_content.append("## Error Response")
+                response_content.append("")
+                response_content.append(f"**Error Type:** `{type(error).__name__}`  ")
+                response_content.append(f"**Error Message:** {str(error)}  ")
+                response_content.append("")
+            else:
+                if self.include_response_data and response_data:
+                    response_content.append("## Response Data")
+                    response_content.append("")
+                    if isinstance(response_data, dict):
+                        response_content.append("```json")
+                        response_content.append(json.dumps(response_data, indent=2))
+                        response_content.append("```")
+                    else:
+                        response_content.append("```text")
+                        response_content.append(str(response_data))
+                        response_content.append("```")
+                    response_content.append("")
+
+                    if isinstance(response_data, dict):
+                        response_content.append("## Response Data (Cleaned)")
+                        response_content.append("")
+                        response_content.append("*For readability - actual response uses escaped newlines*")
+                        response_content.append("")
+                        response_content.append("```json")
+                        cleaned_json = json.dumps(response_data, indent=2).replace('\\n', '\n')
+                        response_content.append(cleaned_json)
+                        response_content.append("```")
+                        response_content.append("")
+
+                        parsed_section = self._format_parsed_response_data(response_data)
+                        if parsed_section:
+                            response_content.extend(parsed_section)
+
+                if self.include_headers and response_headers:
+                    response_content.append("## Response Headers")
+                    response_content.append("")
+                    response_content.append("```text")
+                    sanitized_headers = self._sanitize_headers(response_headers)
+                    for key, value in sanitized_headers.items():
+                        response_content.append(f"{key}: {value}")
+                    response_content.append("```")
+                    response_content.append("")
+
+            # Timing Information
+            if self.include_timing:
+                response_content.append("## Timing Information")
+                response_content.append("")
+                if end_time:
+                    response_content.append(f"**End Time:** {end_time}  ")
+                if duration:
+                    response_content.append(f"**Total Duration:** {duration:.3f} seconds  ")
+                response_content.append("")
+
+            # Footer
+            response_content.append("---")
+            response_content.append("")
+            response_content.append(f"*Log completed at {datetime.now().isoformat()}*")
+
+            # Replace the "Waiting for response..." footer with response data
+            final_content = existing_content.replace(
+                "---\n\n*Waiting for response...*",
+                '\n'.join(response_content)
+            )
+
+            # Write updated content
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(final_content)
+
+            logger.info(f"Completed request log: {filepath}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to complete log {filepath}: {e}")
+            if hasattr(self, 'error_logger') and self.error_logger:
+                self.error_logger.log_error(e, {
+                    "context": "request_logger_complete_error",
+                    "filepath": filepath,
+                    "log_type": "complete_request"
+                })
+            return False
 
     def _format_parsed_response_data(self, response_data: Dict[str, Any]) -> Optional[List[str]]:
         """
@@ -230,7 +525,10 @@ class RequestLogger:
                             original_request_data: Optional[Dict[str, Any]] = None,
                             stripped_metadata: Optional[List[Dict[str, Any]]] = None,
                             lorebook_entries: Optional[List[Dict[str, Any]]] = None) -> str:
-        """Log a complete request/response cycle to a single file
+        """Log a complete request/response cycle to a single file (legacy single-call method)
+
+        This method is kept for backward compatibility. For better real-time visibility,
+        use start_request_log() and complete_request_log() separately.
 
         Args:
             request_id: Unique request identifier
@@ -254,16 +552,16 @@ class RequestLogger:
         if not self.enabled:
             return ""
 
+        # Create the log with both request and response data in one go
         folder = self._get_log_folder(character_chat_info)
 
         # Use sequenced filename if we have character_chat_info, otherwise use timestamp
         if character_chat_info:
             character, timestamp, operation = character_chat_info
-            filename = self._get_sequenced_filename(operation, folder, error=error)
+            filename, filepath = self._get_sequenced_filename(operation, folder, error=error)
         else:
             filename = self._get_timestamp_filename(request_id)
-
-        filepath = os.path.join(folder, filename)
+            filepath = os.path.join(folder, filename)
 
         log_content = []
 

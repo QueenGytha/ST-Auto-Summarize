@@ -111,12 +111,30 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
     response_data = None
     error = None
     character_chat_info = None
+    log_filepath = None
 
     try:
         # Extract character/chat info for organized logging
         # Use original_request_data if provided, otherwise use cleaned request_data
         # This will raise ValueError if ST_METADATA is present but malformed
         character_chat_info = extract_character_chat_info(headers or {}, original_request_data or request_data)
+
+        # Start request log immediately
+        if request_logger:
+            try:
+                log_filepath = request_logger.start_request_log(
+                    request_id=request_id,
+                    endpoint="/chat/completions",
+                    request_data=request_data,
+                    headers=headers or {},
+                    start_time=start_time,
+                    character_chat_info=character_chat_info,
+                    original_request_data=original_request_data,
+                    stripped_metadata=stripped_metadata,
+                    lorebook_entries=lorebook_entries
+                )
+            except Exception as log_error:
+                logger.error(f"Failed to start request log: {log_error}")
 
         # Log incoming request to console
         print("=" * 80, flush=True)
@@ -213,30 +231,22 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
         raise
 
     finally:
-        # Log complete request/response cycle
+        # Complete request log with response data
         end_time = time.time()
         duration = end_time - start_time
 
-        if request_logger:
+        if request_logger and log_filepath:
             try:
-                request_logger.log_complete_request(
-                    request_id=request_id,
-                    endpoint="/chat/completions",
-                    request_data=request_data,
-                    headers=headers or {},
+                request_logger.complete_request_log(
+                    filepath=log_filepath,
                     response_data=response_data,
                     response_headers={},
-                    start_time=start_time,
                     end_time=end_time,
                     duration=duration,
-                    error=error,
-                    character_chat_info=character_chat_info,
-                    original_request_data=original_request_data,
-                    stripped_metadata=stripped_metadata,
-                    lorebook_entries=lorebook_entries
+                    error=error
                 )
             except Exception as log_error:
-                logger.error(f"Failed to log request: {log_error}")
+                logger.error(f"Failed to complete request log: {log_error}")
 
 
 @app.route('/health', methods=['GET'])
