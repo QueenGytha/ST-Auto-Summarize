@@ -33,13 +33,18 @@ export function resolveProfileId(profileId) {
   }
 
   const ctx = getContext();
-  const activeProfileId = ctx.extensionSettings.connectionManager?.selectedProfile;
+  const selectedProfileName = ctx.extensionSettings.connectionManager?.selectedProfile;
 
-  if (!activeProfileId) {
+  if (!selectedProfileName) {
     throw new Error('FATAL: Empty connection profile setting means "use current active profile", but no ConnectionManager profile is currently active (selectedProfile is null). Please either: 1) Select a ConnectionManager profile in ST, OR 2) Configure a specific profile in Auto-Recap settings.');
   }
 
-  return activeProfileId;
+  const profile = ctx.extensionSettings.connectionManager.profiles.find(p => p.name === selectedProfileName);
+  if (!profile) {
+    throw new Error(`FATAL: Current ConnectionManager profile "${selectedProfileName}" not found in profiles list.`);
+  }
+
+  return profile.id;
 }
 
 export function shouldOperationBlockChat(operationType) {

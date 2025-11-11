@@ -41,7 +41,32 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
 
   debug(SUBSYSTEM.CORE, `[LLMClient] Sending request with profile "${profile.name}" (${profileId}), operation: ${operationType}`);
 
-  // 4. LOAD PRESET PROMPTS + PREFILL (ConnectionManager doesn't do this)
+  // 4. LOAD GENERATION PARAMETERS FROM PROFILE PRESET
+  let generationParams = {};
+  if (profile.preset) {
+    const { getPresetManager } = await import('../../../preset-manager.js');
+    const presetManager = getPresetManager('openai');
+    const presetData = presetManager?.getCompletionPresetByName(profile.preset);
+    if (presetData) {
+      generationParams = {
+        temperature: presetData.temperature >= 0 ? Number(presetData.temperature) : undefined,
+        top_p: presetData.top_p >= 0 ? Number(presetData.top_p) : undefined,
+        min_p: presetData.min_p >= 0 ? Number(presetData.min_p) : undefined,
+        presence_penalty: presetData.presence_penalty >= 0 ? Number(presetData.presence_penalty) : undefined,
+        frequency_penalty: presetData.frequency_penalty >= 0 ? Number(presetData.frequency_penalty) : undefined,
+        repetition_penalty: presetData.repetition_penalty >= 0 ? Number(presetData.repetition_penalty) : undefined,
+        top_k: presetData.top_k >= 0 ? Number(presetData.top_k) : undefined,
+      };
+      for (const key of Object.keys(generationParams)) {
+        if (generationParams[key] === undefined) {
+          delete generationParams[key];
+        }
+      }
+      debug(SUBSYSTEM.CORE, `[LLMClient] Loaded generation params from preset "${profile.preset}":`, generationParams);
+    }
+  }
+
+  // 5. LOAD PRESET PROMPTS + PREFILL (ConnectionManager doesn't do this)
   let messages;
   let effectivePrefill = options.prefill || '';
 
@@ -116,7 +141,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
         includeInstruct: options.includeInstruct ?? false,
         instructSettings: options.instructSettings || {}
       },
-      options.overridePayload || {}
+      { ...generationParams, ...options.overridePayload }
     );
 
     // DEBUG: Log raw response structure
