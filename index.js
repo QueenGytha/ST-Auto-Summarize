@@ -232,11 +232,10 @@ export function installEnterKeyInterceptor() {
       return;
     }
 
-    textarea.addEventListener('keydown', async function (e) {
+    textarea.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) {
-        // Check if queue is active
-        const { isQueueActive } = await import('./operationQueue.js');
-        if (isQueueActive()) {
+        // Check if chat is blocked by queue (synchronous check)
+        if (isQueueBlocking) {
           e.preventDefault();
           e.stopPropagation();
           debug(SUBSYSTEM.UI, '[Queue] Blocked Enter key - queue is processing operations');

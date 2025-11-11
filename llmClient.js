@@ -4,7 +4,7 @@
 import { getContext } from '../../../extensions.js';
 import { injectMetadataIntoChatArray } from './metadataInjector.js';
 import { getOperationSuffix } from './operationContext.js';
-import { debug, error, SUBSYSTEM, count_tokens, get_context_size, main_api, trimToEndSentence, loadPresetPrompts } from './index.js';
+import { debug, error, SUBSYSTEM, count_tokens, main_api, trimToEndSentence, loadPresetPrompts } from './index.js';
 
 // eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Complete LLM wrapper
 export async function sendLLMRequest(profileId, prompt, operationType, options = {}) {
@@ -23,16 +23,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     }
   }
 
-  // 2. TOKEN VALIDATION
-  if (typeof prompt === 'string') {
-    const tokenSize = count_tokens(prompt);
-    const contextSize = get_context_size();
-    if (tokenSize > contextSize) {
-      throw new Error(`Prompt ${tokenSize} tokens exceeds context size ${contextSize}`);
-    }
-  }
-
-  // 3. VERIFY PROFILE EXISTS
+  // 2. VERIFY PROFILE EXISTS
   const profile = ctx.extensionSettings.connectionManager.profiles.find(p => p.id === profileId);
   if (!profile) {
     throw new Error(`Connection Manager profile not found: ${profileId}`);
@@ -40,18 +31,32 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
 
   debug(SUBSYSTEM.CORE, `[LLMClient] Sending request with profile "${profile.name}" (${profileId}), operation: ${operationType}`);
 
-  // 4. LOAD GENERATION PARAMETERS FROM PRESET
+  // 3. LOAD GENERATION PARAMETERS FROM PRESET
   let generationParams = {};
 
-  // Use options.preset if provided, otherwise fall back to profile's preset
-  const effectivePresetName = options.preset || profile.preset;
-
-  if (!effectivePresetName) {
-    throw new Error(`FATAL: Connection profile "${profile.name}" (${profileId}) has no preset configured. Every connection profile MUST have a completion preset configured.`);
+  // Resolve preset: explicit value or empty string (meaning "use current active")
+  if (options.preset === undefined || options.preset === null) {
+    throw new Error(`FATAL: options.preset is required. Caller must provide completion preset from operation settings (e.g., scene_recap_completion_preset, auto_scene_break_completion_preset).`);
   }
 
   const { getPresetManager } = await import('../../../preset-manager.js');
   const presetManager = getPresetManager('openai');
+
+  let effectivePresetName;
+  if (options.preset === '') {
+    // Empty string means "use current active preset"
+    effectivePresetName = presetManager?.getSelectedPresetName();
+
+    if (!effectivePresetName) {
+      throw new Error(`FATAL: Empty preset setting means "use current active preset", but no preset is currently active in SillyTavern. Either select a preset in SillyTavern or configure an explicit preset in operation settings.`);
+    }
+
+    debug(SUBSYSTEM.CORE, `[LLMClient] Empty preset resolved to current active: ${effectivePresetName}`);
+  } else {
+    // Non-empty string - use explicit preset
+    effectivePresetName = options.preset;
+  }
+
   const presetData = presetManager?.getCompletionPresetByName(effectivePresetName);
 
   if (!presetData) {
@@ -80,6 +85,27 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
 
   debug(SUBSYSTEM.CORE, `[LLMClient] Loaded generation params from preset "${effectivePresetName}":`, generationParams);
   debug(SUBSYSTEM.CORE, `[LLMClient] Loaded max_tokens from preset: ${presetMaxTokens}`);
+
+  // 4. TOKEN VALIDATION (using profile preset's context size, not global)
+  if (typeof prompt === 'string') {
+    const tokenSize = count_tokens(prompt);
+
+    // Try to get context size from preset
+    const presetMaxContext = presetData.max_context || presetData.openai_max_context;
+
+    if (presetMaxContext && presetMaxContext > 0) {
+      // Available context = total context - tokens reserved for response
+      const availableContextForPrompt = presetMaxContext - presetMaxTokens;
+
+      if (tokenSize > availableContextForPrompt) {
+        throw new Error(`Prompt ${tokenSize} tokens exceeds available context ${availableContextForPrompt} (model context: ${presetMaxContext}, reserved for response: ${presetMaxTokens})`);
+      }
+
+      debug(SUBSYSTEM.CORE, `[LLMClient] Token validation passed: ${tokenSize} <= ${availableContextForPrompt} (${presetMaxContext} - ${presetMaxTokens})`);
+    } else {
+      debug(SUBSYSTEM.CORE, `[LLMClient] Skipping token validation - preset has no max_context configured`);
+    }
+  }
 
   // 5. LOAD PRESET PROMPTS + PREFILL (ConnectionManager doesn't do this)
   let messages;
@@ -129,18 +155,18 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     }
   }
 
-  // 5. ADD PREFILL as assistant message (ConnectionManager has no prefill parameter)
+  // 6. ADD PREFILL as assistant message (ConnectionManager has no prefill parameter)
   if (effectivePrefill) {
     messages.push({ role: 'assistant', content: effectivePrefill });
   }
 
-  // 6. INJECT METADATA
+  // 7. INJECT METADATA
   const suffix = getOperationSuffix();
   const fullOperation = suffix ? `${operationType}${suffix}` : operationType;
   const messagesWithMetadata = [...messages];
   injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
 
-  // 7. CALL ConnectionManager
+  // 8. CALL ConnectionManager
   try {
     const result = await ctx.ConnectionManagerRequestService.sendRequest(
       profileId,
@@ -188,7 +214,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
       debug(SUBSYSTEM.CORE, `[LLMClient] Extracted content from object response (reasoning was included)`);
     }
 
-    // 9. SENTENCE TRIMMING (if enabled in ST settings)
+    // 10. SENTENCE TRIMMING (if enabled in ST settings)
     if (options.trimSentences !== false && typeof finalResult === 'string') {
       if (ctx.powerUserSettings.trim_sentences) {
         finalResult = trimToEndSentence(finalResult);
