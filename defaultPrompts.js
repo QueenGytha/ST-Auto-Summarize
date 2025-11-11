@@ -842,8 +842,8 @@ Required format (copy this structure exactly):
 {
   "type": "<one of the allowed types>",
   "synopsis": "<short one-line recap>",
-  "sameEntityIds": ["entity_id_1"],
-  "needsFullContextIds": ["entity_id_2"]
+  "sameEntityUids": ["entity_uid_1"],
+  "needsFullContextUids": ["entity_uid_2"]
 }
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
@@ -852,7 +852,7 @@ Known lorebook entry types: {{lorebook_entry_types}}
 
 You will be given:
 - A NEW entry candidate formatted as JSON
-- A concise REGISTRY listing for all existing entries of the same type (id, name, aliases, synopsis)
+- A concise REGISTRY listing for all existing entries of the same type (uid, name, aliases, synopsis)
 
 New entry candidate:
 {{new_entry}}
@@ -867,12 +867,12 @@ Tasks:
 4. Validate content uses specific names/references (not pronouns like "him", "her", "it", or vague terms like "the protagonist").
 5. For character entities with a Notable Dialogue bullet, ensure it does not contain dialogue spoken by {{user}}.
 6. Compare the candidate against the registry listing and identify any entries that already cover this entity.
-7. Place confident matches in 'sameEntityIds'. If you need more detail before deciding, list those IDs in 'needsFullContextIds'.
+7. Place confident matches in 'sameEntityUids'. If you need more detail before deciding, list those UIDs in 'needsFullContextUids'.
 8. Craft a concise one-line synopsis that reflects the candidate's newest or most important information.
 
 Deterministic alignment rules:
-- If the candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix) exactly matches a registry entry's name, include that ID in 'sameEntityIds'.
-- If a registry entry's aliases include the candidate's canonical name (same normalization), include that ID in 'sameEntityIds'.
+- If the candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix) exactly matches a registry entry's name, include that UID in 'sameEntityUids'.
+- If a registry entry's aliases include the candidate's canonical name (same normalization), include that UID in 'sameEntityUids'.
 - Prefer exact canonical name matches over fuzzy/semantic similarity.
 
 Alias guidance (characters/items):
@@ -886,8 +886,8 @@ Location naming (subareas):
 - Prefer the longest fully specified chain as the canonical name when deeper subareas are explicitly named (e.g., choose "Ponyville-Twilight's Library-Spike's Room" over a partial).
 
 Rules:
-- 'sameEntityIds' and 'needsFullContextIds' must be arrays. Use [] when empty.
-- Never invent IDs; only use IDs from the registry listing.
+- 'sameEntityUids' and 'needsFullContextUids' must be arrays. Use [] when empty.
+- Never invent UIDs; only use UIDs from the registry listing.
 - Always align the candidate with an existing entity when the canonical name already appears in the registry.
 - Only leave both arrays empty when you are confident the entity is brand new.
 - Even if the candidate repeats known facts, still align it with the correct entity; the merge stage will handle deduplication.
@@ -904,7 +904,7 @@ Your response MUST start with { and end with }. No code fences, no commentary, n
 
 Required format (copy this structure exactly):
 {
-  "resolvedId": "<existing entity id or \\"new\\">",
+  "resolvedUid": "<existing entity uid or \\"new\\">",
   "synopsis": "<updated one-line recap for the canonical entity>"
 }
 
@@ -926,12 +926,12 @@ Candidate lorebook entries (full content, JSON array):
 Rules:
 - Validate the new candidate is a single entity and the content uses bullet points with an identity bullet first.
 - Validate content uses specific names (not pronouns or vague references).
-- If none of the candidates match, set the resolvedId field to "new".
-- When choosing an existing entity, pick the ID that truly represents the same subject and merge the newest facts into it.
+- If none of the candidates match, set the resolvedUid field to "new".
+- When choosing an existing entity, pick the UID that truly represents the same subject and merge the newest facts into it.
 - If the candidate adds nothing new, keep the existing content and synopsis; do not fabricate alternate copies.
 - Prefer the candidate whose Relationships and State most closely match the new dynamic snapshot and current status; consolidate into a single canonical entry rather than splitting near-duplicates.
 - Entity type normalization: If multiple candidates differ only by type for an unnamed collective (e.g., "thugs"), prefer "faction" over "character" when the group is a recurring hazard tied to a location; otherwise treat it as ephemeral and resolve as "new" only if truly durable.
-- Deterministic tie‑breaker: If any candidate's canonical name exactly matches the new candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix), choose that ID over others.
+- Deterministic tie‑breaker: If any candidate's canonical name exactly matches the new candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix), choose that UID over others.
 - For locations: if the candidate is a sub‑area, prefer the entry whose name or content indicates the same parent; normalize to "Parent-Subarea" canonical naming and ensure a "Located in: <Parent>" bullet exists. For multiple levels, normalize to hyphen chain ("Parent-Child-Grandchild") and include the immediate parent link.
 - For character entities with Notable Dialogue and Micro‑Moments bullets: When merging, compare quotes; remove exact duplicates; consolidate similar voice‑pattern descriptions; preserve unique, pattern‑setting quotes that show different facets; maintain recipient/context. Keep at most the 2 freshest Micro‑Moments per counterpart.
 - Do NOT fabricate bullets to satisfy a template; when details are not present, omit that bullet entirely (e.g., no Relations for a faction if none are stated yet).

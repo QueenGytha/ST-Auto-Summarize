@@ -182,18 +182,6 @@
                                 </td>
                             </tr>
                         </table>
-                        <label title="Context limit for scene recap.">
-                            <input id="scene_recap_context_limit" data-testid="scene-context-limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
-                            <span>Context Limit</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="scene_recap_context_type" data-testid="scene-context-type-percent" value="percent" />
-                            <span>%</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="scene_recap_context_type" data-testid="scene-context-type-tokens" value="tokens" />
-                            <span>tk</span>
-                        </label>
                     </div>
                 </div>
 
@@ -275,18 +263,6 @@
                         <label class="checkbox_label" title="Include in World Info Scanning">
                             <input id="running_scene_recap_scan" data-testid="running-scan" type="checkbox" />
                             <span>Include in World Info Scanning</span>
-                        </label>
-                        <label title="Context limit for running scene recap.">
-                            <input id="running_scene_recap_context_limit" data-testid="running-context-limit" class="text_pole widthUnset inline_setting" type="number" min="0" max="99999" />
-                            <span>Context Limit</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="running_scene_recap_context_type" data-testid="running-context-type-percent" value="percent" />
-                            <span>%</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="running_scene_recap_context_type" data-testid="running-context-type-tokens" value="tokens" />
-                            <span>tk</span>
                         </label>
                     </div>
                 </div>
@@ -372,7 +348,7 @@
 
                 <!-- Error Detection -->
                 <hr>
-                <div class="inline-drawer">
+                <div class="inline-drawer" style="display: none;">
                     <div class="inline-drawer-toggle inline-drawer-header">
                         <div class="flex-container alignitemscenter margin0">
                             <h4 class="margin0">Recap Validation <i class="fa-solid fa-info-circle" title="Configure validation for recaps to ensure they meet your criteria"></i></h4>
@@ -448,9 +424,9 @@
                         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                     </div>
                     <div class="inline-drawer-content">
-                        <label title="Whether memory is enabled by default for new chats." class="checkbox_label">
+                        <label title="Whether recap is enabled by default for new chats." class="checkbox_label">
                             <input id="default_chat_enabled" data-testid="misc-default-enabled" type="checkbox" />
-                            <span>Enable Memory in New Chats</span>
+                            <span>Enable Recap in New Chats</span>
                         </label>
 
                         <label title="Uses a global on/off state shared between all chats with this enabled. When unchecked, turning the extension on/off only applies to active chat." class="checkbox_label">
@@ -697,42 +673,6 @@
                                     <input id="autolorebooks-recap-entry-deduplicate-prompt" data-testid="lorebook-dedupe-prompt" type="hidden" />
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Lorebook Viewer Settings -->
-                <hr>
-                <div class="inline-drawer">
-                    <div class="inline-drawer-toggle inline-drawer-header">
-                        <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Lorebook Viewer</h4>
-                        </div>
-                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                    </div>
-                    <div class="inline-drawer-content">
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="lorebook-viewer-group-by-world">
-                                <input type="checkbox" id="lorebook-viewer-group-by-world" data-testid="lorebook-viewer-group" />
-                                <span>Group entries by lorebook/world</span>
-                            </label>
-                            <small class="displayBlock opacity50p">When viewing active entries, group them by their source lorebook</small>
-                        </div>
-
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="lorebook-viewer-show-depth">
-                                <input type="checkbox" id="lorebook-viewer-show-depth" data-testid="lorebook-viewer-depth" />
-                                <span>Show depth and order information</span>
-                            </label>
-                            <small class="displayBlock opacity50p">Display injection depth and order for each entry</small>
-                        </div>
-
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="lorebook-viewer-show-content">
-                                <input type="checkbox" id="lorebook-viewer-show-content" data-testid="lorebook-viewer-content" />
-                                <span>Show entry content preview</span>
-                            </label>
-                            <small class="displayBlock opacity50p">Display a preview of the entry content in the viewer (truncated to 200 characters)</small>
                         </div>
                     </div>
                 </div>

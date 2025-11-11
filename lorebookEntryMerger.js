@@ -451,7 +451,7 @@ export async function mergeLorebookEntryByUid(params ) {
 
     // Get current entry data
     const entries = await getLorebookEntries(lorebookName);
-    const entry = entries?.find((e) => e.uid === entryUid);
+    const entry = entries?.find((e) => String(e.uid) === String(entryUid));
 
     if (!entry) {
       throw new Error(`Entry UID ${entryUid} not found in lorebook`);

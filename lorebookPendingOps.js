@@ -76,8 +76,8 @@ export function setLorebookEntryLookupResult(entryId , lorebookEntryLookupResult
     lorebookEntryLookupResult: {
       type: lorebookEntryLookupResult.type || '',
       synopsis: lorebookEntryLookupResult.synopsis || '',
-      sameEntityIds: Array.isArray(lorebookEntryLookupResult.sameEntityIds) ? lorebookEntryLookupResult.sameEntityIds : [],
-      needsFullContextIds: Array.isArray(lorebookEntryLookupResult.needsFullContextIds) ? lorebookEntryLookupResult.needsFullContextIds : []
+      sameEntityUids: Array.isArray(lorebookEntryLookupResult.sameEntityUids) ? lorebookEntryLookupResult.sameEntityUids : [],
+      needsFullContextUids: Array.isArray(lorebookEntryLookupResult.needsFullContextUids) ? lorebookEntryLookupResult.needsFullContextUids : []
     }
   });
 }
@@ -86,7 +86,7 @@ export function setLorebookEntryDeduplicateResult(entryId , lorebookEntryDedupli
   updatePendingEntry(entryId, {
     stage: 'lorebook_entry_deduplicate_complete',
     lorebookEntryDeduplicateResult: {
-      resolvedId: lorebookEntryDeduplicateResult.resolvedId || null,
+      resolvedUid: lorebookEntryDeduplicateResult.resolvedUid || null,
       synopsis: lorebookEntryDeduplicateResult.synopsis || ''
     }
   });

@@ -3,9 +3,7 @@
 
 import { getContext, selectorsSillyTavern } from './index.js';
 import { getActiveLorebooksForMessage } from './index.js';
-import { get_settings } from './index.js';
 import { debug, SUBSYSTEM } from './index.js';
-import { DEBUG_OUTPUT_MEDIUM_LENGTH } from './constants.js';
 
 const LOREBOOK_VIEWER_BUTTON_CLASS = 'lorebook-viewer-button';
 
@@ -60,11 +58,6 @@ export function showLorebookEntriesModal(messageIndex) {
     return;
   }
 
-  // Get settings - use individual get_settings(key) calls
-  const showContent = get_settings('lorebook_viewer_show_content') ?? false;
-  const groupByWorld = get_settings('lorebook_viewer_group_by_world') ?? true;
-  const showDepth = get_settings('lorebook_viewer_show_depth') ?? true;
-
   // Strategy emoji mapping
   const strategyEmoji = {
     'constant': '🔵',
@@ -87,22 +80,19 @@ export function showLorebookEntriesModal(messageIndex) {
 
     // Depth/order display
     let depthOrderHtml = '';
-    if (showDepth && (entry.depth !== undefined || entry.order !== undefined)) {
+    if (entry.depth !== undefined || entry.order !== undefined) {
       const depthStr = entry.depth !== undefined ? `Depth: ${entry.depth}` : '';
       const orderStr = entry.order !== undefined ? `Order: ${entry.order}` : '';
       const separator = depthStr && orderStr ? ', ' : '';
       depthOrderHtml = `<div><strong>Injection:</strong> ${depthStr}${separator}${orderStr}</div>`;
     }
 
-    // Content preview
+    // Content preview (always shown, no truncation)
     let contentHtml = '';
-    if (showContent && entry.content) {
-      const truncated = entry.content.length > DEBUG_OUTPUT_MEDIUM_LENGTH
-        ? entry.content.slice(0, DEBUG_OUTPUT_MEDIUM_LENGTH) + '...'
-        : entry.content;
+    if (entry.content) {
       contentHtml = `
         <div style="margin-top: 0.5em; padding: 0.5em; background: rgba(0,0,0,0.2); border-radius: 3px; font-size: 0.85em; font-style: italic;">
-          ${truncated.replace(/\n/g, '<br>')}
+          ${entry.content.replace(/\n/g, '<br>')}
         </div>
       `;
     }
@@ -126,34 +116,8 @@ export function showLorebookEntriesModal(messageIndex) {
     `;
   };
 
-  // Build HTML based on grouping setting
-  let entriesHtml = '';
-
-  if (groupByWorld) {
-    // Group entries by world/lorebook
-    const grouped = {};
-    for (const entry of entries) {
-      if (!grouped[entry.world]) {
-        grouped[entry.world] = [];
-      }
-      grouped[entry.world].push(entry);
-    }
-
-    // Build grouped HTML
-    for (const [world, worldEntries] of Object.entries(grouped)) {
-      entriesHtml += `
-        <div style="margin-bottom: 1.5em;">
-          <h4 style="color: #6495ed; margin-bottom: 0.5em; border-bottom: 1px solid #6495ed; padding-bottom: 0.3em;">
-            📚 ${world} (${worldEntries.length})
-          </h4>
-          ${worldEntries.map((entry, i) => buildEntryHtml(entry, i + 1)).join('')}
-        </div>
-      `;
-    }
-  } else {
-    // Flat list
-    entriesHtml = entries.map((entry, i) => buildEntryHtml(entry, i + 1)).join('');
-  }
+  // Build HTML as flat list
+  const entriesHtml = entries.map((entry, i) => buildEntryHtml(entry, i + 1)).join('');
 
   // Build recap with strategy breakdown
   const strategyCounts = {

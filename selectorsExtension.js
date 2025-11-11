@@ -92,9 +92,6 @@ export const selectorsExtension = {
     messageTypes: '[data-testid="scene-message-types"]',             // #scene_recap_message_types
     historyCount: '[data-testid="scene-history-count"]',             // #scene_recap_history_count
     historyCountDisplay: '[data-testid="scene-history-count-display"]',  // #scene_recap_history_count_display
-    contextLimit: '[data-testid="scene-context-limit"]',             // #scene_recap_context_limit
-    contextTypePercent: '[data-testid="scene-context-type-percent"]',  // radio button
-    contextTypeTokens: '[data-testid="scene-context-type-tokens"]',    // radio button
   },
 
   // Running Scene Recap Settings
@@ -114,9 +111,6 @@ export const selectorsExtension = {
     depth: '[data-testid="running-depth"]',                                   // #running_scene_recap_depth
     role: '[data-testid="running-role"]',                                     // #running_scene_recap_role
     scan: '[data-testid="running-scan"]',                                     // #running_scene_recap_scan
-    contextLimit: '[data-testid="running-context-limit"]',                    // #running_scene_recap_context_limit
-    contextTypePercent: '[data-testid="running-context-type-percent"]',       // radio button
-    contextTypeTokens: '[data-testid="running-context-type-tokens"]',         // radio button
   },
 
   // Auto Scene Break Detection Settings
@@ -169,13 +163,6 @@ export const selectorsExtension = {
     dedupePrefill: '[data-testid="lorebook-dedupe-prefill"]',             // #autolorebooks-recap-entry-deduplicate-prefill
     dedupePrompt: '[data-testid="lorebook-dedupe-prompt"]',               // #autolorebooks-recap-entry-deduplicate-prompt
     editDedupePrompt: '[data-testid="lorebook-edit-dedupe-prompt"]',      // #edit_autolorebooks_recap_entry_deduplicate_prompt
-  },
-
-  // Lorebook Viewer Settings
-  lorebookViewer: {
-    groupByWorld: '[data-testid="lorebook-viewer-group"]',    // #lorebook-viewer-group-by-world
-    showDepth: '[data-testid="lorebook-viewer-depth"]',       // #lorebook-viewer-show-depth
-    showContent: '[data-testid="lorebook-viewer-content"]',   // #lorebook-viewer-show-content
   },
 
   // Operation Queue UI (dynamically created)

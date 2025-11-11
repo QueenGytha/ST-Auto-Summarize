@@ -78,8 +78,8 @@ This all happens automatically in the background, requiring no manual interventi
 │  {                                                                    │
 │    "type": "character",                                              │
 │    "synopsis": "Brief description",                                  │
-│    "sameEntityIds": ["char_0001"],    ← Definite matches             │
-│    "needsFullContextIds": ["char_005"] ← Uncertain, needs LorebookEntryDeduplicate │
+│    "sameEntityUids": ["char_0001"],    ← Definite matches             │
+│    "needsFullContextUids": ["char_005"] ← Uncertain, needs LorebookEntryDeduplicate │
 │  }                                                                    │
 └──────────────────────┬──────────────────────────────────────────────┘
                        │
@@ -112,7 +112,7 @@ This all happens automatically in the background, requiring no manual interventi
 │                │                     │
 │ Output:        │                     │
 │ {              │                     │
-│   "resolvedId" │                     │
+│   "resolvedUid" │                     │
 │   "synopsis"   │                     │
 │ }              │                     │
 └────────┬───────┘                     │

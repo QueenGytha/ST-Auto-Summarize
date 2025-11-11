@@ -81,11 +81,6 @@ async function initialize_settings_listeners() {
   bind_setting(selectorsExtension.proxy.sendChatDetails, 'first_hop_proxy_send_chat_details', 'boolean');
   bind_setting(selectorsExtension.proxy.suppressOtherLorebooks, 'suppress_other_lorebooks', 'boolean');
 
-  // Lorebook Viewer Settings
-  bind_setting(selectorsExtension.lorebookViewer.groupByWorld, 'lorebook_viewer_group_by_world', 'boolean');
-  bind_setting(selectorsExtension.lorebookViewer.showDepth, 'lorebook_viewer_show_depth', 'boolean');
-  bind_setting(selectorsExtension.lorebookViewer.showContent, 'lorebook_viewer_show_content', 'boolean');
-
   // Message Filtering Settings (used by scene recaps)
   bind_setting(selectorsExtension.filter.includeUser, 'include_user_messages', 'boolean');
   bind_setting(selectorsExtension.filter.includeHidden, 'include_system_messages', 'boolean');
@@ -168,10 +163,6 @@ Available Macros:
     await get_user_setting_text_input('scene_recap_prompt', 'Edit Scene Recap Prompt', description);
   });
 
-  // Scene recap context limit and type
-  bind_setting(selectorsExtension.scene.contextLimit, 'scene_recap_context_limit', 'number');
-  bind_setting('input[name="scene_recap_context_type"]', 'scene_recap_context_type', 'text');  // Radio button group
-
   // Scene recap preset and connection profile
   bind_setting(selectorsExtension.scene.completionPreset, 'scene_recap_completion_preset', 'text');
   bind_setting(selectorsExtension.scene.includePresetPrompts, 'scene_recap_include_preset_prompts', 'boolean');
@@ -193,8 +184,6 @@ Available Macros:
   bind_setting(selectorsExtension.running.depth, 'running_scene_recap_depth', 'number');
   bind_setting(selectorsExtension.running.role, 'running_scene_recap_role');
   bind_setting(selectorsExtension.running.scan, 'running_scene_recap_scan', 'boolean');
-  bind_setting(selectorsExtension.running.contextLimit, 'running_scene_recap_context_limit', 'number');
-  bind_setting('input[name="running_scene_recap_context_type"]', 'running_scene_recap_context_type', 'text');  // Radio button group
 
   // Running scene recap exclude latest slider
   const $runningExcludeLatest = $(selectorsExtension.running.excludeLatest);
@@ -346,9 +335,6 @@ Available Macros:
 
   // Initialize Auto-Lorebooks settings event listeners
   initialize_lorebooks_settings_listeners();
-
-  // Initialize Lorebook Viewer settings
-  initialize_lorebook_viewer_settings_listeners();
 
   refresh_settings();
 }
@@ -556,31 +542,6 @@ Available Macros:
   });
 
   debug("Auto-Lorebooks settings event listeners initialized");
-}
-
-function initialize_lorebook_viewer_settings_listeners() {
-  // Group by world checkbox
-  $(document).on('change', '#lorebook-viewer-group-by-world', function () {
-    const value = $(this).prop('checked');
-    set_settings('lorebook_viewer_group_by_world', value);
-    save_profile();
-  });
-
-  // Show depth checkbox
-  $(document).on('change', '#lorebook-viewer-show-depth', function () {
-    const value = $(this).prop('checked');
-    set_settings('lorebook_viewer_show_depth', value);
-    save_profile();
-  });
-
-  // Show content checkbox
-  $(document).on('change', '#lorebook-viewer-show-content', function () {
-    const value = $(this).prop('checked');
-    set_settings('lorebook_viewer_show_content', value);
-    save_profile();
-  });
-
-  debug("Lorebook Viewer settings event listeners initialized");
 }
 
 export { initialize_settings_listeners };

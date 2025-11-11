@@ -251,13 +251,13 @@ Return ONLY valid JSON:
 - `{{candidate_registry}}` - Concise registry listing for existing entries of same type (id, name, aliases, synopsis only)
 - `{{lorebook_entry_types}}` - Allowed entity types
 
-**Expected Output:** JSON with type, synopsis, and arrays of matching entity IDs
+**Expected Output:** JSON with type, synopsis, and arrays of matching entity UIDs
 ```json
 {
   "type": "character",
   "synopsis": "short one-line recap",
-  "sameEntityIds": ["entity_123"],
-  "needsFullContextIds": ["entity_456"]
+  "sameEntityUids": ["entity_123"],
+  "needsFullContextUids": ["entity_456"]
 }
 ```
 
@@ -283,19 +283,19 @@ Tasks:
 3. Validate the content is proper PList (single bracketed entry starting with [type-EntityName: ..., comma-separated properties, max two nesting levels, no prose).
 4. Validate content uses specific names/references (not pronouns like "him", "her", "it", or vague terms like "the protagonist").
 5. Compare the candidate against the registry listing and identify any entries that already cover this entity.
-6. Place confident matches in 'sameEntityIds'. If you need more detail before deciding, list those IDs in 'needsFullContextIds'.
+6. Place confident matches in 'sameEntityUids'. If you need more detail before deciding, list those UIDs in 'needsFullContextUids'.
 7. Craft a one-line synopsis (<=15 words) that reflects the candidate's newest or most important information.
 
 Return ONLY a JSON object in this exact shape:
 {
   "type": "<one of the allowed types>",
   "synopsis": "<short one-line recap>",
-  "sameEntityIds": ["entity_id_1"],
-  "needsFullContextIds": ["entity_id_2"]
+  "sameEntityUids": ["entity_id_1"],
+  "needsFullContextUids": ["entity_id_2"]
 }
 
 Rules:
-- 'sameEntityIds' and 'needsFullContextIds' must be arrays. Use [] when empty.
+- 'sameEntityUids' and 'needsFullContextUids' must be arrays. Use [] when empty.
 - Never invent IDs; only use IDs from the registry listing.
 - Always align the candidate with an existing entity when the canonical name already appears in the registry.
 - Only leave both arrays empty when you are confident the entity is brand new.
@@ -309,7 +309,7 @@ Rules:
 
 **Prompt Name:** `auto_lorebook_entry_deduplicate_prompt`
 
-**When It Runs:** During lorebook processing (Stage 2). When Stage 1 (Lookup) flagged uncertain matches (`needsFullContextIds`), this prompt makes the final decision with full content context.
+**When It Runs:** During lorebook processing (Stage 2). When Stage 1 (Lookup) flagged uncertain matches (`needsFullContextUids`), this prompt makes the final decision with full content context.
 
 **What It Does:** Second-pass deduplication with complete information. Receives the full content of candidate matches and decides definitively whether the new entry matches an existing entity or should be created as new. Updates the synopsis.
 
@@ -319,14 +319,14 @@ Rules:
 - `{{candidate_entries}}` - Full content of candidate matches as JSON array
 - `{{lorebook_entry_types}}` - Allowed entity types
 
-**Expected Output:** JSON with resolved ID and updated synopsis
+**Expected Output:** JSON with resolved UID and updated synopsis
 ```json
 {
-  "resolvedId": "entity_123",
+  "resolvedUid": "entity_123",
   "synopsis": "updated one-line recap"
 }
 ```
-(Use `"resolvedId": "new"` if no match found)
+(Use `"resolvedUid": "new"` if no match found)
 
 **Full Prompt:**
 ```
@@ -347,14 +347,14 @@ Candidate lorebook entries (full content, JSON array):
 
 Return ONLY a JSON object in this exact shape:
 {
-  "resolvedId": "<existing entity id or \"new\">",
+  "resolvedUid": "<existing entity uid or \"new\">",
   "synopsis": "<updated one-line recap for the canonical entity>"
 }
 
 Rules:
 - Validate the new candidate remains a single-entity PList (brackets starting with [type-EntityName: ..., properties, <=2 nesting levels).
 - Validate content uses specific names (not pronouns or vague references).
-- If none of the candidates match, set the resolvedId field to "new".
+- If none of the candidates match, set the resolvedUid field to "new".
 - When choosing an existing entity, pick the ID that truly represents the same subject and merge the newest facts into it.
 - If the candidate adds nothing new, keep the existing content and synopsis; do not fabricate alternate copies.
 - Ensure the returned synopsis reflects the most current canon after reconciliation (<=15 words).

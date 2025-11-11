@@ -658,6 +658,69 @@ chat )
   return sceneObjects;
 }
 
+// Helper: Check if a lorebook entry should be filtered out
+function shouldFilterLorebookEntry(entry, suppressOtherLorebooks, chatLorebookName) {
+  // Filter out internal/system entries
+  if (entry.comment && entry.comment.startsWith('_registry_')) {
+    return true;
+  }
+  if (entry.tags && entry.tags.includes('auto_lorebooks_registry')) {
+    return true;
+  }
+  if (entry.comment === 'Auto-Recap Operations Queue') {
+    return true;
+  }
+
+  // Filter to only chat lorebook entries if suppression is enabled
+  if (suppressOtherLorebooks && chatLorebookName) {
+    if (entry.world !== chatLorebookName) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// Helper: Determine why a lorebook entry was filtered out
+function getFilterReason(entry, suppressOtherLorebooks, chatLorebookName) {
+  if (entry.comment && entry.comment.startsWith('_registry_')) {
+    return 'registry';
+  }
+  if (entry.tags && entry.tags.includes('auto_lorebooks_registry')) {
+    return 'registry_tag';
+  }
+  if (entry.comment === 'Auto-Recap Operations Queue') {
+    return 'queue';
+  }
+  if (suppressOtherLorebooks && chatLorebookName && entry.world !== chatLorebookName) {
+    return `different_lorebook(${entry.world})`;
+  }
+  return 'unknown';
+}
+
+// Helper: Log detailed filtering results
+function logFilteringResults(options) {
+  const { entries, filteredEntries, startIdx, endIdx, chatLorebookName, suppressOtherLorebooks } = options;
+  const totalBeforeFiltering = entries.length;
+
+  debug(SUBSYSTEM.SCENE, `Lorebook activation for scene ${startIdx}-${endIdx}: ${totalBeforeFiltering} total -> ${filteredEntries.length} after filtering (chatLB: ${chatLorebookName || 'none'}, suppress: ${suppressOtherLorebooks})`);
+
+  if (filteredEntries.length > 0) {
+    const keptList = filteredEntries.map(e => e.comment || e.uid || 'unnamed').join(', ');
+    debug(SUBSYSTEM.SCENE, `Kept entries: ${keptList}`);
+  }
+
+  if (totalBeforeFiltering - filteredEntries.length > 0) {
+    const removedCount = totalBeforeFiltering - filteredEntries.length;
+    const removed = entries.filter(e => !filteredEntries.includes(e));
+    const removedList = removed.map(e => {
+      const reason = getFilterReason(e, suppressOtherLorebooks, chatLorebookName);
+      return `${e.comment || e.uid || 'unnamed'} (reason: ${reason})`;
+    }).join(', ');
+    debug(SUBSYSTEM.SCENE, `Filtered out ${removedCount} entries: ${removedList}`);
+  }
+}
+
 // Helper: Get active lorebook entries at a specific message position
 async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
   const includeActiveLorebooks = get_settings('scene_recap_include_active_setting_lore');
@@ -699,6 +762,15 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
       scenario: ctx.scenario || ''
     };
 
+    // Get chat lorebook name and refresh cache to ensure latest entries are checked
+    const chatLorebookName = getAttachedLorebook();
+    if (chatLorebookName) {
+      debug(SUBSYSTEM.SCENE, `Refreshing lorebook cache for: ${chatLorebookName}`);
+      const { worldInfoCache } = await import('../../../world-info.js');
+      worldInfoCache.delete(chatLorebookName);
+      debug(SUBSYSTEM.SCENE, `Cache cleared for ${chatLorebookName}, will reload on next access`);
+    }
+
     const MAX_CONTEXT_FOR_WI_CHECK = 999999;
     const wiResult = await checkWorldInfo(sceneMessages, MAX_CONTEXT_FOR_WI_CHECK, true, globalScanData);
 
@@ -706,36 +778,20 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
       return { entries: [], metadata: { startIdx, endIdx, sceneMessageCount: sceneMessages.length } };
     }
 
-    // Get chat lorebook name to filter entries
-    const chatLorebookName = getAttachedLorebook();
     const suppressOtherLorebooks = get_settings('suppress_other_lorebooks');
 
     const entries = Array.from(wiResult.allActivatedEntries);
     const totalBeforeFiltering = entries.length;
 
-    const filteredEntries = entries.filter(entry => {
-      // Filter out internal/system entries
-      if (entry.comment && entry.comment.startsWith('_registry_')) {
-        return false;
-      }
-      if (entry.tags && entry.tags.includes('auto_lorebooks_registry')) {
-        return false;
-      }
-      if (entry.comment === 'Auto-Recap Operations Queue') {
-        return false;
-      }
+    debug(SUBSYSTEM.SCENE, `checkWorldInfo returned ${totalBeforeFiltering} total entries`);
+    if (totalBeforeFiltering > 0) {
+      const entryList = entries.map(e => `${e.comment || e.uid || 'unnamed'} (world: ${e.world})`).join(', ');
+      debug(SUBSYSTEM.SCENE, `Entries before filtering: ${entryList}`);
+    }
 
-      // Filter to only chat lorebook entries if suppression is enabled
-      if (suppressOtherLorebooks && chatLorebookName) {
-        if (entry.world !== chatLorebookName) {
-          return false;
-        }
-      }
+    const filteredEntries = entries.filter(entry => !shouldFilterLorebookEntry(entry, suppressOtherLorebooks, chatLorebookName));
 
-      return true;
-    });
-
-    debug(SUBSYSTEM.SCENE, `Lorebook activation for scene ${startIdx}-${endIdx}: ${totalBeforeFiltering} total -> ${filteredEntries.length} after filtering (chatLB: ${chatLorebookName || 'none'}, suppress: ${suppressOtherLorebooks})`);
+    logFilteringResults({ entries, filteredEntries, startIdx, endIdx, chatLorebookName, suppressOtherLorebooks });
 
     // Enhance entries with strategy metadata (matching automatic tracking format)
     const enhancedEntries = filteredEntries.map(entry => ({

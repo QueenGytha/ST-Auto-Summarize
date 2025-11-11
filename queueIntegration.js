@@ -11,6 +11,8 @@ import {
 import {
   get_settings,
   debug,
+  error,
+  toast,
   SUBSYSTEM } from
 './index.js';
 import { MAX_RECAP_ATTEMPTS, HIGH_PRIORITY_OFFSET, OPERATION_ID_LENGTH } from './constants.js';
@@ -211,6 +213,33 @@ options )
   );
 }
 
+function enqueueMergeLorebookEntry(params ) {
+  const { lorebookName, entryUid, existingContent, newContent, newKeys, newSecondaryKeys, entryName, messageIndex, recapHash } = params;
+
+  return enqueueOperation(
+    OperationType.MERGE_LOREBOOK_ENTRY,
+    {
+      lorebookName,
+      entryUid,
+      existingContent,
+      newContent,
+      newKeys,
+      newSecondaryKeys
+    },
+    {
+      priority: 13,
+      dependencies: [],
+      metadata: {
+        entry_name: entryName,
+        entry_uid: entryUid,
+        message_index: messageIndex,
+        recap_hash: recapHash || null,
+        direct_merge: true
+      }
+    }
+  );
+}
+
 export async function queueProcessLorebookEntry(entryData , messageIndex , recapHash , options  = {}) {
   const entryName = entryData.name || entryData.comment || 'Unknown';
   debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Called for entry: ${entryName}, messageIndex: ${messageIndex}, recapHash: ${recapHash || 'none'}`);
@@ -235,6 +264,42 @@ export async function queueProcessLorebookEntry(entryData , messageIndex , recap
   debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Preparing lookup context...`);
   const context = await prepareLorebookEntryLookupContext(entryData);
 
+  // Check for UID-based direct merge path
+  if (context.normalizedEntry.uid) {
+    const providedUid = String(context.normalizedEntry.uid);
+    debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] UID provided: ${providedUid}, validating...`);
+
+    const { getAttachedLorebook, getLorebookEntries } = await import('./lorebookManager.js');
+    const lorebookName = getAttachedLorebook();
+
+    if (lorebookName) {
+      const entries = await getLorebookEntries(lorebookName);
+      const existingEntry = entries?.find(e => String(e.uid) === providedUid);
+
+      if (existingEntry) {
+        debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ✓ UID valid, queueing direct merge for ${entryName} (uid: ${providedUid})`);
+        const opId = enqueueMergeLorebookEntry({
+          lorebookName,
+          entryUid: providedUid,
+          existingContent: existingEntry.content,
+          newContent: context.normalizedEntry.content,
+          newKeys: context.normalizedEntry.keys,
+          newSecondaryKeys: context.normalizedEntry.secondaryKeys,
+          entryName,
+          messageIndex,
+          recapHash
+        });
+        debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ${opId ? '✓' : '✗'} Direct merge ${opId ? 'enqueued with ID: ' + opId : 'failed to enqueue'}`);
+        return opId;
+      } else {
+        error(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ✗ Invalid UID ${providedUid} for ${entryName}, falling back to lookup`);
+        toast(`⚠ Invalid UID for ${entryName}, using lookup instead`, 'warning');
+        delete context.normalizedEntry.uid;
+      }
+    }
+  }
+
+  // Normal lookup pipeline (no UID or UID validation failed)
   debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] Enqueueing LOREBOOK_ENTRY_LOOKUP operation...`);
   const opId = await enqueueLorebookEntryLookupOperation(context, entryName, messageIndex, recapHash, options);
   debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ${opId ? '✓' : '✗'} Operation ${opId ? 'enqueued with ID: ' + opId : 'failed to enqueue'}`);

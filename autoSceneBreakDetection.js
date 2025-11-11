@@ -9,8 +9,10 @@ import {
   toast,
   log,
   SUBSYSTEM,
-  saveChatDebounced } from
+  saveChatDebounced,
+  count_tokens } from
 './index.js';
+import { pauseQueue } from './operationQueue.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 3;
 
@@ -142,6 +144,72 @@ function stripDecorativeSeparators(text) {
     return true;
   });
   return cleaned.join('\n');
+}
+
+function calculateReductionAmount(checkWhich, chat, currentEndIndex) {
+  if (checkWhich === 'user') {
+    for (let i = currentEndIndex; i >= 0; i--) {
+      if (chat[i].is_user) {
+        return currentEndIndex - i + 1;
+      }
+    }
+    return 1;
+  }
+
+  if (checkWhich === 'character') {
+    for (let i = currentEndIndex; i >= 0; i--) {
+      if (!chat[i].is_user) {
+        return currentEndIndex - i + 1;
+      }
+    }
+    return 1;
+  }
+
+  if (checkWhich === 'both') {
+    let foundUser = -1;
+    let foundAI = -1;
+
+    for (let i = currentEndIndex; i >= 0; i--) {
+      if (chat[i].is_user && foundUser === -1) {foundUser = i;}
+      if (!chat[i].is_user && foundAI === -1) {foundAI = i;}
+
+      if (foundUser !== -1 && foundAI !== -1) {
+        const earliestOfPair = Math.min(foundUser, foundAI);
+        return currentEndIndex - earliestOfPair + 1;
+      }
+    }
+    return 2;
+  }
+
+  return 1;
+}
+
+async function calculateAvailableContext(preset) {
+  const { getPresetManager } = await import('../../../preset-manager.js');
+  const presetManager = getPresetManager('openai');
+
+  let effectivePresetName;
+  if (preset === '') {
+    effectivePresetName = presetManager?.getSelectedPresetName();
+    if (!effectivePresetName) {
+      return null;
+    }
+  } else {
+    effectivePresetName = preset;
+  }
+
+  const presetData = presetManager?.getCompletionPresetByName(effectivePresetName);
+  if (!presetData) {
+    return null;
+  }
+
+  const presetMaxContext = presetData.max_context || presetData.openai_max_context;
+  if (!presetMaxContext || presetMaxContext <= 0) {
+    return null;
+  }
+
+  const presetMaxTokens = presetData.genamt || presetData.openai_max_tokens || 0;
+  return presetMaxContext - presetMaxTokens;
 }
 
 function shouldCheckMessage(
@@ -330,6 +398,124 @@ function validateSceneBreakResponse(sceneBreakAt, config) {
   return { valid: true };
 }
 
+function buildFormattedMessages(chat, filteredIndices, earliestAllowedBreak, maxEligibleIndex) {
+  return filteredIndices.map((i) => {
+    const m = chat[i];
+    const speaker = m?.is_user ? '[USER]' : '[CHARACTER]';
+    const isIneligible = (i < earliestAllowedBreak) || (i > maxEligibleIndex);
+    const header = isIneligible
+      ? `Message #invalid choice ${speaker}:`
+      : `Message #${i} ${speaker}:`;
+    const cleaned = stripDecorativeSeparators(m?.mes ?? '');
+    return `${header} ${cleaned}`;
+  }).join('\n\n');
+}
+
+function buildPromptFromTemplate(ctx, promptTemplate, options) {
+  const { formattedForPrompt, minimumSceneLength, earliestAllowedBreak, prefill } = options;
+  let prompt = promptTemplate;
+  if (ctx.substituteParamsExtended) {
+    prompt = ctx.substituteParamsExtended(prompt, {
+      messages: formattedForPrompt,
+      minimum_scene_length: String(minimumSceneLength),
+      earliest_allowed_break: String(earliestAllowedBreak),
+      prefill
+    }) || prompt;
+  }
+
+  prompt = prompt.replace(/\{\{messages\}\}/g, formattedForPrompt);
+  prompt = prompt.replace(/\{\{minimum_scene_length\}\}/g, String(minimumSceneLength));
+  prompt = prompt.replace(/\{\{earliest_allowed_break\}\}/g, String(earliestAllowedBreak));
+  return prompt;
+}
+
+function filterEligibleIndices(filteredIndices, maxEligibleIndex) {
+  return filteredIndices.filter(i => i <= maxEligibleIndex);
+}
+
+async function reduceMessagesUntilTokenFit(config) {
+  const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill } = config;
+
+  let currentEndIndex = endIndex;
+  let currentFilteredIndices = filteredIndices;
+  let currentMaxEligibleIndex = maxEligibleIndex;
+  let currentEarliestAllowedBreak;
+  let currentFormattedForPrompt;
+  let prompt;
+  let retryCount = 0;
+  const MAX_REDUCTION_RETRIES = 100;
+
+  const maxAllowedTokens = await calculateAvailableContext(preset);
+
+  while (retryCount < MAX_REDUCTION_RETRIES) {
+    const currentEligibleFilteredIndices = filterEligibleIndices(currentFilteredIndices, currentMaxEligibleIndex);
+
+    if (currentEligibleFilteredIndices.length < minimumSceneLength + 1) {
+      if (currentEligibleFilteredIndices.length <= 2 && maxAllowedTokens !== null) {
+        // eslint-disable-next-line no-await-in-loop -- Need to pause queue before throwing error
+        await pauseQueue();
+        toast(`Scene break detection failed: Even ${currentEligibleFilteredIndices.length} messages exceed ${maxAllowedTokens} token limit. Reduce message length or increase preset max_context.`, 'error', { timeOut: 0 });
+        throw new Error(`Scene break detection: minimum range still exceeds token limit`);
+      }
+
+      debug('Not enough eligible messages after token reduction:', currentEligibleFilteredIndices.length, '< minimum + 1:', minimumSceneLength + 1);
+      return {
+        sceneBreakAt: false,
+        rationale: `Not enough eligible messages after token reduction (${currentEligibleFilteredIndices.length} < ${minimumSceneLength + 1} required)`,
+        filteredIndices: currentFilteredIndices,
+        maxEligibleIndex: currentMaxEligibleIndex
+      };
+    }
+
+    currentEarliestAllowedBreak = currentEligibleFilteredIndices[minimumSceneLength];
+
+    currentFormattedForPrompt = buildFormattedMessages(chat, currentFilteredIndices, currentEarliestAllowedBreak, currentMaxEligibleIndex);
+
+    prompt = buildPromptFromTemplate(ctx, promptTemplate, {
+      formattedForPrompt: currentFormattedForPrompt,
+      minimumSceneLength,
+      earliestAllowedBreak: currentEarliestAllowedBreak,
+      prefill
+    });
+
+    const tokenCount = count_tokens(prompt);
+
+    if (maxAllowedTokens === null || tokenCount <= maxAllowedTokens) {
+      debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} tokens, fits within limit`);
+      break;
+    }
+
+    debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} > ${maxAllowedTokens} tokens, reducing end index`);
+
+    const reductionAmount = calculateReductionAmount(checkWhich, chat, currentEndIndex);
+    currentEndIndex -= reductionAmount;
+    currentMaxEligibleIndex = currentEndIndex - offset;
+
+    if (currentEndIndex < startIndex) {
+      // eslint-disable-next-line no-await-in-loop -- Need to pause queue before throwing error
+      await pauseQueue();
+      toast(`Scene break detection failed: Cannot reduce further. Token limit ${maxAllowedTokens} exceeded.`, 'error', { timeOut: 0 });
+      throw new Error(`Scene break detection: cannot reduce end index below start index`);
+    }
+
+    const formatResult = formatMessagesForRangeDetection(chat, startIndex, currentEndIndex, checkWhich);
+    currentFilteredIndices = formatResult.filteredIndices;
+
+    retryCount++;
+  }
+
+  if (retryCount >= MAX_REDUCTION_RETRIES) {
+    throw new Error(`Scene break detection: exceeded ${MAX_REDUCTION_RETRIES} reduction attempts`);
+  }
+
+  return {
+    prompt,
+    currentEndIndex,
+    currentFilteredIndices,
+    currentMaxEligibleIndex
+  };
+}
+
 async function detectSceneBreak(
 startIndex ,
 endIndex ,
@@ -391,41 +577,32 @@ offset  = 0)
     }
     debug('Valid choices for scene break:', validChoices.length, 'messages');
 
-    // Rebuild formatted messages with explicit ineligibility markers
-    // Mark messages as 'invalid choice' if:
-    // 1. Before earliestAllowedBreak (minimum scene length rule)
-    // 2. After maxEligibleIndex (offset rule)
-    const formattedForPrompt = filteredIndices.map((i) => {
-      const m = chat[i];
-      const speaker = m?.is_user ? '[USER]' : '[CHARACTER]';
-      const isIneligible = (i < earliestAllowedBreak) || (i > maxEligibleIndex);
-      const header = isIneligible
-        ? `Message #invalid choice ${speaker}:`
-        : `Message #${i} ${speaker}:`;
-      const cleaned = stripDecorativeSeparators(m?.mes ?? '');
-      return `${header} ${cleaned}`;
-    }).join('\n\n');
+    const reductionResult = await reduceMessagesUntilTokenFit({
+      ctx,
+      chat,
+      startIndex,
+      endIndex,
+      offset,
+      checkWhich,
+      filteredIndices,
+      maxEligibleIndex,
+      preset,
+      promptTemplate,
+      minimumSceneLength,
+      prefill
+    });
 
-    // Build prompt with macro replacements
-    let prompt = promptTemplate;
-    if (ctx.substituteParamsExtended) {
-      prompt = ctx.substituteParamsExtended(prompt, {
-        messages: formattedForPrompt,
-        minimum_scene_length: String(minimumSceneLength),
-        earliest_allowed_break: String(earliestAllowedBreak),
-        prefill
-      }) || prompt;
+    if (reductionResult.sceneBreakAt !== undefined) {
+      return reductionResult;
     }
 
-    prompt = prompt.replace(/\{\{messages\}\}/g, formattedForPrompt);
-    prompt = prompt.replace(/\{\{minimum_scene_length\}\}/g, String(minimumSceneLength));
-    prompt = prompt.replace(/\{\{earliest_allowed_break\}\}/g, String(earliestAllowedBreak));
+    const { prompt, currentEndIndex, currentFilteredIndices, currentMaxEligibleIndex } = reductionResult;
 
     ctx.deactivateSendButtons();
 
     // Set operation context for ST_METADATA with range
     const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
-    setOperationSuffix(`-${startIndex}-${endIndex}`);
+    setOperationSuffix(`-${startIndex}-${currentEndIndex}`);
 
     let response;
 
@@ -437,7 +614,7 @@ offset  = 0)
 
       const effectiveProfile = resolveProfileId(profile);
 
-      debug('Sending range detection prompt to AI for range', startIndex, 'to', endIndex);
+      debug('Sending range detection prompt to AI for range', startIndex, 'to', currentEndIndex);
 
       response = await sendLLMRequest(effectiveProfile, prompt, OperationType.DETECT_SCENE_BREAK, {
         prefill,
@@ -445,23 +622,23 @@ offset  = 0)
         preset: preset
       });
 
-      debug('AI raw response for range', startIndex, 'to', endIndex, ':', response);
+      debug('AI raw response for range', startIndex, 'to', currentEndIndex, ':', response);
     } finally {
       clearOperationSuffix();
     }
 
     // Parse response for message number or false
-    const { sceneBreakAt, rationale } = await parseSceneBreakResponse(response, startIndex, endIndex, filteredIndices);
+    const { sceneBreakAt, rationale } = await parseSceneBreakResponse(response, startIndex, currentEndIndex, currentFilteredIndices);
 
     // Log the decision
     if (sceneBreakAt === false) {
-      debug('✗ No scene break found in range', startIndex, 'to', endIndex);
+      debug('✗ No scene break found in range', startIndex, 'to', currentEndIndex);
     } else {
       debug('✓ SCENE BREAK DETECTED at message', sceneBreakAt);
     }
     debug('  Rationale:', rationale);
 
-    return { sceneBreakAt, rationale, filteredIndices, maxEligibleIndex };
+    return { sceneBreakAt, rationale, filteredIndices: currentFilteredIndices, maxEligibleIndex: currentMaxEligibleIndex };
 
   } catch (err) {
     error('ERROR in detectSceneBreak for range', startIndex, 'to', endIndex);

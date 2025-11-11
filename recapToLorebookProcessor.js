@@ -423,7 +423,7 @@ export function buildRegistryListing(state ) {
       const aliases = ensureStringArray(record.aliases);
       const aliasText = aliases.length > 0 ? aliases.join('; ') : '—';
       const synopsis = record.synopsis || '—';
-      sections.push(`${index + 1}. id: ${record.id} | name: ${name} | aliases: ${aliasText} | synopsis: ${synopsis}`);
+      sections.push(`${index + 1}. uid: ${record.uid} | name: ${name} | aliases: ${aliasText} | synopsis: ${synopsis}`);
     }
     sections.push('');
   }
@@ -464,13 +464,13 @@ function parseRegistryItemLine(line) {
     const p = parts.find((s) => s.toLowerCase().startsWith(label + ':'));
     return p ? p.slice(p.indexOf(':') + 1).trim() : '';
   };
-  const id = getVal('id');
-  if (!id) {return null;}
+  const uid = getVal('uid');
+  if (!uid) {return null;}
   const name = getVal('name');
   const aliasesRaw = getVal('aliases');
   const synopsis = getVal('synopsis');
   const aliases = aliasesRaw && aliasesRaw !== '—' ? aliasesRaw.split(';').map((a) => a.trim()).filter(Boolean) : [];
-  return { id: String(id), name, aliases, synopsis };
+  return { uid: String(uid), name, aliases, synopsis };
 }
 
 function buildIndexFromRegistryEntries(entriesArray ) {
@@ -484,11 +484,10 @@ function buildIndexFromRegistryEntries(entriesArray ) {
     for (let i = 1; i < lines.length; i++) {
       const item = parseRegistryItemLine(lines[i]);
       if (!item) {continue;}
-      const uidStr = String(item.id);
+      const uidStr = String(item.uid);
       const uidNum = Number(uidStr);
       index[uidStr] = {
         uid: Number.isNaN(uidNum) ? uidStr : uidNum,
-        id: uidStr,
         type,
         name: item.name || '',
         comment: item.name || '',
@@ -529,7 +528,6 @@ export function buildCandidateEntriesData(candidateIds , registryState , existin
     const entry = existingEntriesMap.get(String(id));
     if (!entry) {continue;}
     data.push({
-      id,
       uid: id,
       comment: entry.comment || '',
       content: entry.content || '',
@@ -640,7 +638,7 @@ settings )
   if (!promptTemplate) {
     handleMissingLorebookEntryLookupPrompt(normalizedEntry);
     // Flow doesn't understand throw above never returns
-    return { type: '', synopsis: '', sameEntityIds: [], needsFullContextIds: [] };
+    return { type: '', synopsis: '', sameEntityUids: [], needsFullContextUids: [] };
   }
   const payload = buildNewEntryPayload(normalizedEntry);
   const prompt = promptTemplate.
@@ -673,21 +671,21 @@ settings )
     return {
       type: normalizedEntry.type || '',
       synopsis: '',
-      sameEntityIds: [],
-      needsFullContextIds: []
+      sameEntityUids: [],
+      needsFullContextUids: []
     };
   }
 
   const type = sanitizeLorebookEntryLookupType(parsed.type) || normalizedEntry.type || '';
-  const sameIds = ensureStringArray(parsed.sameEntityIds).map((id) => String(id));
-  const needsIds = ensureStringArray(parsed.needsFullContextIds).map((id) => String(id));
+  const sameUids = ensureStringArray(parsed.sameEntityUids).map((id) => String(id));
+  const needsUids = ensureStringArray(parsed.needsFullContextUids).map((id) => String(id));
   const synopsis = typeof parsed.synopsis === 'string' ? parsed.synopsis.trim() : '';
 
   return {
     type,
     synopsis,
-    sameEntityIds: sameIds,
-    needsFullContextIds: needsIds
+    sameEntityUids: sameUids,
+    needsFullContextUids: needsUids
   };
 }
 
@@ -741,30 +739,30 @@ async function parseLorebookEntryDeduplicateResponse(response , fallbackSynopsis
   try {
     const { extractJsonFromResponse } = await import('./utils.js');
     parsed = extractJsonFromResponse(response, {
-      requiredFields: ['resolvedId'],
+      requiredFields: ['resolvedUid'],
       context: 'lorebook entry deduplication'
     });
   } catch (err) {
     // If parsing failed, return default structure
     debug?.('Failed to parse lorebook entry deduplication response:', err);
-    return { resolvedId: null, synopsis: fallbackSynopsis || '' };
+    return { resolvedUid: null, synopsis: fallbackSynopsis || '' };
   }
 
-  let resolvedId = parsed.resolvedId;
-  if (resolvedId && typeof resolvedId === 'string') {
-    const lowered = resolvedId.trim().toLowerCase();
+  let resolvedUid = parsed.resolvedUid;
+  if (resolvedUid && typeof resolvedUid === 'string') {
+    const lowered = resolvedUid.trim().toLowerCase();
     if (lowered === 'new' || lowered === 'none' || lowered === 'null') {
-      resolvedId = null;
+      resolvedUid = null;
     }
   } else {
-    resolvedId = null;
+    resolvedUid = null;
   }
 
   const synopsis = typeof parsed.synopsis === 'string' && parsed.synopsis.trim().length > 0 ?
   parsed.synopsis.trim() :
   fallbackSynopsis || '';
 
-  return { resolvedId: resolvedId ? String(resolvedId) : null, synopsis };
+  return { resolvedUid: resolvedUid ? String(resolvedUid) : null, synopsis };
 }
 
 export async function runLorebookEntryDeduplicateStage(
@@ -775,14 +773,14 @@ singleType ,
 settings )
 {
   if (!shouldRunLorebookEntryDeduplicate(candidateEntries, settings)) {
-    return { resolvedId: null, synopsis: lorebookEntryLookupSynopsis || '' };
+    return { resolvedUid: null, synopsis: lorebookEntryLookupSynopsis || '' };
   }
 
   const prompt = buildLorebookEntryDeduplicatePrompt(normalizedEntry, lorebookEntryLookupSynopsis, candidateEntries, singleType, settings);
   const response = await executeLorebookEntryDeduplicateLLMCall(prompt, settings, normalizedEntry.comment);
 
   if (!response) {
-    return { resolvedId: null, synopsis: lorebookEntryLookupSynopsis || '' };
+    return { resolvedUid: null, synopsis: lorebookEntryLookupSynopsis || '' };
   }
 
   return parseLorebookEntryDeduplicateResponse(response, lorebookEntryLookupSynopsis);
@@ -980,8 +978,8 @@ async function buildCandidateListAndResolve(ctx) {
   }
 
   // 2) Include LLM-proposed matches
-  for (const id of lorebookEntryLookup.sameEntityIds) {candidateIdSet.add(String(id));}
-  for (const id of lorebookEntryLookup.needsFullContextIds) {candidateIdSet.add(String(id));}
+  for (const id of lorebookEntryLookup.sameEntityUids) {candidateIdSet.add(String(id));}
+  for (const id of lorebookEntryLookup.needsFullContextUids) {candidateIdSet.add(String(id));}
 
   const candidateIds = Array.from(candidateIdSet).filter((id) => registryState.index?.[id]);
 
@@ -994,7 +992,7 @@ async function buildCandidateListAndResolve(ctx) {
   }
 
   if (!lorebookEntryDeduplicate) {
-    lorebookEntryDeduplicate = { resolvedId: null, synopsis: lorebookEntryLookup.synopsis || '' };
+    lorebookEntryDeduplicate = { resolvedUid: null, synopsis: lorebookEntryLookup.synopsis || '' };
   }
 
   return { candidateIds, lorebookEntryDeduplicate };
@@ -1006,32 +1004,32 @@ candidateIds ,
 lorebookEntryLookup ,
 registryState )
 {
-  let resolvedId = lorebookEntryDeduplicate.resolvedId;
+  let resolvedUid = lorebookEntryDeduplicate.resolvedUid;
 
   // Single candidate fallback: if only one candidate and no needsFullContext, use it
-  if (!resolvedId && candidateIds.length === 1 && (!lorebookEntryLookup.needsFullContextIds || lorebookEntryLookup.needsFullContextIds.length === 0)) {
+  if (!resolvedUid && candidateIds.length === 1 && (!lorebookEntryLookup.needsFullContextUids || lorebookEntryLookup.needsFullContextUids.length === 0)) {
     const fallbackId = candidateIds[0];
     if (registryState.index?.[fallbackId]) {
-      resolvedId = fallbackId;
+      resolvedUid = fallbackId;
     }
   }
 
-  // Validate resolved ID exists in registry
-  if (resolvedId && !registryState.index?.[resolvedId]) {
-    resolvedId = null;
+  // Validate resolved UID exists in registry
+  if (resolvedUid && !registryState.index?.[resolvedUid]) {
+    resolvedUid = null;
   }
 
-  const previousType = resolvedId ? registryState.index?.[resolvedId]?.type : null;
+  const previousType = resolvedUid ? registryState.index?.[resolvedUid]?.type : null;
   const finalSynopsis = lorebookEntryDeduplicate.synopsis || lorebookEntryLookup.synopsis || '';
 
-  return { resolvedId, previousType, finalSynopsis };
+  return { resolvedUid, previousType, finalSynopsis };
 }
 
 async function executeMergeWorkflow(config) {
-  const { resolvedId, normalizedEntry, targetType, previousType, finalSynopsis, lorebookName, existingEntriesMap, registryState, useQueue, results, typesToUpdate, ctx } = config;
+  const { resolvedUid, normalizedEntry, targetType, previousType, finalSynopsis, lorebookName, existingEntriesMap, registryState, useQueue, results, typesToUpdate, ctx } = config;
 
-  const record = registryState.index?.[resolvedId];
-  const existingEntry = record ? existingEntriesMap.get(String(resolvedId)) : null;
+  const record = registryState.index?.[resolvedUid];
+  const existingEntry = record ? existingEntriesMap.get(String(resolvedUid)) : null;
 
   if (!record || !existingEntry) {
     return false;
@@ -1056,8 +1054,8 @@ async function executeMergeWorkflow(config) {
         finalComment = typePrefix + mergeResult.canonicalName.trim();
       }
 
-      results.merged.push({ comment: finalComment, uid: existingEntry.uid, id: resolvedId });
-      updateRegistryRecord(registryState, resolvedId, {
+      results.merged.push({ comment: finalComment, uid: existingEntry.uid });
+      updateRegistryRecord(registryState, resolvedUid, {
         type: targetType,
         name: finalComment,
         comment: finalComment,
@@ -1102,7 +1100,7 @@ ctx )
       });
       ctx.registryStateDirty = true;
       typesToUpdate.add(targetType);
-      results.created.push({ comment: normalizedEntry.comment, uid: createdEntry.uid, id: newId });
+      results.created.push({ comment: normalizedEntry.comment, uid: createdEntry.uid });
       existingEntries.push(createdEntry);
       existingEntriesMap.set(String(createdEntry.uid), createdEntry);
     } else {
@@ -1149,7 +1147,7 @@ async function handleLorebookEntry(normalizedEntry , ctx ) {
 
       // Execute merge directly
       const merged = await executeMergeWorkflow({
-        resolvedId: providedUid,
+        resolvedUid: providedUid,
         normalizedEntry,
         targetType,
         previousType,
@@ -1190,16 +1188,16 @@ async function handleLorebookEntry(normalizedEntry , ctx ) {
   };
   const { candidateIds, lorebookEntryDeduplicate } = await buildCandidateListAndResolve(lookupCtx);
 
-  const { resolvedId, previousType, finalSynopsis } = applyFallbackAndValidateIdentity(
+  const { resolvedUid, previousType, finalSynopsis } = applyFallbackAndValidateIdentity(
     lorebookEntryDeduplicate,
     candidateIds,
     lorebookEntryLookup,
     registryState
   );
 
-  if (resolvedId) {
+  if (resolvedUid) {
     const merged = await executeMergeWorkflow({
-      resolvedId,
+      resolvedUid,
       normalizedEntry,
       targetType,
       previousType,

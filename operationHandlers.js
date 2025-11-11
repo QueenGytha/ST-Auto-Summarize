@@ -471,10 +471,10 @@ export function registerAllOperationHandlers() {
     setLorebookEntryLookupResult(entryId, lorebookEntryLookupResult);
     markStageInProgress(entryId, 'lorebook_entry_lookup_complete');
 
-    debug(SUBSYSTEM.QUEUE, `✓ Lorebook Entry Lookup complete for ${entryId}: type=${lorebookEntryLookupResult.type}, sameIds=${lorebookEntryLookupResult.sameEntityIds.length}, needsIds=${lorebookEntryLookupResult.needsFullContextIds.length}`);
+    debug(SUBSYSTEM.QUEUE, `✓ Lorebook Entry Lookup complete for ${entryId}: type=${lorebookEntryLookupResult.type}, sameUids=${lorebookEntryLookupResult.sameEntityUids.length}, needsUids=${lorebookEntryLookupResult.needsFullContextUids.length}`);
 
     // Enqueue next operation based on lorebook entry lookup result
-    if (lorebookEntryLookupResult.needsFullContextIds && lorebookEntryLookupResult.needsFullContextIds.length > 0) {
+    if (lorebookEntryLookupResult.needsFullContextUids && lorebookEntryLookupResult.needsFullContextUids.length > 0) {
       // Need lorebook entry deduplication - capture settings at enqueue time
       const deduplicatePrefill = get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill') || '';
       const deduplicateIncludePresetPrompts = get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts') ?? false;
@@ -492,10 +492,10 @@ export function registerAllOperationHandlers() {
           }
         }
       );
-    } else if (lorebookEntryLookupResult.sameEntityIds.length === 1) {
+    } else if (lorebookEntryLookupResult.sameEntityUids.length === 1) {
       // Exact match found - merge - capture merge settings at enqueue time
-      const resolvedId = lorebookEntryLookupResult.sameEntityIds[0];
-      setLorebookEntryDeduplicateResult(entryId, { resolvedId, synopsis: lorebookEntryLookupResult.synopsis });
+      const resolvedUid = lorebookEntryLookupResult.sameEntityUids[0];
+      setLorebookEntryDeduplicateResult(entryId, { resolvedUid, synopsis: lorebookEntryLookupResult.synopsis });
       markStageInProgress(entryId, 'lorebook_entry_deduplicate_complete');
 
       const mergePrefill = get_settings('auto_lorebooks_recap_merge_prefill') || '';
@@ -503,7 +503,7 @@ export function registerAllOperationHandlers() {
 
       await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
-        { entryId, action: 'merge', resolvedId },
+        { entryId, action: 'merge', resolvedUid },
         {
           priority: 14,
           queueVersion: operation.queueVersion,
@@ -586,8 +586,8 @@ export function registerAllOperationHandlers() {
 
     const registryState = ensureRegistryState();
     const candidateIds = Array.from(new Set([
-    ...lorebookEntryLookupResult.sameEntityIds,
-    ...lorebookEntryLookupResult.needsFullContextIds]
+    ...lorebookEntryLookupResult.sameEntityUids,
+    ...lorebookEntryLookupResult.needsFullContextUids]
     ));
 
     const candidateEntries = buildCandidateEntriesData(candidateIds, registryState, existingEntriesMap);
@@ -608,17 +608,17 @@ export function registerAllOperationHandlers() {
     setLorebookEntryDeduplicateResult(entryId, lorebookEntryDeduplicateResult);
     markStageInProgress(entryId, 'lorebook_entry_deduplicate_complete');
 
-    debug(SUBSYSTEM.QUEUE, `✓ LorebookEntryDeduplicate complete for ${entryId}: resolvedId=${lorebookEntryDeduplicateResult.resolvedId || 'new'}`);
+    debug(SUBSYSTEM.QUEUE, `✓ LorebookEntryDeduplicate complete for ${entryId}: resolvedUid=${lorebookEntryDeduplicateResult.resolvedUid || 'new'}`);
 
     // Enqueue next operation - capture settings at enqueue time
-    if (lorebookEntryDeduplicateResult.resolvedId) {
+    if (lorebookEntryDeduplicateResult.resolvedUid) {
       // Match found - merge
       const mergePrefill = get_settings('auto_lorebooks_recap_merge_prefill') || '';
       const mergeIncludePresetPrompts = get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false;
 
       await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
-        { entryId, action: 'merge', resolvedId: lorebookEntryDeduplicateResult.resolvedId },
+        { entryId, action: 'merge', resolvedUid: lorebookEntryDeduplicateResult.resolvedUid },
         {
           priority: 10,
           queueVersion: operation.queueVersion,
@@ -650,7 +650,7 @@ export function registerAllOperationHandlers() {
   });
 
   function prepareEntryContext(operation ) {
-    const { entryId, action, resolvedId } = operation.params;
+    const { entryId, action, resolvedUid } = operation.params;
     const signal = getAbortSignal(operation);
     const entryData = getEntryData(entryId);
     const lorebookEntryLookupResult = getLorebookEntryLookupResult(entryId);
@@ -672,7 +672,7 @@ export function registerAllOperationHandlers() {
     const finalSynopsis = lorebookEntryDeduplicateResult?.synopsis || lorebookEntryLookupResult?.synopsis || '';
 
     return {
-      entryId, action, resolvedId, entryData, lorebookName,
+      entryId, action, resolvedUid, entryData, lorebookName,
       registryState, finalType, finalSynopsis, signal,
       contextGetLorebookEntries: getLorebookEntries, contextAddLorebookEntry: addLorebookEntry, contextMergeLorebookEntry: mergeLorebookEntry,
       contextUpdateRegistryRecord: updateRegistryRecord, contextEnsureStringArray: ensureStringArray
@@ -680,17 +680,17 @@ export function registerAllOperationHandlers() {
   }
 
   async function executeMergeAction(context ) {
-    const { resolvedId, entryData, lorebookName, registryState, finalType, finalSynopsis,
+    const { resolvedUid, entryData, lorebookName, registryState, finalType, finalSynopsis,
       contextGetLorebookEntries, contextMergeLorebookEntry, contextUpdateRegistryRecord, contextEnsureStringArray, entryId, signal } = context;
 
     let existingEntriesRaw = await contextGetLorebookEntries(lorebookName);
-    let record = registryState.index?.[resolvedId];
+    let record = registryState.index?.[resolvedUid];
     let existingEntry = record ? existingEntriesRaw?.find((e) => e.uid === record.uid) : null;
 
     if (!record || !existingEntry) {
       // Defensive refresh: hydrate registry state from lorebook and retry lookup once
       await refreshRegistryStateFromEntries(existingEntriesRaw);
-      record = registryState.index?.[resolvedId];
+      record = registryState.index?.[resolvedUid];
       // Reload entries in case they changed
       existingEntriesRaw = await contextGetLorebookEntries(lorebookName);
       existingEntry = record ? existingEntriesRaw?.find((e) => e.uid === record.uid) : null;
@@ -698,10 +698,10 @@ export function registerAllOperationHandlers() {
 
     if (!record || !existingEntry) {
       // Hard fail: do NOT fallback to create — prevents duplicates
-      debug(SUBSYSTEM.QUEUE, `MERGE failed to locate resolvedId=${resolvedId}. Registry keys: ${Object.keys(registryState.index || {}).join(', ')}`);
+      debug(SUBSYSTEM.QUEUE, `MERGE failed to locate resolvedUid=${resolvedUid}. Registry keys: ${Object.keys(registryState.index || {}).join(', ')}`);
       // Pause the queue to prevent further corruption
       await pauseQueue();
-      throw new Error(`DUPLICATE/STATE ERROR: Cannot merge into id ${resolvedId} — registry/entry not found after hydration.`);
+      throw new Error(`DUPLICATE/STATE ERROR: Cannot merge into uid ${resolvedUid} — registry/entry not found after hydration.`);
     }
 
     const mergeResult = await contextMergeLorebookEntry(lorebookName, existingEntry, entryData, { useQueue: false });
@@ -713,7 +713,7 @@ export function registerAllOperationHandlers() {
       throw new Error(mergeResult?.message || 'Merge failed');
     }
 
-    contextUpdateRegistryRecord(registryState, resolvedId, {
+    contextUpdateRegistryRecord(registryState, resolvedUid, {
       type: finalType,
       name: entryData.comment || existingEntry.comment || '',
       comment: entryData.comment || existingEntry.comment || '',
@@ -721,9 +721,9 @@ export function registerAllOperationHandlers() {
       synopsis: finalSynopsis
     });
 
-    debug(SUBSYSTEM.QUEUE, `✓ Merged entry ${entryId} into ${resolvedId}`);
+    debug(SUBSYSTEM.QUEUE, `✓ Merged entry ${entryId} into ${resolvedUid}`);
 
-    return { success: true, entityId: resolvedId, entityUid: existingEntry.uid, action: 'merged' };
+    return { success: true, entityId: resolvedUid, entityUid: existingEntry.uid, action: 'merged' };
   }
 
   async function executeCreateAction(context ) {
@@ -778,7 +778,7 @@ export function registerAllOperationHandlers() {
     const context = await prepareEntryContext(operation);
 
     let result;
-    if (context.action === 'merge' && context.resolvedId) {
+    if (context.action === 'merge' && context.resolvedUid) {
       result = await executeMergeAction(context);
       if (result.fallbackToCreate) {
         result = await executeCreateAction(context);

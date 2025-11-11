@@ -49,8 +49,6 @@ export const default_settings = {
   message_length_threshold: 0, // Minimum message length to include in scene recaps
   // --- Scene Recap Settings ---
   scene_recap_prefill: JSON_EXTRACTION_PREFILL,
-  scene_recap_context_limit: 10,
-  scene_recap_context_type: 'percent',
   scene_recap_completion_preset: "",
   scene_recap_include_preset_prompts: false, // Include completion preset prompts (main, jailbreak, etc.) before extension prompt
   scene_recap_include_active_setting_lore: true, // Include active setting_lore entries in scene recap prompt
@@ -91,8 +89,6 @@ export const default_settings = {
   running_scene_recap_depth: 2,
   running_scene_recap_role: 0, // System
   running_scene_recap_scan: false,
-  running_scene_recap_context_limit: 40, // High limit - running recap becomes bulk of context as roleplay progresses
-  running_scene_recap_context_type: 'percent',
   running_scene_recap_completion_preset: "",
   running_scene_recap_connection_profile: "",
   running_scene_recap_include_preset_prompts: false, // Include completion preset prompts for running recap generation
@@ -192,11 +188,6 @@ Rules for canonicalName:
   auto_lorebooks_entry_sticky: 4, // Default: stay active for 4 message rounds
 
   // (Removed) Auto-Lorebooks Keyword Generation Settings – keywords now come from recap JSON
-
-  // --- Lorebook Viewer Settings ---
-  lorebook_viewer_show_content: false, // Show entry content in modal
-  lorebook_viewer_group_by_world: true, // Group entries by lorebook/world
-  lorebook_viewer_show_depth: true, // Show depth and order information
 
   // --- First-Hop Proxy Integration Settings ---
   first_hop_proxy_send_chat_details: false, // Send chat details in LLM requests for proxy logging
