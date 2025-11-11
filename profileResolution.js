@@ -33,15 +33,16 @@ export function resolveProfileId(profileId) {
   }
 
   const ctx = getContext();
-  const selectedProfileName = ctx.extensionSettings.connectionManager?.selectedProfile;
+  const selectedProfileId = ctx.extensionSettings.connectionManager?.selectedProfile;
 
-  if (!selectedProfileName) {
+  if (!selectedProfileId) {
     throw new Error('FATAL: Empty connection profile setting means "use current active profile", but no ConnectionManager profile is currently active (selectedProfile is null). Please either: 1) Select a ConnectionManager profile in ST, OR 2) Configure a specific profile in Auto-Recap settings.');
   }
 
-  const profile = ctx.extensionSettings.connectionManager.profiles.find(p => p.name === selectedProfileName);
+  const profile = ctx.extensionSettings.connectionManager.profiles.find(p => p.id === selectedProfileId);
   if (!profile) {
-    throw new Error(`FATAL: Current ConnectionManager profile "${selectedProfileName}" not found in profiles list.`);
+    ctx.extensionSettings.connectionManager.selectedProfile = null;
+    throw new Error(`FATAL: Current ConnectionManager profile ID "${selectedProfileId}" not found in profiles list (profile may have been deleted). The stale profile reference has been cleared. Please select a valid ConnectionManager profile in SillyTavern.`);
   }
 
   return profile.id;
