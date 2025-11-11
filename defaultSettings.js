@@ -66,7 +66,7 @@ export const default_settings = {
   scene_recap_history_count: 1,
   scene_recap_error_detection_prefill: JSON_EXTRACTION_PREFILL,
   scene_recap_error_detection_retries: 3,
-  auto_hide_scene_count: 3, // Hide messages older than last 3 scenes
+  auto_hide_scene_count: 2, // Hide messages older than last 2 scenes
 
   // --- Auto Scene Break Detection Settings --- (always available; governed by per-event settings)
   auto_scene_break_on_load: false,
@@ -200,6 +200,5 @@ Rules for canonicalName:
 
   // --- First-Hop Proxy Integration Settings ---
   first_hop_proxy_send_chat_details: false, // Send chat details in LLM requests for proxy logging
-  wrap_setting_lore_entries: true, // Wrap each setting_lore entry individually with XML tags for downstream parsing
   suppress_other_lorebooks: true // Suppress global/character/persona lorebooks during generation (only chat lorebooks included)
 };

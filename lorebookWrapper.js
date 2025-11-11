@@ -46,10 +46,6 @@ function handleWorldInfoEntriesLoaded(payload ) {
       debug(SUBSYSTEM.LOREBOOK,'[Auto-Recap:LorebookWrapper] Suppressed global/character/persona lorebooks (only chat lorebooks active)');
     }
 
-    if (!get_settings('wrap_setting_lore_entries')) {
-      return;
-    }
-
     const collections = [
     payload.globalLore,
     payload.characterLore,

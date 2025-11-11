@@ -570,26 +570,53 @@ def extract_lorebook_entries_from_content(content: str) -> List[Dict[str, Any]]:
 
 def strip_lorebook_attributes(content: str) -> str:
     """
-    Strip attributes from <setting_lore> tags, keeping only the wrapper and content.
+    Strip attributes from <setting_lore> tags, keeping only name and uid.
 
     Transforms:
-        <setting_lore name="x" uid="14" ...>content</setting_lore>
+        <setting_lore name="x" uid="14" enabled="true" insertion_order="100">content</setting_lore>
     To:
-        <setting_lore>content</setting_lore>
+        <setting_lore name="x" uid="14">content</setting_lore>
 
     Args:
         content: Message content that may contain <setting_lore> tags
 
     Returns:
-        Content with attributes stripped from lorebook tags
+        Content with only name and uid attributes preserved
     """
     if not content:
         return content
 
-    # Replace <setting_lore ...> with <setting_lore>
-    # Keep the content and closing tag intact
-    pattern = r'<setting_lore\s+[^>]+>'
-    result = re.sub(pattern, '<setting_lore>', content)
+    def replace_tag(match):
+        """Replace tag with only name and uid attributes"""
+        attributes_str = match.group(1)
+
+        # Parse attributes
+        name_value = None
+        uid_value = None
+
+        # Extract name attribute
+        name_match = re.search(r'name="([^"]*)"', attributes_str)
+        if name_match:
+            name_value = name_match.group(1)
+
+        # Extract uid attribute
+        uid_match = re.search(r'uid="([^"]*)"', attributes_str)
+        if uid_match:
+            uid_value = uid_match.group(1)
+
+        # Reconstruct tag with only name and uid
+        if name_value and uid_value:
+            return f'<setting_lore name="{name_value}" uid="{uid_value}">'
+        elif name_value:
+            return f'<setting_lore name="{name_value}">'
+        elif uid_value:
+            return f'<setting_lore uid="{uid_value}">'
+        else:
+            return '<setting_lore>'
+
+    # Replace <setting_lore ...> with filtered version
+    pattern = r'<setting_lore\s+([^>]+)>'
+    result = re.sub(pattern, replace_tag, content)
 
     return result
 

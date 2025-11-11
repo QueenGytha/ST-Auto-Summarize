@@ -41,7 +41,6 @@ export const selectorsExtension = {
   // First-Hop Proxy Integration
   proxy: {
     sendChatDetails: '[data-testid="proxy-send-chat-details"]',  // #first_hop_proxy_send_chat_details
-    wrapSettingLore: '[data-testid="proxy-wrap-setting-lore"]',  // #wrap_setting_lore_entries
     suppressOtherLorebooks: '[data-testid="proxy-suppress-other-lorebooks"]',  // #suppress_other_lorebooks
   },
 
@@ -157,18 +156,19 @@ export const selectorsExtension = {
     mergeIncludePresetPrompts: '[data-testid="lorebook-merge-include-preset-prompts"]',  // #auto_lorebooks_recap_merge_include_preset_prompts
     mergePrefill: '[data-testid="lorebook-merge-prefill"]',               // #autolorebooks-recap-merge-prefill
     mergePrompt: '[data-testid="lorebook-merge-prompt"]',                 // #autolorebooks-recap-merge-prompt
+    editMergePrompt: '[data-testid="lorebook-edit-merge-prompt"]',        // #edit_autolorebooks_recap_merge_prompt
     lookupConnection: '[data-testid="lorebook-lookup-connection"]',       // #autolorebooks-recap-lorebook-entry-lookup-connection
     lookupPreset: '[data-testid="lorebook-lookup-preset"]',               // #autolorebooks-recap-lorebook-entry-lookup-preset
     lookupIncludePresetPrompts: '[data-testid="lorebook-lookup-include-preset-prompts"]',  // #auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts
     lookupPrefill: '[data-testid="lorebook-lookup-prefill"]',             // #autolorebooks-recap-lorebook-entry-lookup-prefill
     lookupPrompt: '[data-testid="lorebook-lookup-prompt"]',               // #autolorebooks-recap-lorebook-entry-lookup-prompt
-    restoreLookupPrompt: '[data-testid="lorebook-restore-lookup-prompt"]',  // #restore-recap-triage-prompt
+    editLookupPrompt: '[data-testid="lorebook-edit-lookup-prompt"]',      // #edit_autolorebooks_recap_lorebook_entry_lookup_prompt
     dedupeConnection: '[data-testid="lorebook-dedupe-connection"]',       // #autolorebooks-recap-entry-deduplicate-connection
     dedupePreset: '[data-testid="lorebook-dedupe-preset"]',               // #autolorebooks-recap-entry-deduplicate-preset
     dedupeIncludePresetPrompts: '[data-testid="lorebook-dedupe-include-preset-prompts"]',  // #auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts
     dedupePrefill: '[data-testid="lorebook-dedupe-prefill"]',             // #autolorebooks-recap-entry-deduplicate-prefill
     dedupePrompt: '[data-testid="lorebook-dedupe-prompt"]',               // #autolorebooks-recap-entry-deduplicate-prompt
-    restoreDedupePrompt: '[data-testid="lorebook-restore-dedupe-prompt"]',  // #restore-recap-entry-deduplicate-prompt
+    editDedupePrompt: '[data-testid="lorebook-edit-dedupe-prompt"]',      // #edit_autolorebooks_recap_entry_deduplicate_prompt
   },
 
   // Lorebook Viewer Settings

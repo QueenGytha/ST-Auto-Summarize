@@ -26,7 +26,6 @@ import {
   saveSettingsDebounced,
   selectorsExtension } from
 './index.js';
-import { auto_lorebook_entry_lookup_prompt, auto_lorebook_entry_deduplicate_prompt } from './defaultPrompts.js';
 import {
   ensureEntityTypesSetting,
   renderEntityTypesList,
@@ -80,7 +79,6 @@ async function initialize_settings_listeners() {
 
   // First-Hop Proxy Integration Settings
   bind_setting(selectorsExtension.proxy.sendChatDetails, 'first_hop_proxy_send_chat_details', 'boolean');
-  bind_setting(selectorsExtension.proxy.wrapSettingLore, 'wrap_setting_lore_entries', 'boolean');
   bind_setting(selectorsExtension.proxy.suppressOtherLorebooks, 'suppress_other_lorebooks', 'boolean');
 
   // Lorebook Viewer Settings
@@ -439,10 +437,18 @@ function initialize_lorebooks_settings_listeners() {
     save_profile();
   });
 
-  $(document).on('input', '#autolorebooks-recap-merge-prompt', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_merge_prompt', value);
-    save_profile();
+  bind_setting('#autolorebooks-recap-merge-prompt', 'auto_lorebooks_recap_merge_prompt', 'text');
+  bind_function('#edit_autolorebooks_recap_merge_prompt', async () => {
+    const description = `
+Configure the prompt used to merge new recap information with existing lorebook entry content.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{existing_content}}:</b> Current lorebook entry content.</li>
+    <li><b>{{new_content}}:</b> New information from recap to merge.</li>
+    <li><b>{{entry_name}}:</b> Name of the lorebook entry being updated.</li>
+</ul>`;
+    await get_user_setting_text_input('auto_lorebooks_recap_merge_prompt', 'Edit Lorebook Merge Prompt', description);
   });
 
   // Duplicate Detection – Stage 1: Registry Lorebook Entry Lookup
@@ -471,10 +477,18 @@ function initialize_lorebooks_settings_listeners() {
     save_profile();
   });
 
-  $(document).on('input', '#autolorebooks-recap-lorebook-entry-lookup-prompt', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_lorebook_entry_lookup_prompt', value);
-    save_profile();
+  bind_setting('#autolorebooks-recap-lorebook-entry-lookup-prompt', 'auto_lorebooks_recap_lorebook_entry_lookup_prompt', 'text');
+  bind_function('#edit_autolorebooks_recap_lorebook_entry_lookup_prompt', async () => {
+    const description = `
+Configure the prompt used to look up potentially matching lorebook entries for duplicate detection.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
+    <li><b>{{new_entry}}:</b> New entry to check for duplicates.</li>
+    <li><b>{{candidate_registry}}:</b> List of candidate entries to compare against.</li>
+</ul>`;
+    await get_user_setting_text_input('auto_lorebooks_recap_lorebook_entry_lookup_prompt', 'Edit Lorebook Lookup Prompt', description);
   });
 
   $(document).on('change', '#autolorebooks-recap-entry-deduplicate-connection', function () {
@@ -501,23 +515,21 @@ function initialize_lorebooks_settings_listeners() {
     save_profile();
   });
 
-  $(document).on('input', '#autolorebooks-recap-entry-deduplicate-prompt', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prompt', value);
-    save_profile();
+  bind_setting('#autolorebooks-recap-entry-deduplicate-prompt', 'auto_lorebooks_recap_lorebook_entry_deduplicate_prompt', 'text');
+  bind_function('#edit_autolorebooks_recap_entry_deduplicate_prompt', async () => {
+    const description = `
+Configure the prompt used to deduplicate entries by comparing full entry details.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
+    <li><b>{{new_entry}}:</b> New entry to check for duplicates.</li>
+    <li><b>{{triage_synopsis}}:</b> Synopsis from the lookup stage.</li>
+    <li><b>{{candidate_entries}}:</b> Full candidate entries for comparison.</li>
+</ul>`;
+    await get_user_setting_text_input('auto_lorebooks_recap_lorebook_entry_deduplicate_prompt', 'Edit Lorebook Dedupe Prompt', description);
   });
 
-  $(document).on('click', '#restore-recap-triage-prompt', function () {
-    $(selectorsExtension.lorebook.lookupPrompt).val(auto_lorebook_entry_lookup_prompt);
-    $(selectorsExtension.lorebook.lookupPrompt).trigger('input');
-    toast('Lorebook Entry Lookup prompt restored to default', 'success');
-  });
-
-  $(document).on('click', '#restore-recap-entry-deduplicate-prompt', function () {
-    $(selectorsExtension.lorebook.dedupePrompt).val(auto_lorebook_entry_deduplicate_prompt);
-    $(selectorsExtension.lorebook.dedupePrompt).trigger('input');
-    toast('LorebookEntryDeduplicate prompt restored to default', 'success');
-  });
 
   $(document).on('change', '#autolorebooks-entry-exclude-recursion', function () {
     const value = $(this).prop('checked');

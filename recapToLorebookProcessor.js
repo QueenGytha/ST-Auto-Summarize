@@ -308,6 +308,7 @@ export function normalizeEntryData(entry ) {
     position: entry.position ?? 0,
     depth: entry.depth ?? MIN_ENTITY_SECTIONS,
     type: typeof entry.type === 'string' ? sanitizeEntityTypeName(entry.type) : '',
+    uid: entry.uid,
     ...entrySettings
   };
 }
@@ -1123,6 +1124,57 @@ async function handleLorebookEntry(normalizedEntry , ctx ) {
     typeList
   } = ctx;
 
+  // UID-based direct merge path: Skip lookup if UID is provided
+  if (normalizedEntry.uid) {
+    const providedUid = String(normalizedEntry.uid);
+    const existingEntry = existingEntriesMap.get(providedUid);
+
+    if (existingEntry) {
+      debug(SUBSYSTEM.CORE, `UID-based direct merge for ${normalizedEntry.comment || normalizedEntry.name} (uid: ${providedUid})`);
+
+      // Find the registry record to get type and synopsis
+      let registryRecord = null;
+      let previousType = null;
+      for (const record of Object.values(registryState.index || {})) {
+        if (record.uid === providedUid) {
+          registryRecord = record;
+          previousType = record.type;
+          break;
+        }
+      }
+
+      // Determine target type: prefer registry type, fall back to entry type
+      const targetType = previousType || (normalizedEntry.type ? sanitizeEntityTypeName(normalizedEntry.type) : entityTypeDefs[0]?.name || 'character');
+      const finalSynopsis = registryRecord?.synopsis || '';
+
+      // Execute merge directly
+      const merged = await executeMergeWorkflow({
+        resolvedId: providedUid,
+        normalizedEntry,
+        targetType,
+        previousType,
+        finalSynopsis,
+        ctx,
+        ...ctx
+      });
+
+      if (merged) {
+        return;
+      }
+
+      // If merge failed, entry already added to results.failed by executeMergeWorkflow
+      error(SUBSYSTEM.CORE, `UID-based merge failed for ${normalizedEntry.comment}`);
+      return;
+    } else {
+      // UID validation failed - fall back to normal lookup pipeline
+      error(SUBSYSTEM.CORE, `Invalid UID ${providedUid} for ${normalizedEntry.comment || normalizedEntry.name} - falling back to lookup`);
+      toast(`⚠ Invalid UID for ${normalizedEntry.comment || normalizedEntry.name}, using lookup instead`, 'warning');
+      // Remove the invalid UID to prevent confusion
+      delete normalizedEntry.uid;
+    }
+  }
+
+  // Normal lookup pipeline (no UID provided or UID validation failed)
   const registryListing = buildRegistryListing(registryState);
   const lorebookEntryLookup = await runLorebookEntryLookupStage(normalizedEntry, registryListing, typeList, settings);
 

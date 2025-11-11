@@ -241,7 +241,8 @@ Required format (copy this structure exactly):
       "name": "Entity Name",
       "content": "Description",
       "keywords": ["keyword1", "keyword2"],
-      "secondaryKeys": ["and-term"]
+      "secondaryKeys": ["and-term"],
+      "uid": "12345"
     }
   ]
 }
@@ -348,7 +349,8 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // SETTING_LORE (array):
 // - Only include if this scene adds durable knowledge about an entity (new/changed vs active entries below).
 // - Each object updates ONE concrete entity (character, location, item, faction, quest, rule).
-// - Fields: name, type (one of {{lorebook_entry_types}}), keywords, optional secondaryKeys, content.
+// - Fields: name, type (one of {{lorebook_entry_types}}), keywords, optional secondaryKeys, content, optional uid.
+// - uid field (OPTIONAL): Include ONLY when you are absolutely certain this entry updates an existing entity from active_setting_lore below. Copy the exact uid value from the matching <setting_lore uid="..."> tag. If uncertain whether this is the same entity, or if this is a new entity, OMIT the uid field entirely. Including a uid triggers a direct merge; incorrect uid matching will corrupt data.
 // - Content MUST be bullet points. Start with identity so it stands alone without the title:
 //   - Identity: <Type> — <Canonical Name>
 //   - Synopsis: <1 line identity/purpose>

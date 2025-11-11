@@ -59,11 +59,6 @@
                             <span>Send Chat Details</span>
                         </label>
 
-                        <label title="Wraps each lorebook entry individually with &lt;lorebook&gt; tags for downstream parsing. Supports multi-line entries. Tags are stripped by proxy before sending to LLM." class="checkbox_label">
-                            <input id="wrap_setting_lore_entries" data-testid="proxy-wrap-setting-lore" type="checkbox" />
-                            <span>Wrap Lorebook Entries</span>
-                        </label>
-
                         <label title="When enabled, suppress global/character/persona lorebooks during generation (only chat lorebooks will be included). This prevents conflicts between auto-generated lorebooks and manually-created ones." class="checkbox_label">
                             <input id="suppress_other_lorebooks" data-testid="proxy-suppress-other-lorebooks" type="checkbox" />
                             <span>Suppress Non-Chat Lorebooks</span>
@@ -135,7 +130,6 @@
                         <div class="flex-container justifyspacebetween alignitemscenter">
                             <button id="edit_scene_recap_prompt" data-testid="scene-edit-prompt" class="menu_button flex1" title="Edit the scene recap prompt"><span>Edit Scene Prompt</span></button>
                         </div>
-                        <small class="displayBlock opacity50p">Available macros: {{scene_messages}}, {{lorebook_entry_types}}, {{active_setting_lore}}, {{char}}, {{user}}</small>
                         <input id="scene_recap_prompt" data-testid="scene-prompt" type="hidden" />
                         <input id="scene_recap_default_prompt" data-testid="scene-default-prompt" type="hidden" value="[Default scene recap prompt here]" />
                         <table>
@@ -604,11 +598,13 @@
                                 </div>
 
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-merge-prompt">
+                                    <label>
                                         <span>Lorebook entry merge prompt:</span>
-                                        <small class="displayBlock opacity50p">Use {{existing_content}} and {{new_content}}. Merges new recap data with existing entry content.</small>
                                     </label>
-                                    <textarea id="autolorebooks-recap-merge-prompt" data-testid="lorebook-merge-prompt" class="text_pole textarea_compact" rows="10"></textarea>
+                                    <div class="flex-container justifyspacebetween alignitemscenter">
+                                        <button id="edit_autolorebooks_recap_merge_prompt" data-testid="lorebook-edit-merge-prompt" class="menu_button flex1" title="Edit the lorebook entry merge prompt"><span>Edit Merge Prompt</span></button>
+                                    </div>
+                                    <input id="autolorebooks-recap-merge-prompt" data-testid="lorebook-merge-prompt" type="hidden" />
                                 </div>
                             </div>
                         </div>
@@ -652,12 +648,13 @@
                                     <input type="text" id="autolorebooks-recap-lorebook-entry-lookup-prefill" data-testid="lorebook-lookup-prefill" class="text_pole" placeholder="" />
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-lorebook-entry-lookup-prompt" class="flex-container alignitemscenter justifyspacebetween">
+                                    <label>
                                         <span>Lorebook Entry Lookup prompt:</span>
-                                        <button id="restore-recap-triage-prompt" data-testid="lorebook-restore-lookup-prompt" class="menu_button fa-solid fa-recycle" title="Restore default triage prompt"></button>
                                     </label>
-                                    <small class="displayBlock opacity50p">Use macros: {{lorebook_entry_types}}, {{new_entry}}, {{candidate_registry}}</small>
-                                    <textarea id="autolorebooks-recap-lorebook-entry-lookup-prompt" data-testid="lorebook-lookup-prompt" class="text_pole textarea_compact" rows="10"></textarea>
+                                    <div class="flex-container justifyspacebetween alignitemscenter">
+                                        <button id="edit_autolorebooks_recap_lorebook_entry_lookup_prompt" data-testid="lorebook-edit-lookup-prompt" class="menu_button flex1" title="Edit the lorebook entry lookup prompt"><span>Edit Lookup Prompt</span></button>
+                                    </div>
+                                    <input id="autolorebooks-recap-lorebook-entry-lookup-prompt" data-testid="lorebook-lookup-prompt" type="hidden" />
                                 </div>
 
                                 <h5>Stage 2 – Full LorebookEntryDeduplicate</h5>
@@ -691,12 +688,13 @@
                                     <input type="text" id="autolorebooks-recap-entry-deduplicate-prefill" data-testid="lorebook-dedupe-prefill" class="text_pole" placeholder="" />
                                 </div>
                                 <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-entry-deduplicate-prompt" class="flex-container alignitemscenter justifyspacebetween">
+                                    <label>
                                         <span>LorebookEntryDeduplicate prompt:</span>
-                                        <button id="restore-recap-entry-deduplicate-prompt" data-testid="lorebook-restore-dedupe-prompt" class="menu_button fa-solid fa-recycle" title="Restore default LorebookEntryDeduplicate prompt"></button>
                                     </label>
-                                    <small class="displayBlock opacity50p">Use macros: {{lorebook_entry_types}}, {{new_entry}}, {{triage_synopsis}}, {{candidate_entries}}</small>
-                                    <textarea id="autolorebooks-recap-entry-deduplicate-prompt" data-testid="lorebook-dedupe-prompt" class="text_pole textarea_compact" rows="10"></textarea>
+                                    <div class="flex-container justifyspacebetween alignitemscenter">
+                                        <button id="edit_autolorebooks_recap_entry_deduplicate_prompt" data-testid="lorebook-edit-dedupe-prompt" class="menu_button flex1" title="Edit the lorebook entry deduplicate prompt"><span>Edit Dedupe Prompt</span></button>
+                                    </div>
+                                    <input id="autolorebooks-recap-entry-deduplicate-prompt" data-testid="lorebook-dedupe-prompt" type="hidden" />
                                 </div>
                             </div>
                         </div>
