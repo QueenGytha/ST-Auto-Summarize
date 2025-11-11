@@ -4,7 +4,7 @@ import {
   set_settings,
   check_preset_valid,
   get_presets,
-  get_connection_profiles,
+  get_connection_profile_objects,
   toast,
   debug,
   error,
@@ -102,15 +102,15 @@ async function update_scene_recap_preset_dropdown() {
   $preset_select.off('click').on('click', () => update_scene_recap_preset_dropdown());
 }
 
-async function update_scene_recap_connection_profile_dropdown() {
+function update_scene_recap_connection_profile_dropdown() {
   const $connection_select = $(selectorsExtension.scene.connectionProfile);
   const recap_connection = get_settings('scene_recap_connection_profile');
-  const connection_options = await get_connection_profiles();
+  const connection_profiles = get_connection_profile_objects();
   $connection_select.empty();
   $connection_select.append(`<option value="">Same as Current</option>`);
-  if (connection_options && Array.isArray(connection_options)) {
-    for (const option of connection_options) {
-      $connection_select.append(`<option value="${option}">${option}</option>`);
+  if (connection_profiles && Array.isArray(connection_profiles)) {
+    for (const profile of connection_profiles) {
+      $connection_select.append(`<option value="${profile.id}">${profile.name}</option>`);
     }
   }
   $connection_select.val(recap_connection);
@@ -130,15 +130,15 @@ async function update_auto_scene_break_preset_dropdown() {
   $preset_select.off('click').on('click', () => update_auto_scene_break_preset_dropdown());
 }
 
-async function update_auto_scene_break_connection_profile_dropdown() {
+function update_auto_scene_break_connection_profile_dropdown() {
   const $connection_select = $(selectorsExtension.autoScene.connectionProfile);
   const recap_connection = get_settings('auto_scene_break_connection_profile');
-  const connection_options = await get_connection_profiles();
+  const connection_profiles = get_connection_profile_objects();
   $connection_select.empty();
   $connection_select.append(`<option value="">Same as Current</option>`);
-  if (connection_options && Array.isArray(connection_options)) {
-    for (const option of connection_options) {
-      $connection_select.append(`<option value="${option}">${option}</option>`);
+  if (connection_profiles && Array.isArray(connection_profiles)) {
+    for (const profile of connection_profiles) {
+      $connection_select.append(`<option value="${profile.id}">${profile.name}</option>`);
     }
   }
   $connection_select.val(recap_connection);
@@ -256,15 +256,15 @@ async function update_running_scene_recap_preset_dropdown() {
   $preset_select.off('click').on('click', () => update_running_scene_recap_preset_dropdown());
 }
 
-async function update_running_scene_recap_connection_profile_dropdown() {
+function update_running_scene_recap_connection_profile_dropdown() {
   const $connection_select = $(selectorsExtension.running.connectionProfile);
   const recap_connection = get_settings('running_scene_recap_connection_profile');
-  const connection_options = await get_connection_profiles();
+  const connection_profiles = get_connection_profile_objects();
   $connection_select.empty();
   $connection_select.append(`<option value="">Same as Current</option>`);
-  if (connection_options && Array.isArray(connection_options)) {
-    for (const option of connection_options) {
-      $connection_select.append(`<option value="${option}">${option}</option>`);
+  if (connection_profiles && Array.isArray(connection_profiles)) {
+    for (const profile of connection_profiles) {
+      $connection_select.append(`<option value="${profile.id}">${profile.name}</option>`);
     }
   }
   $connection_select.val(recap_connection);
@@ -337,15 +337,15 @@ function refresh_lorebooks_settings_ui() {
   }
 }
 
-async function update_autolorebooks_recap_merge_connection_dropdown() {
+function update_autolorebooks_recap_merge_connection_dropdown() {
   const $connection_select = $(selectorsExtension.lorebook.mergeConnection);
   const currentValue = get_settings('auto_lorebooks_recap_merge_connection_profile') || '';
-  const connection_options = await get_connection_profiles();
+  const connection_profiles = get_connection_profile_objects();
   $connection_select.empty();
   $connection_select.append(`<option value="">Same as Current</option>`);
-  if (connection_options && Array.isArray(connection_options)) {
-    for (const option of connection_options) {
-      $connection_select.append(`<option value="${option}">${option}</option>`);
+  if (connection_profiles && Array.isArray(connection_profiles)) {
+    for (const profile of connection_profiles) {
+      $connection_select.append(`<option value="${profile.id}">${profile.name}</option>`);
     }
   }
   $connection_select.val(currentValue);
@@ -365,15 +365,15 @@ async function update_autolorebooks_recap_merge_preset_dropdown() {
   $preset_select.off('click').on('click', () => update_autolorebooks_recap_merge_preset_dropdown());
 }
 
-async function update_autolorebooks_recap_triage_connection_dropdown() {
+function update_autolorebooks_recap_triage_connection_dropdown() {
   const $connection_select = $(selectorsExtension.lorebook.lookupConnection);
   const currentValue = get_settings('auto_lorebooks_recap_lorebook_entry_lookup_connection_profile') || '';
-  const connection_options = await get_connection_profiles();
+  const connection_profiles = get_connection_profile_objects();
   $connection_select.empty();
   $connection_select.append(`<option value="">Same as Current</option>`);
-  if (connection_options && Array.isArray(connection_options)) {
-    for (const option of connection_options) {
-      $connection_select.append(`<option value="${option}">${option}</option>`);
+  if (connection_profiles && Array.isArray(connection_profiles)) {
+    for (const profile of connection_profiles) {
+      $connection_select.append(`<option value="${profile.id}">${profile.name}</option>`);
     }
   }
   $connection_select.val(currentValue);
@@ -393,15 +393,15 @@ async function update_autolorebooks_recap_triage_preset_dropdown() {
   $preset_select.off('click').on('click', () => update_autolorebooks_recap_triage_preset_dropdown());
 }
 
-async function update_autolorebooks_recap_lorebook_entry_deduplicate_connection_dropdown() {
+function update_autolorebooks_recap_lorebook_entry_deduplicate_connection_dropdown() {
   const $connection_select = $(selectorsExtension.lorebook.dedupeConnection);
   const currentValue = get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_connection_profile') || '';
-  const connection_options = await get_connection_profiles();
+  const connection_profiles = get_connection_profile_objects();
   $connection_select.empty();
   $connection_select.append(`<option value="">Same as Current</option>`);
-  if (connection_options && Array.isArray(connection_options)) {
-    for (const option of connection_options) {
-      $connection_select.append(`<option value="${option}">${option}</option>`);
+  if (connection_profiles && Array.isArray(connection_profiles)) {
+    for (const profile of connection_profiles) {
+      $connection_select.append(`<option value="${profile.id}">${profile.name}</option>`);
     }
   }
   $connection_select.val(currentValue);

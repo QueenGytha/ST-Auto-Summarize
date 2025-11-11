@@ -46,6 +46,13 @@ export const MAX_DISPLAY_PERCENTAGE = 99;
 export const FULL_COMPLETION_PERCENTAGE = 100;
 
 // ============================================================================
+// Character/Chat Constants
+// ============================================================================
+
+/** Default character ID used by SillyTavern for global preset configurations */
+export const DEFAULT_CHARACTER_ID = 100000;
+
+// ============================================================================
 // LLM API Constants
 // ============================================================================
 

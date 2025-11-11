@@ -7,7 +7,7 @@ import {
   log,
   SUBSYSTEM } from
 './index.js';
-import { DEBUG_OUTPUT_MEDIUM_LENGTH, DEFAULT_MAX_TOKENS } from './constants.js';
+import { DEBUG_OUTPUT_MEDIUM_LENGTH } from './constants.js';
 
 // Helper: Get setting key for validation type
 function getValidationKey(type , suffix ) {
@@ -57,7 +57,6 @@ async function validate_recap(recap , type  = "scene") {
       const effectiveProfile = resolveProfileId(validation_profile);
 
       const options = {
-        maxTokens: DEFAULT_MAX_TOKENS,
         includePreset: include_preset_prompts,
         preset: validation_preset,
         prefill

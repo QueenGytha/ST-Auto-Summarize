@@ -19,8 +19,7 @@ import {
   MAX_RECAP_ATTEMPTS,
   ID_GENERATION_BASE,
   FULL_COMPLETION_PERCENTAGE,
-  MIN_ENTITY_SECTIONS
-,  DEFAULT_MAX_TOKENS } from './constants.js';
+  MIN_ENTITY_SECTIONS } from './constants.js';
 
 const DEFAULT_STICKY_ROUNDS = 4;
 
@@ -589,7 +588,6 @@ async function runModelWithSettings(config) {
                             OperationType.RESOLVE_LOREBOOK_ENTRY;
 
       const options = {
-        maxTokens: DEFAULT_MAX_TOKENS,
         includePreset: include_preset_prompts,
         preset: completionPreset,
         prefill: prefill || ''

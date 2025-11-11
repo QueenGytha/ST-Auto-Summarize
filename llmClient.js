@@ -4,7 +4,7 @@
 import { getContext } from '../../../extensions.js';
 import { injectMetadataIntoChatArray } from './metadataInjector.js';
 import { getOperationSuffix } from './operationContext.js';
-import { debug, error, SUBSYSTEM, count_tokens, get_context_size, main_api, trimToEndSentence, loadPresetPrompts, get_current_preset } from './index.js';
+import { debug, error, SUBSYSTEM, count_tokens, get_context_size, main_api, trimToEndSentence, loadPresetPrompts } from './index.js';
 
 // eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Complete LLM wrapper
 export async function sendLLMRequest(profileId, prompt, operationType, options = {}) {
@@ -40,19 +40,22 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
 
   debug(SUBSYSTEM.CORE, `[LLMClient] Sending request with profile "${profile.name}" (${profileId}), operation: ${operationType}`);
 
-  // 4. LOAD GENERATION PARAMETERS FROM PROFILE PRESET
+  // 4. LOAD GENERATION PARAMETERS FROM PRESET
   let generationParams = {};
 
-  if (!profile.preset) {
+  // Use options.preset if provided, otherwise fall back to profile's preset
+  const effectivePresetName = options.preset || profile.preset;
+
+  if (!effectivePresetName) {
     throw new Error(`FATAL: Connection profile "${profile.name}" (${profileId}) has no preset configured. Every connection profile MUST have a completion preset configured.`);
   }
 
   const { getPresetManager } = await import('../../../preset-manager.js');
   const presetManager = getPresetManager('openai');
-  const presetData = presetManager?.getCompletionPresetByName(profile.preset);
+  const presetData = presetManager?.getCompletionPresetByName(effectivePresetName);
 
   if (!presetData) {
-    throw new Error(`FATAL: Preset "${profile.preset}" configured in connection profile "${profile.name}" not found. Preset must exist and be valid.`);
+    throw new Error(`FATAL: Preset "${effectivePresetName}" not found. Preset must exist and be valid.`);
   }
 
   generationParams = {
@@ -72,26 +75,24 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
 
   const presetMaxTokens = presetData.genamt || presetData.openai_max_tokens;
   if (!presetMaxTokens || presetMaxTokens <= 0) {
-    throw new Error(`FATAL: Preset "${profile.preset}" has no valid max_tokens (genamt or openai_max_tokens). Preset must have max_tokens > 0 configured.`);
+    throw new Error(`FATAL: Preset "${effectivePresetName}" has no valid max_tokens (genamt or openai_max_tokens). Preset must have max_tokens > 0 configured.`);
   }
 
-  debug(SUBSYSTEM.CORE, `[LLMClient] Loaded generation params from preset "${profile.preset}":`, generationParams);
+  debug(SUBSYSTEM.CORE, `[LLMClient] Loaded generation params from preset "${effectivePresetName}":`, generationParams);
   debug(SUBSYSTEM.CORE, `[LLMClient] Loaded max_tokens from preset: ${presetMaxTokens}`);
 
   // 5. LOAD PRESET PROMPTS + PREFILL (ConnectionManager doesn't do this)
   let messages;
   let effectivePrefill = options.prefill || '';
 
-  if (options.includePreset && options.preset) {
-    // Load preset messages
-    const presetName = options.preset || get_current_preset();
-    const presetMessages = await loadPresetPrompts(presetName);
+  debug(SUBSYSTEM.CORE, `[LLMClient] includePreset=${options.includePreset}, preset="${options.preset || effectivePresetName}"`);
 
-    // Load preset prefill
-    const { getPresetManager: getPresetManager2 } = await import('../../../preset-manager.js');
-    const presetManager2 = getPresetManager2('openai');
-    const presetData2 = presetManager2?.getCompletionPresetByName(presetName);
-    const presetPrefill = presetData2?.assistant_prefill || '';
+  if (options.includePreset) {
+    // Load preset messages - use same preset as generation params
+    const presetMessages = await loadPresetPrompts(effectivePresetName);
+
+    // Load preset prefill - reuse presetData from above
+    const presetPrefill = presetData?.assistant_prefill || '';
 
     // Prefill priority: explicit option > preset
     effectivePrefill = options.prefill || presetPrefill;
@@ -144,7 +145,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     const result = await ctx.ConnectionManagerRequestService.sendRequest(
       profileId,
       messagesWithMetadata,
-      options.maxTokens ?? presetMaxTokens,
+      presetMaxTokens,
       {
         stream: options.stream ?? false,
         signal: options.signal ?? null,

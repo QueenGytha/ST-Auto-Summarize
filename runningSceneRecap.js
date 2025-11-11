@@ -13,7 +13,6 @@ import {
   saveMetadata,
   getCurrentChatId } from
 './index.js';
-import { DEFAULT_MAX_TOKENS } from './constants.js';
 import { running_scene_recap_prompt } from './defaultPrompts.js';
 // Lorebook processing for running recap has been disabled; no queue integration needed here.
 
@@ -324,7 +323,6 @@ async function generate_running_scene_recap(skipQueue  = false) {
       debug(SUBSYSTEM.RUNNING, 'Sending running scene recap prompt to LLM');
 
       const options = {
-        maxTokens: DEFAULT_MAX_TOKENS,
         includePreset: include_preset_prompts,
         preset: running_preset,
         prefill
@@ -450,7 +448,6 @@ async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index
     const effectiveProfile = resolveProfileId(running_profile);
 
     const options = {
-      maxTokens: DEFAULT_MAX_TOKENS,
       includePreset: include_preset_prompts,
       preset: running_preset,
       prefill

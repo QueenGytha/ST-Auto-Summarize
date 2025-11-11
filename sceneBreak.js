@@ -16,7 +16,6 @@ import {
   convertLiteralNewlinesToActual,
   convertActualNewlinesToLiteral } from
 './index.js';
-import { DEFAULT_MAX_TOKENS } from './constants.js';
 import {
   queueCombineSceneWithRunning,
   queueProcessLorebookEntry } from
@@ -891,7 +890,6 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
       const { sendLLMRequest } = await import('./llmClient.js');
 
       const options = {
-        maxTokens: DEFAULT_MAX_TOKENS,
         includePreset: include_preset_prompts,
         preset: preset_name,
         prefill

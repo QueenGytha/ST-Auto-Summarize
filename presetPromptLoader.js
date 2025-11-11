@@ -7,7 +7,7 @@
  */
 
 import { debug, SUBSYSTEM } from './utils.js';
-import { DEBUG_OUTPUT_SHORT_LENGTH } from './constants.js';
+import { DEBUG_OUTPUT_SHORT_LENGTH, DEFAULT_CHARACTER_ID } from './constants.js';
 
 /**
  * Loads prompts from a completion preset by name
@@ -44,13 +44,34 @@ export async function loadPresetPrompts(presetName) {
             return [];
         }
 
-        // Include only enabled prompts with content
+        // Get current character/chat ID for prompt_order lookup
+        const { this_chid } = await import('../../../../script.js');
+        const characterId = this_chid ?? DEFAULT_CHARACTER_ID; // Use default if no character
+
+        // Get prompt order configuration for this character
+        const promptOrderConfig = preset.prompt_order?.[characterId] ?? preset.prompt_order?.[DEFAULT_CHARACTER_ID];
+
+        // Build enabled prompts set from prompt_order
+        const enabledIdentifiers = new Set();
+        if (promptOrderConfig && Array.isArray(promptOrderConfig.order)) {
+            for (const item of promptOrderConfig.order) {
+                if (item.enabled !== false) {
+                    enabledIdentifiers.add(item.identifier);
+                }
+            }
+        }
+
+        // Include prompts with content that are enabled in prompt_order
         const messages = preset.prompts
             .filter(p => {
-                // Skip if explicitly disabled
-                if (p.enabled === false) {return false;}
                 // Must have content
                 if (!p.content || p.content.trim() === '') {return false;}
+                // If prompt_order exists, check if this prompt is enabled there
+                if (enabledIdentifiers.size > 0) {
+                    return enabledIdentifiers.has(p.identifier);
+                }
+                // Fallback: check enabled field in prompts array
+                if (p.enabled === false) {return false;}
                 return true;
             })
             .map(p => ({
@@ -66,14 +87,21 @@ export async function loadPresetPrompts(presetName) {
                 return orderA - orderB;
             });
 
-        debug(SUBSYSTEM.CORE, `[PresetPromptLoader] Loaded ${messages.length} prompts from preset "${presetName}"`);
+        debug(SUBSYSTEM.CORE, `[PresetPromptLoader] Loaded ${messages.length} prompts from preset "${presetName}" for character ${characterId}`);
 
         if (messages.length > 0) {
-            const promptIdentifiers = preset.prompts
-                .filter(p => p.content && p.content.trim() !== '')
+            const loadedIdentifiers = messages
                 .map(p => p.identifier || p.name || 'unnamed')
                 .join(', ');
-            debug(SUBSYSTEM.CORE, `[PresetPromptLoader] Prompt identifiers: ${promptIdentifiers}`);
+            debug(SUBSYSTEM.CORE, `[PresetPromptLoader] Loaded prompt identifiers: ${loadedIdentifiers}`);
+        }
+
+        // Log which prompts were skipped
+        const allWithContent = preset.prompts.filter(p => p.content && p.content.trim() !== '');
+        const skipped = allWithContent.filter(p => !messages.some(m => m.identifier === p.identifier));
+        if (skipped.length > 0) {
+            const skippedIds = skipped.map(p => p.identifier || p.name || 'unnamed').join(', ');
+            debug(SUBSYSTEM.CORE, `[PresetPromptLoader] Skipped ${skipped.length} prompts (disabled or not in prompt_order): ${skippedIds}`);
         }
 
         return messages;

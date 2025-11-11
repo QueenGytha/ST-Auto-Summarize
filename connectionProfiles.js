@@ -122,6 +122,13 @@ async function get_connection_profiles() {
   }
 
 }
+function get_connection_profile_objects() {
+  // Get full profile objects with both id and name
+
+  if (!check_connection_profiles_active()) {return null;}
+  const ctx = getContext();
+  return ctx.extensionSettings.connectionManager?.profiles || [];
+}
 async function verify_connection_profile(name ) {
   // check if the given connection profile name is valid
   if (!check_connection_profiles_active()) {return false;} // if the extension isn't active, return
@@ -148,5 +155,6 @@ export {
   get_recap_connection_profile,
   set_connection_profile,
   get_connection_profiles,
+  get_connection_profile_objects,
   verify_connection_profile,
   check_connection_profile_valid };

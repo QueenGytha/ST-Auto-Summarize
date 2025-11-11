@@ -2,7 +2,7 @@
 // lorebookEntryMerger.js - AI-powered merging of new lorebook content with existing entries
 
 import { SUBSYSTEM } from './index.js';
-import { DEBUG_OUTPUT_LONG_LENGTH, DEBUG_OUTPUT_MEDIUM_LENGTH, DEFAULT_MAX_TOKENS } from './constants.js';
+import { DEBUG_OUTPUT_LONG_LENGTH, DEBUG_OUTPUT_MEDIUM_LENGTH } from './constants.js';
 
 // Will be imported from index.js via barrel exports
 let log , debug , error ; // Logging functions - any type is legitimate
@@ -145,7 +145,6 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
       debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] Using sendLLMRequest');
 
       const options = {
-        maxTokens: DEFAULT_MAX_TOKENS,
         includePreset: include_preset_prompts,
         preset: effectivePresetName,
         prefill: prefill || ''

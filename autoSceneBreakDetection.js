@@ -11,7 +11,6 @@ import {
   SUBSYSTEM,
   saveChatDebounced } from
 './index.js';
-import { DEFAULT_MAX_TOKENS } from './constants.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 4;
 
@@ -282,48 +281,8 @@ async function parseSceneBreakResponse(response, _startIndex, _endIndex, _filter
     debug('Parsed JSON - sceneBreakAt:', sceneBreakAt, '- Rationale:', rationale);
     return { sceneBreakAt, rationale };
   } catch (jsonErr) {
-    // JSON parsing failed, try structured fallback patterns
-    debug('JSON parsing failed, using fallback:', jsonErr.message);
-
-    const lower = response.toLowerCase();
-    const original = response.trim();
-
-    // Pattern 1: Key-value extraction (sceneBreakAt: X or sceneBreakAt = X)
-    const keyValueMatch = original.match(/sceneBreakAt\s*[:=]\s*(?:false|(\d+))/i);
-    if (keyValueMatch) {
-      const sceneBreakAt = keyValueMatch[1] ? Number(keyValueMatch[1]) : false;
-      const rationaleMatch = original.match(/rationale\s*[:=]\s*["']?([^"'\n]+)["']?/i);
-      const rationale = rationaleMatch ? rationaleMatch[1].trim() : 'Extracted from key-value pattern';
-      debug(`Fallback pattern 1 matched: sceneBreakAt=${sceneBreakAt}, rationale="${rationale}"`);
-      return { sceneBreakAt, rationale };
-    }
-
-    // Pattern 2: Message number patterns (message #5, message 5, #5)
-    const messageNumMatch = original.match(/\b(?:message\s*#?|#)(\d+)\b/i);
-    if (messageNumMatch) {
-      const sceneBreakAt = Number(messageNumMatch[1]);
-      const rationale = 'Extracted message number from response';
-      debug(`Fallback pattern 2 matched: message #${sceneBreakAt}`);
-      return { sceneBreakAt, rationale };
-    }
-
-    // Pattern 3: Explicit false/no break statements
-    if (lower.includes('false') || lower.includes('no break') || lower.includes('no scene break')) {
-      debug('Fallback pattern 3 matched: explicit false');
-      return { sceneBreakAt: false, rationale: 'No scene break found' };
-    }
-
-    // Pattern 4: Just a number (if response is mostly just a number)
-    const justNumberMatch = original.match(/^\s*(\d+)\s*$/);
-    if (justNumberMatch) {
-      const sceneBreakAt = Number(justNumberMatch[1]);
-      debug(`Fallback pattern 4 matched: just number ${sceneBreakAt}`);
-      return { sceneBreakAt, rationale: 'Message number extracted from simple response' };
-    }
-
-    // Default: conservative fallback (assume no break if uncertain)
-    debug('No fallback patterns matched, defaulting to false');
-    return { sceneBreakAt: false, rationale: 'Could not parse scene break information from response' };
+    error('Failed to parse scene break response:', jsonErr.message);
+    throw jsonErr;
   }
 }
 
@@ -447,8 +406,7 @@ endIndex )
       response = await sendLLMRequest(effectiveProfile, prompt, OperationType.DETECT_SCENE_BREAK, {
         prefill,
         includePreset: includePresetPrompts,
-        preset: preset,
-        maxTokens: DEFAULT_MAX_TOKENS
+        preset: preset
       });
 
       debug('AI raw response for range', startIndex, 'to', endIndex, ':', response);
