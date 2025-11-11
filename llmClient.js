@@ -8,6 +8,27 @@ import { getOperationSuffix } from './operationContext.js';
 import { debug, error, SUBSYSTEM, count_tokens, get_context_size, main_api, trimToEndSentence, loadPresetPrompts, get_current_preset } from './index.js';
 import { DEFAULT_MAX_TOKENS } from './constants.js';
 
+async function getPresetOverridePayload(presetName) {
+  if (!presetName) {return {};}
+
+  const { getPresetManager } = await import('../../../preset-manager.js');
+  const presetManager = getPresetManager('openai');
+  if (!presetManager) {return {};}
+
+  const preset = presetManager.getCompletionPresetByName(presetName);
+  if (!preset) {return {};}
+
+  const payload = {
+    temperature: preset.temperature >= 0 ? Number(preset.temperature) : undefined,
+  };
+
+  for (const key of Object.keys(payload)) {
+    if (payload[key] === undefined) {delete payload[key];}
+  }
+
+  return payload;
+}
+
 // eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Complete LLM wrapper with all recap_text functionality
 export async function sendLLMRequest(profileId, prompt, operationType, options = {}) {
   if (!profileId || profileId === '') {
@@ -103,7 +124,11 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
   const messagesWithMetadata = [...messages];
   injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
 
-  // 7. CALL ConnectionManager
+  // 7. GET PRESET OVERRIDE PAYLOAD
+  const presetOverride = options.preset ? await getPresetOverridePayload(options.preset) : {};
+  const overridePayload = { ...presetOverride, ...options.overridePayload };
+
+  // 8. CALL ConnectionManager
   try {
     const result = await ctx.ConnectionManagerRequestService.sendRequest(
       profileId,
@@ -113,11 +138,11 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
         stream: options.stream ?? false,
         signal: options.signal ?? null,
         extractData: options.extractData ?? true,
-        includePreset: !!options.preset, // Load generation settings from profile's preset
+        includePreset: false,
         includeInstruct: options.includeInstruct ?? false,
         instructSettings: options.instructSettings || {}
       },
-      options.overridePayload || {}
+      overridePayload
     );
 
     // DEBUG: Log raw response structure
@@ -142,7 +167,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
       debug(SUBSYSTEM.CORE, `[LLMClient] Response string length: ${result.length}, preview: ${result.slice(0, DEBUG_PREVIEW_LENGTH)}`);
     }
 
-    // 8. NORMALIZE RESPONSE FORMAT
+    // 9. NORMALIZE RESPONSE FORMAT
     // ConnectionManager with reasoning returns {content, reasoning}
     // Normalize to always return string content
     let finalResult = result;
