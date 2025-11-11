@@ -7,33 +7,6 @@ import { getOperationSuffix } from './operationContext.js';
 import { debug, error, SUBSYSTEM, count_tokens, get_context_size, main_api, trimToEndSentence, loadPresetPrompts, get_current_preset } from './index.js';
 import { DEFAULT_MAX_TOKENS } from './constants.js';
 
-async function getPresetOverridePayload(presetName) {
-  if (!presetName) {return {};}
-
-  const { getPresetManager } = await import('../../../preset-manager.js');
-  const presetManager = getPresetManager('openai');
-  if (!presetManager) {return {};}
-
-  const preset = presetManager.getCompletionPresetByName(presetName);
-  if (!preset) {return {};}
-
-  const payload = {
-    temperature: preset.temperature >= 0 ? Number(preset.temperature) : undefined,
-    top_p: preset.top_p >= 0 ? Number(preset.top_p) : undefined,
-    top_k: preset.top_k >= 0 ? Number(preset.top_k) : undefined,
-    min_p: preset.min_p >= 0 ? Number(preset.min_p) : undefined,
-    repetition_penalty: preset.repetition_penalty >= 0 ? Number(preset.repetition_penalty) : undefined,
-    frequency_penalty: preset.frequency_penalty >= 0 ? Number(preset.frequency_penalty) : undefined,
-    presence_penalty: preset.presence_penalty >= 0 ? Number(preset.presence_penalty) : undefined,
-  };
-
-  for (const key of Object.keys(payload)) {
-    if (payload[key] === undefined) {delete payload[key];}
-  }
-
-  return payload;
-}
-
 // eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Complete LLM wrapper
 export async function sendLLMRequest(profileId, prompt, operationType, options = {}) {
   if (!profileId || profileId === '') {
@@ -129,11 +102,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
   const messagesWithMetadata = [...messages];
   injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
 
-  // 7. GET PRESET OVERRIDE PAYLOAD
-  const presetOverride = options.preset ? await getPresetOverridePayload(options.preset) : {};
-  const overridePayload = { ...presetOverride, ...options.overridePayload };
-
-  // 8. CALL ConnectionManager
+  // 7. CALL ConnectionManager
   try {
     const result = await ctx.ConnectionManagerRequestService.sendRequest(
       profileId,
@@ -143,11 +112,11 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
         stream: options.stream ?? false,
         signal: options.signal ?? null,
         extractData: options.extractData ?? true,
-        includePreset: false,
+        includePreset: options.includePreset ?? Boolean(options.preset),
         includeInstruct: options.includeInstruct ?? false,
         instructSettings: options.instructSettings || {}
       },
-      overridePayload
+      options.overridePayload || {}
     );
 
     // DEBUG: Log raw response structure
