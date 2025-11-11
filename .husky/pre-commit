@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 # Run selector validation
 echo "Running selector validation..."
 npm run validate-selectors || exit 1
