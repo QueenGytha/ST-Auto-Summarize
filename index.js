@@ -13,7 +13,7 @@ import { runRegexScript } from '../../../../scripts/extensions/regex/engine.js';
 import { getContext, getApiUrl, extension_settings } from '../../../extensions.js';
 import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from '../../../utils.js';
 import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, saveSettingsDebounced, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata, getCurrentChatId, activateSendButtons as _originalActivateSendButtons, deactivateSendButtons as _originalDeactivateSendButtons } from '../../../../script.js';
-import { world_info, selected_world_info } from '../../../world-info.js';
+import { loadWorldInfo } from '../../../world-info.js';
 
 // Import SillyTavern selectors (direct import since this is the barrel file)
 import { selectorsSillyTavern } from './selectorsSillyTavern.js';
@@ -194,6 +194,9 @@ export * from './lorebookManager.js';
 export * from './lorebookEntryMerger.js';
 export * from './categoryIndexes.js';
 export * from './recapToLorebookProcessor.js';
+
+// Checkpoint/branch management
+export * from './checkpointManager.js';
 
 // Metadata injection for LLM requests
 export * from './metadataInjector.js';
@@ -390,16 +393,24 @@ function updateStickyTracking(entries, messageIndex) {
  * Persist lorebook entries to message.extra for durability across refresh
  */
 /**
- * Get ALL lorebook entries from currently loaded lorebooks
- * @returns {Array} Array of all entry objects with full content
+ * Get ALL lorebook entries from lorebooks used by active entries
+ * @param {Array} mergedEntries - Active lorebook entries to extract world names from
+ * @returns {Promise<Array>} Promise resolving to array of all entry objects with full content
  */
-function getAllLorebookEntries() {
+async function getAllLorebookEntries(mergedEntries) {
   const allEntries = [];
 
-  for (const worldName of selected_world_info) {
-    const worldData = world_info[worldName];
+  // Extract unique world names from active entries
+  const uniqueWorldNames = new Set(mergedEntries.map(e => e.world));
+
+  debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Loading entries from ${uniqueWorldNames.size} unique lorebook(s)`);
+
+  for (const worldName of uniqueWorldNames) {
+    // eslint-disable-next-line no-await-in-loop -- Sequential loading required to fetch lorebook data
+    const worldData = await loadWorldInfo(worldName);
 
     if (!worldData?.entries) {
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Lorebook "${worldName}" has no entries`);
       continue;
     }
 
@@ -423,6 +434,7 @@ function getAllLorebookEntries() {
     }
   }
 
+  debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Loaded ${allEntries.length} total entries from all lorebooks`);
   return allEntries;
 }
 
@@ -503,7 +515,7 @@ export function installWorldInfoActivationLogger() {
   });
 
   // Track world info activations
-  eventSource.on(event_types.WORLD_INFO_ACTIVATED, (entries) => {
+  eventSource.on(event_types.WORLD_INFO_ACTIVATED, async (entries) => {
     const chatLength = ctx.chat?.length || 0;
 
     // Use calculated target index, fallback to last message
@@ -560,7 +572,7 @@ export function installWorldInfoActivationLogger() {
     debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Total active entries for message ${messageIndex}: ${mergedEntries.length} (${enhancedEntries.length} new + ${stillActive.length} still-active)`);
 
     // Capture ALL entries from lorebooks for complete snapshot
-    const allLorebookEntries = getAllLorebookEntries();
+    const allLorebookEntries = await getAllLorebookEntries(mergedEntries);
     const activeUIDs = new Set(mergedEntries.map(e => e.uid));
 
     // Parse ALL entries into active/inactive based on activation state

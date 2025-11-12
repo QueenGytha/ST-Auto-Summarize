@@ -43,7 +43,7 @@
   "homepage": "https://github.com/QueenGytha/ST-Auto-Recap#readme",
   "lint-staged": {
     "*.js": [
-      "eslint --max-warnings 0",
+      "eslint --max-warnings 0 --no-warn-ignored",
       "node syntax-check.js"
     ]
   },

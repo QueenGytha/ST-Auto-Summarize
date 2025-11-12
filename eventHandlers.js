@@ -443,6 +443,9 @@ async function initializeExtension() {
     // Initialize lorebooks modules
     debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing lorebookManager...');
     lorebookManager.initLorebookManager(lorebookUtils);
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing checkpointManager...');
+    const checkpointManager = await import('./checkpointManager.js');
+    checkpointManager.initCheckpointManager(lorebookUtils);
     debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing categoryIndexes...');
     categoryIndexes.initCategoryIndexes(lorebookUtils, lorebookManager, { get_settings });
 

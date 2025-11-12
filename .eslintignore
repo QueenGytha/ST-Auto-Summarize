@@ -1,0 +1,2 @@
+# Ignore test files from strict ESLint rules
+tests/**

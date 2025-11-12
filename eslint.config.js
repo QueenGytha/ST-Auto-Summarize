@@ -16,6 +16,10 @@ import {
 
 export default [
 {
+  // Ignore test files from strict linting
+  ignores: ['tests/**']
+},
+{
   // Apply to all JS files
   files: ['**/*.js'],
 
