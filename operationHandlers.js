@@ -204,6 +204,25 @@ async function handleContinuityVeto({ operation, chat, sceneBreakAt, rationale, 
   return { vetoed: false };
 }
 
+function buildMergeErrorDiagnostics(resolvedUid, record, existingEntry, registryState, existingEntriesRaw) {
+  const registryKeys = Object.keys(registryState.index || {}).join(', ');
+  const lorebookUids = existingEntriesRaw?.map((e) => e.uid).join(', ') || 'none';
+  const hasRecord = !!record;
+  const hasEntry = !!existingEntry;
+
+  const diagnostics = [
+    `Registry has record: ${hasRecord}`,
+    `Lorebook has entry: ${hasEntry}`,
+    `Registry keys: [${registryKeys}]`,
+    `Lorebook uids: [${lorebookUids}]`,
+    hasRecord && !hasEntry ? `DESYNC: Registry claims uid ${resolvedUid} exists but lorebook entry is missing` : '',
+    !hasRecord && hasEntry ? `DESYNC: Lorebook has entry but registry record is missing` : '',
+    !hasRecord && !hasEntry ? `CRITICAL: Neither registry nor lorebook have uid ${resolvedUid}` : ''
+  ].filter(Boolean).join('. ');
+
+  return { diagnostics, registryKeys, lorebookUids };
+}
+
 // eslint-disable-next-line max-lines-per-function -- Sequential operation handler registration for 10+ operation types (431 lines is acceptable for initialization)
 export function registerAllOperationHandlers() {
   // Validate recap
@@ -698,10 +717,14 @@ export function registerAllOperationHandlers() {
 
     if (!record || !existingEntry) {
       // Hard fail: do NOT fallback to create — prevents duplicates
-      debug(SUBSYSTEM.QUEUE, `MERGE failed to locate resolvedUid=${resolvedUid}. Registry keys: ${Object.keys(registryState.index || {}).join(', ')}`);
+      const { diagnostics, registryKeys, lorebookUids } = buildMergeErrorDiagnostics(resolvedUid, record, existingEntry, registryState, existingEntriesRaw);
+
+      debug(SUBSYSTEM.QUEUE, `MERGE failed to locate resolvedUid=${resolvedUid}. Registry keys: ${registryKeys}. Lorebook uids: ${lorebookUids}`);
+
       // Pause the queue to prevent further corruption
       await pauseQueue();
-      throw new Error(`DUPLICATE/STATE ERROR: Cannot merge into uid ${resolvedUid} — registry/entry not found after hydration.`);
+
+      throw new Error(`DUPLICATE/STATE ERROR: Cannot merge into uid ${resolvedUid} — registry/entry not found after hydration. ${diagnostics}`);
     }
 
     const mergeResult = await contextMergeLorebookEntry(lorebookName, existingEntry, entryData, { useQueue: false });
