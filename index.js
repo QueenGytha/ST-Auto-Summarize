@@ -197,6 +197,7 @@ export * from './recapToLorebookProcessor.js';
 
 // Checkpoint/branch management
 export * from './checkpointManager.js';
+export * from './checkpointValidator.js';
 
 // Metadata injection for LLM requests
 export * from './metadataInjector.js';

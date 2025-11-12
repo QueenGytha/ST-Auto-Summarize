@@ -159,17 +159,21 @@ export async function createValidatedCheckpoint(mesId, checkpointName) {
     return { success: false, error: String(err) };
 
   } finally {
-    if (originalState === undefined) {
-      delete chat_metadata.auto_recap_checkpoint_state;
-    } else {
-      chat_metadata.auto_recap_checkpoint_state = originalState;
-    }
-    chat_metadata.world_info = originalLorebook;
+    if (getCurrentChatId() === startChatId) {
+      if (originalState === undefined) {
+        delete chat_metadata.auto_recap_checkpoint_state;
+      } else {
+        chat_metadata.auto_recap_checkpoint_state = originalState;
+      }
+      chat_metadata.world_info = originalLorebook;
 
-    try {
-      await saveMetadata();
-    } catch (metaErr) {
-      error?.('createValidatedCheckpoint: failed to save metadata restoration', metaErr);
+      try {
+        await saveMetadata();
+      } catch (metaErr) {
+        error?.('createValidatedCheckpoint: failed to save metadata restoration', metaErr);
+      }
+    } else {
+      error?.('createValidatedCheckpoint: chat context changed - cannot restore metadata safely');
     }
 
     isCreatingCheckpoint = false;
@@ -218,17 +222,21 @@ export async function createValidatedBranch(mesId) {
     return { success: false, error: String(err) };
 
   } finally {
-    if (originalState === undefined) {
-      delete chat_metadata.auto_recap_checkpoint_state;
-    } else {
-      chat_metadata.auto_recap_checkpoint_state = originalState;
-    }
-    chat_metadata.world_info = originalLorebook;
+    if (getCurrentChatId() === startChatId) {
+      if (originalState === undefined) {
+        delete chat_metadata.auto_recap_checkpoint_state;
+      } else {
+        chat_metadata.auto_recap_checkpoint_state = originalState;
+      }
+      chat_metadata.world_info = originalLorebook;
 
-    try {
-      await saveMetadata();
-    } catch (metaErr) {
-      error?.('createValidatedBranch: failed to save metadata restoration', metaErr);
+      try {
+        await saveMetadata();
+      } catch (metaErr) {
+        error?.('createValidatedBranch: failed to save metadata restoration', metaErr);
+      }
+    } else {
+      error?.('createValidatedBranch: chat context changed - cannot restore metadata safely');
     }
 
     isCreatingCheckpoint = false;
