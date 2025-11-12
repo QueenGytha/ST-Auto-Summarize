@@ -37,6 +37,21 @@ export function initLorebookManager(utils ) {
   get_settings = utils.get_settings;
 }
 
+async function invalidateLorebookCache(lorebookName ) {
+  if (!lorebookName) {
+    return;
+  }
+  try {
+    const { worldInfoCache } = await import('../../../world-info.js');
+    if (worldInfoCache && typeof worldInfoCache.delete === 'function') {
+      worldInfoCache.delete(lorebookName);
+      debug?.(`Invalidated worldInfoCache for: ${lorebookName}`);
+    }
+  } catch (err) {
+    error?.('Failed to invalidate worldInfoCache', err);
+  }
+}
+
 // eslint-disable-next-line complexity -- Initialization requires validation of multiple entity types and defensive property checks
 async function ensureRegistryEntriesForLorebook(lorebookName ) {
   try {
@@ -90,6 +105,7 @@ async function ensureRegistryEntriesForLorebook(lorebookName ) {
 
     if (added) {
       await saveWorldInfo(lorebookName, data, true);
+      await invalidateLorebookCache(lorebookName);
       debug?.(`Initialized registry entries for lorebook: ${lorebookName}`);
       // Reorder alphabetically after creating registry entries
       await reorderLorebookEntriesAlphabetically(lorebookName);
@@ -153,6 +169,7 @@ items )
     const ensuredEntry  = entry;
     ensuredEntry.content = [header, ...lines].join('\n').trim();
     await saveWorldInfo(lorebookName, data, true);
+    await invalidateLorebookCache(lorebookName);
     debug?.(`Updated registry entry for type "${type}"`);
   } catch (err) {
     error?.('Error updating registry entry content', err);
@@ -770,6 +787,7 @@ export async function addLorebookEntry(lorebookName , entryData  = {}) {
     applyEntryDataToNewEntry(newEntry, entryData);
 
     await saveWorldInfo(lorebookName, data, true);
+    await invalidateLorebookCache(lorebookName);
 
     log(`Added entry to lorebook "${lorebookName}": UID ${newEntry.uid}`);
 
@@ -865,6 +883,7 @@ export async function modifyLorebookEntry(lorebookName , uid , updates  = {}) {
     applyEntryUpdates(entry, updates);
 
     await saveWorldInfo(lorebookName, data, true);
+    await invalidateLorebookCache(lorebookName);
 
     log(`Modified entry UID ${uid} in lorebook "${lorebookName}"`);
 
@@ -923,6 +942,7 @@ export async function deleteLorebookEntry(lorebookName , uid , silent  = true) {
 
     // Save the lorebook
     await saveWorldInfo(lorebookName, data, true);
+    await invalidateLorebookCache(lorebookName);
 
     log(`Deleted entry UID ${uid} from lorebook "${lorebookName}"`);
     return true;
@@ -1021,6 +1041,7 @@ export async function reorderLorebookEntriesAlphabetically(lorebookName ) {
 
     // Save the lorebook
     await saveWorldInfo(lorebookName, data, true);
+    await invalidateLorebookCache(lorebookName);
 
     log(`Reordered ${entriesArray.length} entries alphabetically in lorebook "${lorebookName}"`);
     return true;
