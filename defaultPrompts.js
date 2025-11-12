@@ -257,24 +257,40 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 - Do not invent motives beyond the text
 - Franchise names: ignore canon outside this transcript
 //
-// ⚠️ EXPLICIT CONTENT HANDLING ⚠️
+// ⚠️ EXPLICIT CONTENT HANDLING — CRITICAL REQUIREMENT ⚠️
 // When the scene contains intimate, sexual, or adult content:
+//
+// ABSOLUTE PROHIBITION: NEVER use vague euphemisms. Use direct, specific language or your output will be REJECTED.
+//
+// REQUIRED approach:
 // - BE SPECIFIC about physical acts, positions, body parts involved
-// - NEVER use vague euphemisms like "intimate contact", "sexual contact", "engaged sexually", "made love"
-// - State what actually happened: kissing, touching (where), penetration (type), orgasms, etc.
+// - State what actually happened: kissing, touching (where), penetration (type), orgasms, manual stimulation, oral sex, etc.
+// - Use direct terms: "had sex", "touched [body part]", "performed oral sex", "penetrated with [specifics]"
 // - Capture consent dynamics, comfort levels, who initiated, boundaries respected or tested
 // - Include kink/preference details when present (dominance/submission, specific acts, dirty talk, roleplay scenarios)
 // - Track sexual progression: what acts they've done vs haven't done together
 // - Preserve the explicit terminology from the source text; do not sanitize
-// - Purpose: Future LLM needs to know EXACTLY what sexual history exists to maintain consistency
-// - Examples of GOOD explicit capture:
-//   ✅ "Adam touched Selenay's breast; she guided his hand lower; he penetrated her with fingers while maintaining eye contact"
-//   ✅ "Bob performed oral sex on Alice until orgasm; she reciprocated; penetrative sex followed with Alice on top"
-// - Examples of BAD vague euphemisms to AVOID:
-//   ❌ "intimate contact" - USELESS, says nothing
-//   ❌ "sexually engaged" - USELESS, says nothing
-//   ❌ "made love" - USELESS, says nothing
-//   ❌ "physical intimacy" - USELESS, says nothing
+// - ALSO capture emotional/psychological context: motivations, emotional state during, psychological impact after
+//
+// Purpose: Future LLM needs to know EXACTLY what sexual history exists AND the emotional/relational context to maintain consistency
+//
+// Examples of GOOD explicit capture (combines specifics with emotional context):
+//   ✅ "Senta had sex with Adam in alley (motivated by preventing Elspeth from attempting first); during sex, Senta attempted Choosing but Adam consciously rejected it; unprecedented outcome: telepathic link persists despite rejection (cause unknown); both uncertain of implications for their bond"
+//   ✅ "Adam touched Selenay's breast; she guided his hand lower; he penetrated her with fingers while maintaining eye contact; Selenay experienced intense arousal mixed with rebellion against royal constraints"
+//   ✅ "Bob performed oral sex on Alice until orgasm; she reciprocated; penetrative sex followed with Alice on top; Alice felt vulnerable but trusted Bob enough to take control; afterward both experienced deeper emotional connection"
+//
+// Examples of PROHIBITED vague euphemisms (outputs containing these will be REJECTED):
+//   ❌ "intimate contact" - USELESS, completely vague, says nothing about what happened
+//   ❌ "sexual contact" - USELESS, completely vague, says nothing about what happened
+//   ❌ "sexually engaged" - USELESS, completely vague, says nothing about what happened
+//   ❌ "engaged in intimacy" - USELESS, completely vague, says nothing about what happened
+//   ❌ "made love" - USELESS, euphemistic, says nothing about what happened
+//   ❌ "physical intimacy" - USELESS, completely vague, says nothing about what happened
+//   ❌ "coupling" - USELESS, euphemistic, says nothing about what happened
+//   ❌ "physically joined" - USELESS, euphemistic, says nothing about what happened
+//   ❌ "were intimate" - USELESS, completely vague, says nothing about what happened
+//
+// VERIFICATION: Before submitting output, search for ANY of the prohibited phrases above. If found, rewrite using direct language.
 //
 // recap field (string):
 // Use markdown headers and bullets in this exact order:
@@ -334,17 +350,23 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //   ✅ "Quiet tavern; warm firelight; intimate conversation mood"
 //
 // emotional_beats field (string):
-// - Key emotional moments for named characters with triggers/motivations that explain the feeling
-// - Format: "CharacterName: emotion/internal state with brief trigger or motivation; NextCharacter: emotion with trigger"
-// - Focus on internal emotional states, psychological complexity, and motivations (the "why" behind actions)
-// - Capture contradictions, conflicting feelings, and emotional evolution within the scene
-// - Include what drives the emotion (past events, social pressure, fears, desires, internal conflicts)
-// - Purpose: Preserves character psychology and emotional continuity when original messages scroll out
-// - Examples:
-//   ✅ "Senta: conflicted hope vs self-doubt from Companion teasing about being 'Choosy One'; Adam: defensive hostility masking curiosity after recognizing Companion intelligence"
-//   ✅ "Alice: awe mixed with apprehension at ancient history discovery; Bob: cautious excitement driven by artifact obsession overriding safety concerns"
-//   ✅ "Marcus: wary trust building after payment received; vulnerability showing when mentioning daughter; {{user}}: protective instinct triggered"
-// - Store detailed per-character psychology in setting_lore character entries (Psychology bullet); this field is for scene-specific emotional moments
+// - Key emotional moments for named characters with triggers/motivations AND psychological impact/consequences
+// - Format: "CharacterName: emotion/internal state with trigger → consequence/impact; NextCharacter: emotion with trigger → impact"
+// - REQUIRED elements to capture:
+//   * Internal emotional states and psychological complexity
+//   * The "why" behind emotions (motivations, past events, social pressure, fears, desires, internal conflicts)
+//   * Contradictions and conflicting feelings (emotion vs emotion, belief vs action)
+//   * Emotional evolution within the scene (how emotions changed from beginning → middle → end)
+//   * Psychological consequences (how emotions changed behavior, decision-making, relationship dynamics)
+//   * Not just WHAT they felt, but WHY it matters and HOW it affected them
+// - Purpose: Preserves character psychology, emotional continuity, and the IMPACT of emotional moments when original messages scroll out
+// - Examples demonstrating trigger → emotion → consequence pattern:
+//   ✅ "Senta: conflicted hope vs self-doubt from Companion teasing about being 'Choosy One' → drove her to make unprecedented choice to have sex with Adam to prevent Elspeth from doing so first; Adam: defensive hostility masking curiosity after recognizing Companion intelligence → hostility cracking, allows physical affection but maintains emotional distance"
+//   ✅ "Alice: awe mixed with apprehension at ancient history discovery → excitement overrides usual caution, insists on exploring immediately despite risks; Bob: cautious excitement driven by artifact obsession → tunnel vision on murals, ignores Alice's warnings about structural instability"
+//   ✅ "Selenay: intense arousal mixed with rebellion against royal constraints (triggered by Adam treating her as person not Queen) → initiated sexual contact to reclaim agency; Elspeth: competitive jealousy seeing mother's interest in Adam → attempted sexual presentation to compete, driven by adolescent insecurity"
+// - When emotions EVOLVE during scene, show the progression:
+//   ✅ "Marcus: initial distrust of strangers → wary trust building after payment received → vulnerability showing when mentioning daughter → defensive withdrawal when {{user}} presses for details"
+// - Store detailed per-character psychology in setting_lore character entries (Psychology bullet); this field is for scene-specific emotional moments and their immediate impacts
 //
 // SETTING_LORE (array):
 // - Only include if this scene adds durable knowledge about an entity (new/changed vs active entries below).
@@ -355,15 +377,15 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //   - Identity: <Type> — <Canonical Name>
 //   - Synopsis: <1 line identity/purpose>
 //   - Attributes: <appearance/traits/capabilities> (permanent, defining features)
-//   - Psychology: <core drives, fears, contradictions, defense mechanisms, patterns of thought> (character entities only; durable psychological profile)
+//   - Psychology: <core drives, fears, contradictions, defense mechanisms, patterns of thought; layered motivations (what they want vs why they want it); internal conflicts (belief vs desire, duty vs want); psychological patterns (how they cope, avoid, justify)> (character entities only; durable psychological profile). Examples: "Driven by need for control (because childhood powerlessness) → micromanages relationships"; "Fears vulnerability but craves connection → pushes people away then regrets it"
 //   - Relationships: <X ↔ Y — how THIS CHARACTER (X) relates to Y; include tone, patterns, salient interactions>. Focus on THIS CHARACTER's behavior, words, and actions toward the other party. If including quotes, use quotes spoken BY this character TO the other party. Evidence should demonstrate THIS CHARACTER's stance. When causal relationships exist, use format: "dynamic (because [cause] → resulting in [effect])".
 //   - Interaction Defaults: <for key counterpart(s), how this entity typically addresses/engages> (address forms/pet names, formality level, physical distance/comfort gestures, boundaries/consent norms).
-//   - Intimacy & Romance: <preferences/patterns DEMONSTRATED by this character's actions, words, or internal narration when present — roles, initiations, pace, SPECIFIC ACTS (oral, penetrative, manual, positions, kink acts), aftercare, jealousy/possessiveness patterns, gifting rituals>. Capture what THIS CHARACTER actually did/said/thought, not what other characters said about them. Use short quotes/cues as evidence; NO EUPHEMISMS - state actual acts performed; add only if new vs active entries.
+//   - Intimacy & Romance: <preferences/patterns DEMONSTRATED by this character's actions, words, or internal narration when present — roles, initiations, pace, SPECIFIC ACTS (oral sex, penetrative sex, manual stimulation, positions, kink acts), aftercare, jealousy/possessiveness patterns, gifting rituals; MUST include BOTH physical specifics AND emotional/psychological context>. Capture what THIS CHARACTER actually did/said/thought, not what other characters said about them. Use short quotes/cues as evidence; NO EUPHEMISMS - state actual acts performed using direct language ("had sex", "performed oral sex", "touched/penetrated [specifics]"); ALSO capture motivations and emotional state during/after acts. Examples: "Had sex with X in alley (motivated by preventing Y from doing so); experienced intense physical response but emotional uncertainty about bond implications"; "Performed oral sex on X; felt vulnerable but empowered by X's reaction; initiated penetrative sex afterward seeking deeper connection". Add only if new vs active entries.
 //   - Micro‑Moments (limit 1–2): <short quotes spoken BY this character + physical cues PERFORMED BY this character from THIS scene that established an ongoing pattern>. Capture actions and dialogue that THIS CHARACTER directly performed or spoke, not descriptions or observations by other characters. (prune older duplicates; prefer pattern‑setting beats over one‑offs).
-//   - Current Emotional State: <mood/emotional state EXPRESSED or DEMONSTRATED by this character through their words, actions, or internal narration in this scene; include triggers/evidence>. Capture emotions the character directly expresses or shows, not emotions attributed to them by other characters' observations. When triggers are present, use format: "[trigger/cause] → [emotional state]". (character entities only; temporary, updates with scenes)
+//   - Current Emotional State: <mood/emotional state EXPRESSED or DEMONSTRATED by this character through their words, actions, or internal narration in this scene; include triggers/evidence AND consequences/impact on behavior>. Capture emotions the character directly expresses or shows, not emotions attributed to them by other characters' observations. Required format: "[trigger/cause] → [emotional state] → [consequence/impact on behavior or decisions]". Examples: "Adam petting Senta and calling her 'horsie' → conflicted pleasure mixed with determination to Choose him → drove decision to prevent Elspeth from approaching Adam first"; "Queen's sexual attention → arousal mixed with cultural confusion → allowed physical contact despite religious prohibitions". (character entities only; temporary, updates with scenes)
 //   - State: <current status/location/owner/ongoing effects with scene/time anchors when present> (current, temporary conditions). When state changes resulted from specific causes, include: "current state (because [cause])".
 //   - Secrets/Leverage: <what/who knows>
-//   - Tension/Triggers: <what escalates or defuses THIS CHARACTER's emotional state; what THIS CHARACTER does to escalate/defuse situations with others>. Include both: (1) external factors that trigger this character's reactions, and (2) this character's behaviors that escalate/defuse tension. Use explicit cause → effect format: "[trigger] → [character's reaction]" or "[character's behavior] → [escalation/defusal]". Use quotes if needed to demonstrate.
+//   - Tension/Triggers: <what escalates or defuses THIS CHARACTER's emotional state; what THIS CHARACTER does to escalate/defuse situations with others; capture full causal chains>. Include both: (1) external factors that trigger this character's reactions WITH consequences, and (2) this character's behaviors that escalate/defuse tension WITH resulting impacts. Required format showing full chain: "[specific trigger] → [character's emotional/behavioral reaction] → [consequence for relationship/situation]". Examples: "Religious references from Adam → Senta's defensiveness → pushes harder to prove Companions aren't enslaved → escalates Adam's hostility"; "Adam using physical affection ('horsie') → Senta's hope intensifies → lowered boundaries → willing to make unprecedented choices". Use quotes if needed to demonstrate.
 //   - Style Notes: <voice & diction patterns observed in THIS CHARACTER's actual speech> (idioms, syntax quirks, punctuation habits, emoji/emote usage, mindspeech formatting). Capture patterns from this character's direct dialogue, not descriptions by other characters.
 //   - Notable Dialogue: <significant quotes spoken BY this character TO a recipient; include recipient name; demonstrates speech patterns>. Format: "To [Recipient]: \"quote\"" or "To [Recipient] (context): \"quote\"". Prefer ≤ 2 quotes per entity per scene, ≤ 12 words each. ONLY capture dialogue spoken BY this character, NOT dialogue where this character is mentioned but not the speaker.
 //   - Appearance guidance (character entities): Attributes captures PERMANENT appearance (height, build, eye color, hair, distinctive scars/marks, typical clothing style). State captures TEMPORARY appearance changes (current injuries, dirt/blood, torn clothing, current outfit if notably different from typical).
@@ -510,6 +532,40 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 // - Located in: Old Town
 // - Attributes: narrow; brick walls; puddles; dim lamplight
 
+// ============================================================
+// FINAL VERIFICATION CHECKLIST — COMPLETE BEFORE SUBMITTING
+// ============================================================
+// Before submitting your JSON output, verify ALL of the following:
+//
+// ❌ EUPHEMISM CHECK (CRITICAL):
+//    Search your output for these PROHIBITED phrases. If ANY are found, REWRITE using direct language:
+//    - "intimate contact", "sexual contact", "engaged sexually", "engaged in intimacy"
+//    - "made love", "physical intimacy", "coupling", "physically joined", "were intimate"
+//    - Replace with: "had sex", "touched [specific body part]", "performed oral sex", "penetrated with [specifics]"
+//
+// ✅ EMOTIONAL/PSYCHOLOGICAL DEPTH:
+//    For each character in explicit content, verify you captured:
+//    - Motivations (WHY they made this choice)
+//    - Emotional state during the act
+//    - Psychological impact/consequences after
+//    - How it affected their relationship or future behavior
+//
+// ✅ CAUSE → EFFECT CHAINS:
+//    Verify emotional_beats field uses format: "[trigger] → [emotion] → [consequence]"
+//    Verify Current Emotional State uses format: "[trigger] → [emotion] → [behavioral impact]"
+//    Verify Tension/Triggers uses format: "[trigger] → [reaction] → [relationship consequence]"
+//
+// ✅ COMPLETENESS CHECK:
+//    - Did you capture what happened? (physical specifics)
+//    - Did you capture why it happened? (motivations)
+//    - Did you capture how they felt? (emotional state)
+//    - Did you capture what changed? (consequences, impacts, relationship shifts)
+//
+// ✅ JSON VALIDITY:
+//    - Response starts with { character
+//    - All required fields present: scene_name, recap, atmosphere, emotional_beats, setting_lore
+//    - Proper JSON escaping for quotes and special characters
+//
 // REMINDER: Output must be valid JSON starting with { character. "recap" is REQUIRED. "setting_lore" is OPTIONAL (can be empty: []).
 
 {{active_setting_lore}}
