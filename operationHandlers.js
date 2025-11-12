@@ -102,7 +102,7 @@ function countRemainingFilteredMessages(chat, startIndex, endIndex, checkWhich) 
 }
 
 // Helper: Handle formatting rationale rejection
-async function handleFormattingRationaleRejection({ operation, startIndex, endIndex, rationale }) {
+async function handleFormattingRationaleRejection({ operation, startIndex, endIndex, offset, rationale }) {
   error(SUBSYSTEM.QUEUE, `Scene break rationale rejected (formatting referenced) for range ${startIndex}-${endIndex}`);
   error(SUBSYSTEM.QUEUE, `  Rationale: ${rationale}`);
   toast('⚠ Scene break rejected: rationale cited formatting (ignore decorative separators). Retrying...', 'warning');
@@ -111,7 +111,7 @@ async function handleFormattingRationaleRejection({ operation, startIndex, endIn
   if (!alreadyRetried) {
     await enqueueOperation(
       OperationType.DETECT_SCENE_BREAK,
-      { startIndex, endIndex },
+      { startIndex, endIndex, offset },
       {
         priority: 5,
         queueVersion: operation.queueVersion,
@@ -127,7 +127,7 @@ async function handleFormattingRationaleRejection({ operation, startIndex, endIn
 }
 
 // Helper: Handle below minimum scene length rejection
-async function handleBelowMinimumRejection({ operation, startIndex, endIndex, sceneBreakAt, filteredIndices, minimumSceneLength, validation, chat }) {
+async function handleBelowMinimumRejection({ operation, startIndex, endIndex, offset, sceneBreakAt, filteredIndices, minimumSceneLength, validation, chat }) {
   const earliestAllowedBreak = Array.isArray(filteredIndices) && filteredIndices.length > minimumSceneLength
     ? filteredIndices[minimumSceneLength]
     : null;
@@ -145,7 +145,7 @@ async function handleBelowMinimumRejection({ operation, startIndex, endIndex, sc
 
     await enqueueOperation(
       OperationType.DETECT_SCENE_BREAK,
-      { startIndex: earliestAllowedBreak, endIndex },
+      { startIndex: earliestAllowedBreak, endIndex, offset },
       {
         priority: 5,
         queueVersion: operation.queueVersion,
@@ -167,7 +167,7 @@ async function handleBelowMinimumRejection({ operation, startIndex, endIndex, sc
 }
 
 // Helper: Handle continuity veto check
-async function handleContinuityVeto({ operation, chat, sceneBreakAt, rationale, startIndex, endIndex, minimumSceneLength }) {
+async function handleContinuityVeto({ operation, chat, sceneBreakAt, rationale, startIndex, endIndex, offset, minimumSceneLength }) {
   try {
     const { shouldVetoByContinuityAndObjective } = await import('./autoSceneBreakDetection.js');
     const veto = shouldVetoByContinuityAndObjective(chat, sceneBreakAt, rationale, 2);
@@ -185,7 +185,7 @@ async function handleContinuityVeto({ operation, chat, sceneBreakAt, rationale, 
       if (remainingFiltered >= minimumSceneLength + 1) {
         await enqueueOperation(
           OperationType.DETECT_SCENE_BREAK,
-          { startIndex: remainingStart, endIndex },
+          { startIndex: remainingStart, endIndex, offset },
           {
             priority: 5,
             queueVersion: operation.queueVersion,
@@ -257,7 +257,7 @@ export function registerAllOperationHandlers() {
     // Enforce content-only rationale (no formatting references like '---')
     const rationaleCheck = validateRationaleNoFormatting(rationale);
     if (!rationaleCheck.valid) {
-      return await handleFormattingRationaleRejection({ operation, startIndex, endIndex, rationale });
+      return await handleFormattingRationaleRejection({ operation, startIndex, endIndex, offset, rationale });
     }
 
     const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
@@ -275,7 +275,7 @@ export function registerAllOperationHandlers() {
       const isBelowMinimum = validation.reason.includes('below minimum scene length');
 
       if (isBelowMinimum) {
-        return await handleBelowMinimumRejection({ operation, startIndex, endIndex, sceneBreakAt, filteredIndices, minimumSceneLength, validation, chat });
+        return await handleBelowMinimumRejection({ operation, startIndex, endIndex, offset, sceneBreakAt, filteredIndices, minimumSceneLength, validation, chat });
       }
 
       error(SUBSYSTEM.QUEUE, `Invalid scene break response for range ${startIndex}-${endIndex}: ${validation.reason}`);
@@ -293,7 +293,7 @@ export function registerAllOperationHandlers() {
     }
 
     // Continuity veto + objective-only rule
-    const vetoResult = await handleContinuityVeto({ operation, chat, sceneBreakAt, rationale, startIndex, endIndex, minimumSceneLength });
+    const vetoResult = await handleContinuityVeto({ operation, chat, sceneBreakAt, rationale, startIndex, endIndex, offset, minimumSceneLength });
     if (vetoResult.vetoed) {
       return vetoResult.result;
     }
@@ -320,7 +320,7 @@ export function registerAllOperationHandlers() {
         debug(SUBSYSTEM.QUEUE, `Enqueueing DETECT_SCENE_BREAK for remaining range ${remainingStart} to ${endIndex}`);
         await enqueueOperation(
           OperationType.DETECT_SCENE_BREAK,
-          { startIndex: remainingStart, endIndex },
+          { startIndex: remainingStart, endIndex, offset },
           {
             priority: 5,
             queueVersion: operation.queueVersion,
