@@ -13,6 +13,7 @@ import { runRegexScript } from '../../../../scripts/extensions/regex/engine.js';
 import { getContext, getApiUrl, extension_settings } from '../../../extensions.js';
 import { getStringHash, debounce, copyText, trimToEndSentence, download, parseJsonFile, waitUntilCondition } from '../../../utils.js';
 import { animation_duration, scrollChatToBottom, extension_prompt_roles, extension_prompt_types, saveSettingsDebounced, getMaxContextSize, streamingProcessor, amount_gen, system_message_types, CONNECT_API_MAP, main_api, chat_metadata, saveMetadata, getCurrentChatId, activateSendButtons as _originalActivateSendButtons, deactivateSendButtons as _originalDeactivateSendButtons } from '../../../../script.js';
+import { world_info, selected_world_info } from '../../../world-info.js';
 
 // Import SillyTavern selectors (direct import since this is the barrel file)
 import { selectorsSillyTavern } from './selectorsSillyTavern.js';
@@ -279,6 +280,22 @@ export function getActiveLorebooksForMessage(messageIndex) {
 }
 
 /**
+ * Get inactive lorebook entries for a specific message
+ * @param {number} messageIndex - The message index
+ * @returns {Array|null} Array of inactive lorebook entry objects, or null if none
+ */
+export function getInactiveLorebooksForMessage(messageIndex) {
+  const ctx = getContext();
+  const message = ctx?.chat?.[messageIndex];
+
+  if (message?.extra?.inactiveLorebookEntries) {
+    return message.extra.inactiveLorebookEntries;
+  }
+
+  return null;
+}
+
+/**
  * Clear all lorebook tracking data
  */
 export function clearActiveLorebooksData() {
@@ -372,6 +389,43 @@ function updateStickyTracking(entries, messageIndex) {
 /**
  * Persist lorebook entries to message.extra for durability across refresh
  */
+/**
+ * Get ALL lorebook entries from currently loaded lorebooks
+ * @returns {Array} Array of all entry objects with full content
+ */
+function getAllLorebookEntries() {
+  const allEntries = [];
+
+  for (const worldName of selected_world_info) {
+    const worldData = world_info[worldName];
+
+    if (!worldData?.entries) {
+      continue;
+    }
+
+    for (const entry of Object.values(worldData.entries)) {
+      const strategy = getEntryStrategy(entry);
+      allEntries.push({
+        comment: entry.comment || '(unnamed)',
+        uid: entry.uid,
+        world: worldName,
+        key: entry.key || [],
+        position: entry.position,
+        depth: entry.depth,
+        order: entry.order,
+        role: entry.role,
+        constant: entry.constant || false,
+        vectorized: entry.vectorized || false,
+        sticky: entry.sticky || 0,
+        strategy: strategy,
+        content: entry.content || ''
+      });
+    }
+  }
+
+  return allEntries;
+}
+
 function persistToMessage(messageIndex, entries) {
   const ctx = getContext();
   const message = ctx?.chat?.[messageIndex];
@@ -387,6 +441,28 @@ function persistToMessage(messageIndex, entries) {
 
   message.extra.activeLorebookEntries = entries;
   debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Persisted ${entries.length} entries to message ${messageIndex}.extra`);
+}
+
+/**
+ * Persist inactive lorebook entries to message metadata
+ * @param {number} messageIndex - The message index
+ * @param {Array} entries - Array of inactive entry objects
+ */
+function persistInactiveToMessage(messageIndex, entries) {
+  const ctx = getContext();
+  const message = ctx?.chat?.[messageIndex];
+
+  if (!message) {
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Cannot persist inactive entries: message ${messageIndex} not found`);
+    return;
+  }
+
+  if (!message.extra) {
+    message.extra = {};
+  }
+
+  message.extra.inactiveLorebookEntries = entries;
+  debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Persisted ${entries.length} inactive entries to message ${messageIndex}.extra`);
 }
 
 /**
@@ -483,11 +559,30 @@ export function installWorldInfoActivationLogger() {
     const mergedEntries = Array.from(entryMap.values());
     debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Total active entries for message ${messageIndex}: ${mergedEntries.length} (${enhancedEntries.length} new + ${stillActive.length} still-active)`);
 
-    // Store in memory
+    // Capture ALL entries from lorebooks for complete snapshot
+    const allLorebookEntries = getAllLorebookEntries();
+    const activeUIDs = new Set(mergedEntries.map(e => e.uid));
+
+    // Parse ALL entries into active/inactive based on activation state
+    const activeEntriesFromAll = [];
+    const inactiveEntries = [];
+
+    for (const entry of allLorebookEntries) {
+      if (activeUIDs.has(entry.uid)) {
+        activeEntriesFromAll.push(entry);
+      } else {
+        inactiveEntries.push(entry);
+      }
+    }
+
+    // Store in memory (use original mergedEntries which has sticky/metadata)
     activeLorebooksPerMessage.set(messageIndex, mergedEntries);
 
     // Persist to message.extra
     persistToMessage(messageIndex, mergedEntries);
+    persistInactiveToMessage(messageIndex, inactiveEntries);
+
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Complete snapshot: ${allLorebookEntries.length} total entries (${activeEntriesFromAll.length} active, ${inactiveEntries.length} inactive)`);
 
     // Log entry details for debugging
     for (const [i, entry] of mergedEntries.entries()) {

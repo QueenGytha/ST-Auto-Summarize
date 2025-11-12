@@ -17,7 +17,14 @@ import {
   HEX_COLOR_BASE,
   MAX_QUEUE_PRIORITY,
   DEBUG_OUTPUT_MEDIUM_LENGTH,
-  FULL_COMPLETION_PERCENTAGE
+  FULL_COMPLETION_PERCENTAGE,
+  CHAR_CODE_LF,
+  CHAR_CODE_CR,
+  CHAR_CODE_TAB,
+  CHAR_CODE_BACKSPACE,
+  CHAR_CODE_FORM_FEED,
+  JSON_LOOKAHEAD_LENGTH,
+  JSON_FIELD_START_ADVANCE
 } from './constants.js';
 
 // Consistent prefix for ALL extension logs - easily searchable
@@ -286,6 +293,122 @@ function sanitizeNameSegment(text ) {
 }
 
 /**
+ * Escape control characters in a string for JSON compatibility.
+ * @param {string} str - String that may contain control characters
+ * @returns {string} String with control characters escaped
+ */
+function escapeJsonControlChars(str) {
+  let escaped = '';
+  for (let j = 0; j < str.length; j++) {
+    const charCode = str.charCodeAt(j);
+    const char = str[j];
+    if (char === '\\') {
+      escaped += '\\\\';
+    } else if (charCode === CHAR_CODE_LF) {
+      escaped += '\\n';
+    } else if (charCode === CHAR_CODE_CR) {
+      escaped += '\\r';
+    } else if (charCode === CHAR_CODE_TAB) {
+      escaped += '\\t';
+    } else if (charCode === CHAR_CODE_BACKSPACE) {
+      escaped += '\\b';
+    } else if (charCode === CHAR_CODE_FORM_FEED) {
+      escaped += '\\f';
+    } else {
+      escaped += char;
+    }
+  }
+  return escaped;
+}
+
+/**
+ * Check if a quote character appears to be a closing quote based on context.
+ * @param {string} jsonString - The full JSON string
+ * @param {number} index - Index of the quote character
+ * @returns {boolean} True if this appears to be a closing quote
+ */
+function isLikelyClosingQuote(jsonString, index) {
+  const nextChar = index + 1 < jsonString.length ? jsonString[index + 1] : '';
+  return nextChar === ',' || nextChar === '}' || nextChar === ']' || /\s/.test(nextChar) || nextChar === '';
+}
+
+/**
+ * Check if a newline appears to end the JSON string value.
+ * @param {string} jsonString - The full JSON string
+ * @param {number} index - Index of the newline character
+ * @returns {boolean} True if this newline likely ends the value
+ */
+function isValueEndingNewline(jsonString, index) {
+  const peekAhead = jsonString.slice(index, index + JSON_LOOKAHEAD_LENGTH);
+  return /^\n\s*[}\]]/.test(peekAhead) || index === jsonString.length - 1;
+}
+
+/**
+ * Process a JSON string value, escaping control characters and adding closing quote if needed.
+ * @param {string} jsonString - The full JSON string
+ * @param {number} startIndex - Index where the value content starts (after opening quote)
+ * @returns {{result: string, nextIndex: number}} Processed value and next index
+ */
+function processJsonStringValue(jsonString, startIndex) {
+  let valueContent = '';
+  let i = startIndex;
+
+  while (i < jsonString.length) {
+    const char = jsonString[i];
+
+    if (char === '"' && isLikelyClosingQuote(jsonString, i)) {
+      return {
+        result: escapeJsonControlChars(valueContent) + '"',
+        nextIndex: i + 1
+      };
+    } else if (char === '\n' && isValueEndingNewline(jsonString, i)) {
+      return {
+        result: escapeJsonControlChars(valueContent) + '"',
+        nextIndex: i
+      };
+    } else {
+      valueContent += char;
+      i++;
+    }
+  }
+
+  return {
+    result: escapeJsonControlChars(valueContent) + '"',
+    nextIndex: i
+  };
+}
+
+/**
+ * Aggressively normalize JSON by escaping literal newlines in string values.
+ * This handles both well-formed strings and malformed strings without closing quotes.
+ * @param {string} jsonString - JSON string that may have literal newlines in values
+ * @returns {string} JSON with literal newlines replaced with \n escapes
+ */
+function normalizeJsonStringValues(jsonString) {
+  let normalized = '';
+  let i = 0;
+
+  while (i < jsonString.length) {
+    const isFieldStart = i < jsonString.length - 2 &&
+      jsonString[i] === ':' &&
+      /\s/.test(jsonString[i + 1]) &&
+      jsonString[i + 2] === '"';
+
+    if (isFieldStart) {
+      normalized += ': "';
+      const processed = processJsonStringValue(jsonString, i + JSON_FIELD_START_ADVANCE);
+      normalized += processed.result;
+      i = processed.nextIndex;
+    } else {
+      normalized += jsonString[i];
+      i++;
+    }
+  }
+
+  return normalized;
+}
+
+/**
  * Escape literal control characters in JSON string values.
  * LLMs sometimes return JSON with literal newlines/tabs instead of escaped sequences.
  * This function preprocesses the JSON to escape those control characters.
@@ -294,11 +417,6 @@ function sanitizeNameSegment(text ) {
  * @returns {string} JSON string with control characters properly escaped
  */
 function escapeControlCharactersInJsonStrings(jsonString) {
-  const CHAR_CODE_LF = 0x0A;
-  const CHAR_CODE_CR = 0x0D;
-  const CHAR_CODE_TAB = 0x09;
-  const CHAR_CODE_BACKSPACE = 0x08;
-  const CHAR_CODE_FORM_FEED = 0x0C;
 
   let result = '';
   let insideString = false;
@@ -417,6 +535,57 @@ function repairAndParseJson(jsonString, context = 'JSON repair') {
 }
 
 /**
+ * Preprocess raw JSON string by stripping fences, preambles, postambles, and normalizing control chars.
+ * @param {string} jsonString - Raw JSON string to preprocess
+ * @param {string} context - Context for debug logging
+ * @returns {string} Preprocessed JSON string
+ */
+function preprocessJsonString(jsonString, context) {
+  let cleaned = jsonString.trim();
+
+  const codeFenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  if (codeFenceMatch) {
+    cleaned = codeFenceMatch[1].trim();
+    debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped code fences from ${context}`);
+  }
+
+  if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
+    const partialJsonMatch = cleaned.match(/^\s*"[^"]+"\s*:/);
+    if (partialJsonMatch && cleaned.includes('}')) {
+      cleaned = '{' + cleaned;
+      debug(SUBSYSTEM.CORE, `[JSON Extract] Repaired partial JSON (added opening brace) in ${context}`);
+    }
+  }
+
+  if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
+    const jsonStartMatch = cleaned.match(/[{[]/);
+    if (jsonStartMatch) {
+      const jsonStart = cleaned.indexOf(jsonStartMatch[0]);
+      cleaned = cleaned.slice(jsonStart);
+      debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped preamble from ${context}`);
+    }
+  }
+
+  if (!cleaned.endsWith('}') && !cleaned.endsWith(']')) {
+    const lastBrace = cleaned.lastIndexOf('}');
+    const lastBracket = cleaned.lastIndexOf(']');
+    const lastJsonChar = Math.max(lastBrace, lastBracket);
+    if (lastJsonChar > 0) {
+      cleaned = cleaned.slice(0, lastJsonChar + 1);
+      debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped postamble from ${context}`);
+    }
+  }
+
+  const beforeNormalize = cleaned;
+  cleaned = normalizeJsonStringValues(cleaned);
+  if (cleaned !== beforeNormalize) {
+    debug(SUBSYSTEM.CORE, `[JSON Extract] Pre-normalized literal control characters in ${context}`);
+  }
+
+  return cleaned;
+}
+
+/**
  * Extract and parse JSON from AI responses, handling common issues like preambles and code fences.
  * @param {string} rawResponse - The raw AI response that should contain JSON
  * @param {Object} options - Optional validation and extraction options
@@ -432,50 +601,9 @@ export function extractJsonFromResponse(rawResponse, options = {}) {
     throw new Error(`${context}: Response is empty or not a string`);
   }
 
-  let cleaned = rawResponse.trim();
+  const cleaned = preprocessJsonString(rawResponse, context);
 
-  // Step 1: Strip markdown code fences if present
-  // Handles: ```json\n{...}\n``` or ```\n{...}\n```
-  const codeFenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-  if (codeFenceMatch) {
-    cleaned = codeFenceMatch[1].trim();
-    debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped code fences from ${context}`);
-  }
-
-  // Step 1.5: Detect and repair partial JSON (missing opening brace)
-  // Some LLMs return JSON without the opening { character: "field": value, ...}
-  if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
-    // Check if it looks like partial JSON (starts with a quoted field name)
-    const partialJsonMatch = cleaned.match(/^\s*"[^"]+"\s*:/);
-    if (partialJsonMatch && cleaned.includes('}')) {
-      // Likely partial JSON - prepend opening brace
-      cleaned = '{' + cleaned;
-      debug(SUBSYSTEM.CORE, `[JSON Extract] Repaired partial JSON (added opening brace) in ${context}`);
-    }
-  }
-
-  // Step 2: Strip text before first JSON character
-  if (!cleaned.startsWith('{') && !cleaned.startsWith('[')) {
-    const jsonStartMatch = cleaned.match(/[{[]/);
-    if (jsonStartMatch) {
-      const jsonStart = cleaned.indexOf(jsonStartMatch[0]);
-      cleaned = cleaned.slice(jsonStart);
-      debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped preamble from ${context}`);
-    }
-  }
-
-  // Step 3: Strip text after last JSON character
-  if (!cleaned.endsWith('}') && !cleaned.endsWith(']')) {
-    const lastBrace = cleaned.lastIndexOf('}');
-    const lastBracket = cleaned.lastIndexOf(']');
-    const lastJsonChar = Math.max(lastBrace, lastBracket);
-    if (lastJsonChar > 0) {
-      cleaned = cleaned.slice(0, lastJsonChar + 1);
-      debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped postamble from ${context}`);
-    }
-  }
-
-  // Step 4: Parse JSON with comprehensive repair
+  // Parse JSON with comprehensive repair
   let parsed;
   try {
     parsed = repairAndParseJson(cleaned, context);

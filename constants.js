@@ -172,6 +172,19 @@ export const DEFAULT_MINIMUM_SCENE_LENGTH = 4;
 /** Maximum scene length setting value */
 export const MAX_SCENE_LENGTH_SETTING = 50;
 
+/** Control character codes for JSON escaping */
+export const CHAR_CODE_LF = 0x0A;
+export const CHAR_CODE_CR = 0x0D;
+export const CHAR_CODE_TAB = 0x09;
+export const CHAR_CODE_BACKSPACE = 0x08;
+export const CHAR_CODE_FORM_FEED = 0x0C;
+
+/** Lookahead length for JSON string value detection */
+export const JSON_LOOKAHEAD_LENGTH = 50;
+
+/** Number of spaces to advance when processing JSON field start pattern */
+export const JSON_FIELD_START_ADVANCE = 3;
+
 // ============================================================================
 // Debug Output Constants
 // ============================================================================

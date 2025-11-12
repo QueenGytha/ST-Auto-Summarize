@@ -19,7 +19,8 @@ import {
   debounce,
   debounce_timeout,
   SUBSYSTEM,
-  saveChatDebounced } from
+  saveChatDebounced,
+  clearActiveLorebooksData } from
 './index.js';
 import { get_running_recap_injection, clear_running_scene_recaps } from './runningSceneRecap.js';
 
@@ -230,6 +231,14 @@ function clear_all_recaps_for_chat() {
       }
     }
 
+    if (message.extra?.activeLorebookEntries) {
+      delete message.extra.activeLorebookEntries;
+    }
+
+    if (message.extra?.inactiveLorebookEntries) {
+      delete message.extra.inactiveLorebookEntries;
+    }
+
     if (Array.isArray(message?.swipe_info)) {
       for (const swipe of message.swipe_info) {
         if (swipe?.extra?.[MODULE_NAME]) {
@@ -244,6 +253,8 @@ function clear_all_recaps_for_chat() {
   }
 
   const runningRecapCleared = clear_running_scene_recaps();
+
+  clearActiveLorebooksData();
 
   saveChatDebounced();
 
