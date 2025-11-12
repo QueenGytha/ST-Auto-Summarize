@@ -399,10 +399,17 @@ function validateSceneBreakResponse(sceneBreakAt, config) {
 }
 
 function buildFormattedMessages(chat, filteredIndices, earliestAllowedBreak, maxEligibleIndex) {
+  // Defensive validation: warn if maxEligibleIndex is unexpectedly null
+  if (maxEligibleIndex === null || maxEligibleIndex === undefined) {
+    debug(SUBSYSTEM.OPERATIONS, `WARNING: maxEligibleIndex is ${maxEligibleIndex} in buildFormattedMessages - offset marking may not work correctly`);
+  }
+
   return filteredIndices.map((i) => {
     const m = chat[i];
     const speaker = m?.is_user ? '[USER]' : '[CHARACTER]';
-    const isIneligible = (i < earliestAllowedBreak) || (i > maxEligibleIndex);
+    // Fix: Explicitly check maxEligibleIndex is not null/undefined before comparing
+    // to prevent silent failures from null comparison (i > null evaluates to false)
+    const isIneligible = (i < earliestAllowedBreak) || (maxEligibleIndex !== null && maxEligibleIndex !== undefined && i > maxEligibleIndex);
     const header = isIneligible
       ? `Message #invalid choice ${speaker}:`
       : `Message #${i} ${speaker}:`;

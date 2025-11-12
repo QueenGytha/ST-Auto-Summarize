@@ -762,9 +762,13 @@ Decision process:
 7. Return the LAST message number of the current scene (the message immediately before the new scene begins)
 
 EVALUATION STRATEGY:
-- Scan through ALL eligible messages in the range - do not stop at the first potential break
-- Look for messages where the NEXT message represents a scene change
-- Rate the strength of each potential scene ending:
+- Check messages sequentially from earliest to latest (ascending numerical order)
+- Start with the earliest eligible message and work forward
+- For each message, evaluate: "Does the NEXT message represent a STRONG scene change?"
+- STOP IMMEDIATELY when you find the first STRONG scene break - do NOT continue scanning
+- Return that message number (the last message before the scene change)
+- Rationale: We want frequent scene breaks at the earliest logical points, not delayed breaks
+- Rate the strength of each potential scene ending as you encounter it:
 
 STRONG scene endings (these are valid):
   • Next message opens with explicit time transitions: "Dawn arrived", "The next morning", "Hours later", "That evening"
@@ -780,6 +784,20 @@ WEAK scene endings (treat as continuations, return false instead):
   • Next message shows character arriving somewhere that current message mentioned going to
 
 Decision rule: Return the message number immediately BEFORE the first STRONG scene change. If only weak candidates exist, return false.
+
+SEQUENTIAL EVALUATION REQUIREMENT:
+- You MUST evaluate messages in ascending numerical order (lowest to highest)
+- Start with the earliest eligible message ({{earliest_allowed_break}})
+- Check each message to see if the NEXT message represents a STRONG scene change
+- The MOMENT you identify a STRONG break, STOP and return that message number
+- DO NOT scan beyond the first STRONG break you find
+- DO NOT compare multiple breaks to choose the "best" one - return the FIRST strong break
+- Purpose: Frequent scene breaks at earliest logical points ensure better recap coverage
+
+Example sequential evaluation:
+- Check message #3: Is #4 a STRONG break? No → Continue
+- Check message #4: Is #5 a STRONG break? No → Continue
+- Check message #5: Is #6 a STRONG break? Yes (opens with "Dawn arrived") → STOP, return 5
 
 CRITICAL: Base your decision ONLY on the provided messages below.
 - Never invent details, context, or relationships not explicitly stated in the text
@@ -803,6 +821,22 @@ CONCRETE COUNTER-EXAMPLES (based on actual errors):
 ✓ CORRECT: Returning message #49 when #50 reads "The youth had just settled at an empty table when..."
    Good rationale: "Scene ends at #49; message #50 shows characters physically present in dining hall, seated and beginning new interaction"
    Why right: Message #50 actually IN the new location, starting new beat
+
+✓ CORRECT: Returning message #35 when #36 starts "Dawn arrived with unceremonious brightness"
+   Good rationale: "Scene ends at #35; message #36 opens with explicit time transition 'Dawn arrived' indicating night→morning scene break"
+   Why right: This is the FIRST strong break in the eligible range - returned immediately without scanning further
+
+✓ CORRECT: Returning message #72 when #73 reads "Sunlight streamed through the streets of Haven as the unusual trio made their way from the Collegium grounds"
+   Good rationale: "Scene ends at #72; message #73 shows clear location change from indoors (dining hall) to outdoors (streets of Haven) with explicit text 'made their way FROM the Collegium grounds'"
+   Why right: First strong break after dining hall scene - returned immediately as required
+
+FINAL VALIDATION BEFORE RESPONDING:
+If you are returning a message number (not false), verify:
+1. Quote the EXACT text from the NEXT message that triggered your decision (do NOT paraphrase)
+2. Confirm this is a STRONG break (explicit time transition, new location arrival, new cast with resolved beat, or new objective)
+3. Ask yourself: "Did I check all EARLIER eligible messages? Could there be a STRONG break before this one?"
+4. If you're returning a message number in the upper half of the range, double-check the lower half for earlier breaks
+5. Do NOT rely on memory or assumptions - only quote text actually present in the messages provided
 
 Messages to analyze (with SillyTavern message numbers):
 {{messages}}
