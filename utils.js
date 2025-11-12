@@ -294,31 +294,45 @@ function sanitizeNameSegment(text ) {
 
 /**
  * Escape control characters in a string for JSON compatibility.
+ * Tracks escape state to avoid double-escaping already-escaped sequences.
  * @param {string} str - String that may contain control characters
  * @returns {string} String with control characters escaped
  */
 function escapeJsonControlChars(str) {
-  let escaped = '';
+  let result = '';
+  let isEscaped = false;
+
   for (let j = 0; j < str.length; j++) {
     const charCode = str.charCodeAt(j);
     const char = str[j];
+
+    if (isEscaped) {
+      result += char;
+      isEscaped = false;
+      continue;
+    }
+
     if (char === '\\') {
-      escaped += '\\\\';
-    } else if (charCode === CHAR_CODE_LF) {
-      escaped += '\\n';
+      result += char;
+      isEscaped = true;
+      continue;
+    }
+
+    if (charCode === CHAR_CODE_LF) {
+      result += '\\n';
     } else if (charCode === CHAR_CODE_CR) {
-      escaped += '\\r';
+      result += '\\r';
     } else if (charCode === CHAR_CODE_TAB) {
-      escaped += '\\t';
+      result += '\\t';
     } else if (charCode === CHAR_CODE_BACKSPACE) {
-      escaped += '\\b';
+      result += '\\b';
     } else if (charCode === CHAR_CODE_FORM_FEED) {
-      escaped += '\\f';
+      result += '\\f';
     } else {
-      escaped += char;
+      result += char;
     }
   }
-  return escaped;
+  return result;
 }
 
 /**
