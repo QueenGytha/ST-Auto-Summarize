@@ -1,265 +1,493 @@
+
 import {
-    debug,
-    getContext,
-    chat_enabled,
-    get_settings,
-    refresh_memory,
-    auto_load_profile,
-    scrollChatToBottom,
-    auto_summarize_chat,
-    summarize_messages,
-    check_message_exclusion,
-    get_previous_swipe_memory,
-    clear_memory,
-    get_data,
-    set_data,
-    last_long_injection,
-    last_short_injection,
-    last_combined_injection,
-    last_scene_injection,
-    load_settings_html,
-    initialize_settings_listeners,
-    initialize_popout,
-    initialize_message_buttons,
-    initialize_group_member_buttons,
-    initialize_slash_commands,
-    initialize_menu_buttons,
-    addSceneBreakButton,
-    bindSceneBreakButton,
-    get_message_div,
-    saveChatDebounced,
-    set_character_enabled_button_states,
-    renderAllSceneBreaks,
-    generate_combined_summary,
-    get_manifest,
-    log,
-    refresh_settings,
-    update_connection_profile_dropdown,
-    check_st_version,
-    initialize_settings,
-    get_short_memory,
-    get_long_memory,
-    combined_memory_macro,
-    MacrosParser,
-    MemoryEditInterface,
-    short_memory_macro,
-    long_memory_macro,
-    streamingProcessor,
-    initializeSceneNavigatorBar,
-    renderSceneNavigatorBar,
-    load_combined_summary,
-    get_scene_memory_injection
-} from './index.js';
+  debug,
+  log,
+  SUBSYSTEM,
+  getContext,
+  chat_enabled,
+  get_settings,
+  set_settings,
+  refresh_memory,
+  auto_load_profile,
+  scrollChatToBottom,
+  clear_memory,
+  get_data,
+  set_data,
+  last_scene_injection,
+  load_settings_html,
+  initialize_settings_listeners,
+  initialize_popout,
+  initialize_message_buttons,
+  initialize_group_member_buttons,
+  initialize_slash_commands,
+  initialize_menu_buttons,
+  addSceneBreakButton,
+  bindSceneBreakButton,
+  get_message_div,
+  saveChatDebounced,
+  set_character_enabled_button_states,
+  renderAllSceneBreaks,
+  get_manifest,
+  refresh_settings,
+  check_st_version,
+  initialize_settings,
+  extension_settings,
+  groups,
+  streamingProcessor,
+  initializeSceneNavigatorBar,
+  renderSceneNavigatorBar,
+  processSceneBreakOnChatLoad,
+  processNewMessageForSceneBreak,
+  cleanup_invalid_running_recaps,
+  installGenerateRawInterceptor,
+  installLorebookWrapper,
+  installWorldInfoActivationLogger,
+  addLorebookViewerButton,
+  bindLorebookViewerButton,
+  bindSceneBreakLorebookIcons } from
+'./index.js';
+
+// Import lorebooks utilities (will be dynamically imported if enabled)
+import * as lorebookUtils from './utils.js';
 
 // Event handling
-var last_message_swiped = null  // if an index, that was the last message swiped
-async function on_chat_event(event=null, data=null) {
-    debug(`[on_chat_event] event: ${event}, data: ${JSON.stringify(data)}`);
-    // When the chat is updated, check if the summarization should be triggered
-    debug("Chat updated: " + event)
+let operationQueueModule = null; // Reference to queue module for reloading
+// Track reason for last MESSAGE_RECEIVED to distinguish swipes
+let lastMessageReceivedReason  = null;
 
-    const context = getContext();
-    let index = data
+// Handler functions for each event type
+async function handleChatChanged() {
+  const context = getContext();
 
-    switch (event) {
-        case 'chat_changed':  // chat was changed
-            last_message_swiped = null;
-            auto_load_profile();  // load the profile for the current chat or character
-            refresh_memory();  // refresh the memory state
-            if (context?.chat?.length) {
-                scrollChatToBottom();  // scroll to the bottom of the chat (area is added due to memories)
-            }
-            break;
+  auto_load_profile(); // load the profile for the current chat or character
+  refresh_memory(); // refresh the memory state
+  if (context?.chat?.length) {
+    scrollChatToBottom(); // scroll to the bottom of the chat (area is added due to memories)
+  }
+  // Auto scene break detection on chat load
+  processSceneBreakOnChatLoad();
 
-        case 'message_deleted':   // message was deleted
-            last_message_swiped = null;
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            debug("Message deleted, refreshing memory")
-            refresh_memory();
-            break;
+  // Ensure chat lorebook exists
+  try {
+    const lorebookManager = await import('./lorebookManager.js');
+    // Make sure lorebook utils are wired
+    lorebookManager.initLorebookManager(lorebookUtils);
+    await lorebookManager.initializeChatLorebook();
+  } catch (err) {
+    debug('[Lorebooks] Failed to initialize lorebook on chat change:', String(err));
+  }
 
-        case 'before_message':
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            break;
-
-        // currently no triggers on user message rendered
-        case 'user_message':
-            last_message_swiped = null;
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            if (!get_settings('auto_summarize')) break;  // if auto-summarize is disabled, do nothing
-
-            // Summarize the chat if "include_user_messages" is enabled
-            if (get_settings('include_user_messages')) {
-                debug("New user message detected, summarizing")
-                await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
-            }
-
-            break;
-
-        case 'char_message':
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            if (!context.groupId && context.characterId === undefined) break; // no characters or group selected
-            if (streamingProcessor && !streamingProcessor.isFinished) break;  // Streaming in-progress
-            if (last_message_swiped === index) {  // this is a swipe
-                let message = context.chat[index];
-                if (!get_settings('auto_summarize_on_swipe')) break;  // if auto-summarize on swipe is disabled, do nothing
-                if (!check_message_exclusion(message)) break;  // if the message is excluded, skip
-                if (!get_previous_swipe_memory(message, 'memory')) break;  // if the previous swipe doesn't have a memory, skip
-                debug("re-summarizing on swipe")
-                await summarize_messages(index);  // summarize the swiped message
-                refresh_memory()
-                break;
-            } else { // not a swipe
-                last_message_swiped = null;
-                if (!get_settings('auto_summarize')) break;  // if auto-summarize is disabled, do nothing
-                if (get_settings("auto_summarize_on_send")) break;  // if auto_summarize_on_send is enabled, don't auto-summarize on character message
-                debug("New message detected, summarizing")
-                await auto_summarize_chat();  // auto-summarize the chat (checks for exclusion criteria and whatnot)
-                break;
-            }
-
-        case 'message_edited':  // Message has been edited
-            last_message_swiped = null;
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            if (!get_settings('auto_summarize_on_edit')) break;  // if auto-summarize on edit is disabled, skip
-            if (!check_message_exclusion(context.chat[index])) break;  // if the message is excluded, skip
-            if (!get_data(context.chat[index], 'memory')) break;  // if the message doesn't have a memory, skip
-            debug("Message with memory edited, summarizing")
-            summarize_messages(index);  // summarize that message (no await so the message edit goes through)
-
-            // TODO: I'd like to be able to refresh the memory here, but we can't await the summarization because
-            //  then the message edit textbox doesn't close until the summary is done.
-
-            break;
-
-        case 'message_swiped':  // when this event occurs, don't summarize yet (a new_message event will follow)
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            debug("Message swiped, reloading memory")
-
-            // if this is creating a new swipe, remove the current memory.
-            // This is detected when the swipe ID is greater than the last index in the swipes array,
-            //  i.e. when the swipe ID is EQUAL to the length of the swipes array, not when it's length-1.
-            let message = context.chat[index];
-            if (message.swipe_id === message.swipes.length) {
-                clear_memory(message)
-            }
-
-            refresh_memory()
-            last_message_swiped = index;
-
-            // make sure the chat is scrolled to the bottom because the memory will change
-            scrollChatToBottom();
-            break;
-
-        case 'message_sent':
-            if (!chat_enabled()) break;
-            if (get_settings('debug_mode')) {
-                if (
-                    last_long_injection ||
-                    last_short_injection ||
-                    last_combined_injection ||
-                    last_scene_injection
-                ) {
-                    if (last_long_injection) debug(`[MEMORY INJECTION] long_injection:\n${last_long_injection}`);
-                    if (last_short_injection) debug(`[MEMORY INJECTION] short_injection:\n${last_short_injection}`);
-                    if (last_combined_injection) debug(`[MEMORY INJECTION] combined_injection:\n${last_combined_injection}`);
-                    if (last_scene_injection) debug(`[MEMORY INJECTION] scene_injection:\n${last_scene_injection}`);
-                }
-            }
-            break;
-
-        default:
-            if (!chat_enabled()) break;  // if chat is disabled, do nothing
-            debug(`Unknown event: "${event}", refreshing memory`)
-            refresh_memory();
+  // Reload queue from new chat's lorebook (after ensuring it's available)
+  // Skip reload if processor is actively processing operations to prevent race conditions
+  if (operationQueueModule) {
+    if (operationQueueModule.isQueueProcessorActive()) {
+      debug('[Queue] Skipping queue reload during active processing (prevents concurrent processor bug)');
+    } else {
+      await operationQueueModule.reloadQueue();
     }
+  }
+}
+
+// Delete the auto-created lorebook when a chat is deleted
+async function handleChatDeleted(deletedChatName ) {
+  try {
+    if (!deletedChatName) {return;}
+
+    const deleteEnabled = extension_settings?.autoLorebooks?.deleteOnChatDelete ?? true;
+    if (!deleteEnabled) {
+      debug('[Lorebooks] Delete on chat delete disabled; skipping');
+      return;
+    }
+
+    // Derive character/group name from chat name (format: "<CharOrGroup> - <timestamp>")
+    let characterName = null;
+    try {
+      // If this is a group chat id, find the owning group name
+      const allGroups = groups || [];
+      const owner = allGroups.find((g) => Array.isArray(g?.chats) && g.chats.includes(deletedChatName));
+      if (owner && owner.name) {
+        characterName = owner.name;
+      }
+    } catch {/* ignore */}
+    if (!characterName) {
+      const parts = String(deletedChatName).split(' - ');
+      characterName = parts[0] || deletedChatName;
+    }
+
+    // Reconstruct the lorebook name using the same template we use for creation
+    const template = extension_settings?.autoLorebooks?.nameTemplate || 'z-AutoLB-{{chat}}';
+    const lorebookName = lorebookUtils.generateLorebookName(template, characterName, deletedChatName);
+
+    const lorebookManager = await import('./lorebookManager.js');
+    lorebookManager.initLorebookManager(lorebookUtils);
+    await lorebookManager.deleteChatLorebook(lorebookName);
+  } catch (err) {
+    debug('[Lorebooks] Error processing chat deletion:', String(err));
+  }
+}
+
+function handleMessageDeleted() {
+  if (!chat_enabled()) {return;}
+  debug("Message deleted, refreshing memory and cleaning up running recaps");
+  refresh_memory();
+  cleanup_invalid_running_recaps();
+  // Update the version selector UI after cleanup
+  if (typeof window.updateVersionSelector === 'function') {
+    window.updateVersionSelector();
+  }
+  // Refresh the scene navigator bar to remove deleted scenes
+  renderSceneNavigatorBar();
+}
+
+function handleBeforeMessage() {
+  if (!chat_enabled()) {return;}
+  debug(SUBSYSTEM.EVENT, 'before_message event - no action required');
+}
+
+function handleUserMessage() {
+  if (!chat_enabled()) {return;}
+  debug(SUBSYSTEM.EVENT, 'user_message event - no action required (auto scene break detection runs on char_message)');
+  // NOTE: Auto scene break detection runs on 'char_message' after AI responds, not here
+}
+
+async function handleCharMessageNew(index) {
+  // Auto scene break detection on new character message
+  log(SUBSYSTEM.EVENT, "Triggering auto scene break detection for character message at index", index);
+  // If the last message was a swipe and offset >= 1 (skip latest), skip detection for this char_message
+  const offset = Number(get_settings('auto_scene_break_message_offset')) || 0;
+  if (offset >= 1 && lastMessageReceivedReason === 'swipe') {
+    debug('[Scene] Skipping auto scene break detection on swipe due to offset >= 1');
+    lastMessageReceivedReason = null; // consume the reason
+    return;
+  }
+  // consume any prior reason to avoid accidental carry-over
+  lastMessageReceivedReason = null;
+  await processNewMessageForSceneBreak(index);
+}
+
+async function handleCharMessage(index) {
+  if (!chat_enabled()) {return;}
+  const context = getContext();
+  if (!context.groupId && context.characterId === undefined) {return;} // no characters or group selected
+  if (streamingProcessor && !streamingProcessor.isFinished) {return;} // Streaming in-progress
+
+  await handleCharMessageNew(index);
+}
+
+function handleMessageSwiped(index) {
+  if (!chat_enabled()) {return;}
+  const context = getContext();
+  debug("Message swiped, reloading memory");
+
+  // if this is creating a new swipe, remove the current memory.
+  // This is detected when the swipe ID is greater than the last index in the swipes array,
+  //  i.e. when the swipe ID is EQUAL to the length of the swipes array, not when it's length-1.
+  const message = context.chat[index];
+  if (message.swipe_id === message.swipes.length) {
+    clear_memory(message);
+  }
+
+  refresh_memory();
+
+  // make sure the chat is scrolled to the bottom because the memory will change
+  scrollChatToBottom();
+}
+
+function handleMessageSent() {
+  if (!chat_enabled()) {return;}
+  if (last_scene_injection) {
+    debug(`[MEMORY INJECTION] scene_injection:\n${last_scene_injection}`);
+  }
+}
+
+function handleDefaultEvent(event) {
+  if (!chat_enabled()) {return;}
+  debug(`Unknown event: "${event}", refreshing memory`);
+  refresh_memory();
+}
+
+// Event handler map for cleaner dispatch
+const eventHandlers = {
+  'chat_changed': handleChatChanged,
+  'chat_deleted': handleChatDeleted,
+  'message_deleted': handleMessageDeleted,
+  'before_message': handleBeforeMessage,
+  'user_message': handleUserMessage,
+  'char_message': handleCharMessage,
+  'message_swiped': handleMessageSwiped,
+  'message_sent': handleMessageSent
+};
+
+async function on_chat_event(event  = null, data  = null) {
+  // data is any type - different event types pass different data types (number for message id, undefined, etc.) - legitimate use of any
+  if (!event) {return;} // Guard against null event
+  debug(`[on_chat_event] event: ${event}, data: ${JSON.stringify(data)}`);
+  debug("Chat updated: " + event);
+
+  const handler = eventHandlers[event];
+  await (handler ? handler(data) : handleDefaultEvent(event));
 }
 
 // Entry point
-let memoryEditInterface;
-jQuery(async function () {
-    log(`Loading extension...`)
 
-    // Read version from manifest.json
-    const manifest = await get_manifest();
-    const VERSION = manifest.version;
-    log(`Version: ${VERSION}`)
+// Initialization function that runs when module loads
+async function initializeExtension() {
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] initializeExtension() called');
+  log(`Loading extension...`);
 
-    check_st_version()
+  // Read version from manifest.json
+  const manifest = await get_manifest();
+  const VERSION = manifest.version;
+  log(`Version: ${VERSION}`);
 
-    // Load settings
-    initialize_settings();
+  check_st_version();
 
-    memoryEditInterface = new MemoryEditInterface()
+  // Install global generateRaw interceptor BEFORE anything else
+  // This ensures ALL LLM calls (including from ST core) get metadata injected
+  installGenerateRawInterceptor();
 
-    // load settings html
-    await load_settings_html();
+  // Install lorebook wrapper for individual entry wrapping with XML tags
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] About to call installLorebookWrapper()');
+  installLorebookWrapper();
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] installLorebookWrapper() call completed');
 
-    // initialize UI stuff
-    initialize_settings_listeners();
-    initialize_popout()
-    initialize_message_buttons();
-    initialize_group_member_buttons();
-    initialize_slash_commands();
-    initialize_menu_buttons();
-    
-    // Refresh settings UI to populate dropdowns and other elements
-    refresh_settings();
+  // Install world info activation logger (PoC for tracking active entries)
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] Installing world info activation logger');
+  installWorldInfoActivationLogger();
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] World info activation logger installed');
 
-    addSceneBreakButton();
-    bindSceneBreakButton(get_message_div, getContext, set_data, get_data, saveChatDebounced);
+  // Load settings
+  initialize_settings();
 
-    // ST event listeners
-    let ctx = getContext();
-    let eventSource = ctx.eventSource;
-    let event_types = ctx.event_types;
-    debug(`[eventHandlers] Registered event_types: ${JSON.stringify(event_types)}`);
-    eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, (id, stuff) => {
-        on_chat_event('chat_completion_prompt_ready', id);
+  // load settings html
+  await load_settings_html();
+
+  // Migrate connection profile settings from names to UUIDs
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Migrating connection profile settings...');
+  const { migrateConnectionProfileSettings } = await import('./settingsMigration.js');
+  await migrateConnectionProfileSettings();
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Connection profile migration complete');
+
+  // initialize UI stuff
+  await initialize_settings_listeners();
+  initialize_popout();
+  initialize_message_buttons();
+  initialize_group_member_buttons();
+  initialize_slash_commands();
+  initialize_menu_buttons();
+
+  // Refresh settings UI to populate dropdowns and other elements
+  refresh_settings();
+
+  addSceneBreakButton();
+  bindSceneBreakButton(get_message_div, getContext, set_data, get_data, saveChatDebounced);
+
+  // Initialize lorebook viewer UI
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] Adding lorebook viewer button to message template');
+  addLorebookViewerButton();
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] Binding lorebook viewer button click handlers');
+  bindLorebookViewerButton();
+  bindSceneBreakLorebookIcons();
+  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] Lorebook viewer initialized');
+
+  // ST event listeners
+  const ctx = getContext();
+  const eventSource = ctx.eventSource;
+  const event_types = ctx.event_types;
+  debug(`[eventHandlers] Registered event_types: ${JSON.stringify(event_types)}`);
+  // Inject metadata into chat completion prompts for proxy logging
+  eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, async (promptData) => {
+    await on_chat_event('chat_completion_prompt_ready', promptData);
+
+    try {
+      debug('[Interceptor] CHAT_COMPLETION_PROMPT_READY handler started');
+
+      // Check if injection is enabled (get_settings expects a key parameter)
+      const enabled = get_settings('first_hop_proxy_send_chat_details');
+      debug('[Interceptor] first_hop_proxy_send_chat_details:', enabled);
+
+      if (!enabled) {
+        debug('[Interceptor] Metadata injection disabled, skipping');
+        return; // Not enabled, skip
+      }
+
+      debug('[Interceptor] Metadata injection enabled, proceeding...');
+
+      // Import metadata injector
+      const { injectMetadataIntoChatArray, hasExistingMetadata } = await import('./metadataInjector.js');
+
+      // Process the chat array
+      if (promptData && Array.isArray(promptData.chat)) {
+        debug('[Interceptor] Processing chat array for CHAT_COMPLETION_PROMPT_READY');
+
+        // Check if metadata already exists (another handler may have already injected)
+        if (hasExistingMetadata(promptData.chat)) {
+          debug('[Interceptor] Metadata already exists in prompt, skipping chat-{index} metadata');
+          return;
+        }
+
+        // Check if an extension operation is already in progress
+        const { getOperationSuffix } = await import('./operationContext.js');
+        const operationSuffix = getOperationSuffix();
+
+        if (operationSuffix !== null) {
+          // Extension operation in progress (scene break, recap, etc.)
+          // The generateRawInterceptor will handle metadata injection
+          debug('[Interceptor] Extension operation in progress, skipping chat-{index} metadata');
+          return;
+        }
+
+        // Only inject chat-{index} for actual user/character messages
+        const context = getContext();
+        const messageIndex = (context?.chat?.length ?? 0) - 1;
+
+        if (messageIndex >= 0) {
+          // Check if this is a swipe
+          const lastMessage = context.chat[messageIndex];
+          const swipeId = lastMessage?.swipe_id ?? 0;
+
+          // Build operation string: chat-{index} or chat-{index}-swipe{n}
+          let operation = `chat-${messageIndex}`;
+          if (swipeId > 0) {
+            // swipe_id is 0-indexed, but display as 1-indexed (swipe 1 → swipe2)
+            operation += `-swipe${swipeId + 1}`;
+          }
+
+          injectMetadataIntoChatArray(promptData.chat, { operation });
+          debug(`[Interceptor] Injected metadata with operation: ${operation}`);
+        } else {
+          // Fallback to plain 'chat' if index unavailable
+          injectMetadataIntoChatArray(promptData.chat, { operation: 'chat' });
+          debug('[Interceptor] Injected metadata with operation: chat (index unavailable)');
+        }
+
+        debug('[Interceptor] Successfully processed chat array');
+
+      } else {
+        debug('[Interceptor] No chat array found in promptData');
+      }
+    } catch (err) {
+      debug('[Interceptor] Error processing CHAT_COMPLETION_PROMPT_READY:', String(err));
+    }
+  });
+
+  eventSource.makeLast(event_types.CHARACTER_MESSAGE_RENDERED, (id) => on_chat_event('char_message', id));
+  eventSource.on(event_types.USER_MESSAGE_RENDERED, (id) => on_chat_event('user_message', id));
+  eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, (id, _stuff) => on_chat_event('before_message', id));
+  eventSource.on(event_types.MESSAGE_DELETED, (id) => on_chat_event('message_deleted', id));
+  // Record message_received reasons (e.g., 'swipe') so we can gate char_message handling
+  if (event_types.MESSAGE_RECEIVED) {
+    eventSource.on(event_types.MESSAGE_RECEIVED, (id, reason) => {
+      try {
+        lastMessageReceivedReason = reason;
+      } catch {/* ignore */}
     });
-    eventSource.makeLast(event_types.CHARACTER_MESSAGE_RENDERED, (id) => on_chat_event('char_message', id));
-    eventSource.on(event_types.USER_MESSAGE_RENDERED, (id) => on_chat_event('user_message', id));
-    eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, (id, stuff) => on_chat_event('before_message', id));
-    eventSource.on(event_types.MESSAGE_DELETED, (id) => on_chat_event('message_deleted', id));
-    eventSource.on(event_types.MESSAGE_EDITED, (id) => on_chat_event('message_edited', id));
-    eventSource.on(event_types.MESSAGE_SWIPED, (id) => on_chat_event('message_swiped', id));
-    eventSource.on(event_types.CHAT_CHANGED, () => on_chat_event('chat_changed'));
-    eventSource.on(event_types.MORE_MESSAGES_LOADED, refresh_memory)
-    eventSource.on(event_types.MESSAGE_SENT, (id) => on_chat_event('message_sent', id));
-    eventSource.on(event_types.MORE_MESSAGES_LOADED, () => {
+  }
+  eventSource.on(event_types.MESSAGE_EDITED, (id) => on_chat_event('message_edited', id));
+  eventSource.on(event_types.MESSAGE_SWIPED, (id) => on_chat_event('message_swiped', id));
+  eventSource.on(event_types.CHAT_CHANGED, () => on_chat_event('chat_changed'));
+  // Also listen for chat deletions to clean up auto lorebooks
+  if (event_types.CHAT_DELETED) {
+    eventSource.on(event_types.CHAT_DELETED, (name) => on_chat_event('chat_deleted', name));
+  }
+  if (event_types.GROUP_CHAT_DELETED) {
+    eventSource.on(event_types.GROUP_CHAT_DELETED, (name) => on_chat_event('chat_deleted', name));
+  }
+  eventSource.on(event_types.MORE_MESSAGES_LOADED, refresh_memory);
+  eventSource.on(event_types.MESSAGE_SENT, (id) => on_chat_event('message_sent', id));
+  eventSource.on(event_types.MORE_MESSAGES_LOADED, () => {
     refresh_memory();
     renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
     renderSceneNavigatorBar();
-    });
-    eventSource.on(event_types.CHAT_CHANGED, () => {
-        renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
-    });
-    eventSource.on('groupSelected', set_character_enabled_button_states)
-    eventSource.on(event_types.GROUP_UPDATED, set_character_enabled_button_states)
+  });
+  eventSource.on(event_types.CHAT_CHANGED, () => {
+    renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
+  });
+  eventSource.on('groupSelected', set_character_enabled_button_states);
+  eventSource.on(event_types.GROUP_UPDATED, set_character_enabled_button_states);
 
-    // Log all events for debugging
-Object.entries(event_types).forEach(([key, type]) => {
+  // Log all events for debugging
+  for (const [key, type] of Object.entries(event_types)) {
     eventSource.on(type, (...args) => {
-        debug(`[eventHandlers] Event triggered: ${key} (${type}), args: ${JSON.stringify(args)}`);
+      debug(`[eventHandlers] Event triggered: ${key} (${type}), args: ${JSON.stringify(args)}`);
     });
-});
+  }
 
-    // Global Macros
-    MacrosParser.registerMacro(short_memory_macro, () => get_short_memory());
-    MacrosParser.registerMacro(long_memory_macro, () => get_long_memory());
-    MacrosParser.registerMacro(combined_memory_macro, () => load_combined_summary());
+  // Export to the Global namespace so can be used in the console for debugging
+  window.getContext = getContext;
+  window.refresh_memory = refresh_memory;
+  window.refresh_settings = refresh_settings;
 
-    // Export to the Global namespace so can be used in the console for debugging
-    window.getContext = getContext;
-    window.refresh_memory = refresh_memory;
-    window.generate_combined_summary = generate_combined_summary;
-    window.refresh_settings = refresh_settings;
-    window.update_connection_profile_dropdown = update_connection_profile_dropdown;
+  initializeSceneNavigatorBar();
 
-    initializeSceneNavigatorBar();
+  // Initialize operation queue system
+  log('[Queue] Initializing operation queue...');
+  operationQueueModule = await import('./operationQueue.js');
+  const { initQueueUI } = await import('./operationQueueUI.js');
+
+  await operationQueueModule.initOperationQueue();
+  initQueueUI();
+  log('[Queue] ✓ Operation queue initialized (handlers will be registered after module init)');
+
+  // Initialize Auto-Lorebooks functionality
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] About to initialize Auto-Lorebooks functionality...');
+  log('[Lorebooks] Initializing Auto-Lorebooks functionality...');
+  try {
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Importing modules...');
+    const lorebookManager = await import('./lorebookManager.js');
+    const categoryIndexes = await import('./categoryIndexes.js');
+    const lorebookEntryMerger = await import('./lorebookEntryMerger.js');
+    const recapToLorebookProcessor = await import('./recapToLorebookProcessor.js');
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] All modules imported successfully');
+
+    // Initialize lorebooks modules
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing lorebookManager...');
+    lorebookManager.initLorebookManager(lorebookUtils);
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing categoryIndexes...');
+    categoryIndexes.initCategoryIndexes(lorebookUtils, lorebookManager, { get_settings });
+
+    // Initialize with operation queue
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing lorebookEntryMerger...');
+    if (operationQueueModule) {
+      lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, operationQueueModule);
+    } else {
+      lorebookEntryMerger.initLorebookEntryMerger(lorebookUtils, lorebookManager, { get_settings }, null);
+    }
+
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing recapToLorebookProcessor...');
+    recapToLorebookProcessor.initRecapToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger, { get_settings, set_settings });
+    debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] ✓ recapToLorebookProcessor initialized');
+
+    log('[Lorebooks] ✓ Auto-Lorebooks functionality initialized');
+  } catch (err) {
+    log('[Lorebooks] Failed to initialize Auto-Lorebooks:', err);
+  }
+
+  // Initialize metadata injection system
+  log('[Metadata] Initializing metadata injection...');
+  try {
+    const metadataInjector = await import('./metadataInjector.js');
+    metadataInjector.initMetadataInjector({ get_settings });
+    log('[Metadata] ✓ Metadata injection initialized');
+  } catch (err) {
+    log('[Metadata] Failed to initialize metadata injection:', err);
+  }
+
+  // Register operation handlers AFTER all modules are initialized
+  if (operationQueueModule) {
+    log('[Queue] Registering operation handlers...');
+    const { registerAllOperationHandlers } = await import('./operationHandlers.js');
+    registerAllOperationHandlers();
+    log('[Queue] ✓ Operation handlers registered');
+  }
+}
+
+// Call initialization immediately when module loads
+debug(SUBSYSTEM.EVENT, 'Module loaded, calling initializeExtension()...');
+initializeExtension().catch((err) => {
+  console.error('[EVENT HANDLERS] Failed to initialize extension:', err);
+  console.error('[EVENT HANDLERS] Stack trace:', err.stack);
 });
 
 export {
-    on_chat_event,
-    memoryEditInterface
-};
+  on_chat_event };

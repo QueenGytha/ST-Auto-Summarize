@@ -1,9 +1,9 @@
 :root {
-    --auto_summarize_short: #2E8B57;
-    --auto_summarize_long: #4682B4;
-    --auto_summarize_old: #8B0000;
-    --auto_summarize_excluded: #555;
-    --auto_summarize_redundant_opacity: 50%;
+    --auto_recap_short: #2E8B57;
+    --auto_recap_long: #4682B4;
+    --auto_recap_old: #8B0000;
+    --auto_recap_excluded: #555;
+    --auto_recap_redundant_opacity: 50%;
 }
 
 #drawer_content > hr {
@@ -15,16 +15,16 @@
 }
 
 /* disabled buttons aren't properly styled by default */
-.settings_input:disabled, #auto_summarize_memory_state_interface *:disabled {
+.settings_input:disabled, #auto_recap_memory_state_interface *:disabled {
     cursor: not-allowed;
     opacity: 0.5;
     pointer-events: none;
 }
 
-.auto_summarize_scene_break_hidden { display: none !important; }
+.auto_recap_scene_break_hidden { display: none !important; }
 
 /* tables for formatting settings */
-.auto_summarize_memory_settings_content table {
+.auto_recap_memory_settings_content table {
     width: 100%;
 }
 
@@ -33,7 +33,7 @@
     transition: box-shadow 0.3s;
 }
 
-.auto_summarize_memory_settings_content h4.textAlignCenter {
+.auto_recap_memory_settings_content h4.textAlignCenter {
     color: #2e8bcb; /* Choose your preferred color */
     font-size: 1.5em;
     font-weight: bold;
@@ -80,8 +80,8 @@ input.inline_setting     {
 Div displaying the memory on a message.
 By default, text is greyed to indicate that is it not injected.
 */
-.auto_summarize_memory_display,
-.auto_summarize_scene_break_div {
+.auto_recap_memory_display,
+.auto_recap_scene_break_div {
     background: transparent !important;
     color: grey;
     font-size: small;
@@ -96,54 +96,42 @@ By default, text is greyed to indicate that is it not injected.
 }
 
 /* If you want to keep the border lines, but not white, adjust here: */
-.auto_summarize_scene_break_border {
-    border-top: 1px solid var(--auto_summarize_long) !important;
-    border-bottom: 1px solid var(--auto_summarize_long) !important;
+.auto_recap_scene_break_border {
+    border-top: 1px solid var(--auto_recap_long) !important;
+    border-bottom: 1px solid var(--auto_recap_long) !important;
     background: transparent !important;
 }
 
-/* to style short-term memories. */
-.auto_summarize_short_memory {
-    color: var(--auto_summarize_short);
-}
-.auto_summarize_short_memory.auto_summarize_lagging_memory {
-    color: rgba(from var(--auto_summarize_short) r g b / var(--auto_summarize_redundant_opacity));
-    text-shadow: none;
+/* to style single message recaps. */
+.auto_recap_single_message_recap {
+    color: var(--auto_recap_short);
 }
 /* to style long-term memories. */
-.auto_summarize_long_memory {
-    color: var(--auto_summarize_long);
-}
-.auto_summarize_long_memory.auto_summarize_lagging_memory {
-    color: rgba(from var(--auto_summarize_long) r g b / var(--auto_summarize_redundant_opacity));
-    text-shadow: none;
+.auto_recap_long_memory {
+    color: var(--auto_recap_long);
 }
 /* to style memories marked for long-term, but are past the context limit */
-.auto_summarize_old_memory {
-    color: var(--auto_summarize_old);
-}
-.auto_summarize_old_memory.auto_summarize_lagging_memory {
-    color: rgba(from var(--auto_summarize_old) r g b / var(--auto_summarize_redundant_opacity));
-    text-shadow: none;
+.auto_recap_old_memory {
+    color: var(--auto_recap_old);
 }
 /* to style memories that are force-excluded */
-.auto_summarize_exclude_memory {
-    color: var(--auto_summarize_excluded);
+.auto_recap_exclude_memory {
+    color: var(--auto_recap_excluded);
 }
 
 /* Style the message buttons, separating them from the rest */
-.auto_summarize_memory_button_separator {
+.auto_recap_memory_button_separator {
     margin: 0 1em;
 }
 
 /* memory edit text area needs a bit of negative top margin to fit right */
-.auto_summarize_memory_edit_textarea {
+.auto_recap_memory_edit_textarea {
     margin-top: -6px;
 }
 
 /* on small screens, remove the button separator */
 @media all and (max-width: 600px) {
-    .auto_summarize_memory_button_separator {
+    .auto_recap_memory_button_separator {
         display: none;
     }
 }
@@ -153,115 +141,94 @@ By default, text is greyed to indicate that is it not injected.
     flex-wrap: wrap;
 }
 
-/* the progress bar, mimicking the width of the main chat area */
-#sheld .auto_summarize_progress_bar {
-    top: var(--topBarBlockSize);
-    width: var(--sheldWidth);
-    position: fixed;
-    z-index: 999999;
-    padding: 5px;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(5px);
-}
-
-/* the progres bar when placed in the memory edit interface */
-#auto_summarize_memory_state_interface #progress_bar .auto_summarize_progress_bar {
-    width: 100%;
-    position: absolute;
-    bottom: 0;
-}
-#auto_summarize_memory_state_interface #progress_bar {
-    position: relative;
-}
-
-/* in the group member selection, the buttons that toggle summarization */
-.auto_summarize_memory_group_member_enable {
+/* in the group member selection, the buttons that toggle recapping */
+.auto_recap_memory_group_member_enable {
     transition: all 0.2s ease-in-out;
 }
-.auto_summarize_memory_group_member_enable:not(.auto_summarize_memory_group_member_enabled) {
+.auto_recap_memory_group_member_enable:not(.auto_recap_memory_group_member_enabled) {
     opacity: 0.4;
     filter: brightness(0.5);
 }
-.auto_summarize_memory_group_member_enable.auto_summarize_memory_group_member_enabled {
+.auto_recap_memory_group_member_enable.auto_recap_memory_group_member_enabled {
     filter: drop-shadow(0px 0px 5px rgb(65, 210, 243));
 }
-.auto_summarize_memory_group_member_enable:hover {
+.auto_recap_memory_group_member_enable:hover {
     opacity: inherit;
     filter: drop-shadow(0px 0px 5px rgb(65, 210, 243));
 }
 
 /* Memory state interface */
-dialog:has(#auto_summarize_memory_state_interface) {
+dialog:has(#auto_recap_memory_state_interface) {
     height: 90vh;  /* make the memory edit dialog always full height */
 }
-#auto_summarize_memory_state_interface {
+#auto_recap_memory_state_interface {
     height: 100%;
     display: flex;
     flex-direction: column;
 }
-#auto_summarize_memory_state_interface #filter_bar {
+#auto_recap_memory_state_interface #filter_bar {
     margin: 1em 0;  /* Filter bar vertical margins */
 }
-#auto_summarize_memory_state_interface #filter_bar .filter_box {
+#auto_recap_memory_state_interface #filter_bar .filter_box {
     margin: 0 0.5em;
     padding: 0.2em 0.5em;
     border: 1px black solid;
     border-radius: 5px;
     box-shadow: 1px 1px 5px black;
 }
-#auto_summarize_memory_state_interface #filter_bar .filter_box button {
+#auto_recap_memory_state_interface #filter_bar .filter_box button {
     width: 100%;
 }
-#auto_summarize_memory_state_interface #filter_bar .filter_box label {
+#auto_recap_memory_state_interface #filter_bar .filter_box label {
     width: fit-content;
     margin: auto;
 }
 
-#auto_summarize_memory_state_interface table {
+#auto_recap_memory_state_interface table {
     overflow-y: auto;
     display: block;
 }
-#auto_summarize_memory_state_interface button.menu_button i {
+#auto_recap_memory_state_interface button.menu_button i {
     margin-right: 1em;  /* buttons with icon before text needs margin after the icon */
 }
-#auto_summarize_memory_state_interface #bulk_regex, #auto_summarize_memory_state_interface #bulk_delete, #auto_summarize_memory_state_interface #bulk_summarize  {
+#auto_recap_memory_state_interface #bulk_regex, #auto_recap_memory_state_interface #bulk_delete, #auto_recap_memory_state_interface #bulk_recap  {
     color: red;
 }
-#auto_summarize_memory_state_interface #regex_selector  {
+#auto_recap_memory_state_interface #regex_selector  {
     margin: 0;
 }
-#auto_summarize_memory_state_interface table thead {
+#auto_recap_memory_state_interface table thead {
     position: sticky;
     top: 0;
     z-index: 1;  /* to be above the body when scrolling */
     background: var(--SmartThemeBlurTintColor)
 }
-#auto_summarize_memory_state_interface table {
+#auto_recap_memory_state_interface table {
     border-collapse: collapse;  /* needed to have borders around cells */
 }
-#auto_summarize_memory_state_interface table tr.last_in_context_top {
+#auto_recap_memory_state_interface table tr.last_in_context_top {
     border-top: 3px dotted var(--SmartThemeQuoteColor) !important;
 }
-#auto_summarize_memory_state_interface table tr.last_in_context_bottom {
+#auto_recap_memory_state_interface table tr.last_in_context_bottom {
     border-bottom: 3px dotted var(--SmartThemeQuoteColor) !important;
 }
-#auto_summarize_memory_state_interface table tbody td {
+#auto_recap_memory_state_interface table tbody td {
     position: relative;  /* to be under the head when scrolling */
 }
-#auto_summarize_memory_state_interface table td.interface_summary {
+#auto_recap_memory_state_interface table td.interface_recap {
     width: 100%;
 }
-#auto_summarize_memory_state_interface table td.interface_summary textarea {
+#auto_recap_memory_state_interface table td.interface_recap textarea {
     margin: 0;
     overflow-y: hidden;
 }
-#auto_summarize_memory_state_interface table td.interface_summary textarea span.memory_edit_regex_match {
+#auto_recap_memory_state_interface table td.interface_recap textarea span.memory_edit_regex_match {
     color: red;
 }
-#auto_summarize_memory_state_interface table tr:has(input.interface_message_select:checked, textarea:focus) {
+#auto_recap_memory_state_interface table tr:has(input.interface_message_select:checked, textarea:focus) {
     background-color: var(--white30a);  /* highlight selected rows */
 }
-#auto_summarize_memory_state_interface table td.interface_summary i {  /* edit icon */
+#auto_recap_memory_state_interface table td.interface_recap i {  /* edit icon */
     position: absolute;
     top: 0;
     right: 0;
@@ -269,18 +236,18 @@ dialog:has(#auto_summarize_memory_state_interface) {
     scale: 0.6;
     color: var(--white20a);
 }
-#auto_summarize_memory_state_interface table td div.interface_actions {
+#auto_recap_memory_state_interface table td div.interface_actions {
     display: flex;
     margin: 2px;
 }
 
-#auto_summarize_memory_state_interface #selected_count {
+#auto_recap_memory_state_interface #selected_count {
     font-weight: bold;
 }
 
 /* Scene break formatting now matches long-term memory formatting */
-.auto_summarize_scene_break_div,
-.auto_summarize_scene_break_div * {
+.auto_recap_scene_break_div,
+.auto_recap_scene_break_div * {
     background: transparent !important;
     color: grey;
     font-size: small;
@@ -295,17 +262,17 @@ dialog:has(#auto_summarize_memory_state_interface) {
 }
 
 /* Scene break: visible (active) state - matches long-term memory */
-.auto_summarize_scene_break_div.sceneBreak-visible,
-.auto_summarize_scene_break_div.sceneBreak-visible * {
-    color: var(--auto_summarize_long) !important;
+.auto_recap_scene_break_div.sceneBreak-visible,
+.auto_recap_scene_break_div.sceneBreak-visible * {
+    color: var(--auto_recap_long) !important;
     font-style: normal;
     border: none;
     background: transparent !important;
 }
 
 /* Scene break: hidden (inactive) state - matches excluded/greyed */
-.auto_summarize_scene_break_div.sceneBreak-hidden,
-.auto_summarize_scene_break_div.sceneBreak-hidden * {
+.auto_recap_scene_break_div.sceneBreak-hidden,
+.auto_recap_scene_break_div.sceneBreak-hidden * {
     color: grey !important;
     font-style: italic;
     border: none;
@@ -313,36 +280,36 @@ dialog:has(#auto_summarize_memory_state_interface) {
     opacity: 0.6;
 }
 
-/* Hide the summary content when hidden */
-.auto_summarize_scene_break_div.sceneBreak-hidden .sceneBreak-content {
+/* Hide the recap content when hidden */
+.auto_recap_scene_break_div.sceneBreak-hidden .sceneBreak-content {
     display: none !important;
 }
 
 /* Scene break border only when visible */
-.auto_summarize_scene_break_div.sceneBreak-visible.auto_summarize_scene_break_border {
-    border-top: 1px solid var(--auto_summarize_long) !important;
-    border-bottom: 1px solid var(--auto_summarize_long) !important;
+.auto_recap_scene_break_div.sceneBreak-visible.auto_recap_scene_break_border {
+    border-top: 1px solid var(--auto_recap_long) !important;
+    border-bottom: 1px solid var(--auto_recap_long) !important;
 }
 
-.auto_summarize_scene_break_div.sceneBreak-hidden.auto_summarize_scene_break_border {
+.auto_recap_scene_break_div.sceneBreak-hidden.auto_recap_scene_break_border {
     border-top: none !important;
     border-bottom: none !important;
 }
 
 /* Scene break visually selected (clicked/focused) */
-.auto_summarize_scene_break_div.sceneBreak-selected,
-.auto_summarize_scene_break_div.sceneBreak-selected * {
+.auto_recap_scene_break_div.sceneBreak-selected,
+.auto_recap_scene_break_div.sceneBreak-selected * {
     background: rgba(0,0,0,0.12) !important; /* Matches typical SillyTavern selection highlight */
     border-color: #ffd700 !important;
-    color: var(--auto_summarize_long, #4682B4) !important;
+    color: var(--auto_recap_long, #4682B4) !important;
     box-shadow: 0 0 0 2px #ffd700;
     outline: none;
     font-style: normal;
     transition: background 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
-/* Scene break name input and summary box styling */
-.auto_summarize_scene_break_div input.sceneBreak-name {
+/* Scene break name input and recap box styling */
+.auto_recap_scene_break_div input.sceneBreak-name {
     font-size: 1em;
     font-weight: bold;
     color: inherit;
@@ -354,7 +321,7 @@ dialog:has(#auto_summarize_memory_state_interface) {
     transition: color 0.2s;
 }
 
-.auto_summarize_scene_break_div textarea.scene-summary-box {
+.auto_recap_scene_break_div textarea.scene-recap-box {
     border: 1px solid #e0e0e0;
     background: #fff;
     padding: 0.5em;
@@ -368,23 +335,33 @@ dialog:has(#auto_summarize_memory_state_interface) {
 }
 
 /* Scene break link styling */
-.auto_summarize_scene_break_div .scene-start-link {
-    color: var(--auto_summarize_long);
+.auto_recap_scene_break_div .scene-start-link {
+    color: var(--auto_recap_long);
     text-decoration: underline dotted;
     cursor: pointer;
 }
 
-.auto_summarize_scene_break_div .scene-start-link:hover {
+.auto_recap_scene_break_div .scene-start-link:hover {
     color: #ffd700;
     text-decoration: underline solid;
 }
 
 /* Hide scene break when not visible */
-.auto_summarize_scene_break_hidden {
+.auto_recap_scene_break_hidden {
     display: none !important;
 }
 
-#scene-summary-navigator-bar {
+/* Collapsed scene break - hide content */
+.auto_recap_scene_break_div.sceneBreak-collapsed .sceneBreak-content {
+    display: none !important;
+}
+
+/* Collapsed scene break - adjust header margin when content is hidden */
+.auto_recap_scene_break_div.sceneBreak-collapsed .sceneBreak-header {
+    margin-bottom: 0 !important;
+}
+
+#scene-recap-navigator-bar {
     position: fixed;
     top: 0;
     left: 0;
@@ -395,23 +372,164 @@ dialog:has(#auto_summarize_memory_state_interface) {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 60px;
+    padding-top: 0;
     gap: 8px;
     box-shadow: 2px 0 8px rgba(0,0,0,0.2);
-    overflow-y: auto;
+    overflow-y: hidden; /* Changed from auto - sections scroll independently */
 }
-#scene-summary-navigator-bar .scene-nav-link {
+#scene-recap-navigator-bar .scene-nav-link {
     color: #ffd700;
     background: none;
     border: none;
     cursor: pointer;
     font-size: 1.2em;
     margin: 0;
-    padding: 4px 0;
+    padding: 4px 0.4em;
     text-decoration: underline dotted;
     transition: color 0.2s;
 }
-#scene-summary-navigator-bar .scene-nav-link:hover {
+#scene-recap-navigator-bar .scene-nav-link:hover {
     color: #fff;
     text-decoration: underline solid;
+}
+
+/* Scene Navigation Links Container */
+.scene-nav-links-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1 1 auto; /* Grow to fill remaining space (2/3 when operations expanded, more when collapsed) */
+    overflow-y: auto; /* Independent scrollbar for scene links */
+    overflow-x: hidden;
+    width: 100%;
+    min-height: 50px;
+    gap: 8px;
+}
+
+/* Running Recap Controls - fixed at bottom */
+.running-recap-controls {
+    flex-shrink: 0; /* Prevent controls from shrinking */
+}
+
+/* Queue Navbar Toggle Button */
+#queue_navbar_toggle {
+    width: 16px;
+    padding: 0.8em 0.15em;
+}
+
+/* Operations Queue Styles */
+#shared_operation_queue_ui {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* Don't shrink to ensure consistent sizing */
+    /* 1/3 of available space (total - navbar padding - running controls estimate) */
+    max-height: calc((100vh - 260px) / 3);
+    width: 100%;
+    align-self: stretch; /* Override parent's center alignment */
+}
+
+.queue-header {
+    margin-bottom: 0.5em;
+    flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+#queue_toggle_visibility {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.3em;
+    cursor: pointer;
+    min-height: 1.5em;
+    width: 100%;
+}
+
+#queue_toggle_visibility h4 {
+    margin: 0;
+    font-size: 1em;
+    flex: 1;
+}
+
+#queue_toggle_visibility i {
+    flex-shrink: 0;
+    padding: 0.2em 0.5em;
+}
+
+.queue-list {
+    flex: 1 1 auto; /* Allow list to grow and shrink */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.queue-controls {
+    display: flex;
+    flex-direction: row;
+    gap: 0.2em;
+    flex-shrink: 0;
+    margin-left: 0.5em;
+}
+
+.queue-controls button {
+    padding: 0.2em 0.4em;
+    font-size: 0.85em;
+}
+
+.queue-operation {
+    padding: 0.4em;
+    margin-bottom: 0.3em;
+    border-radius: 4px;
+    font-size: 0.8em;
+}
+
+.queue-operation-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4em;
+    margin-bottom: 0.2em;
+}
+
+.queue-operation-icon {
+    flex-shrink: 0;
+    margin-top: 0.1em;
+}
+
+.queue-operation-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.queue-operation-type {
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.queue-operation-params {
+    opacity: 0.7;
+    font-size: 0.85em;
+    margin-top: 0.1em;
+}
+
+.queue-operation-duration {
+    opacity: 0.6;
+    font-size: 0.8em;
+    margin-left: 1.5em;
+}
+
+.queue-operation-error {
+    color: #ff6b6b;
+    font-size: 0.85em;
+    margin-top: 0.3em;
+    margin-left: 1.5em;
+}
+
+/* Queue collapsed state */
+#shared_operation_queue_ui.queue-collapsed .queue-list {
+    display: none;
+}
+
+#shared_operation_queue_ui.queue-collapsed .queue-controls {
+    display: none;
+}
+
+#shared_operation_queue_ui.queue-collapsed {
+    min-height: auto;
+    max-height: none;
 }

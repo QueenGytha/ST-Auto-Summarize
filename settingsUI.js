@@ -1,486 +1,547 @@
+
 import {
-    log,
-    debug,
-    error,
-    toast,
-    get_message_history,
-    get_settings,
-    set_settings,
-    get_settings_element,
-    get_manifest,
-    load_settings_html,
-    save_profile,
-    load_profile,
-    rename_profile,
-    new_profile,
-    delete_profile,
-    export_profile,
-    import_profile,
-    toggle_character_profile,
-    create_summary_prompt,
-    toggle_chat_profile,
-    get_character_profile,
-    set_character_profile,
-    get_chat_profile,
-    update_scene_summary_preset_dropdown,
-    toggle_chat_enabled,
-    refresh_settings,
-    refresh_memory,
-    summarize_messages,
-    stop_summarization,
-    memoryEditInterface,
-    remember_message_toggle,
-    forget_message_toggle,
-    display_injection_preview,
-    collect_messages_to_auto_summarize,
-    generate_combined_summary,
-    get_summary_preset_max_tokens,
-    get_combined_summary_preset_max_tokens,
-    get_user_setting_text_input,
-    display_text_modal,
-    open_edit_memory_input,
-    MemoryEditInterface,
-    bind_setting,
-    bind_function,
-    reset_settings,
-    get_long_token_limit,
-    get_short_token_limit,
-    load_combined_summary,
-    save_combined_summary,
-    short_memory_macro,
-    long_memory_macro,
-    generic_memories_macro,
-    default_short_template,
-    default_long_template,
-    default_scene_template,
-    default_combined_template,
-} from './index.js';
+  log,
+  debug,
+  error,
+  toast,
+  get_settings,
+  set_settings,
+  save_profile,
+  load_profile,
+  rename_profile,
+  new_profile,
+  delete_profile,
+  export_profile,
+  import_profile,
+  toggle_character_profile,
+  toggle_chat_profile,
+  toggle_chat_enabled,
+  refresh_settings,
+  refresh_memory,
+  get_user_setting_text_input,
+  bind_setting,
+  bind_function,
+  reset_settings,
+  extension_settings,
+  saveSettingsDebounced,
+  selectorsExtension } from
+'./index.js';
+import {
+  ensureEntityTypesSetting,
+  renderEntityTypesList,
+  handleAddEntityTypeFromInput,
+  removeEntityType,
+  restoreEntityTypesToDefault } from
+'./entityTypeSettingsUI.js';
+import {
+  MAX_LINE_LENGTH,
+  UI_UPDATE_DELAY_MS,
+  MAX_DISPLAY_PERCENTAGE,
+  MAX_RECAP_ATTEMPTS,
+  DEFAULT_POLLING_INTERVAL,
+  DEFAULT_MINIMUM_SCENE_LENGTH,
+  MAX_SCENE_LENGTH_SETTING
+} from './constants.js';
 
 // UI initialization
-function initialize_settings_listeners() {
-    log("Initializing settings listeners")
+// eslint-disable-next-line max-lines-per-function -- Sequential UI bindings for 50+ settings controls (226 lines is acceptable for initialization)
+async function initialize_settings_listeners() {
+  log("Initializing settings listeners");
 
 
-    bind_setting('#error_detection_enabled', 'error_detection_enabled', 'boolean');
-    bind_setting('#regular_summary_error_detection_enabled', 'regular_summary_error_detection_enabled', 'boolean');
-    bind_setting('#combined_summary_error_detection_enabled', 'combined_summary_error_detection_enabled', 'boolean');
-    bind_setting('#regular_summary_error_detection_retries', 'regular_summary_error_detection_retries', 'number');
-    bind_setting('#combined_summary_error_detection_retries', 'combined_summary_error_detection_retries', 'number');
-    bind_setting('#regular_summary_error_detection_preset', 'regular_summary_error_detection_preset', 'text');
-    bind_setting('#combined_summary_error_detection_preset', 'combined_summary_error_detection_preset', 'text');
-    bind_setting('#regular_summary_error_detection_prefill', 'regular_summary_error_detection_prefill', 'text');
-    bind_setting('#combined_summary_error_detection_prefill', 'combined_summary_error_detection_prefill', 'text');
-    bind_setting('#short_template', 'short_template', 'text');
-    bind_setting('#long_template', 'long_template', 'text');
-    bind_setting('#scene_summary_template', 'scene_summary_template', 'text');
-    bind_setting('#combined_summary_template', 'combined_summary_template', 'text');
+  bind_setting(selectorsExtension.validation.enabled, 'error_detection_enabled', 'boolean');
+  bind_setting(selectorsExtension.autoHide.sceneCount, 'auto_hide_scene_count', 'number', refresh_memory);
 
-    bind_function('#edit_short_term_injection_template', async () => {
-        let description = `
-        This controls the template for short-term memory injection.<br>
-        Macros: <b>{{memories}}</b> will be replaced with the short-term summaries.
-        `;
-        const value = await get_user_setting_text_input('short_template', 'Edit Short-Term Injection Template', description, default_short_template);
-        if (value !== undefined) {
-            set_settings('short_template', value);
-            save_profile();
-        }
-    });
+  // Trigger profile changes
+  bind_setting(selectorsExtension.profiles.select, 'profile', 'text', () => load_profile(), false);
+  bind_function(selectorsExtension.profiles.restore, () => load_profile(), false);
+  bind_function(selectorsExtension.profiles.rename, () => rename_profile(), false);
+  bind_function(selectorsExtension.profiles.new, new_profile, false);
+  bind_function(selectorsExtension.profiles.delete, delete_profile, false);
 
-    bind_function('#edit_long_term_injection_template', async () => {
-        let description = `
-        This controls the template for long-term memory injection.<br>
-        Macros: <b>{{memories}}</b> will be replaced with the long-term summaries.
-        `;
-        const value = await get_user_setting_text_input('long_template', 'Edit Long-Term Injection Template', description, default_long_template);
-        if (value !== undefined) {
-            set_settings('long_template', value);
-            save_profile();
-        }
-    });
+  bind_function(selectorsExtension.profiles.export, () => export_profile(), false);
+  bind_function(selectorsExtension.profiles.import, (e) => {
 
-    bind_function('#edit_scene_injection_template', async () => {
-        let description = `
-    This controls the template for scene summary injection.<br>
-    Macros: <b>{{scene_summaries}}</b> will be replaced with the scene summaries.
-        `;
-        const value = await get_user_setting_text_input('scene_summary_template', 'Edit Scene Injection Template', description, default_scene_template);
-        if (value !== undefined) {
-            set_settings('scene_summary_template', value);
-            save_profile();
-        }
-    });
+    log($(e.target));
+    log($(e.target).parent().find(selectorsExtension.profiles.importFile));
+    $(e.target).parent().find(selectorsExtension.profiles.importFile).click();
+  }, false);
+  bind_function(selectorsExtension.profiles.importFile, (e) => void import_profile(e), false);
 
-    bind_function('#edit_combined_injection_template', async () => {
-        let description = `
-    This controls the template for combined summary injection.<br>
-    Macros: <b>{{memories}}</b> will be replaced with the combined summaries.
-        `;
-        const value = await get_user_setting_text_input('combined_summary_template', 'Edit Combined Injection Template', description, default_combined_template);
-        if (value !== undefined) {
-            set_settings('combined_summary_template', value);
-            save_profile();
-        }
-    });
+  bind_function(selectorsExtension.profiles.characterAutoload, () => toggle_character_profile());
+  bind_function(selectorsExtension.profiles.chatAutoload, () => toggle_chat_profile());
+  bind_setting(selectorsExtension.profiles.notifySwitch, 'notify_on_profile_switch', 'boolean');
 
-    bind_function('#edit_regular_summary_error_detection_prompt', async () => {
-        let description = `
-Configure the prompt used to verify that regular summaries meet your criteria.
-The prompt should return "VALID" for acceptable summaries and "INVALID" for unacceptable ones.
+  bind_function(selectorsExtension.settings.restoreDefaults, reset_settings);
 
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{summary}}:</b> The generated summary to validate.</li>
-</ul>`;
-        get_user_setting_text_input('regular_summary_error_detection_prompt', 'Edit Regular Summary Error Detection Prompt', description);
-    });
-    
-    bind_function('#edit_combined_summary_error_detection_prompt', async () => {
-        let description = `
-Configure the prompt used to verify that combined summaries meet your criteria.
-The prompt should return "VALID" for acceptable summaries and "INVALID" for unacceptable ones.
+  bind_function(selectorsExtension.memory.toggle, () => toggle_chat_enabled(), false);
+  bind_function(selectorsExtension.memory.refresh, () => refresh_memory());
 
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{summary}}:</b> The generated combined summary to validate.</li>
-</ul>`;
-        get_user_setting_text_input('combined_summary_error_detection_prompt', 'Edit Combined Summary Error Detection Prompt', description);
-    });
+  // First-Hop Proxy Integration Settings
+  bind_setting(selectorsExtension.proxy.sendChatDetails, 'first_hop_proxy_send_chat_details', 'boolean');
+  bind_setting(selectorsExtension.proxy.suppressOtherLorebooks, 'suppress_other_lorebooks', 'boolean');
 
-    bind_setting('#combined_summary_short_count', 'combined_summary_short_count', 'number');
-    bind_setting('#combined_summary_short_once', 'combined_summary_short_once', 'boolean');
-    bind_setting('#combined_summary_long_count', 'combined_summary_long_count', 'number');
-    bind_setting('#combined_summary_long_once', 'combined_summary_long_once', 'boolean');
-    bind_setting('#combined_summary_scene_count', 'combined_summary_scene_count', 'number');
-    bind_setting('#combined_summary_scene_once', 'combined_summary_scene_once', 'boolean');
+  // Message Filtering Settings (used by scene recaps)
+  bind_setting(selectorsExtension.filter.includeUser, 'include_user_messages', 'boolean');
+  bind_setting(selectorsExtension.filter.includeHidden, 'include_system_messages', 'boolean');
+  bind_setting(selectorsExtension.filter.includeSystem, 'include_narrator_messages', 'boolean');
+  bind_setting(selectorsExtension.filter.messageLength, 'message_length_threshold', 'number');
 
-    bind_setting('#combined_summary_run_interval', 'combined_summary_run_interval', 'number');
-    bind_setting('#auto_hide_message_age', 'auto_hide_message_age', 'number', refresh_memory);
-    bind_setting('#auto_hide_scene_count', 'auto_hide_scene_count', 'number', refresh_memory);
-    bind_setting('#show_combined_summary_toast', 'show_combined_summary_toast', 'boolean');
+  bind_setting(selectorsExtension.misc.defaultEnabled, 'default_chat_enabled', 'boolean');
+  bind_setting(selectorsExtension.misc.globalToggle, 'use_global_toggle_state', 'boolean');
 
-    // Trigger profile changes
-    bind_setting('#profile', 'profile', 'text', () => load_profile(), false);
-    bind_function('#save_profile', () => save_profile(), false);
-    bind_function('#restore_profile', () => load_profile(), false);
-    bind_function('#rename_profile', () => rename_profile(), false)
-    bind_function('#new_profile', new_profile, false);
-    bind_function('#delete_profile', delete_profile, false);
-
-    bind_function('#export_profile', () => export_profile(), false)
-    bind_function('#import_profile', (e) => {
-
-        log($(e.target))
-        log($(e.target).parent().find("#import_file"))
-        $(e.target).parent().find("#import_file").click()
-    }, false)
-    bind_function('#import_file', async (e) => await import_profile(e), false)
-
-    bind_function('#character_profile', () => toggle_character_profile());
-    bind_function('#chat_profile', () => toggle_chat_profile());
-    bind_setting('#notify_on_profile_switch', 'notify_on_profile_switch', 'boolean')
-
-    bind_function('#stop_summarization', stop_summarization);
-    bind_function('#revert_settings', reset_settings);
-
-    bind_function('#toggle_chat_memory', () => toggle_chat_enabled(), false);
-    bind_function('#edit_memory_state', () => memoryEditInterface.show())
-    bind_function("#refresh_memory", () => refresh_memory());
-
-    bind_function('#edit_summary_prompt', async () => {
-        let max_tokens = await get_summary_preset_max_tokens()
-        let description = `
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{message}}:</b> The message text.</li>
-    <li><b>{{history}}:</b> The message history as configured by the "Message History" setting.</li>
-    <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset (Currently: ${max_tokens}).</li>
-</ul>
-`
-        get_user_setting_text_input('prompt', 'Edit Summary Prompt', description)
-    })
-    bind_function('#edit_long_term_memory_prompt', async () => {
-        let description = `
-<ul style="text-align: left; font-size: smaller;">
-    <li>This will be the content of the <b>{{${long_memory_macro}}}</b> macro.</li>
-    <li>If there is nothing in long-term memory, the whole macro will be empty.</li>
-    <li>In this input, the <b>{{${generic_memories_macro}}}</b> macro will be replaced by all long-term memories.</li>
-</ul>`
-        get_user_setting_text_input('long_template', `Edit Long-Term Memory Injection`, description)
-    })
-    bind_function('#edit_short_term_memory_prompt', async () => {
-        let description = `
-<ul style="text-align: left; font-size: smaller;">
-    <li>This will be the content of the <b>{{${short_memory_macro}}}</b> macro.</li>
-    <li>If there is nothing in short-term memory, the whole macro will be empty.</li>
-    <li>In this input, the <b>{{${generic_memories_macro}}}</b> macro will be replaced by all short-term memories.</li>
-</ul>`
-        get_user_setting_text_input('short_template', `Edit Short-Term Memory Injection`, description)
-    })
-    bind_function('#preview_message_history', async () => {
-        let chat = getContext().chat;
-        let history = get_message_history(chat.length-1);
-        display_text_modal("{{history}} Macro Preview (Last Message)", history);
-    })
-    bind_function('#preview_summary_prompt', async () => {
-        let text = await create_summary_prompt(getContext().chat.length-1)
-        display_text_modal("Summary Prompt Preview (Last Message)", text);
-    })
-
-    bind_setting('#connection_profile', 'connection_profile', 'text')
-    bind_setting('#completion_preset', 'completion_preset', 'text')
-    bind_setting('#auto_summarize', 'auto_summarize', 'boolean');
-    bind_setting('#auto_summarize_on_edit', 'auto_summarize_on_edit', 'boolean');
-    bind_setting('#auto_summarize_on_swipe', 'auto_summarize_on_swipe', 'boolean');
-    bind_setting('#auto_summarize_batch_size', 'auto_summarize_batch_size', 'number');
-    bind_setting('#auto_summarize_message_limit', 'auto_summarize_message_limit', 'number');
-    bind_setting('#auto_summarize_progress', 'auto_summarize_progress', 'boolean');
-    bind_setting('#auto_summarize_on_send', 'auto_summarize_on_send', 'boolean');
-    bind_setting('#summarization_delay', 'summarization_delay', 'number');
-    bind_setting('#summarization_time_delay', 'summarization_time_delay', 'number')
-    bind_setting('#prefill', 'prefill', 'text')
-    bind_setting('#show_prefill', 'show_prefill', 'boolean')
-
-    bind_setting('#include_user_messages', 'include_user_messages', 'boolean');
-    bind_setting('#include_system_messages', 'include_system_messages', 'boolean');
-    bind_setting('#include_narrator_messages', 'include_narrator_messages', 'boolean')
-    bind_setting('#message_length_threshold', 'message_length_threshold', 'number');
-
-    bind_setting('#include_world_info', 'include_world_info', 'boolean');
-    bind_setting('#block_chat', 'block_chat', 'boolean');
-    bind_setting('#nest_messages_in_prompt', 'nest_messages_in_prompt', 'boolean')
-    bind_setting('#include_message_history', 'include_message_history', 'number');
-    bind_setting('#include_message_history_mode', 'include_message_history_mode', 'text');
-    bind_setting('#include_user_messages_in_history', 'include_user_messages_in_history', 'boolean');
-
-    bind_setting('#summary_injection_separator', 'summary_injection_separator', 'text')
-    bind_setting('#summary_injection_threshold', 'summary_injection_threshold', 'number');
-    bind_setting('#exclude_messages_after_threshold', 'exclude_messages_after_threshold', 'boolean');
-    bind_setting('#keep_last_user_message', 'keep_last_user_message', 'boolean')
-
-    bind_setting('input[name="short_term_position"]', 'short_term_position', 'number');
-    bind_setting('#short_term_depth', 'short_term_depth', 'number');
-    bind_setting('#short_term_role', 'short_term_role');
-    bind_setting('#short_term_scan', 'short_term_scan', 'boolean');
-    bind_setting('#short_term_context_limit', 'short_term_context_limit', 'number', () => {
-        $('#short_term_context_limit_display').text(get_short_token_limit());
-    });
-    bind_setting('input[name="short_term_context_type"]', 'short_term_context_type', 'text', () => {
-        $('#short_term_context_limit_display').text(get_short_token_limit());
-    })
-
-    bind_setting('input[name="long_term_position"]', 'long_term_position', 'number');
-    bind_setting('#long_term_depth', 'long_term_depth', 'number');
-    bind_setting('#long_term_role', 'long_term_role');
-    bind_setting('#long_term_scan', 'long_term_scan', 'boolean');
-    bind_setting('#long_term_context_limit', 'long_term_context_limit', 'number', () => {
-        $('#long_term_context_limit_display').text(get_long_token_limit());  // update the displayed token limit
-    });
-    bind_setting('input[name="long_term_context_type"]', 'long_term_context_type', 'text', () => {
-        $('#long_term_context_limit_display').text(get_long_token_limit());  // update the displayed token limit
-    })
-
-    bind_setting('#debug_mode', 'debug_mode', 'boolean');
-    bind_setting('#display_memories', 'display_memories', 'boolean')
-    bind_setting('#default_chat_enabled', 'default_chat_enabled', 'boolean');
-    bind_setting('#use_global_toggle_state', 'use_global_toggle_state', 'boolean');
-
-    // trigger the change event once to update the display at start
-    $('#long_term_context_limit').trigger('change');
-    $('#short_term_context_limit').trigger('change');
-
-    // --- Combined Summary Settings ---
-    bind_setting('#combined_summary_enabled', 'combined_summary_enabled', 'boolean');
-    bind_setting('#combined_summary_prompt', 'combined_summary_prompt', 'text');
-    bind_setting('#combined_summary_prefill', 'combined_summary_prefill', 'text');
-    bind_setting('#combined_summary_template', 'combined_summary_template', 'text');
-    bind_setting('#combined_summary_position', 'combined_summary_position', 'number');
-    bind_setting('#combined_summary_depth', 'combined_summary_depth', 'number');
-    bind_setting('#combined_summary_role', 'combined_summary_role');
-    bind_setting('#combined_summary_scan', 'combined_summary_scan', 'boolean');
-    bind_setting('#combined_summary_context_limit', 'combined_summary_context_limit', 'number');
-    bind_setting('input[name="combined_summary_context_type"]', 'combined_summary_context_type', 'text');
-    bind_setting('#combined_summary_completion_preset', 'combined_summary_completion_preset', 'text');
-    bind_function('#edit_combined_summary_prompt', async () => {
-        let max_tokens = await get_combined_summary_preset_max_tokens();
-        let description = `
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{message}}:</b> The concatenated summaries.</li>
-    <li><b>{{history}}:</b> The message history (chat messages and/or summaries) as configured in 'Message History'.</li>
-    <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset (Currently: ${max_tokens}).</li>
-    <li><b>{{previous_combined_summary}}:</b> The previously generated combined summary, if one exists..</li>
-</ul>
-`;
-        get_user_setting_text_input('combined_summary_prompt', 'Edit Combined Summary Prompt', description);
-    });
-    bind_function('#view_combined_summary', async () => {
-    const summary = load_combined_summary();
-    
-    // Create a popup with editable textarea
-    let ctx = getContext();
-    let title = "Current Combined Summary";
-    let description = "You can edit the combined summary below:";
-    
-    // Create HTML with a textarea but NO custom buttons - we'll handle them using callPopup's default buttons
-    let html = `
-        <div>
-            <h3>${title}</h3>
-            <p>${description}</p>
-            <textarea id="combined_summary_textarea" rows="20" style="width: 100%; height: 300px;">${summary || ""}</textarea>
-        </div>
-    `;
-    
-    try {
-        // Store original summary for potential restoration
-        const originalSummary = summary;
-        
-        // Create a popup with standard buttons that we rename
-        const result = await ctx.callPopup(html, 'text', undefined, {
-            okButton: "Save",
-            cancelButton: "Cancel",
-            wide: true,
-            large: true
-        });
-        
-        // If the user clicked Save (OK button), save the summary
-        if (result) {
-            const newText = $('#combined_summary_textarea').val();
-            save_combined_summary(newText);
-            toast("Combined summary updated successfully", "success");
-            refresh_memory();
-        }
-        // If Cancel is clicked, do nothing (popup closes automatically)
-        
-        // Add a regenerate button AFTER the popup is shown
-        setTimeout(() => {
-            const $popup = $('.popup:visible');
-            
-            // Create and style the regenerate button
-            const $regenerateBtn = $('<button class="menu_button"><i class="fa-solid fa-rotate"></i> Regenerate</button>');
-            $regenerateBtn.css({
-                'position': 'absolute',
-                'bottom': '28px',
-                'left': '20px',
-                'z-index': '10'
-            });
-            
-            // Handle regenerate functionality
-            $regenerateBtn.on('click', async function() {
-                $(this).prop('disabled', true);
-                $(this).html('<i class="fa-solid fa-spinner fa-spin"></i> Generating...');
-                
-                try {
-                    toast("Generating new combined summary...", "info");
-                    let newSummary = await generate_combined_summary();
-                    $('#combined_summary_textarea').val(newSummary || "");
-                } catch (err) {
-                    toast("Error generating combined summary: " + err, "error");
-                } finally {
-                    $(this).prop('disabled', false);
-                    $(this).html('<i class="fa-solid fa-rotate"></i> Regenerate');
-                }
-            });
-            
-            // Add the button to the visible popup
-            $popup.append($regenerateBtn);
-
-            // --- Add Cancel button ---
-            // Only add if not already present
-            if ($popup.find('.menu_button.cancel-combined-summary').length === 0) {
-                const $cancelBtn = $('<button class="menu_button cancel-combined-summary"><i class="fa-solid fa-xmark"></i> Cancel</button>');
-                $cancelBtn.css({
-                    'position': 'absolute',
-                    'bottom': '28px',
-                    'left': '150px',
-                    'z-index': '10'
-                });
-                $cancelBtn.on('click', function() {
-                    // Close the popup without saving changes
-                    $popup.find('.popup-close, .close, .fa-circle-xmark').trigger('click');
-                });
-                $popup.append($cancelBtn);
-            }
-            // --- End Cancel button ---
-        }, 10); // Short delay to ensure popup is rendered
-        
-    } catch (error) {
-        console.error("Error with popup:", error);
-        // Fallback to basic prompt if the popup fails
-        const confirmEdit = confirm("Would you like to manually edit the combined summary?");
-        if (confirmEdit) {
-            const newText = prompt("Enter new combined summary:", summary || "");
-            if (newText !== null) {
-                save_combined_summary(newText);
-                toast("Combined summary updated successfully", "success");
-                refresh_memory();
-            }
-        }
+  // --- Scene Recap Settings ---
+  // Scene names are now provided by the recap output itself (scene_name field)
+  bind_setting(selectorsExtension.scene.navWidth, 'scene_recap_navigator_width', 'number', (value ) => {
+    // Enforce min/max constraints (30-500 pixels)
+    const clampedValue = Math.max(MAX_LINE_LENGTH, Math.min(UI_UPDATE_DELAY_MS, value));
+    if (clampedValue !== value) {
+      set_settings('scene_recap_navigator_width', clampedValue);
+      refresh_settings();
+      toast(`Navigator width clamped to valid range (${MAX_LINE_LENGTH}-${UI_UPDATE_DELAY_MS} pixels)`, 'warning');
     }
-});
-    // --- END Combined Summary Settings ---
+    // Re-render navigator bar with new width
+    if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
+    // Update navbar toggle button position to match new width
+    if (window.updateNavbarToggleButtonPosition) {window.updateNavbarToggleButtonPosition();}
+  });
+  bind_setting(selectorsExtension.scene.navFontSize, 'scene_recap_navigator_font_size', 'number', () => {
+    // Re-render navigator bar with new font size
+    if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
+  });
+  bind_setting(selectorsExtension.scene.prompt, 'scene_recap_prompt', 'text');
+  bind_setting(selectorsExtension.scene.prefill, 'scene_recap_prefill', 'text');
+  bind_setting(selectorsExtension.scene.messageTypes, 'scene_recap_message_types', 'text');
 
-    // --- Scene Summary Settings ---
-    bind_setting('#scene_summary_enabled', 'scene_summary_enabled', 'boolean');
-    bind_setting('#scene_summary_prompt', 'scene_summary_prompt', 'text');
-    bind_setting('#scene_summary_prefill', 'scene_summary_prefill', 'text');
-    bind_setting('#scene_summary_position', 'scene_summary_position', 'number');
-    bind_setting('#scene_summary_depth', 'scene_summary_depth', 'number');
-    bind_setting('#scene_summary_role', 'scene_summary_role');
-    bind_setting('#scene_summary_scan', 'scene_summary_scan', 'boolean');
-    bind_setting('#scene_summary_history_mode', 'scene_summary_history_mode', 'text');
-    
-    // Persist and display scene_summary_history_count
-    const $sceneHistoryCount = $('#scene_summary_history_count');
-    const $sceneHistoryCountDisplay = $('#scene_summary_history_count_display');
-    // Set default if not present
-    if (get_settings('scene_summary_history_count') === undefined) {
-        set_settings('scene_summary_history_count', 1);
-    }
-    $sceneHistoryCount.val(get_settings('scene_summary_history_count') || 1);
-    $sceneHistoryCountDisplay.text($sceneHistoryCount.val());
-    $sceneHistoryCount.on('input change', function () {
-        let val = Math.max(1, Math.min(99, Number($(this).val()) || 1));
-        set_settings('scene_summary_history_count', val);
-        $sceneHistoryCount.val(val);
-        $sceneHistoryCountDisplay.text(val);
-    });
+  // Persist and display scene_recap_history_count
+  const $sceneHistoryCount = $(selectorsExtension.scene.historyCount);
+  const $sceneHistoryCountDisplay = $(selectorsExtension.scene.historyCountDisplay);
+  // Set default if not present
+  if (get_settings('scene_recap_history_count') === undefined) {
+    set_settings('scene_recap_history_count', 1);
+  }
+  $sceneHistoryCount.val(get_settings('scene_recap_history_count') || 1);
+  $sceneHistoryCountDisplay.text($sceneHistoryCount.val());
+  $sceneHistoryCount.on('input change', function () {
+    const val = Math.max(1, Math.min(MAX_DISPLAY_PERCENTAGE, Number($(this).val()) || 1));
+    set_settings('scene_recap_history_count', val);
+    save_profile(); // auto-save when changed
+    $sceneHistoryCount.val(val);
+    $sceneHistoryCountDisplay.text(val);
+  });
 
-    // --- Scene Summary Validation Settings ---
-    bind_setting('#scene_summary_error_detection_enabled', 'scene_summary_error_detection_enabled', 'boolean');
-    bind_setting('#scene_summary_error_detection_preset', 'scene_summary_error_detection_preset', 'text');
-    bind_setting('#scene_summary_error_detection_prefill', 'scene_summary_error_detection_prefill', 'text');
-    bind_setting('#scene_summary_error_detection_retries', 'scene_summary_error_detection_retries', 'number');
-    bind_setting('#scene_summary_error_detection_prompt', 'scene_summary_error_detection_prompt', 'text');
+  // --- Scene Recap Validation Settings ---
+  bind_setting(selectorsExtension.validation.sceneEnabled, 'scene_recap_error_detection_enabled', 'boolean');
+  bind_setting(selectorsExtension.validation.scenePreset, 'scene_recap_error_detection_preset', 'text');
+  bind_setting(selectorsExtension.validation.sceneIncludePresetPrompts, 'scene_recap_error_detection_include_preset_prompts', 'boolean');
+  bind_setting(selectorsExtension.validation.scenePrefill, 'scene_recap_error_detection_prefill', 'text');
+  bind_setting(selectorsExtension.validation.sceneRetries, 'scene_recap_error_detection_retries', 'number');
+  bind_setting(selectorsExtension.validation.scenePrompt, 'scene_recap_error_detection_prompt', 'text');
 
-    bind_function('#edit_scene_summary_error_detection_prompt', async () => {
-        let description = `
-Configure the prompt used to verify that scene summaries meet your criteria.
-The prompt should return "VALID" for acceptable summaries and "INVALID" for unacceptable ones.
+  bind_function(selectorsExtension.validation.sceneEditPrompt, async () => {
+    const description = `
+Configure the prompt used to verify that scene recaps meet your criteria.
+The prompt should return "VALID" for acceptable recaps and "INVALID" for unacceptable ones.
 
 Available Macros:
 <ul style="text-align: left; font-size: smaller;">
-    <li><b>{{summary}}:</b> The generated scene summary to validate.</li>
+    <li><b>{{recap}}:</b> The generated scene recap to validate.</li>
 </ul>`;
-        get_user_setting_text_input('scene_summary_error_detection_prompt', 'Edit Scene Summary Error Detection Prompt', description);
-    });
-    bind_function('#edit_scene_summary_prompt', async () => {
-        let description = `
+    await get_user_setting_text_input('scene_recap_error_detection_prompt', 'Edit Scene Recap Error Detection Prompt', description);
+  });
+  bind_function(selectorsExtension.scene.editPrompt, async () => {
+    const description = `
 Available Macros:
 <ul style="text-align: left; font-size: smaller;">
-    <li><b>{{message}}:</b> The scene content to summarize.</li>
+    <li><b>{{message}}:</b> The scene content to recap.</li>
     <li><b>{{history}}:</b> The message history as configured by the "Scene Message History Mode" setting.</li>
     <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset.</li>
+    <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
+    <li><b>{{active_setting_lore}}:</b> Active setting_lore entries at the time of the scene summary (if enabled in settings).</li>
 </ul>
 `;
-        get_user_setting_text_input('scene_summary_prompt', 'Edit Scene Summary Prompt', description);
-    });
+    await get_user_setting_text_input('scene_recap_prompt', 'Edit Scene Recap Prompt', description);
+  });
 
-    // Scene summary context limit and type
-    bind_setting('#scene_summary_context_limit', 'scene_summary_context_limit', 'number');
-    bind_setting('input[name="scene_summary_context_type"]', 'scene_summary_context_type', 'text');
+  // Scene recap preset and connection profile
+  bind_setting(selectorsExtension.scene.completionPreset, 'scene_recap_completion_preset', 'text');
+  bind_setting(selectorsExtension.scene.includePresetPrompts, 'scene_recap_include_preset_prompts', 'boolean');
+  bind_setting(selectorsExtension.scene.includeActiveSettingLore, 'scene_recap_include_active_setting_lore', 'boolean');
+  bind_setting(selectorsExtension.scene.connectionProfile, 'scene_recap_connection_profile', 'text');
 
-    refresh_settings()
+  // --- Running Scene Recap Settings ---
+  bind_setting(selectorsExtension.running.autoGenerate, 'running_scene_recap_auto_generate', 'boolean');
+  bind_setting(selectorsExtension.running.showNavbar, 'running_scene_recap_show_navbar', 'boolean', () => {
+    // Refresh navbar buttons visibility
+    if (window.updateRunningSceneRecapNavbar) {window.updateRunningSceneRecapNavbar();}
+  });
+  bind_setting(selectorsExtension.running.prompt, 'running_scene_recap_prompt', 'text');
+  bind_setting(selectorsExtension.running.prefill, 'running_scene_recap_prefill', 'text');
+  bind_setting(selectorsExtension.running.completionPreset, 'running_scene_recap_completion_preset', 'text');
+  bind_setting(selectorsExtension.running.includePresetPrompts, 'running_scene_recap_include_preset_prompts', 'boolean');
+  bind_setting(selectorsExtension.running.connectionProfile, 'running_scene_recap_connection_profile', 'text');
+  bind_setting(selectorsExtension.running.position, 'running_scene_recap_position', 'number');
+  bind_setting(selectorsExtension.running.depth, 'running_scene_recap_depth', 'number');
+  bind_setting(selectorsExtension.running.role, 'running_scene_recap_role');
+  bind_setting(selectorsExtension.running.scan, 'running_scene_recap_scan', 'boolean');
+
+  // Running scene recap exclude latest slider
+  const $runningExcludeLatest = $(selectorsExtension.running.excludeLatest);
+  const $runningExcludeLatestDisplay = $(selectorsExtension.running.excludeLatestDisplay);
+  if (get_settings('running_scene_recap_exclude_latest') === undefined) {
+    set_settings('running_scene_recap_exclude_latest', 1);
+  }
+  $runningExcludeLatest.val(get_settings('running_scene_recap_exclude_latest') || 1);
+  $runningExcludeLatestDisplay.text($runningExcludeLatest.val());
+  $runningExcludeLatest.on('input change', function () {
+    const val = Math.max(0, Math.min(MAX_RECAP_ATTEMPTS, Number($(this).val()) || 1));
+    set_settings('running_scene_recap_exclude_latest', val);
+    save_profile();
+    $runningExcludeLatest.val(val);
+    $runningExcludeLatestDisplay.text(val);
+  });
+
+  // View/edit running scene recap button
+  bind_function(selectorsExtension.running.view, async () => {
+    const { get_running_recap, get_current_running_recap_version, get_running_recap_versions, set_current_running_recap_version } = await import('./runningSceneRecap.js');
+    const current = get_running_recap(get_current_running_recap_version());
+    const ctx = getContext();
+
+    if (!current) {
+      toast('No running recap available yet. Generate a scene recap first.', 'warning');
+      return;
+    }
+
+    const html = `
+            <div>
+                <h3>View/Edit Running Scene Recap</h3>
+                <p>Current version: v${current.version} (${current.prev_scene_index ?? 0} > ${current.new_scene_index ?? 0})</p>
+                <p>Editing will create a new version.</p>
+                <textarea id="view_running_recap_textarea" data-testid="view-running-recap-textarea" rows="20" style="width: 100%; height: 400px;">${current.content || ""}</textarea>
+            </div>
+        `;
+
+    try {
+      const result = await ctx.callPopup(html, 'text', undefined, {
+        okButton: "Save",
+        cancelButton: "Cancel",
+        wide: true,
+        large: true
+      });
+
+      if (result) {
+        const edited = $(selectorsExtension.viewRunning.textarea).val();
+        if (edited !== null && edited !== current.content) {
+          // Editing creates a new version with same scene indexes
+          const versions = get_running_recap_versions();
+          const newVersion = {
+            version: versions.length + 1,
+            content: edited,
+            timestamp: Date.now(),
+            scene_count: current.scene_count,
+            exclude_count: current.exclude_count,
+            prev_scene_index: current.prev_scene_index ?? 0,
+            new_scene_index: current.new_scene_index ?? 0
+          };
+          versions.push(newVersion);
+          set_current_running_recap_version(newVersion.version);
+          toast('Created new version from edit', 'success');
+          refresh_memory();
+        }
+      }
+    } catch (err) {
+      error('Failed to edit running recap', err);
+    }
+  });
+
+  // Edit running scene recap prompt button
+  bind_function(selectorsExtension.running.editPrompt, async () => {
+    const description = `
+Configure the prompt used to combine multiple scene recaps into a cohesive narrative memory.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{current_running_recap}}:</b> The current running recap (if exists).</li>
+    <li><b>{{scene_recaps}}:</b> The individual scene recaps to merge.</li>
+</ul>`;
+    await get_user_setting_text_input('running_scene_recap_prompt', 'Edit Running Scene Recap Prompt', description);
+  });
+
+  // --- Auto Scene Break Detection Settings ---
+  bind_setting(selectorsExtension.autoScene.onLoad, 'auto_scene_break_on_load', 'boolean');
+  bind_setting(selectorsExtension.autoScene.onMessage, 'auto_scene_break_on_new_message', 'boolean');
+  bind_setting(selectorsExtension.autoScene.generateRecap, 'auto_scene_break_generate_recap', 'boolean');
+  bind_setting(selectorsExtension.autoScene.checkWhich, 'auto_scene_break_check_which_messages', 'text');
+
+  // Minimum scene length with live display update
+  const $autoSceneMinLength = $(selectorsExtension.autoScene.minLength);
+  const $autoSceneMinLengthDisplay = $(selectorsExtension.autoScene.minLengthDisplay);
+  if (get_settings('auto_scene_break_minimum_scene_length') === undefined) {
+    set_settings('auto_scene_break_minimum_scene_length', DEFAULT_MINIMUM_SCENE_LENGTH);
+  }
+  $autoSceneMinLength.val(get_settings('auto_scene_break_minimum_scene_length') ?? DEFAULT_MINIMUM_SCENE_LENGTH);
+  $autoSceneMinLengthDisplay.text($autoSceneMinLength.val());
+  $autoSceneMinLength.on('input change', function () {
+    let val = Number($(this).val());
+    if (Number.isNaN(val)) {val = DEFAULT_MINIMUM_SCENE_LENGTH;}
+    val = Math.max(1, Math.min(MAX_SCENE_LENGTH_SETTING, val));
+    set_settings('auto_scene_break_minimum_scene_length', val);
+    save_profile();
+    $autoSceneMinLength.val(val);
+    $autoSceneMinLengthDisplay.text(val);
+  });
+
+  bind_setting(selectorsExtension.autoScene.prompt, 'auto_scene_break_prompt', 'text');
+  bind_setting(selectorsExtension.autoScene.prefill, 'auto_scene_break_prefill', 'text');
+  bind_setting(selectorsExtension.autoScene.connectionProfile, 'auto_scene_break_connection_profile', 'text');
+  bind_setting(selectorsExtension.autoScene.completionPreset, 'auto_scene_break_completion_preset', 'text');
+  bind_setting(selectorsExtension.autoScene.includePresetPrompts, 'auto_scene_break_include_preset_prompts', 'boolean');
+
+  // Message offset with live display update
+  const $autoSceneBreakOffset = $(selectorsExtension.autoScene.messageOffset);
+  const $autoSceneBreakOffsetValue = $(selectorsExtension.autoScene.offsetDisplay);
+  if (get_settings('auto_scene_break_message_offset') === undefined) {
+    set_settings('auto_scene_break_message_offset', 1);
+  }
+  $autoSceneBreakOffset.val(get_settings('auto_scene_break_message_offset') ?? 1);
+  $autoSceneBreakOffsetValue.text($autoSceneBreakOffset.val());
+  $autoSceneBreakOffset.on('input change', function () {
+    let val = Number($(this).val());
+    if (Number.isNaN(val)) {val = 1;}
+    val = Math.max(0, Math.min(DEFAULT_POLLING_INTERVAL, val));
+    set_settings('auto_scene_break_message_offset', val);
+    save_profile(); // auto-save when changed
+    $autoSceneBreakOffset.val(val);
+    $autoSceneBreakOffsetValue.text(val);
+  });
+
+  // Edit prompt button
+  bind_function(selectorsExtension.autoScene.editPrompt, async () => {
+    const description = `
+Configure the prompt used to detect scene breaks automatically.
+The prompt should return "true" if the message is a scene break, or "false" if it is not.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{message}}:</b> The message text to analyze for scene break detection.</li>
+</ul>`;
+    await get_user_setting_text_input('auto_scene_break_prompt', 'Edit Auto Scene Break Detection Prompt', description);
+  });
+
+  // Initialize running scene recap navbar
+  const { createRunningSceneRecapNavbar, updateRunningSceneRecapNavbar } = await import('./runningSceneRecapUI.js');
+  createRunningSceneRecapNavbar();
+  updateRunningSceneRecapNavbar();
+
+  // Initialize Auto-Lorebooks settings event listeners
+  initialize_lorebooks_settings_listeners();
+
+  refresh_settings();
+}
+
+function initialize_lorebooks_settings_listeners() {
+  ensureEntityTypesSetting();
+  renderEntityTypesList();
+
+  // Entity type management
+  $(document).on('click', '#autolorebooks-add-entity-type', (event) => {
+    event.preventDefault();
+    handleAddEntityTypeFromInput();
+  });
+  $(document).on('keypress', '#autolorebooks-entity-type-input', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleAddEntityTypeFromInput();
+    }
+  });
+  $(document).on('click', '.autolorebooks-entity-type-remove', (event) => {
+    event.preventDefault();
+    const type = $(event.currentTarget).attr('data-type') || '';
+    removeEntityType(type);
+  });
+  $(document).on('click', '#autolorebooks-restore-entity-types', (event) => {
+    event.preventDefault();
+    restoreEntityTypesToDefault();
+  });
+
+  // Name template input
+  $(document).on('input', '#autolorebooks-name-template', function () {
+    const value = $(this).val().trim();
+    if (value && value.length > 0) {
+      if (!extension_settings.autoLorebooks) {extension_settings.autoLorebooks = {};}
+      extension_settings.autoLorebooks.nameTemplate = value;
+      saveSettingsDebounced();
+    }
+  });
+
+  // Delete on chat delete checkbox
+  $(document).on('change', '#autolorebooks-delete-on-chat-delete', function () {
+    const value = $(this).prop('checked');
+    if (!extension_settings.autoLorebooks) {extension_settings.autoLorebooks = {};}
+    extension_settings.autoLorebooks.deleteOnChatDelete = value;
+    saveSettingsDebounced();
+  });
+
+  // Auto-reorder alphabetically checkbox
+  $(document).on('change', '#autolorebooks-auto-reorder-alphabetically', function () {
+    const value = $(this).prop('checked');
+    if (!extension_settings.autoLorebooks) {extension_settings.autoLorebooks = {};}
+    extension_settings.autoLorebooks.autoReorderAlphabetically = value;
+    saveSettingsDebounced();
+  });
+
+  // Removed legacy Auto-Lorebooks queue toggles (queue is mandatory)
+
+  // Recap processing settings
+  $(document).on('change', '#autolorebooks-recap-skip-duplicates', function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_recap_skip_duplicates', value);
+    save_profile();
+  });
+
+  $(document).on('change', '#autolorebooks-recap-merge-connection', function () {
+    const value = $(this).val();
+    set_settings('auto_lorebooks_recap_merge_connection_profile', value);
+    save_profile();
+  });
+
+  $(document).on('change', '#autolorebooks-recap-merge-preset', function () {
+    const value = $(this).val();
+    set_settings('auto_lorebooks_recap_merge_completion_preset', value);
+    save_profile();
+  });
+
+  $(document).on('change', selectorsExtension.lorebook.mergeIncludePresetPrompts, function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_recap_merge_include_preset_prompts', value);
+    save_profile();
+  });
+
+  $(document).on('input', '#autolorebooks-recap-merge-prefill', function () {
+    const value = $(this).val();
+    set_settings('auto_lorebooks_recap_merge_prefill', value);
+    save_profile();
+  });
+
+  bind_setting('#autolorebooks-recap-merge-prompt', 'auto_lorebooks_recap_merge_prompt', 'text');
+  bind_function('#edit_autolorebooks_recap_merge_prompt', async () => {
+    const description = `
+Configure the prompt used to merge new recap information with existing lorebook entry content.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{existing_content}}:</b> Current lorebook entry content.</li>
+    <li><b>{{new_content}}:</b> New information from recap to merge.</li>
+    <li><b>{{entry_name}}:</b> Name of the lorebook entry being updated.</li>
+</ul>`;
+    await get_user_setting_text_input('auto_lorebooks_recap_merge_prompt', 'Edit Lorebook Merge Prompt', description);
+  });
+
+  // Duplicate Detection – Stage 1: Registry Lorebook Entry Lookup
+  // Bind to correct IDs from settings.html to ensure selections persist
+  $(document).on('change', '#autolorebooks-recap-lorebook-entry-lookup-connection', function () {
+    const value = $(this).val();
+    set_settings('auto_lorebooks_recap_lorebook_entry_lookup_connection_profile', value);
+    save_profile();
+  });
+
+  $(document).on('change', '#autolorebooks-recap-lorebook-entry-lookup-preset', function () {
+    const value = $(this).val();
+    set_settings('auto_lorebooks_recap_lorebook_entry_lookup_completion_preset', value);
+    save_profile();
+  });
+
+  $(document).on('change', selectorsExtension.lorebook.lookupIncludePresetPrompts, function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts', value);
+    save_profile();
+  });
+
+  $(document).on('input', '#autolorebooks-recap-lorebook-entry-lookup-prefill', function () {
+    const value = $(this).val();
+    set_settings('auto_lorebooks_recap_lorebook_entry_lookup_prefill', value);
+    save_profile();
+  });
+
+  bind_setting('#autolorebooks-recap-lorebook-entry-lookup-prompt', 'auto_lorebooks_recap_lorebook_entry_lookup_prompt', 'text');
+  bind_function('#edit_autolorebooks_recap_lorebook_entry_lookup_prompt', async () => {
+    const description = `
+Configure the prompt used to look up potentially matching lorebook entries for duplicate detection.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
+    <li><b>{{new_entry}}:</b> New entry to check for duplicates.</li>
+    <li><b>{{candidate_registry}}:</b> List of candidate entries to compare against.</li>
+</ul>`;
+    await get_user_setting_text_input('auto_lorebooks_recap_lorebook_entry_lookup_prompt', 'Edit Lorebook Lookup Prompt', description);
+  });
+
+  $(document).on('change', '#autolorebooks-recap-entry-deduplicate-connection', function () {
+    const value = $(this).val();
+    set_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_connection_profile', value);
+    save_profile();
+  });
+
+  $(document).on('change', '#autolorebooks-recap-entry-deduplicate-preset', function () {
+    const value = $(this).val();
+    set_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_completion_preset', value);
+    save_profile();
+  });
+
+  $(document).on('change', selectorsExtension.lorebook.dedupeIncludePresetPrompts, function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts', value);
+    save_profile();
+  });
+
+  $(document).on('input', '#autolorebooks-recap-entry-deduplicate-prefill', function () {
+    const value = $(this).val();
+    set_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill', value);
+    save_profile();
+  });
+
+  bind_setting('#autolorebooks-recap-entry-deduplicate-prompt', 'auto_lorebooks_recap_lorebook_entry_deduplicate_prompt', 'text');
+  bind_function('#edit_autolorebooks_recap_entry_deduplicate_prompt', async () => {
+    const description = `
+Configure the prompt used to deduplicate entries by comparing full entry details.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
+    <li><b>{{new_entry}}:</b> New entry to check for duplicates.</li>
+    <li><b>{{triage_synopsis}}:</b> Synopsis from the lookup stage.</li>
+    <li><b>{{candidate_entries}}:</b> Full candidate entries for comparison.</li>
+</ul>`;
+    await get_user_setting_text_input('auto_lorebooks_recap_lorebook_entry_deduplicate_prompt', 'Edit Lorebook Dedupe Prompt', description);
+  });
+
+
+  $(document).on('change', '#autolorebooks-entry-exclude-recursion', function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_entry_exclude_recursion', value);
+    save_profile();
+  });
+
+  $(document).on('change', '#autolorebooks-entry-prevent-recursion', function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_entry_prevent_recursion', value);
+    save_profile();
+  });
+
+  $(document).on('change', '#autolorebooks-entry-ignore-budget', function () {
+    const value = $(this).prop('checked');
+    set_settings('auto_lorebooks_entry_ignore_budget', value);
+    save_profile();
+  });
+
+  $(document).on('input', '#autolorebooks-entry-sticky', function () {
+    const value = Number($(this).val());
+    set_settings('auto_lorebooks_entry_sticky', value);
+    save_profile();
+  });
+
+  debug("Auto-Lorebooks settings event listeners initialized");
 }
 
 export { initialize_settings_listeners };

@@ -1,12 +1,32 @@
 {
-  "name": "st-auto-summarize",
+  "name": "st-auto-recap",
   "version": "1.0.0",
-  "description": "Auto-Summarize extension for SillyTavern",
+  "type": "module",
+  "description": "Auto-Recap extension for SillyTavern",
   "main": "index.js",
+  "scripts": {
+    "lint": "eslint *.js --ignore-pattern syntax-check.js --no-warn-ignored --max-warnings 0",
+    "lint:quiet": "eslint *.js --ignore-pattern syntax-check.js --quiet --no-warn-ignored --max-warnings 0",
+    "lint:fix": "eslint *.js --ignore-pattern syntax-check.js --no-warn-ignored --fix",
+    "syntax-check": "node syntax-check.js",
+    "audit": "npm audit --audit-level=moderate",
+    "analyze": "npm run lint && npm run syntax-check",
+    "analyze:full": "npm run lint && npm run syntax-check && npm run audit",
+    "validate-selectors": "node scripts/validate-selectors.js",
+    "pretest": "npm run validate-selectors && npm run lint:quiet && npm run syntax-check && npm run audit",
+    "test": "playwright test",
+    "test:reload": "playwright test tests/global-setup.js",
+    "test:feature": "playwright test tests/features",
+    "test:suite": "playwright test tests/suite",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "prepare": "husky"
+  },
   "keywords": [
     "sillytavern",
     "extension",
-    "summarization",
+    "recapping",
     "ai"
   ],
   "author": "Queen Gytha",
@@ -16,11 +36,33 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/QueenGytha/ST-Auto-Summarize.git"
+    "url": "https://github.com/QueenGytha/ST-Auto-Recap.git"
   },
   "bugs": {
-    "url": "https://github.com/QueenGytha/ST-Auto-Summarize/issues"
+    "url": "https://github.com/QueenGytha/ST-Auto-Recap/issues"
   },
-  "homepage": "https://github.com/QueenGytha/ST-Auto-Summarize#readme"
+  "homepage": "https://github.com/QueenGytha/ST-Auto-Recap#readme",
+  "lint-staged": {
+    "*.js": [
+      "eslint --max-warnings 0 --no-warn-ignored",
+      "node syntax-check.js"
+    ]
+  },
+  "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.5.0",
+    "@playwright/test": "^1.56.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.1",
+    "eslint": "^9.38.0",
+    "eslint-plugin-complexity": "^1.0.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-no-floating-promise": "^2.0.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-sonarjs": "^3.0.5",
+    "eslint-plugin-unicorn": "^62.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
+    "puppeteer": "^24.28.0",
+    "typescript": "^5.9.3"
+  }
 }
-

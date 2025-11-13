@@ -1,13 +1,14 @@
 {
-    "display_name": "Auto-Summarize",
+    "display_name": "Auto-Recap & Lorebooks",
     "loading_order": 1,
     "requires": [],
     "optional": [],
     "js": "index.js",
     "css": "style.css",
     "author": "Queen Gytha",
-    "version": "1.0.3",
-    "homePage": "https://github.com/QueenGytha/ST-Auto-Summarize",
+    "version": "2.0.0",
+    "homePage": "https://github.com/QueenGytha/ST-Auto-Recap",
     "auto_update": true,
-    "generate_interceptor": "memory_intercept_messages"
+    "generate_interceptor": "memory_intercept_messages",
+    "description": "Combines Auto-Recap and Auto-Lorebooks functionality: automatic per-message recapping with memory management, and automatic lorebook creation/management with AI-editable tracking entries"
 }

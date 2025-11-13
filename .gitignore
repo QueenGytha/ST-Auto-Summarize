@@ -2,6 +2,9 @@
 test-results/
 playwright-report/
 playwright/.cache/
+.playwright-state.json
+.extension-reload-timestamp
+test-browser-profile/
 
 # Screenshots and videos
 screenshots/
@@ -97,5 +100,20 @@ public
 
 # Temporary folders
 tmp/
-temp/ 
+temp/
 
+# AI development configuration
+.claude/
+.specify/
+CLAUDE.md
+ai-centralization
+package-lock.json
+
+# Development files
+TODO.txt
+console.txt
+z-*.txt
+_console*.txt
+inspect-*.js
+*-analysis.json
+*-structure.json

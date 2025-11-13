@@ -1,0 +1,13 @@
+# Run selector validation
+echo "Running selector validation..."
+npm run validate-selectors || exit 1
+
+# Run lint-staged to check staged files
+echo "Running ESLint on staged files..."
+npx lint-staged || exit 1
+
+# Run security audit
+echo "Running security audit..."
+npm run audit || exit 1
+
+echo "Pre-commit checks passed!"
