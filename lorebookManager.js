@@ -361,9 +361,7 @@ function getActiveLorebookNames() {
 
 function isInternalEntry(comment ) {
   return comment.startsWith('_registry_') ||
-    comment.startsWith('_operations_queue_') ||
-    comment.startsWith('_combined_recap_') ||
-    comment.startsWith('_running_scene_recap_');
+    comment.startsWith('_operations_queue_');
 }
 
 const DEFAULT_DEPTH = 4;

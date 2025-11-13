@@ -7,6 +7,9 @@ export default defineConfig({
   testDir: './tests',
   testMatch: '**/*.spec.js',
 
+  // CRITICAL: Global setup reloads extension before tests
+  globalSetup: './tests/global-setup.js',
+
   // CRITICAL: Sequential execution only
   // One SillyTavern backend = one shared state
   // Parallel workers would corrupt each other's state

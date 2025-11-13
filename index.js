@@ -24,6 +24,9 @@ import { UI_UPDATE_DELAY_MS } from './constants.js';
 // Import logging utilities (direct import since this is the barrel file)
 import { debug, SUBSYSTEM, toast } from './utils.js';
 
+// Import settings functions for window.AutoRecap export
+import { get_settings, set_settings, global_settings as default_settings } from './settingsManager.js';
+
 // Track if queue is blocking (set by operationQueue.js)
 let isQueueBlocking = false;
 
@@ -194,10 +197,6 @@ export * from './lorebookManager.js';
 export * from './lorebookEntryMerger.js';
 export * from './categoryIndexes.js';
 export * from './recapToLorebookProcessor.js';
-
-// Checkpoint/branch management
-export * from './checkpointManager.js';
-export * from './checkpointValidator.js';
 
 // Metadata injection for LLM requests
 export * from './metadataInjector.js';
@@ -615,3 +614,21 @@ export function installWorldInfoActivationLogger() {
 
   debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] ✓ Tracker installed successfully');
 }
+
+/**
+ * TEMPORARY TEST MARKER
+ * Used by extension-reload-verification.spec.js to verify reload works
+ *
+ * DELETE THIS FUNCTION after verification test passes
+ */
+export function _testMarker() {
+  return 'CODE_VERSION_12345';
+}
+
+// Export extension API to window.AutoRecap for tests and external access
+window.AutoRecap = {
+  get_settings,
+  set_settings,
+  default_settings,  // Actually global_settings, aliased above
+  _testMarker
+};

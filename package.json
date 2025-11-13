@@ -15,6 +15,7 @@
     "validate-selectors": "node scripts/validate-selectors.js",
     "pretest": "npm run validate-selectors && npm run lint:quiet && npm run syntax-check && npm run audit",
     "test": "playwright test",
+    "test:reload": "playwright test tests/global-setup.js",
     "test:feature": "playwright test tests/features",
     "test:suite": "playwright test tests/suite",
     "test:ui": "playwright test --ui",

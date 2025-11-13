@@ -391,6 +391,23 @@ class RequestLogger:
                     response_content.append(f"**Total Duration:** {duration:.3f} seconds  ")
                 response_content.append("")
 
+                # Add token usage if available in response
+                if response_data and isinstance(response_data, dict):
+                    usage = response_data.get('usage')
+                    if usage and isinstance(usage, dict):
+                        prompt_tokens = usage.get('prompt_tokens')
+                        completion_tokens = usage.get('completion_tokens')
+                        total_tokens = usage.get('total_tokens')
+
+                        if prompt_tokens is not None:
+                            response_content.append(f"**Prompt Tokens:** {prompt_tokens:,}  ")
+                        if completion_tokens is not None:
+                            response_content.append(f"**Completion Tokens:** {completion_tokens:,}  ")
+                        if total_tokens is not None:
+                            response_content.append(f"**Total Tokens:** {total_tokens:,}  ")
+
+                response_content.append("")
+
             # Footer
             response_content.append("---")
             response_content.append("")
@@ -721,6 +738,23 @@ class RequestLogger:
                 log_content.append(f"**End Time:** {end_time}  ")
             if duration:
                 log_content.append(f"**Total Duration:** {duration:.3f} seconds  ")
+            log_content.append("")
+
+            # Add token usage if available in response
+            if response_data and isinstance(response_data, dict):
+                usage = response_data.get('usage')
+                if usage and isinstance(usage, dict):
+                    prompt_tokens = usage.get('prompt_tokens')
+                    completion_tokens = usage.get('completion_tokens')
+                    total_tokens = usage.get('total_tokens')
+
+                    if prompt_tokens is not None:
+                        log_content.append(f"**Prompt Tokens:** {prompt_tokens:,}  ")
+                    if completion_tokens is not None:
+                        log_content.append(f"**Completion Tokens:** {completion_tokens:,}  ")
+                    if total_tokens is not None:
+                        log_content.append(f"**Total Tokens:** {total_tokens:,}  ")
+
             log_content.append("")
 
         # Footer

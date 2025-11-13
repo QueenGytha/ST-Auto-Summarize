@@ -3,6 +3,8 @@ test-results/
 playwright-report/
 playwright/.cache/
 .playwright-state.json
+.extension-reload-timestamp
+test-browser-profile/
 
 # Screenshots and videos
 screenshots/
@@ -112,3 +114,6 @@ TODO.txt
 console.txt
 z-*.txt
 _console*.txt
+inspect-*.js
+*-analysis.json
+*-structure.json

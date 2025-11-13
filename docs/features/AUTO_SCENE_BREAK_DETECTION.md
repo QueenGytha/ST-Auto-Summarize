@@ -11,7 +11,7 @@ Automatic scene break detection uses an LLM to analyze message ranges and determ
 2. **Message Number Output**: LLM returns a message number (e.g., 5) or false; response is validated and retried if invalid
 3. **Range-Based Analysis**: Analyzes entire message ranges (from last scene break to latest) in one LLM call instead of checking one-by-one
 4. **Message Tracking**: Tracks which messages have been checked on the message object itself (swipe/regen clears tracking)
-5. **Message Offset**: Configurable offset from latest message (default: 2, meaning skip 2 most recent messages)
+5. **Message Offset**: Configurable offset from latest message (default: 4, meaning skip 4 most recent messages)
 6. **Minimum Scene Length**: Enforces minimum number of messages (default: 4) before allowing scene breaks
 7. **Automatic Triggers**: Run on chat load and new messages (both configurable, default: enabled)
 8. **Manual Trigger**: User can manually trigger detection via button/command
@@ -34,7 +34,7 @@ Automatic scene break detection uses an LLM to analyze message ranges and determ
 | `auto_scene_break_on_load` | boolean | false | Auto-check messages when chat loads |
 | `auto_scene_break_on_new_message` | boolean | true | Auto-check when new message arrives |
 | `auto_scene_break_generate_recap` | boolean | true | Auto-generate scene recap when a scene break is detected |
-| `auto_scene_break_message_offset` | number | 2 | How many messages back from latest to skip (2 = skip 2 most recent, 0 = check all including latest) |
+| `auto_scene_break_message_offset` | number | 4 | How many messages back from latest to skip (4 = skip 4 most recent, 0 = check all including latest) |
 | `auto_scene_break_check_which_messages` | string | "both" | Which messages to analyze: "user" (user only), "character" (AI only), "both" (all messages) |
 | `auto_scene_break_minimum_scene_length` | number | 4 | Minimum number of filtered messages required before allowing a scene break (prevents breaking too early) |
 | `auto_scene_break_prompt` | string | (see below) | LLM prompt template for range-based detection |
