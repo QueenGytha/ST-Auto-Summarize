@@ -169,18 +169,23 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
 
   // 8. CALL ConnectionManager
   try {
+    const connectionManagerOptions = {
+      stream: options.stream ?? false,
+      signal: options.signal ?? null,
+      extractData: options.extractData ?? true,
+      includePreset: options.includePreset ?? Boolean(options.preset),
+      includeInstruct: options.includeInstruct ?? false,
+      instructSettings: options.instructSettings || {}
+    };
+
+    debug(SUBSYSTEM.CORE, `[LLMClient] ConnectionManager options: includePreset=${connectionManagerOptions.includePreset}, messages.length=${messagesWithMetadata.length}`);
+    debug(SUBSYSTEM.CORE, `[LLMClient] Total tokens being sent: ${count_tokens(JSON.stringify(messagesWithMetadata))}`);
+
     const result = await ctx.ConnectionManagerRequestService.sendRequest(
       profileId,
       messagesWithMetadata,
       presetMaxTokens,
-      {
-        stream: options.stream ?? false,
-        signal: options.signal ?? null,
-        extractData: options.extractData ?? true,
-        includePreset: options.includePreset ?? Boolean(options.preset),
-        includeInstruct: options.includeInstruct ?? false,
-        instructSettings: options.instructSettings || {}
-      },
+      connectionManagerOptions,
       { ...generationParams, ...options.overridePayload }
     );
 
