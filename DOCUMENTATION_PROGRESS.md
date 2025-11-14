@@ -5,9 +5,9 @@ Document all 299 features with comprehensive `implementation.md` and `data-flow.
 
 ## Status
 - **Total Features:** 299
-- **Completed:** 13
-- **Remaining:** 286
-- **In Progress:** advanced/message-length-threshold (Feature #14)
+- **Completed:** 14
+- **Remaining:** 285
+- **In Progress:** advanced/operation-context-tracking (Feature #15)
 
 ## Agent Prompt Template
 
@@ -74,9 +74,8 @@ FILE: data-flow.md
 
 ---
 
-## Features Remaining (286)
+## Features Remaining (285)
 
-- [ ] 14. advanced/message-length-threshold
 - [ ] 15. advanced/operation-context-tracking
 - [ ] 16. advanced/operation-suffix-management
 - [ ] 17. advanced/settings-hash-tracking
@@ -365,7 +364,7 @@ FILE: data-flow.md
 
 ---
 
-## Completed Features (13)
+## Completed Features (14)
 
 - [x] 1. advanced/active-and-inactive-entry-snapshots *(data-flow.md partial - agent response truncated)*
 - [x] 2. advanced/active-inactive-entry-snapshots *(duplicate of Feature #181 - documented as reference)*
@@ -380,3 +379,4 @@ FILE: data-flow.md
 - [x] 11. advanced/group-member-enable-buttons *(complete: implementation.md 145 lines, data-flow.md 154 lines)*
 - [x] 12. advanced/message-data-persistence *(complete: implementation.md 204 lines, data-flow.md 166 lines)*
 - [x] 13. advanced/message-filtering *(complete: implementation.md 156 lines, data-flow.md 197 lines)*
+- [x] 14. advanced/message-length-threshold *(complete: implementation.md 105 lines, data-flow.md 158 lines)*

@@ -429,6 +429,11 @@ async function initializeExtension() {
   initQueueUI();
   log('[Queue] ✓ Operation queue initialized (handlers will be registered after module init)');
 
+  // Initialize navbar auto-hide when SillyTavern drawers open
+  const { initNavbarAutoHide } = await import('./navbarAutoHide.js');
+  initNavbarAutoHide();
+  debug(SUBSYSTEM.UI, '✓ Navbar auto-hide initialized');
+
   // Initialize Auto-Lorebooks functionality
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] About to initialize Auto-Lorebooks functionality...');
   log('[Lorebooks] Initializing Auto-Lorebooks functionality...');
