@@ -23,7 +23,12 @@ function isAnyDrawerOpen() {
   return DRAWER_IDS.some((id) => {
     const drawer = document.getElementById(id);
     if (!drawer) {return false;}
-    return drawer.classList.contains('openDrawer') || drawer.classList.contains('pinnedOpen');
+
+    // openDrawer = definitely open
+    // pinnedOpen WITHOUT closedDrawer = open
+    // pinnedOpen WITH closedDrawer = closed but pinned in DOM (not visible)
+    return drawer.classList.contains('openDrawer') ||
+           (drawer.classList.contains('pinnedOpen') && !drawer.classList.contains('closedDrawer'));
   });
 }
 
