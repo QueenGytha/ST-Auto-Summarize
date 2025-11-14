@@ -442,40 +442,39 @@ function buildPromptFromTemplate(ctx, promptTemplate, options) {
   return prompt;
 }
 
-async function calculateTotalRequestTokens(prompt, includePreset, preset, prefill) {
+async function calculateTotalRequestTokens(prompt, includePreset, preset, prefill, profile) {
   let totalTokens = count_tokens(prompt);
   const promptTokens = totalTokens;
 
   const DEBUG_PREFILL_LENGTH = 50;
-  debug(SUBSYSTEM.OPERATIONS, `calculateTotalRequestTokens: includePreset=${includePreset}, preset="${preset}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
+  debug(SUBSYSTEM.OPERATIONS, `calculateTotalRequestTokens: includePreset=${includePreset}, preset="${preset}", profile="${profile}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
 
-  // Add preset messages overhead if enabled
-  if (includePreset) {
-    // Resolve effective preset name (same logic as calculateAvailableContext)
-    const { getPresetManager } = await import('../../../preset-manager.js');
-    const presetManager = getPresetManager('openai');
+  // CRITICAL: ConnectionManager always includes preset prompts from the PROFILE's preset setting
+  // regardless of includePreset flag. So we must count tokens from the profile's preset.
+  const ctx = getContext();
+  const profileData = ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === profile);
+  const profilePresetName = profileData?.preset;
 
-    const effectivePresetName = preset === '' ? presetManager?.getSelectedPresetName() : preset;
-
-    if (effectivePresetName) {
-      const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-      const presetMessages = await loadPresetPrompts(effectivePresetName);
-      let presetTokens = 0;
-      for (const msg of presetMessages) {
-        const msgTokens = count_tokens(msg.content || '');
-        presetTokens += msgTokens;
-      }
-      totalTokens += presetTokens;
-
-      // Add OpenAI system prompt overhead (from llmClient.js line 131)
-      if (main_api === 'openai') {
-        const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
-        const systemTokens = count_tokens(systemPrompt);
-        totalTokens += systemTokens;
-      }
-
-      debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, preset=${presetTokens}, total=${totalTokens}`);
+  if (profilePresetName) {
+    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+    const presetMessages = await loadPresetPrompts(profilePresetName);
+    let presetTokens = 0;
+    for (const msg of presetMessages) {
+      const msgTokens = count_tokens(msg.content || '');
+      presetTokens += msgTokens;
     }
+    totalTokens += presetTokens;
+
+    // Add OpenAI system prompt overhead (from llmClient.js line 131)
+    if (main_api === 'openai') {
+      const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
+      const systemTokens = count_tokens(systemPrompt);
+      totalTokens += systemTokens;
+    }
+
+    debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, profilePreset=${presetTokens} (from "${profilePresetName}"), total=${totalTokens}`);
+  } else {
+    debug(SUBSYSTEM.OPERATIONS, `Warning: No preset found in profile ${profile}, token count may be inaccurate`);
   }
 
   // Add prefill overhead if provided
@@ -495,7 +494,7 @@ function filterEligibleIndices(filteredIndices, maxEligibleIndex) {
 }
 
 async function reduceMessagesUntilTokenFit(config) {
-  const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false } = config;
+  const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false, profile } = config;
 
   let currentEndIndex = endIndex;
   let currentFilteredIndices = filteredIndices;
@@ -541,7 +540,7 @@ async function reduceMessagesUntilTokenFit(config) {
 
     // Calculate total tokens including preset messages, system prompt, and prefill
     // eslint-disable-next-line no-await-in-loop -- Need to calculate tokens in loop to check if reduction is needed
-    const tokenCount = await calculateTotalRequestTokens(prompt, includePresetPrompts, preset, prefill);
+    const tokenCount = await calculateTotalRequestTokens(prompt, includePresetPrompts, preset, prefill, profile);
 
     if (maxAllowedTokens === null || tokenCount <= maxAllowedTokens) {
       debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} tokens (including overhead), fits within limit`);
@@ -594,6 +593,10 @@ operationId  = null)
     const includePresetPrompts = get_settings('auto_scene_break_include_preset_prompts') ?? false;
     const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
     const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
+
+    // Resolve profile ID early so we can use it for token counting
+    const { resolveProfileId } = await import('./profileResolution.js');
+    const effectiveProfile = resolveProfileId(profile);
 
     const chat = ctx.chat || [];
 
@@ -651,7 +654,8 @@ operationId  = null)
       minimumSceneLength,
       prefill,
       forceSelection,
-      includePresetPrompts
+      includePresetPrompts,
+      profile: effectiveProfile
     });
 
     if (reductionResult.sceneBreakAt !== undefined) {
@@ -683,9 +687,6 @@ operationId  = null)
       // Use ConnectionManager for ALL requests (handles profile switching internally)
       const { sendLLMRequest } = await import('./llmClient.js');
       const { OperationType } = await import('./operationTypes.js');
-      const { resolveProfileId } = await import('./profileResolution.js');
-
-      const effectiveProfile = resolveProfileId(profile);
 
       debug('Sending range detection prompt to AI for range', startIndex, 'to', currentEndIndex);
 
