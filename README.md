@@ -1,354 +1,622 @@
-Forked from SillyTavern-MessageRecap for the original per‑message recapping code.
-https://github.com/qvink/SillyTavern-MessageRecap/
+# Auto-Recap & Lorebooks
 
----
+A SillyTavern extension that provides AI-powered scene recapping and automatic lorebook management for long roleplays.
 
-### Contents
+## Contents
 
-- [Description](#description)
-- [Notable Features](#notable-features)
-- [Installation and Usage](#installation-and-usage)
-- [Main Settings &amp; Controls](#main-settings--controls)
+- [What This Extension Does](#what-this-extension-does)
+- [Key Features](#key-features)
+- [Installation](#installation)
+- [How It Works](#how-it-works)
+- [Scene Management](#scene-management)
+- [Running Scene Recap](#running-scene-recap)
+- [Auto-Lorebooks](#auto-lorebooks)
+- [AI-Editable Tracking Entries](#ai-editable-tracking-entries)
+- [Configuration Profiles](#configuration-profiles)
+- [Operation Queue](#operation-queue)
+- [Settings Reference](#settings-reference)
 - [Slash Commands](#slash-commands)
-- [Custom CSS](#custom-css)
-- [Tips](#tips)
+- [Tips & Best Practices](#tips--best-practices)
 - [Troubleshooting](#troubleshooting)
-- [Known Issues](#known-issues)
 - [Development](#development)
-- [Todo](#todo)
 
 ---
 
-### Description
+## What This Extension Does
 
-- This extension reworks how memory is stored by recapping each message individually, rather than all at once.
-- Recaps are injected into the main prompt at two levels: short-term memory and long-term memory.
-- Short-term memory rotates out the most recent message recaps automatically.
-- Long-term memory stores recaps of manually-marked messages beyond the short-term limit.
-- **Combined recap**: Optionally merges all message recaps into a single, coherent narrative recap, removing repetition and highlighting key events. The combined recap can be injected into the prompt at configurable positions and intervals.
-- **Scene recaps**: Generate recaps for scene breaks, with their own prompt, injection, and validation settings.
-- **Running scene recap (NEW)**: Combines multiple scene recaps into a single, cohesive narrative memory following best practices. Enabled by default. See `docs/RUNNING_SCENE_RECAP.md` for details.
-- **Recap validation**: Optionally validates recaps (regular, combined, and scene) using a second LLM pass to ensure they meet your format and quality criteria.
+**IMPORTANT**: Only the **running scene recap** gets injected into your LLM prompts. This is a single, cohesive narrative that combines all your scene recaps. Individual scene recaps are NOT injected separately.
 
-**Benefits compared to the built-in recapping:**
+This extension provides two main systems working together:
 
-- Generating recaps individually (as opposed to all at once) gets more accurate results and is less likely to miss details.
-- Because memory storage is not handled by an LLM, old recaps will never change over time.
-- Each recap is attached to the message it recaps, so deleting a message removes only the associated memory.
-- Short-term memory guarantees that relevant info is always available from the most recent messages, but goes away once no longer relevant according to a set limit.
-- Long-term memory allows you to choose which details are important to remember, keeping them available for longer, up to a separate limit.
+1. **Running Scene Recap**: Generates a cohesive narrative summary of your roleplay by scene, injected directly into the LLM prompt for context retention
+2. **Auto-Lorebooks**: Automatically extracts entities (characters, locations, objects, etc.) from scene recaps and manages them in your lorebook
 
 ---
 
-### Notable Features
+## Key Features
 
-- **Configuration profiles**: Save and load different configuration profiles and set one to be auto-loaded for each character or chat.
-- **Popout config menu**: Customize recap settings, injection settings, and auto‑recap message inclusion criteria.
-- **Memory editor**: A separate interface for viewing and editing all memories in your chat.
-- **Combined recap**: Optionally generate a single narrative recap from all message recaps, with customizable prompt, template, and validation.
-- **Scene recaps**: Recap each scene break as a single recap, with customizable prompt, injection, and validation.
-- **Running scene recap (NEW)**: Automatically combines scene recaps into cohesive narrative memory with versioning, navbar controls, and per-scene regeneration. Enabled by default.
-- **Recap validation**: Optionally validate recaps (regular, combined, and scene) using a second LLM pass, with customizable prompt, retries, and preset.
-- **Recaps displayed below messages**: Optionally display recaps in small text below each message, colored according to their status:
-  - Green: Included in short-term memory
-  - Blue: Marked for long-term memory (included in short-term or long-term memory)
-  - Red: Marked for long-term memory, but now out of context
-  - Grey: Excluded
-- **Auto-hide**: Automatically hide messages from scenes older than a configurable threshold (scene-based).
+### Scene-Based Recapping
+- **Scene breaks**: Divide your roleplay into logical narrative units (manual or auto-detected)
+- **Scene recaps**: Generate AI summaries for each scene
+- **Running scene recap**: Combines all scene recaps into one cohesive narrative that gets injected into the prompt
+- **Version management**: Switch between different versions of the running recap, edit manually, or regenerate
+- **Scene navigator**: Visual navigation bar to jump between scenes
 
----
+### Auto-Lorebooks
+- **Automatic entity extraction**: AI extracts characters, locations, objects, events, factions, and concepts from scene recaps
+- **Duplicate detection**: Two-stage process (lookup + deduplicate) prevents duplicate entries
+- **Customizable entity types**: Define your own entity types and extraction prompts
+- **AI-editable tracking**: Special lorebook entries that the AI can update during roleplay (__gm_notes, __character_stats)
+- **Bulk operations**: Enable/disable/delete multiple entries at once
 
-### Installation and Usage
+### Configuration Management
+- **Profiles**: Save and load different configuration profiles
+- **Per-character/chat presets**: Auto-load specific profiles for each character or chat
+- **Import/export**: Share profiles as JSON files
 
-- Install the extension in ST using the github link: https://github.com/QueenGytha/ST-Auto-Recap
-- To mark a message for long-term memory, click the "brain" icon in the message button menu.
-- To regenerate a recap for a message, click the "Quote" icon in the message button menu.
-- To edit a recap, click on the recap text directly or click the "pen" icon in the message button menu.
-- To perform actions on multiple recaps at once, go to the config and click "Edit Memory". Here you can filter for specific memories or manually select memories to modify.
-- To only recap certain characters in a group chat, open the group chat edit menu and scroll down to the member list. Click the glowing "brain" icon to toggle whether that character will be automatically recapped (if you have auto-recap enabled).
-- To manually add or edit scene breaks, use the scene break button in the message menu (if enabled in settings).
-
----
-
-### Main Settings & Controls
-
-#### Memory Controls
-
-- **Toggle Memory:** Enable/disable memory for the current chat.
-- **Edit Memory:** Open the memory editor to view, filter, and bulk-edit recaps.
-- **View Combined Recap:** See the current combined recap in a modal.
-- **Refresh Memory:** Recalculate which recaps are included and update their display.
-
-#### Configuration Profiles
-
-- **Profile Dropdown:** Switch between saved configuration profiles.
-- **Save/Rename/New/Delete/Restore:** Manage your profiles.
-- **Character/Chat Profile:** Set the current profile as default for a character or chat.
-- **Import/Export Profile:** Import or export profiles as JSON files.
-
-#### Recap Settings
-
-- **Edit Recap Prompt:** Customize the prompt used for recap generation.
-- **Preview Recap Prompt:** See a filled-in example using the last message.
-- **Stop Recap Generation:** Immediately halt any ongoing recap generation.
-- **Connection Profile / Completion Preset:** Choose which API and preset to use for recap generation. (Profiles and presets can be set independently for regular, combined, and scene recaps.)
-- **Recap Prefill:** Text to start each recap with.
-- **Include Prefill In Memories:** Show prefill in displayed memories.
-- **Auto Recap:** Automatically generate recaps for new messages.
-- **Auto Recap Before Generation:** Generate recaps before sending a new message.
-- **Auto Recap Progress Bar:** Show progress when generating multiple recaps.
-- **Auto Recap Message Lag/Batch Size/Limit:** Control when and how many messages are recapped at once.
-- **Message History:** Include previous messages or recaps as context for recap generation. (Configurable mode and count.)
-- **Recap Time Delay:** Wait between recap operations (for rate-limited APIs).
-- **Regenerate Recap on Edit/Swipe:** Automatically regenerate recaps when editing or swiping messages.
-- **Block Chat:** Prevent sending messages while generating recaps.
-- **Nest Message in Recap Prompt:** Place the message inside the system prompt (advanced).
-- **Include All Context Content:** Add world info and other context to the recap prompt.
-- **Include User/System/Narrator Messages:** Control which message types are recapped and included in history.
-- **Message Length Threshold:** Only recap messages above a certain length.
-
-#### Memory Injection Settings
-
-- **Running Scene Recap Only:** The extension injects the running scene recap automatically when enabled.
-
-##### Short-term & Long-term Memory
-
-- **Context Limit:** How much context (tokens or percent) each memory type can use.
-- **Include in World Info Scanning:** Make memories available for world info scans.
-- **Injection Position/Depth/Role:** Where and how memories are injected into the prompt.
-- **Scan for Memories:** Optionally scan for memories to include in world info or other features.
-
-#### Combined Recap
-
-- **Enable Combined Recap:** Turn on the combined recap feature.
-- **Combined Recap Interval:** How often to generate a new combined recap (after how many new recaps).
-- **Show Toast Popup:** Notify when generating a combined recap.
-- **Edit Combined Prompt:** Customize the combined recap prompt.
-- **Combined Completion Preset/Prefill/Context Limit:** Control how the combined recap is generated and injected.
-- **Combined Recap Injection Position/Depth/Role:** Where and how the combined recap is injected into the prompt.
-- **Combined Recap Validation:** Optionally validate the combined recap using a second LLM pass.
-- **Combined Recap Scan:** Optionally scan for combined recaps for world info.
-
-#### Scene Recap
-
-- **Auto-generate Scene Names (Auto-Detection):** Automatically generate brief scene names (like chapter titles) when auto-generating scene recaps (e.g., during scene break detection), if no name is already set.
-- **Auto-generate Scene Names (Manual):** Automatically generate brief scene names (like chapter titles) when manually generating scene recaps via the Generate button, if no name is already set.
-- **Navigator Bar Width:** Customize the width of the scene navigator bar in pixels (default: 240px).
-- **Navigator Font Size:** Customize the font size for scene names in the navigator bar in pixels (default: 12px).
-- **Edit Scene Prompt:** Customize the prompt used for scene recaps.
-- **Scene Completion Preset/Prefill/Context Limit:** Control how scene recaps are generated.
-- **Scene Message History Mode/Count:** Configure which messages and how many are included as context for scene recaps.
-- **Include Message Types:** Choose whether to include user messages only, AI messages only, or both when generating scene recaps (default: both).
-- **Scene Recap Validation:** Optionally validate scene recaps using a second LLM pass.
-
-#### Running Scene Recap (Recommended)
-
-**NEW**: Combines multiple scene recaps into a single, cohesive narrative memory following best practices. **Enabled by default.**
-
-- **Running Scene Recap:** Combine all scene recaps into one narrative (always enabled).
-- **Exclude Latest N Scenes:** Wait N scenes before including in running recap (default: 1, allows validation).
-- **Auto-generate on New Scene Recaps:** Automatically regenerate when new scene recaps are created.
-- **Show Navbar Version Controls:** Display floating navbar with version selector, edit, and regenerate buttons.
-- **Edit Running Recap Prompt:** Customize how scenes are combined. Output is JSON with a single `recap` field (markdown inside).
-- **Version Management:** Switch between generated versions, edit to create new versions, manual regeneration.
-- **Per-Scene Regenerate:** "Regenerate Running" button on each scene recap to manually trigger regeneration.
-- **Running Recap Injection:** Uses separate position/depth/role/scan settings, replaces individual scene injection when enabled.
-
-**How it works:**
-1. Scene recaps are generated individually (as before)
-2. Running recap auto-generates, combining all scenes minus latest N
-3. LLM merges scenes into cohesive narrative (focuses on state, deduplicates, extreme brevity)
-4. Running recap is injected instead of individual scene recaps
-5. Versions are stored - switch between them or edit to create new versions
-
-**See detailed documentation:** `docs/RUNNING_SCENE_RECAP.md`
-
-#### Recap Validation
-
-- **Enable Recap Validation:** Use a second LLM pass to check recap format.
-- **Validate Regular/Combined/Scene Recaps:** Enable validation for each type.
-- **Edit Validation Prompt:** Customize the validation criteria for regular, combined, and scene recaps.
-- **Validation Completion Preset/Prefill/Max Retries:** Control how validation is performed for each recap type.
-
-#### Auto-Hide
-
-- **Auto Hide Messages Older Than The Last X Scene(s):** Automatically exclude messages from scenes older than the specified number of scenes. Set to -1 to disable.
-
-#### Miscellaneous
-
-- **Verbose Logging:** Always enabled for easier troubleshooting.
-- **Enable Memory in New Chats:** Default memory state for new chats.
-- **Use Global Toggle State:** Share memory enable/disable state across all chats.
+### Quality of Life
+- **Operation queue**: Background processing of LLM operations with progress tracking
+- **Connection profiles**: Use different API settings for recap generation vs. regular chat
+- **Recap validation**: Optional second LLM pass to validate recap quality
+- **Auto-hide old messages**: Automatically hide messages from older scenes
+- **Popout config**: Dedicated popup window for extension settings
 
 ---
 
-### Slash Commands
+## Installation
 
-- `/get_memory_enabled`: Returns whether the extension is enabled in the current chat.
-- `/toggle_memory`: Toggles the extension on and off for the current chat. Same as clicking "Toggle Chat Memory" in the config. Can also provide a boolean argument to toggle the extension directly.
-- `/toggle_memory_popout`: Toggles the popout config menu.
-- `/toggle_memory_edit_interface`: Toggles the "Edit Memory" interface.
-- `/toggle_memory_injection_preview`: Toggles a preview of the text that will be injected.
-- `/recap`: Recaps the nth message in the chat (default to most recent message). Same as clicking the "quote" icon in the message button menu.
-- `/recap_chat`: Performs a single auto‑recap pass on the chat, even if auto‑recap is disabled.
-- `/stop_recapping`: Stops any recap generation currently running. Same as clicking the "stop" button in the config or next to the progress bar.
-- `/remember <n>`: Mark the nth message for long‑term memory, recapping it if not already. Same as clicking the "brain" icon in the message button menu.
-- `/force_exclude_memory <n>`: Toggles the inclusion of the recap for the nth message. Same as clicking the "Force Exclude" button in the message button menu.
-- `/get_memory <n>`: Get the memory associated with the nth message. Defaults to the most recent message.
-- `/auto_recap_log_chat`: Logs the current chat to the console.
-- `/auto_recap_log_settings`: Logs the current extension settings to the console.
-- `/hard_reset`: Resets all extension settings to default.
-- `/scene_recap_injection`: Logs scene recap injection settings, collected indexes, and injection text.
+1. In SillyTavern, go to **Extensions** > **Install Extension**
+2. Enter the GitHub URL: https://github.com/QueenGytha/ST-Auto-Recap
+3. Click **Install**
+4. Reload SillyTavern if prompted
 
 ---
 
-### Custom CSS
+## How It Works
 
-You can easily customize the CSS for displayed memories by setting the following variables:
+### The Big Picture
 
-- `--qvink_short`: In short-term memory (default green)
-- `--qvink_long`: In long-term memory (default blue)
-- `--qvink_old`: Marked for long-term memory, but now out of context (default red)
-- `--qvink_excluded`: Manually force-excluded (default dark grey)
+1. **You chat normally** in SillyTavern
+2. **Mark scene breaks** manually or let the extension auto-detect them
+3. **Scene recaps are generated** automatically in the background
+4. **Running scene recap combines all scenes** into a cohesive narrative
+5. **The running recap is injected** into your LLM prompts automatically
+6. **Auto-Lorebooks extracts entities** from scene recaps and adds them to your lorebook
 
-Just make sure to use the `!important` directive to override the default styles.
-For example, to color short-term memories yellow and long-term memories black, you would put the following in your "Custom CSS" user settings:
+### What Gets Injected
 
-```css
-:root {
-   --qvink_short: yellow !important;
-   --qvink_long: black !important;
-}
-```
+**Only the running scene recap** gets injected into your prompts. This is a single, unified narrative that:
+- Combines all your scene recaps
+- Removes redundancy
+- Focuses on current state rather than blow-by-blow events
+- Updates automatically as new scenes are recapped
 
----
-
-### Tips
-
-Each model is different of course, but here are just some general things that I have found help getting clean recaps. Try them out if you want.
-
-- **Keep it simple**: Longer recap prompts tend to muddy the waters and get less accurate results. Just in general LLMs have trouble with information overload (hence the reason for this extension in the first place).
-- **Low temperature**: I like to use a temp of 0 to reduce creativity and just get down to the facts. No need for flowery language.
-- **No repetition penalty**: Again, no need for creativity, in fact I want it to repeat what happened.
-- **The `{{words}}` macro doesn't always help**: While some models may reign themselves in if you tell them to keep it under X words, LLMs don't have a soul and therefore can't count, so don't bet on it.
-- **You can use global macros**: If your recaps aren't using names properly, keep in mind that you can use the `{{char}}` or `{{user}}` macro in the prompt.
-- **No need to pause roleplay**: You don't have to include anything like "ignore previous instructions" or "pause your roleplay". The recap prompt is completely independent and will only send what you see in the edit window.
-- **I don't recommend reasoning**: Reasoning models can recap fine, but they do tend to blab for ages which makes recapping slow, so I wouldn't recommend them for that reason.
-- **Save your presets**: If you are using a different completion preset or connection profile for recaps, make sure to save any changes to your regular completion preset or instruct template. When generating recaps, the extension has to temporarily switch presets or connection profiles, which will discard any unsaved changes to the one you are currently using.
+Individual scene recaps are NOT injected separately.
 
 ---
 
-### Troubleshooting
+## Scene Management
 
-- **"ForbiddenError: invalid csrf token":** You opened ST in multiple tabs.
-- **"Syntax Error: No number after minus sign in JSON at position X":** update your koboldcpp, or try disabling "Request token probabilities".
-- **"min new tokens must be in (0, max_new_tokens(X)], got Y":** your model has a minimum token amount, which is conflicting with the max tokens you are using for recap generation. Either reduce the minimum token amount for your model (usually in the completion settings), or increase the maximum token length for recap generations.
-- **Recaps seem to be continuing the conversation rather than recapping:** probably an issue with your instruct template.
-  - Make sure you are using the correct template for your model, and make sure that system messages are properly distinct from user messages (the recaps use a system prompt).
-  - This can be caused by the "System same as user" checkbox in your instruct template settings, which will cause all system messages to be treated like a user - uncheck that if your model can handle it.
-  - Some default instruct templates also may not have anything defined for the "System message sequences" field - that should be filled out.
-  - You can also try toggling "Nest Message in Recap Prompt" in the settings - some models behave better with this.
-- **My jailbreak isn't working:** You'll need to put a jailbreak in the recap prompt if you want it to be included.
-- **The recaps refer to "a person" or "someone" rather than the character by name:** Try using the `{{user}}` or `{{char}}` macros in the recap prompt. There is also a "Message History" setting to include a few previous messages in the recap prompt to give the model a little more context.
-- **The recaps are too long:** You can select a custom completion preset in the settings to use for recap generations, and that can be used to set a maximum token length after which generation will be cut off. You can also use the {{words}} macro in the recap prompt to try and guide the LLM according to that token length, though LLMs cannot actually count words so it's really just a suggestion.
-- **Incomplete sentences aren't getting trimmed even though the option is checked in the advanced formatting settings:** If you are using a different connection profile for recaps, note that instruction templates are part of that so the option needs to be checked in the template used for that connection profile.
-- **When I use a different completion preset for recaps, my regular completion preset gets changed after generating:** When a recap is generated, we actually have to switch completion presets temporarily which discards any unsaved changes you might have made to your current completion preset. This is just how ST does things. The same applies to connection profiles (which in turn affects instruction templates.)
-- **Just updated and things are broken:** try reloading the page first, and make sure you are on the most recent version of ST.
+### Manual Scene Breaks
 
----
+1. Enable **"Show Scene Break Button"** in settings
+2. Click the scene break button in any message's button menu
+3. Optionally add a scene name (like a chapter title)
+4. Generate a scene recap using the **Generate** button
 
-### Known Issues
+### Auto Scene Break Detection
 
-- When editing a message that already has a memory, the memory displayed below the message does not have the right color. This is just a visual bug, and it will correct itself after the next recap generation.
-- Validation prompts may have a high false positive rate due to meta-commentary in LLM outputs (see Todo for planned improvements).
+Enable **"Auto Scene Break Detection"** in settings. The extension will:
+- Detect scene changes automatically (using configurable LLM analysis)
+- Insert scene break markers
+- Optionally generate scene names automatically
+- Queue scene recap generation
 
----
+### Scene Navigator
 
-### Development
-
-This extension uses AI-driven development with comprehensive testing and validation.
-
-#### Prerequisites
-- **Node.js**: For development dependencies
-- **SillyTavern**: For testing the extension
-
-#### Setup & Installation
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/QueenGytha/ST-Auto-Recap.git
-   cd ST-Auto-Recap
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-#### Development Commands
-```bash
-# Check extension functionality
-npm run test
-
-# Build extension
-npm run build
-
-# Development mode
-npm run dev
-```
-
-#### Key Files
-- **AI_INSTRUCTIONS.md**: Complete development guide
-- **index.js**: Main entry point
-- **recapping.js**: Core recap logic
-- **memoryCore.js**: Memory management
-- **settingsManager.js**: Settings handling
-
-#### Development Principles
-- **Real Environment Testing**: Test against actual SillyTavern
-- **Standalone Features**: Each feature works independently
-- **Comprehensive Testing**: All scenarios and edge cases covered
-- **Error Handling**: Robust error handling and logging
-
-For detailed development instructions, see [AI_INSTRUCTIONS.md](AI_INSTRUCTIONS.md).
+A floating navigation bar shows all your scenes:
+- Click a scene to jump to it
+- See which scenes have recaps
+- Manage scene names and recaps
+- Configure width and font size in settings
 
 ---
 
-### Todo
+## Running Scene Recap
 
-- Default to off per chat (already a setting?)
-- Default preset to off, with some included preset with generic out-of-the-box settings
-- Automatically detecting when there is a scene change
-- Automatically creating and updating lorebooks
-- 'Auto' option for injection placement, adjusting based on recap size (tips from https://rentry.org/how2claude#recapping)
-- Version the individual/combined recaps, with the option to choose between them. Including some screen for ease of viewing
-- The validation prompts have a very large false positive rate, due to meta-commentary eg 'here is the recap:'. Possible solution: convert recaps to JSON objects for ease of validation. This will also be useful later, in portioning out what goes into a recap, vs into a lorebook
-- A navigator bar to easily find the various marked scenes
+**This is the memory system that actually gets injected into your prompts.**
 
+### What It Does
 
-Notes:
+The running scene recap:
+- **Combines** all individual scene recaps into one cohesive narrative
+- **Deduplicates** information across scenes
+- **Focuses** on current state (relationships, locations, ongoing plots)
+- **Updates** automatically when new scene recaps are generated
+- **Versions** each generation so you can switch between them or edit manually
 
+### Configuration
 
-My experience with recapping and long-term memory in big adventure RPs that are >2500 messages long:
+**Basic Settings:**
+- **Running Scene Recap**: Toggle on/off (enabled by default)
+- **Exclude Latest N Scenes**: Wait N scenes before including in running recap (default: 1)
+- **Auto-generate on New Scene Recaps**: Regenerate running recap when new scenes are recapped
 
-- All default long-term memory schemes/prompts suck in all frontends - ST, Risu etc. Devs design something that should work in theory, but never verify that it works well in practice.
-- Recapping per message is a waste of time and context, I was never able to make it work well despite trying hard, as it's really simple to automate. Believe me, I tried.
-- Hierarchical memory approaches that many extensions and frontends go with also suck, they're largely useless.
-- Plot/scenario/sequence of what happened is absolutely useless as a recap, it just never works. You are NOT doing this to "make the character reminisce of the past"! That's nonsense. You are doing this to update the card itself and provide a stable reference point, simplifying the history.
-- The only way that works is recapping per logical breakpoint/scene, and only in a specific way (extension of the card).
-- Automated recapping is always poor because models still lack the foresight of a human and have no intuition in prompting themselves. You should always correct it by hand.
-- Recaps that are too complex will eventually make even the best models dissociate badly. It needs to be simplified and cleaned up from time to time. Some things thrown out, some added, some grouped. You can only do this manually, as only you know what you want from your RP.
-- All current models get distracted by the history just 2 messages into it. Your characters drift and stop follow the definitions. Sometimes it keeps the story coherent and also makes possible characters with huge mood swings or multiple personality modes. But sometimes you want to just truncate the history, leaving only the recapped version, so your {{char}} turns back to being self. This needs to be a manual option.
-- Having the card AND the recap that overrides it is an extra source of confusion for the model. Instead of this, just update the card itself! Sooner or later in a long RP you'll just have to do this anyway because the characters just drift too much as your relationships develop. ST makes it hard because you need to juggle several card versions.
-- Different lore facts revealed in the process should be stored in the lorebook, but the decision should be manual because only you know if you want to make it persistent. To know which locations, NPCs, etc you revealed and what it could trigger, the model needs a separate section in the recap with one-line characteristic of each entity. You can't have too many of those, so you have to choose which ones to make persistent.
+**Version Management:**
+- **Show Navbar Version Controls**: Display floating navbar with version selector and controls
+- **Version dropdown**: Switch between generated versions
+- **Edit button**: Create a new version by editing
+- **Regenerate button**: Manually trigger regeneration
 
-The how2claude guide in [&gt;&gt;42367418](https://boards.4chan.org/mlp/thread/42363249#p42367418) has the right idea (ask for an "info panel" and edit it by hand) and has a very good prompt example, but it can be taken much further in a separate recapping extension that would:
+**Prompt Customization:**
+- **Edit Running Recap Prompt**: Customize how scenes are combined
+- Output format is JSON with a single recap field (markdown text inside)
 
-> be able to update arbitrary context records (author's note, card, lorebook etc), instead of having a separate injectable recap like the current extension has.
-> have a convenient way to modularize the recap prompt and the recap itself, akin to the ST prompt manager (toggle the pieces on and off)
-> have a convenient way to detect the scene automatically with a separate prompt, or place a scene breakpoint by hand
-> have a way to truncate the history tail at any arbitrary part of the roleplay manually
-> (THE MOST IMPORTANT PART) have a versioning system for the entire RP session!
-> Make it so that the entire state of SillyTavern is stored per swipe and message and tied to them, so you can roll it back, fork at any point, or delete some messages without fear or having to juggle multiple copies. Your preset, your card, lorebook, author's note, QRs, preset and lorebook toggles, everything should be saved per message/swipe inside the current chat. The original copy of the card/lorebook/etc should stay untouched, so you can start a new chat from scratch if you want.
->
+**Injection Settings:**
+- **Running Recap Position/Depth/Role**: Control where and how the recap is injected
+- **Context Limit**: Maximum tokens/percent for the running recap
+- **Scan for Running Recap**: Include in world info scanning
 
-https://github.com/bmen25124/lorebook-creator
+### How to Use
+
+1. Enable **"Running Scene Recap"** (default: on)
+2. Set **"Exclude Latest N Scenes"** (default: 1, allows time for validation)
+3. Enable **"Auto-generate on New Scene Recaps"** (default: on)
+4. Scene recaps are generated → running recap updates automatically → injected into prompts
+
+**Manual Control:**
+- Click **"Regenerate Running"** on any scene recap to trigger regeneration
+- Use version dropdown to switch between versions
+- Edit the running recap manually to create a new version
+
+---
+
+## Auto-Lorebooks
+
+Automatically extract entities from scene recaps and manage them in your lorebook.
+
+### Entity Types
+
+Default entity types (customizable):
+- **Character**: People, creatures, companions
+- **Location**: Places, buildings, regions
+- **Object**: Items, artifacts, tools
+- **Event**: Battles, ceremonies, discoveries
+- **Faction**: Organizations, groups, alliances
+- **Concept**: Ideas, phenomena, magic systems
+
+### How It Works
+
+1. **Scene recap is generated** (contains narrative summary)
+2. **Auto-Lorebooks analyzes** the scene recap text
+3. **Entities are extracted** based on configured entity types
+4. **Lookup phase**: Check if entity already exists (using LLM)
+5. **Deduplicate phase**: If similar entity exists, merge instead of creating duplicate
+6. **Create lorebook entry**: New entry added to your lorebook (disabled by default)
+
+### Configuration
+
+**Enable/Disable:**
+- **Enable Auto-Lorebooks**: Master toggle for the feature
+
+**Entity Type Management:**
+- Add/edit/delete custom entity types
+- Customize extraction prompts per type
+- Set priority for entity extraction
+
+**Duplicate Detection:**
+- **Lookup prompt**: Customize how the LLM searches for existing entities
+- **Deduplicate prompt**: Customize how the LLM decides if entities should be merged
+- **Thresholds**: Adjust confidence thresholds for duplicate detection
+
+**Entry Settings:**
+- **Default State**: New entries start disabled (you enable manually)
+- **Keywords**: Automatically extracted from entity name
+- **Content Format**: Customizable template for entry content
+- **Insertion Order**: Control where entries are inserted in prompt
+
+### Managing Lorebook Entries
+
+**View Extracted Entities:**
+- Open **World Info** in SillyTavern
+- Entries created by Auto-Lorebooks are tagged with [Auto-Lorebook]
+
+**Bulk Operations:**
+- Select multiple entries
+- Enable/disable in bulk
+- Delete unused entries
+- Edit entry content
+
+**Manual Additions:**
+- You can still add lorebook entries manually
+- Auto-Lorebooks won't interfere with manual entries
+
+---
+
+## AI-Editable Tracking Entries
+
+Special lorebook entries that the AI can update during roleplay.
+
+### What They Are
+
+Two special entry types:
+- **__gm_notes**: GM notes that track ongoing events, decisions, and consequences
+- **__character_stats**: Character stats, conditions, inventory, relationships
+
+These entries use a special syntax that allows the AI to update them in-character during roleplay.
+
+### How They Work
+
+1. **Create tracking entries** in your lorebook with special keywords (__gm_notes or __character_stats)
+2. **Enable the entries** so they're injected into the prompt
+3. **During roleplay**, the AI can suggest updates using special syntax
+4. **Extension detects updates** and automatically modifies the lorebook entries
+5. **Changes persist** across the conversation
+
+### Setting Up Tracking Entries
+
+**GM Notes:**
+1. Create a lorebook entry with keyword: __gm_notes
+2. Set content to empty or initial notes
+3. Enable the entry
+4. AI can now append notes as events happen
+
+**Character Stats:**
+1. Create a lorebook entry with keyword: __character_stats
+2. Set content in a structured format
+3. Enable the entry
+4. AI can now update stats during roleplay
+
+### Configuration
+
+- **Enable AI-Editable Tracking**: Master toggle
+- **Update Syntax**: Customize the syntax the AI uses to suggest updates
+- **Auto-apply Updates**: Automatically apply updates vs. review first
+- **Update Logging**: Log all updates for review
+
+---
+
+## Configuration Profiles
+
+Save and load different settings configurations.
+
+### Managing Profiles
+
+**Create a Profile:**
+1. Open extension settings
+2. Configure settings as desired
+3. Click **"Save Profile"** or **"New Profile"**
+4. Name your profile
+
+**Switch Profiles:**
+- Use the profile dropdown to switch instantly
+
+**Auto-load Profiles:**
+- **Character Profile**: Set a profile to auto-load for a specific character
+- **Chat Profile**: Set a profile to auto-load for a specific chat
+
+**Import/Export:**
+- Export profiles as JSON files
+- Share profiles with others
+- Import profiles from JSON files
+
+### What's Included in Profiles
+
+- All recap generation settings
+- Injection settings (position, depth, role)
+- Scene recap settings
+- Running scene recap settings
+- Auto-Lorebooks configuration
+- Validation settings
+- Connection profiles and presets
+
+---
+
+## Operation Queue
+
+Background processing system for LLM operations.
+
+### What It Does
+
+The operation queue:
+- **Processes LLM operations** in the background (recap generation, validation, entity extraction)
+- **Prevents rate limiting** by spacing out requests
+- **Persists across page reloads** using lorebook storage
+- **Shows progress** with visual indicators
+- **Allows pausing** if you need to stop processing
+
+### Queue Controls
+
+**Slash Commands:**
+- /queue-status or /queue: Show current queue status
+- /queue-pause: Pause the queue
+- /queue-resume: Resume the queue
+- /queue-clear-all: Clear all pending operations
+
+**Queue UI:**
+- Visual progress bar when operations are running
+- Shows pending/running/completed/failed operation counts
+- Click **"Stop"** to pause queue
+
+### Queue Behavior
+
+**Non-blocking (default):**
+- You can continue chatting while operations process
+- Operations run in background
+
+**Blocking Mode:**
+- Enable **"Block Chat"** in settings
+- Prevents sending new messages while queue is processing
+- Useful for ensuring recaps are up-to-date before continuing
+
+---
+
+## Settings Reference
+
+### Core Settings
+
+**Toggle Memory:**
+- Enable/disable the extension for the current chat
+- Slash command: /toggle_memory [true|false]
+
+**Auto Scene Break Detection:**
+- Automatically detect scene changes and insert scene breaks
+- Configurable detection prompt and thresholds
+
+**Show Scene Break Button:**
+- Add scene break button to message button menu
+
+**Block Chat:**
+- Prevent sending messages while queue is processing
+
+### Scene Recap Settings
+
+**Edit Scene Prompt:**
+- Customize the prompt used to generate scene recaps
+- Use macros: {{char}}, {{user}}, etc.
+
+**Scene Completion Preset:**
+- Choose which API connection preset to use for scene recaps
+
+**Scene Prefill:**
+- Text to start each scene recap with
+- Useful for enforcing format
+
+**Scene Message History:**
+- Include previous messages as context for scene recap
+- Mode: None / Previous messages / Previous recaps
+- Count: How many to include
+
+**Include Message Types:**
+- User messages only / AI messages only / Both
+
+**Scene Recap Validation:**
+- Enable second LLM pass to validate scene recap quality
+- Customize validation prompt and retry count
+
+### Running Scene Recap Settings
+
+**Running Scene Recap:**
+- Enable/disable running scene recap (default: on)
+
+**Exclude Latest N Scenes:**
+- Wait N scenes before including in running recap
+- Default: 1 (allows time for validation)
+
+**Auto-generate on New Scene Recaps:**
+- Automatically regenerate when new scene recaps are created
+
+**Show Navbar Version Controls:**
+- Display floating navbar with version selector and controls
+
+**Edit Running Recap Prompt:**
+- Customize how scenes are combined into running recap
+- Output format: JSON with single recap field (markdown text)
+
+**Running Recap Injection Settings:**
+- Position: Where in the prompt (e.g., "After Character Defs")
+- Depth: How many messages back from the end
+- Role: System / User / Assistant
+- Scan: Include in world info scanning
+- Context Limit: Maximum tokens or percent
+
+### Auto-Lorebooks Settings
+
+**Enable Auto-Lorebooks:**
+- Master toggle for automatic entity extraction
+
+**Entity Types:**
+- Add/edit/delete entity types
+- Customize extraction prompts per type
+
+**Lookup Settings:**
+- Customize how existing entities are searched
+- Adjust confidence thresholds
+
+**Deduplicate Settings:**
+- Customize how similar entities are merged
+- Adjust similarity thresholds
+
+**Entry Defaults:**
+- Default state (enabled/disabled)
+- Default insertion order
+- Content template
+
+### Validation Settings
+
+**Enable Recap Validation:**
+- Use second LLM pass to validate recaps
+
+**Validate Scene Recaps:**
+- Enable validation specifically for scene recaps
+
+**Edit Validation Prompt:**
+- Customize validation criteria
+
+**Validation Completion Preset:**
+- Choose which API preset to use for validation
+
+**Max Retries:**
+- How many times to retry if validation fails
+
+### Auto-Hide Settings
+
+**Auto Hide Messages Older Than The Last X Scene(s):**
+- Automatically hide messages from scenes older than X
+- Set to -1 to disable
+- Useful for reducing visual clutter in long roleplays
+
+### Scene Navigator Settings
+
+**Navigator Bar Width:**
+- Customize width in pixels (default: 240px)
+
+**Navigator Font Size:**
+- Customize font size in pixels (default: 12px)
+
+**Auto-generate Scene Names (Auto-Detection):**
+- Automatically generate scene names when auto-detecting scene breaks
+
+**Auto-generate Scene Names (Manual):**
+- Automatically generate scene names when manually creating scene breaks
+
+### Miscellaneous
+
+**Verbose Logging:**
+- Always enabled for easier troubleshooting
+
+**Enable Memory in New Chats:**
+- Default memory state for new chats
+
+**Use Global Toggle State:**
+- Share memory enable/disable state across all chats
+
+---
+
+## Slash Commands
+
+**Memory Control:**
+- /get_memory_enabled - Returns whether memory is enabled for the current chat
+- /toggle_memory [true|false] - Toggle memory on/off (or set directly with boolean)
+- /get_memory [n] - Get the memory associated with message index n (default: most recent)
+
+**UI Control:**
+- /toggle_memory_popout - Toggle the extension config popout
+- /toggle_memory_injection_preview - Toggle preview of what will be injected
+
+**Queue Management:**
+- /queue-status or /queue - Show operation queue status (total, pending, running, completed, failed, paused)
+- /queue-pause - Pause the operation queue
+- /queue-resume - Resume the operation queue
+- /queue-clear-all - Clear all operations from the queue
+
+**Debugging:**
+- /auto_recap_log_chat - Log current chat to console
+- /auto_recap_log_settings - Log current extension settings to console
+- /log_scene_recap_injection - Log running scene recap injection settings and text
+- /hard_reset - Reset all extension settings to default (WARNING: destructive)
+
+---
+
+## Tips & Best Practices
+
+### Recap Generation
+
+**Keep prompts simple:**
+- Longer recap prompts tend to muddy results
+- LLMs handle information overload poorly (hence this extension!)
+
+**Use low temperature:**
+- Temperature 0 reduces creativity and focuses on facts
+- No need for flowery language in recaps
+
+**No repetition penalty:**
+- You WANT the AI to repeat what happened
+- Disable repetition penalty for recap presets
+
+**Use global macros:**
+- {{char}} and {{user}} help with proper name usage
+- Other SillyTavern macros work in recap prompts
+
+**Save your presets:**
+- If using different connection profiles for recaps, save your main preset first
+- Switching profiles discards unsaved changes (this is how ST works)
+
+**Don't use reasoning models:**
+- Reasoning models (like o1) work but are very slow for recapping
+- Use faster models for better experience
+
+### Scene Management
+
+**Scene breaks work best at natural narrative boundaries:**
+- End of a conversation
+- Change of location
+- Time skip
+- Major event conclusion
+
+**Use scene names:**
+- Brief titles (like chapter names) help navigation
+- Auto-generate names or write your own
+
+**Validate important scenes:**
+- Enable scene recap validation for quality control
+- Review and edit scene recaps manually if needed
+
+### Running Scene Recap
+
+**Exclude latest N scenes:**
+- Default: 1 scene excluded
+- Gives you time to validate/edit before inclusion
+- Increase if you want more time to review
+
+**Edit when needed:**
+- Running recap can be edited manually
+- Creates a new version (keeps history)
+- Useful for fixing errors or adjusting focus
+
+**Version management:**
+- Switch between versions if a regeneration goes wrong
+- Keep multiple versions for different story branches
+
+### Auto-Lorebooks
+
+**Review extracted entities:**
+- Auto-Lorebooks creates entries in disabled state (by default)
+- Review and enable the ones you want
+- Delete entries you don't need
+
+**Customize entity types:**
+- Add entity types specific to your setting
+- Remove types you don't use
+- Adjust extraction prompts for better results
+
+**Use AI-editable tracking:**
+- __gm_notes for tracking plot threads and consequences
+- __character_stats for tracking character state
+- Enable these entries to get dynamic updates during roleplay
+
+### Performance
+
+**Connection profiles:**
+- Use a cheaper/faster API for recap generation if cost is a concern
+- Save your expensive API for actual roleplay
+
+**Queue management:**
+- Pause queue if you need to stop processing
+- Clear queue if you want to cancel pending operations
+- Use blocking mode if you want to ensure recaps are current
+
+### Troubleshooting Tips
+
+**Recaps continuing the conversation:**
+- Check your instruct template (system messages must be distinct)
+- Try toggling "Nest Message in Recap Prompt" in settings
+- Make sure "System same as user" is unchecked in instruct template
+
+**Recaps too long:**
+- Set max tokens in your recap completion preset
+- Use {{words}} macro in recap prompt (though LLMs can't count perfectly)
+
+**Names wrong in recaps:**
+- Use {{char}} and {{user}} macros in recap prompt
+- Enable "Message History" to give more context

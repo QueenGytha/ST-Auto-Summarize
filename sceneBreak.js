@@ -151,6 +151,37 @@ saveChatDebounced )
   if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
 }
 
+export function clearSceneBreak(config) {
+  const { index, get_message_div, getContext, saveChatDebounced } = config;
+  const ctx = getContext();
+  const message = ctx.chat[index];
+
+  if (!message) {
+    return;
+  }
+
+  delete message.extra?.[SCENE_BREAK_KEY];
+  delete message.extra?.[SCENE_BREAK_VISIBLE_KEY];
+  delete message.extra?.[SCENE_BREAK_NAME_KEY];
+  delete message.extra?.[SCENE_BREAK_RECAP_KEY];
+  delete message.extra?.[SCENE_RECAP_MEMORY_KEY];
+  delete message.extra?.[SCENE_RECAP_HASH_KEY];
+  delete message.extra?.[SCENE_RECAP_METADATA_KEY];
+  delete message.extra?.[SCENE_BREAK_COLLAPSED_KEY];
+  delete message.extra?.scene_recap_versions;
+  delete message.extra?.scene_recap_current_index;
+
+  const $msgDiv = get_message_div(index);
+  if ($msgDiv && $msgDiv.length) {
+    $msgDiv.find(`.${SCENE_BREAK_DIV_CLASS}`).remove();
+  }
+
+  saveChatDebounced();
+  debug(SUBSYSTEM.SCENE, `Cleared all scene break data from message ${index}`);
+
+  if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
+}
+
 // --- Helper functions for versioned scene recaps ---
 // Scene recap properties are not at the root; see file header for structure.
 function getSceneRecapVersions(

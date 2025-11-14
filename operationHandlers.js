@@ -19,7 +19,7 @@ import {
   messageMatchesType,
   validateRationaleNoFormatting } from
 './autoSceneBreakDetection.js';
-import { generateSceneRecap, toggleSceneBreak } from './sceneBreak.js';
+import { generateSceneRecap, toggleSceneBreak, clearSceneBreak } from './sceneBreak.js';
 import {
   generate_running_scene_recap,
   combine_scene_with_running_recap } from
@@ -360,41 +360,90 @@ export function registerAllOperationHandlers() {
     debug(SUBSYSTEM.QUEUE, `Executing GENERATE_SCENE_RECAP for index ${index}`);
     toast(`Generating scene recap for message ${index}...`, 'info');
 
-    // Set loading state in recap box
-    const $msgDiv = get_message_div(index);
-    const $recapBox = $msgDiv.find(selectorsExtension.sceneBreak.recapBox);
-    if ($recapBox.length) {
-      $recapBox.val("Generating scene recap...");
-    }
+    try {
+      // Set loading state in recap box
+      const $msgDiv = get_message_div(index);
+      const $recapBox = $msgDiv.find(selectorsExtension.sceneBreak.recapBox);
+      if ($recapBox.length) {
+        $recapBox.val("Generating scene recap...");
+      }
 
-    const result = await generateSceneRecap({
-      index,
-      get_message_div,
-      getContext,
-      get_data,
-      set_data,
-      saveChatDebounced,
-      skipQueue: true, // skipQueue = true when called from queue handler
-      signal // Pass abort signal to check before side effects
-    });
-
-    // Check if operation was cancelled during execution
-    throwIfAborted(signal, 'GENERATE_SCENE_RECAP', 'LLM call');
-
-    toast(`✓ Scene recap generated for message ${index}`, 'success');
-
-    // Scene naming is now embedded in the scene recap output (scene_name field)
-
-    // Queue running recap combine as a separate operation, depending on lorebook operations
-    if (get_settings('running_scene_recap_auto_generate')) {
-      debug(SUBSYSTEM.QUEUE, `Queueing COMBINE_SCENE_WITH_RUNNING for scene at index ${index} (depends on ${result.lorebookOpIds.length} lorebook operations)`);
-      await queueCombineSceneWithRunning(index, {
-        dependencies: result.lorebookOpIds,
-        queueVersion: operation.queueVersion
+      const result = await generateSceneRecap({
+        index,
+        get_message_div,
+        getContext,
+        get_data,
+        set_data,
+        saveChatDebounced,
+        skipQueue: true, // skipQueue = true when called from queue handler
+        signal // Pass abort signal to check before side effects
       });
-    }
 
-    return { recap: result.recap };
+      // Check if operation was cancelled during execution
+      throwIfAborted(signal, 'GENERATE_SCENE_RECAP', 'LLM call');
+
+      toast(`✓ Scene recap generated for message ${index}`, 'success');
+
+      // Scene naming is now embedded in the scene recap output (scene_name field)
+
+      // Queue running recap combine as a separate operation, depending on lorebook operations
+      if (get_settings('running_scene_recap_auto_generate')) {
+        debug(SUBSYSTEM.QUEUE, `Queueing COMBINE_SCENE_WITH_RUNNING for scene at index ${index} (depends on ${result.lorebookOpIds.length} lorebook operations)`);
+        await queueCombineSceneWithRunning(index, {
+          dependencies: result.lorebookOpIds,
+          queueVersion: operation.queueVersion
+        });
+      }
+
+      return { recap: result.recap };
+    } catch (err) {
+      const errorMessage = err?.message || String(err);
+
+      if (errorMessage.includes('exceeds available context')) {
+        error(SUBSYSTEM.QUEUE, `Scene recap generation failed due to token limit at message ${index}`);
+        toast(`⚠ Scene too large to recap - retrying with earlier break point`, 'warning');
+
+        clearSceneBreak({ index, get_message_div, getContext, saveChatDebounced });
+
+        const ctx = getContext();
+        const chat = ctx.chat;
+        let startIndex = 0;
+        for (let i = index - 1; i >= 0; i--) {
+          if (get_data(chat[i], 'scene_break')) {
+            startIndex = i + 1;
+            break;
+          }
+        }
+
+        const newEndIndex = index - 1;
+        const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
+        const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
+
+        let remainingCount = 0;
+        for (let i = startIndex; i <= newEndIndex; i++) {
+          if (messageMatchesType(chat[i], checkWhich)) {
+            remainingCount++;
+          }
+        }
+
+        if (remainingCount >= minimumSceneLength + 1) {
+          debug(SUBSYSTEM.QUEUE, `Queueing new DETECT_SCENE_BREAK for range ${startIndex} to ${newEndIndex} after token limit failure`);
+          await enqueueOperation(
+            OperationType.DETECT_SCENE_BREAK,
+            { startIndex, endIndex: newEndIndex, offset: 0 },
+            {
+              priority: 5,
+              queueVersion: operation.queueVersion,
+              metadata: { triggered_by: 'scene_recap_token_limit_retry' }
+            }
+          );
+        } else {
+          error(SUBSYSTEM.QUEUE, `Not enough messages (${remainingCount}) to retry detection after clearing scene break at ${index}`);
+        }
+      }
+
+      throw err;
+    }
   });
 
   // Standalone scene name generation operation removed.
