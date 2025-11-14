@@ -147,6 +147,16 @@ function stripDecorativeSeparators(text) {
   return cleaned.join('\n');
 }
 
+function isContextLengthError(err) {
+  const errorMessage = err?.message || String(err);
+  const errorCause = err?.cause?.message || '';
+  return errorMessage.includes('context') ||
+         errorMessage.includes('maximum') ||
+         errorMessage.includes('too large') ||
+         errorCause.includes('context') ||
+         errorCause.includes('maximum');
+}
+
 function calculateReductionAmount(checkWhich, chat, currentEndIndex) {
   if (checkWhich === 'user') {
     for (let i = currentEndIndex; i >= 0; i--) {
@@ -575,6 +585,7 @@ async function reduceMessagesUntilTokenFit(config) {
   };
 }
 
+// eslint-disable-next-line complexity -- Function handles scene detection with error retry logic
 async function detectSceneBreak(
 startIndex ,
 endIndex ,
@@ -700,8 +711,19 @@ operationId  = null)
       });
 
       debug('AI raw response for range', startIndex, 'to', currentEndIndex, ':', response);
-    } finally {
+    } catch (requestError) {
       clearOperationSuffix();
+
+      // If context length exceeded and we can reduce further, retry with smaller range
+      if (isContextLengthError(requestError) && currentEndIndex > startIndex + minimumSceneLength) {
+        const reductionAmount = calculateReductionAmount(checkWhich, chat, currentEndIndex);
+        const newEndIndex = currentEndIndex - reductionAmount;
+        debug(SUBSYSTEM.OPERATIONS, `Context exceeded, reducing range from ${currentEndIndex} to ${newEndIndex}`);
+        return await detectSceneBreak(startIndex, newEndIndex, offset, checkWhich);
+      }
+
+      // Not a context error or can't reduce further - rethrow
+      throw requestError;
     }
 
     // Parse response for message number or false
