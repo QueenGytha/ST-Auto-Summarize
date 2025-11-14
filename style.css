@@ -448,7 +448,7 @@ dialog:has(#auto_recap_memory_state_interface) {
     flex: 1;
 }
 
-#queue_count.queue-paused {
+#queue_toggle_visibility h4:has(#queue_count.queue-paused) {
     color: #f44336;
 }
 

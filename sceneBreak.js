@@ -1055,17 +1055,28 @@ async function saveSceneRecap(config) {
   refresh_memory();
 
   // If the recap is JSON and contains a scene_name, use it (standardized format)
+  debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] Starting auto scene name check for message ${messageIndex}`);
   try {
     const parsed = JSON.parse(recap);
+    debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] JSON parse succeeded for message ${messageIndex}`);
+
     const maybeName = typeof parsed.scene_name === 'string' ? parsed.scene_name : '';
     const existing = get_data(message, SCENE_BREAK_NAME_KEY);
+
+    debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] scene_name from JSON: "${maybeName}" (type: ${typeof parsed.scene_name})`);
+    debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] existing name from data: "${existing}" (type: ${typeof existing}, truthy: ${!!existing})`);
+
     if (maybeName && !existing) {
+      debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] Condition passed - proceeding with auto-naming`);
       let clean = maybeName.trim()
         .replace(/^["']|["']$/g, '')
         .replace(/\n/g, ' ')
         .trim();
+      debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] Cleaned name: "${clean}" (length: ${clean.length})`);
+
       if (clean.length > SCENE_BREAK_CHARS) {
         clean = clean.slice(0, SCENE_BREAK_MIN_CHARS) + '...';
+        debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] Truncated to: "${clean}"`);
       }
       if (clean) {
         // Append message range if setting is enabled
@@ -1081,9 +1092,15 @@ async function saveSceneRecap(config) {
         debug(SUBSYSTEM.SCENE, `Set scene name for message ${messageIndex}: "${clean}"`);
         // Update scene navigator immediately if available
         try { renderSceneNavigatorBar(); } catch {}
+      } else {
+        debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] Clean name is empty - skipping auto-naming`);
       }
+    } else {
+      debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] Condition failed - maybeName: ${!!maybeName}, !existing: ${!existing}`);
     }
-  } catch {/* non-JSON recap or parse failed; ignore */}
+  } catch (err) {
+    debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] JSON parse failed for message ${messageIndex}:`, err.message);
+  }
 
   // Extract and queue lorebook entries
   let lorebookOpIds = [];
