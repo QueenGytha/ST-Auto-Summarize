@@ -300,7 +300,7 @@ async function loadQueue() {
       let cleanedCount = 0;
       for (const op of currentQueue.queue) {
         // Recreate AbortController (lost during serialization)
-        if (!op.abortController) {
+        if (!op.abortController || typeof op.abortController.abort !== 'function') {
           op.abortController = new AbortController();
         }
 
@@ -567,7 +567,7 @@ export async function removeOperation(operationId ) {
   // If operation is IN_PROGRESS or RETRYING, attempt to abort it first
   if (operation.status === OperationStatus.IN_PROGRESS || operation.status === OperationStatus.RETRYING) {
     // Abort the AbortController signal (allows handlers to check signal.aborted)
-    if (operation.abortController) {
+    if (operation.abortController && typeof operation.abortController.abort === 'function') {
       operation.abortController.abort('Operation cancelled by user');
       debug(SUBSYSTEM.QUEUE, `Aborted signal for ${operation.status} operation ${operationId}`);
     }
@@ -663,7 +663,7 @@ export async function clearAllOperations() {
 
   for (const op of activeOps) {
     // Abort the AbortController signal (allows handlers to check signal.aborted)
-    if (op.abortController) {
+    if (op.abortController && typeof op.abortController.abort === 'function') {
       op.abortController.abort('Queue cleared by user');
     }
 

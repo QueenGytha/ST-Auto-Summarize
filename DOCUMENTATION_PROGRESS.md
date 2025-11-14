@@ -5,9 +5,9 @@ Document all 299 features with comprehensive `implementation.md` and `data-flow.
 
 ## Status
 - **Total Features:** 299
-- **Completed:** 14
-- **Remaining:** 285
-- **In Progress:** advanced/operation-context-tracking (Feature #15)
+- **Completed:** 18
+- **Remaining:** 281
+- **In Progress:** advanced/sticky-entry-tracking (Feature #19)
 
 ## Agent Prompt Template
 
@@ -74,12 +74,8 @@ FILE: data-flow.md
 
 ---
 
-## Features Remaining (285)
+## Features Remaining (281)
 
-- [ ] 15. advanced/operation-context-tracking
-- [ ] 16. advanced/operation-suffix-management
-- [ ] 17. advanced/settings-hash-tracking
-- [ ] 18. advanced/sticky-entry-rounds-tracking
 - [ ] 19. advanced/sticky-entry-tracking
 - [ ] 20. advanced/suppress-other-lorebooks
 - [ ] 21. advanced/swipe-data-persistence
@@ -364,7 +360,7 @@ FILE: data-flow.md
 
 ---
 
-## Completed Features (14)
+## Completed Features (18)
 
 - [x] 1. advanced/active-and-inactive-entry-snapshots *(data-flow.md partial - agent response truncated)*
 - [x] 2. advanced/active-inactive-entry-snapshots *(duplicate of Feature #181 - documented as reference)*
@@ -380,3 +376,7 @@ FILE: data-flow.md
 - [x] 12. advanced/message-data-persistence *(complete: implementation.md 204 lines, data-flow.md 166 lines)*
 - [x] 13. advanced/message-filtering *(complete: implementation.md 156 lines, data-flow.md 197 lines)*
 - [x] 14. advanced/message-length-threshold *(complete: implementation.md 105 lines, data-flow.md 158 lines)*
+- [x] 15. advanced/operation-context-tracking *(complete: implementation.md 174 lines, data-flow.md 283 lines)*
+- [x] 16. advanced/operation-suffix-management *(complete: implementation.md 362 lines, data-flow.md 304 lines)*
+- [x] 17. advanced/settings-hash-tracking *(complete: implementation.md 71 lines, data-flow.md 231 lines)*
+- [x] 18. advanced/sticky-entry-rounds-tracking *(complete: implementation.md 183 lines, data-flow.md 290 lines)*
