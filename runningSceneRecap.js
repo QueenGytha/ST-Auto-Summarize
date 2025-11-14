@@ -68,6 +68,30 @@ function get_current_running_recap_content() {
   return current ? current.content : "";
 }
 
+function get_previous_running_recap_version_before_scene(scene_index ) {
+  const versions = get_running_recap_versions();
+
+  if (versions.length === 0) {
+    return null;
+  }
+
+  // Find the most recent version where new_scene_index < scene_index
+  // This gives us the running recap that existed BEFORE this scene was combined
+  let previous_version = null;
+
+  for (let i = versions.length - 1; i >= 0; i--) {
+    const version = versions[i];
+    const version_scene_idx = version.new_scene_index ?? 0;
+
+    if (version_scene_idx < scene_index) {
+      previous_version = version;
+      break;
+    }
+  }
+
+  return previous_version;
+}
+
 function set_current_running_recap_version(version ) {
   const storage = get_running_recap_storage();
   const versions = storage.versions || [];
@@ -438,7 +462,7 @@ async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index
 
   // Set operation context for ST_METADATA
   const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
-  const prev_version = get_running_recap(get_current_running_recap_version());
+  const prev_version = get_previous_running_recap_version_before_scene(scene_index);
   const prev_scene_idx = prev_version ? prev_version.new_scene_index : 0;
   setOperationSuffix(`-${prev_scene_idx}-${scene_index}`);
 
@@ -473,7 +497,7 @@ async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index
 }
 
 function storeRunningRecap(result , scene_index , scene_name , _scene_recap ) {
-  const prev_version = get_running_recap(get_current_running_recap_version());
+  const prev_version = get_previous_running_recap_version_before_scene(scene_index);
   const scene_count = prev_version ? prev_version.scene_count + 1 : 1;
   const exclude_count = get_settings('running_scene_recap_exclude_latest') || 0;
 
@@ -504,10 +528,11 @@ async function combine_scene_with_running_recap(scene_index ) {
   debug(SUBSYSTEM.RUNNING, `Combining running recap with scene at index ${scene_index} (${scene_name})`);
 
   const extractedRecap = extractRecapFromJSON(scene_recap);
-  const current_recap = get_current_running_recap_content();
+  const previous_version = get_previous_running_recap_version_before_scene(scene_index);
+  const previous_recap = previous_version ? previous_version.content : "";
   const scene_recaps_text = `[${scene_name}]\n${extractedRecap}`;
 
-  const { prompt, prefill } = buildCombinePrompt(current_recap, scene_recaps_text);
+  const { prompt, prefill } = buildCombinePrompt(previous_recap, scene_recaps_text);
 
   try {
     const result = await executeCombineLLMCall(prompt, prefill, scene_name, scene_index);
@@ -640,6 +665,7 @@ export {
   get_current_running_recap_version,
   get_running_recap,
   get_current_running_recap_content,
+  get_previous_running_recap_version_before_scene,
   set_current_running_recap_version,
   add_running_recap_version,
   delete_running_recap_version,
