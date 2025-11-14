@@ -1003,30 +1003,20 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
 
 // Helper: Save scene recap and queue lorebook entries
 
-// Helper: Calculate message range for a scene
-function calculateSceneMessageRange(messageIndex, get_data) {
-  const ctx = getContext();
-  const chat = ctx.chat;
-
-  // Find the START of the scene (message after previous scene break, or 0)
-  let startIndex = 0;
-  for (let i = messageIndex - 1; i >= 0; i--) {
-    if (get_data(chat[i], SCENE_BREAK_KEY)) {
-      startIndex = i + 1;
-      break;
-    }
+// Helper: Get message range string for scene name suffix
+function getMessageRangeForSceneName(lorebookMetadata) {
+  if (!lorebookMetadata) {
+    throw new Error('lorebookMetadata is required for scene name range suffix');
   }
-
-  // Find the END of the scene (next scene break, or end of chat)
-  let endIndex = chat.length - 1;
-  for (let i = messageIndex + 1; i < chat.length; i++) {
-    if (get_data(chat[i], SCENE_BREAK_KEY)) {
-      endIndex = i;
-      break;
-    }
+  if (lorebookMetadata.startIdx === undefined) {
+    throw new Error('lorebookMetadata.startIdx is required for scene name range suffix');
   }
-
-  return `${startIndex}-${endIndex}`;
+  if (lorebookMetadata.endIdx === undefined) {
+    throw new Error('lorebookMetadata.endIdx is required for scene name range suffix');
+  }
+  const range = `${lorebookMetadata.startIdx}-${lorebookMetadata.endIdx}`;
+  debug(SUBSYSTEM.SCENE, `Scene name range from actual recap generation: ${range}`);
+  return range;
 }
 
 async function saveSceneRecap(config) {
@@ -1091,8 +1081,8 @@ async function saveSceneRecap(config) {
         // Append message range if setting is enabled
         const settings = extension_settings[MODULE_NAME];
         if (settings.scene_name_append_range) {
-          debug(SUBSYSTEM.SCENE, `Calculating message range for scene at index ${messageIndex}`);
-          const messageRange = calculateSceneMessageRange(messageIndex, get_data);
+          debug(SUBSYSTEM.SCENE, `Appending message range for scene at index ${messageIndex}`);
+          const messageRange = getMessageRangeForSceneName(lorebookMetadata);
           clean = `${clean} ${messageRange}`;
           debug(SUBSYSTEM.SCENE, `Scene name with range: "${clean}"`);
         }
