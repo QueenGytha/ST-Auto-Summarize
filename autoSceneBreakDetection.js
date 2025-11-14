@@ -419,7 +419,7 @@ function buildFormattedMessages(chat, filteredIndices, earliestAllowedBreak, max
 }
 
 function buildPromptFromTemplate(ctx, promptTemplate, options) {
-  const { formattedForPrompt, minimumSceneLength, earliestAllowedBreak, prefill, rangeWasReduced = false } = options;
+  const { formattedForPrompt, minimumSceneLength, earliestAllowedBreak, prefill, rangeWasReduced = false, forceSelection = false } = options;
   let prompt = promptTemplate;
   if (ctx.substituteParamsExtended) {
     prompt = ctx.substituteParamsExtended(prompt, {
@@ -434,7 +434,7 @@ function buildPromptFromTemplate(ctx, promptTemplate, options) {
   prompt = prompt.replace(/\{\{minimum_scene_length\}\}/g, String(minimumSceneLength));
   prompt = prompt.replace(/\{\{earliest_allowed_break\}\}/g, String(earliestAllowedBreak));
 
-  if (rangeWasReduced) {
+  if (rangeWasReduced || forceSelection) {
     prompt += `\n\n**MANDATORY:** You MUST select the best possible scene break from the messages provided. Returning false is not permitted. Choose the most reasonable break point based on topic shifts, pauses, emotional beats, or any natural separation between narrative moments.`;
   }
 
@@ -446,7 +446,7 @@ function filterEligibleIndices(filteredIndices, maxEligibleIndex) {
 }
 
 async function reduceMessagesUntilTokenFit(config) {
-  const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill } = config;
+  const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false } = config;
 
   let currentEndIndex = endIndex;
   let currentFilteredIndices = filteredIndices;
@@ -486,7 +486,8 @@ async function reduceMessagesUntilTokenFit(config) {
       minimumSceneLength,
       earliestAllowedBreak: currentEarliestAllowedBreak,
       prefill,
-      rangeWasReduced: currentEndIndex !== endIndex
+      rangeWasReduced: currentEndIndex !== endIndex,
+      forceSelection
     });
 
     const tokenCount = count_tokens(prompt);
@@ -525,7 +526,8 @@ async function reduceMessagesUntilTokenFit(config) {
 async function detectSceneBreak(
 startIndex ,
 endIndex ,
-offset  = 0)
+offset  = 0,
+forceSelection  = false)
 {
   const ctx = getContext();
 
@@ -595,7 +597,8 @@ offset  = 0)
       preset,
       promptTemplate,
       minimumSceneLength,
-      prefill
+      prefill,
+      forceSelection
     });
 
     if (reductionResult.sceneBreakAt !== undefined) {

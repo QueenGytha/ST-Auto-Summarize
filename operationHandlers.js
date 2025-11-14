@@ -243,13 +243,13 @@ export function registerAllOperationHandlers() {
 
   // Detect scene break (range-based)
   registerOperationHandler(OperationType.DETECT_SCENE_BREAK, async (operation) => {
-    const { startIndex, endIndex, offset = 0 } = operation.params;
+    const { startIndex, endIndex, offset = 0, forceSelection = false } = operation.params;
     const signal = getAbortSignal(operation);
     const ctx = getContext();
     const chat = ctx.chat;
 
-    debug(SUBSYSTEM.QUEUE, `Executing DETECT_SCENE_BREAK for range ${startIndex} to ${endIndex} (offset: ${offset})`);
-    const result = await detectSceneBreak(startIndex, endIndex, offset);
+    debug(SUBSYSTEM.QUEUE, `Executing DETECT_SCENE_BREAK for range ${startIndex} to ${endIndex} (offset: ${offset}, forceSelection: ${forceSelection})`);
+    const result = await detectSceneBreak(startIndex, endIndex, offset, forceSelection);
 
     // Check if cancelled after detection (before side effects)
     throwIfAborted(signal, 'DETECT_SCENE_BREAK', 'LLM call');
@@ -441,10 +441,10 @@ export function registerAllOperationHandlers() {
         }
 
         if (remainingCount >= minimumSceneLength + 1) {
-          debug(SUBSYSTEM.QUEUE, `Queueing new DETECT_SCENE_BREAK for range ${startIndex} to ${newEndIndex} after token limit failure`);
+          debug(SUBSYSTEM.QUEUE, `Queueing new DETECT_SCENE_BREAK for range ${startIndex} to ${newEndIndex} after token limit failure with forceSelection=true`);
           await enqueueOperation(
             OperationType.DETECT_SCENE_BREAK,
-            { startIndex, endIndex: newEndIndex, offset: 0 },
+            { startIndex, endIndex: newEndIndex, offset: 0, forceSelection: true },
             {
               priority: 5,
               queueVersion: operation.queueVersion,
