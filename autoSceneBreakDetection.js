@@ -10,7 +10,8 @@ import {
   log,
   SUBSYSTEM,
   saveChatDebounced,
-  count_tokens } from
+  count_tokens,
+  main_api } from
 './index.js';
 import { pauseQueue } from './operationQueue.js';
 
@@ -441,12 +442,42 @@ function buildPromptFromTemplate(ctx, promptTemplate, options) {
   return prompt;
 }
 
+async function calculateTotalRequestTokens(prompt, includePreset, preset, prefill) {
+  let totalTokens = count_tokens(prompt);
+
+  // Add preset messages overhead if enabled
+  if (includePreset) {
+    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+    const presetMessages = await loadPresetPrompts(preset);
+    for (const msg of presetMessages) {
+      totalTokens += count_tokens(msg.content || '');
+    }
+
+    // Add OpenAI system prompt overhead (from llmClient.js line 131)
+    if (main_api === 'openai') {
+      const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
+      totalTokens += count_tokens(systemPrompt);
+    }
+  }
+
+  // Add prefill overhead if provided
+  if (prefill && typeof prefill === 'string') {
+    totalTokens += count_tokens(prefill);
+  }
+
+  // Add small buffer for message formatting overhead (role tags, etc.)
+  const MESSAGE_FORMAT_OVERHEAD = 50;
+  totalTokens += MESSAGE_FORMAT_OVERHEAD;
+
+  return totalTokens;
+}
+
 function filterEligibleIndices(filteredIndices, maxEligibleIndex) {
   return filteredIndices.filter(i => i <= maxEligibleIndex);
 }
 
 async function reduceMessagesUntilTokenFit(config) {
-  const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false } = config;
+  const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false } = config;
 
   let currentEndIndex = endIndex;
   let currentFilteredIndices = filteredIndices;
@@ -490,10 +521,12 @@ async function reduceMessagesUntilTokenFit(config) {
       forceSelection
     });
 
-    const tokenCount = count_tokens(prompt);
+    // Calculate total tokens including preset messages, system prompt, and prefill
+    // eslint-disable-next-line no-await-in-loop -- Need to calculate tokens in loop to check if reduction is needed
+    const tokenCount = await calculateTotalRequestTokens(prompt, includePresetPrompts, preset, prefill);
 
     if (maxAllowedTokens === null || tokenCount <= maxAllowedTokens) {
-      debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} tokens, fits within limit`);
+      debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} tokens (including overhead), fits within limit`);
       break;
     }
 
@@ -599,7 +632,8 @@ operationId  = null)
       promptTemplate,
       minimumSceneLength,
       prefill,
-      forceSelection
+      forceSelection,
+      includePresetPrompts
     });
 
     if (reductionResult.sceneBreakAt !== undefined) {
