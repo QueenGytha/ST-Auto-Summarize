@@ -589,7 +589,8 @@ async function runModelWithSettings(config) {
       const options = {
         includePreset: include_preset_prompts,
         preset: completionPreset,
-        prefill: prefill || ''
+        prefill: prefill || '',
+        trimSentences: false
       };
 
       response = await sendLLMRequest(effectiveProfile, prompt, operationType, options);

@@ -960,7 +960,8 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
       const options = {
         includePreset: include_preset_prompts,
         preset: preset_name,
-        prefill
+        prefill,
+        trimSentences: false
       };
 
       const rawResponse = await sendLLMRequest(profileId, prompt, operationType, options);

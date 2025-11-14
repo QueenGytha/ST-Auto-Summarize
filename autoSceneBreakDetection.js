@@ -625,7 +625,8 @@ offset  = 0)
       response = await sendLLMRequest(effectiveProfile, prompt, OperationType.DETECT_SCENE_BREAK, {
         prefill,
         includePreset: includePresetPrompts,
-        preset: preset
+        preset: preset,
+        trimSentences: false
       });
 
       debug('AI raw response for range', startIndex, 'to', currentEndIndex, ':', response);

@@ -147,7 +147,8 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
       const options = {
         includePreset: include_preset_prompts,
         preset: effectivePresetName,
-        prefill: prefill || ''
+        prefill: prefill || '',
+        trimSentences: false
       };
 
       response = await sendLLMRequest(effectiveProfile, prompt, OpType.MERGE_LOREBOOK_ENTRY, options);

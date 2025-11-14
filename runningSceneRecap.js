@@ -325,7 +325,8 @@ async function generate_running_scene_recap(skipQueue  = false) {
       const options = {
         includePreset: include_preset_prompts,
         preset: running_preset,
-        prefill
+        prefill,
+        trimSentences: false
       };
 
       result = await sendLLMRequest(effectiveProfile, prompt, OperationType.GENERATE_RUNNING_RECAP, options);
@@ -450,7 +451,8 @@ async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index
     const options = {
       includePreset: include_preset_prompts,
       preset: running_preset,
-      prefill
+      prefill,
+      trimSentences: false
     };
 
     const result = await sendLLMRequest(effectiveProfile, prompt, OperationType.COMBINE_SCENE_WITH_RUNNING, options);

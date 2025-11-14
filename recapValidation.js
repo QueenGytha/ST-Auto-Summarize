@@ -59,7 +59,8 @@ async function validate_recap(recap , type  = "scene") {
       const options = {
         includePreset: include_preset_prompts,
         preset: validation_preset,
-        prefill
+        prefill,
+        trimSentences: false
       };
 
       validation_result = await sendLLMRequest(effectiveProfile, prompt, OperationType.VALIDATE_RECAP, options);
