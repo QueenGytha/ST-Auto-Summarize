@@ -157,6 +157,36 @@ function isContextLengthError(err) {
          errorCause.includes('maximum');
 }
 
+async function trySendRequest(options) {
+  const { effectiveProfile, prompt, prefill, includePresetPrompts, preset, startIndex, endIndex } = options;
+  const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+  const { sendLLMRequest } = await import('./llmClient.js');
+  const { OperationType } = await import('./operationTypes.js');
+
+  setOperationSuffix(`-${startIndex}-${endIndex}`);
+
+  try {
+    const response = await sendLLMRequest(effectiveProfile, prompt, OperationType.DETECT_SCENE_BREAK, {
+      prefill,
+      includePreset: includePresetPrompts,
+      preset: preset,
+      trimSentences: false
+    });
+
+    clearOperationSuffix();
+    return { success: true, response };
+  } catch (err) {
+    clearOperationSuffix();
+
+    if (isContextLengthError(err)) {
+      return { success: false, error: err };
+    }
+
+    // Non-context error - rethrow
+    throw err;
+  }
+}
+
 function calculateReductionAmount(checkWhich, chat, currentEndIndex) {
   if (checkWhich === 'user') {
     for (let i = currentEndIndex; i >= 0; i--) {
@@ -506,7 +536,7 @@ function filterEligibleIndices(filteredIndices, maxEligibleIndex) {
 }
 
 async function reduceMessagesUntilTokenFit(config) {
-  const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false, profile } = config;
+  const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false, profile, effectiveProfile } = config;
 
   let currentEndIndex = endIndex;
   let currentFilteredIndices = filteredIndices;
@@ -555,12 +585,30 @@ async function reduceMessagesUntilTokenFit(config) {
     const tokenCount = await calculateTotalRequestTokens(prompt, includePresetPrompts, preset, prefill, profile);
 
     if (maxAllowedTokens === null || tokenCount <= maxAllowedTokens) {
-      debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} tokens (including overhead), fits within limit`);
-      break;
+      debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} tokens (including overhead), fits within limit per calculation`);
+
+      // Token calculation says it fits - now try actually sending it
+      // eslint-disable-next-line no-await-in-loop -- Need to try request in loop to handle API rejections
+      const apiResult = await trySendRequest({ effectiveProfile, prompt, prefill, includePresetPrompts, preset, startIndex, endIndex: currentEndIndex });
+
+      if (apiResult.success) {
+        // Request succeeded - return the response
+        return {
+          response: apiResult.response,
+          currentEndIndex,
+          currentFilteredIndices,
+          currentMaxEligibleIndex,
+          rangeWasReduced: currentEndIndex !== endIndex
+        };
+      }
+
+      // API rejected with context error - continue loop to reduce further
+      debug(SUBSYSTEM.OPERATIONS, `API rejected request (context exceeded), continuing reduction from ${currentEndIndex}`);
+    } else {
+      debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} > ${maxAllowedTokens} tokens, reducing end index`);
     }
 
-    debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} > ${maxAllowedTokens} tokens, reducing end index`);
-
+    // Reduce range and continue loop
     const reductionAmount = calculateReductionAmount(checkWhich, chat, currentEndIndex);
     currentEndIndex -= reductionAmount;
     currentMaxEligibleIndex = currentEndIndex - offset;
@@ -575,14 +623,6 @@ async function reduceMessagesUntilTokenFit(config) {
     const formatResult = formatMessagesForRangeDetection(chat, startIndex, currentEndIndex, checkWhich);
     currentFilteredIndices = formatResult.filteredIndices;
   }
-
-  return {
-    prompt,
-    currentEndIndex,
-    currentFilteredIndices,
-    currentMaxEligibleIndex,
-    rangeWasReduced: currentEndIndex !== endIndex
-  };
 }
 
 async function detectSceneBreak(
@@ -653,6 +693,7 @@ _operationId  = null)
     debug('Valid choices for scene break:', validChoices.length, 'messages');
 
     // FIRST: Bulk reduce based on token calculation (fast reduction for large ranges)
+    // SECOND: Try API request and fine-tune if needed (integrated in same loop)
     const reductionResult = await reduceMessagesUntilTokenFit({
       ctx,
       chat,
@@ -668,53 +709,19 @@ _operationId  = null)
       prefill,
       forceSelection,
       includePresetPrompts,
-      profile: effectiveProfile
+      profile: effectiveProfile,
+      effectiveProfile: effectiveProfile
     });
 
     if (reductionResult.sceneBreakAt !== undefined) {
       return reductionResult;
     }
 
-    const { prompt, currentEndIndex, currentFilteredIndices, currentMaxEligibleIndex } = reductionResult;
+    const { response, currentEndIndex, currentFilteredIndices, currentMaxEligibleIndex } = reductionResult;
 
     ctx.deactivateSendButtons();
 
-    // Set operation context for ST_METADATA with range
-    const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
-    setOperationSuffix(`-${startIndex}-${currentEndIndex}`);
-
-    let response;
-
-    try {
-      // Use ConnectionManager for ALL requests (handles profile switching internally)
-      const { sendLLMRequest } = await import('./llmClient.js');
-      const { OperationType } = await import('./operationTypes.js');
-
-      debug('Sending range detection prompt to AI for range', startIndex, 'to', currentEndIndex);
-
-      response = await sendLLMRequest(effectiveProfile, prompt, OperationType.DETECT_SCENE_BREAK, {
-        prefill,
-        includePreset: includePresetPrompts,
-        preset: preset,
-        trimSentences: false
-      });
-
-      debug('AI raw response for range', startIndex, 'to', currentEndIndex, ':', response);
-    } catch (requestError) {
-      clearOperationSuffix();
-
-      // SECOND: Fine-tune if token calculation was slightly off
-      // If context length exceeded and we can reduce further, retry with smaller range
-      if (isContextLengthError(requestError) && currentEndIndex > startIndex + minimumSceneLength) {
-        const reductionAmount = calculateReductionAmount(checkWhich, chat, currentEndIndex);
-        const newEndIndex = currentEndIndex - reductionAmount;
-        debug(SUBSYSTEM.OPERATIONS, `Context exceeded after pre-reduction, fine-tuning: ${currentEndIndex} → ${newEndIndex}`);
-        return await detectSceneBreak(startIndex, newEndIndex, offset, checkWhich);
-      }
-
-      // Not a context error or can't reduce further - rethrow
-      throw requestError;
-    }
+    debug('AI raw response for range', startIndex, 'to', currentEndIndex, ':', response);
 
     // Parse response for message number or false
     const { sceneBreakAt, rationale } = await parseSceneBreakResponse(response, startIndex, currentEndIndex, currentFilteredIndices);
