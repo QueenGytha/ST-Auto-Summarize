@@ -440,6 +440,8 @@ export function registerAllOperationHandlers() {
         } else {
           error(SUBSYSTEM.QUEUE, `Not enough messages (${remainingCount}) to retry detection after clearing scene break at ${index}`);
         }
+
+        return { recap: null };
       }
 
       throw err;

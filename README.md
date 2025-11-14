@@ -620,3 +620,157 @@ The operation queue:
 **Names wrong in recaps:**
 - Use {{char}} and {{user}} macros in recap prompt
 - Enable "Message History" to give more context
+
+---
+
+## Troubleshooting
+
+**"ForbiddenError: invalid csrf token"**
+- You opened ST in multiple tabs
+- Close extra tabs and reload
+
+**"Syntax Error: No number after minus sign in JSON at position X"**
+- Update your koboldcpp
+- Try disabling "Request token probabilities"
+
+**"min new tokens must be in (0, max_new_tokens(X)], got Y"**
+- Your model has a minimum token requirement conflicting with max tokens
+- Either reduce minimum tokens in completion settings
+- Or increase max token length for recap generation
+
+**Recaps seem to be continuing the conversation**
+- Issue with instruct template
+- Make sure system messages are distinct from user messages
+- Check "System message sequences" field in instruct template is filled
+- Try toggling "Nest Message in Recap Prompt" setting
+
+**Jailbreak isn't working**
+- Put jailbreak in the recap prompt if you want it included
+
+**Incomplete sentences not trimmed**
+- If using different connection profile for recaps, check the instruct template for that profile
+- Enable "Trim incomplete sentences" in the recap profile's instruct template
+
+**When using different completion preset for recaps, regular preset changes**
+- This is expected ST behavior
+- Save your main preset before generating recaps
+- Profile switching discards unsaved changes
+
+**Just updated and things are broken**
+- Reload the page first
+- Make sure you're on the most recent version of ST
+
+**Scene recaps not generating automatically**
+- Check that "Auto Scene Break Detection" is enabled
+- Check queue status with /queue-status
+- Check console for errors (F12 in browser)
+
+**Running scene recap not updating**
+- Check "Auto-generate on New Scene Recaps" is enabled
+- Check "Exclude Latest N Scenes" setting (might be excluding recent scenes)
+- Manually regenerate using "Regenerate Running" button
+
+**Auto-Lorebooks not extracting entities**
+- Check "Enable Auto-Lorebooks" is toggled on
+- Check queue status (entity extraction happens in queue)
+- Review entity types and extraction prompts
+- Check console for errors
+
+**Lorebook duplicates being created**
+- Adjust duplicate detection thresholds
+- Review lookup and deduplicate prompts
+- Manually merge duplicates in World Info
+
+---
+
+## Development
+
+This extension uses AI-driven development with comprehensive testing and validation.
+
+### Prerequisites
+
+- **Node.js**: For development dependencies
+- **SillyTavern**: Running locally for testing
+
+### Setup
+
+```bash
+git clone https://github.com/QueenGytha/ST-Auto-Recap.git
+cd ST-Auto-Recap
+npm install
+```
+
+### Development Commands
+
+**Linting & Validation:**
+```bash
+npm run lint              # Lint all JS files (max-warnings: 0)
+npm run lint:fix          # Auto-fix linting issues
+npm run syntax-check      # Validate JS syntax
+npm run validate-selectors # Validate SillyTavern DOM selectors
+npm run analyze           # Run lint + syntax-check
+npm run analyze:full      # Run lint + syntax-check + security audit
+npm run audit             # Security audit (moderate+ severity)
+```
+
+**Testing:**
+```bash
+npm test                  # Run all Playwright E2E tests
+npm run pretest           # Pre-test validation (selectors, lint, syntax, audit)
+npm run test:feature      # Run feature tests only
+npm run test:suite        # Run suite tests only
+npm run test:ui           # Run tests with Playwright UI
+npm run test:headed       # Run tests in headed browser
+npm run test:debug        # Run tests in debug mode
+```
+
+**IMPORTANT**: Tests run against a REAL SillyTavern instance at http://localhost:8000. Tests are sequential (workers: 1) because they share backend state.
+
+**Git Hooks:**
+```bash
+npm run prepare           # Install Husky git hooks
+```
+
+Pre-commit hook runs: selector validation → lint-staged (ESLint + syntax-check) → security audit
+
+### Key Files
+
+- **index.js** - Main entry point, barrel exports
+- **recapping.js** - Recap generation via recap_text()
+- **memoryCore.js** - Memory inclusion/injection logic
+- **runningSceneRecap.js** - Running scene recap system
+- **lorebookManager.js** - Auto-Lorebooks feature
+- **operationQueue.js** - Persistent async operation queue
+- **settingsManager.js** - Extension settings
+- **profileManager.js** - Configuration profiles
+
+### Documentation
+
+- **CLAUDE.md** - Complete development guide for AI assistants
+- **docs/README.md** - Documentation hub
+- **docs/features/** - Feature-specific documentation
+- **docs/development/** - Development workflow and testing guides
+- **docs/reference/** - Technical reference material
+
+### Development Principles
+
+- **Real Environment Testing**: Test against actual SillyTavern, no mocks
+- **Explicit-Only Development**: No fallback values, no default behaviors
+- **Failure-First Testing**: Write tests first, implement to make them pass
+- **Transparent Implementation**: Code clearly expresses intent
+
+For detailed development instructions, see CLAUDE.md.
+
+---
+
+## Credits
+
+Original "Auto-Recap" extension by [Viruk](https://github.com/Viruk/ST-Auto-Recap)
+
+Forked and extended with Auto-Lorebooks, running scene recap, AI-editable tracking, and extensive refactoring by [QueenGytha](https://github.com/QueenGytha)
+
+---
+
+## License
+
+[MIT License](LICENSE)
