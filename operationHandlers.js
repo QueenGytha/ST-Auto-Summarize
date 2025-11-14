@@ -295,9 +295,18 @@ export function registerAllOperationHandlers() {
     }
 
     // Continuity veto + objective-only rule
-    const vetoResult = await handleContinuityVeto({ operation, chat, sceneBreakAt, rationale, startIndex, endIndex, offset, minimumSceneLength });
-    if (vetoResult.vetoed) {
-      return vetoResult.result;
+    // BUT: Skip veto when range was reduced or selection was forced due to token limits
+    // (We told LLM "pick the best available even if imperfect" - so we must accept it)
+    const rangeWasReduced = operation.metadata?.range_reduced === true;
+    const skipVeto = forceSelection || rangeWasReduced;
+
+    if (!skipVeto) {
+      const vetoResult = await handleContinuityVeto({ operation, chat, sceneBreakAt, rationale, startIndex, endIndex, offset, minimumSceneLength });
+      if (vetoResult.vetoed) {
+        return vetoResult.result;
+      }
+    } else {
+      debug(SUBSYSTEM.QUEUE, `Skipping continuity veto for message ${sceneBreakAt} (forceSelection=${forceSelection}, rangeWasReduced=${rangeWasReduced})`);
     }
 
     // Valid scene break detected at sceneBreakAt
