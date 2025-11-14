@@ -7,7 +7,9 @@ import {
   enqueueOperation,
   getAbortSignal,
   throwIfAborted,
-  pauseQueue } from
+  pauseQueue,
+  getPendingOperations,
+  removeOperation } from
 './operationQueue.js';
 // Note: OPERATION_FETCH_TIMEOUT_MS no longer used after removing scene-name operation
 import {
@@ -404,6 +406,18 @@ export function registerAllOperationHandlers() {
         toast(`⚠ Scene too large to recap - retrying with earlier break point`, 'warning');
 
         clearSceneBreak({ index, get_message_div, getContext, saveChatDebounced });
+
+        const pendingOps = getPendingOperations();
+        const orphanedDetects = pendingOps.filter(op =>
+          op.type === OperationType.DETECT_SCENE_BREAK &&
+          op.params.startIndex === index + 1
+        );
+
+        for (const op of orphanedDetects) {
+          // eslint-disable-next-line no-await-in-loop -- Operations must be removed sequentially to maintain queue state
+          await removeOperation(op.id);
+          debug(SUBSYSTEM.QUEUE, `Cancelled orphaned detect operation ${op.id} for range ${op.params.startIndex}-${op.params.endIndex}`);
+        }
 
         const ctx = getContext();
         const chat = ctx.chat;

@@ -476,10 +476,7 @@ The operation queue:
 
 ### Prompts
 - Make a summarization prompt and set it to be the one used instead of 'same as current'. You will want different settings when recapping instead of your chat which will be more creative. Mine: Temperature 0.95, frequency penalty 0, presence penalty 0, Top P 1.00
-
-**Keep prompts simple:**
-- Longer recap prompts tend to muddy results
-- LLMs handle information overload poorly (hence this extension!)
+- **Set correct token limits:** Configure the context size in your completion preset to match your model's actual limit. This determines the maximum size of scenes that can be sent for recapping. If scenes are too large, recap generation will fail with "exceeds available context" errors. Check your model's documentation for its context window size (e.g., 8k, 32k, 128k tokens) and set the completion preset's "Context" slider to match (leave some headroom for the response).
 
 ### Scene Management
 
