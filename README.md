@@ -11,14 +11,12 @@ A SillyTavern extension that provides AI-powered scene recapping and automatic l
 - [Scene Management](#scene-management)
 - [Running Scene Recap](#running-scene-recap)
 - [Auto-Lorebooks](#auto-lorebooks)
-- [AI-Editable Tracking Entries](#ai-editable-tracking-entries)
 - [Configuration Profiles](#configuration-profiles)
 - [Operation Queue](#operation-queue)
 - [Settings Reference](#settings-reference)
 - [Slash Commands](#slash-commands)
 - [Tips & Best Practices](#tips--best-practices)
-- [Troubleshooting](#troubleshooting)
-- [Development](#development)
+- [Known Issues](#known-issues)
 
 ---
 
@@ -46,7 +44,6 @@ This extension provides two main systems working together:
 - **Automatic entity extraction**: AI extracts characters, locations, objects, events, factions, and concepts from scene recaps
 - **Duplicate detection**: Two-stage process (lookup + deduplicate) prevents duplicate entries
 - **Customizable entity types**: Define your own entity types and extraction prompts
-- **AI-editable tracking**: Special lorebook entries that the AI can update during roleplay (__gm_notes, __character_stats)
 - **Bulk operations**: Enable/disable/delete multiple entries at once
 
 ### Configuration Management
@@ -230,49 +227,6 @@ Default entity types (customizable):
 **Manual Additions:**
 - You can still add lorebook entries manually
 - Auto-Lorebooks won't interfere with manual entries
-
----
-
-## AI-Editable Tracking Entries
-
-Special lorebook entries that the AI can update during roleplay.
-
-### What They Are
-
-Two special entry types:
-- **__gm_notes**: GM notes that track ongoing events, decisions, and consequences
-- **__character_stats**: Character stats, conditions, inventory, relationships
-
-These entries use a special syntax that allows the AI to update them in-character during roleplay.
-
-### How They Work
-
-1. **Create tracking entries** in your lorebook with special keywords (__gm_notes or __character_stats)
-2. **Enable the entries** so they're injected into the prompt
-3. **During roleplay**, the AI can suggest updates using special syntax
-4. **Extension detects updates** and automatically modifies the lorebook entries
-5. **Changes persist** across the conversation
-
-### Setting Up Tracking Entries
-
-**GM Notes:**
-1. Create a lorebook entry with keyword: __gm_notes
-2. Set content to empty or initial notes
-3. Enable the entry
-4. AI can now append notes as events happen
-
-**Character Stats:**
-1. Create a lorebook entry with keyword: __character_stats
-2. Set content in a structured format
-3. Enable the entry
-4. AI can now update stats during roleplay
-
-### Configuration
-
-- **Enable AI-Editable Tracking**: Master toggle
-- **Update Syntax**: Customize the syntax the AI uses to suggest updates
-- **Auto-apply Updates**: Automatically apply updates vs. review first
-- **Update Logging**: Log all updates for review
 
 ---
 
@@ -520,31 +474,12 @@ The operation queue:
 
 ## Tips & Best Practices
 
-### Recap Generation
+### Prompts
+- Make a summarization prompt and set it to be the one used instead of 'same as current'. You will want different settings when recapping instead of your chat which will be more creative. Mine: Temperature 0.95, frequency penalty 0, presence penalty 0, Top P 1.00
 
 **Keep prompts simple:**
 - Longer recap prompts tend to muddy results
 - LLMs handle information overload poorly (hence this extension!)
-
-**Use low temperature:**
-- Temperature 0 reduces creativity and focuses on facts
-- No need for flowery language in recaps
-
-**No repetition penalty:**
-- You WANT the AI to repeat what happened
-- Disable repetition penalty for recap presets
-
-**Use global macros:**
-- {{char}} and {{user}} help with proper name usage
-- Other SillyTavern macros work in recap prompts
-
-**Save your presets:**
-- If using different connection profiles for recaps, save your main preset first
-- Switching profiles discards unsaved changes (this is how ST works)
-
-**Don't use reasoning models:**
-- Reasoning models (like o1) work but are very slow for recapping
-- Use faster models for better experience
 
 ### Scene Management
 
@@ -578,199 +513,25 @@ The operation queue:
 - Switch between versions if a regeneration goes wrong
 - Keep multiple versions for different story branches
 
-### Auto-Lorebooks
-
-**Review extracted entities:**
-- Auto-Lorebooks creates entries in disabled state (by default)
-- Review and enable the ones you want
-- Delete entries you don't need
-
-**Customize entity types:**
-- Add entity types specific to your setting
-- Remove types you don't use
-- Adjust extraction prompts for better results
-
-**Use AI-editable tracking:**
-- __gm_notes for tracking plot threads and consequences
-- __character_stats for tracking character state
-- Enable these entries to get dynamic updates during roleplay
-
 ### Performance
 
 **Connection profiles:**
-- Use a cheaper/faster API for recap generation if cost is a concern
-- Save your expensive API for actual roleplay
+- If possible, use a different LLM on a different connection profile from your chat one. This allows the recap/lorebooks to run in the background without blocking your chats
 
 **Queue management:**
 - Pause queue if you need to stop processing
 - Clear queue if you want to cancel pending operations
 - Use blocking mode if you want to ensure recaps are current
 
-### Troubleshooting Tips
-
-**Recaps continuing the conversation:**
-- Check your instruct template (system messages must be distinct)
-- Try toggling "Nest Message in Recap Prompt" in settings
-- Make sure "System same as user" is unchecked in instruct template
-
-**Recaps too long:**
-- Set max tokens in your recap completion preset
-- Use {{words}} macro in recap prompt (though LLMs can't count perfectly)
-
-**Names wrong in recaps:**
-- Use {{char}} and {{user}} macros in recap prompt
-- Enable "Message History" to give more context
-
 ---
 
-## Troubleshooting
+## Known Issues
 
-**"ForbiddenError: invalid csrf token"**
-- You opened ST in multiple tabs
-- Close extra tabs and reload
-
-**"Syntax Error: No number after minus sign in JSON at position X"**
-- Update your koboldcpp
-- Try disabling "Request token probabilities"
-
-**"min new tokens must be in (0, max_new_tokens(X)], got Y"**
-- Your model has a minimum token requirement conflicting with max tokens
-- Either reduce minimum tokens in completion settings
-- Or increase max token length for recap generation
-
-**Recaps seem to be continuing the conversation**
-- Issue with instruct template
-- Make sure system messages are distinct from user messages
-- Check "System message sequences" field in instruct template is filled
-- Try toggling "Nest Message in Recap Prompt" setting
-
-**Jailbreak isn't working**
-- Put jailbreak in the recap prompt if you want it included
-
-**Incomplete sentences not trimmed**
-- If using different connection profile for recaps, check the instruct template for that profile
-- Enable "Trim incomplete sentences" in the recap profile's instruct template
-
-**When using different completion preset for recaps, regular preset changes**
-- This is expected ST behavior
-- Save your main preset before generating recaps
-- Profile switching discards unsaved changes
-
-**Just updated and things are broken**
-- Reload the page first
-- Make sure you're on the most recent version of ST
-
-**Scene recaps not generating automatically**
-- Check that "Auto Scene Break Detection" is enabled
-- Check queue status with /queue-status
-- Check console for errors (F12 in browser)
-
-**Running scene recap not updating**
-- Check "Auto-generate on New Scene Recaps" is enabled
-- Check "Exclude Latest N Scenes" setting (might be excluding recent scenes)
-- Manually regenerate using "Regenerate Running" button
-
-**Auto-Lorebooks not extracting entities**
-- Check "Enable Auto-Lorebooks" is toggled on
-- Check queue status (entity extraction happens in queue)
-- Review entity types and extraction prompts
-- Check console for errors
-
-**Lorebook duplicates being created**
-- Adjust duplicate detection thresholds
-- Review lookup and deduplicate prompts
-- Manually merge duplicates in World Info
-
----
-
-## Development
-
-This extension uses AI-driven development with comprehensive testing and validation.
-
-### Prerequisites
-
-- **Node.js**: For development dependencies
-- **SillyTavern**: Running locally for testing
-
-### Setup
-
-```bash
-git clone https://github.com/QueenGytha/ST-Auto-Recap.git
-cd ST-Auto-Recap
-npm install
-```
-
-### Development Commands
-
-**Linting & Validation:**
-```bash
-npm run lint              # Lint all JS files (max-warnings: 0)
-npm run lint:fix          # Auto-fix linting issues
-npm run syntax-check      # Validate JS syntax
-npm run validate-selectors # Validate SillyTavern DOM selectors
-npm run analyze           # Run lint + syntax-check
-npm run analyze:full      # Run lint + syntax-check + security audit
-npm run audit             # Security audit (moderate+ severity)
-```
-
-**Testing:**
-```bash
-npm test                  # Run all Playwright E2E tests
-npm run pretest           # Pre-test validation (selectors, lint, syntax, audit)
-npm run test:feature      # Run feature tests only
-npm run test:suite        # Run suite tests only
-npm run test:ui           # Run tests with Playwright UI
-npm run test:headed       # Run tests in headed browser
-npm run test:debug        # Run tests in debug mode
-```
-
-**IMPORTANT**: Tests run against a REAL SillyTavern instance at http://localhost:8000. Tests are sequential (workers: 1) because they share backend state.
-
-**Git Hooks:**
-```bash
-npm run prepare           # Install Husky git hooks
-```
-
-Pre-commit hook runs: selector validation → lint-staged (ESLint + syntax-check) → security audit
-
-### Key Files
-
-- **index.js** - Main entry point, barrel exports
-- **recapping.js** - Recap generation via recap_text()
-- **memoryCore.js** - Memory inclusion/injection logic
-- **runningSceneRecap.js** - Running scene recap system
-- **lorebookManager.js** - Auto-Lorebooks feature
-- **operationQueue.js** - Persistent async operation queue
-- **settingsManager.js** - Extension settings
-- **profileManager.js** - Configuration profiles
-
-### Documentation
-
-- **CLAUDE.md** - Complete development guide for AI assistants
-- **docs/README.md** - Documentation hub
-- **docs/features/** - Feature-specific documentation
-- **docs/development/** - Development workflow and testing guides
-- **docs/reference/** - Technical reference material
-
-### Development Principles
-
-- **Real Environment Testing**: Test against actual SillyTavern, no mocks
-- **Explicit-Only Development**: No fallback values, no default behaviors
-- **Failure-First Testing**: Write tests first, implement to make them pass
-- **Transparent Implementation**: Code clearly expresses intent
-
-For detailed development instructions, see CLAUDE.md.
-
----
-
-## Credits
-
-Original "Auto-Recap" extension by [Viruk](https://github.com/Viruk/ST-Auto-Recap)
-
-Forked and extended with Auto-Lorebooks, running scene recap, AI-editable tracking, and extensive refactoring by [QueenGytha](https://github.com/QueenGytha)
-
----
-
-## License
-
-[MIT License](LICENSE)
+**SillyTavern Branches/Checkpoints Not Supported:**
+- The extension does not currently handle SillyTavern's chat branches or checkpoint system
+- Scene recaps and lorebook entries are stored at the chat level, not per-branch
+- Creating a branch or restoring a checkpoint may result in:
+  - Scene recaps being out of sync with the branch timeline
+  - Running scene recap containing scenes from different branches
+  - Lorebook entries created in one branch appearing in others
+- **Workaround**: Export your chat before branching, then work in separate chat files

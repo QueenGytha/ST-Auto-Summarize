@@ -419,7 +419,7 @@ function buildFormattedMessages(chat, filteredIndices, earliestAllowedBreak, max
 }
 
 function buildPromptFromTemplate(ctx, promptTemplate, options) {
-  const { formattedForPrompt, minimumSceneLength, earliestAllowedBreak, prefill } = options;
+  const { formattedForPrompt, minimumSceneLength, earliestAllowedBreak, prefill, rangeWasReduced = false } = options;
   let prompt = promptTemplate;
   if (ctx.substituteParamsExtended) {
     prompt = ctx.substituteParamsExtended(prompt, {
@@ -433,6 +433,11 @@ function buildPromptFromTemplate(ctx, promptTemplate, options) {
   prompt = prompt.replace(/\{\{messages\}\}/g, formattedForPrompt);
   prompt = prompt.replace(/\{\{minimum_scene_length\}\}/g, String(minimumSceneLength));
   prompt = prompt.replace(/\{\{earliest_allowed_break\}\}/g, String(earliestAllowedBreak));
+
+  if (rangeWasReduced) {
+    prompt += `\n\n**MANDATORY:** You MUST select the best possible scene break from the messages provided. Returning false is not permitted. Choose the most reasonable break point based on topic shifts, pauses, emotional beats, or any natural separation between narrative moments.`;
+  }
+
   return prompt;
 }
 
@@ -480,7 +485,8 @@ async function reduceMessagesUntilTokenFit(config) {
       formattedForPrompt: currentFormattedForPrompt,
       minimumSceneLength,
       earliestAllowedBreak: currentEarliestAllowedBreak,
-      prefill
+      prefill,
+      rangeWasReduced: currentEndIndex !== endIndex
     });
 
     const tokenCount = count_tokens(prompt);
@@ -511,7 +517,8 @@ async function reduceMessagesUntilTokenFit(config) {
     prompt,
     currentEndIndex,
     currentFilteredIndices,
-    currentMaxEligibleIndex
+    currentMaxEligibleIndex,
+    rangeWasReduced: currentEndIndex !== endIndex
   };
 }
 
