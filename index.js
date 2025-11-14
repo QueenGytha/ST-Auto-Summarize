@@ -622,7 +622,7 @@ export function installWorldInfoActivationLogger() {
  * DELETE THIS FUNCTION after verification test passes
  */
 export function _testMarker() {
-  return 'CODE_VERSION_12345';
+  return 'CODE_VERSION_NEW_2025_01_13_15_47';
 }
 
 // Export extension API to window.AutoRecap for tests and external access

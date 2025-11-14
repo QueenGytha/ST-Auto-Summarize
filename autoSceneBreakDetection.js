@@ -449,12 +449,10 @@ async function reduceMessagesUntilTokenFit(config) {
   let currentEarliestAllowedBreak;
   let currentFormattedForPrompt;
   let prompt;
-  let retryCount = 0;
-  const MAX_REDUCTION_RETRIES = 100;
 
   const maxAllowedTokens = await calculateAvailableContext(preset);
 
-  while (retryCount < MAX_REDUCTION_RETRIES) {
+  while (true) {
     const currentEligibleFilteredIndices = filterEligibleIndices(currentFilteredIndices, currentMaxEligibleIndex);
 
     if (currentEligibleFilteredIndices.length < minimumSceneLength + 1) {
@@ -507,12 +505,6 @@ async function reduceMessagesUntilTokenFit(config) {
 
     const formatResult = formatMessagesForRangeDetection(chat, startIndex, currentEndIndex, checkWhich);
     currentFilteredIndices = formatResult.filteredIndices;
-
-    retryCount++;
-  }
-
-  if (retryCount >= MAX_REDUCTION_RETRIES) {
-    throw new Error(`Scene break detection: exceeded ${MAX_REDUCTION_RETRIES} reduction attempts`);
   }
 
   return {

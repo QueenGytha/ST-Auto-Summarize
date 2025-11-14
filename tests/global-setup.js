@@ -8,7 +8,9 @@
 
 import { chromium } from '@playwright/test';
 import { ExtensionReloadHelper } from './helpers/ExtensionReloadHelper.js';
-import { ReloadEnforcer } from './helpers/ReloadEnforcer.js';
+import fs from 'fs';
+
+const RELOAD_LOCK_FILE = '.extension-reload-timestamp';
 
 export default async function globalSetup() {
   console.log('');
@@ -18,7 +20,8 @@ export default async function globalSetup() {
   console.log('');
 
   const browser = await chromium.launch({
-    headless: true
+    headless: false,
+    slowMo: 500 // Slow down by 500ms per action so you can see it
   });
 
   const context = await browser.newContext();
@@ -30,11 +33,18 @@ export default async function globalSetup() {
 
     await reloader.verifyExtensionLoaded();
 
-    ReloadEnforcer.recordReload();
+    // Record reload timestamp (inline to avoid config context pollution)
+    const timestamp = Date.now();
+    fs.writeFileSync(RELOAD_LOCK_FILE, timestamp.toString());
+    console.log(`✅ Reload recorded at: ${new Date(timestamp).toISOString()}`);
 
     console.log('');
     console.log('✅ Extension ready for testing');
     console.log('');
+
+    // Wait to ensure SillyTavern saves extension state to disk
+    console.log('⏳ Waiting for SillyTavern to persist settings...');
+    await page.waitForTimeout(2000);
 
   } catch (error) {
     console.error('');

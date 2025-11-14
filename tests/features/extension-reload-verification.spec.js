@@ -17,6 +17,11 @@ test.describe('Extension Reload Verification', () => {
   test('extension loaded with window.AutoRecap available', async ({ page }) => {
     await page.goto('http://localhost:8000');
 
+    // Wait for extension to initialize
+    await page.waitForFunction(() => {
+      return typeof window.AutoRecap !== 'undefined';
+    }, { timeout: 30000 });
+
     const autoRecapExists = await page.evaluate(() => {
       return typeof window.AutoRecap !== 'undefined';
     });
@@ -26,6 +31,11 @@ test.describe('Extension Reload Verification', () => {
 
   test('extension has critical exports', async ({ page }) => {
     await page.goto('http://localhost:8000');
+
+    // Wait for extension to initialize
+    await page.waitForFunction(() => {
+      return typeof window.AutoRecap !== 'undefined';
+    }, { timeout: 30000 });
 
     const exports = await page.evaluate(() => {
       return {
@@ -43,12 +53,21 @@ test.describe('Extension Reload Verification', () => {
   test('can access and modify settings', async ({ page }) => {
     await page.goto('http://localhost:8000');
 
+    // Wait for extension to initialize
+    await page.waitForFunction(() => {
+      return typeof window.AutoRecap !== 'undefined';
+    }, { timeout: 30000 });
+
     const result = await page.evaluate(() => {
       const testValue = 'test_' + Date.now();
       window.AutoRecap.set_settings('_test_key', testValue);
       const retrieved = window.AutoRecap.get_settings('_test_key');
 
-      delete SillyTavern.getContext().extensionSettings.auto_recap._test_key;
+      // Clean up test data
+      const ctx = SillyTavern.getContext();
+      if (ctx?.extensionSettings?.auto_recap) {
+        delete ctx.extensionSettings.auto_recap._test_key;
+      }
 
       return retrieved === testValue;
     });

@@ -35,10 +35,12 @@ export const selectorsSillyTavern = {
     extensions: {
         settings: '#extensions_settings2',  // Settings panel container (verified: id="extensions_settings2")
         settingsButton: '#extensions_settings', // Extensions settings button (for opening extensions panel)
+        settingsButtonDataTarget: '[data-target="extensions-settings-button"]', // Extensions settings button by data attribute
         menu: '#extensionsMenu',            // Extensions menu (verified: id="extensionsMenu")
         sysSettingsButton: '#sys-settings-button',  // System settings button (verified: id="sys-settings-button")
         connectionProfiles: '#connection_profiles', // Connection profiles UI element (verified: id="connection_profiles")
         saveButton: '#extensions_save',     // Extensions save button
+        extensionBlock: '.extension_block', // Extension block in manage extensions dialog
     },
 
     // DOM elements (standard HTML)
