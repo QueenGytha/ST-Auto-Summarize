@@ -505,8 +505,6 @@ function filterEligibleIndices(filteredIndices, maxEligibleIndex) {
   return filteredIndices.filter(i => i <= maxEligibleIndex);
 }
 
-// Removed: Token pre-reduction is no longer used. We now rely on error retry logic.
-// eslint-disable-next-line no-unused-vars -- Kept for reference, may be removed in future cleanup
 async function reduceMessagesUntilTokenFit(config) {
   const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false, profile } = config;
 
@@ -654,20 +652,30 @@ _operationId  = null)
     }
     debug('Valid choices for scene break:', validChoices.length, 'messages');
 
-    // Build prompt without token pre-checking (we'll handle context errors by retrying)
-    const formattedForPrompt = buildFormattedMessages(chat, filteredIndices, earliestAllowedBreak, maxEligibleIndex);
-    const prompt = buildPromptFromTemplate(ctx, promptTemplate, {
-      formattedForPrompt,
+    // FIRST: Bulk reduce based on token calculation (fast reduction for large ranges)
+    const reductionResult = await reduceMessagesUntilTokenFit({
+      ctx,
+      chat,
+      startIndex,
+      endIndex,
+      offset,
+      checkWhich,
+      filteredIndices,
+      maxEligibleIndex,
+      preset,
+      promptTemplate,
       minimumSceneLength,
-      earliestAllowedBreak,
       prefill,
-      rangeWasReduced: false,
-      forceSelection
+      forceSelection,
+      includePresetPrompts,
+      profile: effectiveProfile
     });
 
-    const currentEndIndex = endIndex;
-    const currentFilteredIndices = filteredIndices;
-    const currentMaxEligibleIndex = maxEligibleIndex;
+    if (reductionResult.sceneBreakAt !== undefined) {
+      return reductionResult;
+    }
+
+    const { prompt, currentEndIndex, currentFilteredIndices, currentMaxEligibleIndex } = reductionResult;
 
     ctx.deactivateSendButtons();
 
@@ -695,11 +703,12 @@ _operationId  = null)
     } catch (requestError) {
       clearOperationSuffix();
 
+      // SECOND: Fine-tune if token calculation was slightly off
       // If context length exceeded and we can reduce further, retry with smaller range
       if (isContextLengthError(requestError) && currentEndIndex > startIndex + minimumSceneLength) {
         const reductionAmount = calculateReductionAmount(checkWhich, chat, currentEndIndex);
         const newEndIndex = currentEndIndex - reductionAmount;
-        debug(SUBSYSTEM.OPERATIONS, `Context exceeded, reducing range from ${currentEndIndex} to ${newEndIndex}`);
+        debug(SUBSYSTEM.OPERATIONS, `Context exceeded after pre-reduction, fine-tuning: ${currentEndIndex} → ${newEndIndex}`);
         return await detectSceneBreak(startIndex, newEndIndex, offset, checkWhich);
       }
 
