@@ -572,10 +572,8 @@ function formatOperationParams(type, params, metadata) {
     case OperationType.DETECT_SCENE_BREAK:
     case OperationType.GENERATE_SCENE_RECAP:
     case OperationType.COMBINE_SCENE_WITH_RUNNING:
-      return formatMessageOperationParams(params, metadata);
-
     case OperationType.GENERATE_RUNNING_RECAP:
-      return 'All messages';
+      return formatMessageOperationParams(params, metadata);
 
     case OperationType.LOREBOOK_ENTRY_LOOKUP:
     case OperationType.RESOLVE_LOREBOOK_ENTRY:

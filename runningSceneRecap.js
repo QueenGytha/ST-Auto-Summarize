@@ -274,6 +274,9 @@ async function generate_running_scene_recap(skipQueue  = false) {
   const ctx = getContext();
   const chat = ctx.chat;
 
+  // Collect scene recap indexes early (needed for queue display)
+  const indexes = collect_scene_recap_indexes_for_running();
+
   // Queue running scene recap generation unless explicitly skipped
   if (!skipQueue) {
     debug(SUBSYSTEM.RUNNING, '[Queue] Queueing running scene recap generation');
@@ -281,8 +284,8 @@ async function generate_running_scene_recap(skipQueue  = false) {
     // Import queue integration
     const { queueGenerateRunningRecap } = await import('./queueIntegration.js');
 
-    // Queue the running scene recap generation
-    const operationId = await queueGenerateRunningRecap();
+    // Queue the running scene recap generation, passing indexes for display
+    const operationId = await queueGenerateRunningRecap({ indexes });
 
     if (operationId) {
       log(SUBSYSTEM.RUNNING, '[Queue] Queued running scene recap generation:', operationId);
@@ -301,8 +304,6 @@ async function generate_running_scene_recap(skipQueue  = false) {
 
   debug(SUBSYSTEM.RUNNING, 'Starting running scene recap generation');
 
-  // Collect scene recap indexes
-  const indexes = collect_scene_recap_indexes_for_running();
   const exclude_count = get_settings('running_scene_recap_exclude_latest') || 0;
 
   if (indexes.length === 0) {

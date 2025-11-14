@@ -86,7 +86,7 @@ export function queueGenerateRunningRecap(options  = {}) {
 
   return enqueueOperation(
     OperationType.GENERATE_RUNNING_RECAP,
-    {},
+    options.indexes ? { indexes: options.indexes } : {},
     {
       priority: options.priority ?? RUNNING_RECAP_PRIORITY,
       dependencies: options.dependencies ?? [],
@@ -108,6 +108,8 @@ export function queueCombineSceneWithRunning(index , options  = {}) {
       dependencies: options.dependencies ?? [],
       metadata: {
         scene_index: index,
+        start_index: 0,
+        end_index: index,
         ...options.metadata
       }
     }
