@@ -148,13 +148,15 @@ function stripDecorativeSeparators(text) {
 }
 
 function isContextLengthError(err) {
-  const errorMessage = err?.message || String(err);
-  const errorCause = err?.cause?.message || '';
+  const errorMessage = (err?.message || String(err)).toLowerCase();
+  const errorCause = (err?.cause?.message || '').toLowerCase();
   return errorMessage.includes('context') ||
          errorMessage.includes('maximum') ||
          errorMessage.includes('too large') ||
+         errorMessage.includes('tokens') ||
          errorCause.includes('context') ||
-         errorCause.includes('maximum');
+         errorCause.includes('maximum') ||
+         errorCause.includes('tokens');
 }
 
 async function trySendRequest(options) {
