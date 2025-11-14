@@ -505,6 +505,8 @@ function filterEligibleIndices(filteredIndices, maxEligibleIndex) {
   return filteredIndices.filter(i => i <= maxEligibleIndex);
 }
 
+// Removed: Token pre-reduction is no longer used. We now rely on error retry logic.
+// eslint-disable-next-line no-unused-vars -- Kept for reference, may be removed in future cleanup
 async function reduceMessagesUntilTokenFit(config) {
   const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false, profile } = config;
 
@@ -585,13 +587,12 @@ async function reduceMessagesUntilTokenFit(config) {
   };
 }
 
-// eslint-disable-next-line complexity -- Function handles scene detection with error retry logic
 async function detectSceneBreak(
 startIndex ,
 endIndex ,
 offset  = 0,
 forceSelection  = false,
-operationId  = null)
+_operationId  = null)
 {
   const ctx = getContext();
 
@@ -653,40 +654,20 @@ operationId  = null)
     }
     debug('Valid choices for scene break:', validChoices.length, 'messages');
 
-    const reductionResult = await reduceMessagesUntilTokenFit({
-      ctx,
-      chat,
-      startIndex,
-      endIndex,
-      offset,
-      checkWhich,
-      filteredIndices,
-      maxEligibleIndex,
-      preset,
-      promptTemplate,
+    // Build prompt without token pre-checking (we'll handle context errors by retrying)
+    const formattedForPrompt = buildFormattedMessages(chat, filteredIndices, earliestAllowedBreak, maxEligibleIndex);
+    const prompt = buildPromptFromTemplate(ctx, promptTemplate, {
+      formattedForPrompt,
       minimumSceneLength,
+      earliestAllowedBreak,
       prefill,
-      forceSelection,
-      includePresetPrompts,
-      profile: effectiveProfile
+      rangeWasReduced: false,
+      forceSelection
     });
 
-    if (reductionResult.sceneBreakAt !== undefined) {
-      return reductionResult;
-    }
-
-    const { prompt, currentEndIndex, currentFilteredIndices, currentMaxEligibleIndex } = reductionResult;
-
-    // Update operation metadata if range was reduced
-    if (operationId && currentEndIndex !== endIndex) {
-      const { updateOperationMetadata } = await import('./operationQueue.js');
-      await updateOperationMetadata(operationId, {
-        current_end_index: currentEndIndex,
-        original_end_index: endIndex,
-        range_reduced: true
-      });
-      debug(SUBSYSTEM.OPERATIONS, `Scene break detection range reduced from ${endIndex} to ${currentEndIndex} due to token limits`);
-    }
+    const currentEndIndex = endIndex;
+    const currentFilteredIndices = filteredIndices;
+    const currentMaxEligibleIndex = maxEligibleIndex;
 
     ctx.deactivateSendButtons();
 
