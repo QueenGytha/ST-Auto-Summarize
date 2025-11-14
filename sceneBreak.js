@@ -1017,8 +1017,14 @@ function calculateSceneMessageRange(messageIndex, get_data) {
     }
   }
 
-  // The scene ENDS at the scene break message
-  const endIndex = messageIndex;
+  // Find the END of the scene (next scene break, or end of chat)
+  let endIndex = chat.length - 1;
+  for (let i = messageIndex + 1; i < chat.length; i++) {
+    if (get_data(chat[i], SCENE_BREAK_KEY)) {
+      endIndex = i;
+      break;
+    }
+  }
 
   return `${startIndex}-${endIndex}`;
 }
