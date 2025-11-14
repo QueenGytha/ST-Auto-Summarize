@@ -13,7 +13,8 @@ import {
   debug,
   error,
   toast,
-  SUBSYSTEM } from
+  SUBSYSTEM,
+  getContext } from
 './index.js';
 import { MAX_RECAP_ATTEMPTS, HIGH_PRIORITY_OFFSET, OPERATION_ID_LENGTH } from './constants.js';
 
@@ -100,16 +101,31 @@ export function queueGenerateRunningRecap(options  = {}) {
 }
 
 export function queueCombineSceneWithRunning(index , options  = {}) {
+  const ctx = getContext();
+  const chat_metadata = ctx.chat?.metadata;
+  const runningRecapData = chat_metadata?.auto_recap_running_scene_recaps;
+  const versions = runningRecapData?.versions || [];
+
+  const previousVersions = versions.filter((v) => v.new_scene_index < index);
+  const previousVersion = previousVersions.length > 0
+    ? previousVersions.reduce((latest, current) =>
+        current.version > latest.version ? current : latest
+      )
+    : null;
+
+  const startIndex = previousVersion ? previousVersion.new_scene_index : 0;
+  const endIndex = index;
+
   return enqueueOperation(
     OperationType.COMBINE_SCENE_WITH_RUNNING,
-    { index },
+    { startIndex, endIndex },
     {
       priority: options.priority ?? RUNNING_RECAP_PRIORITY,
       dependencies: options.dependencies ?? [],
       metadata: {
         scene_index: index,
-        start_index: 0,
-        end_index: index,
+        start_index: startIndex,
+        end_index: endIndex,
         ...options.metadata
       }
     }

@@ -483,7 +483,7 @@ export function registerAllOperationHandlers() {
 
   // Combine scene with running recap
   registerOperationHandler(OperationType.COMBINE_SCENE_WITH_RUNNING, async (operation) => {
-    const { index } = operation.params;
+    const index = operation.metadata.scene_index;
     const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing COMBINE_SCENE_WITH_RUNNING for index ${index}`);
 
