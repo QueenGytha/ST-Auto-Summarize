@@ -14,7 +14,8 @@ import {
   selectorsExtension,
   selectorsSillyTavern,
   convertLiteralNewlinesToActual,
-  convertActualNewlinesToLiteral } from
+  convertActualNewlinesToLiteral,
+  MODULE_NAME } from
 './index.js';
 import {
   queueCombineSceneWithRunning,
@@ -151,6 +152,7 @@ saveChatDebounced )
   if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
 }
 
+// eslint-disable-next-line complexity -- Cleanup function with many sequential delete operations
 export function clearSceneBreak(config) {
   const { index, get_message_div, getContext, saveChatDebounced } = config;
   const ctx = getContext();
@@ -160,16 +162,16 @@ export function clearSceneBreak(config) {
     return;
   }
 
-  delete message.extra?.[SCENE_BREAK_KEY];
-  delete message.extra?.[SCENE_BREAK_VISIBLE_KEY];
-  delete message.extra?.[SCENE_BREAK_NAME_KEY];
-  delete message.extra?.[SCENE_BREAK_RECAP_KEY];
-  delete message.extra?.[SCENE_RECAP_MEMORY_KEY];
-  delete message.extra?.[SCENE_RECAP_HASH_KEY];
-  delete message.extra?.[SCENE_RECAP_METADATA_KEY];
-  delete message.extra?.[SCENE_BREAK_COLLAPSED_KEY];
-  delete message.extra?.scene_recap_versions;
-  delete message.extra?.scene_recap_current_index;
+  delete message.extra?.[MODULE_NAME]?.[SCENE_BREAK_KEY];
+  delete message.extra?.[MODULE_NAME]?.[SCENE_BREAK_VISIBLE_KEY];
+  delete message.extra?.[MODULE_NAME]?.[SCENE_BREAK_NAME_KEY];
+  delete message.extra?.[MODULE_NAME]?.[SCENE_BREAK_RECAP_KEY];
+  delete message.extra?.[MODULE_NAME]?.[SCENE_RECAP_MEMORY_KEY];
+  delete message.extra?.[MODULE_NAME]?.[SCENE_RECAP_HASH_KEY];
+  delete message.extra?.[MODULE_NAME]?.[SCENE_RECAP_METADATA_KEY];
+  delete message.extra?.[MODULE_NAME]?.[SCENE_BREAK_COLLAPSED_KEY];
+  delete message.extra?.[MODULE_NAME]?.scene_recap_versions;
+  delete message.extra?.[MODULE_NAME]?.scene_recap_current_index;
 
   const $msgDiv = get_message_div(index);
   if ($msgDiv && $msgDiv.length) {
