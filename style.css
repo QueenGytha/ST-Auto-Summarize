@@ -448,6 +448,10 @@ dialog:has(#auto_recap_memory_state_interface) {
     flex: 1;
 }
 
+#queue_count.queue-paused {
+    color: #f44336;
+}
+
 #queue_toggle_visibility i {
     flex-shrink: 0;
     padding: 0.2em 0.5em;

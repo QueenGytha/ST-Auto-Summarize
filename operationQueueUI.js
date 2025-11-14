@@ -320,8 +320,12 @@ function updateQueueDisplay() {
   // Update count in header
   const stats = getQueueStats();
   const $count = $(selectorsExtension.queue.count);
-  const totalCount = stats.pending + stats.in_progress + stats.failed;
-  $count.text(`(${totalCount})`);
+  if (stats.paused) {
+    $count.text('(PAUSED)').addClass('queue-paused');
+  } else {
+    const totalCount = stats.pending + stats.in_progress + stats.failed;
+    $count.text(`(${totalCount})`).removeClass('queue-paused');
+  }
 
   // Update pause/resume button
   const $pauseBtn = $(selectorsExtension.queue.togglePause);

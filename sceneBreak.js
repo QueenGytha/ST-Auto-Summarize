@@ -1005,7 +1005,7 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
 
 // Helper: Calculate message range for a scene
 function calculateSceneMessageRange(messageIndex, get_data) {
-  const ctx = window.SillyTavern.getContext();
+  const ctx = getContext();
   const chat = ctx.chat;
   const startIndex = messageIndex;
   let endIndex = chat.length - 1;
@@ -1071,11 +1071,14 @@ async function saveSceneRecap(config) {
         // Append message range if setting is enabled
         const settings = get_settings();
         if (settings.scene_name_append_range) {
+          debug(SUBSYSTEM.SCENE, `Calculating message range for scene at index ${messageIndex}`);
           const messageRange = calculateSceneMessageRange(messageIndex, get_data);
           clean = `${clean} ${messageRange}`;
+          debug(SUBSYSTEM.SCENE, `Scene name with range: "${clean}"`);
         }
 
         set_data(message, SCENE_BREAK_NAME_KEY, clean);
+        debug(SUBSYSTEM.SCENE, `Set scene name for message ${messageIndex}: "${clean}"`);
         // Update scene navigator immediately if available
         try { renderSceneNavigatorBar(); } catch {}
       }
