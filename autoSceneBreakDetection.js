@@ -446,6 +446,9 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
   let totalTokens = count_tokens(prompt);
   const promptTokens = totalTokens;
 
+  const DEBUG_PREFILL_LENGTH = 50;
+  debug(SUBSYSTEM.OPERATIONS, `calculateTotalRequestTokens: includePreset=${includePreset}, preset="${preset}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
+
   // Add preset messages overhead if enabled
   if (includePreset) {
     // Resolve effective preset name (same logic as calculateAvailableContext)
