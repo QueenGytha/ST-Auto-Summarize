@@ -449,22 +449,22 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
   const DEBUG_PREFILL_LENGTH = 50;
   debug(SUBSYSTEM.OPERATIONS, `calculateTotalRequestTokens: includePreset=${includePreset}, preset="${preset}", profile="${profile}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
 
-  // CRITICAL: ConnectionManager always includes preset prompts from the ACTIVE preset
-  // (not the profile preset, not the operation preset), regardless of includePreset flag.
-  // We must count tokens from the active preset to get accurate totals.
-  const { getPresetManager } = await import('../../../preset-manager.js');
-  const presetManager = getPresetManager('openai');
-  const activePresetName = presetManager?.getSelectedPresetName();
+  // CRITICAL: ConnectionManager ALWAYS includes preset prompts, completely ignoring the
+  // includePreset flag. It loads prompts from the profile's preset setting.
+  // We must ALWAYS count these tokens to match what actually gets sent.
+  const ctx = getContext();
+  const profileData = ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === profile);
+  const profilePresetName = profileData?.preset;
 
-  if (activePresetName) {
+  if (profilePresetName) {
     const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-    const presetMessages = await loadPresetPrompts(activePresetName);
+    const presetMessages = await loadPresetPrompts(profilePresetName);
     let presetTokens = 0;
     for (const msg of presetMessages) {
       const msgTokens = count_tokens(msg.content || '');
       presetTokens += msgTokens;
     }
-    debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from ACTIVE preset "${activePresetName}", ${presetTokens} tokens`);
+    debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from profile preset "${profilePresetName}", ${presetTokens} tokens`);
     totalTokens += presetTokens;
 
     // Add OpenAI system prompt overhead (from llmClient.js line 131)
@@ -474,9 +474,9 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
       totalTokens += systemTokens;
     }
 
-    debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, activePreset=${presetTokens} (from "${activePresetName}"), total=${totalTokens}`);
+    debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, profilePreset=${presetTokens} (from "${profilePresetName}"), total=${totalTokens}`);
   } else {
-    debug(SUBSYSTEM.OPERATIONS, `Warning: No active preset found, token count may be inaccurate`);
+    debug(SUBSYSTEM.OPERATIONS, `Warning: No profile preset found, token count may be inaccurate`);
   }
 
   // Add prefill overhead if provided
