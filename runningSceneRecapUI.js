@@ -101,12 +101,14 @@ function createRunningSceneRecapNavbar() {
 
   $navbar.append(html);
 
-  // ALWAYS respect user's navbar visibility preference from localStorage
+  // ALWAYS respect user's navbar visibility preference from localStorage (defaults to collapsed)
   // This must run every time, not just on creation, because the navbar
   // might already exist from Queue UI or previous initialization
   const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
-  if (navbarVisible === 'false') {
-    $navbar.hide();
+  if (navbarVisible === 'true') {
+    $navbar.show();
+  } else {
+    $navbar.hide(); // Default to collapsed
   }
 
   // Bind event handlers
@@ -207,12 +209,14 @@ function updateRunningSceneRecapNavbar() {
     $controls.hide();
   }
 
-  // ALWAYS respect user's navbar visibility preference from localStorage
+  // ALWAYS respect user's navbar visibility preference from localStorage (defaults to collapsed)
   // Even when showing controls, the navbar itself might need to be hidden
   const $navbar = $(selectorsExtension.sceneNav.bar);
   const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
-  if (navbarVisible === 'false') {
-    $navbar.hide();
+  if (navbarVisible === 'true') {
+    $navbar.show();
+  } else {
+    $navbar.hide(); // Default to collapsed
   }
 
   debug(SUBSYSTEM.UI, `Running scene recap controls ${show ? 'shown' : 'hidden'}`);

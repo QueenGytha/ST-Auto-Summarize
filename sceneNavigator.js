@@ -1,3 +1,4 @@
+/* global localStorage -- Browser API for persisting UI preferences */
 
 import { get_settings, getContext, get_data, SCENE_BREAK_KEY, SCENE_BREAK_VISIBLE_KEY, selectorsExtension, selectorsSillyTavern } from './index.js';
 
@@ -92,9 +93,16 @@ export function renderSceneNavigatorBar() {
     $bar.append($runningControls);
   }
 
-  // Always show the navbar and queue toggle button
-  $bar.show();
+  // Always show the queue toggle button, but respect navbar visibility preference
   $(selectorsExtension.queue.navbarToggle).show();
+
+  // Check user's navbar visibility preference (defaults to collapsed)
+  const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
+  if (navbarVisible === 'true') {
+    $bar.show();
+  } else {
+    $bar.hide(); // Default to collapsed
+  }
 
   // Update running recap controls after rendering
   if (window.updateRunningSceneRecapNavbar) {

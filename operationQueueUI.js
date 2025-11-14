@@ -262,15 +262,25 @@ function bindQueueControlEvents() {
     }
   });
 
-  // Restore navbar visibility state from localStorage
+  // Restore navbar visibility state from localStorage (defaults to collapsed)
   const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
-  if (navbarVisible === 'false') {
+  if (navbarVisible === 'true') {
+    // Explicitly show navbar if user previously expanded it
     const $navbar = $(selectorsExtension.sceneNav.bar);
     const $button = $(selectorsExtension.queue.navbarToggle);
-    $navbar.hide(); // Hide entire navbar
+    $navbar.show();
+    $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
+    $button.attr('title', 'Hide Queue Navbar');
+    const navbarWidth = $navbar.outerWidth() || QUEUE_BUTTON_WIDTH_PX;
+    $button.css('left', `${navbarWidth}px`);
+  } else {
+    // Default to hidden (collapsed)
+    const $navbar = $(selectorsExtension.sceneNav.bar);
+    const $button = $(selectorsExtension.queue.navbarToggle);
+    $navbar.hide();
     $button.removeClass(ICON_CHEVRON_LEFT).addClass(ICON_CHEVRON_RIGHT);
     $button.attr('title', 'Show Queue Navbar');
-    $button.css('left', '0'); // Button at left edge when collapsed
+    $button.css('left', '0');
   }
 
   // Add window resize listener
@@ -299,9 +309,9 @@ function updateQueueDisplay() {
   // Always show button, navbar visibility controlled by user
   $button.show();
 
-  // Check user's toggle preference (default to visible)
+  // Check user's toggle preference (defaults to collapsed)
   const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
-  if (navbarVisible !== 'false') {
+  if (navbarVisible === 'true') {
     // Navbar visible - sync button state
     $navbar.show();
     $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
@@ -310,7 +320,7 @@ function updateQueueDisplay() {
     const navbarWidth = $navbar.outerWidth() || QUEUE_BUTTON_WIDTH_PX;
     $button.css('left', `${navbarWidth}px`);
   } else {
-    // Navbar hidden - sync button state
+    // Navbar hidden - sync button state (default)
     $navbar.hide();
     $button.removeClass(ICON_CHEVRON_LEFT).addClass(ICON_CHEVRON_RIGHT);
     $button.attr('title', 'Show Queue Navbar');
@@ -451,7 +461,7 @@ function renderOperation(operation) {
   const removeTitle = operation.status === OperationStatus.IN_PROGRESS || operation.status === OperationStatus.RETRYING
     ? 'Cancel and Remove'
     : 'Remove';
-  const removeButton = `<button class="queue-operation-remove fa-solid fa-times" data-operation-id="${operation.id}" title="${removeTitle}" style="background: none; border: none; cursor: pointer; padding: 0.2em 0.5em; opacity: 0.5;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5"></button>`;
+  const removeButton = `<button class="queue-operation-remove fa-solid fa-times" data-operation-id="${operation.id}" title="${removeTitle}" style="background: none; border: none; cursor: pointer;"></button>`;
 
   return $(`
         <div class="queue-operation" style="background: ${bgColor};">
@@ -608,9 +618,9 @@ export function updateQueueUIVisibility() {
   // Always show button, navbar visibility controlled by user
   $button.show();
 
-  // Check user's toggle preference (default to visible)
+  // Check user's toggle preference (defaults to collapsed)
   const navbarVisible = localStorage.getItem('operation_queue_navbar_visible');
-  if (navbarVisible !== 'false') {
+  if (navbarVisible === 'true') {
     // Navbar visible - sync button state
     $navbar.show();
     $button.removeClass(ICON_CHEVRON_RIGHT).addClass(ICON_CHEVRON_LEFT);
@@ -619,7 +629,7 @@ export function updateQueueUIVisibility() {
     const navbarWidth = $navbar.outerWidth() || QUEUE_BUTTON_WIDTH_PX;
     $button.css('left', `${navbarWidth}px`);
   } else {
-    // Navbar hidden - sync button state
+    // Navbar hidden - sync button state (default)
     $navbar.hide();
     $button.removeClass(ICON_CHEVRON_LEFT).addClass(ICON_CHEVRON_RIGHT);
     $button.attr('title', 'Show Queue Navbar');
