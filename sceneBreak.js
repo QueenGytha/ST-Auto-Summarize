@@ -1007,15 +1007,18 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
 function calculateSceneMessageRange(messageIndex, get_data) {
   const ctx = getContext();
   const chat = ctx.chat;
-  const startIndex = messageIndex;
-  let endIndex = chat.length - 1;
 
-  for (let i = messageIndex + 1; i < chat.length; i++) {
+  // Find the START of the scene (message after previous scene break, or 0)
+  let startIndex = 0;
+  for (let i = messageIndex - 1; i >= 0; i--) {
     if (get_data(chat[i], SCENE_BREAK_KEY)) {
-      endIndex = i - 1;
+      startIndex = i + 1;
       break;
     }
   }
+
+  // The scene ENDS at the scene break message
+  const endIndex = messageIndex;
 
   return `${startIndex}-${endIndex}`;
 }

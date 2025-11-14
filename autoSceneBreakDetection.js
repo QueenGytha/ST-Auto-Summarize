@@ -527,7 +527,8 @@ async function detectSceneBreak(
 startIndex ,
 endIndex ,
 offset  = 0,
-forceSelection  = false)
+forceSelection  = false,
+operationId  = null)
 {
   const ctx = getContext();
 
@@ -606,6 +607,17 @@ forceSelection  = false)
     }
 
     const { prompt, currentEndIndex, currentFilteredIndices, currentMaxEligibleIndex } = reductionResult;
+
+    // Update operation metadata if range was reduced
+    if (operationId && currentEndIndex !== endIndex) {
+      const { updateOperationMetadata } = await import('./operationQueue.js');
+      await updateOperationMetadata(operationId, {
+        current_end_index: currentEndIndex,
+        original_end_index: endIndex,
+        range_reduced: true
+      });
+      debug(SUBSYSTEM.OPERATIONS, `Scene break detection range reduced from ${endIndex} to ${currentEndIndex} due to token limits`);
+    }
 
     ctx.deactivateSendButtons();
 
@@ -727,7 +739,9 @@ async function tryQueueSceneBreaks(config) {
         filtered_count: filteredCount,
         minimum_required: minimumSceneLength + 1,
         offset: offset || 0,
-        triggered_by: 'auto_scene_break_detection'
+        triggered_by: 'auto_scene_break_detection',
+        start_index: start,
+        end_index: end
       }
     }
   );

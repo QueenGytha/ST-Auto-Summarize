@@ -249,7 +249,7 @@ export function registerAllOperationHandlers() {
     const chat = ctx.chat;
 
     debug(SUBSYSTEM.QUEUE, `Executing DETECT_SCENE_BREAK for range ${startIndex} to ${endIndex} (offset: ${offset}, forceSelection: ${forceSelection})`);
-    const result = await detectSceneBreak(startIndex, endIndex, offset, forceSelection);
+    const result = await detectSceneBreak(startIndex, endIndex, offset, forceSelection, operation.id);
 
     // Check if cancelled after detection (before side effects)
     throwIfAborted(signal, 'DETECT_SCENE_BREAK', 'LLM call');
@@ -326,7 +326,11 @@ export function registerAllOperationHandlers() {
           {
             priority: 5,
             queueVersion: operation.queueVersion,
-            metadata: { triggered_by: 'scene_break_found_in_range' }
+            metadata: {
+              triggered_by: 'scene_break_found_in_range',
+              start_index: remainingStart,
+              end_index: endIndex
+            }
           }
         );
       } else {

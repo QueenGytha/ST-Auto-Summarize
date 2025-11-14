@@ -542,6 +542,20 @@ export async function updateOperationStatus(operationId , status , errorMsg  = n
   debug(SUBSYSTEM.QUEUE, `Operation ${operationId} status: ${status}`);
 }
 
+export async function updateOperationMetadata(operationId , newMetadata ) {
+  const operation = getOperation(operationId);
+  if (!operation) {
+    error(SUBSYSTEM.QUEUE, `Operation ${operationId} not found`);
+    return;
+  }
+
+  operation.metadata = { ...operation.metadata, ...newMetadata };
+
+  await saveQueue();
+  notifyUIUpdate();
+  debug(SUBSYSTEM.QUEUE, `Operation ${operationId} metadata updated`);
+}
+
 export async function removeOperation(operationId ) {
   const index = currentQueue.queue.findIndex((op) => op.id === operationId);
   if (index === -1) {

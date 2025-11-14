@@ -547,12 +547,21 @@ function formatLorebookOperationParams(params, metadata) {
   return `${entryType}-${entryName}`;
 }
 
-function formatMessageOperationParams(params) {
+function formatMessageOperationParams(params, metadata = {}) {
   if (params.index !== undefined) {
     return `Message #${params.index}`;
   }
   if (params.indexes && params.indexes.length) {
     return `Messages #${params.indexes[0]}-${params.indexes[params.indexes.length - 1]}`;
+  }
+  if (params.startIndex !== undefined && params.endIndex !== undefined) {
+    const startIndex = metadata.start_index ?? params.startIndex;
+    const originalEndIndex = metadata.original_end_index ?? metadata.end_index ?? params.endIndex;
+    const currentEndIndex = metadata.current_end_index ?? originalEndIndex;
+    const wasReduced = metadata.range_reduced === true;
+
+    const rangeText = `Messages #${startIndex}-${currentEndIndex}`;
+    return wasReduced ? `${rangeText} (reduced from ${originalEndIndex})` : rangeText;
   }
   return '';
 }
@@ -563,7 +572,7 @@ function formatOperationParams(type, params, metadata) {
     case OperationType.DETECT_SCENE_BREAK:
     case OperationType.GENERATE_SCENE_RECAP:
     case OperationType.COMBINE_SCENE_WITH_RUNNING:
-      return formatMessageOperationParams(params);
+      return formatMessageOperationParams(params, metadata);
 
     case OperationType.GENERATE_RUNNING_RECAP:
       return 'All messages';
