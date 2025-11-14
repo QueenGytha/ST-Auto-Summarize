@@ -29,7 +29,8 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     throw new Error(`Connection Manager profile not found: ${profileId}`);
   }
 
-  debug(SUBSYSTEM.CORE, `[LLMClient] Sending request with profile "${profile.name}" (${profileId}), operation: ${operationType}`);
+  debug(SUBSYSTEM.CORE, `[LLMClient] Sending request with profile "${profile.name}" (${profileId}), API type: ${profile.api}, operation: ${operationType}`);
+  debug(SUBSYSTEM.CORE, `[LLMClient] Full profile data:`, JSON.stringify(profile, null, 2));
 
   // 3. LOAD GENERATION PARAMETERS FROM PRESET
   let generationParams = {};
@@ -226,6 +227,20 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     return finalResult;
   } catch (err) {
     error(SUBSYSTEM.CORE, `[LLMClient] Request failed for operation ${operationType}:`, err);
+    error(SUBSYSTEM.CORE, `[LLMClient] Profile being used: "${profile.name}" (ID: ${profileId}, API: ${profile.api})`);
+
+    // Enhanced error for API type mismatches (common issue with stale profile data)
+    if (err.message && (err.message.includes('is not supported') || err.message.includes('API type'))) {
+      const enhancedError = new Error(
+        `Profile "${profile.name}" has API type "${profile.api}" which failed. ` +
+        `This profile's data may be stale/corrupted (common on mobile browsers). ` +
+        `Fix: Delete this profile in ConnectionManager settings and recreate it from scratch. ` +
+        `Original error: ${err.message}`
+      );
+      enhancedError.originalError = err;
+      throw enhancedError;
+    }
+
     throw err;
   }
 }
