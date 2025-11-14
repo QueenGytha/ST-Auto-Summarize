@@ -491,6 +491,14 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
   const DEBUG_PREFILL_LENGTH = 50;
   debug(SUBSYSTEM.OPERATIONS, `calculateTotalRequestTokens: includePreset=${includePreset}, preset="${preset}", profile="${profile}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
 
+  // OpenAI ALWAYS adds system prompt (llmClient.js lines 130-132, 146-148)
+  if (main_api === 'openai') {
+    const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
+    const systemTokens = count_tokens(systemPrompt);
+    totalTokens += systemTokens;
+    debug(SUBSYSTEM.OPERATIONS, `Added OpenAI system prompt overhead: ${systemTokens} tokens`);
+  }
+
   // Only count preset tokens if they will actually be included
   if (includePreset && preset !== null && preset !== undefined) {
     // Resolve preset name (empty string means use active preset)
@@ -517,14 +525,6 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
       }
       debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from operation preset "${effectivePresetName}", ${presetTokens} tokens`);
       totalTokens += presetTokens;
-
-      // Add OpenAI system prompt overhead (from llmClient.js line 131)
-      if (main_api === 'openai') {
-        const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
-        const systemTokens = count_tokens(systemPrompt);
-        totalTokens += systemTokens;
-        debug(SUBSYSTEM.OPERATIONS, `Added OpenAI system prompt overhead: ${systemTokens} tokens`);
-      }
 
       debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, operationPreset=${presetTokens} (from "${effectivePresetName}"), total=${totalTokens}`);
     }
