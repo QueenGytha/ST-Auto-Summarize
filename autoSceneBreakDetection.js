@@ -444,6 +444,7 @@ function buildPromptFromTemplate(ctx, promptTemplate, options) {
 
 async function calculateTotalRequestTokens(prompt, includePreset, preset, prefill) {
   let totalTokens = count_tokens(prompt);
+  const promptTokens = totalTokens;
 
   // Add preset messages overhead if enabled
   if (includePreset) {
@@ -456,15 +457,21 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
     if (effectivePresetName) {
       const { loadPresetPrompts } = await import('./presetPromptLoader.js');
       const presetMessages = await loadPresetPrompts(effectivePresetName);
+      let presetTokens = 0;
       for (const msg of presetMessages) {
-        totalTokens += count_tokens(msg.content || '');
+        const msgTokens = count_tokens(msg.content || '');
+        presetTokens += msgTokens;
       }
+      totalTokens += presetTokens;
 
       // Add OpenAI system prompt overhead (from llmClient.js line 131)
       if (main_api === 'openai') {
         const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
-        totalTokens += count_tokens(systemPrompt);
+        const systemTokens = count_tokens(systemPrompt);
+        totalTokens += systemTokens;
       }
+
+      debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, preset=${presetTokens}, total=${totalTokens}`);
     }
   }
 
