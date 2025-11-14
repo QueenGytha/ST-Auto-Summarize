@@ -120,10 +120,9 @@ export function initNavbarAutoHide() {
     }
   }
 
-  // Initial check
-  checkDrawerState();
-
-  debug(SUBSYSTEM.UI, 'Navbar auto-hide initialized');
+  // Don't run initial check - navbar is already in correct state from initialization
+  // Only hide/restore on drawer state CHANGES, not initial state
+  debug(SUBSYSTEM.UI, 'Navbar auto-hide initialized (waiting for drawer changes)');
 }
 
 export function destroyNavbarAutoHide() {
