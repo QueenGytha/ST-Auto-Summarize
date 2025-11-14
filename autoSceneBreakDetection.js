@@ -180,6 +180,15 @@ async function trySendRequest(options) {
   } catch (err) {
     clearOperationSuffix();
 
+    // Log full error details for debugging
+    const ERROR_DEBUG_LENGTH = 200;
+    debug(SUBSYSTEM.OPERATIONS, `API request failed. Error: ${err?.message || String(err)}`);
+    debug(SUBSYSTEM.OPERATIONS, `Error cause: ${err?.cause?.message || 'none'}`);
+    debug(SUBSYSTEM.OPERATIONS, `Error type: ${err?.constructor?.name || typeof err}`);
+    if (err?.response) {
+      debug(SUBSYSTEM.OPERATIONS, `Error response: ${JSON.stringify(err.response).slice(0, ERROR_DEBUG_LENGTH)}`);
+    }
+
     if (isContextLengthError(err)) {
       return { success: false, error: err };
     }
