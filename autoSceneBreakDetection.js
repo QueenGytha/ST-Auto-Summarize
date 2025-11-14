@@ -489,44 +489,59 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
   const DEBUG_PREFILL_LENGTH = 50;
   debug(SUBSYSTEM.OPERATIONS, `calculateTotalRequestTokens: includePreset=${includePreset}, preset="${preset}", profile="${profile}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
 
-  // CRITICAL: ConnectionManager ALWAYS includes preset prompts, completely ignoring the
-  // includePreset flag. It loads prompts from the profile's preset setting.
-  // We must ALWAYS count these tokens to match what actually gets sent.
-  const ctx = getContext();
-  const profileData = ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === profile);
-  const profilePresetName = profileData?.preset;
+  // Only count preset tokens if they will actually be included
+  if (includePreset && preset) {
+    // Resolve preset name (empty string means use active preset)
+    const { getPresetManager } = await import('../../../preset-manager.js');
+    const presetManager = getPresetManager('openai');
 
-  if (profilePresetName) {
-    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-    const presetMessages = await loadPresetPrompts(profilePresetName);
-    let presetTokens = 0;
-    for (const msg of presetMessages) {
-      const msgTokens = count_tokens(msg.content || '');
-      presetTokens += msgTokens;
-    }
-    debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from profile preset "${profilePresetName}", ${presetTokens} tokens`);
-    totalTokens += presetTokens;
-
-    // Add OpenAI system prompt overhead (from llmClient.js line 131)
-    if (main_api === 'openai') {
-      const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
-      const systemTokens = count_tokens(systemPrompt);
-      totalTokens += systemTokens;
+    let effectivePresetName;
+    if (preset === '') {
+      effectivePresetName = presetManager?.getSelectedPresetName();
+      if (!effectivePresetName) {
+        debug(SUBSYSTEM.OPERATIONS, `Warning: Empty preset with no active preset, skipping preset token count`);
+      }
+    } else {
+      effectivePresetName = preset;
     }
 
-    debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, profilePreset=${presetTokens} (from "${profilePresetName}"), total=${totalTokens}`);
+    if (effectivePresetName) {
+      const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+      const presetMessages = await loadPresetPrompts(effectivePresetName);
+      let presetTokens = 0;
+      for (const msg of presetMessages) {
+        const msgTokens = count_tokens(msg.content || '');
+        presetTokens += msgTokens;
+      }
+      debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from operation preset "${effectivePresetName}", ${presetTokens} tokens`);
+      totalTokens += presetTokens;
+
+      // Add OpenAI system prompt overhead (from llmClient.js line 131)
+      if (main_api === 'openai') {
+        const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
+        const systemTokens = count_tokens(systemPrompt);
+        totalTokens += systemTokens;
+        debug(SUBSYSTEM.OPERATIONS, `Added OpenAI system prompt overhead: ${systemTokens} tokens`);
+      }
+
+      debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, operationPreset=${presetTokens} (from "${effectivePresetName}"), total=${totalTokens}`);
+    }
   } else {
-    debug(SUBSYSTEM.OPERATIONS, `Warning: No profile preset found, token count may be inaccurate`);
+    debug(SUBSYSTEM.OPERATIONS, `Preset prompts not included (includePreset=${includePreset}), counting prompt tokens only`);
   }
 
   // Add prefill overhead if provided
   if (prefill && typeof prefill === 'string') {
-    totalTokens += count_tokens(prefill);
+    const prefillTokens = count_tokens(prefill);
+    totalTokens += prefillTokens;
+    debug(SUBSYSTEM.OPERATIONS, `Added prefill overhead: ${prefillTokens} tokens`);
   }
 
   // Add small buffer for message formatting overhead (role tags, etc.)
   const MESSAGE_FORMAT_OVERHEAD = 50;
   totalTokens += MESSAGE_FORMAT_OVERHEAD;
+
+  debug(SUBSYSTEM.OPERATIONS, `Final token count: ${totalTokens} (includes ${MESSAGE_FORMAT_OVERHEAD} token formatting buffer)`);
 
   return totalTokens;
 }
