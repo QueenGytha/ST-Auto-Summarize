@@ -463,6 +463,7 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
       const msgTokens = count_tokens(msg.content || '');
       presetTokens += msgTokens;
     }
+    debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from "${profilePresetName}", ${presetTokens} tokens`);
     totalTokens += presetTokens;
 
     // Add OpenAI system prompt overhead (from llmClient.js line 131)
