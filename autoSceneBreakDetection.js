@@ -490,7 +490,7 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
   debug(SUBSYSTEM.OPERATIONS, `calculateTotalRequestTokens: includePreset=${includePreset}, preset="${preset}", profile="${profile}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
 
   // Only count preset tokens if they will actually be included
-  if (includePreset && preset) {
+  if (includePreset && preset !== null && preset !== undefined) {
     // Resolve preset name (empty string means use active preset)
     const { getPresetManager } = await import('../../../preset-manager.js');
     const presetManager = getPresetManager('openai');
