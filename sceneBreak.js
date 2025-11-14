@@ -1080,7 +1080,7 @@ async function saveSceneRecap(config) {
       }
       if (clean) {
         // Append message range if setting is enabled
-        const settings = get_settings();
+        const settings = extension_settings[MODULE_NAME];
         if (settings.scene_name_append_range) {
           debug(SUBSYSTEM.SCENE, `Calculating message range for scene at index ${messageIndex}`);
           const messageRange = calculateSceneMessageRange(messageIndex, get_data);
