@@ -533,7 +533,7 @@ function buildOperationTooltip(operation) {
 
 function formatLorebookOperationParams(params, metadata) {
   const entryType = params.entryData?.type || metadata?.entry_type || 'entry';
-  const entryName = metadata?.entry_comment || params.entryData?.comment || params.entryData?.name || 'Unknown';
+  const entryName = metadata?.entry_name || metadata?.entry_comment || params.entryData?.comment || params.entryData?.name || 'Unknown';
 
   // Check if name already has type prefix to avoid duplication (e.g., "location-Apartment")
   if (entryName.startsWith(`${entryType}-`)) {

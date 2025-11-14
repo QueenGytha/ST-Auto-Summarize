@@ -81,6 +81,7 @@ export const selectorsExtension = {
     navWidth: '[data-testid="scene-nav-width"]',                     // #scene_recap_navigator_width
     navFontSize: '[data-testid="scene-nav-font-size"]',              // #scene_recap_navigator_font_size
     defaultCollapsed: '[data-testid="scene-default-collapsed"]',     // #scene_recap_default_collapsed
+    nameAppendRange: '[data-testid="scene-name-append-range"]',      // #scene_name_append_range
     editPrompt: '[data-testid="scene-edit-prompt"]',                 // #edit_scene_recap_prompt
     prompt: '[data-testid="scene-prompt"]',                          // #scene_recap_prompt
     defaultPrompt: '[data-testid="scene-default-prompt"]',           // #scene_recap_default_prompt

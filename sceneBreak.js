@@ -1003,6 +1003,23 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
 
 // Helper: Save scene recap and queue lorebook entries
 
+// Helper: Calculate message range for a scene
+function calculateSceneMessageRange(messageIndex, get_data) {
+  const ctx = window.SillyTavern.getContext();
+  const chat = ctx.chat;
+  const startIndex = messageIndex;
+  let endIndex = chat.length - 1;
+
+  for (let i = messageIndex + 1; i < chat.length; i++) {
+    if (get_data(chat[i], SCENE_BREAK_KEY)) {
+      endIndex = i - 1;
+      break;
+    }
+  }
+
+  return `${startIndex}-${endIndex}`;
+}
+
 async function saveSceneRecap(config) {
   const { message, recap, get_data, set_data, saveChatDebounced, messageIndex, lorebookMetadata } = config;
   const updatedVersions = getSceneRecapVersions(message, get_data).slice();
@@ -1051,6 +1068,13 @@ async function saveSceneRecap(config) {
         clean = clean.slice(0, SCENE_BREAK_MIN_CHARS) + '...';
       }
       if (clean) {
+        // Append message range if setting is enabled
+        const settings = get_settings();
+        if (settings.scene_name_append_range) {
+          const messageRange = calculateSceneMessageRange(messageIndex, get_data);
+          clean = `${clean} ${messageRange}`;
+        }
+
         set_data(message, SCENE_BREAK_NAME_KEY, clean);
         // Update scene navigator immediately if available
         try { renderSceneNavigatorBar(); } catch {}

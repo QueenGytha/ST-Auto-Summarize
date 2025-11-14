@@ -56,6 +56,7 @@ export const default_settings = {
   scene_recap_navigator_width: 240, // Width of scene navigator bar in pixels (default: 240px, double the original 48px)
   scene_recap_navigator_font_size: 12, // Font size for scene navigator links in pixels (default: 12px)
   scene_recap_default_collapsed: true, // New scene recaps start collapsed by default (only showing scene name)
+  scene_name_append_range: true, // Append message range to auto-generated scene names (e.g., "Scene Name 159-254")
 
   // --- Scene Recap Validation Settings ---
   scene_recap_error_detection_enabled: false,

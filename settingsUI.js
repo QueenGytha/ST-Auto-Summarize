@@ -109,6 +109,8 @@ async function initialize_settings_listeners() {
     // Re-render navigator bar with new font size
     if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
   });
+  bind_setting(selectorsExtension.scene.defaultCollapsed, 'scene_recap_default_collapsed', 'boolean');
+  bind_setting(selectorsExtension.scene.nameAppendRange, 'scene_name_append_range', 'boolean');
   bind_setting(selectorsExtension.scene.prompt, 'scene_recap_prompt', 'text');
   bind_setting(selectorsExtension.scene.prefill, 'scene_recap_prefill', 'text');
   bind_setting(selectorsExtension.scene.messageTypes, 'scene_recap_message_types', 'text');
