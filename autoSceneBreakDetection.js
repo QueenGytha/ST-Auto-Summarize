@@ -447,16 +447,24 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
 
   // Add preset messages overhead if enabled
   if (includePreset) {
-    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-    const presetMessages = await loadPresetPrompts(preset);
-    for (const msg of presetMessages) {
-      totalTokens += count_tokens(msg.content || '');
-    }
+    // Resolve effective preset name (same logic as calculateAvailableContext)
+    const { getPresetManager } = await import('../../../preset-manager.js');
+    const presetManager = getPresetManager('openai');
 
-    // Add OpenAI system prompt overhead (from llmClient.js line 131)
-    if (main_api === 'openai') {
-      const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
-      totalTokens += count_tokens(systemPrompt);
+    const effectivePresetName = preset === '' ? presetManager?.getSelectedPresetName() : preset;
+
+    if (effectivePresetName) {
+      const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+      const presetMessages = await loadPresetPrompts(effectivePresetName);
+      for (const msg of presetMessages) {
+        totalTokens += count_tokens(msg.content || '');
+      }
+
+      // Add OpenAI system prompt overhead (from llmClient.js line 131)
+      if (main_api === 'openai') {
+        const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
+        totalTokens += count_tokens(systemPrompt);
+      }
     }
   }
 
