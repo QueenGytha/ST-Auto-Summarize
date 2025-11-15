@@ -158,17 +158,6 @@ function extract_custom_url(profile) {
 function extract_reverse_proxy_url(profile) {
   return profile['reverse-proxy'] || profile['reverse_proxy'] || profile['proxy-url'] || profile['proxy_url'] || profile.reverseProxy || profile['server-url'] || profile['server_url'];
 }
-function find_proxy_preset_url(profile) {
-  const ctx = getContext();
-  const proxies = ctx.extensionSettings.connectionManager?.proxies || [];
-  debug(`[Proxy Detection] Available proxies:`, proxies.length > 0 ? JSON.stringify(proxies, null, 2) : '(none)');
-  const proxyPreset = proxies.find((p) => p.name === profile.proxy);
-  if (proxyPreset?.url) {
-    debug(`[Proxy Detection] Profile proxy name: "${profile.proxy}", Found preset:`, JSON.stringify(proxyPreset, null, 2));
-    return proxyPreset.url;
-  }
-  return null;
-}
 function get_connection_profile_proxy_url(profileName) {
   if (!check_connection_profiles_active()) {
     debug('[Proxy Detection] Connection profiles not active');
@@ -185,17 +174,21 @@ function get_connection_profile_proxy_url(profileName) {
   debug(`[Proxy Detection] Raw profile object:`, JSON.stringify(profile, null, 2));
   debug(`[Proxy Detection] Profile field names:`, Object.keys(profile));
 
-  // Check for global reverse proxy URL (may be in power_user settings)
-  const powerUser = ctx.power_user || {};
-  debug(`[Proxy Detection] power_user reverse proxy fields:`, {
-    'reverse_proxy': powerUser.reverse_proxy,
-    'reverse-proxy': powerUser['reverse-proxy'],
-    'proxy_password': powerUser.proxy_password
-  });
-  const globalReverseProxy = powerUser.reverse_proxy || powerUser['reverse-proxy'];
-  if (globalReverseProxy) {
-    debug(`[Proxy Detection] Found reverse proxy in power_user settings: ${globalReverseProxy}`);
-    return globalReverseProxy;
+  // Check OpenAI settings for reverse proxy (Connection Manager uses this!)
+  const oaiSettings = ctx.oai_settings || {};
+  debug(`[Proxy Detection] oai_settings.reverse_proxy:`, oaiSettings.reverse_proxy);
+  if (oaiSettings.reverse_proxy) {
+    debug(`[Proxy Detection] Found reverse proxy in oai_settings: ${oaiSettings.reverse_proxy}`);
+    return oaiSettings.reverse_proxy;
+  }
+
+  // Check for proxy preset (Connection Manager looks up proxies array from openai.js)
+  const proxiesArray = ctx.proxies || [];
+  debug(`[Proxy Detection] OpenAI proxies array:`, proxiesArray.map(p => ({ name: p.name, url: p.url })));
+  const proxyPreset = proxiesArray.find((p) => p.name === profile.proxy);
+  if (proxyPreset?.url) {
+    debug(`[Proxy Detection] Found proxy preset "${profile.proxy}":`, proxyPreset.url);
+    return proxyPreset.url;
   }
 
   const customUrl = extract_custom_url(profile);
@@ -210,12 +203,7 @@ function get_connection_profile_proxy_url(profileName) {
     return reverseProxyUrl;
   }
 
-  const presetUrl = find_proxy_preset_url(profile);
-  if (presetUrl) {
-    return presetUrl;
-  }
-
-  debug(`[Proxy Detection] No reverse proxy found in profile, presets, or global settings`);
+  debug(`[Proxy Detection] No reverse proxy found`);
   return null;
 }
 function is_using_first_hop_proxy(profileName) {
