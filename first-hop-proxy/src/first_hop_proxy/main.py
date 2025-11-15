@@ -227,6 +227,15 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
                 "error_type": "forward_request_error"
             }, character_chat_info=character_chat_info)
 
+        # For HTTPError, extract and return the actual API error response
+        if hasattr(e, 'response') and e.response is not None:
+            try:
+                error_json = e.response.json()
+                print(f"Returning API error to client: {json.dumps(error_json, indent=2)}", flush=True)
+                return jsonify(error_json), e.response.status_code
+            except Exception as parse_error:
+                print(f"Failed to parse error response: {parse_error}", flush=True)
+
         # Re-raise the original exception to preserve the stack trace
         raise
 

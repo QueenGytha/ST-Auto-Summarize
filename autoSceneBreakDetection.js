@@ -147,9 +147,23 @@ function stripDecorativeSeparators(text) {
   return cleaned.join('\n');
 }
 
+// eslint-disable-next-line complexity -- Comprehensive error detection for multiple API error formats
 function isContextLengthError(err) {
   const errorMessage = (err?.message || String(err)).toLowerCase();
   const errorCause = (err?.cause?.message || '').toLowerCase();
+
+  // Check for OpenAI-style error response in cause.error.code
+  if (err?.cause?.error?.code === 'context_length_exceeded') {
+    return true;
+  }
+
+  // Check for OpenAI-style error response in cause.error.message
+  const apiErrorMessage = (err?.cause?.error?.message || '').toLowerCase();
+  if (apiErrorMessage.includes('context') || apiErrorMessage.includes('maximum') || apiErrorMessage.includes('tokens')) {
+    return true;
+  }
+
+  // Fallback: check error message strings
   return errorMessage.includes('context') ||
          errorMessage.includes('maximum') ||
          errorMessage.includes('too large') ||
