@@ -231,6 +231,43 @@ async function trySendRequest(options) {
   }
 }
 
+function findValidCutoffIndex(chat, targetIndex, checkWhich, startIndex) {
+  if (checkWhich === 'user') {
+    for (let i = targetIndex; i >= startIndex; i--) {
+      if (chat[i].is_user) {
+        return i;
+      }
+    }
+    return startIndex;
+  }
+
+  if (checkWhich === 'character') {
+    for (let i = targetIndex; i >= startIndex; i--) {
+      if (!chat[i].is_user) {
+        return i;
+      }
+    }
+    return startIndex;
+  }
+
+  if (checkWhich === 'both') {
+    let foundUser = -1;
+    let foundAI = -1;
+
+    for (let i = targetIndex; i >= startIndex; i--) {
+      if (chat[i].is_user && foundUser === -1) {foundUser = i;}
+      if (!chat[i].is_user && foundAI === -1) {foundAI = i;}
+
+      if (foundUser !== -1 && foundAI !== -1) {
+        return Math.max(foundUser, foundAI);
+      }
+    }
+    return startIndex;
+  }
+
+  return targetIndex;
+}
+
 function calculateReductionAmount(checkWhich, chat, currentEndIndex) {
   if (checkWhich === 'user') {
     for (let i = currentEndIndex; i >= 0; i--) {
@@ -634,6 +671,9 @@ async function reduceMessagesUntilTokenFit(config) {
 
   const maxAllowedTokens = await calculateAvailableContext(preset);
 
+  let reductionPhase = 'coarse';
+  let lastReduction = 0;
+
   while (true) {
     const currentEligibleFilteredIndices = filterEligibleIndices(currentFilteredIndices, currentMaxEligibleIndex);
 
@@ -672,32 +712,52 @@ async function reduceMessagesUntilTokenFit(config) {
     const tokenCount = await calculateTotalRequestTokens(prompt, includePresetPrompts, preset, prefill, profile);
 
     if (maxAllowedTokens === null || tokenCount <= maxAllowedTokens) {
-      debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} tokens (including overhead), fits within limit per calculation`);
+      if (reductionPhase === 'coarse') {
+        reductionPhase = 'backtrack';
+        debug(SUBSYSTEM.OPERATIONS, `Under limit - switching to backtrack phase`);
+      } else {
+        debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} tokens (including overhead), fits within limit per calculation`);
 
-      // Token calculation says it fits - now try actually sending it
-      // eslint-disable-next-line no-await-in-loop -- Need to try request in loop to handle API rejections
-      const apiResult = await trySendRequest({ effectiveProfile, prompt, prefill, includePresetPrompts, preset, startIndex, endIndex: currentEndIndex });
+        // eslint-disable-next-line no-await-in-loop -- Need to try request in loop to handle API rejections
+        const apiResult = await trySendRequest({ effectiveProfile, prompt, prefill, includePresetPrompts, preset, startIndex, endIndex: currentEndIndex });
 
-      if (apiResult.success) {
-        // Request succeeded - return the response
-        return {
-          response: apiResult.response,
-          currentEndIndex,
-          currentFilteredIndices,
-          currentMaxEligibleIndex,
-          rangeWasReduced: currentEndIndex !== endIndex
-        };
+        if (apiResult.success) {
+          return {
+            response: apiResult.response,
+            currentEndIndex,
+            currentFilteredIndices,
+            currentMaxEligibleIndex,
+            rangeWasReduced: currentEndIndex !== endIndex
+          };
+        }
+
+        debug(SUBSYSTEM.OPERATIONS, `API rejected request (context exceeded), continuing reduction from ${currentEndIndex}`);
+        reductionPhase = 'coarse';
       }
-
-      // API rejected with context error - continue loop to reduce further
-      debug(SUBSYSTEM.OPERATIONS, `API rejected request (context exceeded), continuing reduction from ${currentEndIndex}`);
     } else {
       debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} > ${maxAllowedTokens} tokens, reducing end index`);
+
+      if (reductionPhase === 'coarse') {
+        const messageRange = currentEndIndex - startIndex;
+        const halfwayPoint = startIndex + Math.floor(messageRange / 2);
+        const validCutoff = findValidCutoffIndex(chat, halfwayPoint, checkWhich, startIndex);
+        lastReduction = currentEndIndex - validCutoff;
+        currentEndIndex = validCutoff;
+        debug(SUBSYSTEM.OPERATIONS, `Coarse reduction: halved range by ${lastReduction} messages to index ${currentEndIndex}`);
+      } else if (reductionPhase === 'backtrack') {
+        const backtrackAmount = Math.floor(lastReduction / 2);
+        const targetIndex = currentEndIndex + backtrackAmount;
+        const validCutoff = findValidCutoffIndex(chat, targetIndex, checkWhich, startIndex);
+        currentEndIndex = validCutoff;
+        reductionPhase = 'fine';
+        debug(SUBSYSTEM.OPERATIONS, `Backtrack: added back ${backtrackAmount} messages (adjusted to valid cutoff), switching to fine-tuning`);
+      } else {
+        const reductionAmount = calculateReductionAmount(checkWhich, chat, currentEndIndex);
+        currentEndIndex -= reductionAmount;
+        debug(SUBSYSTEM.OPERATIONS, `Fine reduction: reduced by ${reductionAmount} messages`);
+      }
     }
 
-    // Reduce range and continue loop
-    const reductionAmount = calculateReductionAmount(checkWhich, chat, currentEndIndex);
-    currentEndIndex -= reductionAmount;
     currentMaxEligibleIndex = currentEndIndex - offset;
 
     if (currentEndIndex < startIndex) {
