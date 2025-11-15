@@ -199,18 +199,27 @@ async function trySendRequest(options) {
     debug(SUBSYSTEM.OPERATIONS, `System prompt tokens: ${systemTokens}`);
   }
 
-  // Count profile preset tokens (ConnectionManager ALWAYS loads these)
-  const ctx = getContext();
-  const profileData = ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === effectiveProfile);
-  const profilePresetName = profileData?.preset;
-  if (profilePresetName) {
-    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-    const presetMessages = await loadPresetPrompts(profilePresetName);
-    let presetTokens = 0;
-    for (const msg of presetMessages) {
-      presetTokens += count_tokens(msg.content || '');
+  // Count completion preset tokens (if includePresetPrompts is true)
+  if (includePresetPrompts) {
+    let effectivePresetForDebug;
+    if (preset === '') {
+      // Empty string means "use current active preset"
+      const { getPresetManager } = await import('../../../preset-manager.js');
+      const presetManager = getPresetManager('openai');
+      effectivePresetForDebug = presetManager?.getSelectedPresetName();
+    } else {
+      effectivePresetForDebug = preset;
     }
-    debug(SUBSYSTEM.OPERATIONS, `Profile preset "${profilePresetName}": ${presetMessages.length} messages, ${presetTokens} tokens`);
+
+    if (effectivePresetForDebug) {
+      const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+      const presetMessages = await loadPresetPrompts(effectivePresetForDebug);
+      let presetTokens = 0;
+      for (const msg of presetMessages) {
+        presetTokens += count_tokens(msg.content || '');
+      }
+      debug(SUBSYSTEM.OPERATIONS, `Completion preset "${effectivePresetForDebug}": ${presetMessages.length} messages, ${presetTokens} tokens`);
+    }
   }
 
   debug(SUBSYSTEM.OPERATIONS, `includePresetPrompts=${includePresetPrompts}, preset="${preset}"`);
@@ -573,26 +582,37 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
     debug(SUBSYSTEM.OPERATIONS, `Added OpenAI system prompt overhead: ${systemTokens} tokens`);
   }
 
-  // CRITICAL: ConnectionManager ALWAYS loads preset from the PROFILE, completely ignoring
-  // the includePreset flag and the operation preset parameter. We MUST count these tokens.
-  const ctx = getContext();
-  const profileData = ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === profile);
-  const profilePresetName = profileData?.preset;
-
-  if (profilePresetName) {
-    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-    const presetMessages = await loadPresetPrompts(profilePresetName);
-    let presetTokens = 0;
-    for (const msg of presetMessages) {
-      const msgTokens = count_tokens(msg.content || '');
-      presetTokens += msgTokens;
+  // CRITICAL: We now manually load preset messages from the CORRECT preset (not profile's preset).
+  // llmClient.js sets includePreset=false for ConnectionManager, so we load manually using the
+  // completion preset parameter. If preset="" (empty), resolve to current active preset.
+  let effectivePresetForTokens;
+  if (includePreset) {
+    if (preset === '') {
+      // Empty string means "use current active preset"
+      const { getPresetManager } = await import('../../../preset-manager.js');
+      const presetManager = getPresetManager('openai');
+      effectivePresetForTokens = presetManager?.getSelectedPresetName();
+      debug(SUBSYSTEM.OPERATIONS, `Empty preset resolved to current active: ${effectivePresetForTokens}`);
+    } else {
+      // Non-empty string - use explicit preset
+      effectivePresetForTokens = preset;
     }
-    debug(SUBSYSTEM.OPERATIONS, `ConnectionManager will load ${presetMessages.length} preset messages from PROFILE preset "${profilePresetName}", ${presetTokens} tokens`);
-    totalTokens += presetTokens;
 
-    debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, profilePreset=${presetTokens} (from "${profilePresetName}"), total=${totalTokens}`);
-  } else {
-    debug(SUBSYSTEM.OPERATIONS, `Warning: No profile preset found, ConnectionManager behavior undefined`);
+    if (effectivePresetForTokens) {
+      const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+      const presetMessages = await loadPresetPrompts(effectivePresetForTokens);
+      let presetTokens = 0;
+      for (const msg of presetMessages) {
+        const msgTokens = count_tokens(msg.content || '');
+        presetTokens += msgTokens;
+      }
+      debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from completion preset "${effectivePresetForTokens}", ${presetTokens} tokens`);
+      totalTokens += presetTokens;
+
+      debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, completionPreset=${presetTokens} (from "${effectivePresetForTokens}"), total=${totalTokens}`);
+    } else {
+      debug(SUBSYSTEM.OPERATIONS, `Warning: No preset name resolved, skipping preset token count`);
+    }
   }
 
   // Add prefill overhead if provided
