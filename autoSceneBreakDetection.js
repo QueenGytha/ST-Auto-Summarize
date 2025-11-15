@@ -181,38 +181,8 @@ async function trySendRequest(options) {
 
   setOperationSuffix(`-${startIndex}-${endIndex}`);
 
-  // Log token breakdown BEFORE sending request
-  const promptTokens = count_tokens(prompt);
-  debug(SUBSYSTEM.OPERATIONS, `=== TOKEN BREAKDOWN BEFORE REQUEST (${startIndex}-${endIndex}) ===`);
-  debug(SUBSYSTEM.OPERATIONS, `Prompt tokens: ${promptTokens}`);
-
-  // Count prefill tokens
-  if (prefill) {
-    const prefillTokens = count_tokens(prefill);
-    debug(SUBSYSTEM.OPERATIONS, `Prefill tokens: ${prefillTokens}`);
-  }
-
-  // Count system prompt tokens (OpenAI always adds this)
-  if (main_api === 'openai') {
-    const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
-    const systemTokens = count_tokens(systemPrompt);
-    debug(SUBSYSTEM.OPERATIONS, `System prompt tokens: ${systemTokens}`);
-  }
-
-  // Count completion preset tokens (if includePresetPrompts is true)
-  // preset is already resolved to actual name in detectSceneBreak, never empty string here
-  if (includePresetPrompts && preset) {
-    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-    const presetMessages = await loadPresetPrompts(preset);
-    let presetTokens = 0;
-    for (const msg of presetMessages) {
-      presetTokens += count_tokens(msg.content || '');
-    }
-    debug(SUBSYSTEM.OPERATIONS, `Completion preset "${preset}": ${presetMessages.length} messages, ${presetTokens} tokens`);
-  }
-
+  debug(SUBSYSTEM.OPERATIONS, `=== SENDING REQUEST (${startIndex}-${endIndex}) ===`);
   debug(SUBSYSTEM.OPERATIONS, `includePresetPrompts=${includePresetPrompts}, preset="${preset}"`);
-  debug(SUBSYSTEM.OPERATIONS, `=== END TOKEN BREAKDOWN ===`);
 
   try {
     const response = await sendLLMRequest(effectiveProfile, prompt, OperationType.DETECT_SCENE_BREAK, {
@@ -557,51 +527,95 @@ function buildPromptFromTemplate(ctx, promptTemplate, options) {
 }
 
 async function calculateTotalRequestTokens(prompt, includePreset, preset, prefill, profile) {
-  let totalTokens = count_tokens(prompt);
-  const promptTokens = totalTokens;
-
   const DEBUG_PREFILL_LENGTH = 50;
   debug(SUBSYSTEM.OPERATIONS, `calculateTotalRequestTokens: includePreset=${includePreset}, preset="${preset}", profile="${profile}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
 
-  // OpenAI ALWAYS adds system prompt (llmClient.js lines 130-132, 146-148)
-  if (main_api === 'openai') {
-    const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
-    const systemTokens = count_tokens(systemPrompt);
-    totalTokens += systemTokens;
-    debug(SUBSYSTEM.OPERATIONS, `Added OpenAI system prompt overhead: ${systemTokens} tokens`);
-  }
+  // Build the ACTUAL message array that will be sent (mirroring llmClient.js logic)
+  let messages = [];
+  const effectivePrefill = prefill || '';
+  let presetTokens = 0;
+  let systemTokens = 0;
+  const userPromptTokens = count_tokens(prompt);
+  let prefillTokens = 0;
 
-  // CRITICAL: We now manually load preset messages from the CORRECT preset (not profile's preset).
-  // llmClient.js sets includePreset=false for ConnectionManager, so we load manually using the
-  // completion preset parameter. preset is already resolved to actual name in detectSceneBreak, never empty string here.
+  // Load preset messages if includePreset is true (same as llmClient.js lines 117-142)
   if (includePreset && preset) {
     const { loadPresetPrompts } = await import('./presetPromptLoader.js');
     const presetMessages = await loadPresetPrompts(preset);
-    let presetTokens = 0;
+
+    // Add preset messages first
+    messages = [...presetMessages];
+
+    // Count preset tokens
     for (const msg of presetMessages) {
-      const msgTokens = count_tokens(msg.content || '');
-      presetTokens += msgTokens;
+      presetTokens += count_tokens(msg.content || '');
     }
-    debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from completion preset "${preset}", ${presetTokens} tokens`);
-    totalTokens += presetTokens;
 
-    debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, completionPreset=${presetTokens} (from "${preset}"), total=${totalTokens}`);
+    debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from completion preset "${preset}"`);
   }
 
-  // Add prefill overhead if provided
-  if (prefill && typeof prefill === 'string') {
-    const prefillTokens = count_tokens(prefill);
-    totalTokens += prefillTokens;
-    debug(SUBSYSTEM.OPERATIONS, `Added prefill overhead: ${prefillTokens} tokens`);
+  // Add system prompt for OpenAI (same as llmClient.js lines 130-132, 146-148)
+  if (main_api === 'openai') {
+    const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
+    messages.push({ role: 'system', content: systemPrompt });
+    systemTokens = count_tokens(systemPrompt);
   }
 
-  // Add small buffer for message formatting overhead (role tags, etc.)
-  const MESSAGE_FORMAT_OVERHEAD = 50;
-  totalTokens += MESSAGE_FORMAT_OVERHEAD;
+  // Add user prompt
+  messages.push({ role: 'user', content: prompt });
 
-  debug(SUBSYSTEM.OPERATIONS, `Final token count: ${totalTokens} (includes ${MESSAGE_FORMAT_OVERHEAD} token formatting buffer)`);
+  // Add prefill as assistant message (same as llmClient.js lines 160-162)
+  if (effectivePrefill) {
+    messages.push({ role: 'assistant', content: effectivePrefill });
+    prefillTokens = count_tokens(effectivePrefill);
+  }
 
-  return totalTokens;
+  // Count tokens BEFORE metadata injection
+  const tokensBeforeMetadata = count_tokens(JSON.stringify(messages));
+
+  // Inject metadata (same as llmClient.js line 168)
+  const { getOperationSuffix } = await import('./index.js');
+  const { injectMetadataIntoChatArray } = await import('./metadataInjector.js');
+  const { OperationType } = await import('./operationTypes.js');
+
+  const suffix = getOperationSuffix();
+  const fullOperation = suffix ? `${OperationType.DETECT_SCENE_BREAK}${suffix}` : OperationType.DETECT_SCENE_BREAK;
+  const messagesWithMetadata = [...messages];
+  injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
+
+  // Count tokens in the ACTUAL structure that will be sent (same as llmClient.js line 191)
+  const actualTokens = count_tokens(JSON.stringify(messagesWithMetadata));
+
+  // Calculate overhead
+  const contentOnlyTokens = presetTokens + systemTokens + userPromptTokens + prefillTokens;
+  const jsonStructureOverhead = tokensBeforeMetadata - contentOnlyTokens;
+  const metadataOverhead = actualTokens - tokensBeforeMetadata;
+  const totalOverhead = actualTokens - contentOnlyTokens;
+
+  debug(SUBSYSTEM.OPERATIONS, `=== DETAILED TOKEN BREAKDOWN ===`);
+  debug(SUBSYSTEM.OPERATIONS, `Content tokens:`);
+  if (presetTokens > 0) {
+    debug(SUBSYSTEM.OPERATIONS, `  - Preset prompts: ${presetTokens} tokens (${messages.filter(m => m.role !== 'system' && m.role !== 'user' && m.role !== 'assistant').length} messages)`);
+  }
+  if (systemTokens > 0) {
+    debug(SUBSYSTEM.OPERATIONS, `  - System prompt: ${systemTokens} tokens`);
+  }
+  debug(SUBSYSTEM.OPERATIONS, `  - User prompt: ${userPromptTokens} tokens`);
+  if (prefillTokens > 0) {
+    debug(SUBSYSTEM.OPERATIONS, `  - Prefill: ${prefillTokens} tokens`);
+  }
+  debug(SUBSYSTEM.OPERATIONS, `  - Content subtotal: ${contentOnlyTokens} tokens`);
+  debug(SUBSYSTEM.OPERATIONS, ``);
+  debug(SUBSYSTEM.OPERATIONS, `Overhead tokens:`);
+  debug(SUBSYSTEM.OPERATIONS, `  - JSON structure (role/content fields, quotes, braces): ${jsonStructureOverhead} tokens`);
+  debug(SUBSYSTEM.OPERATIONS, `  - Metadata injection: ${metadataOverhead} tokens`);
+  const PERCENTAGE_MULTIPLIER = 100;
+  debug(SUBSYSTEM.OPERATIONS, `  - Overhead subtotal: ${totalOverhead} tokens (${((totalOverhead / actualTokens) * PERCENTAGE_MULTIPLIER).toFixed(1)}% of total)`);
+  debug(SUBSYSTEM.OPERATIONS, ``);
+  debug(SUBSYSTEM.OPERATIONS, `TOTAL TOKENS TO BE SENT: ${actualTokens}`);
+  debug(SUBSYSTEM.OPERATIONS, `=== END TOKEN BREAKDOWN ===`);
+
+  return actualTokens;
 }
 
 function filterEligibleIndices(filteredIndices, maxEligibleIndex) {
