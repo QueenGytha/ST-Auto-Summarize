@@ -9,7 +9,8 @@ import {
   throwIfAborted,
   pauseQueue,
   getPendingOperations,
-  removeOperation } from
+  removeOperation,
+  transferDependencies } from
 './operationQueue.js';
 // Note: OPERATION_FETCH_TIMEOUT_MS no longer used after removing scene-name operation
 import {
@@ -606,7 +607,7 @@ export function registerAllOperationHandlers() {
       const deduplicatePrefill = get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill') || '';
       const deduplicateIncludePresetPrompts = get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts') ?? false;
 
-      await enqueueOperation(
+      const nextOpId = await enqueueOperation(
         OperationType.RESOLVE_LOREBOOK_ENTRY,
         { entryId },
         {
@@ -619,6 +620,7 @@ export function registerAllOperationHandlers() {
           }
         }
       );
+      await transferDependencies(operation.id, nextOpId);
     } else if (lorebookEntryLookupResult.sameEntityUids.length === 1) {
       // Exact match found - merge - capture merge settings at enqueue time
       const resolvedUid = lorebookEntryLookupResult.sameEntityUids[0];
@@ -628,7 +630,7 @@ export function registerAllOperationHandlers() {
       const mergePrefill = get_settings('auto_lorebooks_recap_merge_prefill') || '';
       const mergeIncludePresetPrompts = get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false;
 
-      await enqueueOperation(
+      const nextOpId = await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
         { entryId, action: 'merge', resolvedUid },
         {
@@ -641,9 +643,10 @@ export function registerAllOperationHandlers() {
           }
         }
       );
+      await transferDependencies(operation.id, nextOpId);
     } else {
       // No match - create new (no prefill/preset prompts for create operations)
-      await enqueueOperation(
+      const nextOpId = await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
         { entryId, action: 'create' },
         {
@@ -656,6 +659,7 @@ export function registerAllOperationHandlers() {
           }
         }
       );
+      await transferDependencies(operation.id, nextOpId);
     }
 
     return { success: true, lorebookEntryLookupResult };
@@ -743,7 +747,7 @@ export function registerAllOperationHandlers() {
       const mergePrefill = get_settings('auto_lorebooks_recap_merge_prefill') || '';
       const mergeIncludePresetPrompts = get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false;
 
-      await enqueueOperation(
+      const nextOpId = await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
         { entryId, action: 'merge', resolvedUid: lorebookEntryDeduplicateResult.resolvedUid },
         {
@@ -756,9 +760,10 @@ export function registerAllOperationHandlers() {
           }
         }
       );
+      await transferDependencies(operation.id, nextOpId);
     } else {
       // No match - create new (no prefill/preset prompts for create operations)
-      await enqueueOperation(
+      const nextOpId = await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
         { entryId, action: 'create' },
         {
@@ -771,6 +776,7 @@ export function registerAllOperationHandlers() {
           }
         }
       );
+      await transferDependencies(operation.id, nextOpId);
     }
 
     return { success: true, lorebookEntryDeduplicateResult };

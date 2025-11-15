@@ -622,6 +622,29 @@ export async function removeOperation(operationId ) {
   return true;
 }
 
+export async function transferDependencies(fromOperationId , toOperationId ) {
+  if (!fromOperationId || !toOperationId) {
+    debug(SUBSYSTEM.QUEUE, 'transferDependencies called with invalid IDs');
+    return;
+  }
+
+  let transferCount = 0;
+
+  for (const op of currentQueue.queue) {
+    if (op.dependencies?.includes(fromOperationId)) {
+      op.dependencies = op.dependencies.filter(id => id !== fromOperationId);
+      op.dependencies.push(toOperationId);
+      transferCount++;
+      debug(SUBSYSTEM.QUEUE, `Transferred dependency from ${fromOperationId} to ${toOperationId} for operation ${op.id} (${op.type})`);
+    }
+  }
+
+  if (transferCount > 0) {
+    await saveQueue();
+    debug(SUBSYSTEM.QUEUE, `Transferred ${transferCount} dependencies from ${fromOperationId} to ${toOperationId}`);
+  }
+}
+
 export async function clearCompletedOperations() {
   const before = currentQueue.queue.length;
   currentQueue.queue = currentQueue.queue.filter((op) =>
