@@ -160,14 +160,14 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     // Use total from breakdown (includes all overhead)
     const actualTokenSize = tokenBreakdown.total;
 
-    // Available context = total context - tokens reserved for response
-    const availableContextForPrompt = presetMaxContext - presetMaxTokens;
+    // Available context = max_context (response budget is additional)
+    const availableContextForPrompt = presetMaxContext;
 
     if (actualTokenSize > availableContextForPrompt) {
       throw new Error(`Prompt ${actualTokenSize} tokens exceeds available context ${availableContextForPrompt} (model context: ${presetMaxContext}, reserved for response: ${presetMaxTokens})`);
     }
 
-    debug(SUBSYSTEM.CORE, `[LLMClient] Token validation passed: ${actualTokenSize} <= ${availableContextForPrompt} (${presetMaxContext} - ${presetMaxTokens})`);
+    debug(SUBSYSTEM.CORE, `[LLMClient] Token validation passed: ${actualTokenSize} <= ${availableContextForPrompt} (max_context: ${presetMaxContext}, max_tokens: ${presetMaxTokens})`);
   } else {
     debug(SUBSYSTEM.CORE, `[LLMClient] Skipping token validation - preset has no max_context configured`);
   }

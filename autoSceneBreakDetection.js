@@ -612,7 +612,13 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
   const preset = get_settings('scene_recap_completion_preset');
   const includePresetPrompts = get_settings('scene_recap_include_preset_prompts');
 
-  const tokens = await calculateSceneRecapTokens(prompt, includePresetPrompts, preset, prefill, 'generate_scene_recap');
+  const tokens = await calculateSceneRecapTokens({
+    prompt,
+    includePreset: includePresetPrompts,
+    preset,
+    prefill,
+    operationType: 'generate_scene_recap',
+  });
   debug(SUBSYSTEM.OPERATIONS, `[calculateSceneRecapTokensForRange] Calculated ${tokens} tokens for scene recap (range ${startIndex}-${endIndex})`);
 
   return tokens;
