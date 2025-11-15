@@ -291,13 +291,21 @@ export function registerAllOperationHandlers() {
 
       ({ sceneBreakAt, rationale, tokenBreakdown, filteredIndices, maxEligibleIndex, rangeWasReduced, currentEndIndex } = result);
 
-      // If range was reduced, update operation params to reflect the new state
+      // If range was reduced, update operation params AND metadata to reflect the new state
       if (rangeWasReduced && !forceSelection) {
+        const originalEndIndex = operation.params.endIndex;
         operation.params.endIndex = currentEndIndex;
         operation.params.forceSelection = true;
         forceSelection = true; // Update local variable for retry logic
         endIndex = currentEndIndex; // Update local variable for validation
-        debug(SUBSYSTEM.QUEUE, `Range reduced from ${operation.params.startIndex}-${result.currentEndIndex + 1}→${currentEndIndex}, setting forceSelection=true`);
+
+        // Update metadata for UI display
+        operation.metadata = operation.metadata || {};
+        operation.metadata.range_reduced = true;
+        operation.metadata.original_end_index = originalEndIndex;
+        operation.metadata.current_end_index = currentEndIndex;
+
+        debug(SUBSYSTEM.QUEUE, `Range reduced from ${startIndex}-${originalEndIndex} to ${startIndex}-${currentEndIndex}, setting forceSelection=true`);
       }
 
       // Store token breakdown in operation metadata
