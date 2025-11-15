@@ -649,7 +649,8 @@ async function reduceMessagesUntilTokenFit(config) {
         rationale: `Not enough eligible messages after token reduction (${currentEligibleFilteredIndices.length} < ${minimumSceneLength + 1} required)`,
         filteredIndices: currentFilteredIndices,
         maxEligibleIndex: currentMaxEligibleIndex,
-        rangeWasReduced: currentEndIndex !== endIndex
+        rangeWasReduced: currentEndIndex !== endIndex,
+        currentEndIndex
       };
     }
 
@@ -808,7 +809,9 @@ _operationId  = null)
         sceneBreakAt: false,
         rationale: `Not enough eligible messages (${eligibleFilteredIndices.length} < ${minimumSceneLength + 1} required)`,
         filteredIndices,
-        maxEligibleIndex
+        maxEligibleIndex,
+        rangeWasReduced: false,
+        currentEndIndex: endIndex
       };
     }
 
@@ -880,7 +883,8 @@ _operationId  = null)
       tokenBreakdown,
       filteredIndices: currentFilteredIndices,
       maxEligibleIndex: currentMaxEligibleIndex,
-      rangeWasReduced: currentEndIndex !== endIndex
+      rangeWasReduced: currentEndIndex !== endIndex,
+      currentEndIndex
     };
 
   } catch (err) {

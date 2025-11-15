@@ -256,7 +256,8 @@ export function registerAllOperationHandlers() {
   // Detect scene break (range-based)
   // eslint-disable-next-line complexity -- Retry logic adds one branch, acceptable increase from 20 to 21
   registerOperationHandler(OperationType.DETECT_SCENE_BREAK, async (operation) => {
-    const { startIndex, endIndex, offset = 0, forceSelection = false } = operation.params;
+    const { startIndex, offset = 0 } = operation.params;
+    let { endIndex, forceSelection = false } = operation.params;
     const signal = getAbortSignal(operation);
     const ctx = getContext();
     const chat = ctx.chat;
@@ -269,6 +270,8 @@ export function registerAllOperationHandlers() {
     let tokenBreakdown;
     let filteredIndices;
     let maxEligibleIndex;
+    let rangeWasReduced;
+    let currentEndIndex;
     let result;
     const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
 
@@ -286,7 +289,16 @@ export function registerAllOperationHandlers() {
       // Check if cancelled after detection (before side effects)
       throwIfAborted(signal, 'DETECT_SCENE_BREAK', 'LLM call');
 
-      ({ sceneBreakAt, rationale, tokenBreakdown, filteredIndices, maxEligibleIndex } = result);
+      ({ sceneBreakAt, rationale, tokenBreakdown, filteredIndices, maxEligibleIndex, rangeWasReduced, currentEndIndex } = result);
+
+      // If range was reduced, update operation params to reflect the new state
+      if (rangeWasReduced && !forceSelection) {
+        operation.params.endIndex = currentEndIndex;
+        operation.params.forceSelection = true;
+        forceSelection = true; // Update local variable for retry logic
+        endIndex = currentEndIndex; // Update local variable for validation
+        debug(SUBSYSTEM.QUEUE, `Range reduced from ${operation.params.startIndex}-${result.currentEndIndex + 1}→${currentEndIndex}, setting forceSelection=true`);
+      }
 
       // Store token breakdown in operation metadata
       if (tokenBreakdown) {
@@ -352,7 +364,7 @@ export function registerAllOperationHandlers() {
     // Continuity veto + objective-only rule
     // BUT: Skip veto when range was reduced or selection was forced due to token limits
     // (We told LLM "pick the best available even if imperfect" - so we must accept it)
-    const rangeWasReduced = operation.metadata?.range_reduced === true;
+    // Note: rangeWasReduced is already set from result destructuring above
     const skipVeto = forceSelection || rangeWasReduced;
 
     if (!skipVeto) {
