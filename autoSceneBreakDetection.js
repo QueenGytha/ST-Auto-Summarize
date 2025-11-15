@@ -167,6 +167,41 @@ async function trySendRequest(options) {
 
   setOperationSuffix(`-${startIndex}-${endIndex}`);
 
+  // Log token breakdown BEFORE sending request
+  const promptTokens = count_tokens(prompt);
+  debug(SUBSYSTEM.OPERATIONS, `=== TOKEN BREAKDOWN BEFORE REQUEST (${startIndex}-${endIndex}) ===`);
+  debug(SUBSYSTEM.OPERATIONS, `Prompt tokens: ${promptTokens}`);
+
+  // Count prefill tokens
+  if (prefill) {
+    const prefillTokens = count_tokens(prefill);
+    debug(SUBSYSTEM.OPERATIONS, `Prefill tokens: ${prefillTokens}`);
+  }
+
+  // Count system prompt tokens (OpenAI always adds this)
+  if (main_api === 'openai') {
+    const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
+    const systemTokens = count_tokens(systemPrompt);
+    debug(SUBSYSTEM.OPERATIONS, `System prompt tokens: ${systemTokens}`);
+  }
+
+  // Count profile preset tokens (ConnectionManager ALWAYS loads these)
+  const ctx = getContext();
+  const profileData = ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === effectiveProfile);
+  const profilePresetName = profileData?.preset;
+  if (profilePresetName) {
+    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+    const presetMessages = await loadPresetPrompts(profilePresetName);
+    let presetTokens = 0;
+    for (const msg of presetMessages) {
+      presetTokens += count_tokens(msg.content || '');
+    }
+    debug(SUBSYSTEM.OPERATIONS, `Profile preset "${profilePresetName}": ${presetMessages.length} messages, ${presetTokens} tokens`);
+  }
+
+  debug(SUBSYSTEM.OPERATIONS, `includePresetPrompts=${includePresetPrompts}, preset="${preset}"`);
+  debug(SUBSYSTEM.OPERATIONS, `=== END TOKEN BREAKDOWN ===`);
+
   try {
     const response = await sendLLMRequest(effectiveProfile, prompt, OperationType.DETECT_SCENE_BREAK, {
       prefill,
