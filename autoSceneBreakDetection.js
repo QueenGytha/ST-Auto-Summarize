@@ -644,7 +644,8 @@ async function reduceMessagesUntilTokenFit(config) {
         sceneBreakAt: false,
         rationale: `Not enough eligible messages after token reduction (${currentEligibleFilteredIndices.length} < ${minimumSceneLength + 1} required)`,
         filteredIndices: currentFilteredIndices,
-        maxEligibleIndex: currentMaxEligibleIndex
+        maxEligibleIndex: currentMaxEligibleIndex,
+        rangeWasReduced: currentEndIndex !== endIndex
       };
     }
 
@@ -868,7 +869,13 @@ _operationId  = null)
     }
     debug('  Rationale:', rationale);
 
-    return { sceneBreakAt, rationale, filteredIndices: currentFilteredIndices, maxEligibleIndex: currentMaxEligibleIndex };
+    return {
+      sceneBreakAt,
+      rationale,
+      filteredIndices: currentFilteredIndices,
+      maxEligibleIndex: currentMaxEligibleIndex,
+      rangeWasReduced: currentEndIndex !== endIndex
+    };
 
   } catch (err) {
     error('ERROR in detectSceneBreak for range', startIndex, 'to', endIndex);

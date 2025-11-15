@@ -117,6 +117,81 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
 }
 
 /**
+ * Calculate token breakdown and inject metadata in two passes
+ * Handles circular dependency: metadata size affects token count
+ * @param {Array} messages - Array of message objects
+ * @param {string} operation - Operation type
+ * @param {number} maxContext - Maximum context size
+ * @param {number} maxTokens - Maximum response tokens
+ * @returns {Promise<Object>} { messagesWithMetadata, tokenBreakdown }
+ */
+export async function calculateAndInjectTokenBreakdown(messages, operation, maxContext, maxTokens) {
+  const { injectMetadataIntoChatArray: injectMetadata } = await import('./metadataInjector.js');
+
+  // First pass: count content tokens
+  let presetTokens = 0;
+  let systemTokens = 0;
+  let userTokens = 0;
+  let prefillTokens = 0;
+
+  for (const msg of messages) {
+    const content = msg.content || '';
+    const tokens = count_tokens(content);
+
+    if (msg.role === 'system') {
+      systemTokens += tokens;
+    } else if (msg.role === 'user') {
+      userTokens += tokens;
+    } else if (msg.role === 'assistant') {
+      prefillTokens += tokens;
+    } else {
+      presetTokens += tokens;
+    }
+  }
+
+  const tokensBeforeMetadata = count_tokens(JSON.stringify(messages));
+  const contentOnlyTokens = presetTokens + systemTokens + userTokens + prefillTokens;
+  const jsonStructureOverhead = tokensBeforeMetadata - contentOnlyTokens;
+
+  // Create preliminary breakdown for metadata
+  const preliminaryBreakdown = {
+    preset: presetTokens,
+    system: systemTokens,
+    user: userTokens,
+    prefill: prefillTokens,
+    content_subtotal: contentOnlyTokens,
+    json_structure: jsonStructureOverhead,
+    metadata: 0,
+    overhead_subtotal: jsonStructureOverhead,
+    total: tokensBeforeMetadata,
+    max_context: maxContext,
+    max_tokens: maxTokens
+  };
+
+  // Inject metadata with preliminary breakdown
+  const messagesWithMetadata = [...messages];
+  await injectMetadata(messagesWithMetadata, {
+    operation,
+    tokenBreakdown: preliminaryBreakdown
+  });
+
+  // Second pass: measure actual metadata overhead
+  const tokensAfterMetadata = count_tokens(JSON.stringify(messagesWithMetadata));
+  const metadataOverhead = tokensAfterMetadata - tokensBeforeMetadata;
+  const totalOverhead = jsonStructureOverhead + metadataOverhead;
+
+  // Final breakdown with actual metadata overhead
+  const tokenBreakdown = {
+    ...preliminaryBreakdown,
+    metadata: metadataOverhead,
+    overhead_subtotal: totalOverhead,
+    total: tokensAfterMetadata
+  };
+
+  return { messagesWithMetadata, tokenBreakdown };
+}
+
+/**
  * Calculate token breakdown from already-built message array
  * Used by llmClient.js which has already constructed messages
  * @param {Array} messages - Array of message objects with role and content

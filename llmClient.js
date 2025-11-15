@@ -2,7 +2,6 @@
 // LLM client wrapper for ConnectionManagerRequestService
 
 import { getContext } from '../../../extensions.js';
-import { injectMetadataIntoChatArray } from './metadataInjector.js';
 import { getOperationSuffix } from './operationContext.js';
 import { debug, error, SUBSYSTEM, count_tokens, main_api, trimToEndSentence, loadPresetPrompts } from './index.js';
 
@@ -138,21 +137,17 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     messages.push({ role: 'assistant', content: effectivePrefill });
   }
 
-  // 7. CALCULATE TOKEN BREAKDOWN (before metadata injection)
-  const { calculateTokenBreakdownFromMessages } = await import('./tokenBreakdown.js');
-  const tokenBreakdown = calculateTokenBreakdownFromMessages(messages, {
-    max_context: presetData.max_context || presetData.openai_max_context,
-    max_tokens: presetMaxTokens
-  });
-
-  // 8. INJECT METADATA (including token breakdown)
+  // 7-8. CALCULATE TOKEN BREAKDOWN AND INJECT METADATA
   const suffix = getOperationSuffix();
   const fullOperation = suffix ? `${operationType}${suffix}` : operationType;
-  const messagesWithMetadata = [...messages];
-  await injectMetadataIntoChatArray(messagesWithMetadata, {
-    operation: fullOperation,
-    tokenBreakdown: tokenBreakdown
-  });
+  const { calculateAndInjectTokenBreakdown } = await import('./tokenBreakdown.js');
+
+  const { messagesWithMetadata, tokenBreakdown } = await calculateAndInjectTokenBreakdown(
+    messages,
+    fullOperation,
+    presetData.max_context || presetData.openai_max_context,
+    presetMaxTokens
+  );
 
   // 9. TOKEN VALIDATION (using breakdown data which includes metadata overhead)
   const presetMaxContext = presetData.max_context || presetData.openai_max_context;
