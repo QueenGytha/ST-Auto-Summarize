@@ -23,6 +23,15 @@ import { MAX_RECAP_ATTEMPTS, HIGH_PRIORITY_OFFSET, OPERATION_ID_LENGTH } from '.
 // HIGHER numbers run FIRST, so running recap needs LOWER priority than lorebooks (lookup=11, resolve=12, create=14)
 const RUNNING_RECAP_PRIORITY = 10;
 
+/**
+ * Check if a UID string is meaningful (non-empty and not stringified null/undefined)
+ * @param {string} uid - The UID string to check
+ * @returns {boolean} True if UID is meaningful and should be validated
+ */
+function isMeaningfulUid(uid) {
+  return uid && uid !== 'null' && uid !== 'undefined';
+}
+
 export function queueValidateRecap(recap , type , options  = {}) {
   // Capture settings at enqueue time for tooltip display
   const includePresetPrompts = get_settings('scene_recap_error_detection_include_preset_prompts') ?? false;
@@ -315,8 +324,11 @@ export async function queueProcessLorebookEntry(entryData , messageIndex , recap
         debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ${opId ? '✓' : '✗'} Direct merge ${opId ? 'enqueued with ID: ' + opId : 'failed to enqueue'}`);
         return opId;
       } else {
-        error(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ✗ Invalid UID ${providedUid} for ${entryName}, falling back to lookup`);
-        toast(`⚠ Invalid UID for ${entryName}, using lookup instead`, 'warning');
+        // Only error if UID is non-empty (truly invalid vs expected missing)
+        if (isMeaningfulUid(providedUid)) {
+          error(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ✗ Invalid UID ${providedUid} for ${entryName}, falling back to lookup`);
+          toast(`⚠ Invalid UID for ${entryName}, using lookup instead`, 'warning');
+        }
         delete context.normalizedEntry.uid;
       }
     }

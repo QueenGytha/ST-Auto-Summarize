@@ -32,6 +32,15 @@ let get_settings , set_settings ; // Profile settings functions - any type is le
 
 const REGISTRY_PREFIX  = '_registry_';
 
+/**
+ * Check if a UID string is meaningful (non-empty and not stringified null/undefined)
+ * @param {string} uid - The UID string to check
+ * @returns {boolean} True if UID is meaningful and should be validated
+ */
+function isMeaningfulUid(uid) {
+  return uid && uid !== 'null' && uid !== 'undefined';
+}
+
 // Removed getSetting helper; no settings access needed here
 
 export function initRecapToLorebookProcessor(utils , lorebookManagerModule , entryMergerModule , settingsManager ) {
@@ -1198,8 +1207,11 @@ async function handleLorebookEntry(normalizedEntry , ctx ) {
       return;
     } else {
       // UID validation failed - fall back to normal lookup pipeline
-      error(SUBSYSTEM.CORE, `Invalid UID ${providedUid} for ${normalizedEntry.comment || normalizedEntry.name} - falling back to lookup`);
-      toast(`⚠ Invalid UID for ${normalizedEntry.comment || normalizedEntry.name}, using lookup instead`, 'warning');
+      // Only error if UID is non-empty (truly invalid vs expected missing)
+      if (isMeaningfulUid(providedUid)) {
+        error(SUBSYSTEM.CORE, `Invalid UID ${providedUid} for ${normalizedEntry.comment || normalizedEntry.name} - falling back to lookup`);
+        toast(`⚠ Invalid UID for ${normalizedEntry.comment || normalizedEntry.name}, using lookup instead`, 'warning');
+      }
       // Remove the invalid UID to prevent confusion
       delete normalizedEntry.uid;
     }
