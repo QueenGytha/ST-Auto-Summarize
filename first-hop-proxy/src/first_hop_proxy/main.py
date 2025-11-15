@@ -9,7 +9,7 @@ import time
 import sys
 import os
 from typing import Dict, Any, Optional, List
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, make_response
 from flask_cors import CORS
 from requests.exceptions import HTTPError
 
@@ -208,8 +208,12 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
             print(f"OUTGOING RESPONSE [{request_id}] - Client Error {status_code}", flush=True)
             print(f"Error Response: {json.dumps(response_data, indent=2)}", flush=True)
             print(f"Duration: {time.time() - start_time:.3f}s", flush=True)
+            print(f"Response data type: {type(response_data)}", flush=True)
+            print(f"Response data keys: {list(response_data.keys())}", flush=True)
             print("=" * 80, flush=True)
-            return jsonify(response_data), status_code
+            # Return Flask response with explicit status code
+            flask_response = make_response(jsonify(response_data), status_code)
+            return flask_response
 
         # Log successful response to console
         print("=" * 80, flush=True)
