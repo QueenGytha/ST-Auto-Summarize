@@ -226,13 +226,15 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     }
 
     // 13. ATTACH TOKEN BREAKDOWN (for operation metadata capture)
-    // Store as non-enumerable property so it doesn't interfere with string operations
+    // Convert primitive string to String object so we can attach properties
     if (typeof finalResult === 'string') {
-      Object.defineProperty(finalResult, '__tokenBreakdown', {
+      const stringObject = new String(finalResult);
+      Object.defineProperty(stringObject, '__tokenBreakdown', {
         value: tokenBreakdown,
         enumerable: false,
         writable: false
       });
+      return stringObject;
     }
 
     return finalResult;
