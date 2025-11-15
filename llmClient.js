@@ -168,12 +168,21 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
   injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
 
   // 8. CALL ConnectionManager
+  // CRITICAL: Always set includePreset=false to prevent ConnectionManager from loading profile's preset
+  // We already manually loaded preset messages from the CORRECT preset (effectivePresetName) at lines 116-141
+  // If we set includePreset=true, ConnectionManager would load preset messages from the CONNECTION PROFILE's preset,
+  // which may be DIFFERENT from the completion preset we want to use (e.g., profile has "momoura-neovorpus" but
+  // user selected "bbypwg-claude" for generation). This would result in WRONG preset messages being used.
+  debug(SUBSYSTEM.CORE, `[LLMClient] Setting ConnectionManager includePreset=false because we already loaded preset messages from "${effectivePresetName}"`);
+  debug(SUBSYSTEM.CORE, `[LLMClient] If includePreset=true, ConnectionManager would load from profile's preset "${profile.preset}" instead, which is WRONG`);
+  debug(SUBSYSTEM.CORE, `[LLMClient] Profile preset: "${profile.preset}", Completion preset we're using: "${effectivePresetName}"`);
+
   try {
     const connectionManagerOptions = {
       stream: options.stream ?? false,
       signal: options.signal ?? null,
       extractData: options.extractData ?? true,
-      includePreset: options.includePreset ?? Boolean(options.preset),
+      includePreset: false,  // ALWAYS false - we manually loaded correct preset messages above
       includeInstruct: options.includeInstruct ?? false,
       instructSettings: options.instructSettings || {}
     };
