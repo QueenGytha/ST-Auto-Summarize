@@ -666,7 +666,10 @@ function filterEligibleIndices(filteredIndices, maxEligibleIndex) {
 
 async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx) {
   const sceneRecapEnabled = get_settings('scene_recap_include_active_setting_lore');
+  debug(SUBSYSTEM.OPERATIONS, `[calculateSceneRecapTokensForRange] Called for range ${startIndex}-${endIndex}, scene_recap_include_active_setting_lore=${sceneRecapEnabled}`);
+
   if (!sceneRecapEnabled) {
+    debug(SUBSYSTEM.OPERATIONS, `[calculateSceneRecapTokensForRange] Skipping - lorebooks disabled, returning 0 tokens`);
     return 0;
   }
 
@@ -677,7 +680,10 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
   const preset = get_settings('scene_recap_completion_preset');
   const includePresetPrompts = get_settings('scene_recap_include_preset_prompts');
 
-  return await calculateSceneRecapTokens(prompt, includePresetPrompts, preset, prefill, 'generate_scene_recap');
+  const tokens = await calculateSceneRecapTokens(prompt, includePresetPrompts, preset, prefill, 'generate_scene_recap');
+  debug(SUBSYSTEM.OPERATIONS, `[calculateSceneRecapTokensForRange] Calculated ${tokens} tokens for scene recap (range ${startIndex}-${endIndex})`);
+
+  return tokens;
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity -- Complex reduction algorithm with multiple phases and state management
