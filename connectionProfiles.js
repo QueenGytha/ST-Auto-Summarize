@@ -165,20 +165,26 @@ async function get_connection_profile_proxy_url(profileName) {
   let profileData;
   try {
     profileData = JSON.parse(result.pipe);
-    debug(`[Proxy Detection] Profile data:`, profileData);
+    debug(`[Proxy Detection] Full profile data:`, JSON.stringify(profileData, null, 2));
   } catch {
     error(`Failed to parse JSON from /profile-get for "${profileName}". Result:`);
     error(result);
     return null;
   }
 
+  // Check if there's a direct URL in the profile (api-url field)
+  if (profileData['api-url']) {
+    debug(`[Proxy Detection] Found direct api-url in profile: ${profileData['api-url']}`);
+    return profileData['api-url'];
+  }
+
   // Get the proxy presets from connection manager
   const proxies = ctx.extensionSettings.connectionManager?.proxies || [];
-  debug(`[Proxy Detection] Available proxies:`, proxies);
+  debug(`[Proxy Detection] Available proxies:`, proxies.length > 0 ? JSON.stringify(proxies, null, 2) : '(none)');
 
   // Look up the proxy URL by name
   const proxyPreset = proxies.find((p) => p.name === profileData.proxy);
-  debug(`[Proxy Detection] Profile proxy name: "${profileData.proxy}", Found preset:`, proxyPreset);
+  debug(`[Proxy Detection] Profile proxy name: "${profileData.proxy}", Found preset:`, proxyPreset ? JSON.stringify(proxyPreset, null, 2) : 'undefined');
 
   return proxyPreset?.url || null;
 }
