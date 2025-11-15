@@ -18,6 +18,7 @@ import {
   initialize_settings_listeners,
   initialize_popout,
   initialize_message_buttons,
+  should_send_chat_details,
   initialize_group_member_buttons,
   initialize_slash_commands,
   initialize_menu_buttons,
@@ -302,16 +303,16 @@ async function initializeExtension() {
     try {
       debug('[Interceptor] CHAT_COMPLETION_PROMPT_READY handler started');
 
-      // Check if injection is enabled (get_settings expects a key parameter)
-      const enabled = get_settings('first_hop_proxy_send_chat_details');
-      debug('[Interceptor] first_hop_proxy_send_chat_details:', enabled);
+      // Auto-detect if using first-hop proxy based on connection profile
+      const enabled = await should_send_chat_details();
+      debug('[Interceptor] should_send_chat_details (auto-detected):', enabled);
 
       if (!enabled) {
-        debug('[Interceptor] Metadata injection disabled, skipping');
+        debug('[Interceptor] Metadata injection disabled (not using first-hop proxy), skipping');
         return; // Not enabled, skip
       }
 
-      debug('[Interceptor] Metadata injection enabled, proceeding...');
+      debug('[Interceptor] Metadata injection enabled (using first-hop proxy), proceeding...');
 
       // Import metadata injector
       const { injectMetadataIntoChatArray, hasExistingMetadata } = await import('./metadataInjector.js');
@@ -472,8 +473,8 @@ async function initializeExtension() {
   log('[Metadata] Initializing metadata injection...');
   try {
     const metadataInjector = await import('./metadataInjector.js');
-    metadataInjector.initMetadataInjector({ get_settings });
-    log('[Metadata] ✓ Metadata injection initialized');
+    metadataInjector.initMetadataInjector();
+    log('[Metadata] ✓ Metadata injection initialized (auto-detection enabled)');
   } catch (err) {
     log('[Metadata] Failed to initialize metadata injection:', err);
   }

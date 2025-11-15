@@ -4,13 +4,10 @@
 
 import { getCurrentChatId } from '../../../../script.js';
 import { selected_group, groups } from '../../../group-chats.js';
-import { debug, SUBSYSTEM } from './index.js';
+import { debug, SUBSYSTEM, should_send_chat_details } from './index.js';
 
-// Will be imported from index.js via barrel exports
-let get_settings ;
-
-export function initMetadataInjector(utils ) {
-  get_settings = utils.get_settings;
+export function initMetadataInjector() {
+  // No longer needs to import get_settings
 }
 
 export function getChatName() {
@@ -38,10 +35,10 @@ export function getChatName() {
   }
 }
 
-export function isMetadataInjectionEnabled() {
+export async function isMetadataInjectionEnabled() {
   try {
-    // get_settings expects a key parameter
-    const enabled = get_settings('first_hop_proxy_send_chat_details');
+    // Automatically detect if using first-hop proxy based on connection profile
+    const enabled = await should_send_chat_details();
     return enabled === true;
   } catch (err) {
     console.error('[Auto-Recap:Metadata] Error checking if enabled:', err);
@@ -89,13 +86,13 @@ export function formatMetadataBlock(metadata ) {
   }
 }
 
-export function injectMetadata(
+export async function injectMetadata(
 prompt ,
 options  = {})
 {
   try {
     // Check if injection is enabled
-    if (!isMetadataInjectionEnabled()) {
+    if (!(await isMetadataInjectionEnabled())) {
       return prompt;
     }
 
@@ -168,12 +165,12 @@ export function getExistingOperation(chatArray ) {
   }
 }
 
-export function injectMetadataIntoChatArray(
+export async function injectMetadataIntoChatArray(
 chatArray ,
 options  = {})
 {
   try {
-    if (!isMetadataInjectionEnabled()) {
+    if (!(await isMetadataInjectionEnabled())) {
       return;
     }
 

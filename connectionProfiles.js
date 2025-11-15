@@ -147,6 +147,46 @@ async function check_connection_profile_valid() {
   }
   return valid;
 }
+async function get_connection_profile_proxy_url(profileName) {
+  // Get the proxy URL for a given connection profile
+  if (!check_connection_profiles_active()) {return null;}
+
+  const ctx = getContext();
+  const result = await ctx.executeSlashCommandsWithOptions(`/profile-get ${profileName}`);
+
+  if (!result.pipe) {
+    debug(`/profile-get ${profileName} returned nothing - no connection profile selected`);
+    return null;
+  }
+
+  let profileData;
+  try {
+    profileData = JSON.parse(result.pipe);
+  } catch {
+    error(`Failed to parse JSON from /profile-get for "${profileName}". Result:`);
+    error(result);
+    return null;
+  }
+
+  // Get the proxy presets from connection manager
+  const proxies = ctx.extensionSettings.connectionManager?.proxies || [];
+
+  // Look up the proxy URL by name
+  const proxyPreset = proxies.find((p) => p.name === profileData.proxy);
+
+  return proxyPreset?.url || null;
+}
+async function is_using_first_hop_proxy(profileName) {
+  // Check if the given connection profile is using the first-hop proxy (localhost:8765)
+  const proxyUrl = await get_connection_profile_proxy_url(profileName);
+  return proxyUrl?.includes('http://localhost:8765') ?? false;
+}
+async function should_send_chat_details() {
+  // Automatically determine if chat details should be sent based on whether we're using first-hop proxy
+  const profileName = await get_recap_connection_profile();
+  if (!profileName) {return false;}
+  return await is_using_first_hop_proxy(profileName);
+}
 
 export {
   check_connection_profiles_active,
@@ -157,4 +197,7 @@ export {
   get_connection_profiles,
   get_connection_profile_objects,
   verify_connection_profile,
-  check_connection_profile_valid };
+  check_connection_profile_valid,
+  get_connection_profile_proxy_url,
+  is_using_first_hop_proxy,
+  should_send_chat_details };

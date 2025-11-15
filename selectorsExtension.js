@@ -40,7 +40,7 @@ export const selectorsExtension = {
 
   // First-Hop Proxy Integration
   proxy: {
-    sendChatDetails: '[data-testid="proxy-send-chat-details"]',  // #first_hop_proxy_send_chat_details
+    // (Removed) sendChatDetails – checkbox removed, now auto-detected
     suppressOtherLorebooks: '[data-testid="proxy-suppress-other-lorebooks"]',  // #suppress_other_lorebooks
   },
 

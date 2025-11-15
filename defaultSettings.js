@@ -191,6 +191,6 @@ Rules for canonicalName:
   // (Removed) Auto-Lorebooks Keyword Generation Settings – keywords now come from recap JSON
 
   // --- First-Hop Proxy Integration Settings ---
-  first_hop_proxy_send_chat_details: false, // Send chat details in LLM requests for proxy logging
+  // (Removed) first_hop_proxy_send_chat_details – now auto-detected based on connection profile proxy URL
   suppress_other_lorebooks: true // Suppress global/character/persona lorebooks during generation (only chat lorebooks included)
 };
