@@ -16,6 +16,43 @@ import {
   display_injection_preview,
   toast } from
 './index.js';
+import { loadWorldInfo } from '../../../world-info.js';
+import { getAttachedLorebook } from './lorebookManager.js';
+
+async function count_lorebook_tokens(context) {
+  const lorebookName = getAttachedLorebook();
+
+  if (!lorebookName) {
+    return { lorebookTokens: 0, lorebookEntryCount: 0 };
+  }
+
+  const data = await loadWorldInfo(lorebookName);
+  if (!data?.entries) {
+    return { lorebookTokens: 0, lorebookEntryCount: 0 };
+  }
+
+  const entries = Object.values(data.entries);
+  let lorebookTokens = 0;
+  let lorebookEntryCount = 0;
+
+  for (const entry of entries) {
+    const entryContent = entry.content || '';
+    // eslint-disable-next-line no-await-in-loop -- must count tokens sequentially
+    const tokenCount = await context.getTokenCountAsync(entryContent);
+    lorebookTokens += tokenCount;
+    lorebookEntryCount++;
+  }
+
+  return { lorebookTokens, lorebookEntryCount };
+}
+
+async function count_running_recap_tokens(context) {
+  const runningRecapText = get_running_recap_injection();
+  if (!runningRecapText) {
+    return 0;
+  }
+  return await context.getTokenCountAsync(runningRecapText);
+}
 
 function initialize_slash_commands() {
   const ctx = getContext();
@@ -188,7 +225,7 @@ function initialize_slash_commands() {
       }
 
       const PREVIEW_LENGTH = 50;
-      let totalTokens = 0;
+      let messageTokens = 0;
       const messageTokenCounts = [];
 
       for (let i = 0; i < chat.length; i++) {
@@ -196,7 +233,7 @@ function initialize_slash_commands() {
         const messageText = message.mes || '';
         // eslint-disable-next-line no-await-in-loop -- must count tokens sequentially
         const tokenCount = await context.getTokenCountAsync(messageText);
-        totalTokens += tokenCount;
+        messageTokens += tokenCount;
         messageTokenCounts.push({
           index: i,
           tokens: tokenCount,
@@ -204,15 +241,20 @@ function initialize_slash_commands() {
         });
       }
 
-      const summary = `Token Count Summary:\n• Total Messages: ${chat.length}\n• Total Tokens: ${totalTokens.toLocaleString()}\n• Average Tokens/Message: ${Math.round(totalTokens / chat.length)}`;
+      const { lorebookTokens, lorebookEntryCount } = await count_lorebook_tokens(context);
+      const runningRecapTokens = await count_running_recap_tokens(context);
+
+      const summary = `Token Count Summary:\n• Messages: ${chat.length} (${messageTokens.toLocaleString()} tokens, avg ${Math.round(messageTokens / chat.length)})\n• Chat Lorebook Entries: ${lorebookEntryCount} (${lorebookTokens.toLocaleString()} tokens)\n• Running Scene Recap: ${runningRecapTokens.toLocaleString()} tokens`;
 
       log('[Token Count] Summary:', summary);
       log('[Token Count] Per-message breakdown:', messageTokenCounts);
+      log('[Token Count] Chat lorebook entries:', lorebookEntryCount, 'tokens:', lorebookTokens);
+      log('[Token Count] Running recap tokens:', runningRecapTokens);
 
       toast(summary, 'info');
       return summary;
     },
-    helpString: 'Count tokens in all messages in the current chat'
+    helpString: 'Count tokens in all messages, lorebook entries, and running scene recap'
   }));
 
 }
