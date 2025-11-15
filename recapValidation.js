@@ -69,6 +69,10 @@ async function validate_recap(recap , type  = "scene") {
       clearOperationSuffix();
     }
 
+    // Extract token breakdown from response
+    const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
+    const tokenBreakdown = extractTokenBreakdownFromResponse(validation_result);
+
     // Clean up and check result
     const result_upper = validation_result.trim().toUpperCase();
     const valid = result_upper.includes("VALID") && !result_upper.includes("INVALID");
@@ -79,7 +83,7 @@ async function validate_recap(recap , type  = "scene") {
       debug(SUBSYSTEM.VALIDATION, `Recap validation passed with result: "${result_upper}"`);
     }
 
-    return valid;
+    return { valid, tokenBreakdown };
 
   } catch (e) {
     error(SUBSYSTEM.VALIDATION, `Error during recap validation: ${e}`);

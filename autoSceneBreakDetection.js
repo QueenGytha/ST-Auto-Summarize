@@ -195,8 +195,12 @@ async function trySendRequest(options) {
       trimSentences: false
     });
 
+    // Extract token breakdown from response (attached by llmClient)
+    const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
+    const tokenBreakdown = extractTokenBreakdownFromResponse(response);
+
     clearOperationSuffix();
-    return { success: true, response };
+    return { success: true, response, tokenBreakdown };
   } catch (err) {
     clearOperationSuffix();
 
@@ -700,6 +704,7 @@ async function reduceMessagesUntilTokenFit(config) {
         if (apiResult.success) {
           return {
             response: apiResult.response,
+            tokenBreakdown: apiResult.tokenBreakdown,
             currentEndIndex,
             currentFilteredIndices,
             currentMaxEligibleIndex,
@@ -852,7 +857,7 @@ _operationId  = null)
       return reductionResult;
     }
 
-    const { response, currentEndIndex, currentFilteredIndices, currentMaxEligibleIndex } = reductionResult;
+    const { response, tokenBreakdown, currentEndIndex, currentFilteredIndices, currentMaxEligibleIndex } = reductionResult;
 
     ctx.deactivateSendButtons();
 
@@ -872,6 +877,7 @@ _operationId  = null)
     return {
       sceneBreakAt,
       rationale,
+      tokenBreakdown,
       filteredIndices: currentFilteredIndices,
       maxEligibleIndex: currentMaxEligibleIndex,
       rangeWasReduced: currentEndIndex !== endIndex

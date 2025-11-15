@@ -1102,6 +1102,7 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
   const { startIdx, endIdx } = range;
 
   let recap = "";
+  let tokenBreakdown = null;
   try {
     ctx.deactivateSendButtons();
     debug(SUBSYSTEM.SCENE, "Sending prompt to AI:", prompt);
@@ -1125,6 +1126,10 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
 
       const rawResponse = await sendLLMRequest(profileId, prompt, operationType, options);
       debug(SUBSYSTEM.SCENE, "AI response:", rawResponse);
+
+      // Extract token breakdown from response
+      const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
+      tokenBreakdown = extractTokenBreakdownFromResponse(rawResponse);
 
       // Extract and validate JSON using centralized helper
       const { extractJsonFromResponse } = await import('./utils.js');
@@ -1155,7 +1160,7 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
   } finally {
     ctx.activateSendButtons();
   }
-  return recap;
+  return { recap, tokenBreakdown };
 }
 
 // Helper: Save scene recap and queue lorebook entries
@@ -1421,7 +1426,7 @@ export async function generateSceneRecap(config) {
   const effectiveProfile = resolveProfileId(profile_name);
   const llmConfig = { prompt, prefill, include_preset_prompts, preset_name };
   const range = { startIdx, endIdx };
-  const recap = await executeSceneRecapGeneration(llmConfig, range, ctx, effectiveProfile, OperationType.GENERATE_SCENE_RECAP);
+  const { recap, tokenBreakdown } = await executeSceneRecapGeneration(llmConfig, range, ctx, effectiveProfile, OperationType.GENERATE_SCENE_RECAP);
 
   // Check if operation was cancelled while LLM call was in progress
   if (signal?.aborted) {
@@ -1440,5 +1445,5 @@ export async function generateSceneRecap(config) {
 
   renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
 
-  return { recap, lorebookOpIds };
+  return { recap, tokenBreakdown, lorebookOpIds };
 }

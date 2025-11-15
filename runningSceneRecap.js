@@ -360,6 +360,10 @@ async function generate_running_scene_recap(skipQueue  = false) {
       clearOperationSuffix();
     }
 
+    // Extract token breakdown from response
+    const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
+    const tokenBreakdown = extractTokenBreakdownFromResponse(result);
+
     // Parse JSON response using centralized helper
     const { extractJsonFromResponse } = await import('./utils.js');
     const parsed = extractJsonFromResponse(result, {
@@ -373,7 +377,7 @@ async function generate_running_scene_recap(skipQueue  = false) {
 
     toast(`Running scene recap updated (v${version})`, 'success');
 
-    return parsed.recap;
+    return { recap: parsed.recap, tokenBreakdown };
 
   } catch (err) {
     error(SUBSYSTEM.RUNNING, 'Failed to generate running scene recap:', err);
@@ -482,6 +486,10 @@ async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index
 
     const result = await sendLLMRequest(effectiveProfile, prompt, OperationType.COMBINE_SCENE_WITH_RUNNING, options);
 
+    // Extract token breakdown from response
+    const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
+    const tokenBreakdown = extractTokenBreakdownFromResponse(result);
+
     // Parse JSON response using centralized helper
     const { extractJsonFromResponse } = await import('./utils.js');
     const parsed = extractJsonFromResponse(result, {
@@ -491,7 +499,7 @@ async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index
 
     debug(SUBSYSTEM.RUNNING, `Combined running recap with scene (${parsed.recap.length} chars)`);
 
-    return parsed.recap;
+    return { recap: parsed.recap, tokenBreakdown };
   } finally {
     clearOperationSuffix();
   }
@@ -536,9 +544,9 @@ async function combine_scene_with_running_recap(scene_index ) {
   const { prompt, prefill } = buildCombinePrompt(previous_recap, scene_recaps_text);
 
   try {
-    const result = await executeCombineLLMCall(prompt, prefill, scene_name, scene_index);
-    storeRunningRecap(result, scene_index, scene_name, scene_recap);
-    return result;
+    const { recap, tokenBreakdown } = await executeCombineLLMCall(prompt, prefill, scene_name, scene_index);
+    storeRunningRecap(recap, scene_index, scene_name, scene_recap);
+    return { recap, tokenBreakdown };
 
   } catch (err) {
     error(SUBSYSTEM.RUNNING, 'Failed to combine scene with running recap:', err);

@@ -10,7 +10,8 @@ import {
   pauseQueue,
   getPendingOperations,
   removeOperation,
-  transferDependencies } from
+  transferDependencies,
+  updateOperationMetadata } from
 './operationQueue.js';
 // Note: OPERATION_FETCH_TIMEOUT_MS no longer used after removing scene-name operation
 import {
@@ -234,12 +235,22 @@ export function registerAllOperationHandlers() {
     const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing VALIDATE_RECAP for type ${type}`);
 
-    const isValid = await validate_recap(recap, type);
+    const result = await validate_recap(recap, type);
 
     // Check if cancelled after validation (before potential side effects)
     throwIfAborted(signal, 'VALIDATE_RECAP', 'validation');
 
-    return { isValid };
+    // Store token breakdown in operation metadata
+    if (result?.tokenBreakdown) {
+      const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+      const tokenMetadata = formatTokenBreakdownForMetadata(result.tokenBreakdown, {
+        max_context: result.tokenBreakdown.max_context,
+        max_tokens: result.tokenBreakdown.max_tokens
+      });
+      await updateOperationMetadata(operation.id, tokenMetadata);
+    }
+
+    return { isValid: result?.valid ?? result };
   });
 
   // Detect scene break (range-based)
@@ -255,6 +266,7 @@ export function registerAllOperationHandlers() {
     // Declare variables outside loop for access after loop completes
     let sceneBreakAt;
     let rationale;
+    let tokenBreakdown;
     let filteredIndices;
     let maxEligibleIndex;
     let result;
@@ -274,7 +286,19 @@ export function registerAllOperationHandlers() {
       // Check if cancelled after detection (before side effects)
       throwIfAborted(signal, 'DETECT_SCENE_BREAK', 'LLM call');
 
-      ({ sceneBreakAt, rationale, filteredIndices, maxEligibleIndex } = result);
+      ({ sceneBreakAt, rationale, tokenBreakdown, filteredIndices, maxEligibleIndex } = result);
+
+      // Store token breakdown in operation metadata
+      if (tokenBreakdown) {
+        // eslint-disable-next-line no-await-in-loop -- Intentional: capturing metadata after successful LLM call in retry loop
+        const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+        const tokenMetadata = formatTokenBreakdownForMetadata(tokenBreakdown, {
+          max_context: tokenBreakdown.max_context,
+          max_tokens: tokenBreakdown.max_tokens
+        });
+        // eslint-disable-next-line no-await-in-loop -- Intentional: updating operation metadata after successful LLM call in retry loop
+        await updateOperationMetadata(operation.id, tokenMetadata);
+      }
 
       // Enforce content-only rationale (no formatting references like '---')
       const rationaleCheck = validateRationaleNoFormatting(rationale);
@@ -428,6 +452,16 @@ export function registerAllOperationHandlers() {
       // Check if operation was cancelled during execution
       throwIfAborted(signal, 'GENERATE_SCENE_RECAP', 'LLM call');
 
+      // Store token breakdown in operation metadata
+      if (result.tokenBreakdown) {
+        const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+        const tokenMetadata = formatTokenBreakdownForMetadata(result.tokenBreakdown, {
+          max_context: result.tokenBreakdown.max_context,
+          max_tokens: result.tokenBreakdown.max_tokens
+        });
+        await updateOperationMetadata(operation.id, tokenMetadata);
+      }
+
       toast(`✓ Scene recap generated for message ${index}`, 'success');
 
       // Scene naming is now embedded in the scene recap output (scene_name field)
@@ -513,12 +547,22 @@ export function registerAllOperationHandlers() {
     const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing GENERATE_RUNNING_RECAP`);
 
-    const recap = await generate_running_scene_recap(true);
+    const result = await generate_running_scene_recap(true);
 
     // Check if cancelled after LLM call (before return)
     throwIfAborted(signal, 'GENERATE_RUNNING_RECAP', 'LLM call');
 
-    return { recap };
+    // Store token breakdown in operation metadata
+    if (result?.tokenBreakdown) {
+      const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+      const tokenMetadata = formatTokenBreakdownForMetadata(result.tokenBreakdown, {
+        max_context: result.tokenBreakdown.max_context,
+        max_tokens: result.tokenBreakdown.max_tokens
+      });
+      await updateOperationMetadata(operation.id, tokenMetadata);
+    }
+
+    return { recap: result?.recap || result };
   });
 
   // Combine scene with running recap
@@ -527,12 +571,22 @@ export function registerAllOperationHandlers() {
     const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing COMBINE_SCENE_WITH_RUNNING for index ${index}`);
 
-    const recap = await combine_scene_with_running_recap(index);
+    const result = await combine_scene_with_running_recap(index);
 
     // Check if cancelled after LLM call (before return)
     throwIfAborted(signal, 'COMBINE_SCENE_WITH_RUNNING', 'LLM call');
 
-    return { recap };
+    // Store token breakdown in operation metadata
+    if (result?.tokenBreakdown) {
+      const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+      const tokenMetadata = formatTokenBreakdownForMetadata(result.tokenBreakdown, {
+        max_context: result.tokenBreakdown.max_context,
+        max_tokens: result.tokenBreakdown.max_tokens
+      });
+      await updateOperationMetadata(operation.id, tokenMetadata);
+    }
+
+    return { recap: result?.recap || result };
   });
 
   // Merge lorebook entry (standalone operation)
