@@ -347,7 +347,9 @@ function readAndCoerceLorebookEntrySettings(entryComment ) {
     const isUserEntry = commentLower === userNameLower ||
                        commentLower === `character-${userNameLower}`;
 
-    if (isUserEntry && rawPreventRecursion === undefined) {
+    debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] {{user}} check: entryComment="${entryComment}", name1="${userName}", isUserEntry=${isUserEntry}, rawPreventRecursion=${rawPreventRecursion}`);
+
+    if (isUserEntry) {
       preventRecursion = true;
       debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] Auto-enabled preventRecursion for {{user}} entry: "${entryComment}"`);
     }
