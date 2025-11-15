@@ -16,6 +16,7 @@ import {
   SUBSYSTEM,
   chat_metadata } from
 './index.js';
+import { get_previous_running_recap_version_before_scene } from './runningSceneRecap.js';
 import { MAX_RECAP_ATTEMPTS, HIGH_PRIORITY_OFFSET, OPERATION_ID_LENGTH } from './constants.js';
 
 // Priority for running recap operations - must run AFTER all lorebook operations
@@ -109,18 +110,8 @@ export function queueCombineSceneWithRunning(index , options  = {}) {
     debug(SUBSYSTEM.QUEUE, `  Version ${v.version}: ${v.prev_scene_index} > ${v.new_scene_index}`);
   }
 
-  // Find the most recent version where new_scene_index < index
-  // This matches the logic in get_previous_running_recap_version_before_scene()
-  let previousVersion = null;
-  for (let i = versions.length - 1; i >= 0; i--) {
-    const version = versions[i];
-    const version_scene_idx = version.new_scene_index ?? 0;
-
-    if (version_scene_idx < index) {
-      previousVersion = version;
-      break;
-    }
-  }
+  // Use the same helper function that the actual combine operation uses
+  const previousVersion = get_previous_running_recap_version_before_scene(index);
 
   debug(SUBSYSTEM.QUEUE, `[queueCombineSceneWithRunning] Selected previous version: ${previousVersion ? `v${previousVersion.version} (${previousVersion.prev_scene_index} > ${previousVersion.new_scene_index})` : 'null'}`);
 
