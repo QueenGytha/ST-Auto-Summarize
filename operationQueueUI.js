@@ -582,8 +582,10 @@ function formatMessageOperationParams(params, metadata = {}) {
     const originalEndIndex = metadata.original_end_index ?? metadata.end_index ?? params.endIndex;
     const currentEndIndex = metadata.current_end_index ?? originalEndIndex;
     const wasReduced = metadata.range_reduced === true;
+    const isForced = params.forceSelection === true;
 
-    const rangeText = `Messages #${startIndex}-${currentEndIndex}`;
+    const forcedPrefix = isForced ? 'FORCED ' : '';
+    const rangeText = `${forcedPrefix}Messages #${startIndex}-${currentEndIndex}`;
     return wasReduced ? `${rangeText} (reduced from ${originalEndIndex})` : rangeText;
   }
   return '';

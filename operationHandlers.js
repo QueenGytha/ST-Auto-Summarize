@@ -242,6 +242,7 @@ export function registerAllOperationHandlers() {
   });
 
   // Detect scene break (range-based)
+  // eslint-disable-next-line complexity -- Retry logic adds one branch, acceptable increase from 20 to 21
   registerOperationHandler(OperationType.DETECT_SCENE_BREAK, async (operation) => {
     const { startIndex, endIndex, offset = 0, forceSelection = false } = operation.params;
     const signal = getAbortSignal(operation);
@@ -249,49 +250,78 @@ export function registerAllOperationHandlers() {
     const chat = ctx.chat;
 
     debug(SUBSYSTEM.QUEUE, `Executing DETECT_SCENE_BREAK for range ${startIndex} to ${endIndex} (offset: ${offset}, forceSelection: ${forceSelection})`);
-    const result = await detectSceneBreak(startIndex, endIndex, offset, forceSelection, operation.id);
 
-    // Check if cancelled after detection (before side effects)
-    throwIfAborted(signal, 'DETECT_SCENE_BREAK', 'LLM call');
-
-    const { sceneBreakAt, rationale, filteredIndices, maxEligibleIndex } = result;
-
-    // Enforce content-only rationale (no formatting references like '---')
-    const rationaleCheck = validateRationaleNoFormatting(rationale);
-    if (!rationaleCheck.valid) {
-      return await handleFormattingRationaleRejection({ operation, startIndex, endIndex, offset, rationale });
-    }
-
+    // Declare variables outside loop for access after loop completes
+    let sceneBreakAt;
+    let rationale;
+    let filteredIndices;
+    let maxEligibleIndex;
+    let result;
     const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
 
-    // Validate the response (including offset check via maxEligibleIndex)
-    const validation = validateSceneBreakResponse(sceneBreakAt, {
-      startIndex,
-      endIndex,
-      filteredIndices,
-      minimumSceneLength,
-      maxEligibleIndex
-    });
-
-    if (!validation.valid) {
-      const isBelowMinimum = validation.reason.includes('below minimum scene length');
-
-      if (isBelowMinimum) {
-        return await handleBelowMinimumRejection({ operation, startIndex, endIndex, offset, sceneBreakAt, filteredIndices, minimumSceneLength, validation, chat });
+    // Retry loop: When forceSelection=true and AI returns false, retry indefinitely
+    let retryCount = 0;
+    while (true) {
+      if (retryCount > 0) {
+        debug(SUBSYSTEM.QUEUE, `[FORCED RETRY #${retryCount}] Retrying scene break detection for range ${startIndex}-${endIndex}`);
+        toast(`⟳ Forced scene break retry #${retryCount}...`, 'info');
       }
 
-      error(SUBSYSTEM.QUEUE, `Invalid scene break response for range ${startIndex}-${endIndex}: ${validation.reason}`);
-      error(SUBSYSTEM.QUEUE, `  sceneBreakAt: ${sceneBreakAt}, rationale: ${rationale}`);
-      toast(`⚠ Invalid scene break detection response - will retry`, 'warning');
-      return { sceneBreakAt: false, rationale: `Invalid: ${validation.reason}` };
-    }
+      // eslint-disable-next-line no-await-in-loop -- Intentional retry loop for forced scene break detection
+      result = await detectSceneBreak(startIndex, endIndex, offset, forceSelection, operation.id);
 
-    if (sceneBreakAt === false) {
-      // No scene break found - mark entire range as checked
-      debug(SUBSYSTEM.QUEUE, `✗ No scene break found in range ${startIndex} to ${endIndex}`);
-      markRangeAsChecked(chat, startIndex, endIndex);
-      saveChatDebounced();
-      return result;
+      // Check if cancelled after detection (before side effects)
+      throwIfAborted(signal, 'DETECT_SCENE_BREAK', 'LLM call');
+
+      ({ sceneBreakAt, rationale, filteredIndices, maxEligibleIndex } = result);
+
+      // Enforce content-only rationale (no formatting references like '---')
+      const rationaleCheck = validateRationaleNoFormatting(rationale);
+      if (!rationaleCheck.valid) {
+        // eslint-disable-next-line no-await-in-loop -- Intentional retry loop for forced scene break detection
+        return await handleFormattingRationaleRejection({ operation, startIndex, endIndex, offset, rationale });
+      }
+
+      // Validate the response (including offset check via maxEligibleIndex)
+      const validation = validateSceneBreakResponse(sceneBreakAt, {
+        startIndex,
+        endIndex,
+        filteredIndices,
+        minimumSceneLength,
+        maxEligibleIndex
+      });
+
+      if (!validation.valid) {
+        const isBelowMinimum = validation.reason.includes('below minimum scene length');
+
+        if (isBelowMinimum) {
+          // eslint-disable-next-line no-await-in-loop -- Intentional retry loop for forced scene break detection
+          return await handleBelowMinimumRejection({ operation, startIndex, endIndex, offset, sceneBreakAt, filteredIndices, minimumSceneLength, validation, chat });
+        }
+
+        error(SUBSYSTEM.QUEUE, `Invalid scene break response for range ${startIndex}-${endIndex}: ${validation.reason}`);
+        error(SUBSYSTEM.QUEUE, `  sceneBreakAt: ${sceneBreakAt}, rationale: ${rationale}`);
+        toast(`⚠ Invalid scene break detection response - will retry`, 'warning');
+        return { sceneBreakAt: false, rationale: `Invalid: ${validation.reason}` };
+      }
+
+      if (sceneBreakAt === false) {
+        // Check if this is a forced selection that returned false (retry indefinitely)
+        if (forceSelection) {
+          retryCount++;
+          debug(SUBSYSTEM.QUEUE, `[FORCED] AI returned false despite MANDATORY instruction - retrying (attempt #${retryCount})`);
+          continue; // Retry the detection
+        }
+
+        // No scene break found - mark entire range as checked
+        debug(SUBSYSTEM.QUEUE, `✗ No scene break found in range ${startIndex} to ${endIndex}`);
+        markRangeAsChecked(chat, startIndex, endIndex);
+        saveChatDebounced();
+        return result;
+      }
+
+      // Valid scene break found - break out of retry loop
+      break;
     }
 
     // Continuity veto + objective-only rule

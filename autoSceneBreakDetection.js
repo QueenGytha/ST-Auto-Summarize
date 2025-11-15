@@ -808,7 +808,8 @@ async function reduceMessagesUntilTokenFit(config) {
       }
     }
 
-    currentMaxEligibleIndex = currentEndIndex - offset;
+    // Recalculate maxEligibleIndex - disable offset zone when forceSelection=true
+    currentMaxEligibleIndex = forceSelection ? currentEndIndex : currentEndIndex - offset;
 
     if (currentEndIndex < startIndex) {
       // eslint-disable-next-line no-await-in-loop -- Need to pause queue before throwing error
@@ -859,7 +860,8 @@ _operationId  = null)
     const chat = ctx.chat || [];
 
     // Calculate max eligible index (messages after this are in offset zone)
-    const maxEligibleIndex = endIndex - offset;
+    // When forceSelection=true, disable offset zone (all messages up to endIndex are eligible)
+    const maxEligibleIndex = forceSelection ? endIndex : endIndex - offset;
 
     // Format all messages in range with their ST indices
     const { filteredIndices } = formatMessagesForRangeDetection(chat, startIndex, endIndex, checkWhich);
