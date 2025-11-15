@@ -695,17 +695,33 @@ Messages may be marked as "Message #invalid choice" for two reasons:
 
 2. OFFSET ZONE RULE (messages at the END):
    - Some recent messages at the end of the range may be marked as "invalid choice"
-   - These messages are shown for CONTEXT ONLY to help you evaluate whether a scene break is approaching
-   - They are intentionally excluded from being selected as breaks on this pass
-   - CRITICAL: If the best/only scene break candidate is in the offset zone (marked "invalid choice" at the end), you MUST return false
-   - Returning false allows those messages to become eligible on the next detection attempt
-   - Example: If message #47 (marked "invalid choice") opens with "The next morning..." but all eligible messages before it are continuous, return false
-   - This ensures you don't select a suboptimal break just because the optimal break isn't eligible yet
+   - PURPOSE: These offset messages provide lookahead context to help you determine if the current scene continues BEYOND the eligible range
+   - They show you what comes AFTER the eligible messages, helping you evaluate whether the scene truly ends within the eligible range or continues further
+   - They are intentionally excluded from being selected as breaks on THIS detection pass
+
+   CRITICAL DECISION RULE FOR OFFSET ZONE:
+   - If the actual scene ending occurs in the offset zone (marked "invalid choice" at the end), you MUST return false
+   - Returning false means: "The scene continues beyond the eligible range - the real ending is in the offset zone, so wait for the next detection pass"
+   - On the next detection pass, those offset messages will become eligible, allowing you to mark the correct scene ending
+   - DO NOT choose a weaker/earlier break in the eligible range just because the true scene ending is in the offset zone
+
+   Example scenarios:
+   • Messages #3-#50 are eligible, messages #51-#53 are offset (context only)
+   • Message #52 opens with "Dawn arrived..." (STRONG scene break)
+   • Messages #3-#50 are all continuous (no STRONG breaks)
+   • CORRECT ACTION: Return false (the real scene ending is at #51, but it's not eligible yet - wait for next pass)
+   • WRONG ACTION: Returning message #48 just because it's the "best available" in eligible range
+
+   Another example:
+   • Messages #3-#50 are eligible, messages #51-#53 are offset
+   • Message #35 shows "The trio made their way from the Collegium grounds" (STRONG break - new location)
+   • Message #52 also has a break, but #35 comes first
+   • CORRECT ACTION: Return 34 (scene ends before #35, which is the FIRST strong break in eligible range)
 
 DECISION LOGIC FOR OFFSET ZONE:
-- If you find a STRONG scene break in the eligible messages → return that message number
-- If the only STRONG scene break is in the offset zone (marked "invalid choice" at the end) → return false (wait for next attempt)
-- If no STRONG scene breaks exist anywhere → return false (treat as continuous scene)
+- If you find a STRONG scene break in the eligible messages (not in offset zone) → return that message number
+- If the only STRONG scene break is in the offset zone (marked "invalid choice" at the end) → return false (the scene continues beyond eligible range - wait for next attempt)
+- If no STRONG scene breaks exist anywhere (neither eligible nor offset) → return false (treat as continuous scene)
 
 DECISION CRITERIA:
 A scene break means the prior beat resolved and the story now shifts focus.
