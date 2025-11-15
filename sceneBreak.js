@@ -815,6 +815,7 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
     const originalSettings = getWorldInfoSettings();
     const MAX_SCAN_DEPTH = 1000;
     setWorldInfoSettings({
+      world_info: originalSettings.world_info,  // Preserve world_info object to avoid reset
       world_info_depth: MAX_SCAN_DEPTH,
       world_info_min_activations: 0,
       world_info_max_recursion_steps: 1
@@ -878,6 +879,7 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
     } finally {
       // Restore original world info settings
       setWorldInfoSettings({
+        world_info: originalSettings.world_info,  // Preserve world_info object
         world_info_depth: originalSettings.world_info_depth,
         world_info_min_activations: originalSettings.world_info_min_activations,
         world_info_max_recursion_steps: originalSettings.world_info_max_recursion_steps
