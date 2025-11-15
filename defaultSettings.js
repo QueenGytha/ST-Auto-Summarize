@@ -19,6 +19,14 @@ export const default_settings = {
   // --- Error Detection Settings ---
   error_detection_enabled: false,
 
+  // --- Token Counting Settings ---
+  // Correction factor for Claude tokenizer discrepancy
+  // SillyTavern uses an approximation of Claude's tokenizer that typically undercounts by 30-40%
+  // This multiplier compensates for the difference to provide more accurate token estimates
+  // Set to 1.0 to disable correction (use raw ST tokenizer count)
+  // Recommended: 1.35 for Claude models (based on observed 30-40% undercount)
+  claude_tokenizer_correction_factor: 1.35,
+
   // --- Operation Queue Settings ---
   // Maximum number of retries for failed operations before permanently failing.
   // DEFAULT: 0 (unlimited retries)

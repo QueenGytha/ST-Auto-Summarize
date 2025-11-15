@@ -1,7 +1,29 @@
 // tokenBreakdown.js - Token counting and breakdown utilities
 
-import { count_tokens, main_api, debug, SUBSYSTEM } from './index.js';
+import { count_tokens, main_api, debug, SUBSYSTEM, get_settings } from './index.js';
 import { injectMetadataIntoChatArray } from './metadataInjector.js';
+
+/**
+ * Apply Claude tokenizer correction factor if using Claude API
+ * SillyTavern's Claude tokenizer approximation typically undercounts by 30-40%
+ * @param {number} rawCount - Raw token count from ST's count_tokens
+ * @returns {number} Corrected token count
+ */
+function applyCorrectionFactor(rawCount) {
+  // Only apply correction for Claude API
+  if (main_api !== 'claude') {
+    return rawCount;
+  }
+
+  const correctionFactor = get_settings('claude_tokenizer_correction_factor') || 1.0;
+  const corrected = Math.ceil(rawCount * correctionFactor);
+
+  if (correctionFactor !== 1.0) {
+    debug(SUBSYSTEM.CORE, `[TokenCorrection] Applied ${correctionFactor}x correction: ${rawCount} → ${corrected} tokens`);
+  }
+
+  return corrected;
+}
 
 /**
  * Calculate detailed token breakdown for an LLM request
@@ -80,13 +102,16 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
   await injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
 
   // Count tokens in the ACTUAL structure that will be sent (same as llmClient.js line 191)
-  const actualTokens = count_tokens(JSON.stringify(messagesWithMetadata));
+  const actualTokensRaw = count_tokens(JSON.stringify(messagesWithMetadata));
+
+  // Apply correction factor for Claude tokenizer discrepancy
+  const actualTokens = applyCorrectionFactor(actualTokensRaw);
 
   // Calculate overhead
   const contentOnlyTokens = presetTokens + systemTokens + userPromptTokens + prefillTokens;
   const jsonStructureOverhead = tokensBeforeMetadata - contentOnlyTokens;
-  const metadataOverhead = actualTokens - tokensBeforeMetadata;
-  const totalOverhead = actualTokens - contentOnlyTokens;
+  const metadataOverhead = actualTokensRaw - tokensBeforeMetadata;
+  const totalOverhead = actualTokensRaw - contentOnlyTokens;
 
   const breakdown = {
     preset: presetTokens,
@@ -99,7 +124,8 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
     json_structure: jsonStructureOverhead,
     metadata: metadataOverhead,
     overhead_subtotal: totalOverhead,
-    total: actualTokens
+    total: actualTokens,
+    st_raw_count: actualTokensRaw // Include raw count for comparison
   };
 
   debug(SUBSYSTEM.OPERATIONS, `=== DETAILED TOKEN BREAKDOWN ===`);
@@ -204,16 +230,20 @@ export async function calculateAndInjectTokenBreakdown(messages, operation, maxC
   });
 
   // Second pass: measure actual metadata overhead
-  const tokensAfterMetadata = count_tokens(JSON.stringify(messagesWithMetadata));
-  const metadataOverhead = tokensAfterMetadata - tokensBeforeMetadata;
+  const tokensAfterMetadataRaw = count_tokens(JSON.stringify(messagesWithMetadata));
+  const metadataOverhead = tokensAfterMetadataRaw - tokensBeforeMetadata;
   const totalOverhead = jsonStructureOverhead + metadataOverhead;
+
+  // Apply correction factor for Claude tokenizer discrepancy
+  const tokensAfterMetadata = applyCorrectionFactor(tokensAfterMetadataRaw);
 
   // Final breakdown with actual metadata overhead
   const tokenBreakdown = {
     ...preliminaryBreakdown,
     metadata: metadataOverhead,
     overhead_subtotal: totalOverhead,
-    total: tokensAfterMetadata
+    total: tokensAfterMetadata,
+    st_raw_count: tokensAfterMetadataRaw // Include raw count for comparison
   };
 
   return { messagesWithMetadata, tokenBreakdown };
