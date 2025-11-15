@@ -517,9 +517,13 @@ def chat_completions(config_path):
 def main():
     """Main entry point for the application"""
     try:
+        # Ensure base log directories exist
+        os.makedirs("logs/characters", exist_ok=True)
+        os.makedirs("logs/unsorted", exist_ok=True)
+
         # Initialize loggers
         global request_logger, error_logger
-        
+
         # Initialize error logger first (request logger depends on it)
         error_logger = ErrorLogger(config)
 
