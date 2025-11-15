@@ -20,12 +20,19 @@ export const default_settings = {
   error_detection_enabled: false,
 
   // --- Token Counting Settings ---
-  // Correction factor for Claude tokenizer discrepancy
-  // SillyTavern uses an approximation of Claude's tokenizer that typically undercounts by 30-40%
-  // This multiplier compensates for the difference to provide more accurate token estimates
-  // Set to 1.0 to disable correction (use raw ST tokenizer count)
-  // Recommended: 1.35 for Claude models (based on observed 30-40% undercount)
-  claude_tokenizer_correction_factor: 1.35,
+  // Correction factor for tokenizer discrepancies between ST and actual LLM providers
+  // SillyTavern uses tokenizer approximations that may not match the provider's actual tokenizer
+  // This multiplier adjusts token estimates to be more accurate
+  //
+  // Values > 1.0: Use when ST undercounts (multiply to increase estimate)
+  // Values < 1.0: Use when ST overcounts (multiply to decrease estimate)
+  // Value = 1.0: No correction (use raw ST tokenizer count)
+  //
+  // Recommended values based on observed discrepancies:
+  // - Claude models: 1.35 (ST typically undercounts by 30-40%)
+  // - OpenAI models: 1.0 (tiktoken is accurate, no correction needed)
+  // - Other models: Test and adjust based on your observations
+  tokenizer_correction_factor: 1.35,
 
   // --- Operation Queue Settings ---
   // Maximum number of retries for failed operations before permanently failing.

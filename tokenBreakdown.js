@@ -4,23 +4,21 @@ import { count_tokens, main_api, debug, SUBSYSTEM, get_settings } from './index.
 import { injectMetadataIntoChatArray } from './metadataInjector.js';
 
 /**
- * Apply Claude tokenizer correction factor if using Claude API
- * SillyTavern's Claude tokenizer approximation typically undercounts by 30-40%
+ * Apply tokenizer correction factor to adjust for discrepancies between ST and actual LLM tokenizers
+ * ST uses tokenizer approximations that may undercount or overcount vs actual provider tokenizers
  * @param {number} rawCount - Raw token count from ST's count_tokens
  * @returns {number} Corrected token count
  */
 function applyCorrectionFactor(rawCount) {
-  // Only apply correction for Claude API
-  if (main_api !== 'claude') {
+  const correctionFactor = get_settings('tokenizer_correction_factor') || 1.0;
+
+  // If factor is 1.0, no correction needed
+  if (correctionFactor === 1.0) {
     return rawCount;
   }
 
-  const correctionFactor = get_settings('claude_tokenizer_correction_factor') || 1.0;
   const corrected = Math.ceil(rawCount * correctionFactor);
-
-  if (correctionFactor !== 1.0) {
-    debug(SUBSYSTEM.CORE, `[TokenCorrection] Applied ${correctionFactor}x correction: ${rawCount} → ${corrected} tokens`);
-  }
+  debug(SUBSYSTEM.CORE, `[TokenCorrection] Applied ${correctionFactor}x correction: ${rawCount} → ${corrected} tokens`);
 
   return corrected;
 }
