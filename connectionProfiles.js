@@ -202,10 +202,22 @@ function is_using_first_hop_proxy(profileName) {
   debug(`[Proxy Detection] Is using first-hop proxy: ${isUsing}`);
   return isUsing;
 }
-async function should_send_chat_details() {
+async function should_send_chat_details(operationType) {
   // Automatically determine if chat details should be sent based on whether we're using first-hop proxy
-  const profileName = await get_recap_connection_profile();
-  debug(`[Proxy Detection] Recap connection profile: "${profileName}"`);
+  // For regular chat messages (operation: 'chat'), check current active connection profile
+  // For recap operations, check the recap connection profile setting
+  let profileName;
+
+  if (operationType === 'chat' || operationType?.startsWith('chat')) {
+    // Regular chat message - use current active profile
+    profileName = await get_current_connection_profile();
+    debug(`[Proxy Detection] Chat operation - using current active profile: "${profileName}"`);
+  } else {
+    // Recap or other operation - use configured recap profile
+    profileName = await get_recap_connection_profile();
+    debug(`[Proxy Detection] Operation "${operationType}" - using recap connection profile: "${profileName}"`);
+  }
+
   if (!profileName) {
     debug('[Proxy Detection] No profile name, returning false');
     return false;

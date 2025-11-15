@@ -304,7 +304,8 @@ async function initializeExtension() {
       debug('[Interceptor] CHAT_COMPLETION_PROMPT_READY handler started');
 
       // Auto-detect if using first-hop proxy based on connection profile
-      const enabled = await should_send_chat_details();
+      // This is a regular chat message, so check current active profile
+      const enabled = await should_send_chat_details('chat');
       debug('[Interceptor] should_send_chat_details (auto-detected):', enabled);
 
       if (!enabled) {

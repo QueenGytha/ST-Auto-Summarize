@@ -35,10 +35,10 @@ export function getChatName() {
   }
 }
 
-export async function isMetadataInjectionEnabled() {
+export async function isMetadataInjectionEnabled(operationType) {
   try {
     // Automatically detect if using first-hop proxy based on connection profile
-    const enabled = await should_send_chat_details();
+    const enabled = await should_send_chat_details(operationType);
     return enabled === true;
   } catch (err) {
     console.error('[Auto-Recap:Metadata] Error checking if enabled:', err);
@@ -116,7 +116,7 @@ options  = {})
 {
   try {
     // Check if injection is enabled
-    if (!(await isMetadataInjectionEnabled())) {
+    if (!(await isMetadataInjectionEnabled(options?.operation))) {
       return prompt;
     }
 
@@ -194,7 +194,7 @@ chatArray ,
 options  = {})
 {
   try {
-    if (!(await isMetadataInjectionEnabled())) {
+    if (!(await isMetadataInjectionEnabled(options?.operation))) {
       return;
     }
 

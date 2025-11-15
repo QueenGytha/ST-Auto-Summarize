@@ -39,7 +39,7 @@ export async function wrappedGenerateRaw(options ) {
         // String prompt - inject at beginning
         debug(SUBSYSTEM.CORE, '[Interceptor] Processing string prompt (first 100 chars):', options.prompt.slice(0, DEBUG_OUTPUT_SHORT_LENGTH));
 
-        const processedPrompt = injectMetadata(options.prompt, {
+        const processedPrompt = await injectMetadata(options.prompt, {
           operation: operation
         });
 
@@ -53,7 +53,7 @@ export async function wrappedGenerateRaw(options ) {
         // Specific operations (non-chat) should replace generic chat metadata
         const isSpecificOperation = baseOperation !== 'chat';
 
-        injectMetadataIntoChatArray(options.prompt, {
+        await injectMetadataIntoChatArray(options.prompt, {
           operation: operation,
           replaceIfChat: isSpecificOperation
         });
