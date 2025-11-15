@@ -355,11 +355,11 @@ async function initializeExtension() {
             operation += `-swipe${swipeId + 1}`;
           }
 
-          injectMetadataIntoChatArray(promptData.chat, { operation });
+          await injectMetadataIntoChatArray(promptData.chat, { operation });
           debug(`[Interceptor] Injected metadata with operation: ${operation}`);
         } else {
           // Fallback to plain 'chat' if index unavailable
-          injectMetadataIntoChatArray(promptData.chat, { operation: 'chat' });
+          await injectMetadataIntoChatArray(promptData.chat, { operation: 'chat' });
           debug('[Interceptor] Injected metadata with operation: chat (index unavailable)');
         }
 
