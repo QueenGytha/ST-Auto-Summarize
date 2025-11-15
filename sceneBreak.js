@@ -670,7 +670,7 @@ async function tryQueueSceneRecap(index ) {
 }
 
 // Helper: Collect scene objects for recap
-function collectSceneObjects(
+export function collectSceneObjects(
 startIdx ,
 endIdx ,
 chat )
@@ -757,7 +757,7 @@ function logFilteringResults(options) {
 }
 
 // Helper: Get active lorebook entries at a specific message position
-async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
+export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
   const includeActiveLorebooks = get_settings('scene_recap_include_active_setting_lore');
   if (!includeActiveLorebooks) {
     return { entries: [], metadata: { startIdx: endIdx, endIdx, sceneMessageCount: 0 } };
@@ -897,7 +897,7 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
 }
 
 // Helper: Format lorebook entries for prompt with inline instructions
-function formatSettingLoreForPrompt(entries) {
+export function formatSettingLoreForPrompt(entries) {
   if (!entries || entries.length === 0) {
     return '';
   }
@@ -925,7 +925,7 @@ function formatSettingLoreForPrompt(entries) {
 }
 
 // Helper: Prepare scene recap prompt
-async function prepareScenePrompt(
+export async function prepareScenePrompt(
 sceneObjects ,
 ctx ,
 endIdx ,
@@ -975,7 +975,7 @@ get_data )
 }
 
 // Helper: Calculate total request tokens for scene recap (mirrors llmClient.js logic)
-async function calculateSceneRecapTokens(prompt, includePreset, preset, prefill, operationType) {
+export async function calculateSceneRecapTokens(prompt, includePreset, preset, prefill, operationType) {
   const DEBUG_PREFILL_LENGTH = 50;
   debug(SUBSYSTEM.SCENE, `calculateSceneRecapTokens: includePreset=${includePreset}, preset="${preset}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
 
@@ -1148,6 +1148,48 @@ function getMessageRangeForSceneName(lorebookMetadata) {
   return range;
 }
 
+async function persistInactiveLorebookEntries(message, messageIndex, lorebookMetadata) {
+  const chatLorebookName = lorebookMetadata.chatLorebookName;
+  if (!chatLorebookName) {
+    return;
+  }
+
+  try {
+    const { loadWorldInfo } = await import('../../../world-info.js');
+    const worldData = await loadWorldInfo(chatLorebookName);
+
+    if (!worldData?.entries) {
+      return;
+    }
+
+    const allEntries = Object.values(worldData.entries);
+    const activeUIDs = new Set(lorebookMetadata.entries.map(e => e.uid));
+
+    const inactiveEntries = allEntries
+      .filter(entry => !activeUIDs.has(entry.uid))
+      .map(entry => ({
+        comment: entry.comment || '(unnamed)',
+        uid: entry.uid,
+        world: chatLorebookName,
+        key: entry.key || [],
+        position: entry.position,
+        depth: entry.depth,
+        order: entry.order,
+        role: entry.role,
+        constant: entry.constant || false,
+        vectorized: entry.vectorized || false,
+        sticky: entry.sticky || 0,
+        strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal'),
+        content: entry.content || ''
+      }));
+
+    message.extra.inactiveLorebookEntries = inactiveEntries;
+    debug(SUBSYSTEM.SCENE, `Persisted ${inactiveEntries.length} inactive entries to message ${messageIndex}.extra (${allEntries.length} total in lorebook)`);
+  } catch (err) {
+    debug(SUBSYSTEM.SCENE, `Failed to load inactive entries: ${err.message}`);
+  }
+}
+
 async function saveSceneRecap(config) {
   const { message, recap, get_data, set_data, saveChatDebounced, messageIndex, lorebookMetadata } = config;
   const updatedVersions = getSceneRecapVersions(message, get_data).slice();
@@ -1176,6 +1218,9 @@ async function saveSceneRecap(config) {
       }
       message.extra.activeLorebookEntries = lorebookMetadata.entries;
       debug(SUBSYSTEM.SCENE, `Persisted ${lorebookMetadata.entries.length} manually looked-up entries to message ${messageIndex}.extra`);
+
+      // Load and persist inactive entries
+      await persistInactiveLorebookEntries(message, messageIndex, lorebookMetadata);
     }
   }
 

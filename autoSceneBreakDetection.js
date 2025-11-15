@@ -14,6 +14,11 @@ import {
   main_api } from
 './index.js';
 import { pauseQueue } from './operationQueue.js';
+import {
+  collectSceneObjects,
+  prepareScenePrompt,
+  calculateSceneRecapTokens } from
+'./sceneBreak.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 3;
 
@@ -659,6 +664,23 @@ function filterEligibleIndices(filteredIndices, maxEligibleIndex) {
   return filteredIndices.filter(i => i <= maxEligibleIndex);
 }
 
+async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx) {
+  const sceneRecapEnabled = get_settings('scene_recap_include_active_setting_lore');
+  if (!sceneRecapEnabled) {
+    return 0;
+  }
+
+  const sceneObjects = collectSceneObjects(startIndex, endIndex, chat);
+
+  const { prompt, prefill } = await prepareScenePrompt(sceneObjects, ctx, endIndex, get_data);
+
+  const preset = get_settings('scene_recap_completion_preset');
+  const includePresetPrompts = get_settings('scene_recap_include_preset_prompts');
+
+  return await calculateSceneRecapTokens(prompt, includePresetPrompts, preset, prefill, 'generate_scene_recap');
+}
+
+// eslint-disable-next-line sonarjs/cognitive-complexity -- Complex reduction algorithm with multiple phases and state management
 async function reduceMessagesUntilTokenFit(config) {
   const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false, profile, effectiveProfile } = config;
 
@@ -709,14 +731,35 @@ async function reduceMessagesUntilTokenFit(config) {
 
     // Calculate total tokens including preset messages, system prompt, and prefill
     // eslint-disable-next-line no-await-in-loop -- Need to calculate tokens in loop to check if reduction is needed
-    const tokenCount = await calculateTotalRequestTokens(prompt, includePresetPrompts, preset, prefill, profile);
+    const sceneBreakTokens = await calculateTotalRequestTokens(prompt, includePresetPrompts, preset, prefill, profile);
+
+    // ALSO calculate tokens for scene recap generation (which includes lorebooks)
+    // The scene that would be recapped starts from the previous scene break (or chat start) to currentEndIndex
+    let sceneRecapStartIndex = 0;
+    for (let i = startIndex - 1; i >= 0; i--) {
+      if (get_data(chat[i], 'scene_break')) {
+        sceneRecapStartIndex = i + 1;
+        break;
+      }
+    }
+
+    // eslint-disable-next-line no-await-in-loop -- Need to calculate scene recap tokens to ensure it will also fit
+    const sceneRecapTokens = await calculateSceneRecapTokensForRange(sceneRecapStartIndex, currentEndIndex, chat, ctx);
+
+    // Reserve tokens for whichever prompt is LARGER (scene break detection or scene recap generation)
+    const tokenCount = Math.max(sceneBreakTokens, sceneRecapTokens);
+
+    if (sceneRecapTokens > 0) {
+      debug(SUBSYSTEM.OPERATIONS, `Token comparison - Scene break: ${sceneBreakTokens}, Scene recap (with lorebooks): ${sceneRecapTokens}, Using max: ${tokenCount}`);
+    }
 
     if (maxAllowedTokens === null || tokenCount <= maxAllowedTokens) {
       if (reductionPhase === 'coarse') {
         reductionPhase = 'backtrack';
         debug(SUBSYSTEM.OPERATIONS, `Under limit - switching to backtrack phase`);
       } else {
-        debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} tokens (including overhead), fits within limit per calculation`);
+        const largerPromptType = sceneRecapTokens > sceneBreakTokens ? 'scene recap (with lorebooks)' : 'scene break detection';
+        debug(SUBSYSTEM.OPERATIONS, `${largerPromptType}: ${tokenCount} tokens (including overhead), fits within limit per calculation`);
 
         // eslint-disable-next-line no-await-in-loop -- Need to try request in loop to handle API rejections
         const apiResult = await trySendRequest({ effectiveProfile, prompt, prefill, includePresetPrompts, preset, startIndex, endIndex: currentEndIndex });
@@ -735,7 +778,8 @@ async function reduceMessagesUntilTokenFit(config) {
         reductionPhase = 'coarse';
       }
     } else {
-      debug(SUBSYSTEM.OPERATIONS, `Scene break detection: ${tokenCount} > ${maxAllowedTokens} tokens, reducing end index`);
+      const largerPromptType = sceneRecapTokens > sceneBreakTokens ? 'scene recap (with lorebooks)' : 'scene break detection';
+      debug(SUBSYSTEM.OPERATIONS, `${largerPromptType}: ${tokenCount} > ${maxAllowedTokens} tokens, reducing end index`);
 
       if (reductionPhase === 'coarse') {
         const messageRange = currentEndIndex - startIndex;
