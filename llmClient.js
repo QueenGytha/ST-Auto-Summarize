@@ -163,7 +163,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
   const suffix = getOperationSuffix();
   const fullOperation = suffix ? `${operationType}${suffix}` : operationType;
   const messagesWithMetadata = [...messages];
-  injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
+  await injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
 
   // 8. CALL ConnectionManager
   // CRITICAL: Always set includePreset=false to prevent ConnectionManager from loading profile's preset
