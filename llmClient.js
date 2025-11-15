@@ -30,7 +30,6 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
   }
 
   debug(SUBSYSTEM.CORE, `[LLMClient] Sending request with profile "${profile.name}" (${profileId}), API type: ${profile.api}, operation: ${operationType}`);
-  debug(SUBSYSTEM.CORE, `[LLMClient] Full profile data:`, JSON.stringify(profile, null, 2));
 
   // 3. LOAD GENERATION PARAMETERS FROM PRESET
   let generationParams = {};
@@ -84,8 +83,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     throw new Error(`FATAL: Preset "${effectivePresetName}" has no valid max_tokens (genamt or openai_max_tokens). Preset must have max_tokens > 0 configured.`);
   }
 
-  debug(SUBSYSTEM.CORE, `[LLMClient] Loaded generation params from preset "${effectivePresetName}":`, generationParams);
-  debug(SUBSYSTEM.CORE, `[LLMClient] Loaded max_tokens from preset: ${presetMaxTokens}`);
+  debug(SUBSYSTEM.CORE, `[LLMClient] Using preset "${effectivePresetName}", max_tokens: ${presetMaxTokens}`);
 
   // 4. TOKEN VALIDATION (using profile preset's context size, not global)
   if (typeof prompt === 'string') {
@@ -169,13 +167,17 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
 
   // 8. CALL ConnectionManager
   // CRITICAL: Always set includePreset=false to prevent ConnectionManager from loading profile's preset
-  // We already manually loaded preset messages from the CORRECT preset (effectivePresetName) at lines 116-141
+  // We already manually loaded preset messages from the CORRECT preset (effectivePresetName) at lines 117-142
   // If we set includePreset=true, ConnectionManager would load preset messages from the CONNECTION PROFILE's preset,
   // which may be DIFFERENT from the completion preset we want to use (e.g., profile has "momoura-neovorpus" but
-  // user selected "bbypwg-claude" for generation). This would result in WRONG preset messages being used.
-  debug(SUBSYSTEM.CORE, `[LLMClient] Setting ConnectionManager includePreset=false because we already loaded preset messages from "${effectivePresetName}"`);
-  debug(SUBSYSTEM.CORE, `[LLMClient] If includePreset=true, ConnectionManager would load from profile's preset "${profile.preset}" instead, which is WRONG`);
-  debug(SUBSYSTEM.CORE, `[LLMClient] Profile preset: "${profile.preset}", Completion preset we're using: "${effectivePresetName}"`);
+  // user selected "bbypwg-claude35" for generation). This would result in WRONG preset messages being used.
+  //
+  // Example scenario where this matters:
+  //   - Connection profile "double" has preset "momoura-neovorpus"
+  //   - User configured completion preset "bbypwg-claude35" for scene breaks
+  //   - We MUST use "bbypwg-claude35" (the completion preset), NOT "momoura-neovorpus" (profile preset)
+  //   - Solution: Load preset messages manually from completion preset, then set includePreset=false
+  //     so ConnectionManager doesn't override with profile preset
 
   try {
     const connectionManagerOptions = {
@@ -187,8 +189,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
       instructSettings: options.instructSettings || {}
     };
 
-    debug(SUBSYSTEM.CORE, `[LLMClient] ConnectionManager options: includePreset=${connectionManagerOptions.includePreset}, messages.length=${messagesWithMetadata.length}`);
-    debug(SUBSYSTEM.CORE, `[LLMClient] Total tokens being sent: ${count_tokens(JSON.stringify(messagesWithMetadata))}`);
+    debug(SUBSYSTEM.CORE, `[LLMClient] Sending ${messagesWithMetadata.length} messages, ${count_tokens(JSON.stringify(messagesWithMetadata))} tokens`);
 
     const result = await ctx.ConnectionManagerRequestService.sendRequest(
       profileId,
@@ -198,27 +199,8 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
       { ...generationParams, ...options.overridePayload }
     );
 
-    // DEBUG: Log raw response structure
-    const DEBUG_PREVIEW_LENGTH = 100;
-    debug(SUBSYSTEM.CORE, `[LLMClient] Raw response type: ${typeof result}`);
-    if (result && typeof result === 'object') {
-      debug(SUBSYSTEM.CORE, `[LLMClient] Response keys: ${Object.keys(result).join(', ')}`);
-      debug(SUBSYSTEM.CORE, `[LLMClient] Response.content: ${typeof result.content} = ${JSON.stringify(result.content)?.slice(0, DEBUG_PREVIEW_LENGTH)}`);
-      if ('reasoning' in result) {
-        debug(SUBSYSTEM.CORE, `[LLMClient] Response.reasoning: ${typeof result.reasoning} = ${JSON.stringify(result.reasoning)?.slice(0, DEBUG_PREVIEW_LENGTH)}`);
-      }
-      if ('text' in result) {
-        debug(SUBSYSTEM.CORE, `[LLMClient] Response.text: ${typeof result.text} = ${JSON.stringify(result.text)?.slice(0, DEBUG_PREVIEW_LENGTH)}`);
-      }
-      if ('response' in result) {
-        debug(SUBSYSTEM.CORE, `[LLMClient] Response.response: ${typeof result.response} = ${JSON.stringify(result.response)?.slice(0, DEBUG_PREVIEW_LENGTH)}`);
-      }
-      if ('message' in result) {
-        debug(SUBSYSTEM.CORE, `[LLMClient] Response.message: ${typeof result.message} = ${JSON.stringify(result.message)?.slice(0, DEBUG_PREVIEW_LENGTH)}`);
-      }
-    } else if (typeof result === 'string') {
-      debug(SUBSYSTEM.CORE, `[LLMClient] Response string length: ${result.length}, preview: ${result.slice(0, DEBUG_PREVIEW_LENGTH)}`);
-    }
+    // Response structure varies by API: string, {content}, {content, reasoning}, etc.
+    // Normalize to string in next step
 
     // 9. NORMALIZE RESPONSE FORMAT
     // ConnectionManager with reasoning returns {content, reasoning}
@@ -226,18 +208,15 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     let finalResult = result;
     if (finalResult && typeof finalResult === 'object' && 'content' in finalResult) {
       finalResult = finalResult.content || '';
-      debug(SUBSYSTEM.CORE, `[LLMClient] Extracted content from object response (reasoning was included)`);
     }
 
     // 10. SENTENCE TRIMMING (if enabled in ST settings)
     if (options.trimSentences !== false && typeof finalResult === 'string') {
       if (ctx.powerUserSettings.trim_sentences) {
         finalResult = trimToEndSentence(finalResult);
-        debug(SUBSYSTEM.CORE, `[LLMClient] Trimmed result to complete sentence`);
       }
     }
 
-    debug(SUBSYSTEM.CORE, `[LLMClient] Request completed successfully for operation: ${operationType}`);
     return finalResult;
   } catch (err) {
     error(SUBSYSTEM.CORE, `[LLMClient] Request failed for operation ${operationType}:`, err);
