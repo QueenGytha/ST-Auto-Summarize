@@ -496,12 +496,64 @@ function formatOperationType(type) {
   return names[type] || type;
 }
 
+function buildTokenBreakdownSection(metadata) {
+  const lines = [];
+
+  lines.push('=== TOKEN BREAKDOWN ===');
+
+  if (metadata.tokens_max_context !== null) {
+    lines.push(`Max Context: ${metadata.tokens_max_context.toLocaleString()}`);
+  }
+  if (metadata.tokens_max_response !== null) {
+    lines.push(`Reply Reserved: ${metadata.tokens_max_response.toLocaleString()}`);
+  }
+  if (metadata.tokens_available_for_prompt !== null) {
+    lines.push(`Available: ${metadata.tokens_available_for_prompt.toLocaleString()}`);
+  }
+
+  lines.push('');
+  lines.push('Content:');
+
+  if (metadata.tokens_preset > 0) {
+    lines.push(`  Preset: ${metadata.tokens_preset.toLocaleString()}`);
+  }
+  if (metadata.tokens_system > 0) {
+    lines.push(`  System: ${metadata.tokens_system.toLocaleString()}`);
+  }
+  if (metadata.tokens_user > 0) {
+    lines.push(`  User: ${metadata.tokens_user.toLocaleString()}`);
+  }
+  if (metadata.tokens_prefill > 0) {
+    lines.push(`  Prefill: ${metadata.tokens_prefill.toLocaleString()}`);
+  }
+  if (metadata.tokens_lorebooks !== undefined && metadata.tokens_lorebooks > 0) {
+    lines.push(`  Lorebooks: ${metadata.tokens_lorebooks.toLocaleString()}`);
+  }
+  if (metadata.tokens_messages !== undefined && metadata.tokens_messages > 0) {
+    lines.push(`  Messages: ${metadata.tokens_messages.toLocaleString()}`);
+  }
+
+  lines.push(`  Subtotal: ${metadata.tokens_content_subtotal.toLocaleString()}`);
+  lines.push('');
+  lines.push('Overhead:');
+  lines.push(`  JSON: ${metadata.tokens_json_structure.toLocaleString()}`);
+  lines.push(`  Metadata: ${metadata.tokens_metadata.toLocaleString()}`);
+  lines.push(`  Subtotal: ${metadata.tokens_overhead_subtotal.toLocaleString()}`);
+  lines.push('');
+  lines.push(`TOTAL: ${metadata.tokens_total.toLocaleString()}`);
+  lines.push('');
+
+  return lines;
+}
+
 // UI formatting: displays all available operation metadata fields
 function buildOperationTooltip(operation) {
   const lines = [];
-
-  // Add operation-specific metadata
   const metadata = operation.metadata || {};
+
+  if (metadata.tokens_total !== undefined) {
+    lines.push(...buildTokenBreakdownSection(metadata));
+  }
 
   // Prefill and preset prompts settings (captured at enqueue time)
   if (metadata.hasPrefill !== undefined) {

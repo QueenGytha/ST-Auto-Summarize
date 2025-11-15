@@ -55,20 +55,46 @@ export function getDefaultMetadata() {
   };
 }
 
+function buildTokenMetadata(tokenBreakdown) {
+  return {
+    max_context: tokenBreakdown.max_context || null,
+    max_response: tokenBreakdown.max_tokens || null,
+    available_for_prompt: tokenBreakdown.max_context && tokenBreakdown.max_tokens
+      ? tokenBreakdown.max_context - tokenBreakdown.max_tokens
+      : null,
+    content: {
+      preset: tokenBreakdown.preset || 0,
+      system: tokenBreakdown.system || 0,
+      user: tokenBreakdown.user || 0,
+      prefill: tokenBreakdown.prefill || 0,
+      lorebooks: tokenBreakdown.lorebooks || null,
+      messages: tokenBreakdown.messages || null,
+      subtotal: tokenBreakdown.content_subtotal || 0
+    },
+    overhead: {
+      json_structure: tokenBreakdown.json_structure || 0,
+      metadata: tokenBreakdown.metadata || 0,
+      subtotal: tokenBreakdown.overhead_subtotal || 0
+    },
+    total: tokenBreakdown.total || 0
+  };
+}
+
 export function createMetadataBlock(options  = {}) {
   const metadata  = getDefaultMetadata();
 
-  // Add operation type if provided
   if (options?.operation) {
     metadata.operation = String(options.operation);
   }
 
-  // Add timestamp if requested
   if (options?.includeTimestamp) {
     metadata.timestamp = new Date().toISOString();
   }
 
-  // Add custom fields if provided
+  if (options?.tokenBreakdown && typeof options.tokenBreakdown === 'object') {
+    metadata.tokens = buildTokenMetadata(options.tokenBreakdown);
+  }
+
   if (options?.custom && typeof options.custom === 'object') {
     metadata.custom = options.custom;
   }

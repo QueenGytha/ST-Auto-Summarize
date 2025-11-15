@@ -138,18 +138,28 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     messages.push({ role: 'assistant', content: effectivePrefill });
   }
 
-  // 7. INJECT METADATA
+  // 7. CALCULATE TOKEN BREAKDOWN (before metadata injection)
+  const { calculateTokenBreakdownFromMessages } = await import('./tokenBreakdown.js');
+  const tokenBreakdown = calculateTokenBreakdownFromMessages(messages, {
+    max_context: presetData.max_context || presetData.openai_max_context,
+    max_tokens: presetMaxTokens
+  });
+
+  // 8. INJECT METADATA (including token breakdown)
   const suffix = getOperationSuffix();
   const fullOperation = suffix ? `${operationType}${suffix}` : operationType;
   const messagesWithMetadata = [...messages];
-  await injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
+  await injectMetadataIntoChatArray(messagesWithMetadata, {
+    operation: fullOperation,
+    tokenBreakdown: tokenBreakdown
+  });
 
-  // 8. TOKEN VALIDATION (after building complete message array with all overhead)
+  // 9. TOKEN VALIDATION (using breakdown data which includes metadata overhead)
   const presetMaxContext = presetData.max_context || presetData.openai_max_context;
 
   if (presetMaxContext && presetMaxContext > 0) {
-    // Count tokens in the COMPLETE message array including system prompt, prefill, metadata, etc.
-    const actualTokenSize = count_tokens(JSON.stringify(messagesWithMetadata));
+    // Use total from breakdown (includes all overhead)
+    const actualTokenSize = tokenBreakdown.total;
 
     // Available context = total context - tokens reserved for response
     const availableContextForPrompt = presetMaxContext - presetMaxTokens;
@@ -163,7 +173,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     debug(SUBSYSTEM.CORE, `[LLMClient] Skipping token validation - preset has no max_context configured`);
   }
 
-  // 9. CALL ConnectionManager
+  // 10. CALL ConnectionManager
   // CRITICAL: Always set includePreset=false to prevent ConnectionManager from loading profile's preset
   // We already manually loaded preset messages from the CORRECT preset (effectivePresetName) at lines 117-142
   // If we set includePreset=true, ConnectionManager would load preset messages from the CONNECTION PROFILE's preset,
@@ -200,7 +210,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     // Response structure varies by API: string, {content}, {content, reasoning}, etc.
     // Normalize to string in next step
 
-    // 9. NORMALIZE RESPONSE FORMAT
+    // 11. NORMALIZE RESPONSE FORMAT
     // ConnectionManager with reasoning returns {content, reasoning}
     // Normalize to always return string content
     let finalResult = result;
@@ -208,11 +218,21 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
       finalResult = finalResult.content || '';
     }
 
-    // 10. SENTENCE TRIMMING (if enabled in ST settings)
+    // 12. SENTENCE TRIMMING (if enabled in ST settings)
     if (options.trimSentences !== false && typeof finalResult === 'string') {
       if (ctx.powerUserSettings.trim_sentences) {
         finalResult = trimToEndSentence(finalResult);
       }
+    }
+
+    // 13. ATTACH TOKEN BREAKDOWN (for operation metadata capture)
+    // Store as non-enumerable property so it doesn't interfere with string operations
+    if (typeof finalResult === 'string') {
+      Object.defineProperty(finalResult, '__tokenBreakdown', {
+        value: tokenBreakdown,
+        enumerable: false,
+        writable: false
+      });
     }
 
     return finalResult;

@@ -308,7 +308,7 @@ export function registerAllOperationHandlers() {
 
       if (sceneBreakAt === false) {
         // Check if this is a forced selection that returned false (retry indefinitely)
-        if (forceSelection) {
+        if (forceSelection || result.rangeWasReduced) {
           retryCount++;
           debug(SUBSYSTEM.QUEUE, `[FORCED] AI returned false despite MANDATORY instruction - retrying (attempt #${retryCount})`);
           continue; // Retry the detection
