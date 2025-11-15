@@ -9,6 +9,7 @@ import {
   toast,
   log,
   SUBSYSTEM,
+  count_tokens,
   saveChatDebounced } from
 './index.js';
 import { pauseQueue } from './operationQueue.js';
@@ -177,14 +178,16 @@ function isContextLengthError(err) {
 }
 
 async function trySendRequest(options) {
-  const { effectiveProfile, prompt, prefill, includePresetPrompts, preset, startIndex, endIndex } = options;
+  const { effectiveProfile, prompt, prefill, includePresetPrompts, preset, startIndex, endIndex, forceSelection = false, messagesTokenCount = null } = options;
   const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
   const { sendLLMRequest } = await import('./llmClient.js');
   const { OperationType } = await import('./operationTypes.js');
 
-  setOperationSuffix(`-${startIndex}-${endIndex}`);
+  const suffix = forceSelection ? `_FORCED-${startIndex}-${endIndex}` : `-${startIndex}-${endIndex}`;
+  setOperationSuffix(suffix);
 
-  debug(SUBSYSTEM.OPERATIONS, `=== SENDING REQUEST (${startIndex}-${endIndex}) ===`);
+  const requestLabel = forceSelection ? `${startIndex}-${endIndex} FORCED` : `${startIndex}-${endIndex}`;
+  debug(SUBSYSTEM.OPERATIONS, `=== SENDING REQUEST (${requestLabel}) ===`);
   debug(SUBSYSTEM.OPERATIONS, `includePresetPrompts=${includePresetPrompts}, preset="${preset}"`);
 
   try {
@@ -192,7 +195,8 @@ async function trySendRequest(options) {
       prefill,
       includePreset: includePresetPrompts,
       preset: preset,
-      trimSentences: false
+      trimSentences: false,
+      messagesTokenCount
     });
 
     // Extract token breakdown from response (attached by llmClient)
@@ -548,7 +552,7 @@ function buildFormattedMessages(chat, filteredIndices, earliestAllowedBreak, max
 }
 
 function buildPromptFromTemplate(ctx, promptTemplate, options) {
-  const { formattedForPrompt, minimumSceneLength, earliestAllowedBreak, prefill, rangeWasReduced = false, forceSelection = false } = options;
+  const { formattedForPrompt, minimumSceneLength, earliestAllowedBreak, prefill } = options;
   let prompt = promptTemplate;
   if (ctx.substituteParamsExtended) {
     prompt = ctx.substituteParamsExtended(prompt, {
@@ -563,14 +567,11 @@ function buildPromptFromTemplate(ctx, promptTemplate, options) {
   prompt = prompt.replace(/\{\{minimum_scene_length\}\}/g, String(minimumSceneLength));
   prompt = prompt.replace(/\{\{earliest_allowed_break\}\}/g, String(earliestAllowedBreak));
 
-  if (rangeWasReduced || forceSelection) {
-    prompt += `\n\n**MANDATORY:** You MUST select the best possible scene break from the messages provided. Returning false is not permitted. Choose the most reasonable break point based on topic shifts, pauses, emotional beats, or any natural separation between narrative moments.`;
-  }
-
   return prompt;
 }
 
-async function calculateTotalRequestTokens(prompt, includePreset, preset, prefill, profile) {
+async function calculateTotalRequestTokens(options) {
+  const { prompt, includePreset, preset, prefill, profile, messagesTokenCount = null } = options;
   const DEBUG_PREFILL_LENGTH = 50;
   debug(SUBSYSTEM.OPERATIONS, `calculateTotalRequestTokens: includePreset=${includePreset}, preset="${preset}", profile="${profile}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
 
@@ -583,7 +584,8 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
     includePreset,
     preset,
     prefill,
-    operationType: OperationType.DETECT_SCENE_BREAK
+    operationType: OperationType.DETECT_SCENE_BREAK,
+    messagesTokenCount
   });
 
   return breakdown.total;
@@ -662,14 +664,23 @@ async function reduceMessagesUntilTokenFit(config) {
       formattedForPrompt: currentFormattedForPrompt,
       minimumSceneLength,
       earliestAllowedBreak: currentEarliestAllowedBreak,
-      prefill,
-      rangeWasReduced: currentEndIndex !== endIndex,
-      forceSelection
+      prefill
     });
+
+    // Calculate message tokens separately for proper breakdown
+    const messagesTokenCount = count_tokens(currentFormattedForPrompt);
+    debug(SUBSYSTEM.OPERATIONS, `[Token Breakdown] Formatted messages: ${messagesTokenCount} tokens`);
 
     // Calculate total tokens including preset messages, system prompt, and prefill
     // eslint-disable-next-line no-await-in-loop -- Need to calculate tokens in loop to check if reduction is needed
-    const sceneBreakTokens = await calculateTotalRequestTokens(prompt, includePresetPrompts, preset, prefill, profile);
+    const sceneBreakTokens = await calculateTotalRequestTokens({
+      prompt,
+      includePreset: includePresetPrompts,
+      preset,
+      prefill,
+      profile,
+      messagesTokenCount
+    });
 
     // ALSO calculate tokens for scene recap generation (which includes lorebooks)
     // The scene that would be recapped starts from the previous scene break (or chat start) to currentEndIndex
@@ -700,7 +711,7 @@ async function reduceMessagesUntilTokenFit(config) {
         debug(SUBSYSTEM.OPERATIONS, `${largerPromptType}: ${tokenCount} tokens (including overhead), fits within limit per calculation`);
 
         // eslint-disable-next-line no-await-in-loop -- Need to try request in loop to handle API rejections
-        const apiResult = await trySendRequest({ effectiveProfile, prompt, prefill, includePresetPrompts, preset, startIndex, endIndex: currentEndIndex });
+        const apiResult = await trySendRequest({ effectiveProfile, prompt, prefill, includePresetPrompts, preset, startIndex, endIndex: currentEndIndex, forceSelection, messagesTokenCount });
 
         if (apiResult.success) {
           return {
@@ -756,6 +767,36 @@ async function reduceMessagesUntilTokenFit(config) {
   }
 }
 
+function loadSceneBreakPromptSettings(forceSelection) {
+  if (forceSelection) {
+    const forcedPrompt = get_settings('auto_scene_break_forced_prompt');
+    const forcedPrefill = get_settings('auto_scene_break_forced_prefill');
+
+    // Use forced settings if provided, otherwise fallback to regular settings
+    const promptTemplate = forcedPrompt || get_settings('auto_scene_break_prompt');
+    const prefill = forcedPrefill || get_settings('auto_scene_break_prefill') || '';
+
+    if (forcedPrompt) {
+      debug(SUBSYSTEM.OPERATIONS, `[forceSelection] Using forced detection prompt (${forcedPrompt.length} chars)`);
+    } else {
+      debug(SUBSYSTEM.OPERATIONS, `[forceSelection] No forced prompt set, using regular detection prompt`);
+    }
+
+    if (forcedPrefill) {
+      debug(SUBSYSTEM.OPERATIONS, `[forceSelection] Using forced prefill: "${forcedPrefill}"`);
+    } else {
+      debug(SUBSYSTEM.OPERATIONS, `[forceSelection] No forced prefill set, using regular prefill: "${prefill}"`);
+    }
+
+    return { promptTemplate, prefill };
+  }
+
+  return {
+    promptTemplate: get_settings('auto_scene_break_prompt'),
+    prefill: get_settings('auto_scene_break_prefill') || ''
+  };
+}
+
 async function detectSceneBreak(
 startIndex ,
 endIndex ,
@@ -768,9 +809,9 @@ _operationId  = null)
   try {
     debug('Checking message range', startIndex, 'to', endIndex, 'for scene break (offset:', offset, ')');
 
-    // Get settings
-    const promptTemplate = get_settings('auto_scene_break_prompt');
-    const prefill = get_settings('auto_scene_break_prefill') || '';
+    // Get settings - use forced settings when forceSelection=true, fallback to regular if empty
+    const { promptTemplate, prefill } = loadSceneBreakPromptSettings(forceSelection);
+
     const profile = get_settings('auto_scene_break_connection_profile');
     const presetSetting = get_settings('auto_scene_break_completion_preset');
     const includePresetPrompts = get_settings('auto_scene_break_include_preset_prompts') ?? false;

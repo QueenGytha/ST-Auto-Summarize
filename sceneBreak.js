@@ -16,8 +16,7 @@ import {
   convertLiteralNewlinesToActual,
   convertActualNewlinesToLiteral,
   MODULE_NAME,
-  count_tokens,
-  main_api } from
+  count_tokens } from
 './index.js';
 import {
   queueCombineSceneWithRunning,
@@ -982,6 +981,10 @@ skipSettingsModification = false)
     return '';
   }).filter((m) => m).join('\n\n');
 
+  // Count tokens for messages and lorebooks separately for proper breakdown
+  const messagesTokenCount = count_tokens(formattedMessages);
+  const lorebooksTokenCount = count_tokens(activeSettingLoreText);
+
   let prompt = promptTemplate;
   if (ctx.substituteParamsExtended) {
     prompt = ctx.substituteParamsExtended(prompt, {
@@ -999,106 +1002,32 @@ skipSettingsModification = false)
   // Support both legacy and new macro names
   prompt = prompt.replace(/\{\{active_setting_lore\}\}/g, activeSettingLoreText);
 
-  return { prompt, prefill, lorebookMetadata: { ...lorebookMetadata, entries: activeEntries } };
+  return { prompt, prefill, lorebookMetadata: { ...lorebookMetadata, entries: activeEntries }, messagesTokenCount, lorebooksTokenCount };
 }
 
-// Helper: Calculate total request tokens for scene recap (mirrors llmClient.js logic)
-export async function calculateSceneRecapTokens(prompt, includePreset, preset, prefill, operationType) {
-  const DEBUG_PREFILL_LENGTH = 50;
-  debug(SUBSYSTEM.SCENE, `calculateSceneRecapTokens: includePreset=${includePreset}, preset="${preset}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
+// Helper: Calculate total request tokens for scene recap (uses centralized token breakdown)
+export async function calculateSceneRecapTokens(options) {
+  const { prompt, includePreset, preset, prefill, operationType, messagesTokenCount = null, lorebooksTokenCount = null } = options;
+  const { calculateTokenBreakdown } = await import('./tokenBreakdown.js');
 
-  // Build the ACTUAL message array that will be sent (mirroring llmClient.js logic)
-  let messages = [];
-  const effectivePrefill = prefill || '';
-  let presetTokens = 0;
-  let systemTokens = 0;
-  const userPromptTokens = count_tokens(prompt);
-  let prefillTokens = 0;
+  const breakdown = await calculateTokenBreakdown({
+    prompt,
+    includePreset,
+    preset,
+    prefill,
+    operationType,
+    messagesTokenCount,
+    lorebooksTokenCount
+  });
 
-  // Load preset messages if includePreset is true (same as llmClient.js lines 117-142)
-  if (includePreset && preset) {
-    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-    const presetMessages = await loadPresetPrompts(preset);
-
-    // Add preset messages first
-    messages = [...presetMessages];
-
-    // Count preset tokens
-    for (const msg of presetMessages) {
-      presetTokens += count_tokens(msg.content || '');
-    }
-
-    debug(SUBSYSTEM.SCENE, `Loaded ${presetMessages.length} preset messages from completion preset "${preset}"`);
-  }
-
-  // Add system prompt for OpenAI (same as llmClient.js lines 130-132, 146-148)
-  if (main_api === 'openai') {
-    const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
-    messages.push({ role: 'system', content: systemPrompt });
-    systemTokens = count_tokens(systemPrompt);
-  }
-
-  // Add user prompt
-  messages.push({ role: 'user', content: prompt });
-
-  // Add prefill as assistant message (same as llmClient.js lines 160-162)
-  if (effectivePrefill) {
-    messages.push({ role: 'assistant', content: effectivePrefill });
-    prefillTokens = count_tokens(effectivePrefill);
-  }
-
-  // Count tokens BEFORE metadata injection
-  const tokensBeforeMetadata = count_tokens(JSON.stringify(messages));
-
-  // Inject metadata (same as llmClient.js line 168)
-  const { getOperationSuffix } = await import('./index.js');
-  const { injectMetadataIntoChatArray } = await import('./metadataInjector.js');
-
-  const suffix = getOperationSuffix();
-  const fullOperation = suffix ? `${operationType}${suffix}` : operationType;
-  const messagesWithMetadata = [...messages];
-  injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
-
-  // Count tokens in the ACTUAL structure that will be sent (same as llmClient.js line 191)
-  const actualTokens = count_tokens(JSON.stringify(messagesWithMetadata));
-
-  // Calculate overhead
-  const contentOnlyTokens = presetTokens + systemTokens + userPromptTokens + prefillTokens;
-  const jsonStructureOverhead = tokensBeforeMetadata - contentOnlyTokens;
-  const metadataOverhead = actualTokens - tokensBeforeMetadata;
-  const totalOverhead = actualTokens - contentOnlyTokens;
-
-  debug(SUBSYSTEM.SCENE, `=== DETAILED TOKEN BREAKDOWN ===`);
-  debug(SUBSYSTEM.SCENE, `Content tokens:`);
-  if (presetTokens > 0) {
-    debug(SUBSYSTEM.SCENE, `  - Preset prompts: ${presetTokens} tokens (${messages.filter(m => m.role !== 'system' && m.role !== 'user' && m.role !== 'assistant').length} messages)`);
-  }
-  if (systemTokens > 0) {
-    debug(SUBSYSTEM.SCENE, `  - System prompt: ${systemTokens} tokens`);
-  }
-  debug(SUBSYSTEM.SCENE, `  - User prompt: ${userPromptTokens} tokens`);
-  if (prefillTokens > 0) {
-    debug(SUBSYSTEM.SCENE, `  - Prefill: ${prefillTokens} tokens`);
-  }
-  debug(SUBSYSTEM.SCENE, `  - Content subtotal: ${contentOnlyTokens} tokens`);
-  debug(SUBSYSTEM.SCENE, ``);
-  debug(SUBSYSTEM.SCENE, `Overhead tokens:`);
-  debug(SUBSYSTEM.SCENE, `  - JSON structure (role/content fields, quotes, braces): ${jsonStructureOverhead} tokens`);
-  debug(SUBSYSTEM.SCENE, `  - Metadata injection: ${metadataOverhead} tokens`);
-  const PERCENTAGE_MULTIPLIER = 100;
-  debug(SUBSYSTEM.SCENE, `  - Overhead subtotal: ${totalOverhead} tokens (${((totalOverhead / actualTokens) * PERCENTAGE_MULTIPLIER).toFixed(1)}% of total)`);
-  debug(SUBSYSTEM.SCENE, ``);
-  debug(SUBSYSTEM.SCENE, `TOTAL TOKENS TO BE SENT: ${actualTokens}`);
-  debug(SUBSYSTEM.SCENE, `=== END TOKEN BREAKDOWN ===`);
-
-  return actualTokens;
+  return breakdown.total;
 }
 
 // Helper: Extract and validate JSON from AI response (REMOVED - now uses centralized helper in utils.js)
 
 // Helper: Generate recap with error handling
 async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, operationType) {
-  const { prompt, prefill, include_preset_prompts = false, preset_name = null } = llmConfig;
+  const { prompt, prefill, include_preset_prompts = false, preset_name = null, messagesTokenCount = null, lorebooksTokenCount = null } = llmConfig;
   const { startIdx, endIdx } = range;
 
   let recap = "";
@@ -1112,7 +1041,15 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
     setOperationSuffix(`-${startIdx}-${endIdx}`);
 
     // Calculate and log token breakdown BEFORE sending
-    await calculateSceneRecapTokens(prompt, include_preset_prompts, preset_name, prefill, operationType);
+    await calculateSceneRecapTokens({
+      prompt,
+      includePreset: include_preset_prompts,
+      preset: preset_name,
+      prefill,
+      operationType,
+      messagesTokenCount,
+      lorebooksTokenCount
+    });
 
     try {
       const { sendLLMRequest } = await import('./llmClient.js');
@@ -1121,7 +1058,9 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
         includePreset: include_preset_prompts,
         preset: preset_name,
         prefill,
-        trimSentences: false
+        trimSentences: false,
+        messagesTokenCount,
+        lorebooksTokenCount
       };
 
       const rawResponse = await sendLLMRequest(profileId, prompt, operationType, options);
@@ -1413,8 +1352,8 @@ export async function generateSceneRecap(config) {
   const [startIdx, endIdx] = getSceneRangeIndexes(index, chat, get_data, sceneCount);
   const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
-  // Prepare prompt (now returns lorebook metadata)
-  const { prompt, prefill, lorebookMetadata } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data);
+  // Prepare prompt (now returns lorebook metadata and token counts)
+  const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data);
 
   // Generate recap with connection profile/preset switching
   const profile_name = get_settings('scene_recap_connection_profile') || '';
@@ -1424,7 +1363,7 @@ export async function generateSceneRecap(config) {
   const { OperationType } = await import('./operationTypes.js');
   const { resolveProfileId } = await import('./profileResolution.js');
   const effectiveProfile = resolveProfileId(profile_name);
-  const llmConfig = { prompt, prefill, include_preset_prompts, preset_name };
+  const llmConfig = { prompt, prefill, include_preset_prompts, preset_name, messagesTokenCount, lorebooksTokenCount };
   const range = { startIdx, endIdx };
   const { recap, tokenBreakdown } = await executeSceneRecapGeneration(llmConfig, range, ctx, effectiveProfile, OperationType.GENERATE_SCENE_RECAP);
 

@@ -146,7 +146,11 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     messages,
     fullOperation,
     presetData.max_context || presetData.openai_max_context,
-    presetMaxTokens
+    presetMaxTokens,
+    {
+      messagesTokenCount: options.messagesTokenCount || null,
+      lorebooksTokenCount: options.lorebooksTokenCount || null
+    }
   );
 
   // 9. TOKEN VALIDATION (using breakdown data which includes metadata overhead)

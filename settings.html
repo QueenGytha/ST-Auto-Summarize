@@ -347,6 +347,26 @@
                                 <td><input id="auto_scene_break_prefill" data-testid="auto-scene-prefill" class="text_pole" type="text" placeholder=""></td>
                             </tr>
                         </table>
+
+                        <!-- Context Limit Force Break Settings -->
+                        <hr style="margin-top: 1em; margin-bottom: 0.5em;">
+                        <div style="margin-bottom: 0.5em;">
+                            <h5 style="margin-top: 0.5em; margin-bottom: 0.5em;">Context Limit Force Break Settings <i class="fa-solid fa-info-circle" title="Alternative prompt/prefill used when range reduction forces a scene break selection due to token limits."></i></h5>
+                            <small style="display:block; margin-bottom:0.5em;">When scene detection hits token limits and reduces the message range, these alternative settings are used instead of the regular detection prompt/prefill. Leave empty to use regular detection settings.</small>
+                        </div>
+
+                        <div class="flex-container justifyspacebetween alignitemscenter">
+                            <button id="edit_auto_scene_break_forced_prompt" data-testid="auto-scene-edit-forced-prompt" class="menu_button flex1" title="Edit the forced scene break detection prompt (used when range is reduced due to context limits)"><span>Edit Forced Detection Prompt</span></button>
+                        </div>
+
+                        <input id="auto_scene_break_forced_prompt" data-testid="auto-scene-forced-prompt" type="hidden" />
+
+                        <table>
+                            <tr title="Prefill used when context limits force a scene break selection. Leave empty to use regular detection prefill.">
+                                <td><span>Forced Detection Prefill</span></td>
+                                <td><input id="auto_scene_break_forced_prefill" data-testid="auto-scene-forced-prefill" class="text_pole" type="text" placeholder="(use regular detection prefill)"></td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
 

@@ -3,6 +3,7 @@ import {
   scene_recap_prompt,
   scene_recap_error_detection_prompt,
   auto_scene_break_detection_prompt,
+  auto_scene_break_forced_prompt,
   running_scene_recap_prompt,
   default_running_scene_template,
   auto_lorebook_entry_lookup_prompt,
@@ -75,6 +76,8 @@ export const default_settings = {
   auto_scene_break_minimum_scene_length: 3, // Minimum number of filtered messages required before allowing a scene break
   auto_scene_break_prompt: auto_scene_break_detection_prompt,
   auto_scene_break_prefill: JSON_EXTRACTION_PREFILL,
+  auto_scene_break_forced_prompt: auto_scene_break_forced_prompt, // Prompt used when context limits force a scene break (forceSelection=true)
+  auto_scene_break_forced_prefill: "Understood. I will select a scene break point and output valid JSON:\n{", // Prefill used when context limits force a scene break (forceSelection=true)
   auto_scene_break_connection_profile: "",
   auto_scene_break_completion_preset: "",
   auto_scene_break_include_preset_prompts: false, // Include completion preset prompts (main, jailbreak, etc.) before extension prompt

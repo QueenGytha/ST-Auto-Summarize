@@ -295,6 +295,8 @@ Available Macros:
 
   bind_setting(selectorsExtension.autoScene.prompt, 'auto_scene_break_prompt', 'text');
   bind_setting(selectorsExtension.autoScene.prefill, 'auto_scene_break_prefill', 'text');
+  bind_setting(selectorsExtension.autoScene.forcedPrompt, 'auto_scene_break_forced_prompt', 'text');
+  bind_setting(selectorsExtension.autoScene.forcedPrefill, 'auto_scene_break_forced_prefill', 'text');
   bind_setting(selectorsExtension.autoScene.connectionProfile, 'auto_scene_break_connection_profile', 'text');
   bind_setting(selectorsExtension.autoScene.completionPreset, 'auto_scene_break_completion_preset', 'text');
   bind_setting(selectorsExtension.autoScene.includePresetPrompts, 'auto_scene_break_include_preset_prompts', 'boolean');
@@ -328,6 +330,21 @@ Available Macros:
     <li><b>{{message}}:</b> The message text to analyze for scene break detection.</li>
 </ul>`;
     await get_user_setting_text_input('auto_scene_break_prompt', 'Edit Auto Scene Break Detection Prompt', description);
+  });
+
+  // Edit forced prompt button
+  bind_function(selectorsExtension.autoScene.editForcedPrompt, async () => {
+    const description = `
+Configure the alternative prompt used when context limits force a scene break selection (when range is reduced due to token limits).
+Leave empty to use the regular detection prompt.
+
+This prompt is used when the system has reduced the message range and needs to force a scene break selection.
+
+Available Macros:
+<ul style="text-align: left; font-size: smaller;">
+    <li><b>{{message}}:</b> The message text to analyze for scene break detection.</li>
+</ul>`;
+    await get_user_setting_text_input('auto_scene_break_forced_prompt', 'Edit Forced Scene Break Detection Prompt', description);
   });
 
   // Initialize running scene recap navbar
