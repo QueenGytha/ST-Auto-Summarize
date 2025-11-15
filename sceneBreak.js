@@ -816,8 +816,20 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
     const originalSettings = getWorldInfoSettings();
     const MAX_SCAN_DEPTH = 1000;
 
-    // Only modify settings if not skipping (to avoid triggering SETTINGS_UPDATED events during token estimation)
-    if (!skipSettingsModification) {
+    // When skipSettingsModification=true: modify globals directly without calling setWorldInfoSettings (no SETTINGS_UPDATED events)
+    // When false: use setWorldInfoSettings (triggers events, but that's OK during actual generation)
+    if (skipSettingsModification) {
+      // Import world-info.js module to access mutable exports
+      const worldInfoModule = await import('../../../world-info.js');
+
+      // Directly mutate the exported global variables (JavaScript allows this for 'let' exports)
+      // This modifies the settings WITHOUT calling setWorldInfoSettings, so no events fire
+      worldInfoModule.world_info_depth = MAX_SCAN_DEPTH;
+      worldInfoModule.world_info_min_activations = 0;
+      worldInfoModule.world_info_max_recursion_steps = 1;
+
+      debug(SUBSYSTEM.SCENE, `Directly modified WI globals (no events) - scan_depth: ${MAX_SCAN_DEPTH}, min_activations: 0, max_recursion: 1 (original: ${originalSettings.world_info_depth}, ${originalSettings.world_info_min_activations}, ${originalSettings.world_info_max_recursion_steps})`);
+    } else {
       // Import world_names to pass to setWorldInfoSettings (required by function)
       const { world_names } = await import('../../../world-info.js');
 
@@ -828,8 +840,6 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
         world_info_max_recursion_steps: 1
       }, { world_names });
       debug(SUBSYSTEM.SCENE, `Temporarily overriding WI settings - scan_depth: ${MAX_SCAN_DEPTH}, min_activations: 0, max_recursion: 1 (original: ${originalSettings.world_info_depth}, ${originalSettings.world_info_min_activations}, ${originalSettings.world_info_max_recursion_steps})`);
-    } else {
-      debug(SUBSYSTEM.SCENE, `Skipping WI settings modification (skipSettingsModification=true) - using current settings for lorebook query`);
     }
 
     try {
