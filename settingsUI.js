@@ -81,12 +81,6 @@ async function initialize_settings_listeners() {
   // (Removed) first_hop_proxy_send_chat_details binding – now auto-detected
   bind_setting(selectorsExtension.proxy.suppressOtherLorebooks, 'suppress_other_lorebooks', 'boolean');
 
-  // Message Filtering Settings (used by scene recaps)
-  bind_setting(selectorsExtension.filter.includeUser, 'include_user_messages', 'boolean');
-  bind_setting(selectorsExtension.filter.includeHidden, 'include_system_messages', 'boolean');
-  bind_setting(selectorsExtension.filter.includeSystem, 'include_narrator_messages', 'boolean');
-  bind_setting(selectorsExtension.filter.messageLength, 'message_length_threshold', 'number');
-
   bind_setting(selectorsExtension.misc.defaultEnabled, 'default_chat_enabled', 'boolean');
   bind_setting(selectorsExtension.misc.globalToggle, 'use_global_toggle_state', 'boolean');
 

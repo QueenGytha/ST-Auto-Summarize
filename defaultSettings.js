@@ -58,11 +58,6 @@ export const default_settings = {
   default_chat_enabled: true,
   use_global_toggle_state: false,
 
-  // --- Message Filtering Settings (used by scene recaps) ---
-  include_user_messages: true, // Include user messages in scene recaps
-  include_system_messages: true, // Include hidden messages in scene recaps
-  include_narrator_messages: true, // Include system/narrator messages in scene recaps
-  message_length_threshold: 0, // Minimum message length to include in scene recaps
   // --- Scene Recap Settings ---
   scene_recap_prefill: JSON_EXTRACTION_PREFILL,
   scene_recap_completion_preset: "",

@@ -1,17 +1,8 @@
 
 import {
   get_settings,
-  set_data,
-  get_data,
   getContext,
-  get_memory,
-  count_tokens,
-  get_short_token_limit,
-  update_all_message_visuals,
   debug,
-  character_enabled,
-  get_character_key,
-  system_message_types,
   auto_hide_messages_by_command,
   chat_enabled,
   MODULE_NAME,
@@ -38,141 +29,13 @@ let last_scene_injection = "";
 //     - 'scene_recap_versions': array of all versions of the scene recap
 //     - 'scene_recap_current_index': index of the current version
 
-// Retrieving memories
-function check_message_exclusion(message ) {
-  // check for any exclusion criteria for a given message based on current settings
-  // (this does NOT take context lengths into account, only exclusion criteria based on the message itself).
-  if (!message) {return false;}
-
-  // system messages sent by this extension are always ignored
-  if (get_data(message, 'is_auto_recap_system_memory')) {
-    return false;
-  }
-
-  // check if it's marked to be excluded - if so, exclude it
-  if (get_data(message, 'exclude')) {
-    return false;
-  }
-
-  // check if it's a user message and exclude if the setting is disabled
-  if (!get_settings('include_user_messages') && message.is_user) {
-    return false;
-  }
-
-  // check if it's a thought message and exclude (Stepped Thinking extension)
-  // NOTE: message.is_thoughts may be deprecated in newer versions of the Stepped Thinking extension,
-  // but we keep this check for backward compatibility with older versions
-  if (message.is_thoughts) {
-    return false;
-  }
-
-  // check if it's a hidden message and exclude if the setting is disabled
-  if (!get_settings('include_system_messages') && message.is_system) {
-    return false;
-  }
-
-  // check if it's a narrator message
-  if (!get_settings('include_narrator_messages') && message.extra?.type === system_message_types.NARRATOR) {
-    return false;
-  }
-
-  // check if the character is disabled
-  const char_key = get_character_key(message);
-  if (!character_enabled(char_key)) {
-    return false;
-  }
-
-  // Check if the message is too short
-  const token_size = count_tokens(message.mes);
-  if (token_size < get_settings('message_length_threshold')) {
-    return false;
-  }
-
-  return true;
-}
-function update_message_inclusion_flags() {
-  // Update all messages in the chat, flagging them as single message recaps or long-term memories to include in the injection.
-  // This has to be run on the entire chat since it needs to take the context limits into account.
-  const context = getContext();
-  const chat = context.chat;
-
-  debug("Updating message inclusion flags");
-
-  // iterate through the chat in reverse order and mark the messages that should be included as single message recaps
-  let message_recap_limit_reached = false;
-  const end = chat.length - 1;
-  let recap = ""; // total concatenated recap so far
-  let new_recap = ""; // temp recap storage to check token length
-  for (let i = end; i >= 0; i--) {
-    const message = chat[i];
-
-    // check for any of the exclusion criteria
-    const include = check_message_exclusion(message);
-    if (!include) {
-      set_data(message, 'include', null);
-      continue;
-    }
-
-    if (!message_recap_limit_reached) {// single message limit hasn't been reached yet
-      const memory = get_memory(message);
-      if (!memory) {// If it doesn't have a memory, mark it as excluded and move to the next
-        set_data(message, 'include', null);
-        continue;
-      }
-
-      new_recap = concatenate_recap(recap, message); // concatenate this recap
-      const message_recap_token_size = count_tokens(new_recap);
-      if (message_recap_token_size > get_short_token_limit()) {// over context limit
-        message_recap_limit_reached = true;
-        recap = ""; // reset recap
-      } else {// under context limit
-        set_data(message, 'include', 'Recap of message(s)');
-        recap = new_recap;
-        continue;
-      }
-    }
-
-    // if we haven't marked it for inclusion yet, mark it as excluded
-    set_data(message, 'include', null);
-  }
-
-  update_all_message_visuals();
-}
-function concatenate_recap(existing_text , message ) {
-  // given an existing text of concatenated recaps, concatenate the next one onto it
-  const memory = get_memory(message);
-  if (!memory) {// if there's no recap, do nothing
-    return existing_text;
-  }
-  const separator = existing_text ? "\n" : "";
-  return existing_text + separator + memory;
-}
-
-// Scene recaps are stored in 'scene_recap_memory' (not 'memory') on the message object.
-function concatenate_recaps(indexes ) {
-  const context = getContext();
-  const chat = context.chat;
-  const recaps = [];
-  let count = 1;
-  for (const i of indexes) {
-    const message = chat[i];
-    let type, recap;
-    if (get_data(message, 'scene_recap_memory')) {
-      // Scene recap
-      type = 'Scene-wide Recap';
-      recap = get_data(message, 'scene_recap_memory');
-    } else {
-      // Single message recap
-      type = get_data(message, 'include');
-      recap = get_data(message, 'memory');
-    }
-    if (recap) {
-      recaps.push({ id: count, recap, type });
-      count++;
-    }
-  }
-  return JSON.stringify(recaps, null, 2);
-}
+// NOTE: Per-message recap injection has been removed. Only scene recaps are injected.
+// The following legacy code has been removed:
+// - check_message_exclusion() - filtered messages for per-message recap inclusion
+// - update_message_inclusion_flags() - set message.include flags for UI display
+// - concatenate_recap() - concatenated per-message recaps
+// - concatenate_recaps() - created JSON arrays of recaps (never used)
+// - collect_chat_messages() - collected message indexes by inclusion type (never used)
 
 // Comprehensive cleanup with detailed auditing - tracks 6 types of cleared data
 // eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Cleanup with detailed auditing of 6 data types inherently complex
@@ -279,24 +142,6 @@ function clear_all_recaps_for_chat() {
   };
 }
 
-function collect_chat_messages(include ) {
-  // Get a list of chat message indexes identified by the given criteria
-  const context = getContext();
-  const indexes = []; // list of indexes of messages
-
-  // iterate in reverse order
-  for (let i = context.chat.length - 1; i >= 0; i--) {
-    const message = context.chat[i];
-    if (!get_data(message, 'memory')) {continue;} // no memory
-    if (get_data(message, 'include') !== include) {continue;} // not the include types we want
-    indexes.push(i);
-  }
-
-  // reverse the indexes so they are in chronological order
-  indexes.reverse();
-  return indexes;
-}
-
 async function refresh_memory() {
   const ctx = getContext();
 
@@ -317,9 +162,6 @@ async function refresh_memory() {
 
   debug("Refreshing memory");
 
-  // Update the UI according to the current state of the chat memories
-  update_message_inclusion_flags(); // update the inclusion flags for all messages
-
   // --- Scene Recap Injection ---
   const scene_injection = get_running_recap_injection();
   debug(SUBSYSTEM.MEMORY, `Using running scene recap for injection (${scene_injection.length} chars)`);
@@ -336,9 +178,6 @@ const refresh_memory_debounced = debounce(refresh_memory, debounce_timeout.relax
 
 
 export {
-  check_message_exclusion,
-  collect_chat_messages,
-  concatenate_recaps,
   clear_all_recaps_for_chat,
   refresh_memory,
   refresh_memory_debounced,

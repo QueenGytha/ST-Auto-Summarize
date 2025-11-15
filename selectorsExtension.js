@@ -44,14 +44,6 @@ export const selectorsExtension = {
     suppressOtherLorebooks: '[data-testid="proxy-suppress-other-lorebooks"]',  // #suppress_other_lorebooks
   },
 
-  // Message Filtering
-  filter: {
-    includeUser: '[data-testid="filter-include-user"]',     // #include_user_messages
-    includeHidden: '[data-testid="filter-include-hidden"]', // #include_system_messages
-    includeSystem: '[data-testid="filter-include-system"]', // #include_narrator_messages
-    messageLength: '[data-testid="filter-message-length"]', // #message_length_threshold
-  },
-
   // Miscellaneous Settings
   misc: {
     defaultEnabled: '[data-testid="misc-default-enabled"]',  // #default_chat_enabled
