@@ -611,11 +611,17 @@ function preprocessJsonString(jsonString, context) {
 export function extractJsonFromResponse(rawResponse, options = {}) {
   const { requiredFields = [], context = 'AI response' } = options;
 
-  if (!rawResponse || typeof rawResponse !== 'string') {
+  // Handle both primitive strings and String objects (from llmClient token breakdown attachment)
+  const isStringPrimitive = typeof rawResponse === 'string';
+  const isStringObject = rawResponse instanceof String;
+
+  if (!rawResponse || (!isStringPrimitive && !isStringObject)) {
     throw new Error(`${context}: Response is empty or not a string`);
   }
 
-  const cleaned = preprocessJsonString(rawResponse, context);
+  // Convert String object to primitive for processing
+  const responseStr = isStringObject ? rawResponse.toString() : rawResponse;
+  const cleaned = preprocessJsonString(responseStr, context);
 
   // Parse JSON with comprehensive repair
   let parsed;

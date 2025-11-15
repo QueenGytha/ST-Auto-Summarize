@@ -215,11 +215,12 @@ export function formatTokenBreakdownForMetadata(breakdown, contextInfo = {}) {
 
 /**
  * Extract token breakdown from LLM response (attached by llmClient)
- * @param {string} response - Response from sendLLMRequest
+ * @param {string|String} response - Response from sendLLMRequest (primitive or String object)
  * @returns {Object|null} Token breakdown or null if not present
  */
 export function extractTokenBreakdownFromResponse(response) {
-  if (typeof response === 'string' && response.__tokenBreakdown) {
+  // Check both primitive strings and String objects
+  if ((typeof response === 'string' || response instanceof String) && response.__tokenBreakdown) {
     return response.__tokenBreakdown;
   }
   return null;
