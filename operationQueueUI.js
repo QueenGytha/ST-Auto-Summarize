@@ -546,6 +546,27 @@ function buildTokenBreakdownSection(metadata) {
   return lines;
 }
 
+function buildMessageRangeSection(params, metadata) {
+  const lines = [];
+
+  if (params?.index !== undefined) {
+    lines.push(`Message: #${params.index}`);
+  } else if (params?.indexes && params.indexes.length > 0) {
+    const start = params.indexes[0];
+    const end = params.indexes[params.indexes.length - 1];
+    lines.push(`Messages: #${start}-${end}`);
+  } else if (params?.startIndex !== undefined && params?.endIndex !== undefined) {
+    const startIndex = metadata.start_index ?? params.startIndex;
+    const endIndex = metadata.current_end_index ?? metadata.end_index ?? params.endIndex;
+    lines.push(`Messages: #${startIndex}-${endIndex}`);
+    if (metadata.range_reduced === true) {
+      lines.push(`(reduced from #${startIndex}-${metadata.original_end_index ?? endIndex})`);
+    }
+  }
+
+  return lines;
+}
+
 // UI formatting: displays all available operation metadata fields
 function buildOperationTooltip(operation) {
   const lines = [];
@@ -555,7 +576,6 @@ function buildOperationTooltip(operation) {
     lines.push(...buildTokenBreakdownSection(metadata));
   }
 
-  // Prefill and preset prompts settings (captured at enqueue time)
   if (metadata.hasPrefill !== undefined) {
     lines.push(`Prefill: ${metadata.hasPrefill ? 'Yes' : 'No'}`);
   }
@@ -563,14 +583,7 @@ function buildOperationTooltip(operation) {
     lines.push(`Preset Prompts: ${metadata.includePresetPrompts ? 'Yes' : 'No'}`);
   }
 
-  // Message range for message-based operations
-  if (operation.params?.index !== undefined) {
-    lines.push(`Message: #${operation.params.index}`);
-  } else if (operation.params?.indexes && operation.params.indexes.length > 0) {
-    const start = operation.params.indexes[0];
-    const end = operation.params.indexes[operation.params.indexes.length - 1];
-    lines.push(`Messages: #${start}-${end}`);
-  }
+  lines.push(...buildMessageRangeSection(operation.params, metadata));
 
   // Scene information
   if (metadata.scene_index !== undefined) {
