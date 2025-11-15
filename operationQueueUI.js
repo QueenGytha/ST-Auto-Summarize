@@ -557,6 +557,19 @@ function formatLorebookOperationParams(params, metadata) {
   return `${entryType}-${entryName}`;
 }
 
+function formatCombineSceneOperationParams(params, metadata = {}) {
+  const newSceneIndex = metadata.scene_index ?? params.endIndex;
+
+  if (metadata.prev_version_number !== null && metadata.prev_version_number !== undefined) {
+    const versionNum = metadata.prev_version_number;
+    const versionStart = metadata.prev_version_start ?? 0;
+    const versionEnd = metadata.prev_version_end ?? 0;
+    return `v${versionNum}(${versionStart} > ${versionEnd}) - #${newSceneIndex}`;
+  }
+
+  return `v0(new) - #${newSceneIndex}`;
+}
+
 function formatMessageOperationParams(params, metadata = {}) {
   if (params.index !== undefined) {
     return `Message #${params.index}`;
@@ -581,9 +594,11 @@ function formatOperationParams(type, params, metadata) {
     case OperationType.VALIDATE_RECAP:
     case OperationType.DETECT_SCENE_BREAK:
     case OperationType.GENERATE_SCENE_RECAP:
-    case OperationType.COMBINE_SCENE_WITH_RUNNING:
     case OperationType.GENERATE_RUNNING_RECAP:
       return formatMessageOperationParams(params, metadata);
+
+    case OperationType.COMBINE_SCENE_WITH_RUNNING:
+      return formatCombineSceneOperationParams(params, metadata);
 
     case OperationType.LOREBOOK_ENTRY_LOOKUP:
     case OperationType.RESOLVE_LOREBOOK_ENTRY:

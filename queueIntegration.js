@@ -126,6 +126,9 @@ export function queueCombineSceneWithRunning(index , options  = {}) {
         scene_index: index,
         start_index: startIndex,
         end_index: endIndex,
+        prev_version_number: previousVersion ? previousVersion.version : null,
+        prev_version_start: previousVersion ? previousVersion.prev_scene_index : null,
+        prev_version_end: previousVersion ? previousVersion.new_scene_index : null,
         ...options.metadata
       }
     }
