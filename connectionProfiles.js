@@ -147,7 +147,7 @@ async function check_connection_profile_valid() {
   }
   return valid;
 }
-async function get_connection_profile_proxy_url(profileName) {
+function get_connection_profile_proxy_url(profileName) {
   // Get the proxy URL for a given connection profile
   if (!check_connection_profiles_active()) {
     debug('[Proxy Detection] Connection profiles not active');
@@ -155,25 +155,20 @@ async function get_connection_profile_proxy_url(profileName) {
   }
 
   const ctx = getContext();
-  const result = await ctx.executeSlashCommandsWithOptions(`/profile-get ${profileName}`);
 
-  if (!result.pipe) {
-    debug(`[Proxy Detection] /profile-get ${profileName} returned nothing - no connection profile selected`);
+  // Get the raw profile object from connection manager settings
+  const profiles = ctx.extensionSettings.connectionManager?.profiles || [];
+  const profile = profiles.find((p) => p.name === profileName);
+
+  if (!profile) {
+    debug(`[Proxy Detection] Profile "${profileName}" not found in connectionManager.profiles`);
     return null;
   }
 
-  let profileData;
-  try {
-    profileData = JSON.parse(result.pipe);
-    debug(`[Proxy Detection] Full profile data:`, JSON.stringify(profileData, null, 2));
-  } catch {
-    error(`Failed to parse JSON from /profile-get for "${profileName}". Result:`);
-    error(result);
-    return null;
-  }
+  debug(`[Proxy Detection] Raw profile object:`, JSON.stringify(profile, null, 2));
 
-  // Check for reverse proxy URL (various possible field names)
-  const reverseProxyUrl = profileData['reverse-proxy'] || profileData['reverse_proxy'] || profileData['proxy-url'] || profileData['proxy_url'];
+  // Check for reverse proxy URL in raw profile (various possible field names)
+  const reverseProxyUrl = profile['reverse-proxy'] || profile['reverse_proxy'] || profile['proxy-url'] || profile['proxy_url'] || profile.reverseProxy || profile['server-url'] || profile['server_url'];
   if (reverseProxyUrl) {
     debug(`[Proxy Detection] Found reverse proxy URL in profile: ${reverseProxyUrl}`);
     return reverseProxyUrl;
@@ -184,18 +179,18 @@ async function get_connection_profile_proxy_url(profileName) {
   debug(`[Proxy Detection] Available proxies:`, proxies.length > 0 ? JSON.stringify(proxies, null, 2) : '(none)');
 
   // Look up the proxy URL by name
-  const proxyPreset = proxies.find((p) => p.name === profileData.proxy);
+  const proxyPreset = proxies.find((p) => p.name === profile.proxy);
   if (proxyPreset?.url) {
-    debug(`[Proxy Detection] Profile proxy name: "${profileData.proxy}", Found preset:`, JSON.stringify(proxyPreset, null, 2));
+    debug(`[Proxy Detection] Profile proxy name: "${profile.proxy}", Found preset:`, JSON.stringify(proxyPreset, null, 2));
     return proxyPreset.url;
   }
 
   debug(`[Proxy Detection] No reverse proxy found in profile or presets`);
   return null;
 }
-async function is_using_first_hop_proxy(profileName) {
+function is_using_first_hop_proxy(profileName) {
   // Check if the given connection profile is using the first-hop proxy (localhost:8765)
-  const proxyUrl = await get_connection_profile_proxy_url(profileName);
+  const proxyUrl = get_connection_profile_proxy_url(profileName);
   debug(`[Proxy Detection] Proxy URL for profile "${profileName}": ${proxyUrl}`);
   const isUsing = proxyUrl?.includes('http://localhost:8765') ?? false;
   debug(`[Proxy Detection] Is using first-hop proxy: ${isUsing}`);
@@ -209,7 +204,7 @@ async function should_send_chat_details() {
     debug('[Proxy Detection] No profile name, returning false');
     return false;
   }
-  const result = await is_using_first_hop_proxy(profileName);
+  const result = is_using_first_hop_proxy(profileName);
   debug(`[Proxy Detection] Final result: ${result}`);
   return result;
 }
