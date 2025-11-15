@@ -175,6 +175,7 @@ function get_connection_profile_proxy_url(profileName) {
     return null;
   }
 
+  const ctx = getContext();
   const profile = find_profile_by_name(profileName);
   if (!profile) {
     debug(`[Proxy Detection] Profile "${profileName}" not found in connectionManager.profiles`);
@@ -183,6 +184,15 @@ function get_connection_profile_proxy_url(profileName) {
 
   debug(`[Proxy Detection] Raw profile object:`, JSON.stringify(profile, null, 2));
   debug(`[Proxy Detection] Profile field names:`, Object.keys(profile));
+
+  // Check for global reverse proxy URL (may be global, not per-profile)
+  const globalSettings = ctx.extensionSettings.connectionManager || {};
+  debug(`[Proxy Detection] Connection Manager global settings:`, JSON.stringify(globalSettings, null, 2));
+  const globalReverseProxy = globalSettings['reverse-proxy'] || globalSettings['reverse_proxy'] || globalSettings['proxy-url'] || globalSettings['proxy_url'] || globalSettings.reverseProxy;
+  if (globalReverseProxy) {
+    debug(`[Proxy Detection] Found GLOBAL reverse proxy URL: ${globalReverseProxy}`);
+    return globalReverseProxy;
+  }
 
   const customUrl = extract_custom_url(profile);
   if (customUrl) {
@@ -201,7 +211,7 @@ function get_connection_profile_proxy_url(profileName) {
     return presetUrl;
   }
 
-  debug(`[Proxy Detection] No reverse proxy found in profile or presets`);
+  debug(`[Proxy Detection] No reverse proxy found in profile, presets, or global settings`);
   return null;
 }
 function is_using_first_hop_proxy(profileName) {
