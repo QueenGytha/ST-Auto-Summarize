@@ -814,12 +814,16 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
     // - max_recursion_steps: 1 (effectively disables recursion after first pass)
     const originalSettings = getWorldInfoSettings();
     const MAX_SCAN_DEPTH = 1000;
+
+    // Import world_names to pass to setWorldInfoSettings (required by function)
+    const { world_names } = await import('../../../world-info.js');
+
     setWorldInfoSettings({
       world_info: originalSettings.world_info,  // Preserve world_info object to avoid reset
       world_info_depth: MAX_SCAN_DEPTH,
       world_info_min_activations: 0,
       world_info_max_recursion_steps: 1
-    }, null);
+    }, { world_names });
     debug(SUBSYSTEM.SCENE, `Temporarily overriding WI settings - scan_depth: ${MAX_SCAN_DEPTH}, min_activations: 0, max_recursion: 1 (original: ${originalSettings.world_info_depth}, ${originalSettings.world_info_min_activations}, ${originalSettings.world_info_max_recursion_steps})`);
 
     try {
@@ -883,7 +887,7 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
         world_info_depth: originalSettings.world_info_depth,
         world_info_min_activations: originalSettings.world_info_min_activations,
         world_info_max_recursion_steps: originalSettings.world_info_max_recursion_steps
-      }, null);
+      }, { world_names });
       debug(SUBSYSTEM.SCENE, `Restored WI settings - scan_depth: ${originalSettings.world_info_depth}, min_activations: ${originalSettings.world_info_min_activations}, max_recursion: ${originalSettings.world_info_max_recursion_steps}`);
     }
   } catch (err) {
