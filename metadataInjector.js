@@ -59,9 +59,7 @@ function buildTokenMetadata(tokenBreakdown) {
   return {
     max_context: tokenBreakdown.max_context || null,
     max_response: tokenBreakdown.max_tokens || null,
-    available_for_prompt: tokenBreakdown.max_context && tokenBreakdown.max_tokens
-      ? tokenBreakdown.max_context - tokenBreakdown.max_tokens
-      : null,
+    available_for_prompt: tokenBreakdown.max_context || null,
     content: {
       preset: tokenBreakdown.preset || 0,
       system: tokenBreakdown.system || 0,

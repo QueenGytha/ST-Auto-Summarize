@@ -310,9 +310,7 @@ export function formatTokenBreakdownForMetadata(breakdown, contextInfo = {}) {
     tokens_total: breakdown.total,
     tokens_max_context: contextInfo.max_context || null,
     tokens_max_response: contextInfo.max_tokens || null,
-    tokens_available_for_prompt: contextInfo.max_context && contextInfo.max_tokens
-      ? contextInfo.max_context - contextInfo.max_tokens
-      : null
+    tokens_available_for_prompt: contextInfo.max_context || null
   };
 }
 
