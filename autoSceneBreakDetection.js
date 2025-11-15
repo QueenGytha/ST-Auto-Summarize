@@ -200,26 +200,15 @@ async function trySendRequest(options) {
   }
 
   // Count completion preset tokens (if includePresetPrompts is true)
-  if (includePresetPrompts) {
-    let effectivePresetForDebug;
-    if (preset === '') {
-      // Empty string means "use current active preset"
-      const { getPresetManager } = await import('../../../preset-manager.js');
-      const presetManager = getPresetManager('openai');
-      effectivePresetForDebug = presetManager?.getSelectedPresetName();
-    } else {
-      effectivePresetForDebug = preset;
+  // preset is already resolved to actual name in detectSceneBreak, never empty string here
+  if (includePresetPrompts && preset) {
+    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+    const presetMessages = await loadPresetPrompts(preset);
+    let presetTokens = 0;
+    for (const msg of presetMessages) {
+      presetTokens += count_tokens(msg.content || '');
     }
-
-    if (effectivePresetForDebug) {
-      const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-      const presetMessages = await loadPresetPrompts(effectivePresetForDebug);
-      let presetTokens = 0;
-      for (const msg of presetMessages) {
-        presetTokens += count_tokens(msg.content || '');
-      }
-      debug(SUBSYSTEM.OPERATIONS, `Completion preset "${effectivePresetForDebug}": ${presetMessages.length} messages, ${presetTokens} tokens`);
-    }
+    debug(SUBSYSTEM.OPERATIONS, `Completion preset "${preset}": ${presetMessages.length} messages, ${presetTokens} tokens`);
   }
 
   debug(SUBSYSTEM.OPERATIONS, `includePresetPrompts=${includePresetPrompts}, preset="${preset}"`);
@@ -584,35 +573,19 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
 
   // CRITICAL: We now manually load preset messages from the CORRECT preset (not profile's preset).
   // llmClient.js sets includePreset=false for ConnectionManager, so we load manually using the
-  // completion preset parameter. If preset="" (empty), resolve to current active preset.
-  let effectivePresetForTokens;
-  if (includePreset) {
-    if (preset === '') {
-      // Empty string means "use current active preset"
-      const { getPresetManager } = await import('../../../preset-manager.js');
-      const presetManager = getPresetManager('openai');
-      effectivePresetForTokens = presetManager?.getSelectedPresetName();
-      debug(SUBSYSTEM.OPERATIONS, `Empty preset resolved to current active: ${effectivePresetForTokens}`);
-    } else {
-      // Non-empty string - use explicit preset
-      effectivePresetForTokens = preset;
+  // completion preset parameter. preset is already resolved to actual name in detectSceneBreak, never empty string here.
+  if (includePreset && preset) {
+    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+    const presetMessages = await loadPresetPrompts(preset);
+    let presetTokens = 0;
+    for (const msg of presetMessages) {
+      const msgTokens = count_tokens(msg.content || '');
+      presetTokens += msgTokens;
     }
+    debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from completion preset "${preset}", ${presetTokens} tokens`);
+    totalTokens += presetTokens;
 
-    if (effectivePresetForTokens) {
-      const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-      const presetMessages = await loadPresetPrompts(effectivePresetForTokens);
-      let presetTokens = 0;
-      for (const msg of presetMessages) {
-        const msgTokens = count_tokens(msg.content || '');
-        presetTokens += msgTokens;
-      }
-      debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from completion preset "${effectivePresetForTokens}", ${presetTokens} tokens`);
-      totalTokens += presetTokens;
-
-      debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, completionPreset=${presetTokens} (from "${effectivePresetForTokens}"), total=${totalTokens}`);
-    } else {
-      debug(SUBSYSTEM.OPERATIONS, `Warning: No preset name resolved, skipping preset token count`);
-    }
+    debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, completionPreset=${presetTokens} (from "${preset}"), total=${totalTokens}`);
   }
 
   // Add prefill overhead if provided
@@ -741,10 +714,19 @@ _operationId  = null)
     const promptTemplate = get_settings('auto_scene_break_prompt');
     const prefill = get_settings('auto_scene_break_prefill') || '';
     const profile = get_settings('auto_scene_break_connection_profile');
-    const preset = get_settings('auto_scene_break_completion_preset');
+    const presetSetting = get_settings('auto_scene_break_completion_preset');
     const includePresetPrompts = get_settings('auto_scene_break_include_preset_prompts') ?? false;
     const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
     const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
+
+    // CRITICAL: Resolve preset name NOW, before any profile switching that might change the active preset
+    let preset = presetSetting;
+    if (preset === '') {
+      const { getPresetManager } = await import('../../../preset-manager.js');
+      const presetManager = getPresetManager('openai');
+      preset = presetManager?.getSelectedPresetName() || '';
+      debug(SUBSYSTEM.OPERATIONS, `[detectSceneBreak] Empty preset resolved to current active BEFORE profile switch: "${preset}"`);
+    }
 
     // Resolve profile ID early so we can use it for token counting
     const { resolveProfileId } = await import('./profileResolution.js');
