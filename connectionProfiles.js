@@ -172,10 +172,11 @@ async function get_connection_profile_proxy_url(profileName) {
     return null;
   }
 
-  // Check if there's a direct URL in the profile (api-url field)
-  if (profileData['api-url']) {
-    debug(`[Proxy Detection] Found direct api-url in profile: ${profileData['api-url']}`);
-    return profileData['api-url'];
+  // Check for reverse proxy URL (various possible field names)
+  const reverseProxyUrl = profileData['reverse-proxy'] || profileData['reverse_proxy'] || profileData['proxy-url'] || profileData['proxy_url'];
+  if (reverseProxyUrl) {
+    debug(`[Proxy Detection] Found reverse proxy URL in profile: ${reverseProxyUrl}`);
+    return reverseProxyUrl;
   }
 
   // Get the proxy presets from connection manager
@@ -184,9 +185,13 @@ async function get_connection_profile_proxy_url(profileName) {
 
   // Look up the proxy URL by name
   const proxyPreset = proxies.find((p) => p.name === profileData.proxy);
-  debug(`[Proxy Detection] Profile proxy name: "${profileData.proxy}", Found preset:`, proxyPreset ? JSON.stringify(proxyPreset, null, 2) : 'undefined');
+  if (proxyPreset?.url) {
+    debug(`[Proxy Detection] Profile proxy name: "${profileData.proxy}", Found preset:`, JSON.stringify(proxyPreset, null, 2));
+    return proxyPreset.url;
+  }
 
-  return proxyPreset?.url || null;
+  debug(`[Proxy Detection] No reverse proxy found in profile or presets`);
+  return null;
 }
 async function is_using_first_hop_proxy(profileName) {
   // Check if the given connection profile is using the first-hop proxy (localhost:8765)

@@ -175,6 +175,46 @@ function initialize_slash_commands() {
     helpString: 'Clear all operations from queue'
   }));
 
+  SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+    name: 'countmessagetokens',
+    callback: async () => {
+      const context = getContext();
+      const chat = context.chat;
+
+      if (!chat || chat.length === 0) {
+        const message = 'No messages in current chat';
+        toast(message, 'warning');
+        return message;
+      }
+
+      const PREVIEW_LENGTH = 50;
+      let totalTokens = 0;
+      const messageTokenCounts = [];
+
+      for (let i = 0; i < chat.length; i++) {
+        const message = chat[i];
+        const messageText = message.mes || '';
+        // eslint-disable-next-line no-await-in-loop -- must count tokens sequentially
+        const tokenCount = await context.getTokenCountAsync(messageText);
+        totalTokens += tokenCount;
+        messageTokenCounts.push({
+          index: i,
+          tokens: tokenCount,
+          preview: messageText.slice(0, PREVIEW_LENGTH)
+        });
+      }
+
+      const summary = `Token Count Summary:\n• Total Messages: ${chat.length}\n• Total Tokens: ${totalTokens.toLocaleString()}\n• Average Tokens/Message: ${Math.round(totalTokens / chat.length)}`;
+
+      log('[Token Count] Summary:', summary);
+      log('[Token Count] Per-message breakdown:', messageTokenCounts);
+
+      toast(summary, 'info');
+      return { totalTokens, totalMessages: chat.length, average: Math.round(totalTokens / chat.length), breakdown: messageTokenCounts };
+    },
+    helpString: 'Count tokens in all messages in the current chat'
+  }));
+
 }
 
 export {
