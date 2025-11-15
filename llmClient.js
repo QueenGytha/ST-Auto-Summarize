@@ -85,28 +85,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
 
   debug(SUBSYSTEM.CORE, `[LLMClient] Using preset "${effectivePresetName}", max_tokens: ${presetMaxTokens}`);
 
-  // 4. TOKEN VALIDATION (using profile preset's context size, not global)
-  if (typeof prompt === 'string') {
-    const tokenSize = count_tokens(prompt);
-
-    // Try to get context size from preset
-    const presetMaxContext = presetData.max_context || presetData.openai_max_context;
-
-    if (presetMaxContext && presetMaxContext > 0) {
-      // Available context = total context - tokens reserved for response
-      const availableContextForPrompt = presetMaxContext - presetMaxTokens;
-
-      if (tokenSize > availableContextForPrompt) {
-        throw new Error(`Prompt ${tokenSize} tokens exceeds available context ${availableContextForPrompt} (model context: ${presetMaxContext}, reserved for response: ${presetMaxTokens})`);
-      }
-
-      debug(SUBSYSTEM.CORE, `[LLMClient] Token validation passed: ${tokenSize} <= ${availableContextForPrompt} (${presetMaxContext} - ${presetMaxTokens})`);
-    } else {
-      debug(SUBSYSTEM.CORE, `[LLMClient] Skipping token validation - preset has no max_context configured`);
-    }
-  }
-
-  // 5. LOAD PRESET PROMPTS + PREFILL (ConnectionManager doesn't do this)
+  // 4. LOAD PRESET PROMPTS + PREFILL (ConnectionManager doesn't do this)
   let messages;
   let effectivePrefill = options.prefill || '';
 
@@ -165,7 +144,26 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
   const messagesWithMetadata = [...messages];
   await injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
 
-  // 8. CALL ConnectionManager
+  // 8. TOKEN VALIDATION (after building complete message array with all overhead)
+  const presetMaxContext = presetData.max_context || presetData.openai_max_context;
+
+  if (presetMaxContext && presetMaxContext > 0) {
+    // Count tokens in the COMPLETE message array including system prompt, prefill, metadata, etc.
+    const actualTokenSize = count_tokens(JSON.stringify(messagesWithMetadata));
+
+    // Available context = total context - tokens reserved for response
+    const availableContextForPrompt = presetMaxContext - presetMaxTokens;
+
+    if (actualTokenSize > availableContextForPrompt) {
+      throw new Error(`Prompt ${actualTokenSize} tokens exceeds available context ${availableContextForPrompt} (model context: ${presetMaxContext}, reserved for response: ${presetMaxTokens})`);
+    }
+
+    debug(SUBSYSTEM.CORE, `[LLMClient] Token validation passed: ${actualTokenSize} <= ${availableContextForPrompt} (${presetMaxContext} - ${presetMaxTokens})`);
+  } else {
+    debug(SUBSYSTEM.CORE, `[LLMClient] Skipping token validation - preset has no max_context configured`);
+  }
+
+  // 9. CALL ConnectionManager
   // CRITICAL: Always set includePreset=false to prevent ConnectionManager from loading profile's preset
   // We already manually loaded preset messages from the CORRECT preset (effectivePresetName) at lines 117-142
   // If we set includePreset=true, ConnectionManager would load preset messages from the CONNECTION PROFILE's preset,
