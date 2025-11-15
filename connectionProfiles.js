@@ -176,6 +176,8 @@ function get_connection_profile_proxy_url(profileName) {
 
   // Check OpenAI settings for reverse proxy (Connection Manager uses this!)
   const oaiSettings = ctx.oai_settings || {};
+  debug(`[Proxy Detection] FULL oai_settings object:`, JSON.stringify(oaiSettings, null, 2));
+  debug(`[Proxy Detection] oai_settings keys:`, Object.keys(oaiSettings));
   debug(`[Proxy Detection] oai_settings.reverse_proxy:`, oaiSettings.reverse_proxy);
   if (oaiSettings.reverse_proxy) {
     debug(`[Proxy Detection] Found reverse proxy in oai_settings: ${oaiSettings.reverse_proxy}`);
