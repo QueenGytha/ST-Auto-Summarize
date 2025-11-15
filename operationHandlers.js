@@ -608,6 +608,16 @@ export function registerAllOperationHandlers() {
     // Check if cancelled after LLM call (before return)
     throwIfAborted(signal, 'MERGE_LOREBOOK_ENTRY', 'LLM call');
 
+    // Store token breakdown in operation metadata
+    if (result?.tokenBreakdown) {
+      const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+      const tokenMetadata = formatTokenBreakdownForMetadata(result.tokenBreakdown, {
+        max_context: result.tokenBreakdown.max_context,
+        max_tokens: result.tokenBreakdown.max_tokens
+      });
+      await updateOperationMetadata(operation.id, tokenMetadata);
+    }
+
     return result;
   });
 
@@ -648,6 +658,16 @@ export function registerAllOperationHandlers() {
 
     // Check if cancelled after LLM call (before side effects)
     throwIfAborted(signal, 'LOREBOOK_ENTRY_LOOKUP', 'LLM call');
+
+    // Store token breakdown in operation metadata
+    if (lorebookEntryLookupResult?.tokenBreakdown) {
+      const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+      const tokenMetadata = formatTokenBreakdownForMetadata(lorebookEntryLookupResult.tokenBreakdown, {
+        max_context: lorebookEntryLookupResult.tokenBreakdown.max_context,
+        max_tokens: lorebookEntryLookupResult.tokenBreakdown.max_tokens
+      });
+      await updateOperationMetadata(operation.id, tokenMetadata);
+    }
 
     // Store lorebook entry lookup result in pending ops
     setLorebookEntryLookupResult(entryId, lorebookEntryLookupResult);
@@ -788,6 +808,16 @@ export function registerAllOperationHandlers() {
 
     // Check if cancelled after LLM call (before side effects)
     throwIfAborted(signal, 'RESOLVE_LOREBOOK_ENTRY', 'LLM call');
+
+    // Store token breakdown in operation metadata
+    if (lorebookEntryDeduplicateResult?.tokenBreakdown) {
+      const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+      const tokenMetadata = formatTokenBreakdownForMetadata(lorebookEntryDeduplicateResult.tokenBreakdown, {
+        max_context: lorebookEntryDeduplicateResult.tokenBreakdown.max_context,
+        max_tokens: lorebookEntryDeduplicateResult.tokenBreakdown.max_tokens
+      });
+      await updateOperationMetadata(operation.id, tokenMetadata);
+    }
 
     // Store lorebook entry deduplicate result
     setLorebookEntryDeduplicateResult(entryId, lorebookEntryDeduplicateResult);
@@ -1050,16 +1080,28 @@ export function registerAllOperationHandlers() {
     filter(Boolean).
     join('|');
 
-    const results = await runBulkRegistryPopulation(entries, typeList, settings);
+    const result = await runBulkRegistryPopulation(entries, typeList, settings);
+    const results = result?.results || result;
+    const tokenBreakdown = result?.tokenBreakdown;
 
     throwIfAborted(signal, 'POPULATE_REGISTRIES', 'LLM call');
+
+    // Store token breakdown in operation metadata
+    if (tokenBreakdown) {
+      const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+      const tokenMetadata = formatTokenBreakdownForMetadata(tokenBreakdown, {
+        max_context: tokenBreakdown.max_context,
+        max_tokens: tokenBreakdown.max_tokens
+      });
+      await updateOperationMetadata(operation.id, tokenMetadata);
+    }
 
     const entriesMap = new Map(entries.map((e) => [e.id, e]));
     await processBulkPopulateResults(results, lorebookName, entriesMap);
 
-    debug(SUBSYSTEM.QUEUE, `✓ Populated registries for ${results.length} entries`);
+    debug(SUBSYSTEM.QUEUE, `✓ Populated registries for ${Array.isArray(results) ? results.length : 0} entries`);
 
-    return { success: true, processedCount: results.length };
+    return { success: true, processedCount: Array.isArray(results) ? results.length : 0 };
   });
 
   log(SUBSYSTEM.QUEUE, 'Registered all operation handlers');

@@ -616,9 +616,13 @@ async function runModelWithSettings(config) {
       clearOperationSuffix();
     }
 
-    if (typeof response === 'string') {
+    // Extract token breakdown from response
+    const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
+    const tokenBreakdown = extractTokenBreakdownFromResponse(response);
+
+    if (typeof response === 'string' || response instanceof String) {
       debug?.(`Auto-Lorebooks ${label} response length: ${response.length}`);
-      return response.trim();
+      return { response: response.toString().trim(), tokenBreakdown };
     }
 
     error?.(`Auto-Lorebooks ${label} returned non-string response`);
@@ -647,6 +651,7 @@ function handleMissingLorebookEntryLookupPrompt(normalizedEntry ) {
   throw new Error(`Auto-Lorebooks configuration error: lorebook_entry_lookup_prompt is required but missing. Cannot process entry: ${entryName}`);
 }
 
+// eslint-disable-next-line complexity -- Token breakdown extraction adds one conditional branch
 export async function runLorebookEntryLookupStage(
 normalizedEntry ,
 registryListing ,
@@ -674,7 +679,9 @@ settings )
     label: 'lorebook_entry_lookup',
     entryComment: normalizedEntry.comment, // Pass comment for context suffix
   };
-  const response = await runModelWithSettings(config);
+  const result = await runModelWithSettings(config);
+  const response = result?.response || result;
+  const tokenBreakdown = result?.tokenBreakdown;
 
   // Parse JSON using centralized helper (doesn't throw, uses try-catch internally)
   let parsed;
@@ -691,7 +698,8 @@ settings )
       type: normalizedEntry.type || '',
       synopsis: '',
       sameEntityUids: [],
-      needsFullContextUids: []
+      needsFullContextUids: [],
+      tokenBreakdown
     };
   }
 
@@ -703,6 +711,7 @@ settings )
   return {
     type,
     synopsis,
+    tokenBreakdown,
     sameEntityUids: sameUids,
     needsFullContextUids: needsUids
   };
@@ -796,13 +805,16 @@ settings )
   }
 
   const prompt = buildLorebookEntryDeduplicatePrompt(normalizedEntry, lorebookEntryLookupSynopsis, candidateEntries, singleType, settings);
-  const response = await executeLorebookEntryDeduplicateLLMCall(prompt, settings, normalizedEntry.comment);
+  const result = await executeLorebookEntryDeduplicateLLMCall(prompt, settings, normalizedEntry.comment);
+  const response = result?.response || result;
+  const tokenBreakdown = result?.tokenBreakdown;
 
   if (!response) {
-    return { resolvedUid: null, synopsis: lorebookEntryLookupSynopsis || '' };
+    return { resolvedUid: null, synopsis: lorebookEntryLookupSynopsis || '', tokenBreakdown };
   }
 
-  return parseLorebookEntryDeduplicateResponse(response, lorebookEntryLookupSynopsis);
+  const parsed = await parseLorebookEntryDeduplicateResponse(response, lorebookEntryLookupSynopsis);
+  return { ...parsed, tokenBreakdown };
 }
 
 function resolveEntryType(
@@ -859,7 +871,9 @@ export async function runBulkRegistryPopulation(entriesArray , typeList , settin
     label: 'bulk_registry_populate'
   };
 
-  const response = await runModelWithSettings(config);
+  const result = await runModelWithSettings(config);
+  const response = result?.response || result;
+  const tokenBreakdown = result?.tokenBreakdown;
 
   let parsed;
   try {
@@ -870,15 +884,15 @@ export async function runBulkRegistryPopulation(entriesArray , typeList , settin
     });
   } catch (err) {
     error?.('Failed to parse bulk registry population response:', err);
-    return [];
+    return { results: [], tokenBreakdown };
   }
 
   if (!Array.isArray(parsed.results)) {
     error?.('Bulk populate response missing results array');
-    return [];
+    return { results: [], tokenBreakdown };
   }
 
-  return parsed.results;
+  return { results: parsed.results, tokenBreakdown };
 }
 
 export async function processBulkPopulateResults(results , lorebookName , existingEntriesMap ) {

@@ -160,6 +160,10 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
       throw new Error('AI returned empty response');
     }
 
+    // Extract token breakdown from response
+    const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
+    const tokenBreakdown = extractTokenBreakdownFromResponse(response);
+
     // Parse JSON response using centralized helper
     const { extractJsonFromResponse } = await import('./utils.js');
     const parsed = extractJsonFromResponse(response, {
@@ -170,7 +174,8 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
     debug('AI merge completed successfully');
     return {
       mergedContent: parsed.mergedContent,
-      canonicalName: parsed.canonicalName || null
+      canonicalName: parsed.canonicalName || null,
+      tokenBreakdown
     };
 
   } catch (err) {
@@ -434,7 +439,8 @@ export async function executeMerge(lorebookName , existingEntry , newEntryData )
       success: true,
       message: 'Entry merged successfully',
       mergedContent: mergeResult.mergedContent,
-      canonicalName: finalCanonicalName
+      canonicalName: finalCanonicalName,
+      tokenBreakdown: mergeResult.tokenBreakdown
     };
 
   } catch (err) {
