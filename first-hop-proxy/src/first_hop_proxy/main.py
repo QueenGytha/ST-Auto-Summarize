@@ -211,9 +211,10 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
             print(f"Response data type: {type(response_data)}", flush=True)
             print(f"Response data keys: {list(response_data.keys())}", flush=True)
             print("=" * 80, flush=True)
-            # Return Flask response with explicit status code
-            flask_response = make_response(jsonify(response_data), status_code)
-            return flask_response
+            # Return tuple - Flask will handle it
+            response = jsonify(response_data)
+            response.status_code = status_code
+            return response
 
         # Log successful response to console
         print("=" * 80, flush=True)
