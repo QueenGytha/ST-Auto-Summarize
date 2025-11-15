@@ -147,42 +147,58 @@ async function check_connection_profile_valid() {
   }
   return valid;
 }
+function find_profile_by_name(profileName) {
+  const ctx = getContext();
+  const profiles = ctx.extensionSettings.connectionManager?.profiles || [];
+  return profiles.find((p) => p.name === profileName);
+}
+function extract_custom_url(profile) {
+  return profile['custom-url'] || profile['custom_url'] || profile.customUrl;
+}
+function extract_reverse_proxy_url(profile) {
+  return profile['reverse-proxy'] || profile['reverse_proxy'] || profile['proxy-url'] || profile['proxy_url'] || profile.reverseProxy || profile['server-url'] || profile['server_url'];
+}
+function find_proxy_preset_url(profile) {
+  const ctx = getContext();
+  const proxies = ctx.extensionSettings.connectionManager?.proxies || [];
+  debug(`[Proxy Detection] Available proxies:`, proxies.length > 0 ? JSON.stringify(proxies, null, 2) : '(none)');
+  const proxyPreset = proxies.find((p) => p.name === profile.proxy);
+  if (proxyPreset?.url) {
+    debug(`[Proxy Detection] Profile proxy name: "${profile.proxy}", Found preset:`, JSON.stringify(proxyPreset, null, 2));
+    return proxyPreset.url;
+  }
+  return null;
+}
 function get_connection_profile_proxy_url(profileName) {
-  // Get the proxy URL for a given connection profile
   if (!check_connection_profiles_active()) {
     debug('[Proxy Detection] Connection profiles not active');
     return null;
   }
 
-  const ctx = getContext();
-
-  // Get the raw profile object from connection manager settings
-  const profiles = ctx.extensionSettings.connectionManager?.profiles || [];
-  const profile = profiles.find((p) => p.name === profileName);
-
+  const profile = find_profile_by_name(profileName);
   if (!profile) {
     debug(`[Proxy Detection] Profile "${profileName}" not found in connectionManager.profiles`);
     return null;
   }
 
   debug(`[Proxy Detection] Raw profile object:`, JSON.stringify(profile, null, 2));
+  debug(`[Proxy Detection] Profile field names:`, Object.keys(profile));
 
-  // Check for reverse proxy URL in raw profile (various possible field names)
-  const reverseProxyUrl = profile['reverse-proxy'] || profile['reverse_proxy'] || profile['proxy-url'] || profile['proxy_url'] || profile.reverseProxy || profile['server-url'] || profile['server_url'];
+  const customUrl = extract_custom_url(profile);
+  if (customUrl) {
+    debug(`[Proxy Detection] Found custom endpoint URL in profile: ${customUrl}`);
+    return customUrl;
+  }
+
+  const reverseProxyUrl = extract_reverse_proxy_url(profile);
   if (reverseProxyUrl) {
     debug(`[Proxy Detection] Found reverse proxy URL in profile: ${reverseProxyUrl}`);
     return reverseProxyUrl;
   }
 
-  // Get the proxy presets from connection manager
-  const proxies = ctx.extensionSettings.connectionManager?.proxies || [];
-  debug(`[Proxy Detection] Available proxies:`, proxies.length > 0 ? JSON.stringify(proxies, null, 2) : '(none)');
-
-  // Look up the proxy URL by name
-  const proxyPreset = proxies.find((p) => p.name === profile.proxy);
-  if (proxyPreset?.url) {
-    debug(`[Proxy Detection] Profile proxy name: "${profile.proxy}", Found preset:`, JSON.stringify(proxyPreset, null, 2));
-    return proxyPreset.url;
+  const presetUrl = find_proxy_preset_url(profile);
+  if (presetUrl) {
+    return presetUrl;
   }
 
   debug(`[Proxy Detection] No reverse proxy found in profile or presets`);
