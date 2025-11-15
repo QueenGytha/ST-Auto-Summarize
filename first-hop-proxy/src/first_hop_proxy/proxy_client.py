@@ -195,8 +195,12 @@ class ProxyClient:
             # The API error details are in the response body
             if 400 <= response.status_code < 500:
                 logger.warning(f"Client error {response.status_code}, returning error response body")
-                # Return a tuple of (response_json, status_code) so Flask can return it properly
-                return (response.json(), response.status_code)
+                # Return a dict with error flag and status code
+                return {
+                    '_proxy_error': True,
+                    '_status_code': response.status_code,
+                    **response.json()
+                }
 
             # For server errors (5xx), raise so retry logic kicks in
             response.raise_for_status()

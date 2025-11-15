@@ -200,15 +200,16 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
         # Use error handler for retries
         response_data = error_handler.retry_with_backoff(make_request, context)
 
-        # Check if this is an error response (tuple of error_json, status_code)
-        if isinstance(response_data, tuple) and len(response_data) == 2:
-            error_json, status_code = response_data
+        # Check if this is an error response (dict with _proxy_error flag)
+        if isinstance(response_data, dict) and response_data.get('_proxy_error'):
+            status_code = response_data.pop('_status_code')
+            response_data.pop('_proxy_error')
             print("=" * 80, flush=True)
             print(f"OUTGOING RESPONSE [{request_id}] - Client Error {status_code}", flush=True)
-            print(f"Error Response: {json.dumps(error_json, indent=2)}", flush=True)
+            print(f"Error Response: {json.dumps(response_data, indent=2)}", flush=True)
             print(f"Duration: {time.time() - start_time:.3f}s", flush=True)
             print("=" * 80, flush=True)
-            return jsonify(error_json), status_code
+            return jsonify(response_data), status_code
 
         # Log successful response to console
         print("=" * 80, flush=True)
