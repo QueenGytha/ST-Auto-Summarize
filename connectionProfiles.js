@@ -185,12 +185,16 @@ function get_connection_profile_proxy_url(profileName) {
   debug(`[Proxy Detection] Raw profile object:`, JSON.stringify(profile, null, 2));
   debug(`[Proxy Detection] Profile field names:`, Object.keys(profile));
 
-  // Check for global reverse proxy URL (may be global, not per-profile)
-  const globalSettings = ctx.extensionSettings.connectionManager || {};
-  debug(`[Proxy Detection] Connection Manager global settings:`, JSON.stringify(globalSettings, null, 2));
-  const globalReverseProxy = globalSettings['reverse-proxy'] || globalSettings['reverse_proxy'] || globalSettings['proxy-url'] || globalSettings['proxy_url'] || globalSettings.reverseProxy;
+  // Check for global reverse proxy URL (may be in power_user settings)
+  const powerUser = ctx.power_user || {};
+  debug(`[Proxy Detection] power_user reverse proxy fields:`, {
+    'reverse_proxy': powerUser.reverse_proxy,
+    'reverse-proxy': powerUser['reverse-proxy'],
+    'proxy_password': powerUser.proxy_password
+  });
+  const globalReverseProxy = powerUser.reverse_proxy || powerUser['reverse-proxy'];
   if (globalReverseProxy) {
-    debug(`[Proxy Detection] Found GLOBAL reverse proxy URL: ${globalReverseProxy}`);
+    debug(`[Proxy Detection] Found reverse proxy in power_user settings: ${globalReverseProxy}`);
     return globalReverseProxy;
   }
 
