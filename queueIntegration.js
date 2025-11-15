@@ -14,7 +14,7 @@ import {
   error,
   toast,
   SUBSYSTEM,
-  getContext } from
+  chat_metadata } from
 './index.js';
 import { MAX_RECAP_ATTEMPTS, HIGH_PRIORITY_OFFSET, OPERATION_ID_LENGTH } from './constants.js';
 
@@ -101,10 +101,13 @@ export function queueGenerateRunningRecap(options  = {}) {
 }
 
 export function queueCombineSceneWithRunning(index , options  = {}) {
-  const ctx = getContext();
-  const chat_metadata = ctx.chat?.metadata;
-  const runningRecapData = chat_metadata?.auto_recap_running_scene_recaps;
+  const runningRecapData = chat_metadata.auto_recap_running_scene_recaps;
   const versions = runningRecapData?.versions || [];
+
+  debug(SUBSYSTEM.QUEUE, `[queueCombineSceneWithRunning] Scene index: ${index}, Total versions: ${versions.length}`);
+  for (const v of versions) {
+    debug(SUBSYSTEM.QUEUE, `  Version ${v.version}: ${v.prev_scene_index} > ${v.new_scene_index}`);
+  }
 
   const previousVersions = versions.filter((v) => v.new_scene_index < index);
   const previousVersion = previousVersions.length > 0
@@ -112,6 +115,8 @@ export function queueCombineSceneWithRunning(index , options  = {}) {
         current.version > latest.version ? current : latest
       )
     : null;
+
+  debug(SUBSYSTEM.QUEUE, `[queueCombineSceneWithRunning] Found ${previousVersions.length} previous versions, selected: ${previousVersion ? `v${previousVersion.version} (${previousVersion.prev_scene_index} > ${previousVersion.new_scene_index})` : 'null'}`);
 
   const startIndex = previousVersion ? previousVersion.new_scene_index : 0;
   const endIndex = index;
