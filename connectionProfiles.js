@@ -149,19 +149,23 @@ async function check_connection_profile_valid() {
 }
 async function get_connection_profile_proxy_url(profileName) {
   // Get the proxy URL for a given connection profile
-  if (!check_connection_profiles_active()) {return null;}
+  if (!check_connection_profiles_active()) {
+    debug('[Proxy Detection] Connection profiles not active');
+    return null;
+  }
 
   const ctx = getContext();
   const result = await ctx.executeSlashCommandsWithOptions(`/profile-get ${profileName}`);
 
   if (!result.pipe) {
-    debug(`/profile-get ${profileName} returned nothing - no connection profile selected`);
+    debug(`[Proxy Detection] /profile-get ${profileName} returned nothing - no connection profile selected`);
     return null;
   }
 
   let profileData;
   try {
     profileData = JSON.parse(result.pipe);
+    debug(`[Proxy Detection] Profile data:`, profileData);
   } catch {
     error(`Failed to parse JSON from /profile-get for "${profileName}". Result:`);
     error(result);
@@ -170,22 +174,33 @@ async function get_connection_profile_proxy_url(profileName) {
 
   // Get the proxy presets from connection manager
   const proxies = ctx.extensionSettings.connectionManager?.proxies || [];
+  debug(`[Proxy Detection] Available proxies:`, proxies);
 
   // Look up the proxy URL by name
   const proxyPreset = proxies.find((p) => p.name === profileData.proxy);
+  debug(`[Proxy Detection] Profile proxy name: "${profileData.proxy}", Found preset:`, proxyPreset);
 
   return proxyPreset?.url || null;
 }
 async function is_using_first_hop_proxy(profileName) {
   // Check if the given connection profile is using the first-hop proxy (localhost:8765)
   const proxyUrl = await get_connection_profile_proxy_url(profileName);
-  return proxyUrl?.includes('http://localhost:8765') ?? false;
+  debug(`[Proxy Detection] Proxy URL for profile "${profileName}": ${proxyUrl}`);
+  const isUsing = proxyUrl?.includes('http://localhost:8765') ?? false;
+  debug(`[Proxy Detection] Is using first-hop proxy: ${isUsing}`);
+  return isUsing;
 }
 async function should_send_chat_details() {
   // Automatically determine if chat details should be sent based on whether we're using first-hop proxy
   const profileName = await get_recap_connection_profile();
-  if (!profileName) {return false;}
-  return await is_using_first_hop_proxy(profileName);
+  debug(`[Proxy Detection] Recap connection profile: "${profileName}"`);
+  if (!profileName) {
+    debug('[Proxy Detection] No profile name, returning false');
+    return false;
+  }
+  const result = await is_using_first_hop_proxy(profileName);
+  debug(`[Proxy Detection] Final result: ${result}`);
+  return result;
 }
 
 export {
