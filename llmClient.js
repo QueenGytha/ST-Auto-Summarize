@@ -196,7 +196,32 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
       instructSettings: options.instructSettings || {}
     };
 
-    debug(SUBSYSTEM.CORE, `[LLMClient] Sending ${messagesWithMetadata.length} messages, ${count_tokens(JSON.stringify(messagesWithMetadata))} tokens`);
+    // Count actual payload tokens (entire messages array as JSON)
+    const actualPayloadTokens = count_tokens(JSON.stringify(messagesWithMetadata));
+    debug(SUBSYSTEM.CORE, `[LLMClient] Sending ${messagesWithMetadata.length} messages, ${actualPayloadTokens} tokens (actual payload)`);
+    debug(SUBSYSTEM.CORE, `[LLMClient] Token breakdown claimed ${tokenBreakdown.total} tokens, actual payload is ${actualPayloadTokens} tokens (diff: ${actualPayloadTokens - tokenBreakdown.total})`);
+
+    // Update metadata with actual payload token count
+    const firstSystemMsg = messagesWithMetadata.find(msg => msg.role === 'system');
+    if (firstSystemMsg && firstSystemMsg.content && firstSystemMsg.content.includes('<ST_METADATA>')) {
+      try {
+        const metadataMatch = firstSystemMsg.content.match(/<ST_METADATA>\s*(\{[\s\S]*?\})\s*<\/ST_METADATA>/);
+        if (metadataMatch) {
+          const metadataObj = JSON.parse(metadataMatch[1]);
+          if (metadataObj.tokens) {
+            metadataObj.tokens.actual_payload_tokens = actualPayloadTokens;
+            const updatedMetadata = JSON.stringify(metadataObj, null, 2);
+            firstSystemMsg.content = firstSystemMsg.content.replace(
+              /<ST_METADATA>\s*\{[\s\S]*?\}\s*<\/ST_METADATA>/,
+              `<ST_METADATA>\n${updatedMetadata}\n</ST_METADATA>`
+            );
+            debug(SUBSYSTEM.CORE, `[LLMClient] Updated metadata with actual_payload_tokens: ${actualPayloadTokens}`);
+          }
+        }
+      } catch (err) {
+        debug(SUBSYSTEM.CORE, `[LLMClient] Failed to update metadata with actual payload tokens:`, err);
+      }
+    }
 
     const result = await ctx.ConnectionManagerRequestService.sendRequest(
       profileId,
