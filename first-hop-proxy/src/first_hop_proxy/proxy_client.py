@@ -190,10 +190,17 @@ class ProxyClient:
                 if parsing_info.get("recategorized", False):
                     logger.info(f"Response status recategorized: {response.status_code} → {new_status}")
                     response.status_code = new_status
-            
-            # Raise HTTPError for non-200 responses - this will be caught by ErrorHandler
+
+            # For client errors (4xx), don't raise - let the caller handle the error response
+            # The API error details are in the response body
+            if 400 <= response.status_code < 500:
+                logger.warning(f"Client error {response.status_code}, returning error response body")
+                # Return a tuple of (response_json, status_code) so Flask can return it properly
+                return (response.json(), response.status_code)
+
+            # For server errors (5xx), raise so retry logic kicks in
             response.raise_for_status()
-        
+
         return response.json()
     
     def _is_blank_response(self, response_json: Dict[str, Any]) -> bool:

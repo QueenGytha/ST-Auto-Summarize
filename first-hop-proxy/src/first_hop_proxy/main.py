@@ -200,6 +200,16 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
         # Use error handler for retries
         response_data = error_handler.retry_with_backoff(make_request, context)
 
+        # Check if this is an error response (tuple of error_json, status_code)
+        if isinstance(response_data, tuple) and len(response_data) == 2:
+            error_json, status_code = response_data
+            print("=" * 80, flush=True)
+            print(f"OUTGOING RESPONSE [{request_id}] - Client Error {status_code}", flush=True)
+            print(f"Error Response: {json.dumps(error_json, indent=2)}", flush=True)
+            print(f"Duration: {time.time() - start_time:.3f}s", flush=True)
+            print("=" * 80, flush=True)
+            return jsonify(error_json), status_code
+
         # Log successful response to console
         print("=" * 80, flush=True)
         print(f"OUTGOING RESPONSE [{request_id}] - Success", flush=True)
@@ -227,16 +237,7 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
                 "error_type": "forward_request_error"
             }, character_chat_info=character_chat_info)
 
-        # For HTTPError, extract and return the actual API error response
-        if hasattr(e, 'response') and e.response is not None:
-            try:
-                error_json = e.response.json()
-                print(f"Returning API error to client: {json.dumps(error_json, indent=2)}", flush=True)
-                return jsonify(error_json), e.response.status_code
-            except Exception as parse_error:
-                print(f"Failed to parse error response: {parse_error}", flush=True)
-
-        # Re-raise the original exception to preserve the stack trace
+        # Re-raise the exception to return 500
         raise
 
     finally:
