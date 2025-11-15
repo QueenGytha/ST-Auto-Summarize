@@ -71,7 +71,27 @@
                     </div>
                 </div>
 
-                <!-- General Injection Settings -->
+                <!-- Token Counting -->
+                <hr>
+                <div class="inline-drawer">
+                    <div class="inline-drawer-toggle inline-drawer-header">
+                        <div class="flex-container alignitemscenter margin0">
+                            <h4 class="margin0">Token Counting <i class="fa-solid fa-info-circle" title="Configure how token counts are calculated and adjusted for different LLM providers."></i></h4>
+                        </div>
+                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+                    </div>
+                    <div class="inline-drawer-content">
+                        <label title="Correction factor for tokenizer discrepancies between SillyTavern and actual LLM providers. Values >1.0 increase estimates (for undercounting), values <1.0 decrease estimates (for overcounting). Claude models typically need 1.35 (35% undercount). OpenAI models use 1.0 (accurate).">
+                            <input id="tokenizer_correction_factor" data-testid="token-correction-factor" class="text_pole widthUnset inline_setting" type="number" min="0.5" max="2.0" step="0.05" />
+                            <span>Tokenizer Correction Factor</span>
+                        </label>
+
+                        <div class="note-block">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span>SillyTavern uses tokenizer approximations that may not match the provider's actual tokenizer. This multiplier adjusts token estimates for more accurate budget calculations. <strong>Recommended values:</strong> Claude: <code>1.35</code> (ST undercounts by ~35%), OpenAI: <code>1.0</code> (tiktoken is accurate).</span>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Scene Recap -->
                 <hr>

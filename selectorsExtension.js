@@ -44,6 +44,11 @@ export const selectorsExtension = {
     suppressOtherLorebooks: '[data-testid="proxy-suppress-other-lorebooks"]',  // #suppress_other_lorebooks
   },
 
+  // Token Counting Settings
+  tokenCounting: {
+    correctionFactor: '[data-testid="token-correction-factor"]',  // #tokenizer_correction_factor
+  },
+
   // Miscellaneous Settings
   misc: {
     defaultEnabled: '[data-testid="misc-default-enabled"]',  // #default_chat_enabled
