@@ -181,12 +181,28 @@ async function trySendRequest(options) {
     clearOperationSuffix();
 
     // Log full error details for debugging
-    const ERROR_DEBUG_LENGTH = 200;
-    debug(SUBSYSTEM.OPERATIONS, `API request failed. Error: ${err?.message || String(err)}`);
-    debug(SUBSYSTEM.OPERATIONS, `Error cause: ${err?.cause?.message || 'none'}`);
+    const ERROR_DEBUG_LENGTH = 500;
+    debug(SUBSYSTEM.OPERATIONS, `API request failed. Error message: ${err?.message || String(err)}`);
     debug(SUBSYSTEM.OPERATIONS, `Error type: ${err?.constructor?.name || typeof err}`);
-    if (err?.response) {
-      debug(SUBSYSTEM.OPERATIONS, `Error response: ${JSON.stringify(err.response).slice(0, ERROR_DEBUG_LENGTH)}`);
+
+    // Log full error object structure
+    try {
+      const errorProps = Object.getOwnPropertyNames(err);
+      debug(SUBSYSTEM.OPERATIONS, `Error properties: ${errorProps.join(', ')}`);
+      debug(SUBSYSTEM.OPERATIONS, `Full error: ${JSON.stringify(err, errorProps).slice(0, ERROR_DEBUG_LENGTH)}`);
+    } catch (e) {
+      debug(SUBSYSTEM.OPERATIONS, `Could not stringify error: ${e.message}`);
+    }
+
+    // Log full cause object structure
+    if (err?.cause) {
+      try {
+        const causeProps = Object.getOwnPropertyNames(err.cause);
+        debug(SUBSYSTEM.OPERATIONS, `Cause properties: ${causeProps.join(', ')}`);
+        debug(SUBSYSTEM.OPERATIONS, `Full cause: ${JSON.stringify(err.cause, causeProps).slice(0, ERROR_DEBUG_LENGTH)}`);
+      } catch (e) {
+        debug(SUBSYSTEM.OPERATIONS, `Could not stringify cause: ${e.message}`);
+      }
     }
 
     if (isContextLengthError(err)) {
@@ -508,37 +524,26 @@ async function calculateTotalRequestTokens(prompt, includePreset, preset, prefil
     debug(SUBSYSTEM.OPERATIONS, `Added OpenAI system prompt overhead: ${systemTokens} tokens`);
   }
 
-  // Only count preset tokens if they will actually be included
-  if (includePreset && preset !== null && preset !== undefined) {
-    // Resolve preset name (empty string means use active preset)
-    const { getPresetManager } = await import('../../../preset-manager.js');
-    const presetManager = getPresetManager('openai');
+  // CRITICAL: ConnectionManager ALWAYS loads preset from the PROFILE, completely ignoring
+  // the includePreset flag and the operation preset parameter. We MUST count these tokens.
+  const ctx = getContext();
+  const profileData = ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === profile);
+  const profilePresetName = profileData?.preset;
 
-    let effectivePresetName;
-    if (preset === '') {
-      effectivePresetName = presetManager?.getSelectedPresetName();
-      if (!effectivePresetName) {
-        debug(SUBSYSTEM.OPERATIONS, `Warning: Empty preset with no active preset, skipping preset token count`);
-      }
-    } else {
-      effectivePresetName = preset;
+  if (profilePresetName) {
+    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+    const presetMessages = await loadPresetPrompts(profilePresetName);
+    let presetTokens = 0;
+    for (const msg of presetMessages) {
+      const msgTokens = count_tokens(msg.content || '');
+      presetTokens += msgTokens;
     }
+    debug(SUBSYSTEM.OPERATIONS, `ConnectionManager will load ${presetMessages.length} preset messages from PROFILE preset "${profilePresetName}", ${presetTokens} tokens`);
+    totalTokens += presetTokens;
 
-    if (effectivePresetName) {
-      const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-      const presetMessages = await loadPresetPrompts(effectivePresetName);
-      let presetTokens = 0;
-      for (const msg of presetMessages) {
-        const msgTokens = count_tokens(msg.content || '');
-        presetTokens += msgTokens;
-      }
-      debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from operation preset "${effectivePresetName}", ${presetTokens} tokens`);
-      totalTokens += presetTokens;
-
-      debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, operationPreset=${presetTokens} (from "${effectivePresetName}"), total=${totalTokens}`);
-    }
+    debug(SUBSYSTEM.OPERATIONS, `Token breakdown: prompt=${promptTokens}, profilePreset=${presetTokens} (from "${profilePresetName}"), total=${totalTokens}`);
   } else {
-    debug(SUBSYSTEM.OPERATIONS, `Preset prompts not included (includePreset=${includePreset}), counting prompt tokens only`);
+    debug(SUBSYSTEM.OPERATIONS, `Warning: No profile preset found, ConnectionManager behavior undefined`);
   }
 
   // Add prefill overhead if provided
