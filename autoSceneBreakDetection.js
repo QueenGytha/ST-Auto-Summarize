@@ -341,8 +341,7 @@ async function calculateAvailableContext(preset) {
     return null;
   }
 
-  const presetMaxTokens = presetData.genamt || presetData.openai_max_tokens || 0;
-  return presetMaxContext - presetMaxTokens;
+  return presetMaxContext;
 }
 
 function shouldCheckMessage(
