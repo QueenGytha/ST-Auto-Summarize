@@ -210,7 +210,7 @@ function initialize_slash_commands() {
       log('[Token Count] Per-message breakdown:', messageTokenCounts);
 
       toast(summary, 'info');
-      return { totalTokens, totalMessages: chat.length, average: Math.round(totalTokens / chat.length), breakdown: messageTokenCounts };
+      return summary;
     },
     helpString: 'Count tokens in all messages in the current chat'
   }));
