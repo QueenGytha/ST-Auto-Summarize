@@ -1,7 +1,7 @@
 
 // recapToLorebookProcessor.js - Extract lorebook entries from recap JSON objects and process them
 
-import { chat_metadata, saveMetadata } from '../../../../script.js';
+import { chat_metadata, saveMetadata, name1 } from '../../../../script.js';
 import { extension_settings } from '../../../extensions.js';
 
 import {
@@ -333,9 +333,25 @@ function readAndCoerceLorebookEntrySettings(entryComment ) {
 
   // Apply explicit type coercion to ensure correct types
   const excludeRecursion = rawExcludeRecursion === undefined ? false : Boolean(rawExcludeRecursion);
-  const preventRecursion = rawPreventRecursion === undefined ? false : Boolean(rawPreventRecursion);
+  let preventRecursion = rawPreventRecursion === undefined ? false : Boolean(rawPreventRecursion);
   const ignoreBudget = rawIgnoreBudget === undefined ? true : Boolean(rawIgnoreBudget);
   const sticky = rawSticky === undefined ? DEFAULT_STICKY_ROUNDS : Number(rawSticky);
+
+  // Check if this is a {{user}} character entry and auto-set preventRecursion if not already set
+  if (typeof entryComment === 'string' && typeof name1 === 'string') {
+    const commentLower = entryComment.toLowerCase().trim();
+    const userName = name1.trim();
+    const userNameLower = userName.toLowerCase();
+
+    // Check if comment matches {{user}} name (exact match or with character- prefix)
+    const isUserEntry = commentLower === userNameLower ||
+                       commentLower === `character-${userNameLower}`;
+
+    if (isUserEntry && rawPreventRecursion === undefined) {
+      preventRecursion = true;
+      debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] Auto-enabled preventRecursion for {{user}} entry: "${entryComment}"`);
+    }
+  }
 
   debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] Final coerced settings for entry "${entryComment}":`, {
     excludeRecursion,

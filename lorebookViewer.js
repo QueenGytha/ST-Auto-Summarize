@@ -164,7 +164,7 @@ export function showLorebookEntriesModal(messageIndex) {
         <p style="margin-bottom: 0.5em; font-size: 0.9em; color: #aaa;">
           Entries that were injected into the LLM prompt${strategyBreakdownHtml}
         </p>
-        <div style="max-height: 300px; overflow-y: auto; padding: 0.5em; border: 1px solid #4CAF50; border-radius: 4px; background: rgba(76,175,80,0.05);">
+        <div style="max-height: 60vh; overflow-y: auto; padding: 0.5em; border: 1px solid #4CAF50; border-radius: 4px; background: rgba(76,175,80,0.05);">
           ${activeEntriesHtml}
         </div>
       </div>
@@ -174,7 +174,7 @@ export function showLorebookEntriesModal(messageIndex) {
         <p style="margin-bottom: 0.5em; font-size: 0.9em; color: #666;">
           Complete snapshot of all other loaded lorebook entries
         </p>
-        <div style="max-height: 300px; overflow-y: auto; padding: 0.5em; border: 1px solid #888; border-radius: 4px; background: rgba(136,136,136,0.03);">
+        <div style="max-height: 20vh; overflow-y: auto; padding: 0.5em; border: 1px solid #888; border-radius: 4px; background: rgba(136,136,136,0.03);">
           ${inactiveEntriesHtml}
         </div>
       </div>

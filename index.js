@@ -403,7 +403,8 @@ async function getAllLorebookEntries(mergedEntries) {
   // Extract unique world names from active entries
   const uniqueWorldNames = new Set(mergedEntries.map(e => e.world));
 
-  debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Loading entries from ${uniqueWorldNames.size} unique lorebook(s)`);
+  debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Loading entries from ${uniqueWorldNames.size} unique lorebook(s): ${Array.from(uniqueWorldNames).join(', ')}`);
+  debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] mergedEntries contains ${mergedEntries.length} active entries`);
 
   for (const worldName of uniqueWorldNames) {
     // eslint-disable-next-line no-await-in-loop -- Sequential loading required to fetch lorebook data
@@ -414,7 +415,11 @@ async function getAllLorebookEntries(mergedEntries) {
       continue;
     }
 
-    for (const entry of Object.values(worldData.entries)) {
+    const entriesArray = Object.values(worldData.entries);
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Lorebook "${worldName}" - worldData.entries has ${entriesArray.length} entries`);
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Lorebook "${worldName}" - worldData.entries keys: ${Object.keys(worldData.entries).length}`);
+
+    for (const entry of entriesArray) {
       const strategy = getEntryStrategy(entry);
       allEntries.push({
         comment: entry.comment || '(unnamed)',
@@ -432,6 +437,7 @@ async function getAllLorebookEntries(mergedEntries) {
         content: entry.content || ''
       });
     }
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Lorebook "${worldName}" - added ${entriesArray.length} entries to allEntries`);
   }
 
   debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Loaded ${allEntries.length} total entries from all lorebooks`);
@@ -575,6 +581,9 @@ export function installWorldInfoActivationLogger() {
     const allLorebookEntries = await getAllLorebookEntries(mergedEntries);
     const activeUIDs = new Set(mergedEntries.map(e => e.uid));
 
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Active UIDs set contains ${activeUIDs.size} UIDs: ${Array.from(activeUIDs).join(', ')}`);
+    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] allLorebookEntries contains ${allLorebookEntries.length} total entries`);
+
     // Parse ALL entries into active/inactive based on activation state
     const activeEntriesFromAll = [];
     const inactiveEntries = [];
@@ -582,8 +591,10 @@ export function installWorldInfoActivationLogger() {
     for (const entry of allLorebookEntries) {
       if (activeUIDs.has(entry.uid)) {
         activeEntriesFromAll.push(entry);
+        debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Entry "${entry.comment}" (${entry.uid}) classified as ACTIVE`);
       } else {
         inactiveEntries.push(entry);
+        debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Entry "${entry.comment}" (${entry.uid}) classified as INACTIVE`);
       }
     }
 

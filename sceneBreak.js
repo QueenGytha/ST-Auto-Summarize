@@ -764,7 +764,7 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
   }
 
   try {
-    const { checkWorldInfo } = await import('../../../world-info.js');
+    const { checkWorldInfo, getWorldInfoSettings, setWorldInfoSettings } = await import('../../../world-info.js');
     const chat = ctx.chat;
 
     // Find scene boundaries (walk back to previous scene break or chat start)
@@ -806,58 +806,84 @@ async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
       debug(SUBSYSTEM.SCENE, `Cache cleared for ${chatLorebookName}, will reload on next access`);
     }
 
-    const MAX_CONTEXT_FOR_WI_CHECK = 999999;
-    const wiResult = await checkWorldInfo(sceneMessages, MAX_CONTEXT_FOR_WI_CHECK, true, globalScanData);
+    // CRITICAL FIX: checkWorldInfo expects messages in reverse chronological order (newest → oldest)
+    // but chat array is in chronological order (oldest → newest). We must reverse before calling.
+    // Override world info settings for scene recap:
+    // - scan_depth: 1000 (scan entire scene, not just last N messages)
+    // - min_activations: 0 (disable, otherwise it overwrites scan_depth behavior)
+    // - max_recursion_steps: 1 (effectively disables recursion after first pass)
+    const originalSettings = getWorldInfoSettings();
+    const MAX_SCAN_DEPTH = 1000;
+    setWorldInfoSettings({
+      world_info_depth: MAX_SCAN_DEPTH,
+      world_info_min_activations: 0,
+      world_info_max_recursion_steps: 1
+    }, null);
+    debug(SUBSYSTEM.SCENE, `Temporarily overriding WI settings - scan_depth: ${MAX_SCAN_DEPTH}, min_activations: 0, max_recursion: 1 (original: ${originalSettings.world_info_depth}, ${originalSettings.world_info_min_activations}, ${originalSettings.world_info_max_recursion_steps})`);
 
-    if (!wiResult || !wiResult.allActivatedEntries) {
-      return { entries: [], metadata: { startIdx, endIdx, sceneMessageCount: sceneMessages.length } };
-    }
+    try {
+      const reversedSceneMessages = sceneMessages.slice().reverse();
+      const MAX_CONTEXT_FOR_WI_CHECK = 999999;
+      const wiResult = await checkWorldInfo(reversedSceneMessages, MAX_CONTEXT_FOR_WI_CHECK, true, globalScanData);
 
-    const suppressOtherLorebooks = get_settings('suppress_other_lorebooks');
-
-    const entries = Array.from(wiResult.allActivatedEntries);
-    const totalBeforeFiltering = entries.length;
-
-    debug(SUBSYSTEM.SCENE, `checkWorldInfo returned ${totalBeforeFiltering} total entries`);
-    if (totalBeforeFiltering > 0) {
-      const entryList = entries.map(e => `${e.comment || e.uid || 'unnamed'} (world: ${e.world})`).join(', ');
-      debug(SUBSYSTEM.SCENE, `Entries before filtering: ${entryList}`);
-    }
-
-    const filteredEntries = entries.filter(entry => !shouldFilterLorebookEntry(entry, suppressOtherLorebooks, chatLorebookName));
-
-    logFilteringResults({ entries, filteredEntries, startIdx, endIdx, chatLorebookName, suppressOtherLorebooks });
-
-    // Enhance entries with strategy metadata (matching automatic tracking format)
-    const enhancedEntries = filteredEntries.map(entry => ({
-      comment: entry.comment || '(unnamed)',
-      uid: entry.uid,
-      world: entry.world,
-      key: entry.key || [],
-      position: entry.position,
-      depth: entry.depth,
-      order: entry.order,
-      role: entry.role,
-      constant: entry.constant || false,
-      vectorized: entry.vectorized || false,
-      sticky: entry.sticky || 0,
-      strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal'),
-      content: entry.content || ''
-    }));
-
-    return {
-      entries: enhancedEntries,
-      metadata: {
-        startIdx,
-        endIdx,
-        sceneMessageCount: sceneMessages.length,
-        totalActivatedEntries: enhancedEntries.length,
-        totalBeforeFiltering,
-        chatLorebookName: chatLorebookName || null,
-        suppressOtherLorebooks,
-        entryNames: enhancedEntries.map(e => e.comment || e.uid || 'Unnamed')
+      if (!wiResult || !wiResult.allActivatedEntries) {
+        return { entries: [], metadata: { startIdx, endIdx, sceneMessageCount: sceneMessages.length } };
       }
-    };
+
+      const suppressOtherLorebooks = get_settings('suppress_other_lorebooks');
+
+      const entries = Array.from(wiResult.allActivatedEntries);
+      const totalBeforeFiltering = entries.length;
+
+      debug(SUBSYSTEM.SCENE, `checkWorldInfo returned ${totalBeforeFiltering} total entries`);
+      if (totalBeforeFiltering > 0) {
+        const entryList = entries.map(e => `${e.comment || e.uid || 'unnamed'} (world: ${e.world})`).join(', ');
+        debug(SUBSYSTEM.SCENE, `Entries before filtering: ${entryList}`);
+      }
+
+      const filteredEntries = entries.filter(entry => !shouldFilterLorebookEntry(entry, suppressOtherLorebooks, chatLorebookName));
+
+      logFilteringResults({ entries, filteredEntries, startIdx, endIdx, chatLorebookName, suppressOtherLorebooks });
+
+      // Enhance entries with strategy metadata (matching automatic tracking format)
+      const enhancedEntries = filteredEntries.map(entry => ({
+        comment: entry.comment || '(unnamed)',
+        uid: entry.uid,
+        world: entry.world,
+        key: entry.key || [],
+        position: entry.position,
+        depth: entry.depth,
+        order: entry.order,
+        role: entry.role,
+        constant: entry.constant || false,
+        vectorized: entry.vectorized || false,
+        sticky: entry.sticky || 0,
+        strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal'),
+        content: entry.content || ''
+      }));
+
+      return {
+        entries: enhancedEntries,
+        metadata: {
+          startIdx,
+          endIdx,
+          sceneMessageCount: sceneMessages.length,
+          totalActivatedEntries: enhancedEntries.length,
+          totalBeforeFiltering,
+          chatLorebookName: chatLorebookName || null,
+          suppressOtherLorebooks,
+          entryNames: enhancedEntries.map(e => e.comment || e.uid || 'Unnamed')
+        }
+      };
+    } finally {
+      // Restore original world info settings
+      setWorldInfoSettings({
+        world_info_depth: originalSettings.world_info_depth,
+        world_info_min_activations: originalSettings.world_info_min_activations,
+        world_info_max_recursion_steps: originalSettings.world_info_max_recursion_steps
+      }, null);
+      debug(SUBSYSTEM.SCENE, `Restored WI settings - scan_depth: ${originalSettings.world_info_depth}, min_activations: ${originalSettings.world_info_min_activations}, max_recursion: ${originalSettings.world_info_max_recursion_steps}`);
+    }
   } catch (err) {
     debug(SUBSYSTEM.SCENE, `Failed to get active lorebooks: ${err.message}`);
     return { entries: [], metadata: { startIdx: endIdx, endIdx, sceneMessageCount: 0, error: err.message } };
