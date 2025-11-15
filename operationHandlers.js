@@ -254,7 +254,7 @@ export function registerAllOperationHandlers() {
   });
 
   // Detect scene break (range-based)
-  // eslint-disable-next-line complexity -- Retry logic adds one branch, acceptable increase from 20 to 21
+  // eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Retry logic and range reduction handling adds complexity, acceptable increase
   registerOperationHandler(OperationType.DETECT_SCENE_BREAK, async (operation) => {
     const { startIndex, offset = 0 } = operation.params;
     let { endIndex, forceSelection = false } = operation.params;
@@ -292,20 +292,29 @@ export function registerAllOperationHandlers() {
       ({ sceneBreakAt, rationale, tokenBreakdown, filteredIndices, maxEligibleIndex, rangeWasReduced, currentEndIndex } = result);
 
       // If range was reduced, update operation params AND metadata to reflect the new state
-      if (rangeWasReduced && !forceSelection) {
-        const originalEndIndex = operation.params.endIndex;
+      if (rangeWasReduced) {
+        const previousEndIndex = operation.params.endIndex;
         operation.params.endIndex = currentEndIndex;
-        operation.params.forceSelection = true;
-        forceSelection = true; // Update local variable for retry logic
         endIndex = currentEndIndex; // Update local variable for validation
 
         // Update metadata for UI display
         operation.metadata = operation.metadata || {};
         operation.metadata.range_reduced = true;
-        operation.metadata.original_end_index = originalEndIndex;
+        // Only set original_end_index once (preserve the truly original value)
+        if (!operation.metadata.original_end_index) {
+          operation.metadata.original_end_index = previousEndIndex;
+        }
+        // Always update current_end_index to show latest reduction
         operation.metadata.current_end_index = currentEndIndex;
 
-        debug(SUBSYSTEM.QUEUE, `Range reduced from ${startIndex}-${originalEndIndex} to ${startIndex}-${currentEndIndex}, setting forceSelection=true`);
+        // Set forceSelection if not already set
+        if (!forceSelection) {
+          operation.params.forceSelection = true;
+          forceSelection = true; // Update local variable for retry logic
+          debug(SUBSYSTEM.QUEUE, `Range reduced from ${startIndex}-${previousEndIndex} to ${startIndex}-${currentEndIndex}, setting forceSelection=true`);
+        } else {
+          debug(SUBSYSTEM.QUEUE, `Range reduced AGAIN from ${startIndex}-${previousEndIndex} to ${startIndex}-${currentEndIndex} (already forced)`);
+        }
       }
 
       // Store token breakdown in operation metadata
