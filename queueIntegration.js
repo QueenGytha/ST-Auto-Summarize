@@ -109,14 +109,20 @@ export function queueCombineSceneWithRunning(index , options  = {}) {
     debug(SUBSYSTEM.QUEUE, `  Version ${v.version}: ${v.prev_scene_index} > ${v.new_scene_index}`);
   }
 
-  const previousVersions = versions.filter((v) => v.new_scene_index < index);
-  const previousVersion = previousVersions.length > 0
-    ? previousVersions.reduce((latest, current) =>
-        current.version > latest.version ? current : latest
-      )
-    : null;
+  // Find the most recent version where new_scene_index < index
+  // This matches the logic in get_previous_running_recap_version_before_scene()
+  let previousVersion = null;
+  for (let i = versions.length - 1; i >= 0; i--) {
+    const version = versions[i];
+    const version_scene_idx = version.new_scene_index ?? 0;
 
-  debug(SUBSYSTEM.QUEUE, `[queueCombineSceneWithRunning] Found ${previousVersions.length} previous versions, selected: ${previousVersion ? `v${previousVersion.version} (${previousVersion.prev_scene_index} > ${previousVersion.new_scene_index})` : 'null'}`);
+    if (version_scene_idx < index) {
+      previousVersion = version;
+      break;
+    }
+  }
+
+  debug(SUBSYSTEM.QUEUE, `[queueCombineSceneWithRunning] Selected previous version: ${previousVersion ? `v${previousVersion.version} (${previousVersion.prev_scene_index} > ${previousVersion.new_scene_index})` : 'null'}`);
 
   const startIndex = previousVersion ? previousVersion.new_scene_index : 0;
   const endIndex = index;

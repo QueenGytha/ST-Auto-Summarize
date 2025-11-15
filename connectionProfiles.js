@@ -1,6 +1,7 @@
 
 import { get_settings, error, debug, toast_debounced, getContext, CONNECT_API_MAP, selectorsSillyTavern } from './index.js';
 import { CONNECTION_TOAST_DURATION_MS, PROFILE_SWITCH_DELAY_MS } from './constants.js';
+import { oai_settings, proxies } from '../../../openai.js';
 
 // Connection profiles
 let connection_profiles_active;
@@ -164,7 +165,6 @@ function get_connection_profile_proxy_url(profileName) {
     return null;
   }
 
-  const ctx = getContext();
   const profile = find_profile_by_name(profileName);
   if (!profile) {
     debug(`[Proxy Detection] Profile "${profileName}" not found in connectionManager.profiles`);
@@ -175,19 +175,16 @@ function get_connection_profile_proxy_url(profileName) {
   debug(`[Proxy Detection] Profile field names:`, Object.keys(profile));
 
   // Check OpenAI settings for reverse proxy (Connection Manager uses this!)
-  const oaiSettings = ctx.oai_settings || {};
-  debug(`[Proxy Detection] FULL oai_settings object:`, JSON.stringify(oaiSettings, null, 2));
-  debug(`[Proxy Detection] oai_settings keys:`, Object.keys(oaiSettings));
-  debug(`[Proxy Detection] oai_settings.reverse_proxy:`, oaiSettings.reverse_proxy);
-  if (oaiSettings.reverse_proxy) {
-    debug(`[Proxy Detection] Found reverse proxy in oai_settings: ${oaiSettings.reverse_proxy}`);
-    return oaiSettings.reverse_proxy;
+  // Import oai_settings and proxies directly from openai.js (like shared.js does)
+  debug(`[Proxy Detection] oai_settings.reverse_proxy:`, oai_settings.reverse_proxy);
+  if (oai_settings.reverse_proxy) {
+    debug(`[Proxy Detection] Found reverse proxy in oai_settings: ${oai_settings.reverse_proxy}`);
+    return oai_settings.reverse_proxy;
   }
 
   // Check for proxy preset (Connection Manager looks up proxies array from openai.js)
-  const proxiesArray = ctx.proxies || [];
-  debug(`[Proxy Detection] OpenAI proxies array:`, proxiesArray.map(p => ({ name: p.name, url: p.url })));
-  const proxyPreset = proxiesArray.find((p) => p.name === profile.proxy);
+  debug(`[Proxy Detection] OpenAI proxies array:`, proxies.map(p => ({ name: p.name, url: p.url })));
+  const proxyPreset = proxies.find((p) => p.name === profile.proxy);
   if (proxyPreset?.url) {
     debug(`[Proxy Detection] Found proxy preset "${profile.proxy}":`, proxyPreset.url);
     return proxyPreset.url;
