@@ -897,8 +897,16 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
         }
       };
     } finally {
-      // Restore original world info settings (only if we modified them)
-      if (!skipSettingsModification) {
+      // Restore original world info settings
+      if (skipSettingsModification) {
+        // We modified globals directly, restore them directly
+        const worldInfoModule = await import('../../../world-info.js');
+        worldInfoModule.world_info_depth = originalSettings.world_info_depth;
+        worldInfoModule.world_info_min_activations = originalSettings.world_info_min_activations;
+        worldInfoModule.world_info_max_recursion_steps = originalSettings.world_info_max_recursion_steps;
+        debug(SUBSYSTEM.SCENE, `Restored WI globals directly (no events) - scan_depth: ${originalSettings.world_info_depth}, min_activations: ${originalSettings.world_info_min_activations}, max_recursion: ${originalSettings.world_info_max_recursion_steps}`);
+      } else {
+        // We used setWorldInfoSettings, restore via setWorldInfoSettings
         const { world_names } = await import('../../../world-info.js');
         setWorldInfoSettings({
           world_info: originalSettings.world_info,  // Preserve world_info object
