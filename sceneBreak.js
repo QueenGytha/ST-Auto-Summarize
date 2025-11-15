@@ -15,7 +15,9 @@ import {
   selectorsSillyTavern,
   convertLiteralNewlinesToActual,
   convertActualNewlinesToLiteral,
-  MODULE_NAME } from
+  MODULE_NAME,
+  count_tokens,
+  main_api } from
 './index.js';
 import {
   queueCombineSceneWithRunning,
@@ -940,6 +942,98 @@ get_data )
   return { prompt, prefill, lorebookMetadata: { ...lorebookMetadata, entries: activeEntries } };
 }
 
+// Helper: Calculate total request tokens for scene recap (mirrors llmClient.js logic)
+async function calculateSceneRecapTokens(prompt, includePreset, preset, prefill, operationType) {
+  const DEBUG_PREFILL_LENGTH = 50;
+  debug(SUBSYSTEM.SCENE, `calculateSceneRecapTokens: includePreset=${includePreset}, preset="${preset}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
+
+  // Build the ACTUAL message array that will be sent (mirroring llmClient.js logic)
+  let messages = [];
+  const effectivePrefill = prefill || '';
+  let presetTokens = 0;
+  let systemTokens = 0;
+  const userPromptTokens = count_tokens(prompt);
+  let prefillTokens = 0;
+
+  // Load preset messages if includePreset is true (same as llmClient.js lines 117-142)
+  if (includePreset && preset) {
+    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+    const presetMessages = await loadPresetPrompts(preset);
+
+    // Add preset messages first
+    messages = [...presetMessages];
+
+    // Count preset tokens
+    for (const msg of presetMessages) {
+      presetTokens += count_tokens(msg.content || '');
+    }
+
+    debug(SUBSYSTEM.SCENE, `Loaded ${presetMessages.length} preset messages from completion preset "${preset}"`);
+  }
+
+  // Add system prompt for OpenAI (same as llmClient.js lines 130-132, 146-148)
+  if (main_api === 'openai') {
+    const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
+    messages.push({ role: 'system', content: systemPrompt });
+    systemTokens = count_tokens(systemPrompt);
+  }
+
+  // Add user prompt
+  messages.push({ role: 'user', content: prompt });
+
+  // Add prefill as assistant message (same as llmClient.js lines 160-162)
+  if (effectivePrefill) {
+    messages.push({ role: 'assistant', content: effectivePrefill });
+    prefillTokens = count_tokens(effectivePrefill);
+  }
+
+  // Count tokens BEFORE metadata injection
+  const tokensBeforeMetadata = count_tokens(JSON.stringify(messages));
+
+  // Inject metadata (same as llmClient.js line 168)
+  const { getOperationSuffix } = await import('./index.js');
+  const { injectMetadataIntoChatArray } = await import('./metadataInjector.js');
+
+  const suffix = getOperationSuffix();
+  const fullOperation = suffix ? `${operationType}${suffix}` : operationType;
+  const messagesWithMetadata = [...messages];
+  injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
+
+  // Count tokens in the ACTUAL structure that will be sent (same as llmClient.js line 191)
+  const actualTokens = count_tokens(JSON.stringify(messagesWithMetadata));
+
+  // Calculate overhead
+  const contentOnlyTokens = presetTokens + systemTokens + userPromptTokens + prefillTokens;
+  const jsonStructureOverhead = tokensBeforeMetadata - contentOnlyTokens;
+  const metadataOverhead = actualTokens - tokensBeforeMetadata;
+  const totalOverhead = actualTokens - contentOnlyTokens;
+
+  debug(SUBSYSTEM.SCENE, `=== DETAILED TOKEN BREAKDOWN ===`);
+  debug(SUBSYSTEM.SCENE, `Content tokens:`);
+  if (presetTokens > 0) {
+    debug(SUBSYSTEM.SCENE, `  - Preset prompts: ${presetTokens} tokens (${messages.filter(m => m.role !== 'system' && m.role !== 'user' && m.role !== 'assistant').length} messages)`);
+  }
+  if (systemTokens > 0) {
+    debug(SUBSYSTEM.SCENE, `  - System prompt: ${systemTokens} tokens`);
+  }
+  debug(SUBSYSTEM.SCENE, `  - User prompt: ${userPromptTokens} tokens`);
+  if (prefillTokens > 0) {
+    debug(SUBSYSTEM.SCENE, `  - Prefill: ${prefillTokens} tokens`);
+  }
+  debug(SUBSYSTEM.SCENE, `  - Content subtotal: ${contentOnlyTokens} tokens`);
+  debug(SUBSYSTEM.SCENE, ``);
+  debug(SUBSYSTEM.SCENE, `Overhead tokens:`);
+  debug(SUBSYSTEM.SCENE, `  - JSON structure (role/content fields, quotes, braces): ${jsonStructureOverhead} tokens`);
+  debug(SUBSYSTEM.SCENE, `  - Metadata injection: ${metadataOverhead} tokens`);
+  const PERCENTAGE_MULTIPLIER = 100;
+  debug(SUBSYSTEM.SCENE, `  - Overhead subtotal: ${totalOverhead} tokens (${((totalOverhead / actualTokens) * PERCENTAGE_MULTIPLIER).toFixed(1)}% of total)`);
+  debug(SUBSYSTEM.SCENE, ``);
+  debug(SUBSYSTEM.SCENE, `TOTAL TOKENS TO BE SENT: ${actualTokens}`);
+  debug(SUBSYSTEM.SCENE, `=== END TOKEN BREAKDOWN ===`);
+
+  return actualTokens;
+}
+
 // Helper: Extract and validate JSON from AI response (REMOVED - now uses centralized helper in utils.js)
 
 // Helper: Generate recap with error handling
@@ -955,6 +1049,9 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
     // Set operation context for ST_METADATA
     const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
     setOperationSuffix(`-${startIdx}-${endIdx}`);
+
+    // Calculate and log token breakdown BEFORE sending
+    await calculateSceneRecapTokens(prompt, include_preset_prompts, preset_name, prefill, operationType);
 
     try {
       const { sendLLMRequest } = await import('./llmClient.js');
