@@ -906,6 +906,25 @@ export function registerAllOperationHandlers() {
     }
 
     // Store lorebook entry deduplicate result
+    // Merge duplicateUids from LLM with sameEntityUids from LOOKUP to ensure we consolidate everything
+    if (lorebookEntryDeduplicateResult.resolvedUid &&
+        lorebookEntryLookupResult.sameEntityUids &&
+        lorebookEntryLookupResult.sameEntityUids.length > 1) {
+      // LOOKUP identified multiple same entities - ensure ALL are in duplicateUids for consolidation
+      const llmDuplicates = lorebookEntryDeduplicateResult.duplicateUids || [];
+      const lookupDuplicates = lorebookEntryLookupResult.sameEntityUids
+        .filter(uid => String(uid) !== String(lorebookEntryDeduplicateResult.resolvedUid))
+        .map(uid => String(uid));
+
+      // Merge both sources, deduplicate
+      const allDuplicates = [...new Set([...llmDuplicates, ...lookupDuplicates])];
+
+      if (allDuplicates.length !== llmDuplicates.length) {
+        debug(SUBSYSTEM.QUEUE, `Merged duplicates: LLM provided [${llmDuplicates.join(', ')}], LOOKUP identified [${lookupDuplicates.join(', ')}], final: [${allDuplicates.join(', ')}]`);
+      }
+
+      lorebookEntryDeduplicateResult.duplicateUids = allDuplicates;
+    }
     setLorebookEntryDeduplicateResult(entryId, lorebookEntryDeduplicateResult);
     markStageInProgress(entryId, 'lorebook_entry_deduplicate_complete');
 
