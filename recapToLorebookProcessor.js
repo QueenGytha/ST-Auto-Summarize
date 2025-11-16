@@ -782,7 +782,7 @@ async function parseLorebookEntryDeduplicateResponse(response , fallbackSynopsis
   } catch (err) {
     // If parsing failed, return default structure
     debug?.('Failed to parse lorebook entry deduplication response:', err);
-    return { resolvedUid: null, synopsis: fallbackSynopsis || '' };
+    return { resolvedUid: null, synopsis: fallbackSynopsis || '', duplicateUids: [] };
   }
 
   let resolvedUid = parsed.resolvedUid;
@@ -799,7 +799,13 @@ async function parseLorebookEntryDeduplicateResponse(response , fallbackSynopsis
   parsed.synopsis.trim() :
   fallbackSynopsis || '';
 
-  return { resolvedUid: resolvedUid ? String(resolvedUid) : null, synopsis };
+  const duplicateUids = Array.isArray(parsed.duplicateUids)
+    ? parsed.duplicateUids
+        .filter(uid => uid && String(uid) !== String(resolvedUid))
+        .map(uid => String(uid))
+    : [];
+
+  return { resolvedUid: resolvedUid ? String(resolvedUid) : null, synopsis, duplicateUids };
 }
 
 export async function runLorebookEntryDeduplicateStage(
@@ -810,7 +816,7 @@ singleType ,
 settings )
 {
   if (!shouldRunLorebookEntryDeduplicate(candidateEntries, settings)) {
-    return { resolvedUid: null, synopsis: lorebookEntryLookupSynopsis || '' };
+    return { resolvedUid: null, synopsis: lorebookEntryLookupSynopsis || '', duplicateUids: [] };
   }
 
   const prompt = buildLorebookEntryDeduplicatePrompt(normalizedEntry, lorebookEntryLookupSynopsis, candidateEntries, singleType, settings);
@@ -819,7 +825,7 @@ settings )
   const tokenBreakdown = result?.tokenBreakdown;
 
   if (!response) {
-    return { resolvedUid: null, synopsis: lorebookEntryLookupSynopsis || '', tokenBreakdown };
+    return { resolvedUid: null, synopsis: lorebookEntryLookupSynopsis || '', duplicateUids: [], tokenBreakdown };
   }
 
   const parsed = await parseLorebookEntryDeduplicateResponse(response, lorebookEntryLookupSynopsis);

@@ -87,7 +87,8 @@ export function setLorebookEntryDeduplicateResult(entryId , lorebookEntryDedupli
     stage: 'lorebook_entry_deduplicate_complete',
     lorebookEntryDeduplicateResult: {
       resolvedUid: lorebookEntryDeduplicateResult.resolvedUid || null,
-      synopsis: lorebookEntryDeduplicateResult.synopsis || ''
+      synopsis: lorebookEntryDeduplicateResult.synopsis || '',
+      duplicateUids: Array.isArray(lorebookEntryDeduplicateResult.duplicateUids) ? lorebookEntryDeduplicateResult.duplicateUids : []
     }
   });
 }

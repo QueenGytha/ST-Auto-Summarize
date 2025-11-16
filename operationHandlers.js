@@ -59,6 +59,7 @@ import {
   getAttachedLorebook,
   getLorebookEntries,
   addLorebookEntry,
+  deleteLorebookEntry,
   updateRegistryEntryContent,
   reorderLorebookEntriesAlphabetically } from
 './lorebookManager.js';
@@ -758,8 +759,11 @@ export function registerAllOperationHandlers() {
     debug(SUBSYSTEM.QUEUE, `✓ Lorebook Entry Lookup complete for ${entryId}: type=${lorebookEntryLookupResult.type}, sameUids=${lorebookEntryLookupResult.sameEntityUids.length}, needsUids=${lorebookEntryLookupResult.needsFullContextUids.length}`);
 
     // Enqueue next operation based on lorebook entry lookup result
-    if (lorebookEntryLookupResult.needsFullContextUids && lorebookEntryLookupResult.needsFullContextUids.length > 0) {
-      // Need lorebook entry deduplication - capture settings at enqueue time
+    const needsResolution = (lorebookEntryLookupResult.needsFullContextUids && lorebookEntryLookupResult.needsFullContextUids.length > 0) ||
+                           (lorebookEntryLookupResult.sameEntityUids && lorebookEntryLookupResult.sameEntityUids.length > 1);
+
+    if (needsResolution) {
+      // Need lorebook entry deduplication - handles both uncertain matches AND multiple definite matches
       const deduplicatePrefill = get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill') || '';
       const deduplicateIncludePresetPrompts = get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts') ?? false;
 
@@ -780,7 +784,7 @@ export function registerAllOperationHandlers() {
     } else if (lorebookEntryLookupResult.sameEntityUids.length === 1) {
       // Exact match found - merge - capture merge settings at enqueue time
       const resolvedUid = lorebookEntryLookupResult.sameEntityUids[0];
-      setLorebookEntryDeduplicateResult(entryId, { resolvedUid, synopsis: lorebookEntryLookupResult.synopsis });
+      setLorebookEntryDeduplicateResult(entryId, { resolvedUid, synopsis: lorebookEntryLookupResult.synopsis, duplicateUids: [] });
       markStageInProgress(entryId, 'lorebook_entry_deduplicate_complete');
 
       const mergePrefill = get_settings('auto_lorebooks_recap_merge_prefill') || '';
@@ -917,7 +921,7 @@ export function registerAllOperationHandlers() {
         OperationType.CREATE_LOREBOOK_ENTRY,
         { entryId, action: 'merge', resolvedUid: lorebookEntryDeduplicateResult.resolvedUid },
         {
-          priority: 10,
+          priority: 14, // Match other CREATE operations, ensure completion before new LOOKUPs
           queueVersion: operation.queueVersion,
           metadata: {
             entry_comment: entryData.comment,
@@ -978,6 +982,94 @@ export function registerAllOperationHandlers() {
     };
   }
 
+  // eslint-disable-next-line complexity,max-params -- Consolidation requires sequential operations with error handling
+  async function consolidateDuplicateEntries(entryId , resolvedUid , lorebookName , registryState , contextGetLorebookEntries , contextMergeLorebookEntry , signal ) {
+    const lorebookEntryDeduplicateResult = getLorebookEntryDeduplicateResult(entryId);
+    const duplicateUidsRaw = lorebookEntryDeduplicateResult?.duplicateUids || [];
+
+    if (duplicateUidsRaw.length === 0) {
+      return { canonicalUid: resolvedUid, record: registryState.index?.[resolvedUid] };
+    }
+
+    // ALWAYS use LOWEST UID as canonical (first created = source of truth)
+    const allUids = [resolvedUid, ...duplicateUidsRaw].map(uid => String(uid));
+    const numericUids = allUids.map(uid => {
+      const num = Number.parseInt(uid, 10);
+      return Number.isNaN(num) ? Infinity : num;
+    });
+    const minIdx = numericUids.indexOf(Math.min(...numericUids));
+    const canonicalUid = allUids[minIdx];
+    const duplicateUids = allUids.filter(uid => uid !== canonicalUid);
+
+    // Sort duplicates in DESCENDING order (merge highest → canonical first)
+    duplicateUids.sort((a, b) => {
+      const aNum = Number.parseInt(a, 10);
+      const bNum = Number.parseInt(b, 10);
+      if (Number.isNaN(aNum) || Number.isNaN(bNum)) {return 0;}
+      return bNum - aNum; // Descending
+    });
+
+    debug(SUBSYSTEM.QUEUE, `Consolidating ${duplicateUids.length} duplicate entries into canonical UID ${canonicalUid} (lowest): [${duplicateUids.join(', ')}]`);
+
+    // Update record to canonical if it changed
+    let record = registryState.index?.[canonicalUid];
+    if (!record) {
+      const allEntries = await contextGetLorebookEntries(lorebookName);
+      await refreshRegistryStateFromEntries(allEntries);
+      record = registryState.index?.[canonicalUid];
+    }
+    if (!record) {
+      throw new Error(`Canonical UID ${canonicalUid} not found in registry after resolution`);
+    }
+
+    for (const dupUid of duplicateUids) {
+      // Refetch to get latest merged content
+      // eslint-disable-next-line no-await-in-loop -- Sequential refetch required to get latest merged content after each merge
+      const currentEntries = await contextGetLorebookEntries(lorebookName);
+      const currentResolvedEntry = currentEntries?.find((e) => String(e.uid) === String(record.uid));
+      const dupRecord = registryState.index?.[dupUid];
+      const dupEntry = dupRecord ? currentEntries?.find((e) => String(e.uid) === String(dupRecord.uid)) : null;
+
+      if (!currentResolvedEntry) {
+        throw new Error(`Canonical entry ${canonicalUid} disappeared during consolidation`);
+      }
+
+      if (dupEntry) {
+        debug(SUBSYSTEM.QUEUE, `Merging duplicate UID ${dupUid} → canonical UID ${canonicalUid}`);
+
+        // eslint-disable-next-line no-await-in-loop -- Sequential merges required to maintain data integrity
+        const dupMergeResult = await contextMergeLorebookEntry(
+          lorebookName,
+          currentResolvedEntry,
+          { content: dupEntry.content, keys: dupEntry.key, secondaryKeys: dupEntry.keysecondary },
+          { useQueue: false }
+        );
+
+        throwIfAborted(signal, 'CREATE_LOREBOOK_ENTRY (consolidate duplicates)', 'duplicate merge LLM call');
+
+        if (!dupMergeResult?.success) {
+          throw new Error(`Failed to merge duplicate ${dupUid}: ${dupMergeResult?.message || 'Unknown error'}`);
+        }
+
+        // eslint-disable-next-line no-await-in-loop -- Sequential deletions required
+        const deleted = await deleteLorebookEntry(lorebookName, dupRecord.uid);
+        if (!deleted) {
+          debug(SUBSYSTEM.QUEUE, `Warning: Failed to delete duplicate entry ${dupUid}`);
+        }
+
+        debug(SUBSYSTEM.QUEUE, `✓ Consolidated and deleted duplicate ${dupUid}`);
+      } else {
+        debug(SUBSYSTEM.QUEUE, `Duplicate ${dupUid} not found in lorebook, skipping`);
+      }
+
+      // Remove from registry
+      delete registryState.index[dupUid];
+    }
+
+    return { canonicalUid, record };
+  }
+
+  // eslint-disable-next-line complexity -- Merge operation requires validation and consolidation steps
   async function executeMergeAction(context ) {
     const { resolvedUid, entryData, lorebookName, registryState, finalType, finalSynopsis,
       contextGetLorebookEntries, contextMergeLorebookEntry, contextUpdateRegistryRecord, contextEnsureStringArray, entryId, signal } = context;
@@ -1007,6 +1099,21 @@ export function registerAllOperationHandlers() {
       throw new Error(`DUPLICATE/STATE ERROR: Cannot merge into uid ${resolvedUid} — registry/entry not found after hydration. ${diagnostics}`);
     }
 
+    // Consolidate duplicates if any exist
+    const consolidation = await consolidateDuplicateEntries(entryId, resolvedUid, lorebookName, registryState, contextGetLorebookEntries, contextMergeLorebookEntry, signal);
+    const canonicalUid = consolidation.canonicalUid;
+
+    if (canonicalUid !== resolvedUid) {
+      // Canonical UID changed, update context and refetch
+      context.resolvedUid = canonicalUid;
+      record = consolidation.record;
+      existingEntriesRaw = await contextGetLorebookEntries(lorebookName);
+      existingEntry = existingEntriesRaw?.find((e) => String(e.uid) === String(record.uid));
+      if (!existingEntry) {
+        throw new Error(`Canonical entry ${canonicalUid} disappeared after consolidation`);
+      }
+    }
+
     const mergeResult = await contextMergeLorebookEntry(lorebookName, existingEntry, entryData, { useQueue: false });
 
     // Check if cancelled after LLM call (before side effects)
@@ -1016,7 +1123,7 @@ export function registerAllOperationHandlers() {
       throw new Error(mergeResult?.message || 'Merge failed');
     }
 
-    contextUpdateRegistryRecord(registryState, resolvedUid, {
+    contextUpdateRegistryRecord(registryState, canonicalUid, {
       type: finalType,
       name: entryData.comment || existingEntry.comment || '',
       comment: entryData.comment || existingEntry.comment || '',
@@ -1024,9 +1131,9 @@ export function registerAllOperationHandlers() {
       synopsis: finalSynopsis
     });
 
-    debug(SUBSYSTEM.QUEUE, `✓ Merged entry ${entryId} into ${resolvedUid}`);
+    debug(SUBSYSTEM.QUEUE, `✓ Merged entry ${entryId} into ${canonicalUid}`);
 
-    return { success: true, entityId: resolvedUid, entityUid: existingEntry.uid, action: 'merged' };
+    return { success: true, entityId: canonicalUid, entityUid: existingEntry.uid, action: 'merged' };
   }
 
   async function executeCreateAction(context ) {

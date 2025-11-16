@@ -1123,6 +1123,7 @@ Your response MUST start with { and end with }. No code fences, no commentary, n
 Required format (copy this structure exactly):
 {
   "resolvedUid": "<existing entity uid or \\"new\\">",
+  "duplicateUids": ["<uid1>", "<uid2>"],
   "synopsis": "<updated one-line recap for the canonical entity>"
 }
 
@@ -1154,6 +1155,8 @@ Rules:
 - For character entities with Notable Dialogue and Micro‑Moments bullets: When merging, compare quotes; remove exact duplicates; consolidate similar voice‑pattern descriptions; preserve unique, pattern‑setting quotes that show different facets; maintain recipient/context. Keep at most the 2 freshest Micro‑Moments per counterpart.
 - Do NOT fabricate bullets to satisfy a template; when details are not present, omit that bullet entirely (e.g., no Relations for a faction if none are stated yet).
 - Ensure the returned synopsis reflects the most current canon after reconciliation (concise, one line).
+- duplicateUids array: If multiple candidates represent the SAME entity (true duplicates of the same character/location/etc, not just similar), list the OTHER UIDs (excluding resolvedUid) in the duplicateUids array. These entries will be consolidated and deleted. Only include UIDs that are genuinely the same entity with overlapping information. Use [] when no duplicates exist.
+- The duplicateUids field must be an array. Do not include the resolvedUid itself in this array.
 - Output STRICT JSON with double quotes and no commentary.`;
 
 
