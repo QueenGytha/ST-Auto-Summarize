@@ -78,7 +78,7 @@ async function initialize_settings_listeners() {
   bind_function(selectorsExtension.memory.refresh, () => refresh_memory());
 
   // First-Hop Proxy Integration Settings
-  // (Removed) first_hop_proxy_send_chat_details binding – now auto-detected
+  bind_setting(selectorsExtension.proxy.manualOverride, 'first_hop_proxy_manual_override', 'boolean');
   bind_setting(selectorsExtension.proxy.suppressOtherLorebooks, 'suppress_other_lorebooks', 'boolean');
 
   // Token Counting Settings

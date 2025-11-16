@@ -40,7 +40,7 @@ export const selectorsExtension = {
 
   // First-Hop Proxy Integration
   proxy: {
-    // (Removed) sendChatDetails – checkbox removed, now auto-detected
+    manualOverride: '[data-testid="proxy-manual-override"]',  // #first_hop_proxy_manual_override
     suppressOtherLorebooks: '[data-testid="proxy-suppress-other-lorebooks"]',  // #suppress_other_lorebooks
   },
 

@@ -59,6 +59,11 @@
                             <span><strong>Auto-Detection Enabled:</strong> Chat metadata is automatically sent when your connection profile uses <code>http://localhost:8765</code> as the proxy server. No manual configuration needed.</span>
                         </div>
 
+                        <label title="Force metadata injection even when first-hop proxy is not auto-detected. Enable this if auto-detection fails on your device." class="checkbox_label">
+                            <input id="first_hop_proxy_manual_override" data-testid="proxy-manual-override" type="checkbox" />
+                            <span>Always Send Metadata</span>
+                        </label>
+
                         <label title="When enabled, suppress global/character/persona lorebooks during generation (only chat lorebooks will be included). This prevents conflicts between auto-generated lorebooks and manually-created ones." class="checkbox_label">
                             <input id="suppress_other_lorebooks" data-testid="proxy-suppress-other-lorebooks" type="checkbox" />
                             <span>Suppress Non-Chat Lorebooks</span>

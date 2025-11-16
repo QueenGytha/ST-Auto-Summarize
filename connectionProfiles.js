@@ -203,9 +203,20 @@ function is_using_first_hop_proxy(profileName) {
   return isUsing;
 }
 async function should_send_chat_details(operationType) {
-  // Automatically determine if chat details should be sent based on whether we're using first-hop proxy
-  // For regular chat messages (operation: 'chat'), check current active connection profile
-  // For recap operations, check the recap connection profile setting
+  // Determine if chat details should be sent based on:
+  // 1. Manual override setting (first_hop_proxy_manual_override)
+  // 2. Auto-detection of first-hop proxy in connection profile
+  // For chat messages: uses current active profile
+  // For extension operations: uses recap connection profile
+
+  // Check manual override first (per-profile setting)
+  const manualOverride = get_settings('first_hop_proxy_manual_override');
+  if (manualOverride === true) {
+    debug(`[Proxy Detection] Manual override enabled for operation "${operationType}"`);
+    return true;
+  }
+
+  // Fall back to auto-detection
   let profileName;
 
   if (operationType === 'chat' || operationType?.startsWith('chat')) {
@@ -223,7 +234,7 @@ async function should_send_chat_details(operationType) {
     return false;
   }
   const result = is_using_first_hop_proxy(profileName);
-  debug(`[Proxy Detection] Final result: ${result}`);
+  debug(`[Proxy Detection] Auto-detection result: ${result}`);
   return result;
 }
 

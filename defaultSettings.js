@@ -205,5 +205,6 @@ Rules for canonicalName:
 
   // --- First-Hop Proxy Integration Settings ---
   // (Removed) first_hop_proxy_send_chat_details – now auto-detected based on connection profile proxy URL
+  first_hop_proxy_manual_override: false, // Manual override to force metadata injection even when first-hop proxy is not auto-detected
   suppress_other_lorebooks: true // Suppress global/character/persona lorebooks during generation (only chat lorebooks included)
 };
