@@ -66,22 +66,27 @@ Return ONLY valid JSON:
 
 **When It Runs:** At scene breaks (manual or auto-detected). Generates a comprehensive recap of the scene.
 
-**What It Does:** Creates a structured markdown recap with specific headers, plus optional lorebook entries for entities introduced or updated in the scene. Uses JSON format to separate timeline (recap) from entity knowledge (lorebooks).
+**What It Does:** Creates a structured markdown recap with specific headers, plus optional lorebook entries for entities introduced or updated in the scene. Uses JSON format to separate timeline (recap) from entity knowledge (lorebooks). Captures plot-relevant written content (letters, inscriptions, prophecies, etc.) verbatim.
 
 **Macros Used:**
 - `{{scene_messages}}` - Formatted messages from the scene (includes [USER: name] / [CHARACTER: name] labels and any existing recaps)
 - `{{lorebook_entry_types}}` - Dynamically inserted list of allowed entity types (character, location, item, faction, quest, rule)
+- `{{active_setting_lore}}` - Existing lorebook entries for comparison
 
 **Expected Output:** JSON with recap (markdown) and lorebooks (array)
 ```json
 {
-  "recap": "## Current Situation\n...\n## Key Developments\n...\n## Dialogue Highlights\n...\n## Pending Threads\n...",
-  "lorebooks": [
+  "scene_name": "Brief descriptive title",
+  "recap": "## Current Situation\n...\n## Key Developments\n- [document] Letter from X: \"verbatim text\"\n...\n## Tone & Style\n...\n## Pending Threads\n...",
+  "atmosphere": "Brief mood/sensory context",
+  "emotional_beats": "Character emotional moments with triggers",
+  "setting_lore": [
     {
       "name": "Entity Name",
       "type": "character",
       "keywords": ["keyword1", "keyword2"],
-      "content": "[character-EntityName: property1, property2, nested(details)]"
+      "content": "- Identity: Character — Entity Name\n- Synopsis: ...\n- Attributes: ...",
+      "uid": "12345"
     }
   ]
 }
@@ -164,6 +169,51 @@ Return ONLY valid JSON:
 
 {{scene_messages}}
 ```
+
+### 2.1 Verbatim Content Capture (Critical Feature)
+
+The scene recap prompt includes **explicit instructions** to capture plot-relevant written content verbatim, not summarized. This ensures future scenes have access to exact wording when it matters.
+
+**Content Types That Must Be Captured Verbatim:**
+- Letters, notes, messages
+- Contracts, agreements, legal documents
+- Prophecies, riddles, poems
+- Inscriptions, signs, plaques
+- Codes, ciphers, passwords
+- Any written content characters read, reference, or may need to recall
+
+**Format in Key Developments:**
+```
+- [document] <Context>: "<exact verbatim text>"
+```
+
+**Examples:**
+
+✅ **GOOD** (verbatim capture):
+```
+- [document] Letter from Marcus to Alice: "Meet me at the eastern gate before dawn. Come alone. Bring the artifact. Trust no one else with this message. -M"
+- [document] Inscription on temple door: "Only those who speak the three truths may enter: the truth of blood, the truth of sacrifice, the truth of surrender"
+- [document] Prophecy read by Oracle: "When the twin moons align and the firstborn falls, the kingdom shall know its true heir"
+```
+
+❌ **BAD** (summarized - loses critical details):
+```
+- [document] Letter from Marcus asking Alice to meet
+- [document] Temple inscription about entry requirements
+- [document] Prophecy about kingdom's future
+```
+
+**Why This Matters:**
+- Future LLM needs **exact wording** to maintain consistency
+- Plot puzzles may hinge on specific phrasing (riddles, prophecies)
+- Legal agreements require precise terms
+- Passwords, codes, and inscriptions must be exact
+
+**Validation:**
+The final verification checklist in the prompt explicitly checks:
+- Was any written content in the scene captured verbatim with [document] tag?
+- Were quotes properly escaped for JSON?
+- Did you avoid summarizing what should be verbatim?
 
 ---
 

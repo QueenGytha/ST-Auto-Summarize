@@ -292,12 +292,41 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //
 // VERIFICATION: Before submitting output, search for ANY of the prohibited phrases above. If found, rewrite using direct language.
 //
+// ⚠️ VERBATIM CONTENT CAPTURE - CRITICAL REQUIREMENT ⚠️
+// When the scene contains written content that may be plot-relevant:
+//
+// REQUIRED approach for documentary evidence:
+// - Letters, notes, messages: Capture full text verbatim in Key Developments
+// - Contracts, agreements: Capture exact terms and conditions verbatim
+// - Prophecies, riddles, poems: Capture exact wording (future scenes may hinge on specific phrasing)
+// - Inscriptions, signs, plaques: Capture exact text when read by characters
+// - Codes, ciphers, passwords: Capture exactly as written
+// - Any written content that characters read, reference, or may need to recall
+//
+// Purpose: Future LLM needs EXACT wording to maintain consistency and solve plot puzzles
+//
+// Format in Key Developments:
+// - [document] <Context>: "<exact verbatim text>"
+//
+// Examples of GOOD verbatim capture:
+//   ✅ [document] Letter from Marcus to Alice: "Meet me at the eastern gate before dawn. Come alone. Bring the artifact. Trust no one else with this message. -M"
+//   ✅ [document] Inscription on temple door: "Only those who speak the three truths may enter: the truth of blood, the truth of sacrifice, the truth of surrender"
+//   ✅ [document] Prophecy read by Oracle: "When the twin moons align and the firstborn falls, the kingdom shall know its true heir"
+//
+// Examples of BAD summary (DO NOT do this for written content):
+//   ❌ [document] Letter from Marcus asking Alice to meet - USELESS, loses critical details
+//   ❌ [document] Temple inscription about entry requirements - USELESS, exact wording may matter
+//   ❌ [document] Prophecy about kingdom's future - USELESS, specific phrasing likely important
+//
+// VERIFICATION: Before submitting, search the scene for any written content (letters read, signs seen, inscriptions examined). If found but not captured verbatim, add it now.
+//
 // recap field (string):
 // Use markdown headers and bullets in this exact order:
 //   ## Current Situation   -> Where the scene ends; who is present; unresolved stakes
 //                           Include explicit time and location only if stated (e.g., "dawn", "later that night", a named place).
 //   ## Key Developments    -> One bullet per significant change/outcome in this scene
-//                           Optional category tag at start of bullet to aid scanning: [reveal], [decision], [travel], [combat], [transfer], [relationship], [plan], [discovery], [state]. Use at most one tag per bullet and only when it adds clarity.
+//                           Optional category tag at start of bullet to aid scanning: [reveal], [decision], [travel], [combat], [transfer], [relationship], [plan], [discovery], [state], [document]. Use at most one tag per bullet and only when it adds clarity.
+//                           [document] tag: Use for written content that characters read/received (letters, contracts, inscriptions, prophecies, etc.). Capture verbatim in quotes.
 //                           For plot events NOT captured in lorebook entries, use cause → effect format when causal relationships exist (e.g., "- [event] X happened (because Y) → resulting in Z" or "- Character revealed secret → trust damaged").
 //   ## Tone & Style        -> Capture the ROLEPLAY's writing style and genre (NOT character emotions)
 //                           Focus on: genre/subgenre, narrative voice (POV, tense), prose patterns, dialogue style, recurring motifs
@@ -543,6 +572,12 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //    - "made love", "physical intimacy", "coupling", "physically joined", "were intimate"
 //    - Replace with: "had sex", "touched [specific body part]", "performed oral sex", "penetrated with [specifics]"
 //
+// ✅ VERBATIM CONTENT CHECK (CRITICAL):
+//    For any written content in the scene (letters, notes, inscriptions, contracts, prophecies, riddles):
+//    - Did you capture the EXACT text in quotes using [document] tag?
+//    - Did you verify you didn't summarize something that should be verbatim?
+//    - Are quotes properly escaped for JSON (\" for internal quotes)?
+//
 // ✅ EMOTIONAL/PSYCHOLOGICAL DEPTH:
 //    For each character in explicit content, verify you captured:
 //    - Motivations (WHY they made this choice)
@@ -631,14 +666,15 @@ Check that the JSON meets these criteria:
 3. Has a "recap" field (string) using the headers "## Current Situation", "## Key Developments", "## Tone & Style", "## Pending Threads" in that order.
 4. Has an "atmosphere" field (string) with brief sensory/mood context.
 5. Has an "emotional_beats" field (string) with character emotional moments and triggers.
-6. Each section contains bullet lines with observable facts or outcomes from the scene (no speculation or biographies). Key Developments bullets may optionally start with a category tag (e.g., [plan], [reveal]).
-7. Has a "setting_lore" field (array, may be empty).
-8. Every setting_lore entry includes "name", "type", "keywords" (array), and bullet-point "content" that starts with an identity bullet and uses specific names; content may include Interaction Defaults, Psychology, Current Emotional State, and Micro‑Moments when relevant.
-9. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
-10. Recap covers events and overall tone. Tone & Style may include brief Voice Anchors (per‑character speech patterns, address forms, dialogue conventions) and Moment Anchors (micro‑moments with ≤12‑word quotes + cues) that help preserve writing voice and vibe; detailed nuance lives in setting_lore entries.
-11. For location entries with hyphenated canonical names indicating subareas (e.g., "Parent-Subarea", "Parent-Child-Grandchild"), content includes a "Located in: <ImmediateParent>" bullet and optionally a top-level link ("Part of: <TopLevel>"); chain separators are single hyphens (preserve punctuation in names).
-12. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
-13. If setting_lore entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
+6. Each section contains bullet lines with observable facts or outcomes from the scene (no speculation or biographies). Key Developments bullets may optionally start with a category tag (e.g., [plan], [reveal], [document]).
+7. If the recap contains written content (letters, notes, inscriptions, contracts, prophecies) mentioned in scene, it must be captured verbatim in quotes with [document] tag, not summarized.
+8. Has a "setting_lore" field (array, may be empty).
+9. Every setting_lore entry includes "name", "type", "keywords" (array), and bullet-point "content" that starts with an identity bullet and uses specific names; content may include Interaction Defaults, Psychology, Current Emotional State, and Micro‑Moments when relevant.
+10. Identity bullet's canonical name must exactly match the entry's canonical name, including full hyphen chain for sublocations.
+11. Recap covers events and overall tone. Tone & Style may include brief Voice Anchors (per‑character speech patterns, address forms, dialogue conventions) and Moment Anchors (micro‑moments with ≤12‑word quotes + cues) that help preserve writing voice and vibe; detailed nuance lives in setting_lore entries.
+12. For location entries with hyphenated canonical names indicating subareas (e.g., "Parent-Subarea", "Parent-Child-Grandchild"), content includes a "Located in: <ImmediateParent>" bullet and optionally a top-level link ("Part of: <TopLevel>"); chain separators are single hyphens (preserve punctuation in names).
+13. For item entries that include an "Owner change" bullet, the State bullet must reflect the current owner consistent with the latest transfer.
+14. If setting_lore entries are present, each entry's canonical name should be mentioned at least once in the recap text (Current Situation or Key Developments) to maintain coherence.
 
 Respond with ONLY:
 - "VALID" if all criteria met
