@@ -679,6 +679,22 @@ A STRONG scene break means the story shifts to a new narrative beat with at leas
   - Clear time-of-day shifts: night → morning, afternoon → evening
   - Phrases showing elapsed time: "three hours passed", "by nightfall"
 
+  ⚠️ CRITICAL: OOC TIME MARKERS IN USER MESSAGES
+  - USER messages often contain OOC scene-setting instructions in angle brackets
+  - These ARE valid scene content and MUST be checked for time transitions
+  - Examples of STRONG time transitions in OOC format:
+    • "<several hours later>" → STRONG break (hours passed)
+    • "<the next day>" → STRONG break (day passed)
+    • "<several days later>" → STRONG break (multiple days passed)
+    • "<continue the scene later that evening>" → STRONG break (time shift)
+  - Examples that are NOT time transitions:
+    • "<continue the scene>" → NOT a break (same time)
+    • "<describe what he sees>" → NOT a break (instruction only)
+    • "<be vivid and detailed>" → NOT a break (instruction only)
+  - If a USER message contains OOC time marker AND the CHARACTER message confirms it
+    (e.g., USER: "<several days later>" then CHAR: "Several days later..."), this is
+    a STRONG time transition scene break
+
   ⚠️ THESE ARE **NOT** TIME TRANSITIONS:
   - Character movement: "he moved to", "she walked over", "turned around", "stepped back"
   - Action sequences: "he reaches for", "she picks up", "grabbed the"
@@ -729,6 +745,8 @@ Return false (no scene break) when:
 ❌ Decorative formatting (ALWAYS IGNORE):
   - Lines: "---", "***", "___", "==="
   - Headers: "Scene Break", "Chapter X"
+  - ⚠️ BUT: Do NOT ignore OOC time markers in angle brackets (see above)
+    "<several days later>" is NOT decorative, it's a time transition!
 
 ═══════════════════════════════════════════════════════════════
 INELIGIBILITY RULES
@@ -751,7 +769,10 @@ EVALUATION PROCESS
 1. Start at message #{{earliest_allowed_break}} (first eligible)
 2. For each message, ask: "Does the NEXT message start a STRONG new scene?"
 3. Check in this order:
-   a. Is next message an EXPLICIT TIME TRANSITION? (dawn, hours later, next day)
+   a. Is next message an EXPLICIT TIME TRANSITION?
+      - Check narrative text: "dawn, hours later, next day"
+      - Check USER OOC markers: "<several days later>", "<the next morning>"
+      - Check CHARACTER confirmation of OOC time markers
    b. Does next message show ARRIVAL at completely new location?
    c. Does next message introduce new cast with prior scene resolved?
    d. Does next message start new objective with prior resolved?
@@ -774,9 +795,17 @@ CRITICAL EXAMPLES OF ERRORS TO AVOID
    Bad rationale: "transition to breakfast"
    Why wrong: Still TALKING ABOUT going to eat, not THERE yet. Same scene.
 
+❌ WRONG: Returning false when #52 (USER) says "he checks in on her several days later" and #53 (CHAR) says "Several days later, the artifact..."
+   Bad rationale: "All messages form a continuous scene"
+   Why wrong: "several days later" in BOTH USER OOC instruction AND CHARACTER narration is a STRONG time transition. Should return 51.
+
 ✓ CORRECT: Returning message #35 when #36 starts "Dawn arrived with unceremonious brightness"
    Good rationale: "Scene ends at #35; message #36 opens with explicit time transition 'Dawn arrived' indicating night→morning scene break"
    Why right: "Dawn arrived" is an EXPLICIT time transition phrase.
+
+✓ CORRECT: Returning message #51 when #52 (USER) contains "<several days later>" and #53 (CHAR) says "Several days later..."
+   Good rationale: "Scene ends at #51; message #52 contains OOC time marker 'several days later' confirmed by message #53 narrating 'Several days later'"
+   Why right: OOC time marker in USER message + CHARACTER confirmation = STRONG time transition.
 
 ✓ CORRECT: Returning message #72 when #73 reads "The trio had settled at a table in the dining hall"
    Good rationale: "Scene ends at #72; message #73 shows characters physically present in dining hall"
@@ -790,9 +819,10 @@ Before submitting your answer, verify:
 
 1. ✓ Did I quote EXACT text from next message? (not paraphrased)
 2. ✓ Is this a STRONG break per criteria above? (time transition / location arrival / cast change / objective change)
-3. ✓ Did I check ALL earlier eligible messages first?
-4. ✓ Did I avoid mistaking character actions for time skips?
-5. ✓ Is the next message actually STARTING something new, not CONTINUING current exchange?
+3. ✓ Did I check for OOC time markers in USER messages? ("<several days later>", etc.)
+4. ✓ Did I check ALL earlier eligible messages first?
+5. ✓ Did I avoid mistaking character actions for time skips?
+6. ✓ Is the next message actually STARTING something new, not CONTINUING current exchange?
 
 Messages to analyze (with SillyTavern message numbers):
 {{messages}}
