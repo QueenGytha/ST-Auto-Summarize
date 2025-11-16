@@ -14,7 +14,8 @@ import {
   toggle_popout,
   get_running_recap_injection,
   display_injection_preview,
-  toast } from
+  toast,
+  get_data } from
 './index.js';
 import { loadWorldInfo } from '../../../world-info.js';
 import { getAttachedLorebook } from './lorebookManager.js';
@@ -52,6 +53,34 @@ async function count_running_recap_tokens(context) {
     return 0;
   }
   return await context.getTokenCountAsync(runningRecapText);
+}
+
+function findVisibleSceneBreaks(chat) {
+  const scene_break_indexes = [];
+  for (let i = 0; i < chat.length; i++) {
+    if (get_data(chat[i], 'scene_break') && get_data(chat[i], 'scene_break_visible') !== false) {
+      scene_break_indexes.push(i);
+    }
+  }
+  return scene_break_indexes;
+}
+
+function calculateVisibleStartIndex(chat) {
+  const auto_hide_scene_count = get_settings('auto_hide_scene_count');
+
+  if (auto_hide_scene_count < 0) {
+    return 0;
+  }
+
+  const scene_break_indexes = findVisibleSceneBreaks(chat);
+  const scenes_to_keep = auto_hide_scene_count;
+
+  if (scene_break_indexes.length >= scenes_to_keep) {
+    const first_visible_scene = scene_break_indexes.length - scenes_to_keep;
+    return scene_break_indexes[first_visible_scene] + 1;
+  }
+
+  return 0;
 }
 
 function initialize_slash_commands() {
@@ -224,8 +253,12 @@ function initialize_slash_commands() {
         return message;
       }
 
+      const visible_start = calculateVisibleStartIndex(chat);
+
       const PREVIEW_LENGTH = 50;
       let messageTokens = 0;
+      let hiddenTokens = 0;
+      let visibleTokens = 0;
       const messageTokenCounts = [];
 
       for (let i = 0; i < chat.length; i++) {
@@ -234,6 +267,13 @@ function initialize_slash_commands() {
         // eslint-disable-next-line no-await-in-loop -- must count tokens sequentially
         const tokenCount = await context.getTokenCountAsync(messageText);
         messageTokens += tokenCount;
+
+        if (i < visible_start) {
+          hiddenTokens += tokenCount;
+        } else {
+          visibleTokens += tokenCount;
+        }
+
         messageTokenCounts.push({
           index: i,
           tokens: tokenCount,
@@ -241,10 +281,13 @@ function initialize_slash_commands() {
         });
       }
 
+      const hiddenCount = visible_start;
+      const visibleCount = chat.length - visible_start;
+
       const { lorebookTokens, lorebookEntryCount } = await count_lorebook_tokens(context);
       const runningRecapTokens = await count_running_recap_tokens(context);
 
-      const summary = `Token Count Summary:\n• Messages: ${chat.length} (${messageTokens.toLocaleString()} tokens, avg ${Math.round(messageTokens / chat.length)})\n• Chat Lorebook Entries: ${lorebookEntryCount} (${lorebookTokens.toLocaleString()} tokens)\n• Running Scene Recap: ${runningRecapTokens.toLocaleString()} tokens`;
+      const summary = `Token Count Summary:\n• Messages: ${chat.length} (${messageTokens.toLocaleString()} tokens, avg ${Math.round(messageTokens / chat.length)})\n  - Hidden: ${hiddenCount} (${hiddenTokens.toLocaleString()} tokens)\n  - Visible: ${visibleCount} (${visibleTokens.toLocaleString()} tokens)\n• Chat Lorebook Entries: ${lorebookEntryCount} (${lorebookTokens.toLocaleString()} tokens)\n• Running Scene Recap: ${runningRecapTokens.toLocaleString()} tokens`;
 
       log('[Token Count] Summary:', summary);
       log('[Token Count] Per-message breakdown:', messageTokenCounts);
