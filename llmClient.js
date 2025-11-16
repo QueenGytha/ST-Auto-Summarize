@@ -149,7 +149,9 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     presetMaxTokens,
     {
       messagesTokenCount: options.messagesTokenCount || null,
-      lorebooksTokenCount: options.lorebooksTokenCount || null
+      lorebooksTokenCount: options.lorebooksTokenCount || null,
+      messageBreakdown: options.messageBreakdown || null,
+      lorebookBreakdown: options.lorebookBreakdown || null
     }
   );
 

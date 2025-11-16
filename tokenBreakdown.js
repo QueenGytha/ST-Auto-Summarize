@@ -32,8 +32,10 @@ function applyCorrectionFactor(rawCount) {
  * @param {number} options.contentOnlyTokens - Content tokens only
  * @param {number} options.totalOverhead - Total overhead tokens
  * @param {Array} options.messageBreakdown - Optional per-message breakdown
+ * @param {Array} options.lorebookBreakdown - Optional per-lorebook-entry breakdown
  */
-function logTokenBreakdown({ breakdown, actualTokensRaw, actualTokens, contentOnlyTokens, totalOverhead, messageBreakdown = null }) {
+// eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Comprehensive logging requires many conditionals
+function logTokenBreakdown({ breakdown, actualTokensRaw, actualTokens, contentOnlyTokens, totalOverhead, messageBreakdown = null, lorebookBreakdown = null }) {
   debug(SUBSYSTEM.OPERATIONS, `=== DETAILED TOKEN BREAKDOWN ===`);
   debug(SUBSYSTEM.OPERATIONS, `Content tokens:`);
   if (breakdown.preset > 0) {
@@ -62,7 +64,21 @@ function logTokenBreakdown({ breakdown, actualTokensRaw, actualTokens, contentOn
     }
   }
   if (breakdown.lorebooks !== null && breakdown.lorebooks > 0) {
-    debug(SUBSYSTEM.OPERATIONS, `  - Embedded lorebooks: ${breakdown.lorebooks.toLocaleString()} tokens`);
+    const lorebookCountInfo = lorebookBreakdown ? ` (${lorebookBreakdown.length} entries)` : '';
+    debug(SUBSYSTEM.OPERATIONS, `  - Embedded lorebooks: ${breakdown.lorebooks.toLocaleString()} tokens${lorebookCountInfo}`);
+
+    // Show individual lorebook breakdown
+    if (lorebookBreakdown && lorebookBreakdown.length > 0) {
+      debug(SUBSYSTEM.OPERATIONS, `    Per-entry breakdown:`);
+
+      for (const entry of lorebookBreakdown) {
+        const MAX_PREVIEW_LENGTH = 60;
+        const preview = entry.preview.length > MAX_PREVIEW_LENGTH
+          ? `${entry.preview.slice(0, MAX_PREVIEW_LENGTH)}...`
+          : entry.preview;
+        debug(SUBSYSTEM.OPERATIONS, `      ${entry.name} (UID:${entry.uid}): ${entry.tokens.toLocaleString()} tokens - "${preview}"`);
+      }
+    }
   }
   if (breakdown.prefill > 0) {
     debug(SUBSYSTEM.OPERATIONS, `  - Prefill: ${breakdown.prefill.toLocaleString()} tokens`);
@@ -102,9 +118,11 @@ function logTokenBreakdown({ breakdown, actualTokensRaw, actualTokens, contentOn
  * @param {number} params.messagesTokenCount - Optional: Token count for embedded chat messages
  * @param {number} params.lorebooksTokenCount - Optional: Token count for embedded lorebooks
  * @param {Array<{index: number, tokens: number, preview: string}>} params.messageBreakdown - Optional: Individual message token counts
+ * @param {Array<{name: string, uid: number, tokens: number, preview: string}>} params.lorebookBreakdown - Optional: Individual lorebook entry token counts
  * @returns {Promise<Object>} Token breakdown object
  */
-export async function calculateTokenBreakdown({ prompt, includePreset, preset, prefill, operationType, suffix = null, messagesTokenCount = null, lorebooksTokenCount = null, messageBreakdown = null }) {
+// eslint-disable-next-line complexity -- Token breakdown requires conditional logic for preset/system/messages/lorebooks/prefill
+export async function calculateTokenBreakdown({ prompt, includePreset, preset, prefill, operationType, suffix = null, messagesTokenCount = null, lorebooksTokenCount = null, messageBreakdown = null, lorebookBreakdown = null }) {
   const DEBUG_PREFILL_LENGTH = 50;
   debug(SUBSYSTEM.OPERATIONS, `calculateTokenBreakdown: includePreset=${includePreset}, preset="${preset}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
 
@@ -194,7 +212,7 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
     st_raw_count: actualTokensRaw // Include raw count for comparison
   };
 
-  logTokenBreakdown({ breakdown, actualTokensRaw, actualTokens, contentOnlyTokens, totalOverhead, messageBreakdown });
+  logTokenBreakdown({ breakdown, actualTokensRaw, actualTokens, contentOnlyTokens, totalOverhead, messageBreakdown, lorebookBreakdown });
 
   return breakdown;
 }
@@ -212,7 +230,7 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
  * @returns {Promise<Object>} { messagesWithMetadata, tokenBreakdown }
  */
 export async function calculateAndInjectTokenBreakdown(messages, operation, maxContext, maxTokens, options = {}) {
-  const { messagesTokenCount = null, lorebooksTokenCount = null } = options;
+  const { messagesTokenCount = null, lorebooksTokenCount = null, messageBreakdown = null, lorebookBreakdown = null } = options;
   const { injectMetadataIntoChatArray: injectMetadata } = await import('./metadataInjector.js');
 
   // First pass: count content tokens
@@ -292,7 +310,8 @@ export async function calculateAndInjectTokenBreakdown(messages, operation, maxC
     actualTokens: tokensAfterMetadata,
     contentOnlyTokens,
     totalOverhead,
-    messageBreakdown: null
+    messageBreakdown,
+    lorebookBreakdown
   });
 
   return { messagesWithMetadata, tokenBreakdown };
