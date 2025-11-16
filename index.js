@@ -636,10 +636,16 @@ export function _testMarker() {
   return 'CODE_VERSION_NEW_2025_01_13_15_47';
 }
 
+// Import POC test function
+import { testMandatoryCalculation, calculateAvailableContextWithMandatory } from './z-POC-mandatory-prompts.js';
+
 // Export extension API to window.AutoRecap for tests and external access
 window.AutoRecap = {
   get_settings,
   set_settings,
   default_settings,  // Actually global_settings, aliased above
-  _testMarker
+  _testMarker,
+  // POC: Test mandatory prompt calculation
+  testMandatoryCalculation,
+  calculateAvailableContextWithMandatory
 };
