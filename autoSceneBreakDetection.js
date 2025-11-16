@@ -37,7 +37,6 @@ export function validateRationaleNoFormatting(rationale) {
     /\bseparators\b/i,
     /\bdivider\b/i,
     /\bhorizontal\s+rule\b/i,
-    /\bheading(s)?\b/i,
     /\bmarkdown\b/i
   ];
 
@@ -1292,4 +1291,6 @@ export {
   detectSceneBreak,
   isCooldownSkip,
   validateSceneBreakResponse,
-  messageMatchesType };
+  messageMatchesType,
+  calculateAvailableContext,
+  calculateSceneRecapTokensForRange };

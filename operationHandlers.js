@@ -21,7 +21,9 @@ import {
   detectSceneBreak,
   validateSceneBreakResponse,
   messageMatchesType,
-  validateRationaleNoFormatting } from
+  validateRationaleNoFormatting,
+  calculateAvailableContext,
+  calculateSceneRecapTokensForRange } from
 './autoSceneBreakDetection.js';
 import { generateSceneRecap, toggleSceneBreak, clearSceneBreak } from './sceneBreak.js';
 import {
@@ -380,6 +382,47 @@ export function registerAllOperationHandlers() {
         debug(SUBSYSTEM.QUEUE, `✗ No scene break found in range ${startIndex} to ${endIndex}`);
         markRangeAsChecked(chat, startIndex, endIndex);
         saveChatDebounced();
+
+        // Check if there are remaining unchecked messages that exceed token threshold
+        // (Only continue if range is too large - prevents infinite loop at end of chat)
+        if (endIndex < originalEndIndex) {
+          const remainingStart = endIndex + 1;
+          const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
+          const remainingFiltered = countRemainingFilteredMessages(chat, remainingStart, originalEndIndex, checkWhich);
+
+          if (remainingFiltered >= minimumSceneLength + 1) {
+            // Calculate tokens for remaining range
+            const preset = get_settings('auto_scene_break_completion_preset');
+            // eslint-disable-next-line no-await-in-loop -- Continuation logic runs before return, no actual iteration
+            const maxAllowedTokens = await calculateAvailableContext(preset);
+            // eslint-disable-next-line no-await-in-loop -- Continuation logic runs before return, no actual iteration
+            const sceneRecapTokens = await calculateSceneRecapTokensForRange(remainingStart, originalEndIndex, chat, ctx);
+
+            // Only continue if tokens EXCEED limit (range too large, needs breaking)
+            if (maxAllowedTokens !== null && sceneRecapTokens > maxAllowedTokens) {
+              debug(SUBSYSTEM.QUEUE, `Continuing detection - remaining range tokens (${sceneRecapTokens}) exceed limit (${maxAllowedTokens})`);
+              // eslint-disable-next-line no-await-in-loop -- Continuation logic runs before return, no actual iteration
+              await enqueueOperation(
+                OperationType.DETECT_SCENE_BREAK,
+                { startIndex: remainingStart, endIndex: originalEndIndex, offset },
+                {
+                  priority: 5,
+                  queueVersion: operation.queueVersion,
+                  metadata: {
+                    triggered_by: 'no_break_found_continuation',
+                    start_index: remainingStart,
+                    end_index: originalEndIndex
+                  }
+                }
+              );
+            } else {
+              debug(SUBSYSTEM.QUEUE, `Stopping detection - remaining range tokens (${sceneRecapTokens}) fit within limit (${maxAllowedTokens})`);
+            }
+          } else {
+            debug(SUBSYSTEM.QUEUE, `Not enough remaining messages (${remainingFiltered} < ${minimumSceneLength + 1}) - not queuing new detection`);
+          }
+        }
+
         return result;
       }
 
