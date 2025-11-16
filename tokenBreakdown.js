@@ -34,10 +34,11 @@ function applyCorrectionFactor(rawCount) {
  * @param {string} params.suffix - Optional suffix for operation metadata
  * @param {number} params.messagesTokenCount - Optional: Token count for embedded chat messages
  * @param {number} params.lorebooksTokenCount - Optional: Token count for embedded lorebooks
+ * @param {Array<{index: number, tokens: number, preview: string}>} params.messageBreakdown - Optional: Individual message token counts
  * @returns {Promise<Object>} Token breakdown object
  */
 // eslint-disable-next-line complexity -- Token breakdown requires conditional logic for preset/system/messages/lorebooks
-export async function calculateTokenBreakdown({ prompt, includePreset, preset, prefill, operationType, suffix = null, messagesTokenCount = null, lorebooksTokenCount = null }) {
+export async function calculateTokenBreakdown({ prompt, includePreset, preset, prefill, operationType, suffix = null, messagesTokenCount = null, lorebooksTokenCount = null, messageBreakdown = null }) {
   const DEBUG_PREFILL_LENGTH = 50;
   debug(SUBSYSTEM.OPERATIONS, `calculateTokenBreakdown: includePreset=${includePreset}, preset="${preset}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
 
@@ -106,10 +107,11 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
   const actualTokens = applyCorrectionFactor(actualTokensRaw);
 
   // Calculate overhead
-  const contentOnlyTokens = presetTokens + systemTokens + userPromptTokens + prefillTokens;
+  const embeddedTokensTotal = (messagesTokenCount || 0) + (lorebooksTokenCount || 0);
+  const contentOnlyTokens = presetTokens + systemTokens + userPromptTokens + embeddedTokensTotal + prefillTokens;
   const jsonStructureOverhead = tokensBeforeMetadata - contentOnlyTokens;
   const metadataOverhead = actualTokensRaw - tokensBeforeMetadata;
-  const totalOverhead = actualTokensRaw - contentOnlyTokens;
+  const totalOverhead = jsonStructureOverhead + metadataOverhead;
 
   const breakdown = {
     preset: presetTokens,
@@ -129,30 +131,42 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
   debug(SUBSYSTEM.OPERATIONS, `=== DETAILED TOKEN BREAKDOWN ===`);
   debug(SUBSYSTEM.OPERATIONS, `Content tokens:`);
   if (presetTokens > 0) {
-    debug(SUBSYSTEM.OPERATIONS, `  - Preset prompts: ${presetTokens} tokens`);
+    debug(SUBSYSTEM.OPERATIONS, `  - Preset prompts: ${presetTokens.toLocaleString()} tokens`);
   }
   if (systemTokens > 0) {
-    debug(SUBSYSTEM.OPERATIONS, `  - System prompt: ${systemTokens} tokens`);
+    debug(SUBSYSTEM.OPERATIONS, `  - System prompt: ${systemTokens.toLocaleString()} tokens`);
   }
-  debug(SUBSYSTEM.OPERATIONS, `  - User prompt (template): ${userPromptTokens} tokens`);
+  debug(SUBSYSTEM.OPERATIONS, `  - User prompt (template): ${userPromptTokens.toLocaleString()} tokens`);
   if (messagesTokenCount !== null && messagesTokenCount > 0) {
-    debug(SUBSYSTEM.OPERATIONS, `  - Embedded messages: ${messagesTokenCount} tokens`);
+    const messageCountInfo = messageBreakdown ? ` (${messageBreakdown.length} messages)` : '';
+    debug(SUBSYSTEM.OPERATIONS, `  - Embedded messages: ${messagesTokenCount.toLocaleString()} tokens${messageCountInfo}`);
   }
   if (lorebooksTokenCount !== null && lorebooksTokenCount > 0) {
-    debug(SUBSYSTEM.OPERATIONS, `  - Embedded lorebooks: ${lorebooksTokenCount} tokens`);
+    debug(SUBSYSTEM.OPERATIONS, `  - Embedded lorebooks: ${lorebooksTokenCount.toLocaleString()} tokens`);
   }
   if (prefillTokens > 0) {
-    debug(SUBSYSTEM.OPERATIONS, `  - Prefill: ${prefillTokens} tokens`);
+    debug(SUBSYSTEM.OPERATIONS, `  - Prefill: ${prefillTokens.toLocaleString()} tokens`);
   }
-  debug(SUBSYSTEM.OPERATIONS, `  - Content subtotal: ${contentOnlyTokens} tokens`);
+  debug(SUBSYSTEM.OPERATIONS, `  - Content subtotal: ${contentOnlyTokens.toLocaleString()} tokens`);
   debug(SUBSYSTEM.OPERATIONS, ``);
   debug(SUBSYSTEM.OPERATIONS, `Overhead tokens:`);
-  debug(SUBSYSTEM.OPERATIONS, `  - JSON structure (role/content fields, quotes, braces): ${jsonStructureOverhead} tokens`);
-  debug(SUBSYSTEM.OPERATIONS, `  - Metadata injection: ${metadataOverhead} tokens`);
+  debug(SUBSYSTEM.OPERATIONS, `  - JSON structure (role/content fields, quotes, braces): ${jsonStructureOverhead.toLocaleString()} tokens`);
+  debug(SUBSYSTEM.OPERATIONS, `  - Metadata injection: ${metadataOverhead.toLocaleString()} tokens`);
   const PERCENTAGE_MULTIPLIER = 100;
-  debug(SUBSYSTEM.OPERATIONS, `  - Overhead subtotal: ${totalOverhead} tokens (${((totalOverhead / actualTokens) * PERCENTAGE_MULTIPLIER).toFixed(1)}% of total)`);
+  debug(SUBSYSTEM.OPERATIONS, `  - Overhead subtotal: ${totalOverhead.toLocaleString()} tokens (${((totalOverhead / actualTokens) * PERCENTAGE_MULTIPLIER).toFixed(1)}% of total)`);
   debug(SUBSYSTEM.OPERATIONS, ``);
-  debug(SUBSYSTEM.OPERATIONS, `TOTAL TOKENS TO BE SENT: ${actualTokens}`);
+  debug(SUBSYSTEM.OPERATIONS, `TOTAL TOKENS TO BE SENT: ${actualTokens.toLocaleString()}`);
+  debug(SUBSYSTEM.OPERATIONS, ``);
+  debug(SUBSYSTEM.OPERATIONS, `Sanity check:`);
+  debug(SUBSYSTEM.OPERATIONS, `  - Content + Overhead = ${(contentOnlyTokens + totalOverhead).toLocaleString()}`);
+  debug(SUBSYSTEM.OPERATIONS, `  - Actual (before correction) = ${actualTokensRaw.toLocaleString()}`);
+  debug(SUBSYSTEM.OPERATIONS, `  - Actual (after ${breakdown.st_raw_count !== actualTokens ? `${(actualTokens / actualTokensRaw).toFixed(2)}x correction` : 'no correction'}) = ${actualTokens.toLocaleString()}`);
+  const discrepancy = actualTokensRaw - (contentOnlyTokens + totalOverhead);
+  if (Math.abs(discrepancy) > 1) {
+    debug(SUBSYSTEM.OPERATIONS, `  - ⚠️ DISCREPANCY: ${discrepancy.toLocaleString()} tokens (calculation may be incorrect)`);
+  } else {
+    debug(SUBSYSTEM.OPERATIONS, `  - ✓ Calculation verified (discrepancy: ${discrepancy} tokens)`);
+  }
   debug(SUBSYSTEM.OPERATIONS, `=== END TOKEN BREAKDOWN ===`);
 
   return breakdown;
@@ -330,6 +344,8 @@ export function formatTokenBreakdownForMetadata(breakdown, contextInfo = {}) {
     tokens_preset: breakdown.preset,
     tokens_system: breakdown.system,
     tokens_user: breakdown.user,
+    tokens_messages: breakdown.messages || null,
+    tokens_lorebooks: breakdown.lorebooks || null,
     tokens_prefill: breakdown.prefill,
     tokens_content_subtotal: breakdown.content_subtotal,
     tokens_json_structure: breakdown.json_structure,

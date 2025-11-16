@@ -529,24 +529,42 @@ function validateSceneBreakResponse(sceneBreakAt, config) {
   return { valid: true };
 }
 
-function buildFormattedMessages(chat, filteredIndices, earliestAllowedBreak, maxEligibleIndex) {
+function buildFormattedMessagesWithTokens(chat, filteredIndices, earliestAllowedBreak, maxEligibleIndex) {
   // Defensive validation: warn if maxEligibleIndex is unexpectedly null
   if (maxEligibleIndex === null || maxEligibleIndex === undefined) {
-    debug(SUBSYSTEM.OPERATIONS, `WARNING: maxEligibleIndex is ${maxEligibleIndex} in buildFormattedMessages - offset marking may not work correctly`);
+    debug(SUBSYSTEM.OPERATIONS, `WARNING: maxEligibleIndex is ${maxEligibleIndex} in buildFormattedMessagesWithTokens - offset marking may not work correctly`);
   }
 
-  return filteredIndices.map((i) => {
+  const messages = [];
+  const breakdown = [];
+
+  for (const i of filteredIndices) {
     const m = chat[i];
     const speaker = m?.is_user ? '[USER]' : '[CHARACTER]';
-    // Fix: Explicitly check maxEligibleIndex is not null/undefined before comparing
-    // to prevent silent failures from null comparison (i > null evaluates to false)
     const isIneligible = (i < earliestAllowedBreak) || (maxEligibleIndex !== null && maxEligibleIndex !== undefined && i > maxEligibleIndex);
     const header = isIneligible
       ? `Message #invalid choice ${speaker}:`
       : `Message #${i} ${speaker}:`;
     const cleaned = stripDecorativeSeparators(m?.mes ?? '');
-    return `${header} ${cleaned}`;
-  }).join('\n\n');
+    const formatted = `${header} ${cleaned}`;
+
+    messages.push(formatted);
+
+    const tokens = count_tokens(formatted);
+    const MAX_PREVIEW = 80;
+    const preview = cleaned.length > MAX_PREVIEW ? `${cleaned.slice(0, MAX_PREVIEW)}...` : cleaned;
+
+    breakdown.push({
+      index: i,
+      tokens,
+      preview
+    });
+  }
+
+  return {
+    formatted: messages.join('\n\n'),
+    breakdown
+  };
 }
 
 function buildPromptFromTemplate(ctx, promptTemplate, options) {
@@ -569,7 +587,7 @@ function buildPromptFromTemplate(ctx, promptTemplate, options) {
 }
 
 async function calculateTotalRequestTokens(options) {
-  const { prompt, includePreset, preset, prefill, profile, messagesTokenCount = null } = options;
+  const { prompt, includePreset, preset, prefill, profile, messagesTokenCount = null, messageBreakdown = null } = options;
   const DEBUG_PREFILL_LENGTH = 50;
   debug(SUBSYSTEM.OPERATIONS, `calculateTotalRequestTokens: includePreset=${includePreset}, preset="${preset}", profile="${profile}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
 
@@ -583,7 +601,8 @@ async function calculateTotalRequestTokens(options) {
     preset,
     prefill,
     operationType: OperationType.DETECT_SCENE_BREAK,
-    messagesTokenCount
+    messagesTokenCount,
+    messageBreakdown
   });
 
   return breakdown.total;
@@ -662,7 +681,10 @@ async function reduceMessagesUntilTokenFit(config) {
 
     currentEarliestAllowedBreak = currentEligibleFilteredIndices[minimumSceneLength];
 
-    currentFormattedForPrompt = buildFormattedMessages(chat, currentFilteredIndices, currentEarliestAllowedBreak, currentMaxEligibleIndex);
+    // Build formatted messages with individual token breakdown
+    const messagesResult = buildFormattedMessagesWithTokens(chat, currentFilteredIndices, currentEarliestAllowedBreak, currentMaxEligibleIndex);
+    currentFormattedForPrompt = messagesResult.formatted;
+    const messageBreakdown = messagesResult.breakdown;
 
     prompt = buildPromptFromTemplate(ctx, promptTemplate, {
       formattedForPrompt: currentFormattedForPrompt,
@@ -683,7 +705,8 @@ async function reduceMessagesUntilTokenFit(config) {
       preset,
       prefill,
       profile,
-      messagesTokenCount
+      messagesTokenCount,
+      messageBreakdown
     });
 
     // ALSO calculate tokens for scene recap generation (which includes lorebooks)
