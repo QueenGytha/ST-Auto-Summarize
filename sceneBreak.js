@@ -971,15 +971,36 @@ skipSettingsModification = false)
   const activeSettingLoreText = formatSettingLoreForPrompt(activeEntries);
 
   // Format scene messages with speaker labels to prevent substituteParamsExtended from stripping them
-  const formattedMessages = sceneObjects.map((obj) => {
+  // Also build individual message token breakdown
+  const messageTexts = [];
+  const messageBreakdown = [];
+
+  for (const obj of sceneObjects) {
+    let formatted = '';
     if (obj.type === 'message') {
       const role = obj.is_user ? 'USER' : 'CHARACTER';
-      return `[${role}: ${obj.name}]\n${obj.text}`;
+      formatted = `[${role}: ${obj.name}]\n${obj.text}`;
     } else if (obj.type === 'recap') {
-      return `[RECAP]\n${obj.recap}`;
+      formatted = `[RECAP]\n${obj.recap}`;
     }
-    return '';
-  }).filter((m) => m).join('\n\n');
+
+    if (formatted) {
+      messageTexts.push(formatted);
+      const tokens = count_tokens(formatted);
+      const MAX_PREVIEW = 80;
+      const previewText = obj.type === 'message' ? obj.text : obj.recap;
+      const preview = previewText.length > MAX_PREVIEW ? `${previewText.slice(0, MAX_PREVIEW)}...` : previewText;
+
+      messageBreakdown.push({
+        index: obj.type === 'message' ? obj.index : -1, // Use -1 for recaps
+        tokens,
+        preview,
+        type: obj.type
+      });
+    }
+  }
+
+  const formattedMessages = messageTexts.join('\n\n');
 
   // Count tokens for messages and lorebooks separately for proper breakdown
   const messagesTokenCount = count_tokens(formattedMessages);
@@ -1002,12 +1023,12 @@ skipSettingsModification = false)
   // Support both legacy and new macro names
   prompt = prompt.replace(/\{\{active_setting_lore\}\}/g, activeSettingLoreText);
 
-  return { prompt, prefill, lorebookMetadata: { ...lorebookMetadata, entries: activeEntries }, messagesTokenCount, lorebooksTokenCount };
+  return { prompt, prefill, lorebookMetadata: { ...lorebookMetadata, entries: activeEntries }, messagesTokenCount, lorebooksTokenCount, messageBreakdown };
 }
 
 // Helper: Calculate total request tokens for scene recap (uses centralized token breakdown)
 export async function calculateSceneRecapTokens(options) {
-  const { prompt, includePreset, preset, prefill, operationType, messagesTokenCount = null, lorebooksTokenCount = null } = options;
+  const { prompt, includePreset, preset, prefill, operationType, messagesTokenCount = null, lorebooksTokenCount = null, messageBreakdown = null } = options;
   const { calculateTokenBreakdown } = await import('./tokenBreakdown.js');
 
   const breakdown = await calculateTokenBreakdown({
@@ -1017,7 +1038,8 @@ export async function calculateSceneRecapTokens(options) {
     prefill,
     operationType,
     messagesTokenCount,
-    lorebooksTokenCount
+    lorebooksTokenCount,
+    messageBreakdown
   });
 
   return breakdown.total;
@@ -1027,7 +1049,7 @@ export async function calculateSceneRecapTokens(options) {
 
 // Helper: Generate recap with error handling
 async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, operationType) {
-  const { prompt, prefill, include_preset_prompts = false, preset_name = null, messagesTokenCount = null, lorebooksTokenCount = null } = llmConfig;
+  const { prompt, prefill, include_preset_prompts = false, preset_name = null, messagesTokenCount = null, lorebooksTokenCount = null, messageBreakdown = null } = llmConfig;
   const { startIdx, endIdx } = range;
 
   let recap = "";
@@ -1048,7 +1070,8 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
       prefill,
       operationType,
       messagesTokenCount,
-      lorebooksTokenCount
+      lorebooksTokenCount,
+      messageBreakdown
     });
 
     try {
@@ -1353,7 +1376,7 @@ export async function generateSceneRecap(config) {
   const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
   // Prepare prompt (now returns lorebook metadata and token counts)
-  const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data);
+  const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data);
 
   // Generate recap with connection profile/preset switching
   const profile_name = get_settings('scene_recap_connection_profile') || '';
@@ -1363,7 +1386,7 @@ export async function generateSceneRecap(config) {
   const { OperationType } = await import('./operationTypes.js');
   const { resolveProfileId } = await import('./profileResolution.js');
   const effectiveProfile = resolveProfileId(profile_name);
-  const llmConfig = { prompt, prefill, include_preset_prompts, preset_name, messagesTokenCount, lorebooksTokenCount };
+  const llmConfig = { prompt, prefill, include_preset_prompts, preset_name, messagesTokenCount, lorebooksTokenCount, messageBreakdown };
   const range = { startIdx, endIdx };
   const { recap, tokenBreakdown } = await executeSceneRecapGeneration(llmConfig, range, ctx, effectiveProfile, OperationType.GENERATE_SCENE_RECAP);
 

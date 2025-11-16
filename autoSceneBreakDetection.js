@@ -624,7 +624,7 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
   const sceneObjects = collectSceneObjects(startIndex, endIndex, chat);
 
   // Use working lorebook lookup (don't skip settings modification - direct mutation causes read-only property errors)
-  const { prompt, prefill } = await prepareScenePrompt(sceneObjects, ctx, endIndex, get_data, false);
+  const { prompt, prefill, messagesTokenCount, lorebooksTokenCount, messageBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIndex, get_data, false);
 
   const preset = get_settings('scene_recap_completion_preset');
   const includePresetPrompts = get_settings('scene_recap_include_preset_prompts');
@@ -635,6 +635,9 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
     preset,
     prefill,
     operationType: 'generate_scene_recap',
+    messagesTokenCount,
+    lorebooksTokenCount,
+    messageBreakdown
   });
   debug(SUBSYSTEM.OPERATIONS, `[calculateSceneRecapTokensForRange] Calculated ${tokens} tokens for scene recap (range ${startIndex}-${endIndex})`);
 

@@ -24,6 +24,73 @@ function applyCorrectionFactor(rawCount) {
 }
 
 /**
+ * Log detailed token breakdown to console
+ * @param {Object} options - Logging options
+ * @param {Object} options.breakdown - Token breakdown object
+ * @param {number} options.actualTokensRaw - Raw token count before correction
+ * @param {number} options.actualTokens - Corrected token count
+ * @param {number} options.contentOnlyTokens - Content tokens only
+ * @param {number} options.totalOverhead - Total overhead tokens
+ * @param {Array} options.messageBreakdown - Optional per-message breakdown
+ */
+function logTokenBreakdown({ breakdown, actualTokensRaw, actualTokens, contentOnlyTokens, totalOverhead, messageBreakdown = null }) {
+  debug(SUBSYSTEM.OPERATIONS, `=== DETAILED TOKEN BREAKDOWN ===`);
+  debug(SUBSYSTEM.OPERATIONS, `Content tokens:`);
+  if (breakdown.preset > 0) {
+    debug(SUBSYSTEM.OPERATIONS, `  - Preset prompts: ${breakdown.preset.toLocaleString()} tokens`);
+  }
+  if (breakdown.system > 0) {
+    debug(SUBSYSTEM.OPERATIONS, `  - System prompt: ${breakdown.system.toLocaleString()} tokens`);
+  }
+  debug(SUBSYSTEM.OPERATIONS, `  - User prompt (template): ${breakdown.user.toLocaleString()} tokens`);
+  if (breakdown.messages !== null && breakdown.messages > 0) {
+    const messageCountInfo = messageBreakdown ? ` (${messageBreakdown.length} messages)` : '';
+    debug(SUBSYSTEM.OPERATIONS, `  - Embedded messages: ${breakdown.messages.toLocaleString()} tokens${messageCountInfo}`);
+
+    // Show individual message breakdown
+    if (messageBreakdown && messageBreakdown.length > 0) {
+      debug(SUBSYSTEM.OPERATIONS, `    Per-message breakdown:`);
+
+      for (const msg of messageBreakdown) {
+        const msgLabel = msg.type === 'recap' ? 'RECAP' : `#${msg.index}`;
+        const MAX_PREVIEW_LENGTH = 60;
+        const preview = msg.preview.length > MAX_PREVIEW_LENGTH
+          ? `${msg.preview.slice(0, MAX_PREVIEW_LENGTH)}...`
+          : msg.preview;
+        debug(SUBSYSTEM.OPERATIONS, `      ${msgLabel}: ${msg.tokens.toLocaleString()} tokens - "${preview}"`);
+      }
+    }
+  }
+  if (breakdown.lorebooks !== null && breakdown.lorebooks > 0) {
+    debug(SUBSYSTEM.OPERATIONS, `  - Embedded lorebooks: ${breakdown.lorebooks.toLocaleString()} tokens`);
+  }
+  if (breakdown.prefill > 0) {
+    debug(SUBSYSTEM.OPERATIONS, `  - Prefill: ${breakdown.prefill.toLocaleString()} tokens`);
+  }
+  debug(SUBSYSTEM.OPERATIONS, `  - Content subtotal: ${contentOnlyTokens.toLocaleString()} tokens`);
+  debug(SUBSYSTEM.OPERATIONS, ``);
+  debug(SUBSYSTEM.OPERATIONS, `Overhead tokens:`);
+  debug(SUBSYSTEM.OPERATIONS, `  - JSON structure (role/content fields, quotes, braces): ${breakdown.json_structure.toLocaleString()} tokens`);
+  debug(SUBSYSTEM.OPERATIONS, `  - Metadata injection: ${breakdown.metadata.toLocaleString()} tokens`);
+  const PERCENTAGE_MULTIPLIER = 100;
+  debug(SUBSYSTEM.OPERATIONS, `  - Overhead subtotal: ${totalOverhead.toLocaleString()} tokens (${((totalOverhead / actualTokens) * PERCENTAGE_MULTIPLIER).toFixed(1)}% of total)`);
+  debug(SUBSYSTEM.OPERATIONS, ``);
+  debug(SUBSYSTEM.OPERATIONS, `TOTAL TOKENS TO BE SENT: ${actualTokens.toLocaleString()}`);
+  debug(SUBSYSTEM.OPERATIONS, ``);
+  debug(SUBSYSTEM.OPERATIONS, `Sanity check:`);
+  debug(SUBSYSTEM.OPERATIONS, `  - Content + Overhead = ${(contentOnlyTokens + totalOverhead).toLocaleString()}`);
+  debug(SUBSYSTEM.OPERATIONS, `  - Actual (before correction) = ${actualTokensRaw.toLocaleString()}`);
+  debug(SUBSYSTEM.OPERATIONS, `  - Actual (after ${actualTokensRaw !== actualTokens ? `${(actualTokens / actualTokensRaw).toFixed(2)}x correction` : 'no correction'}) = ${actualTokens.toLocaleString()}`);
+  const discrepancy = actualTokensRaw - (contentOnlyTokens + totalOverhead);
+  if (Math.abs(discrepancy) > 1) {
+    debug(SUBSYSTEM.OPERATIONS, `  - ⚠️ DISCREPANCY: ${discrepancy.toLocaleString()} tokens (calculation may be incorrect)`);
+  } else {
+    debug(SUBSYSTEM.OPERATIONS, `  - ✓ Calculation verified (discrepancy: ${discrepancy} tokens)`);
+  }
+  debug(SUBSYSTEM.OPERATIONS, `=== END TOKEN BREAKDOWN ===`);
+}
+
+/**
  * Calculate detailed token breakdown for an LLM request
  * @param {Object} params - Parameters object
  * @param {string} params.prompt - The user prompt text
@@ -37,7 +104,6 @@ function applyCorrectionFactor(rawCount) {
  * @param {Array<{index: number, tokens: number, preview: string}>} params.messageBreakdown - Optional: Individual message token counts
  * @returns {Promise<Object>} Token breakdown object
  */
-// eslint-disable-next-line complexity -- Token breakdown requires conditional logic for preset/system/messages/lorebooks
 export async function calculateTokenBreakdown({ prompt, includePreset, preset, prefill, operationType, suffix = null, messagesTokenCount = null, lorebooksTokenCount = null, messageBreakdown = null }) {
   const DEBUG_PREFILL_LENGTH = 50;
   debug(SUBSYSTEM.OPERATIONS, `calculateTokenBreakdown: includePreset=${includePreset}, preset="${preset}", prefill="${prefill?.slice(0, DEBUG_PREFILL_LENGTH) || ''}"`);
@@ -128,46 +194,7 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
     st_raw_count: actualTokensRaw // Include raw count for comparison
   };
 
-  debug(SUBSYSTEM.OPERATIONS, `=== DETAILED TOKEN BREAKDOWN ===`);
-  debug(SUBSYSTEM.OPERATIONS, `Content tokens:`);
-  if (presetTokens > 0) {
-    debug(SUBSYSTEM.OPERATIONS, `  - Preset prompts: ${presetTokens.toLocaleString()} tokens`);
-  }
-  if (systemTokens > 0) {
-    debug(SUBSYSTEM.OPERATIONS, `  - System prompt: ${systemTokens.toLocaleString()} tokens`);
-  }
-  debug(SUBSYSTEM.OPERATIONS, `  - User prompt (template): ${userPromptTokens.toLocaleString()} tokens`);
-  if (messagesTokenCount !== null && messagesTokenCount > 0) {
-    const messageCountInfo = messageBreakdown ? ` (${messageBreakdown.length} messages)` : '';
-    debug(SUBSYSTEM.OPERATIONS, `  - Embedded messages: ${messagesTokenCount.toLocaleString()} tokens${messageCountInfo}`);
-  }
-  if (lorebooksTokenCount !== null && lorebooksTokenCount > 0) {
-    debug(SUBSYSTEM.OPERATIONS, `  - Embedded lorebooks: ${lorebooksTokenCount.toLocaleString()} tokens`);
-  }
-  if (prefillTokens > 0) {
-    debug(SUBSYSTEM.OPERATIONS, `  - Prefill: ${prefillTokens.toLocaleString()} tokens`);
-  }
-  debug(SUBSYSTEM.OPERATIONS, `  - Content subtotal: ${contentOnlyTokens.toLocaleString()} tokens`);
-  debug(SUBSYSTEM.OPERATIONS, ``);
-  debug(SUBSYSTEM.OPERATIONS, `Overhead tokens:`);
-  debug(SUBSYSTEM.OPERATIONS, `  - JSON structure (role/content fields, quotes, braces): ${jsonStructureOverhead.toLocaleString()} tokens`);
-  debug(SUBSYSTEM.OPERATIONS, `  - Metadata injection: ${metadataOverhead.toLocaleString()} tokens`);
-  const PERCENTAGE_MULTIPLIER = 100;
-  debug(SUBSYSTEM.OPERATIONS, `  - Overhead subtotal: ${totalOverhead.toLocaleString()} tokens (${((totalOverhead / actualTokens) * PERCENTAGE_MULTIPLIER).toFixed(1)}% of total)`);
-  debug(SUBSYSTEM.OPERATIONS, ``);
-  debug(SUBSYSTEM.OPERATIONS, `TOTAL TOKENS TO BE SENT: ${actualTokens.toLocaleString()}`);
-  debug(SUBSYSTEM.OPERATIONS, ``);
-  debug(SUBSYSTEM.OPERATIONS, `Sanity check:`);
-  debug(SUBSYSTEM.OPERATIONS, `  - Content + Overhead = ${(contentOnlyTokens + totalOverhead).toLocaleString()}`);
-  debug(SUBSYSTEM.OPERATIONS, `  - Actual (before correction) = ${actualTokensRaw.toLocaleString()}`);
-  debug(SUBSYSTEM.OPERATIONS, `  - Actual (after ${breakdown.st_raw_count !== actualTokens ? `${(actualTokens / actualTokensRaw).toFixed(2)}x correction` : 'no correction'}) = ${actualTokens.toLocaleString()}`);
-  const discrepancy = actualTokensRaw - (contentOnlyTokens + totalOverhead);
-  if (Math.abs(discrepancy) > 1) {
-    debug(SUBSYSTEM.OPERATIONS, `  - ⚠️ DISCREPANCY: ${discrepancy.toLocaleString()} tokens (calculation may be incorrect)`);
-  } else {
-    debug(SUBSYSTEM.OPERATIONS, `  - ✓ Calculation verified (discrepancy: ${discrepancy} tokens)`);
-  }
-  debug(SUBSYSTEM.OPERATIONS, `=== END TOKEN BREAKDOWN ===`);
+  logTokenBreakdown({ breakdown, actualTokensRaw, actualTokens, contentOnlyTokens, totalOverhead, messageBreakdown });
 
   return breakdown;
 }
@@ -257,6 +284,16 @@ export async function calculateAndInjectTokenBreakdown(messages, operation, maxC
     total: tokensAfterMetadata,
     st_raw_count: tokensAfterMetadataRaw // Include raw count for comparison
   };
+
+  // Log token breakdown
+  logTokenBreakdown({
+    breakdown: tokenBreakdown,
+    actualTokensRaw: tokensAfterMetadataRaw,
+    actualTokens: tokensAfterMetadata,
+    contentOnlyTokens,
+    totalOverhead,
+    messageBreakdown: null
+  });
 
   return { messagesWithMetadata, tokenBreakdown };
 }
