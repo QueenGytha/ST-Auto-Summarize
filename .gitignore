@@ -5,6 +5,7 @@ playwright/.cache/
 .playwright-state.json
 .extension-reload-timestamp
 test-browser-profile/
+first-hop-proxy-githublogs/
 
 # Screenshots and videos
 screenshots/
