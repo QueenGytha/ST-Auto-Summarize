@@ -183,6 +183,13 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
         )
 
         # Create proxy client with error logger
+        logger.warning(f"DEBUG: Creating ProxyClient with config type: {type(active_config)}")
+        logger.warning(f"DEBUG: Config is global config? {active_config is config}")
+        logger.warning(f"DEBUG: Config is request_config? {active_config is request_config if request_config else 'N/A'}")
+        if active_config:
+            response_parsing_cfg = active_config.get_response_parsing_config()
+            logger.warning(f"DEBUG: response_parsing enabled? {response_parsing_cfg.get('enabled')}")
+            logger.warning(f"DEBUG: status_recategorization enabled? {response_parsing_cfg.get('status_recategorization', {}).get('enabled')}")
         proxy_client = ProxyClient(target_url, error_logger=error_logger, config=active_config)
 
         # Define the request function that will be retried

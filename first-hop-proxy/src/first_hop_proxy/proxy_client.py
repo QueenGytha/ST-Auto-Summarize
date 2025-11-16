@@ -21,7 +21,20 @@ class ProxyClient:
         self.target_url = target_url.rstrip('/')
         self.error_logger = error_logger
         self.config = config
-        self.response_parser = ResponseParser(config) if config else None
+
+        # Initialize response parser with error handling
+        if config:
+            try:
+                self.response_parser = ResponseParser(config)
+                logger.warning(f"DEBUG: ResponseParser initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize ResponseParser: {e}")
+                logger.error(f"Config type: {type(config)}")
+                logger.error(f"Config has get_response_parsing_config? {hasattr(config, 'get_response_parsing_config')}")
+                self.response_parser = None
+        else:
+            logger.warning(f"DEBUG: Config is None, ResponseParser will be None")
+            self.response_parser = None
     
     def forward_request(self, request_data: Dict[str, Any], 
                        headers: Optional[Dict[str, str]] = None,
@@ -100,17 +113,26 @@ class ProxyClient:
                 response_json = response.json()
                 logger.info(f"Successfully parsed JSON response")
                 logger.info(f"Response content preview: {str(response.text)[:500]}...")
+
+                # DEBUG: Check if this is an error response
+                if isinstance(response_json, dict) and 'error' in response_json:
+                    logger.warning(f"DEBUG: Response contains error object: {response_json.get('error')}")
                 
                 # Parse response and recategorize status if needed
+                logger.warning(f"DEBUG: response_parser exists? {self.response_parser is not None}")
                 if self.response_parser:
                     new_status, parsing_info = self.response_parser.parse_and_recategorize(response.text, response.status_code)
+                    logger.warning(f"DEBUG: parsing_info = {parsing_info}")
                     if parsing_info.get("recategorized", False):
                         logger.info(f"Response status recategorized: {response.status_code} → {new_status}")
                         # Create a new response object with the recategorized status
                         response.status_code = new_status
                         # If it's now an error status, raise HTTPError to trigger retry logic
+                        logger.warning(f"DEBUG: About to raise HTTPError for status {new_status}")
                         if new_status >= 400:
                             response.raise_for_status()
+                else:
+                    logger.warning("DEBUG: response_parser is None! Not checking for rate limits.")
                 
                 # Apply response processing rules if enabled
                 if self.config and hasattr(self.config, 'get_response_processing_config'):

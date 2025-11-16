@@ -40,24 +40,30 @@ class ResponseParser:
     def _parse_json_response(self, response_json: Dict[str, Any], original_status: int) -> Tuple[int, Dict[str, Any]]:
         """Parse JSON response and recategorize status if needed"""
         recategorization_config = self.parsing_config.get("status_recategorization", {})
-        
+
         if not recategorization_config.get("enabled", False):
+            logger.warning("DEBUG: Recategorization is disabled in config")
             return original_status, {"recategorized": False, "reason": "recategorization_disabled"}
-        
+
         # Extract error messages from JSON paths
         error_messages = self._extract_error_messages(response_json)
+        logger.warning(f"DEBUG: Extracted error messages: {error_messages}")
         
         # Check each recategorization rule
         rules = recategorization_config.get("rules", [])
-        for rule in rules:
+        logger.warning(f"DEBUG: Checking {len(rules)} recategorization rules")
+        for idx, rule in enumerate(rules):
+            logger.warning(f"DEBUG: Rule {idx}: pattern={rule.get('pattern')}, original_status={rule.get('original_status')}, new_status={rule.get('new_status')}")
             if self._should_apply_rule(rule, original_status, error_messages):
                 new_status = rule.get("new_status")
                 pattern = rule.get("pattern")
                 description = rule.get("description", "No description")
-                
+
+                logger.warning(f"DEBUG: RULE MATCHED! Recategorizing {original_status} → {new_status}")
+
                 # Log the recategorization
                 self._log_recategorization(original_status, new_status, pattern, description)
-                
+
                 return new_status, {
                     "recategorized": True,
                     "original_status": original_status,
@@ -66,7 +72,8 @@ class ResponseParser:
                     "description": description,
                     "error_messages": error_messages
                 }
-        
+
+        logger.warning(f"DEBUG: No rules matched. Returning original status {original_status}")
         return original_status, {"recategorized": False, "reason": "no_matching_rules", "error_messages": error_messages}
     
     def _parse_text_response(self, response_text: str, original_status: int) -> Tuple[int, Dict[str, Any]]:
