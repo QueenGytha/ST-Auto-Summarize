@@ -32,7 +32,7 @@ import {
   removeEntityType,
   restoreEntityTypesToDefault } from
 './entityTypeSettingsUI.js';
-import { initializeOperationsPresetsUI } from './operationsPresetsUIBindings.js';
+import { initializeOperationsPresetsUI, loadActivePreset } from './operationsPresetsUIBindings.js';
 import {
   MAX_LINE_LENGTH,
   UI_UPDATE_DELAY_MS,
@@ -355,4 +355,4 @@ function initialize_lorebooks_settings_listeners() {
   debug("Operations Presets UI initialized");
 }
 
-export { initialize_settings_listeners };
+export { initialize_settings_listeners, loadActivePreset };

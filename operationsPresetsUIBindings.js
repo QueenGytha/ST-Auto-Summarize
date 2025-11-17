@@ -16,6 +16,7 @@ import { updateArtifact, deleteArtifact, listArtifacts, createNewArtifactVersion
 import { get_settings } from './index.js';
 import { exportPreset } from './operationsPresetsExport.js';
 import { importPreset } from './operationsPresetsImport.js';
+import { resolveOperationsPreset } from './operationsPresetsResolution.js';
 
 const MODAL_FADE_DURATION_MS = 200;
 const OPERATION_TYPE_DATA_KEY = 'operation-type';
@@ -72,6 +73,16 @@ export function initializeOperationsPresetsUI() {
   bindPresetControls();
   bindArtifactControls();
   bindArtifactEditorModal();
+  loadActivePreset();
+}
+
+/**
+ * Load the active preset based on sticky/profile resolution
+ * Called on initialization and when chat/character changes
+ */
+export function loadActivePreset() {
+  const presetName = resolveOperationsPreset();
+  $(selectorsExtension.operationsPresets.selector).val(presetName);
   refreshPresetBadge();
   refreshPresetButtons();
   refreshAllArtifactSelectors();

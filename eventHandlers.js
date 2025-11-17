@@ -38,6 +38,7 @@ import {
   initializeSceneNavigatorBar,
   renderSceneNavigatorBar,
   processSceneBreakOnChatLoad,
+  loadActivePreset,
   processNewMessageForSceneBreak,
   cleanup_invalid_running_recaps,
   installGenerateRawInterceptor,
@@ -414,6 +415,7 @@ async function initializeExtension() {
   });
   eventSource.on(event_types.CHAT_CHANGED, () => {
     renderAllSceneBreaks(get_message_div, getContext, get_data, set_data, saveChatDebounced);
+    loadActivePreset();
   });
   eventSource.on('groupSelected', set_character_enabled_button_states);
   eventSource.on(event_types.GROUP_UPDATED, set_character_enabled_button_states);
