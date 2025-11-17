@@ -429,6 +429,9 @@ function bindArtifactEditorModal() {
     if (operationType === 'auto_scene_break') {
       artifactData.forced_prompt = $(selectorsExtension.operationsPresets.modalForcedPrompt).val();
       artifactData.forced_prefill = $(selectorsExtension.operationsPresets.modalForcedPrefill).val();
+      artifactData.forced_connection_profile = $(selectorsExtension.operationsPresets.modalForcedConnection).val() || null;
+      artifactData.forced_completion_preset_name = $(selectorsExtension.operationsPresets.modalForcedPreset).val();
+      artifactData.forced_include_preset_prompts = $(selectorsExtension.operationsPresets.modalForcedIncludeFlag).prop('checked');
     }
 
     try {
@@ -519,6 +522,24 @@ async function openArtifactEditor(operationType) {
   populateConnectionProfileDropdown();
   await populateCompletionPresetDropdown();
 
+  if (operationType === 'auto_scene_break') {
+    const $forcedConnectionSelect = $(selectorsExtension.operationsPresets.modalForcedConnection);
+    const connection_profiles = get_connection_profile_objects();
+    $forcedConnectionSelect.empty();
+    $forcedConnectionSelect.append('<option value="">Use Regular Setting</option>');
+    for (const profile of connection_profiles) {
+      $forcedConnectionSelect.append(`<option value="${profile.id}">${profile.name}</option>`);
+    }
+
+    const $forcedPresetSelect = $(selectorsExtension.operationsPresets.modalForcedPreset);
+    const preset_options = await get_presets();
+    $forcedPresetSelect.empty();
+    $forcedPresetSelect.append('<option value="">Use Currently Active Preset</option>');
+    for (const preset of preset_options) {
+      $forcedPresetSelect.append(`<option value="${preset}">${preset}</option>`);
+    }
+  }
+
   $(selectorsExtension.operationsPresets.modalTitle).text(`Edit Operation Artifact - ${operationName}`);
   $(selectorsExtension.operationsPresets.modalName).val(config.name);
   $(selectorsExtension.operationsPresets.modalDescription).val(config.customLabel || '');
@@ -531,6 +552,9 @@ async function openArtifactEditor(operationType) {
   if (operationType === 'auto_scene_break') {
     $(selectorsExtension.operationsPresets.modalForcedPrompt).val(config.forced_prompt || '');
     $(selectorsExtension.operationsPresets.modalForcedPrefill).val(config.forced_prefill || '');
+    $(selectorsExtension.operationsPresets.modalForcedConnection).val(config.forced_connection_profile || '');
+    $(selectorsExtension.operationsPresets.modalForcedPreset).val(config.forced_completion_preset_name || '');
+    $(selectorsExtension.operationsPresets.modalForcedIncludeFlag).prop('checked', config.forced_include_preset_prompts || false);
     $(selectorsExtension.operationsPresets.modalForcedSection).show();
   } else {
     $(selectorsExtension.operationsPresets.modalForcedSection).hide();

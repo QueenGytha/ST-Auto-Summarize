@@ -805,10 +805,15 @@ function loadSceneBreakPromptSettings(forceSelection) {
   if (forceSelection) {
     const forcedPrompt = config.forced_prompt;
     const forcedPrefill = config.forced_prefill;
+    const forcedConnectionProfile = config.forced_connection_profile;
+    const forcedCompletionPreset = config.forced_completion_preset_name;
+    const forcedIncludePresetPrompts = config.forced_include_preset_prompts;
 
-    // Use forced settings if provided, otherwise fallback to regular settings
     const promptTemplate = forcedPrompt || config.prompt;
     const prefill = forcedPrefill || config.prefill || '';
+    const connectionProfile = forcedConnectionProfile || config.connection_profile;
+    const completionPreset = forcedCompletionPreset !== undefined ? forcedCompletionPreset : config.completion_preset_name;
+    const includePresetPrompts = forcedIncludePresetPrompts !== undefined ? forcedIncludePresetPrompts : (config.include_preset_prompts ?? false);
 
     if (forcedPrompt) {
       debug(SUBSYSTEM.OPERATIONS, `[forceSelection] Using forced detection prompt (${forcedPrompt.length} chars)`);
@@ -822,12 +827,27 @@ function loadSceneBreakPromptSettings(forceSelection) {
       debug(SUBSYSTEM.OPERATIONS, `[forceSelection] No forced prefill set, using regular prefill: "${prefill}"`);
     }
 
-    return { promptTemplate, prefill };
+    if (forcedConnectionProfile) {
+      debug(SUBSYSTEM.OPERATIONS, `[forceSelection] Using forced connection profile: "${forcedConnectionProfile}"`);
+    }
+
+    if (forcedCompletionPreset !== undefined && forcedCompletionPreset !== '') {
+      debug(SUBSYSTEM.OPERATIONS, `[forceSelection] Using forced completion preset: "${forcedCompletionPreset}"`);
+    }
+
+    if (forcedIncludePresetPrompts !== undefined) {
+      debug(SUBSYSTEM.OPERATIONS, `[forceSelection] Using forced include preset prompts: ${forcedIncludePresetPrompts}`);
+    }
+
+    return { promptTemplate, prefill, connectionProfile, completionPreset, includePresetPrompts };
   }
 
   return {
     promptTemplate: config.prompt,
-    prefill: config.prefill || ''
+    prefill: config.prefill || '',
+    connectionProfile: config.connection_profile,
+    completionPreset: config.completion_preset_name,
+    includePresetPrompts: config.include_preset_prompts ?? false
   };
 }
 
@@ -844,12 +864,10 @@ _operationId  = null)
     debug('Checking message range', startIndex, 'to', endIndex, 'for scene break (offset:', offset, ')');
 
     // Get settings - use forced settings when forceSelection=true, fallback to regular if empty
-    const { promptTemplate, prefill } = loadSceneBreakPromptSettings(forceSelection);
+    const { promptTemplate, prefill, connectionProfile, completionPreset, includePresetPrompts } = loadSceneBreakPromptSettings(forceSelection);
 
-    const config = resolveOperationConfig('auto_scene_break');
-    const profile = config.connection_profile;
-    const presetSetting = config.completion_preset_name;
-    const includePresetPrompts = config.include_preset_prompts ?? false;
+    const profile = connectionProfile;
+    const presetSetting = completionPreset;
     const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
     const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
 
