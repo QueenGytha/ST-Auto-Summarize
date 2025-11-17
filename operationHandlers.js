@@ -394,7 +394,8 @@ export function registerAllOperationHandlers() {
 
           if (remainingFiltered >= minimumSceneLength + 1) {
             // Calculate tokens for remaining range
-            const preset = get_settings('auto_scene_break_completion_preset');
+            const config = resolveOperationConfig('auto_scene_break');
+            const preset = config.completion_preset_name || '';
             // eslint-disable-next-line no-await-in-loop -- Continuation logic runs before return, no actual iteration
             const maxAllowedTokens = await calculateAvailableContext(preset);
             // eslint-disable-next-line no-await-in-loop -- Continuation logic runs before return, no actual iteration

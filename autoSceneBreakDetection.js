@@ -627,8 +627,9 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
   // Use working lorebook lookup (don't skip settings modification - direct mutation causes read-only property errors)
   const { prompt, prefill, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIndex, get_data, false);
 
-  const preset = get_settings('scene_recap_completion_preset');
-  const includePresetPrompts = get_settings('scene_recap_include_preset_prompts');
+  const config = resolveOperationConfig('scene_recap');
+  const preset = config.completion_preset_name || '';
+  const includePresetPrompts = config.include_preset_prompts ?? false;
 
   const tokens = await calculateSceneRecapTokens({
     prompt,

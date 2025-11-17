@@ -28,7 +28,7 @@ let log , debug , error , toast ; // Utility functions - any type is legitimate
 let getAttachedLorebook , getLorebookEntries , addLorebookEntry , modifyLorebookEntry ; // Lorebook functions - any type is legitimate
 let mergeLorebookEntry ; // Entry merger function - any type is legitimate
 let updateRegistryEntryContent ;
-let get_settings , set_settings ; // Profile settings functions - any type is legitimate
+let get_settings ; // Profile settings functions - any type is legitimate
 
 const REGISTRY_PREFIX  = '_registry_';
 
@@ -50,7 +50,6 @@ export function initRecapToLorebookProcessor(utils , lorebookManagerModule , ent
   error = utils.error;
   toast = utils.toast;
   get_settings = settingsManager.get_settings;
-  set_settings = settingsManager.set_settings;
 
   // Import lorebook manager functions
   if (lorebookManagerModule) {
@@ -64,28 +63,6 @@ export function initRecapToLorebookProcessor(utils , lorebookManagerModule , ent
   // Import entry merger function
   if (entryMergerModule) {
     mergeLorebookEntry = entryMergerModule.mergeLorebookEntry;
-  }
-}
-
-function getRecapProcessingSetting(key , defaultValue  = null) {
-  try {
-    // ALL recap processing settings are per-profile
-    const settingKey = `auto_lorebooks_recap_${key}`;
-    return get_settings(settingKey) ?? defaultValue;
-  } catch (err) {
-    error("Error getting recap processing setting", err);
-    return defaultValue;
-  }
-}
-
-// eslint-disable-next-line no-unused-vars -- Reserved for future use in UI settings
-function setRecapProcessingSetting(key , value ) {
-  try {
-    // ALL recap processing settings are per-profile
-    const settingKey = `auto_lorebooks_recap_${key}`;
-    set_settings(settingKey, value);
-  } catch (err) {
-    error("Error setting recap processing setting", err);
   }
 }
 
@@ -1290,6 +1267,7 @@ function extractAndValidateEntities(recap ) {
   return { valid: true, entries: lorebookData.entries };
 }
 
+// eslint-disable-next-line complexity -- Complex validation logic with multiple conditional paths
 async function loadRecapContext(config ) {
   const lorebookName = getAttachedLorebook();
   if (!lorebookName) {
@@ -1316,22 +1294,27 @@ async function loadRecapContext(config ) {
 
   const registryState = ensureRegistryState();
 
-  // Build recapSettings from per-profile settings
+  // Build recapSettings from operations presets system
+  const { resolveOperationConfig } = await import('./index.js');
+  const mergeConfig = resolveOperationConfig('auto_lorebooks_recap_merge');
+  const lookupConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_lookup');
+  const deduplicateConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_deduplicate');
+
   const recapSettings = {
-    merge_connection_profile: getRecapProcessingSetting('merge_connection_profile', ''),
-    merge_completion_preset: getRecapProcessingSetting('merge_completion_preset', ''),
-    merge_prefill: getRecapProcessingSetting('merge_prefill', ''),
-    merge_prompt: getRecapProcessingSetting('merge_prompt', ''),
-    lorebook_entry_lookup_connection_profile: getRecapProcessingSetting('lorebook_entry_lookup_connection_profile', ''),
-    lorebook_entry_lookup_completion_preset: getRecapProcessingSetting('lorebook_entry_lookup_completion_preset', ''),
-    lorebook_entry_lookup_prefill: getRecapProcessingSetting('lorebook_entry_lookup_prefill', ''),
-    lorebook_entry_lookup_prompt: getRecapProcessingSetting('lorebook_entry_lookup_prompt', ''),
-    lorebook_entry_deduplicate_connection_profile: getRecapProcessingSetting('lorebook_entry_deduplicate_connection_profile', ''),
-    lorebook_entry_deduplicate_completion_preset: getRecapProcessingSetting('lorebook_entry_deduplicate_completion_preset', ''),
-    lorebook_entry_deduplicate_prefill: getRecapProcessingSetting('lorebook_entry_deduplicate_prefill', ''),
-    lorebook_entry_deduplicate_prompt: getRecapProcessingSetting('lorebook_entry_deduplicate_prompt', ''),
-    skip_duplicates: getRecapProcessingSetting('skip_duplicates', true),
-    enabled: getRecapProcessingSetting('enabled', false)
+    merge_connection_profile: mergeConfig.connection_profile || '',
+    merge_completion_preset: mergeConfig.completion_preset_name || '',
+    merge_prefill: mergeConfig.prefill || '',
+    merge_prompt: mergeConfig.prompt || '',
+    lorebook_entry_lookup_connection_profile: lookupConfig.connection_profile || '',
+    lorebook_entry_lookup_completion_preset: lookupConfig.completion_preset_name || '',
+    lorebook_entry_lookup_prefill: lookupConfig.prefill || '',
+    lorebook_entry_lookup_prompt: lookupConfig.prompt || '',
+    lorebook_entry_deduplicate_connection_profile: deduplicateConfig.connection_profile || '',
+    lorebook_entry_deduplicate_completion_preset: deduplicateConfig.completion_preset_name || '',
+    lorebook_entry_deduplicate_prefill: deduplicateConfig.prefill || '',
+    lorebook_entry_deduplicate_prompt: deduplicateConfig.prompt || '',
+    skip_duplicates: get_settings('auto_lorebooks_recap_skip_duplicates') ?? true,
+    enabled: get_settings('auto_lorebooks_enabled_by_default') ?? false
   };
 
   const typeList = config.entityTypeDefs.map((def) => def.name).filter(Boolean).join('|') || 'character';
