@@ -21,6 +21,8 @@ import { resolveOperationsPreset, setUserSelectedPreset } from './operationsPres
 const MODAL_FADE_DURATION_MS = 200;
 const OPERATION_TYPE_DATA_KEY = 'operation-type';
 
+let isLoadingPreset = false;
+
 const OPERATION_TYPES = [
   'auto_lorebooks_bulk_populate',
   'auto_scene_break',
@@ -55,6 +57,7 @@ function ensureNotDefaultPreset() {
   saveSettingsDebounced();
   refreshPresetSelector();
   $(selectorsExtension.operationsPresets.selector).val(newName);
+  setUserSelectedPreset(newName);
   refreshPresetButtons();
   refreshStickyButtonColors();
   refreshAllArtifactSelectors();
@@ -81,12 +84,14 @@ export function initializeOperationsPresetsUI() {
  * Called on initialization and when chat/character changes
  */
 export function loadActivePreset() {
+  isLoadingPreset = true;
   const presetName = resolveOperationsPreset();
   $(selectorsExtension.operationsPresets.selector).val(presetName);
   refreshPresetBadge();
   refreshPresetButtons();
   refreshAllArtifactSelectors();
   refreshPresetDescription();
+  isLoadingPreset = false;
 }
 
 /**
@@ -95,7 +100,9 @@ export function loadActivePreset() {
 function bindPresetControls() {
   $(selectorsExtension.operationsPresets.selector).on('change', () => {
     const selectedPreset = $(selectorsExtension.operationsPresets.selector).val();
-    setUserSelectedPreset(selectedPreset);
+    if (!isLoadingPreset) {
+      setUserSelectedPreset(selectedPreset);
+    }
     refreshAllArtifactSelectors();
     refreshStickyButtonColors();
     refreshPresetButtons();
