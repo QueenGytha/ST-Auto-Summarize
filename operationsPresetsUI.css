@@ -1,0 +1,186 @@
+/* Operations Presets UI Styling */
+
+/* Preset Source Badge */
+.auto_recap_preset_badge {
+    font-size: 1.2em;
+    margin-left: 8px;
+    cursor: help;
+}
+
+/* Preset Description */
+.auto_recap_preset_description {
+    min-height: 20px;
+}
+
+/* Operation Type Sections */
+.auto_recap_operation_type_section {
+    margin-bottom: 5px;
+}
+
+.auto_recap_operation_type_section .inline-drawer-header {
+    padding: 8px 12px;
+    background: var(--SmartThemeBlurTintColor);
+    border-radius: 4px;
+}
+
+.auto_recap_operation_type_section .inline-drawer-content {
+    padding: 10px;
+}
+
+/* Artifact Editor Modal */
+.auto_recap_artifact_editor_modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auto_recap_artifact_editor_backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.auto_recap_artifact_editor_dialog {
+    position: relative;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    background: var(--SmartThemeBlurTintColor);
+    border: 2px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.auto_recap_artifact_editor_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.auto_recap_artifact_editor_header h3 {
+    margin: 0;
+    font-size: 1.2em;
+    color: var(--SmartThemeBodyColor);
+}
+
+.auto_recap_artifact_editor_close {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    padding: 5px 10px;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.auto_recap_artifact_editor_close:hover {
+    color: #ff4444;
+    transform: scale(1.1);
+}
+
+.auto_recap_artifact_editor_body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.auto_recap_form_group {
+    margin-bottom: 15px;
+}
+
+.auto_recap_form_group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: var(--SmartThemeBodyColor);
+}
+
+.auto_recap_form_group .displayBlock {
+    margin-top: 3px;
+}
+
+.auto_recap_form_group input[type="text"],
+.auto_recap_form_group textarea,
+.auto_recap_form_group select {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.auto_recap_form_group textarea {
+    resize: vertical;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.auto_recap_artifact_editor_footer {
+    display: flex;
+    gap: 10px;
+    padding: 15px 20px;
+    border-top: 1px solid var(--SmartThemeBorderColor);
+    justify-content: flex-end;
+}
+
+.auto_recap_artifact_editor_footer button {
+    padding: 8px 16px;
+}
+
+/* Button Styling */
+.auto_recap_artifact_edit,
+.auto_recap_artifact_rename,
+.auto_recap_artifact_delete,
+.auto_recap_artifact_duplicate {
+    margin: 0 2px;
+    font-size: 0.85em;
+    padding: 5px 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .auto_recap_artifact_editor_dialog {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .auto_recap_artifact_editor_header,
+    .auto_recap_artifact_editor_body,
+    .auto_recap_artifact_editor_footer {
+        padding: 10px 15px;
+    }
+
+    .flex-container.justifyspacebetween.alignitemscenter button {
+        font-size: 0.8em;
+        padding: 4px 8px;
+    }
+}
+
+/* Note Block Styling (if not already defined) */
+.note-block {
+    padding: 10px;
+    border-left: 4px solid var(--SmartThemeBorderColor);
+    background: rgba(255, 255, 255, 0.05);
+    margin: 10px 0;
+}
+
+.note-block i {
+    margin-right: 8px;
+    color: var(--SmartThemeQuotesColor);
+}
+
+.note-block strong {
+    color: var(--SmartThemeBodyColor);
+}

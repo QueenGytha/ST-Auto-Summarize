@@ -1,3 +1,5 @@
+@import url('operationsPresetsUI.css');
+
 :root {
     --auto_recap_short: #2E8B57;
     --auto_recap_long: #4682B4;

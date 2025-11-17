@@ -49,6 +49,67 @@ export const selectorsExtension = {
     correctionFactor: '[data-testid="token-correction-factor"]',  // #tokenizer_correction_factor
   },
 
+  // Operations Presets
+  operationsPresets: {
+    // Preset selector and controls
+    section: '[data-testid="operations-preset-section"]',              // Main preset section
+    selector: '[data-testid="operations-preset-selector"]',            // #auto_recap_preset_selector
+    badge: '[data-testid="operations-preset-badge"]',                  // #auto_recap_preset_source_badge
+    description: '[data-testid="operations-preset-description"]',      // #auto_recap_preset_description
+
+    // Preset action buttons
+    save: '[data-testid="operations-preset-save"]',                    // #auto_recap_preset_save
+    rename: '[data-testid="operations-preset-rename"]',                // #auto_recap_preset_rename
+    delete: '[data-testid="operations-preset-delete"]',                // #auto_recap_preset_delete
+    import: '[data-testid="operations-preset-import"]',                // #auto_recap_preset_import
+    export: '[data-testid="operations-preset-export"]',                // #auto_recap_preset_export
+    duplicate: '[data-testid="operations-preset-duplicate"]',          // #auto_recap_preset_duplicate
+    stickyCharacter: '[data-testid="operations-preset-sticky-character"]',  // #auto_recap_preset_sticky_character
+    stickyChat: '[data-testid="operations-preset-sticky-chat"]',       // #auto_recap_preset_sticky_chat
+    importFile: '[data-testid="operations-preset-import-file"]',       // #auto_recap_preset_import_file
+
+    // Operation type sections
+    opSceneRecap: '[data-testid="operation-type-scene-recap"]',
+    opSceneRecapError: '[data-testid="operation-type-scene-recap-error"]',
+    opAutoSceneBreak: '[data-testid="operation-type-auto-scene-break"]',
+    opRunningSceneRecap: '[data-testid="operation-type-running-scene-recap"]',
+    opLorebooksMerge: '[data-testid="operation-type-lorebooks-merge"]',
+    opLorebooksLookup: '[data-testid="operation-type-lorebooks-lookup"]',
+    opLorebooksDeduplicate: '[data-testid="operation-type-lorebooks-deduplicate"]',
+    opLorebooksBulkPopulate: '[data-testid="operation-type-lorebooks-bulk-populate"]',
+
+    // Artifact selectors
+    artifactSceneRecap: '[data-testid="artifact-scene-recap"]',                          // #auto_recap_artifact_scene_recap
+    artifactSceneRecapError: '[data-testid="artifact-scene-recap-error"]',               // #auto_recap_artifact_scene_recap_error_detection
+    artifactAutoSceneBreak: '[data-testid="artifact-auto-scene-break"]',                 // #auto_recap_artifact_auto_scene_break
+    artifactRunningSceneRecap: '[data-testid="artifact-running-scene-recap"]',           // #auto_recap_artifact_running_scene_recap
+    artifactLorebooksMerge: '[data-testid="artifact-lorebooks-merge"]',                  // #auto_recap_artifact_auto_lorebooks_recap_merge
+    artifactLorebooksLookup: '[data-testid="artifact-lorebooks-lookup"]',                // #auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_lookup
+    artifactLorebooksDeduplicate: '[data-testid="artifact-lorebooks-deduplicate"]',      // #auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_deduplicate
+    artifactLorebooksBulkPopulate: '[data-testid="artifact-lorebooks-bulk-populate"]',   // #auto_recap_artifact_auto_lorebooks_bulk_populate
+
+    // Artifact action buttons (generic class-based selectors)
+    artifactEditClass: '.auto_recap_artifact_edit',
+    artifactRenameClass: '.auto_recap_artifact_rename',
+    artifactDeleteClass: '.auto_recap_artifact_delete',
+    artifactDuplicateClass: '.auto_recap_artifact_duplicate',
+
+    // Artifact Editor Modal
+    modal: '[data-testid="artifact-editor-modal"]',                    // #auto_recap_artifact_editor_modal
+    modalBackdrop: '.auto_recap_artifact_editor_backdrop',             // Modal backdrop
+    modalTitle: '[data-testid="artifact-editor-title"]',               // #auto_recap_artifact_editor_title
+    modalClose: '[data-testid="artifact-editor-close"]',               // #auto_recap_artifact_editor_close
+    modalName: '[data-testid="artifact-editor-name"]',                 // #auto_recap_artifact_editor_name
+    modalDescription: '[data-testid="artifact-editor-description"]',   // #auto_recap_artifact_editor_description
+    modalPrompt: '[data-testid="artifact-editor-prompt"]',             // #auto_recap_artifact_editor_prompt
+    modalPrefill: '[data-testid="artifact-editor-prefill"]',           // #auto_recap_artifact_editor_prefill
+    modalConnection: '[data-testid="artifact-editor-connection"]',     // #auto_recap_artifact_editor_connection
+    modalPreset: '[data-testid="artifact-editor-preset"]',             // #auto_recap_artifact_editor_preset
+    modalIncludeFlag: '[data-testid="artifact-editor-include-flag"]',  // #auto_recap_artifact_editor_include_flag
+    modalSave: '[data-testid="artifact-editor-save"]',                 // #auto_recap_artifact_editor_save
+    modalCancel: '[data-testid="artifact-editor-cancel"]',             // #auto_recap_artifact_editor_cancel
+  },
+
   // Miscellaneous Settings
   misc: {
     defaultEnabled: '[data-testid="misc-default-enabled"]',  // #default_chat_enabled

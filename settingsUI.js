@@ -33,6 +33,7 @@ import {
   removeEntityType,
   restoreEntityTypesToDefault } from
 './entityTypeSettingsUI.js';
+import { initializeOperationsPresetsUI } from './operationsPresetsUIBindings.js';
 import {
   MAX_LINE_LENGTH,
   UI_UPDATE_DELAY_MS,
@@ -558,6 +559,9 @@ Available Macros:
   });
 
   debug("Auto-Lorebooks settings event listeners initialized");
+
+  initializeOperationsPresetsUI();
+  debug("Operations Presets UI initialized");
 }
 
 export { initialize_settings_listeners };
