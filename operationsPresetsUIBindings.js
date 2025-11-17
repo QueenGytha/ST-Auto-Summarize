@@ -16,7 +16,7 @@ import { updateArtifact, deleteArtifact, listArtifacts, createNewArtifactVersion
 import { get_settings } from './index.js';
 import { exportPreset } from './operationsPresetsExport.js';
 import { importPreset } from './operationsPresetsImport.js';
-import { resolveOperationsPreset } from './operationsPresetsResolution.js';
+import { resolveOperationsPreset, setUserSelectedPreset } from './operationsPresetsResolution.js';
 
 const MODAL_FADE_DURATION_MS = 200;
 const OPERATION_TYPE_DATA_KEY = 'operation-type';
@@ -94,6 +94,8 @@ export function loadActivePreset() {
  */
 function bindPresetControls() {
   $(selectorsExtension.operationsPresets.selector).on('change', () => {
+    const selectedPreset = $(selectorsExtension.operationsPresets.selector).val();
+    setUserSelectedPreset(selectedPreset);
     refreshAllArtifactSelectors();
     refreshStickyButtonColors();
     refreshPresetButtons();

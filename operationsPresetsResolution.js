@@ -1,5 +1,5 @@
 
-import { get_settings, error, log, SUBSYSTEM, get_current_chat_identifier, get_current_character_identifier } from './index.js';
+import { get_settings, set_settings, error, log, SUBSYSTEM, get_current_chat_identifier, get_current_character_identifier } from './index.js';
 
 export function presetExists(presetName) {
   if (!presetName || typeof presetName !== 'string') {
@@ -8,6 +8,11 @@ export function presetExists(presetName) {
 
   const presets = get_settings('operations_presets') || {};
   return !!presets[presetName];
+}
+
+export function setUserSelectedPreset(presetName) {
+  set_settings('active_operations_preset_global', presetName);
+  log(SUBSYSTEM.CORE, `Set user-selected preset to: "${presetName}"`);
 }
 
 export function resolveOperationsPreset() {
@@ -30,6 +35,12 @@ export function resolveOperationsPreset() {
         log(SUBSYSTEM.CORE, `Resolved preset from character sticky: "${characterPreset}"`);
         return characterPreset;
       }
+    }
+
+    const userSelection = get_settings('active_operations_preset_global');
+    if (userSelection && presetExists(userSelection)) {
+      log(SUBSYSTEM.CORE, `Resolved preset from user selection: "${userSelection}"`);
+      return userSelection;
     }
 
     const profile = get_settings('profile');
