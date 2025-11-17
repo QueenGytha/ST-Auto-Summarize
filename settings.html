@@ -99,13 +99,10 @@
                                 <span id="auto_recap_preset_source_badge" data-testid="operations-preset-badge" class="auto_recap_preset_badge fa-solid fa-file" title="Using profile default preset"></span>
                             </div>
 
-                            <div class="auto_recap_preset_description" id="auto_recap_preset_description" data-testid="operations-preset-description" style="font-size: 0.9em; color: var(--SmartThemeQuotesColor); margin: 5px 0; font-style: italic;">
-                                Default configuration for all operations
-                            </div>
+                            <textarea id="auto_recap_preset_description" data-testid="operations-preset-description" class="text_pole" placeholder="Preset description (optional)" style="font-size: 0.9em; margin: 5px 0; min-height: 50px; resize: vertical;"></textarea>
 
                             <!-- Preset Action Buttons -->
                             <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 10px; gap: 5px;">
-                                <button id="auto_recap_preset_save" data-testid="operations-preset-save" class="menu_button fa-solid fa-floppy-disk" title="Save current state as new version (auto-increment)" disabled></button>
                                 <button id="auto_recap_preset_rename" data-testid="operations-preset-rename" class="menu_button fa-solid fa-pencil" title="Rename this preset" disabled></button>
                                 <button id="auto_recap_preset_delete" data-testid="operations-preset-delete" class="menu_button fa-solid fa-trash-can" title="Delete this preset" disabled></button>
                                 <button id="auto_recap_preset_import" data-testid="operations-preset-import" class="menu_button fa-solid fa-file-import" title="Import preset from JSON file"></button>

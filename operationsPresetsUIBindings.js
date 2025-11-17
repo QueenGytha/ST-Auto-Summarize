@@ -75,6 +75,7 @@ export function initializeOperationsPresetsUI() {
   refreshPresetBadge();
   refreshPresetButtons();
   refreshAllArtifactSelectors();
+  refreshPresetDescription();
 }
 
 /**
@@ -85,16 +86,23 @@ function bindPresetControls() {
     refreshAllArtifactSelectors();
     refreshStickyButtonColors();
     refreshPresetButtons();
+    refreshPresetDescription();
   });
 
-  $(selectorsExtension.operationsPresets.save).on('click', () => {
+  $(selectorsExtension.operationsPresets.description).on('change', () => {
     const presetName = $(selectorsExtension.operationsPresets.selector).val();
+    const description = $(selectorsExtension.operationsPresets.description).val();
+
+    if (presetName === 'Default') {
+      toast('Cannot edit Default preset description', 'error');
+      return;
+    }
+
     try {
-      updatePreset(presetName, { modifiedAt: Date.now() });
+      updatePreset(presetName, { description });
       saveSettingsDebounced();
-      toast(`Saved preset: "${presetName}"`, 'success');
     } catch (err) {
-      toast(`Failed to save preset: ${err.message}`, 'error');
+      toast(`Failed to update description: ${err.message}`, 'error');
     }
   });
 
@@ -541,6 +549,18 @@ function refreshPresetBadge() {
   }
 
   refreshStickyButtonColors();
+}
+
+function refreshPresetDescription() {
+  const presetName = $(selectorsExtension.operationsPresets.selector).val();
+  const preset = getPreset(presetName);
+  const $description = $(selectorsExtension.operationsPresets.description);
+
+  if (preset) {
+    $description.val(preset.description || '');
+  } else {
+    $description.val('');
+  }
 }
 
 function refreshStickyButtonColors() {

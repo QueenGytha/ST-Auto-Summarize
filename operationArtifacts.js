@@ -73,49 +73,54 @@ export function updateArtifact(operationType, artifactName, changes) {
     throw new Error(`Artifact not found: ${artifactName}`);
   }
 
-  if (currentArtifact.isDefault) {
-    throw new Error('Cannot update Default artifact');
-  }
+  let targetArtifact;
+  let targetName;
 
-  const newVersionName = createNewArtifactVersion(operationType, artifactName);
-  const newArtifact = operationArtifacts.find(a => a.name === newVersionName);
+  if (currentArtifact.isDefault) {
+    targetName = createNewArtifactVersion(operationType, artifactName);
+    targetArtifact = operationArtifacts.find(a => a.name === targetName);
+  } else {
+    targetArtifact = currentArtifact;
+    targetName = artifactName;
+  }
 
   if (changes.prompt !== undefined) {
-    newArtifact.prompt = changes.prompt;
+    targetArtifact.prompt = changes.prompt;
   }
   if (changes.prefill !== undefined) {
-    newArtifact.prefill = changes.prefill;
+    targetArtifact.prefill = changes.prefill;
   }
   if (changes.connection_profile !== undefined) {
-    newArtifact.connection_profile = changes.connection_profile;
+    targetArtifact.connection_profile = changes.connection_profile;
   }
   if (changes.completion_preset_name !== undefined) {
-    newArtifact.completion_preset_name = changes.completion_preset_name;
+    targetArtifact.completion_preset_name = changes.completion_preset_name;
   }
   if (changes.include_preset_prompts !== undefined) {
-    newArtifact.include_preset_prompts = changes.include_preset_prompts;
+    targetArtifact.include_preset_prompts = changes.include_preset_prompts;
   }
   if (changes.customLabel !== undefined) {
-    newArtifact.customLabel = changes.customLabel;
+    targetArtifact.customLabel = changes.customLabel;
   }
 
   if (operationType === 'auto_scene_break') {
     if (changes.forced_prompt !== undefined) {
-      newArtifact.forced_prompt = changes.forced_prompt;
+      targetArtifact.forced_prompt = changes.forced_prompt;
     }
     if (changes.forced_prefill !== undefined) {
-      newArtifact.forced_prefill = changes.forced_prefill;
+      targetArtifact.forced_prefill = changes.forced_prefill;
     }
   }
 
-  newArtifact.modifiedAt = Date.now();
+  targetArtifact.modifiedAt = Date.now();
 
   artifacts[operationType] = operationArtifacts;
   set_settings('operation_artifacts', artifacts);
   saveSettingsDebounced();
 
-  log(SUBSYSTEM.CORE, `Updated artifact "${artifactName}" → "${newVersionName}" for ${operationType}`);
-  return newVersionName;
+  const action = currentArtifact.isDefault ? 'Created version' : 'Updated';
+  log(SUBSYSTEM.CORE, `${action} artifact "${artifactName}" → "${targetName}" for ${operationType}`);
+  return targetName;
 }
 
 export function deleteArtifact(operationType, artifactName) {
