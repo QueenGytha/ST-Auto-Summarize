@@ -1,17 +1,38 @@
-# Prompt Versioning & Settings System - Implementation Summary
+# Operation Config Versioning & Settings System - Implementation Summary
 
 **Created:** 2025-11-12
-**Status:** Ready for Implementation
-**Purpose:** Guide for implementing prompt versioning and settings improvements
+**Updated:** 2025-11-17
+**Status:** Planning Phase - Latest Spec: UI_DRIVEN_OPERATIONS_PRESETS.md
+**Purpose:** Overview of atomic operation config versioning approaches
 
 ---
 
-## What We're Doing
+## Design Evolution
 
-Implementing **two major improvements** to the ST-Auto-Summarize extension:
+This document summarizes the **atomic operation config** approach. The latest design is:
 
-1. **Settings Versioning System** - Enable safe schema evolution and user data protection during updates
-2. **Prompt Versioning with Immutable Defaults** - Version-controlled prompts with character/chat-level overrides
+**➡️ [UI_DRIVEN_OPERATIONS_PRESETS.md](UI_DRIVEN_OPERATIONS_PRESETS.md)** - **LATEST SPEC (2025-11-17)**
+
+### Timeline:
+1. **V1 (DESIGN_V1.md)** - Deprecated (flaws identified in VERIFICATION_REPORT.md)
+2. **V2 (CORRECTED_DESIGN.md)** - Foundation: Atomic configs + immutable defaults
+3. **V3 (UI_DRIVEN_OPERATIONS_PRESETS.md)** - **CURRENT**: Preset-based system with artifacts
+
+---
+
+## What We're Implementing (V3)
+
+**Two-layer architecture** for operations configuration:
+
+1. **Operation Artifacts** - Atomic configs (prompt + execution settings)
+   - Reusable across multiple presets
+   - Auto-versioned (v1, v2, v3...)
+   - Stored in global registry
+
+2. **Operations Presets** - Bundles that reference artifacts
+   - Maps each operation type to specific artifact
+   - Can be stickied to character/chat
+   - Shareable via import/export (API key safe)
 
 ---
 
@@ -21,15 +42,36 @@ Implementing **two major improvements** to the ST-Auto-Summarize extension:
 
 | Document | Purpose | Use For |
 |----------|---------|---------|
-| **`SETTINGS_AND_PROFILES_ANALYSIS.md`** | Complete analysis of current settings system | Understanding how current system works |
-| **`PROMPT_VERSIONING_VERIFICATION.md`** | Verification report with critical findings | Understanding what NOT to do (flaws to avoid) |
-| **`PROMPT_VERSIONING_CORRECTED.md`** | Corrected design with immutable defaults | **PRIMARY IMPLEMENTATION GUIDE** |
+| **`UI_DRIVEN_OPERATIONS_PRESETS.md`** | **LATEST SPEC** - Preset-based system with artifacts | **PRIMARY IMPLEMENTATION GUIDE (2025-11-17)** |
+| **`CORRECTED_DESIGN.md`** | Foundation: Atomic configs + immutable defaults | Understanding core atomic config concept |
+| **`VERIFICATION_REPORT.md`** | Critical review of V1 design | Understanding what NOT to do (flaws to avoid) |
+| **`SETTINGS_AND_PROFILES_ANALYSIS.md`** | Analysis of current settings system | Understanding how current system works |
 
 ### ❌ DEPRECATED DOCUMENTS (Do Not Use)
 
 | Document | Status | Why Deprecated |
 |----------|--------|----------------|
-| `PROMPT_VERSIONING_DESIGN.md` | ❌ SUPERSEDED | Contains critical flaws, rating 6.5/10 |
+| `DESIGN_V1.md` | ❌ SUPERSEDED | Contains critical flaws, rating 6.5/10, scattered settings approach |
+
+---
+
+## V3 vs V2: Key Differences
+
+| Aspect | V2 (CORRECTED_DESIGN.md) | V3 (UI_DRIVEN_OPERATIONS_PRESETS.md) |
+|--------|---------------------------|--------------------------------------|
+| **Architecture** | Single-layer: Operation configs | Two-layer: Presets → Artifacts |
+| **Stickying** | Individual operation configs | Entire preset bundles |
+| **Shareability** | Not designed for sharing | Import/export with API key safety |
+| **Artifact Reuse** | Each profile has independent configs | One artifact used in multiple presets |
+| **Versioning** | Track history per operation | Auto-increment v<N> on edit |
+| **Organization** | Per-operation stickies | Bundled presets for coherent configs |
+| **UI Approach** | Edit individual configs | Manage presets + artifacts |
+
+**Why V3?**
+- More flexible organization (character-specific preset bundles)
+- Better shareability (users can share community presets)
+- Cleaner UX (one preset selector vs 8 sticky buttons)
+- Artifact reuse (efficiency + consistency)
 
 ---
 
@@ -49,20 +91,22 @@ Implementing **two major improvements** to the ST-Auto-Summarize extension:
 - Track which migrations have run
 - Safe schema evolution
 
-### Problem 2: Default Prompts Stored Everywhere
+### Problem 2: Default Operation Configs Stored Everywhere (Scattered)
 
 **Current issue:**
-- Every profile stores full copy of all prompts (~50KB per profile)
-- Users never get improved default prompts
+- Every profile stores full copy of all operation configs (8 operations × 5 settings = 40 keys per profile, ~50KB)
+- Settings scattered: `scene_recap_prompt`, `scene_recap_prefill`, `scene_recap_connection_profile`, etc.
+- Users never get improved default configs
 - No way to distinguish customized vs default
 - Massive storage bloat
 
-**Solution (Immutable Defaults):**
-- Default prompts only in code (`defaultPrompts.js`)
-- Profiles store ONLY user-customized prompts
-- Editing default creates user version (fork)
+**Solution (Atomic Immutable Defaults):**
+- Default operation configs only in code (`operationConfigRegistry.js`)
+- Each operation = ONE atomic object (prompt + prefill + connection_profile + preset + flags)
+- Profiles store ONLY user-customized operation configs
+- Editing ANY field creates user version of ENTIRE config (fork)
 - "Delete My Version" reverts to default
-- 75-90% storage savings
+- 75-90% storage savings + cleaner structure (1 key per operation instead of 5)
 
 ---
 
@@ -89,88 +133,98 @@ Implementing **two major improvements** to the ST-Auto-Summarize extension:
 
 ---
 
-### Phase 2: Prompt Versioning (Core)
+### Phase 2: Operation Config Versioning (Core)
 
-**Goal:** Implement immutable defaults system
+**Goal:** Implement atomic operation configs with immutable defaults system
 
 **Key Principle:**
 ```
-DEFAULT PROMPTS = READ-ONLY CODE
-USER VERSIONS = WRITABLE DATA (created when user edits)
+DEFAULT OPERATION CONFIGS = READ-ONLY CODE (entire config: prompt + settings)
+USER VERSIONS = WRITABLE DATA (created when user edits ANY field)
 ```
 
 **Tasks:**
-1. Create `promptVersionRegistry.js` - Default prompts metadata
-2. Create `promptResolution.js` - Resolution algorithm
-3. Create `promptMigration.js` - String → versioned migration
-4. Refactor ALL prompt access sites to use `getPromptText()`
+1. Create `operationConfigRegistry.js` - Default operation configs (atomic) + metadata
+2. Create `operationConfigResolution.js` - Resolution algorithm (returns entire config)
+3. Create `operationConfigMigration.js` - Scattered settings → atomic config migration
+4. Refactor ALL operation config access sites to use `resolveOperationConfig()`
 5. Update `export_profile()` to omit defaults
-6. Update `import_profile()` to handle versioned prompts
+6. Update `import_profile()` to handle versioned atomic configs
 
 **New files to create:**
-- `promptVersionRegistry.js` - `getDefaultPrompt()`, version metadata
-- `promptResolution.js` - `resolvePrompt()`, `getPromptText()`
-- `promptMigration.js` - Migration logic
-- `promptUpdate.js` - Update detection
-- `promptSticky.js` - Sticky functionality
-- `promptEditor.js` - UI components
+- `operationConfigRegistry.js` - `getDefaultConfig()`, `OPERATION_CONFIGS`, version metadata
+- `operationConfigResolution.js` - `resolveOperationConfig()`, `getPromptText()`, `getPrefillText()`, etc.
+- `operationConfigMigration.js` - Migration logic (gather scattered → compare → store if customized)
+- `operationConfigUpdate.js` - Update detection
+- `operationConfigSticky.js` - Sticky functionality (entire configs)
+- `operationConfigEditor.js` - UI components
 
 **Files to modify:**
-- `autoSceneBreakDetection.js:537` - Use `getPromptText()`
-- `sceneBreak.js:867` - Use `getPromptText()`
-- `runningSceneRecap.js:298, 410` - Use `getPromptText()`
-- All Auto-Lorebooks prompt access (grep first)
+- `autoSceneBreakDetection.js` - Use `resolveOperationConfig('auto_scene_break')`
+- `sceneBreak.js` - Use `resolveOperationConfig('scene_recap')`
+- `runningSceneRecap.js` - Use `resolveOperationConfig('running_scene_recap')`
+- All Auto-Lorebooks operation access (grep first)
 - `profileManager.js` - Export/import changes
+- `recapping.js` - Use config fields from resolved config
 
-**Result:** Prompts versioned, defaults immutable, 75-90% storage savings
+**Result:** Operation configs versioned (atomic), defaults immutable, 75-90% storage savings, cleaner structure
 
 ---
 
 ### Phase 3: Character/Chat Stickies
 
-**Goal:** Allow per-character and per-chat prompt overrides
+**Goal:** Allow per-character and per-chat operation config overrides
 
 **Tasks:**
-1. Add `character_sticky_prompts` to global settings
-2. Add `chat_sticky_prompts` to global settings
-3. Implement sticky functions (sticky/remove)
+1. Add `character_sticky_configs` to global settings
+2. Add `chat_sticky_configs` to global settings
+3. Implement sticky functions (sticky/remove - entire configs)
 4. Update resolution to check stickies first
 5. Add cleanup on chat delete
 
 **Resolution priority:**
 ```
-Chat sticky (highest)
+Chat sticky (entire config - highest)
   ↓
-Character sticky
+Character sticky (entire config)
   ↓
-Profile user version
+Profile user version (entire config)
   ↓
-Default (code)
+Default (entire config from code)
 ```
 
-**Result:** Users can override prompts per character/chat
+**Important:** Stickying stickies the **entire operation config** (prompt + prefill + connection_profile + preset + flags), not individual fields.
+
+**Result:** Users can override entire operation configs per character/chat
 
 ---
 
 ### Phase 4: UI Components
 
-**Goal:** User-facing interface for managing prompts
+**Goal:** User-facing interface for managing operation configs
 
 **Tasks:**
-1. Enhanced prompt editor (two states: default vs user version)
+1. Enhanced operation config editor (two states: default vs user version)
 2. Badges (Default, My Version, Character Override, Chat Override)
-3. "Edit" button (creates fork from default)
-4. "Delete My Version" button (reverts to default)
-5. Sticky menu (pin to character/chat)
+3. "Edit" button (creates fork of ENTIRE config from default)
+4. "Delete My Version" button (reverts to default, deletes ENTIRE config)
+5. Sticky menu (pin ENTIRE config to character/chat)
 6. Update notification modal
 7. Version history viewer (optional)
 
 **UI States:**
-- **Default (read-only):** "Edit" button creates user version
-- **User version (editable):** "Delete My Version" reverts to default
+- **Default (read-only):** "Edit" button creates user version of entire config
+- **User version (editable):** "Delete My Version" reverts to default, editing ANY field saves entire config
 - **Override (editable):** "Remove Sticky" falls back to profile/default
 
-**Result:** Intuitive UI for managing prompts
+**UI displays:**
+- Prompt text (textarea)
+- Prefill text (input)
+- Connection profile (dropdown)
+- Completion preset name (input)
+- Include preset prompts (checkbox)
+
+**Result:** Intuitive UI for managing atomic operation configs
 
 ---
 
@@ -192,105 +246,139 @@ Default (code)
 
 ## Critical Implementation Details
 
-### 1. Prompts vs Settings (CRITICAL)
+### 1. Atomic Operation Configs (CRITICAL)
 
-**Each prompt has associated SETTINGS that must stay SEPARATE:**
+**Each operation = ONE atomic versioned artifact (all fields together):**
 
 ```javascript
-// PROMPT (versioned if customized, optional in storage)
-scene_recap_prompt: {
-  id: "scene_recap_prompt",
+// ATOMIC OPERATION CONFIG (versioned if customized, optional in storage)
+scene_recap: {
+  id: "scene_recap",
   version: "2.1.0-custom-123",
-  content: "Prompt text...",
-  // ... metadata
-}
 
-// SETTINGS (always stored, NEVER versioned)
-scene_recap_prefill: "{"
-scene_recap_connection_profile: "uuid-1234"
-scene_recap_completion_preset_name: "Creative"
-scene_recap_include_preset_prompts: true
+  // All fields in ONE object
+  prompt: "Prompt text...",
+  prefill: "{",
+  connection_profile: null,  // null = use current
+  completion_preset_name: "Creative",
+  include_preset_prompts: true,
+
+  // Metadata
+  isDefault: false,
+  userModified: true,
+  // ...
+}
 ```
 
-**Why separate:**
-- Prompt = AI instructions (content to version)
-- Settings = Configuration (runtime behavior, don't version)
-- User may change settings without creating prompt version
+**Why atomic:**
+- Changing ANY field (prompt, prefill, connection_profile, etc.) creates user version of ENTIRE config
+- Simpler to reason about: "Is scene_recap customized?" → Check if key exists
+- Cleaner storage: 1 key per operation instead of 5 scattered keys
+- Stickying stickies ENTIRE config (not just prompt)
 
 **Sticky behavior:**
-- Sticky the PROMPT only
-- Settings resolved from profile
+- Sticky the **ENTIRE operation config**
+- Includes prompt + prefill + connection_profile + preset + flags
 
 ### 2. Migration Strategy (CRITICAL)
 
-**Current (v1.x) profiles store prompts as strings:**
+**Current (v1.x) profiles store scattered settings:**
 ```javascript
 {
-  scene_recap_prompt: "You are a structured..."  // String
+  scene_recap_prompt: "You are a structured...",  // String
+  scene_recap_prefill: "{",                        // Separate
+  scene_recap_connection_profile: "",              // Separate
+  scene_recap_completion_preset_name: "",          // Separate
+  scene_recap_include_preset_prompts: false,       // Separate
 }
 ```
 
 **Migration must:**
-1. Compare string with default
-2. If customized → Create user version
-3. If not customized → DELETE from profile (use code default)
+1. Gather all 5 settings into one config
+2. Compare ENTIRE config with default
+3. If customized → Create user version (entire config)
+4. If not customized → DELETE (use code default)
+5. Delete old scattered keys
 
 ```javascript
 // Migration logic
-if (currentValue === defaultValue) {
-  delete profileSettings[promptKey];  // Use code default
+const gatheredConfig = {
+  prompt: profile[`${opType}_prompt`],
+  prefill: profile[`${opType}_prefill`],
+  connection_profile: profile[`${opType}_connection_profile`] || null,
+  completion_preset_name: profile[`${opType}_completion_preset_name`],
+  include_preset_prompts: profile[`${opType}_include_preset_prompts`],
+};
+
+if (deepEqualConfigs(gatheredConfig, defaultConfig)) {
+  // Not customized, don't store (use code default)
 } else {
-  profileSettings[promptKey] = createUserVersion(...);  // User version
+  profile[opType] = createUserVersion(opType, gatheredConfig);
 }
+
+// Delete old scattered keys
+delete profile[`${opType}_prompt`];
+delete profile[`${opType}_prefill`];
+// ... etc
 ```
 
 **Result:**
-- Non-customized prompts deleted (~75-90% storage saved)
-- Customized prompts preserved as user versions
+- Non-customized configs NOT stored (~75-90% storage saved)
+- Customized configs preserved as atomic user versions
+- Scattered settings consolidated
 - Zero data loss
 
-### 3. All Prompt Access Sites (CRITICAL)
+### 3. All Operation Config Access Sites (CRITICAL)
 
-**Must refactor ALL sites that access prompts:**
+**Must refactor ALL sites that access operation configs:**
 
 **Before:**
 ```javascript
 const prompt = get_settings('scene_recap_prompt');
+const prefill = get_settings('scene_recap_prefill');
+const connectionProfile = get_settings('scene_recap_connection_profile');
+// ... scattered access
 ```
 
 **After:**
 ```javascript
-import { getPromptText } from './promptResolution.js';
-const prompt = getPromptText('scene_recap_prompt');
+import { resolveOperationConfig } from './operationConfigResolution.js';
+const config = resolveOperationConfig('scene_recap');
+const prompt = config.prompt;
+const prefill = config.prefill;
+const connectionProfile = config.connection_profile;
+// OR use helper functions:
+import { getPromptText, getPrefillText } from './operationConfigResolution.js';
+const prompt = getPromptText('scene_recap');
 ```
 
 **Known sites (grep for more):**
-- `autoSceneBreakDetection.js:537`
-- `sceneBreak.js:867`
-- `runningSceneRecap.js:298`
-- `runningSceneRecap.js:410`
+- `autoSceneBreakDetection.js` - Use `resolveOperationConfig('auto_scene_break')`
+- `sceneBreak.js` - Use `resolveOperationConfig('scene_recap')`
+- `runningSceneRecap.js` - Use `resolveOperationConfig('running_scene_recap')`
+- `recapping.js` - Use resolved config fields
 - Auto-Lorebooks features (TBD)
 
 **Action BEFORE implementing:**
 ```bash
-grep -rn "get_settings.*_prompt" --include="*.js" | grep -v "prefill\|connection\|preset"
+grep -rn "get_settings.*_prompt\|get_settings.*_prefill\|get_settings.*_connection_profile" --include="*.js"
 ```
 
-### 4. Templates Are NOT Prompts (CRITICAL)
+### 4. Templates Are NOT Operation Configs (CRITICAL)
 
 **Exclude from versioning:**
-- `running_scene_recap_template` - This is a wrapper template, NOT a prompt
-- Templates are structural, not AI instructions
+- `running_scene_recap_template` - This is a wrapper template, NOT an operation config
+- Templates are structural, not operation configs
 
-**Only version these 8 prompts:**
-1. `scene_recap_prompt`
-2. `scene_recap_error_detection_prompt`
-3. `auto_scene_break_prompt`
-4. `running_scene_recap_prompt`
-5. `auto_lorebooks_recap_merge_prompt`
-6. `auto_lorebooks_recap_lorebook_entry_lookup_prompt`
-7. `auto_lorebooks_recap_lorebook_entry_deduplicate_prompt`
-8. `auto_lorebooks_bulk_populate_prompt`
+**Only version these 8 operation types:**
+1. `scene_recap`
+2. `scene_recap_error_detection`
+3. `auto_scene_break`
+4. `running_scene_recap`
+5. `auto_lorebooks_recap_merge`
+6. `auto_lorebooks_recap_lorebook_entry_lookup`
+7. `auto_lorebooks_recap_lorebook_entry_deduplicate`
+8. `auto_lorebooks_bulk_populate`
 
 ### 5. Import Must Merge Defaults (CRITICAL)
 

@@ -1,18 +1,18 @@
-# Prompt Versioning System - Corrected Design (Immutable Defaults)
+# Operation Config Versioning System - Corrected Design (Immutable Defaults + Atomic Configs)
 
-**Document Version:** 2.0
-**Date:** 2025-11-12
+**Document Version:** 3.0
+**Date:** 2025-11-17
 **Status:** Authoritative Design Specification
-**Replaces:** PROMPT_VERSIONING_DESIGN.md
-**Purpose:** Corrected design with immutable defaults principle
+**Replaces:** PROMPT_VERSIONING_DESIGN.md (v1), CORRECTED_DESIGN.md v2.0
+**Purpose:** Atomic operation configs with immutable defaults principle
 
 ---
 
 ## Executive Summary
 
-This document specifies the corrected prompt versioning system based on the **immutable defaults** principle:
+This document specifies the operation config versioning system based on **immutable defaults with atomic operation configs**:
 
-**Core Rule:** Default prompts are read-only code. Editing creates a user version.
+**Core Rule:** Default operation configs are read-only code. Editing ANY field creates a user version of the ENTIRE config.
 
 ### Key Improvements Over Original Design
 
@@ -21,16 +21,17 @@ This document specifies the corrected prompt versioning system based on the **im
 3. ✅ **Auto-updates for defaults** - Users get improvements automatically
 4. ✅ **Clear UI distinction** - "Default" (read-only) vs "My Version" (editable)
 5. ✅ **Simplified resolution** - No version history bloat, no customization flags
-6. ✅ **Settings separated** - Only prompt text versioned, not prefill/connection_profile/etc
-7. ✅ **Clean migration** - Deletes non-customized prompts instead of storing them
+6. ✅ **Atomic operation configs** - Prompt + execution settings as ONE versioned artifact
+7. ✅ **Clean migration** - Deletes non-customized configs, consolidates scattered settings
+8. ✅ **One object per operation** - `scene_recap` instead of 5 separate `scene_recap_*` keys
 
 ### Critical Fixes from Verification Report
 
-- ✅ Migration deletes non-customized prompts (don't store defaults)
+- ✅ Migration deletes non-customized configs (don't store defaults)
 - ✅ Export omits defaults (smaller files, cleaner)
 - ✅ Import merges with code defaults (backward compatible)
-- ✅ Settings (prefill, connection_profile, etc.) kept separate from prompts
-- ✅ All prompt access sites refactored to use `getPromptText()`
+- ✅ **Atomic configs** - Prompt + prefill + connection_profile + preset settings together
+- ✅ All operation config access sites refactored to use `resolveOperationConfig()`
 
 ---
 
@@ -51,51 +52,77 @@ This document specifies the corrected prompt versioning system based on the **im
 
 ## 1. Core Principles
 
-### 1.1 Immutable Defaults
+### 1.1 Immutable Defaults with Atomic Operation Configs
 
-**Default prompts are CODE, not DATA**
+**Default operation configs are CODE, not DATA**
 
 ```javascript
 // Defaults live in defaultPrompts.js (version-controlled)
-export const scene_recap_prompt = `You are a structured...`;
+export const OPERATION_CONFIGS = {
+  scene_recap: {
+    prompt: "You are a structured...",
+    prefill: "{",
+    connection_profile: null,  // null = "use current connection"
+    completion_preset_name: "",
+    include_preset_prompts: false,
+  },
+  auto_scene_break: {
+    prompt: "Analyze the following...",
+    prefill: "",
+    connection_profile: null,
+    completion_preset_name: "",
+    include_preset_prompts: true,
+  },
+  // ... 8 operation types total
+};
 
 // Never stored in profiles unless user edits
 // Always available as fallback
 // Updates propagate automatically (no storage to update)
 ```
 
+**Key Concept:** Each operation type (scene_recap, auto_scene_break, etc.) is **one atomic artifact** containing:
+- Prompt text
+- Execution settings (prefill, connection_profile, preset, flags)
+- Version metadata
+
 **Analogy:** Like `character_profiles` and `chat_profiles` - they only store the **mapping** (character → profile name), not the profile data itself.
 
 ### 1.2 User Versions (Forks)
 
-**User versions are created when editing:**
+**User versions are created when editing ANY field:**
 
 ```
-User clicks "Edit" on default prompt
-  → Creates user version (fork from default)
+User clicks "Edit" on default operation config
+  → Creates user version (fork of ENTIRE config from default)
   → Stores in profile/sticky
-  → User edits the fork
+  → User edits ANY field (prompt, prefill, connection_profile, etc.)
+  → Entire config is saved as user version
 
 User clicks "Delete My Version"
-  → Deletes user version
+  → Deletes user version (entire config)
   → Falls back to default (always available)
 ```
+
+**Important:** Editing the prompt, prefill, connection_profile, or any other field creates a user version of the **entire operation config**, not just that field.
 
 ### 1.3 Resolution Priority
 
 ```
 HIGHEST PRIORITY
     ↓
-Chat sticky (user version) - if exists
+Chat sticky (user version - entire config) - if exists
     ↓
-Character sticky (user version) - if exists
+Character sticky (user version - entire config) - if exists
     ↓
-Profile (user version) - if exists
+Profile (user version - entire config) - if exists
     ↓
-Default (from code) - always available
+Default (from code - entire config) - always available
     ↓
 LOWEST PRIORITY (but always present)
 ```
+
+**Note:** Resolution returns the **entire operation config** as one atomic unit, not individual fields.
 
 ### 1.4 Storage Efficiency
 
@@ -103,60 +130,131 @@ LOWEST PRIORITY (but always present)
 
 | Approach | Storage |
 |----------|---------|
-| **v1 (current)** | Every profile stores all 8 prompts (~50KB per profile) |
-| **v2 (immutable defaults)** | Profile stores only customized prompts |
+| **v1 (current)** | Every profile stores all 8 operation configs (8 × 5 settings each = 40 keys) (~50KB per profile) |
+| **v2 (atomic immutable defaults)** | Profile stores only customized operation configs (1 key per customized operation) |
 | - 0 customized | ~0KB (100% savings) |
 | - 2 customized | ~12KB (75% savings) |
 | - 8 customized | ~50KB (same as v1) |
 
-**Typical user:** 1-2 customized prompts per profile
+**Additional benefits:**
+- **Cleaner structure:** 1 key per operation instead of 5 scattered keys
+- **Easier to reason about:** Is `scene_recap` customized? Check if key exists (not 5 separate checks)
+
+**Typical user:** 1-2 customized operation configs per profile
 **Expected savings:** 75-90% on average
 
 ---
 
 ## 2. Data Structures
 
-### 2.1 Default Prompt (CODE - Never Stored)
+### 2.1 Default Operation Config (CODE - Never Stored)
 
-**File:** `promptVersionRegistry.js`
+**File:** `operationConfigRegistry.js`
 
 ```javascript
-export const PROMPT_VERSIONS = {
-  scene_recap_prompt: {
+import * as defaultPrompts from './defaultPrompts.js';
+
+export const OPERATION_CONFIGS = {
+  scene_recap: {
+    prompt: defaultPrompts.scene_recap_prompt,
+    prefill: "{",
+    connection_profile: null,  // null = "use current connection"
+    completion_preset_name: "",
+    include_preset_prompts: false,
+  },
+  scene_recap_error_detection: {
+    prompt: defaultPrompts.scene_recap_error_detection_prompt,
+    prefill: "",
+    connection_profile: null,
+    completion_preset_name: "",
+    include_preset_prompts: false,
+  },
+  auto_scene_break: {
+    prompt: defaultPrompts.auto_scene_break_prompt,
+    prefill: "",
+    connection_profile: null,
+    completion_preset_name: "",
+    include_preset_prompts: true,
+  },
+  running_scene_recap: {
+    prompt: defaultPrompts.running_scene_recap_prompt,
+    prefill: "{",
+    connection_profile: null,
+    completion_preset_name: "",
+    include_preset_prompts: false,
+  },
+  auto_lorebooks_recap_merge: {
+    prompt: defaultPrompts.auto_lorebooks_recap_merge_prompt,
+    prefill: "",
+    connection_profile: null,
+    completion_preset_name: "",
+    include_preset_prompts: false,
+  },
+  auto_lorebooks_recap_lorebook_entry_lookup: {
+    prompt: defaultPrompts.auto_lorebooks_recap_lorebook_entry_lookup_prompt,
+    prefill: "",
+    connection_profile: null,
+    completion_preset_name: "",
+    include_preset_prompts: false,
+  },
+  auto_lorebooks_recap_lorebook_entry_deduplicate: {
+    prompt: defaultPrompts.auto_lorebooks_recap_lorebook_entry_deduplicate_prompt,
+    prefill: "",
+    connection_profile: null,
+    completion_preset_name: "",
+    include_preset_prompts: false,
+  },
+  auto_lorebooks_bulk_populate: {
+    prompt: defaultPrompts.auto_lorebooks_bulk_populate_prompt,
+    prefill: "",
+    connection_profile: null,
+    completion_preset_name: "",
+    include_preset_prompts: false,
+  },
+};
+
+export const OPERATION_VERSIONS = {
+  scene_recap: {
     version: '2.1.0',
     changelog: 'Added explicit content handling improvements',
     updatedAt: '2025-01-15'
   },
-  auto_scene_break_prompt: {
+  auto_scene_break: {
     version: '1.2.0',
     changelog: 'Improved scene boundary detection',
     updatedAt: '2025-01-10'
   },
-  running_scene_recap_prompt: {
+  running_scene_recap: {
     version: '1.1.0',
     changelog: 'Enhanced narrative coherence',
     updatedAt: '2025-01-10'
   },
-  // ... all prompts (8 total, no templates)
+  // ... all 8 operation types
 };
 
 /**
- * Get default prompt (always from code, never stored)
- * @param {string} promptId - e.g., 'scene_recap_prompt'
- * @returns {VersionedPrompt}
+ * Get default operation config (always from code, never stored)
+ * @param {string} operationType - e.g., 'scene_recap'
+ * @returns {VersionedOperationConfig}
  */
-export function getDefaultPrompt(promptId) {
-  const content = defaultPrompts[promptId];
-  const meta = PROMPT_VERSIONS[promptId];
+export function getDefaultConfig(operationType) {
+  const config = OPERATION_CONFIGS[operationType];
+  const meta = OPERATION_VERSIONS[operationType];
 
-  if (!content) {
-    throw new Error(`No default prompt for ${promptId}`);
+  if (!config) {
+    throw new Error(`No default config for ${operationType}`);
   }
 
   return {
-    id: promptId,
+    id: operationType,
     version: meta?.version || '1.0.0',
-    content: content,
+
+    // Operation config fields
+    prompt: config.prompt,
+    prefill: config.prefill,
+    connection_profile: config.connection_profile,
+    completion_preset_name: config.completion_preset_name,
+    include_preset_prompts: config.include_preset_prompts,
 
     // Flags
     isDefault: true,
@@ -178,14 +276,18 @@ export function getDefaultPrompt(promptId) {
 ```javascript
 {
   // Identity
-  id: "scene_recap_prompt",
+  id: "scene_recap",
 
   // Version tracking
   version: "2.1.0-custom-1705320000000",  // Custom version string
   basedOnVersion: "2.1.0",                 // Which default was forked from
 
-  // Content
-  content: "My custom prompt text...",
+  // Operation config fields (ALL fields stored together)
+  prompt: "My custom prompt text...",
+  prefill: "{\"",                          // User changed this
+  connection_profile: null,                // null = use current
+  completion_preset_name: "Creative",      // User changed this
+  include_preset_prompts: true,            // User changed this
 
   // Flags
   isDefault: false,
@@ -194,7 +296,7 @@ export function getDefaultPrompt(promptId) {
   // Metadata
   createdAt: 1705320000000,
   modifiedAt: 1705320000000,
-  customLabel: "My custom scene recap",  // Optional user label
+  customLabel: "My custom scene recap config",  // Optional user label
 
   // Update tracking
   updateAvailable: false,
@@ -207,10 +309,14 @@ export function getDefaultPrompt(promptId) {
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| `id` | string | Prompt identifier (matches setting key) |
+| `id` | string | Operation type identifier |
 | `version` | string | Custom version string (timestamp-based) |
 | `basedOnVersion` | string | Default version this was forked from |
-| `content` | string | The actual prompt text |
+| `prompt` | string | The actual prompt text |
+| `prefill` | string | Prefill text for LLM response |
+| `connection_profile` | string\|null | Connection profile UUID, null = use current |
+| `completion_preset_name` | string | Completion preset name |
+| `include_preset_prompts` | boolean | Include preset prompts flag |
 | `isDefault` | boolean | Always `false` for user versions |
 | `userModified` | boolean | Always `true` for user versions |
 | `createdAt` | number | When user created this version (epoch ms) |
@@ -220,34 +326,27 @@ export function getDefaultPrompt(promptId) {
 | `updateDismissed` | boolean | Did user dismiss update notification? |
 | `dismissedVersion` | string\|null | Which default version was dismissed |
 
-### 2.3 Versionable Prompts List
+### 2.3 Versionable Operation Types List
 
-**File:** `promptMigration.js`
+**File:** `operationConfigMigration.js`
 
 ```javascript
 /**
- * List of prompts that support versioning
+ * List of operation types that support versioning
  * EXCLUDES templates (e.g., running_scene_recap_template)
  */
-export const VERSIONABLE_PROMPTS = [
-  // Scene recap
-  'scene_recap_prompt',
-  'scene_recap_error_detection_prompt',
-
-  // Scene break
-  'auto_scene_break_prompt',
-
-  // Running scene recap
-  'running_scene_recap_prompt',
-
-  // Auto-Lorebooks
-  'auto_lorebooks_recap_merge_prompt',
-  'auto_lorebooks_recap_lorebook_entry_lookup_prompt',
-  'auto_lorebooks_recap_lorebook_entry_deduplicate_prompt',
-  'auto_lorebooks_bulk_populate_prompt'
+export const VERSIONABLE_OPERATIONS = [
+  'scene_recap',
+  'scene_recap_error_detection',
+  'auto_scene_break',
+  'running_scene_recap',
+  'auto_lorebooks_recap_merge',
+  'auto_lorebooks_recap_lorebook_entry_lookup',
+  'auto_lorebooks_recap_lorebook_entry_deduplicate',
+  'auto_lorebooks_bulk_populate'
 ];
 
-// Total: 8 prompts
+// Total: 8 operation types
 ```
 
 ---
@@ -263,96 +362,145 @@ export const VERSIONABLE_PROMPTS = [
   // Only store user versions (not defaults)
   profiles: {
     "Default": {
-      // If user never edited scene_recap_prompt, this key DOESN'T EXIST
-      // If user edited it:
-      scene_recap_prompt: { /* user version object */ },
+      // If user never edited scene_recap config, this key DOESN'T EXIST
+      // If user edited ANY field (prompt, prefill, connection_profile, etc.):
+      scene_recap: {
+        id: "scene_recap",
+        version: "2.1.0-custom-1705320000000",
+        basedOnVersion: "2.1.0",
+        prompt: "Custom prompt...",
+        prefill: "{\"",
+        connection_profile: null,
+        completion_preset_name: "Creative",
+        include_preset_prompts: true,
+        isDefault: false,
+        userModified: true,
+        // ... metadata
+      },
 
-      // Settings (NOT prompts) always stored
-      scene_recap_prefill: "{",
-      scene_recap_connection_profile: "",
-      scene_recap_completion_preset_name: "",
-      scene_recap_include_preset_prompts: false,
+      // No more scattered settings!
+      // OLD (v1): scene_recap_prompt, scene_recap_prefill, scene_recap_connection_profile, etc.
+      // NEW (v2): Just scene_recap (one atomic object)
 
-      // ... other settings
+      // ... other non-customized operations omitted (use defaults from code)
     }
   },
 
   // ===== CHARACTER STICKIES =====
-  // Only user versions
-  character_sticky_prompts: {
+  // Only user versions (entire configs)
+  character_sticky_configs: {
     "alice.png": {
-      scene_recap_prompt: { /* user version */ }
+      scene_recap: { /* entire user version config */ }
       // No entry = use profile or default
     },
     "bob.png": {
-      auto_scene_break_prompt: { /* user version */ }
+      auto_scene_break: { /* entire user version config */ }
     }
   },
 
   // ===== CHAT STICKIES =====
-  // Only user versions
-  chat_sticky_prompts: {
+  // Only user versions (entire configs)
+  chat_sticky_configs: {
     "chat-2024-01-15-12345": {
-      scene_recap_prompt: { /* user version */ }
+      scene_recap: { /* entire user version config */ }
     }
   }
 }
 ```
 
-### 3.2 Settings vs Prompts
+### 3.2 Atomic Operation Configs (No Scattered Settings)
 
-**CRITICAL:** Each prompt has associated **settings** that are stored **separately**:
+**CRITICAL:** Operation configs are **atomic** - all fields stored together:
 
 ```javascript
-// Profile structure
+// Profile structure (v2 - ATOMIC)
 {
-  // ===== PROMPT (versioned, optional) =====
-  scene_recap_prompt: { /* user version */ },  // Only if customized
+  // ===== OPERATION CONFIG (one atomic object, all fields together) =====
+  scene_recap: {
+    // All fields in ONE object
+    prompt: "Custom prompt...",
+    prefill: "{\"",
+    connection_profile: null,  // null = use current
+    completion_preset_name: "Creative",
+    include_preset_prompts: true,
 
-  // ===== SETTINGS (always stored, never versioned) =====
-  scene_recap_prefill: "{",                           // Prefill text
-  scene_recap_connection_profile: "uuid-1234",        // API connection
-  scene_recap_completion_preset_name: "Creative",     // Temperature/top_p/etc
-  scene_recap_include_preset_prompts: true            // Boolean flag
+    // Version metadata
+    version: "2.1.0-custom-1705320000000",
+    basedOnVersion: "2.1.0",
+    isDefault: false,
+    userModified: true,
+    // ...
+  }
+
+  // NO MORE: scene_recap_prompt, scene_recap_prefill, etc. (scattered)
 }
 ```
 
-**Why separate:**
-- Prompt = AI instructions (content to version)
-- Settings = Configuration (runtime behavior, don't version)
-- User may want different settings per profile without forking prompt
+**Comparison with old (v1) structure:**
+
+```javascript
+// OLD (v1) - SCATTERED (40 keys for 8 operations)
+{
+  scene_recap_prompt: "...",
+  scene_recap_prefill: "{",
+  scene_recap_connection_profile: "",
+  scene_recap_completion_preset_name: "",
+  scene_recap_include_preset_prompts: false,
+
+  auto_scene_break_prompt: "...",
+  auto_scene_break_prefill: "",
+  // ... 40 total keys
+}
+
+// NEW (v2) - ATOMIC (1 key per customized operation)
+{
+  scene_recap: { /* entire config */ },
+  auto_scene_break: { /* entire config */ },
+  // Only customized operations stored
+  // Non-customized operations omitted (use code defaults)
+}
+```
+
+**Why atomic:**
+- Changing ANY field (prompt, prefill, connection_profile) creates user version of ENTIRE config
+- Stickying stickies the ENTIRE config (not just prompt)
+- Resolution returns ENTIRE config (not scattered lookups)
+- Simpler to reason about: "Is scene_recap customized?" → Check if key exists
 
 **Sticky behavior:**
-- Sticky the **prompt only**
-- Settings resolved from profile (not stickied)
+- Sticky the **entire operation config**
+- Not just prompt - includes prefill, connection_profile, preset, flags
 
 **Example:**
 ```javascript
-// Alice uses custom scene recap prompt
-character_sticky_prompts: {
+// Alice uses custom scene recap config
+character_sticky_configs: {
   "alice.png": {
-    scene_recap_prompt: { /* user version */ }
-    // Settings NOT here, resolved from profile
+    scene_recap: {
+      // ENTIRE config for Alice
+      prompt: "Alice-specific prompt...",
+      prefill: "{",
+      connection_profile: null,
+      completion_preset_name: "",
+      include_preset_prompts: false,
+      // ... metadata
+    }
   }
 }
 
-// Settings come from active profile
-profile: {
-  scene_recap_prefill: "{",              // From profile
-  scene_recap_connection_profile: "..."  // From profile
-}
+// When chatting with Alice, resolveOperationConfig('scene_recap')
+// returns the entire Alice-specific config above
 ```
 
 ### 3.3 What Gets Stored Where
 
 | Data | Storage Location | When Stored |
 |------|------------------|-------------|
-| Default prompt text | `defaultPrompts.js` (code) | Always (never in settings) |
-| Default prompt metadata | `promptVersionRegistry.js` (code) | Always (never in settings) |
-| User version | `profiles[name][promptId]` | When user edits |
-| Character sticky | `character_sticky_prompts[char][promptId]` | When user stickies |
-| Chat sticky | `chat_sticky_prompts[chatId][promptId]` | When user stickies |
-| Prompt settings | `profiles[name][promptId_*]` | Always (prefill, connection, etc.) |
+| Default operation config | `operationConfigRegistry.js` (code) | Always (never in settings) |
+| Default config metadata | `operationConfigRegistry.js` (code) | Always (never in settings) |
+| User version (entire config) | `profiles[name][operationType]` | When user edits ANY field |
+| Character sticky (entire config) | `character_sticky_configs[char][operationType]` | When user stickies |
+| Chat sticky (entire config) | `chat_sticky_configs[chatId][operationType]` | When user stickies |
 
 ---
 
@@ -360,92 +508,110 @@ profile: {
 
 ### 4.1 Resolution Function
 
-**File:** `promptResolution.js`
+**File:** `operationConfigResolution.js`
 
 ```javascript
 import { get_settings } from './settingsManager.js';
 import { get_current_character_identifier, get_current_chat_identifier } from './utils.js';
-import { getDefaultPrompt } from './promptVersionRegistry.js';
+import { getDefaultConfig } from './operationConfigRegistry.js';
 
 /**
- * Resolve which prompt to use based on priority chain
- * @param {string} promptId - e.g., 'scene_recap_prompt'
- * @returns {VersionedPrompt} - Resolved prompt object
+ * Resolve which operation config to use based on priority chain
+ * @param {string} operationType - e.g., 'scene_recap'
+ * @returns {VersionedOperationConfig} - Resolved config object (entire config)
  */
-export function resolvePrompt(promptId) {
+export function resolveOperationConfig(operationType) {
   try {
     const context = getContext();
 
     // If context not ready, skip stickies (use profile or default)
     if (!context || !context.characters) {
-      const profileVersion = get_settings(promptId);
+      const profileVersion = get_settings(operationType);
       if (profileVersion && !profileVersion.isDefault) {
-        return profileVersion;
+        return profileVersion;  // Entire config
       }
-      return getDefaultPrompt(promptId);
+      return getDefaultConfig(operationType);  // Entire config
     }
 
-    // PRIORITY 1: Check chat sticky (user version only)
+    // PRIORITY 1: Check chat sticky (entire user version config)
     const chatId = get_current_chat_identifier();
     if (chatId) {
-      const chatStickies = get_settings('chat_sticky_prompts') || {};
-      const chatVersion = chatStickies[chatId]?.[promptId];
+      const chatStickies = get_settings('chat_sticky_configs') || {};
+      const chatVersion = chatStickies[chatId]?.[operationType];
       if (chatVersion) {
-        return chatVersion;
+        return chatVersion;  // Entire config
       }
     }
 
-    // PRIORITY 2: Check character sticky (user version only)
+    // PRIORITY 2: Check character sticky (entire user version config)
     const characterKey = get_current_character_identifier();
     if (characterKey) {
-      const characterStickies = get_settings('character_sticky_prompts') || {};
-      const characterVersion = characterStickies[characterKey]?.[promptId];
+      const characterStickies = get_settings('character_sticky_configs') || {};
+      const characterVersion = characterStickies[characterKey]?.[operationType];
       if (characterVersion) {
-        return characterVersion;
+        return characterVersion;  // Entire config
       }
     }
 
-    // PRIORITY 3: Check profile (user version only)
-    const profileVersion = get_settings(promptId);
+    // PRIORITY 3: Check profile (entire user version config)
+    const profileVersion = get_settings(operationType);
     if (profileVersion && !profileVersion.isDefault) {
-      return profileVersion;
+      return profileVersion;  // Entire config
     }
 
-    // PRIORITY 4: Use default (always available from code)
-    return getDefaultPrompt(promptId);
+    // PRIORITY 4: Use default (entire config, always available from code)
+    return getDefaultConfig(operationType);  // Entire config
 
   } catch (error) {
-    error(`Failed to resolve prompt ${promptId}:`, error);
-    return getDefaultPrompt(promptId);  // Safe fallback
+    error(`Failed to resolve operation config ${operationType}:`, error);
+    return getDefaultConfig(operationType);  // Safe fallback (entire config)
   }
 }
 
 /**
- * Get the actual prompt text to use (unwraps versioned object)
- * @param {string} promptId
+ * Get the prompt text from resolved config
+ * @param {string} operationType
  * @returns {string} - The prompt text
  */
-export function getPromptText(promptId) {
-  return resolvePrompt(promptId).content;
+export function getPromptText(operationType) {
+  return resolveOperationConfig(operationType).prompt;
 }
 
 /**
- * Check if a prompt is using default or user version
- * @param {string} promptId
+ * Get the prefill text from resolved config
+ * @param {string} operationType
+ * @returns {string} - The prefill text
+ */
+export function getPrefillText(operationType) {
+  return resolveOperationConfig(operationType).prefill;
+}
+
+/**
+ * Get the connection profile from resolved config
+ * @param {string} operationType
+ * @returns {string|null} - Connection profile UUID or null (use current)
+ */
+export function getConnectionProfile(operationType) {
+  return resolveOperationConfig(operationType).connection_profile;
+}
+
+/**
+ * Check if an operation config is using default or user version
+ * @param {string} operationType
  * @returns {boolean}
  */
-export function isUsingDefault(promptId) {
-  return resolvePrompt(promptId).isDefault;
+export function isUsingDefault(operationType) {
+  return resolveOperationConfig(operationType).isDefault;
 }
 
 /**
- * Get information about where a prompt is coming from
+ * Get information about where an operation config is coming from
  * Used for UI badges
- * @param {string} promptId
+ * @param {string} operationType
  * @returns {Object} - { type, label, isUserVersion }
  */
-export function getPromptSource(promptId) {
-  const resolved = resolvePrompt(promptId);
+export function getConfigSource(operationType) {
+  const resolved = resolveOperationConfig(operationType);
 
   // Check if using default
   if (resolved.isDefault) {
@@ -460,8 +626,8 @@ export function getPromptSource(promptId) {
 
   // Check where user version comes from
   const chatId = get_current_chat_identifier();
-  const chatStickies = get_settings('chat_sticky_prompts') || {};
-  if (chatId && chatStickies[chatId]?.[promptId]) {
+  const chatStickies = get_settings('chat_sticky_configs') || {};
+  if (chatId && chatStickies[chatId]?.[operationType]) {
     return {
       type: 'chat',
       label: 'Chat Override',
@@ -472,8 +638,8 @@ export function getPromptSource(promptId) {
   }
 
   const characterKey = get_current_character_identifier();
-  const characterStickies = get_settings('character_sticky_prompts') || {};
-  if (characterKey && characterStickies[characterKey]?.[promptId]) {
+  const characterStickies = get_settings('character_sticky_configs') || {};
+  if (characterKey && characterStickies[characterKey]?.[operationType]) {
     return {
       type: 'character',
       label: 'Character Override',
@@ -500,14 +666,24 @@ export function getPromptSource(promptId) {
 
 ```javascript
 // Setup:
-// - User never edited scene_recap_prompt
-// - profile['scene_recap_prompt'] doesn't exist
+// - User never edited scene_recap config
+// - profile['scene_recap'] doesn't exist
 // - No character/chat stickies
 
-resolvePrompt('scene_recap_prompt')
-// → Returns default from code
+resolveOperationConfig('scene_recap')
+// → Returns default entire config from code:
+// {
+//   id: 'scene_recap',
+//   prompt: "You are a structured...",
+//   prefill: "{",
+//   connection_profile: null,
+//   completion_preset_name: "",
+//   include_preset_prompts: false,
+//   isDefault: true,
+//   // ...
+// }
 
-getPromptSource('scene_recap_prompt')
+getConfigSource('scene_recap')
 // → { type: 'default', label: 'Default', isUserVersion: false }
 ```
 
@@ -515,14 +691,25 @@ getPromptSource('scene_recap_prompt')
 
 ```javascript
 // Setup:
-// - User edited scene_recap_prompt
-// - profile['scene_recap_prompt'] = { /* user version */ }
+// - User edited scene_recap config (changed prefill)
+// - profile['scene_recap'] = { /* user version entire config */ }
 // - No character/chat stickies
 
-resolvePrompt('scene_recap_prompt')
-// → Returns profile user version
+resolveOperationConfig('scene_recap')
+// → Returns profile user version (entire config):
+// {
+//   id: 'scene_recap',
+//   prompt: "You are a structured...",  // Same as default
+//   prefill: "{\"",                     // USER CHANGED THIS
+//   connection_profile: null,
+//   completion_preset_name: "",
+//   include_preset_prompts: false,
+//   isDefault: false,
+//   userModified: true,
+//   // ...
+// }
 
-getPromptSource('scene_recap_prompt')
+getConfigSource('scene_recap')
 // → { type: 'profile', label: 'My Version', isUserVersion: true }
 ```
 
@@ -530,14 +717,14 @@ getPromptSource('scene_recap_prompt')
 
 ```javascript
 // Setup:
-// - character_sticky_prompts['alice.png']['scene_recap_prompt'] exists
+// - character_sticky_configs['alice.png']['scene_recap'] exists (entire config)
 // - profile also has user version
 // - Character: alice.png
 
-resolvePrompt('scene_recap_prompt')
-// → Returns character sticky (overrides profile)
+resolveOperationConfig('scene_recap')
+// → Returns character sticky (entire config, overrides profile)
 
-getPromptSource('scene_recap_prompt')
+getConfigSource('scene_recap')
 // → { type: 'character', label: 'Character Override', isUserVersion: true }
 ```
 
@@ -545,15 +732,15 @@ getPromptSource('scene_recap_prompt')
 
 ```javascript
 // Setup:
-// - chat_sticky_prompts['chat-123']['scene_recap_prompt'] exists
-// - character_sticky_prompts['alice.png']['scene_recap_prompt'] exists
+// - chat_sticky_configs['chat-123']['scene_recap'] exists (entire config)
+// - character_sticky_configs['alice.png']['scene_recap'] exists (entire config)
 // - profile also has user version
 // - Chat: chat-123, Character: alice.png
 
-resolvePrompt('scene_recap_prompt')
-// → Returns chat sticky (highest priority)
+resolveOperationConfig('scene_recap')
+// → Returns chat sticky (entire config, highest priority)
 
-getPromptSource('scene_recap_prompt')
+getConfigSource('scene_recap')
 // → { type: 'chat', label: 'Chat Override', isUserVersion: true }
 ```
 
@@ -563,33 +750,32 @@ getPromptSource('scene_recap_prompt')
 
 ### 5.1 Migration Goal
 
-**Convert v1.x (string prompts) → v2.x (immutable defaults with optional user versions)**
+**Convert v1.x (scattered settings) → v2.x (atomic configs with immutable defaults)**
 
-**Key principle:** Only store what user actually customized
+**Key principle:** Gather scattered settings into atomic configs, then only store what user actually customized
 
 ### 5.2 Migration Logic
 
-**File:** `promptMigration.js`
+**File:** `operationConfigMigration.js`
 
 ```javascript
 import { get_settings, set_settings, log, SUBSYSTEM } from './index.js';
-import { getDefaultPrompt } from './promptVersionRegistry.js';
-import * as defaultPrompts from './defaultPrompts.js';
+import { getDefaultConfig } from './operationConfigRegistry.js';
+import { OPERATION_CONFIGS } from './operationConfigRegistry.js';
 
 /**
  * Check if migration is needed
  * @returns {boolean}
  */
-export function needsPromptMigration() {
+export function needsOperationConfigMigration() {
   const profiles = get_settings('profiles');
 
   for (const [profileName, profileSettings] of Object.entries(profiles)) {
-    for (const promptKey of VERSIONABLE_PROMPTS) {
-      const value = profileSettings[promptKey];
-
-      // If string exists, need migration
-      if (typeof value === 'string') {
-        return true;
+    // Check if any scattered settings exist (old format)
+    for (const opType of VERSIONABLE_OPERATIONS) {
+      // Old format: scene_recap_prompt, scene_recap_prefill, etc.
+      if (profileSettings[`${opType}_prompt`] !== undefined) {
+        return true;  // Found old scattered format
       }
     }
   }
@@ -598,12 +784,12 @@ export function needsPromptMigration() {
 }
 
 /**
- * Migrate string prompts to versioned format
- * KEY: Only create user versions if customized, otherwise delete
+ * Migrate scattered settings to atomic operation configs
+ * KEY: Gather all fields, compare entire config, only store if customized
  * @returns {Promise<boolean>} - true if migration performed
  */
-export async function migratePromptsToVersioned() {
-  log(SUBSYSTEM.SETTINGS, '=== Starting Prompt Migration (Immutable Defaults) ===');
+export async function migrateToAtomicConfigs() {
+  log(SUBSYSTEM.SETTINGS, '=== Starting Operation Config Migration (Atomic + Immutable Defaults) ===');
 
   const profiles = get_settings('profiles');
   let migrated = false;
@@ -611,42 +797,57 @@ export async function migratePromptsToVersioned() {
   for (const [profileName, profileSettings] of Object.entries(profiles)) {
     log(SUBSYSTEM.SETTINGS, `Migrating profile: "${profileName}"`);
 
-    for (const promptKey of VERSIONABLE_PROMPTS) {
-      const currentValue = profileSettings[promptKey];
+    for (const opType of VERSIONABLE_OPERATIONS) {
+      // STEP 1: Gather scattered settings into one config
+      const gatheredConfig = {
+        prompt: profileSettings[`${opType}_prompt`],
+        prefill: profileSettings[`${opType}_prefill`],
+        connection_profile: profileSettings[`${opType}_connection_profile`] || null,
+        completion_preset_name: profileSettings[`${opType}_completion_preset_name`],
+        include_preset_prompts: profileSettings[`${opType}_include_preset_prompts`],
+      };
 
-      // Skip if already versioned or missing
-      if (!currentValue || typeof currentValue !== 'string') {
+      // Skip if all fields undefined (operation never configured)
+      if (!gatheredConfig.prompt && gatheredConfig.prefill === undefined) {
         continue;
       }
 
-      // Get default for comparison
-      const defaultValue = defaultPrompts[promptKey];
-      const isCustomized = currentValue !== defaultValue;
+      // STEP 2: Get default config for comparison
+      const defaultConfig = OPERATION_CONFIGS[opType];
+
+      // STEP 3: Compare ENTIRE config with default
+      const isCustomized = !deepEqualConfigs(gatheredConfig, defaultConfig);
 
       if (isCustomized) {
-        // User customized = create user version
-        const userVersion = createUserVersion(
-          promptKey,
-          currentValue,
-          getDefaultPrompt(promptKey).version
+        // User customized = create user version (entire config)
+        const userVersion = createUserVersionFromScattered(
+          opType,
+          gatheredConfig,
+          getDefaultConfig(opType).version
         );
 
-        profileSettings[promptKey] = userVersion;
-        log(SUBSYSTEM.SETTINGS, `  ✓ ${promptKey} → USER VERSION (customized)`);
+        profileSettings[opType] = userVersion;
+        log(SUBSYSTEM.SETTINGS, `  ✓ ${opType} → USER VERSION (customized)`);
         migrated = true;
 
       } else {
-        // Not customized = delete from profile (use code default)
-        delete profileSettings[promptKey];
-        log(SUBSYSTEM.SETTINGS, `  ✓ ${promptKey} → DELETED (will use code default)`);
+        // Not customized = don't store (use code default)
+        log(SUBSYSTEM.SETTINGS, `  ✓ ${opType} → USING DEFAULT (not stored)`);
         migrated = true;
       }
+
+      // STEP 4: Delete old scattered keys
+      delete profileSettings[`${opType}_prompt`];
+      delete profileSettings[`${opType}_prefill`];
+      delete profileSettings[`${opType}_connection_profile`];
+      delete profileSettings[`${opType}_completion_preset_name`];
+      delete profileSettings[`${opType}_include_preset_prompts`];
     }
   }
 
   if (migrated) {
     set_settings('profiles', profiles);
-    log(SUBSYSTEM.SETTINGS, '=== Prompt Migration Complete ===');
+    log(SUBSYSTEM.SETTINGS, '=== Operation Config Migration Complete ===');
   } else {
     log(SUBSYSTEM.SETTINGS, '=== No Migration Needed ===');
   }
@@ -655,22 +856,48 @@ export async function migratePromptsToVersioned() {
 }
 
 /**
- * Create user version object from string
- * @param {string} promptId
- * @param {string} content
+ * Deep compare two operation configs (ignoring metadata)
+ * @param {Object} config1 - Gathered config from v1
+ * @param {Object} config2 - Default config
+ * @returns {boolean} - true if configs are equal
+ */
+function deepEqualConfigs(config1, config2) {
+  return (
+    config1.prompt === config2.prompt &&
+    config1.prefill === config2.prefill &&
+    (config1.connection_profile || null) === (config2.connection_profile || null) &&
+    config1.completion_preset_name === config2.completion_preset_name &&
+    config1.include_preset_prompts === config2.include_preset_prompts
+  );
+}
+
+/**
+ * Create user version object from scattered v1 settings
+ * @param {string} operationType
+ * @param {Object} gatheredConfig - { prompt, prefill, connection_profile, ... }
  * @param {string} basedOnVersion
  * @returns {UserVersion}
  */
-function createUserVersion(promptId, content, basedOnVersion) {
+function createUserVersionFromScattered(operationType, gatheredConfig, basedOnVersion) {
   const timestamp = Date.now();
 
   return {
-    id: promptId,
+    id: operationType,
     version: `${basedOnVersion}-custom-${timestamp}`,
     basedOnVersion: basedOnVersion,
-    content: content,
+
+    // Operation config fields
+    prompt: gatheredConfig.prompt,
+    prefill: gatheredConfig.prefill,
+    connection_profile: gatheredConfig.connection_profile || null,
+    completion_preset_name: gatheredConfig.completion_preset_name,
+    include_preset_prompts: gatheredConfig.include_preset_prompts,
+
+    // Flags
     isDefault: false,
     userModified: true,
+
+    // Metadata
     createdAt: timestamp,
     modifiedAt: timestamp,
     customLabel: 'Migrated from v1.x',
@@ -699,9 +926,9 @@ async function initializeExtension() {
     await migrateConnectionProfileSettings();
   }
 
-  // NEW: Migrate prompts to versioned (with immutable defaults)
-  if (needsPromptMigration()) {
-    await migratePromptsToVersioned();
+  // NEW: Migrate to atomic operation configs (with immutable defaults)
+  if (needsOperationConfigMigration()) {
+    await migrateToAtomicConfigs();
     saveSettingsDebounced();
   }
 
@@ -711,41 +938,64 @@ async function initializeExtension() {
 
 ### 5.4 Migration Outcomes
 
-**Before migration (v1.x profile):**
+**Before migration (v1.x profile - scattered settings):**
 ```javascript
 {
-  scene_recap_prompt: "You are a structured...",  // Default text (string)
-  auto_scene_break_prompt: "Custom prompt...",    // Customized (string)
-  scene_recap_prefill: "{",
-  // ... settings
+  // Scene recap (default settings - NOT customized)
+  scene_recap_prompt: "You are a structured...",  // Default (string)
+  scene_recap_prefill: "{",                        // Default
+  scene_recap_connection_profile: "",              // Default
+  scene_recap_completion_preset_name: "",          // Default
+  scene_recap_include_preset_prompts: false,       // Default
+
+  // Auto scene break (CUSTOMIZED - user changed prefill)
+  auto_scene_break_prompt: "Analyze the following...",  // Default (string)
+  auto_scene_break_prefill: "YES/NO",                    // CUSTOMIZED!
+  auto_scene_break_connection_profile: "",               // Default
+  auto_scene_break_completion_preset_name: "",           // Default
+  auto_scene_break_include_preset_prompts: true,         // Default
+
+  // ... 40 total keys for 8 operations
 }
 ```
 
-**After migration (v2.x profile):**
+**After migration (v2.x profile - atomic configs):**
 ```javascript
 {
-  // scene_recap_prompt: DELETED (will use code default)
+  // scene_recap: NOT STORED (all fields matched default, using code default)
 
-  auto_scene_break_prompt: {  // User version (customized)
-    id: "auto_scene_break_prompt",
+  // auto_scene_break: STORED (user customized prefill, so entire config stored)
+  auto_scene_break: {
+    id: "auto_scene_break",
     version: "1.2.0-custom-1705320000000",
     basedOnVersion: "1.2.0",
-    content: "Custom prompt...",
+
+    // Entire config stored (atomic)
+    prompt: "Analyze the following...",         // Same as default
+    prefill: "YES/NO",                          // CUSTOMIZED
+    connection_profile: null,                   // Same as default
+    completion_preset_name: "",                 // Same as default
+    include_preset_prompts: true,               // Same as default
+
     isDefault: false,
     userModified: true,
-    // ... metadata
+    createdAt: 1705320000000,
+    modifiedAt: 1705320000000,
+    customLabel: 'Migrated from v1.x',
+    // ...
   },
 
-  scene_recap_prefill: "{",
-  // ... settings (unchanged)
+  // All scattered _prompt, _prefill, etc. keys DELETED
 }
 ```
 
 **Result:**
-- ✅ Non-customized prompts deleted (75-90% storage saved)
-- ✅ Customized prompts preserved as user versions
+- ✅ Non-customized configs NOT stored (75-90% storage saved)
+- ✅ Customized configs preserved as atomic user versions
+- ✅ Scattered settings consolidated into atomic configs
 - ✅ Zero data loss
-- ✅ Auto-updates for non-customized prompts
+- ✅ Auto-updates for non-customized configs
+- ✅ 1 key per customized operation instead of 5
 
 ---
 

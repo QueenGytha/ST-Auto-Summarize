@@ -34,8 +34,9 @@ This folder contains design documentation for a prompt versioning system that wo
 
 ### Start Here
 
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Overview and implementation guide
-- **[CORRECTED_DESIGN.md](CORRECTED_DESIGN.md)** - **PRIMARY SPEC** - Authoritative design with immutable defaults
+- **[UI_DRIVEN_OPERATIONS_PRESETS.md](UI_DRIVEN_OPERATIONS_PRESETS.md)** - **LATEST SPEC** - UI-driven presets system (2025-11-17)
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Overview of atomic operation configs approach
+- **[CORRECTED_DESIGN.md](CORRECTED_DESIGN.md)** - Atomic configs with immutable defaults (foundation for presets system)
 
 ### Analysis & Verification
 
@@ -44,46 +45,103 @@ This folder contains design documentation for a prompt versioning system that wo
 
 ---
 
-## Core Principle: Immutable Defaults
+## Design Evolution
 
-**Default prompts = READ-ONLY CODE (never stored in profiles)**
+**V1 (DESIGN_V1.md)** - ❌ DEPRECATED
+- Versioned prompts with character/chat stickies
+- Critical flaws identified in VERIFICATION_REPORT.md
+- Rating: 6.5/10
 
-```
-User clicks "Edit" on default prompt
-  → Creates user version (fork)
-  → Stores in profile/chat/character sticky
-  → User edits their version
+**V2 (CORRECTED_DESIGN.md)** - ✅ Foundation
+- Atomic operation configs (prompt + execution settings together)
+- Immutable defaults principle (defaults in code, not stored)
+- 75-90% storage savings
+- Resolution: Chat sticky → Character sticky → Profile → Default
 
-User clicks "Delete My Version"
-  → Deletes user version
-  → Reverts to default (always available from code)
-```
-
-**Benefits:**
-- 75-90% storage savings (only customizations stored)
-- Users get improvements automatically (unless they customized)
-- Clear distinction between default vs user versions
-- No version history bloat
+**V3 (UI_DRIVEN_OPERATIONS_PRESETS.md)** - ✅ **LATEST**
+- Builds on V2's atomic configs
+- Adds two-layer architecture: **Presets** (bundles) reference **Artifacts** (configs)
+- Auto-versioning with v<N> increments
+- Import/export with API key safety
+- Artifact reuse across multiple presets
 
 ---
 
-## Resolution Priority
+## Core Principles
 
-When resolving which prompt to use:
+### 1. Atomic Operation Configs (from V2/CORRECTED_DESIGN.md)
 
+Each operation type is **one atomic artifact** containing:
+- Prompt text
+- Prefill
+- Connection profile
+- Completion preset name
+- Include preset prompts flag
+
+**Benefits:**
+- No scattered settings (1 object instead of 5 separate keys)
+- Atomic editing (change any field = new version)
+- Simpler resolution
+
+### 2. Two-Layer Architecture (V3/UI_DRIVEN_OPERATIONS_PRESETS.md)
+
+```
+Operations Preset (shareable bundle, can be stickied)
+├── Scene Recap → References "Detailed Recap v3" artifact
+├── Scene Break → References "Strict Detection v1" artifact
+└── ... (8 operation types)
+
+Operation Artifact (atomic config, reusable)
+├── Prompt text
+├── Prefill
+├── Connection profile
+├── Completion preset name
+└── Include preset prompts flag
+```
+
+**Key Innovation:**
+- **Presets** bundle artifact references (shareable, stickied to char/chat)
+- **Artifacts** are the actual configs (reusable across presets)
+- Auto-versioning with v<N> increments
+- Import/export with API key safety
+
+**Benefits:**
+- Artifact reuse (one artifact in multiple presets)
+- Shareable configs (users can share presets)
+- Character-specific presets (without duplication)
+- Clear organization (bundled configs vs scattered settings)
+
+---
+
+## Resolution Priority (V3 System)
+
+Two-step resolution:
+
+**Step 1: Resolve which preset to use**
 ```
 HIGHEST PRIORITY
     ↓
-Chat sticky (user version) - if exists
+Chat sticky preset - if exists
     ↓
-Character sticky (user version) - if exists
+Character sticky preset - if exists
     ↓
-Profile (user version) - if exists
+Profile active preset - if exists
     ↓
-Default (from code) - always available
+Default preset - always available
     ↓
 LOWEST PRIORITY
 ```
+
+**Step 2: Resolve artifact for specific operation**
+```
+Preset.operations[operation_type] → artifact_name
+    ↓
+operation_artifacts[operation_type].find(artifact_name)
+    ↓
+Returns: { prompt, prefill, connection_profile, ... }
+```
+
+**Result:** Returns the **entire operation config** (atomic artifact) for that operation type.
 
 ---
 
@@ -109,7 +167,12 @@ The V1 design had several critical flaws identified in VERIFICATION_REPORT.md:
 3. ❌ **Wrong sticky storage** - Designed for extension_settings, should use chat_metadata
 4. ❌ **No validation** - Didn't handle corrupted/malformed prompt objects
 
-V2 (CORRECTED_DESIGN.md) fixes all these issues.
+V2 (CORRECTED_DESIGN.md) fixes all these issues with **atomic operation configs**:
+
+- ✅ **One versioned artifact per operation** - Prompt + prefill + connection_profile + preset settings
+- ✅ **No scattered settings** - `scene_recap` object instead of 5 separate `scene_recap_*` keys
+- ✅ **Simpler resolution** - One lookup returns entire config
+- ✅ **Atomic editing** - Changing any field creates user version of entire config
 
 ---
 
