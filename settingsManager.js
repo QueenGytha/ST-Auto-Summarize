@@ -98,10 +98,14 @@ function hard_reset_settings() {
   if (global_settings['profiles']['Default'] === undefined) {// if the default profile doesn't exist, create it
     global_settings['profiles']['Default'] = structuredClone(default_settings);
   }
-  extension_settings[MODULE_NAME] = structuredClone({
-    ...default_settings,
-    ...global_settings
-  });
+  extension_settings[MODULE_NAME] = structuredClone(default_settings);
+
+  for (const key of Object.keys(global_settings)) {
+    if (extension_settings[MODULE_NAME][key] === undefined) {
+      extension_settings[MODULE_NAME][key] = structuredClone(global_settings[key]);
+    }
+  }
+
   extension_settings.autoLorebooks = getDefaultAutoLorebookSettings();
   saveSettingsDebounced();
 }
@@ -109,9 +113,14 @@ function soft_reset_settings() {
   // fix any missing settings without destroying profiles
   extension_settings[MODULE_NAME] = Object.assign(
     structuredClone(default_settings),
-    structuredClone(global_settings),
     extension_settings[MODULE_NAME]
   );
+
+  for (const key of Object.keys(global_settings)) {
+    if (extension_settings[MODULE_NAME][key] === undefined) {
+      extension_settings[MODULE_NAME][key] = structuredClone(global_settings[key]);
+    }
+  }
 
   // check for any missing profiles
   const profiles = get_settings('profiles');
