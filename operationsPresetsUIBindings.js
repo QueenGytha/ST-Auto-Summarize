@@ -5,19 +5,63 @@ import {
   MODULE_NAME,
   get_current_character_identifier,
   get_current_chat_identifier,
-  saveSettingsDebounced
+  saveSettingsDebounced,
+  set_settings
 } from './index.js';
+import { getArtifactSelector } from './selectorsExtension.js';
 import { get_connection_profile_objects } from './connectionProfiles.js';
 import { get_presets } from './presetManager.js';
-import { updatePreset, deletePreset, duplicatePreset, renamePreset, setCharacterStickyPreset, setChatStickyPreset, listPresets } from './operationsPresets.js';
+import { updatePreset, deletePreset, duplicatePreset, renamePreset, setCharacterStickyPreset, setChatStickyPreset, getCharacterStickyPreset, getChatStickyPreset, clearCharacterSticky, clearChatSticky, listPresets, getPreset } from './operationsPresets.js';
 import { updateArtifact, deleteArtifact, listArtifacts, createNewArtifactVersion } from './operationArtifacts.js';
-import { resolveOperationConfig } from './operationsPresetsResolution.js';
 import { get_settings } from './index.js';
 import { exportPreset } from './operationsPresetsExport.js';
 import { importPreset } from './operationsPresetsImport.js';
 
 const MODAL_FADE_DURATION_MS = 200;
 const OPERATION_TYPE_DATA_KEY = 'operation-type';
+
+const OPERATION_TYPES = [
+  'auto_lorebooks_bulk_populate',
+  'auto_scene_break',
+  'scene_recap_error_detection',
+  'scene_recap',
+  'running_scene_recap',
+  'auto_lorebooks_recap_lorebook_entry_lookup',
+  'auto_lorebooks_recap_lorebook_entry_deduplicate',
+  'auto_lorebooks_recap_merge'
+];
+
+function ensureNotDefaultPreset() {
+  const presetName = $(selectorsExtension.operationsPresets.selector).val();
+
+  if (presetName !== 'Default') {
+    return presetName;
+  }
+
+  // Auto-generate versioned name like "Default v2", "Default v3", etc.
+  const presets = listPresets();
+  const presetNames = new Set(presets.map(p => p.name));
+  const baseName = 'Default';
+  let version = 2;
+  let newName = `${baseName} v${version}`;
+
+  while (presetNames.has(newName)) {
+    version++;
+    newName = `${baseName} v${version}`;
+  }
+
+  duplicatePreset('Default', newName);
+  saveSettingsDebounced();
+  refreshPresetSelector();
+  $(selectorsExtension.operationsPresets.selector).val(newName);
+  refreshPresetButtons();
+  refreshStickyButtonColors();
+  refreshAllArtifactSelectors();
+
+  toast(`Created new preset: "${newName}"`, 'info');
+
+  return newName;
+}
 
 /**
  * Initialize operations presets UI bindings
@@ -28,12 +72,21 @@ export function initializeOperationsPresetsUI() {
   bindPresetControls();
   bindArtifactControls();
   bindArtifactEditorModal();
+  refreshPresetBadge();
+  refreshPresetButtons();
+  refreshAllArtifactSelectors();
 }
 
 /**
  * Bind preset-level controls (save, rename, delete, import, export, sticky)
  */
 function bindPresetControls() {
+  $(selectorsExtension.operationsPresets.selector).on('change', () => {
+    refreshAllArtifactSelectors();
+    refreshStickyButtonColors();
+    refreshPresetButtons();
+  });
+
   $(selectorsExtension.operationsPresets.save).on('click', () => {
     const presetName = $(selectorsExtension.operationsPresets.selector).val();
     try {
@@ -150,12 +203,20 @@ function bindPresetControls() {
     }
 
     try {
-      setCharacterStickyPreset(characterKey, presetName);
-      saveSettingsDebounced();
-      toast(`Preset "${presetName}" stickied to character`, 'success');
+      const currentSticky = getCharacterStickyPreset(characterKey);
+      if (currentSticky === presetName) {
+        clearCharacterSticky(characterKey);
+        saveSettingsDebounced();
+        toast(`Removed character sticky`, 'success');
+      } else {
+        setCharacterStickyPreset(characterKey, presetName);
+        saveSettingsDebounced();
+        toast(`Preset "${presetName}" stickied to character`, 'success');
+      }
       refreshPresetBadge();
+      refreshStickyButtonColors();
     } catch (err) {
-      toast(`Failed to set character sticky: ${err.message}`, 'error');
+      toast(`Failed to toggle character sticky: ${err.message}`, 'error');
     }
   });
 
@@ -169,12 +230,20 @@ function bindPresetControls() {
     }
 
     try {
-      setChatStickyPreset(chatId, presetName);
-      saveSettingsDebounced();
-      toast(`Preset "${presetName}" stickied to chat`, 'success');
+      const currentSticky = getChatStickyPreset(chatId);
+      if (currentSticky === presetName) {
+        clearChatSticky(chatId);
+        saveSettingsDebounced();
+        toast(`Removed chat sticky`, 'success');
+      } else {
+        setChatStickyPreset(chatId, presetName);
+        saveSettingsDebounced();
+        toast(`Preset "${presetName}" stickied to chat`, 'success');
+      }
       refreshPresetBadge();
+      refreshStickyButtonColors();
     } catch (err) {
-      toast(`Failed to set chat sticky: ${err.message}`, 'error');
+      toast(`Failed to toggle chat sticky: ${err.message}`, 'error');
     }
   });
 }
@@ -183,6 +252,23 @@ function bindPresetControls() {
  * Bind artifact-level controls (edit, rename, delete, duplicate)
  */
 function bindArtifactControls() {
+  // Add change handlers to all artifact selectors
+  for (const operationType of OPERATION_TYPES) {
+    $(getArtifactSelector(operationType)).on('change', () => {
+      const selectedArtifact = $(getArtifactSelector(operationType)).val();
+      const presetName = ensureNotDefaultPreset();
+
+      // Update preset with new artifact selection
+      updatePreset(presetName, {
+        operations: {
+          [operationType]: selectedArtifact
+        }
+      });
+      saveSettingsDebounced();
+      refreshArtifactButtons(operationType);
+    });
+  }
+
   $(document).on('click', selectorsExtension.operationsPresets.artifactEditClass, async (e) => {
     const operationType = $(e.currentTarget).data(OPERATION_TYPE_DATA_KEY);
     await openArtifactEditor(operationType);
@@ -190,11 +276,9 @@ function bindArtifactControls() {
 
   $(document).on('click', selectorsExtension.operationsPresets.artifactRenameClass, (e) => {
     const operationType = $(e.currentTarget).data(OPERATION_TYPE_DATA_KEY);
+    const currentName = $(getArtifactSelector(operationType)).val();
 
-    const config = resolveOperationConfig(operationType);
-    const currentName = config.name;
-
-    if (config.isDefault) {
+    if (currentName === 'Default') {
       toast('Cannot rename Default artifact. Duplicate it first.', 'error');
       return;
     }
@@ -206,14 +290,29 @@ function bindArtifactControls() {
     }
 
     try {
-      const artifacts = get_settings('operation_artifacts')?.[operationType] || [];
+      const allArtifacts = get_settings('operation_artifacts') || {};
+      const artifacts = allArtifacts[operationType] || [];
       const artifact = artifacts.find(a => a.name === currentName);
       if (!artifact) {
         throw new Error(`Artifact not found: ${currentName}`);
       }
+
       artifact.name = newName;
       artifact.modifiedAt = Date.now();
+      allArtifacts[operationType] = artifacts;
+      set_settings('operation_artifacts', allArtifacts);
+
+      // Update all presets that reference this artifact
+      const presets = get_settings('operations_presets') || {};
+      for (const preset of Object.values(presets)) {
+        if (preset.operations[operationType] === currentName) {
+          preset.operations[operationType] = newName;
+        }
+      }
+      set_settings('operations_presets', presets);
+
       saveSettingsDebounced();
+      refreshArtifactSelector(operationType, newName);
       toast(`Renamed artifact to: "${newName}"`, 'success');
     } catch (err) {
       toast(`Failed to rename artifact: ${err.message}`, 'error');
@@ -222,11 +321,9 @@ function bindArtifactControls() {
 
   $(document).on('click', selectorsExtension.operationsPresets.artifactDeleteClass, (e) => {
     const operationType = $(e.currentTarget).data(OPERATION_TYPE_DATA_KEY);
+    const artifactName = $(getArtifactSelector(operationType)).val();
 
-    const config = resolveOperationConfig(operationType);
-    const artifactName = config.name;
-
-    if (config.isDefault) {
+    if (artifactName === 'Default') {
       toast('Cannot delete Default artifact', 'error');
       return;
     }
@@ -238,6 +335,7 @@ function bindArtifactControls() {
     try {
       deleteArtifact(operationType, artifactName);
       saveSettingsDebounced();
+      refreshArtifactSelector(operationType, 'Default');
       toast(`Deleted artifact: "${artifactName}"`, 'success');
     } catch (err) {
       toast(`Failed to delete artifact: ${err.message}`, 'error');
@@ -246,17 +344,21 @@ function bindArtifactControls() {
 
   $(document).on('click', selectorsExtension.operationsPresets.artifactDuplicateClass, (e) => {
     const operationType = $(e.currentTarget).data(OPERATION_TYPE_DATA_KEY);
+    const artifactName = $(getArtifactSelector(operationType)).val();
 
-    const config = resolveOperationConfig(operationType);
-    const artifactName = config.name;
+    const presetName = ensureNotDefaultPreset();
+    const newArtifactName = createNewArtifactVersion(operationType, artifactName);
 
-    try {
-      const newArtifactName = createNewArtifactVersion(operationType, artifactName);
-      saveSettingsDebounced();
-      toast(`Duplicated artifact as: "${newArtifactName}"`, 'success');
-    } catch (err) {
-      toast(`Failed to duplicate artifact: ${err.message}`, 'error');
-    }
+    // Update preset to reference the new artifact
+    updatePreset(presetName, {
+      operations: {
+        [operationType]: newArtifactName
+      }
+    });
+
+    saveSettingsDebounced();
+    refreshArtifactSelector(operationType, newArtifactName);
+    toast(`Duplicated artifact as: "${newArtifactName}"`, 'success');
   });
 }
 
@@ -360,7 +462,16 @@ async function openArtifactEditor(operationType) {
   };
 
   const operationName = operationNames[operationType] || operationType;
-  const config = resolveOperationConfig(operationType);
+  const artifactName = $(getArtifactSelector(operationType)).val();
+
+  const artifacts = get_settings('operation_artifacts') || {};
+  const operationArtifacts = artifacts[operationType] || [];
+  const config = operationArtifacts.find(a => a.name === artifactName);
+
+  if (!config) {
+    toast(`Artifact not found: ${artifactName}`, 'error');
+    return;
+  }
 
   populateConnectionProfileDropdown();
   await populateCompletionPresetDropdown();
@@ -415,20 +526,65 @@ function refreshPresetBadge() {
   const chatSticky = extension_settings[MODULE_NAME].chat_sticky_presets?.[chatId];
   const characterSticky = extension_settings[MODULE_NAME].character_sticky_presets?.[characterKey];
 
-  let badge = '📄';
+  const $badge = $(selectorsExtension.operationsPresets.badge);
+  $badge.removeClass('fa-solid fa-file fa-user fa-comments');
+
   if (chatSticky) {
-    badge = '💬';
+    $badge.addClass('fa-solid fa-comments');
+    $badge.attr('title', 'Using chat-specific preset');
   } else if (characterSticky) {
-    badge = '👤';
+    $badge.addClass('fa-solid fa-user');
+    $badge.attr('title', 'Using character-specific preset');
+  } else {
+    $badge.addClass('fa-solid fa-file');
+    $badge.attr('title', 'Using profile default preset');
   }
 
-  $(selectorsExtension.operationsPresets.badge).text(badge);
+  refreshStickyButtonColors();
 }
 
-function refreshArtifactSelector(operationType) {
+function refreshStickyButtonColors() {
+  const presetName = $(selectorsExtension.operationsPresets.selector).val();
+  const chatId = get_current_chat_identifier();
+  const characterKey = get_current_character_identifier();
+
+  if (!chatId && !characterKey) {
+    return;
+  }
+
+  const chatSticky = chatId ? getChatStickyPreset(chatId) : null;
+  const characterSticky = characterKey ? getCharacterStickyPreset(characterKey) : null;
+
+  const $charButton = $(selectorsExtension.operationsPresets.stickyCharacter);
+  const $chatButton = $(selectorsExtension.operationsPresets.stickyChat);
+  const $charIcon = $charButton.find('i');
+  const $chatIcon = $chatButton.find('i');
+
+  const lockClass = 'fa-lock';
+  const unlockClass = 'fa-unlock';
+  const highlightClass = 'button_highlight';
+
+  if (characterSticky === presetName) {
+    $charButton.addClass(highlightClass);
+    $charIcon.removeClass(unlockClass).addClass(lockClass);
+  } else {
+    $charButton.removeClass(highlightClass);
+    $charIcon.removeClass(lockClass).addClass(unlockClass);
+  }
+
+  if (chatSticky === presetName) {
+    $chatButton.addClass(highlightClass);
+    $chatIcon.removeClass(unlockClass).addClass(lockClass);
+  } else {
+    $chatButton.removeClass(highlightClass);
+    $chatIcon.removeClass(lockClass).addClass(unlockClass);
+  }
+}
+
+function refreshArtifactSelector(operationType, selectValue = null) {
   const artifacts = listArtifacts(operationType);
-  const $selector = $(`[data-operation-section="${operationType}"] select`);
-  const currentValue = $selector.val();
+  const $selector = $(getArtifactSelector(operationType));
+  const currentValue = selectValue || $selector.val();
 
   $selector.empty();
   for (const artifact of artifacts) {
@@ -438,6 +594,49 @@ function refreshArtifactSelector(operationType) {
   if (artifacts.some(a => a.name === currentValue)) {
     $selector.val(currentValue);
   }
+
+  refreshArtifactButtons(operationType);
+}
+
+function refreshAllArtifactSelectors() {
+  const presetName = $(selectorsExtension.operationsPresets.selector).val();
+  const preset = getPreset(presetName);
+
+  if (!preset) {
+    return;
+  }
+
+  for (const operationType of OPERATION_TYPES) {
+    const artifactName = preset.operations[operationType];
+    if (artifactName) {
+      refreshArtifactSelector(operationType, artifactName);
+    }
+  }
+}
+
+function refreshArtifactButtons(operationType) {
+  const $selector = $(getArtifactSelector(operationType));
+  const artifactName = $selector.val();
+  const isDefault = artifactName === 'Default';
+
+  const $renameBtn = $(`button[data-operation-type="${operationType}"].auto_recap_artifact_rename`);
+  const $deleteBtn = $(`button[data-operation-type="${operationType}"].auto_recap_artifact_delete`);
+
+  if (isDefault) {
+    $renameBtn.prop('disabled', true);
+    $deleteBtn.prop('disabled', true);
+  } else {
+    $renameBtn.prop('disabled', false);
+    $deleteBtn.prop('disabled', false);
+  }
+}
+
+function refreshPresetButtons() {
+  const presetName = $(selectorsExtension.operationsPresets.selector).val();
+  const isDefault = presetName === 'Default';
+
+  $(selectorsExtension.operationsPresets.rename).prop('disabled', isDefault);
+  $(selectorsExtension.operationsPresets.delete).prop('disabled', isDefault);
 }
 
 export { refreshPresetSelector, refreshPresetBadge, refreshArtifactSelector };

@@ -8,6 +8,21 @@ export function scopeToSettings(selector, settingsClass) {
   return `.${settingsClass} ${selector}`;
 }
 
+// Helper function to get artifact selector for operation type
+export function getArtifactSelector(operationType) {
+  const selectorMap = {
+    'scene_recap': '[data-testid="artifact-scene-recap"]',
+    'scene_recap_error_detection': '[data-testid="artifact-scene-recap-error"]',
+    'auto_scene_break': '[data-testid="artifact-auto-scene-break"]',
+    'running_scene_recap': '[data-testid="artifact-running-scene-recap"]',
+    'auto_lorebooks_recap_merge': '[data-testid="artifact-lorebooks-merge"]',
+    'auto_lorebooks_recap_lorebook_entry_lookup': '[data-testid="artifact-lorebooks-lookup"]',
+    'auto_lorebooks_recap_lorebook_entry_deduplicate': '[data-testid="artifact-lorebooks-deduplicate"]',
+    'auto_lorebooks_bulk_populate': '[data-testid="artifact-lorebooks-bulk-populate"]'
+  };
+  return selectorMap[operationType];
+}
+
 export const selectorsExtension = {
   // Main container & settings
   settings: {

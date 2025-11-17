@@ -257,6 +257,7 @@ export function createNewArtifactVersion(operationType, currentArtifactName) {
   operationArtifacts.push(newArtifact);
   artifacts[operationType] = operationArtifacts;
   set_settings('operation_artifacts', artifacts);
+  saveSettingsDebounced();
 
   log(SUBSYSTEM.CORE, `Created version ${newVersion} of artifact: ${currentArtifactName} → ${newName}`);
   return newName;

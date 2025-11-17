@@ -109,6 +109,13 @@
     color: var(--SmartThemeBodyColor);
 }
 
+.auto_recap_form_group label.checkbox_label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
 .auto_recap_form_group .displayBlock {
     margin-top: 3px;
 }
