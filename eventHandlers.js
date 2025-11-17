@@ -272,13 +272,18 @@ async function initializeExtension() {
 
   // Migrate settings to operations presets system
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checking for operations presets migration...');
-  const { needsOperationsPresetsMigration, migrateToOperationsPresets } = await import('./operationsPresetsMigration.js');
+  const { needsOperationsPresetsMigration, migrateToOperationsPresets, updateDefaultArtifacts } = await import('./operationsPresetsMigration.js');
   if (needsOperationsPresetsMigration()) {
     await migrateToOperationsPresets();
     saveSettingsDebounced();
     log(SUBSYSTEM.CORE, 'Operations presets migration completed');
   }
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Operations presets migration check complete');
+
+  // Update Default artifacts if code version changed
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checking Default artifacts for updates...');
+  updateDefaultArtifacts();
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Default artifacts update check complete');
 
   // initialize UI stuff
   await initialize_settings_listeners();

@@ -215,3 +215,47 @@ function deepEqualConfigs(config1, config2) {
 
   return true;
 }
+
+export function updateDefaultArtifacts() {
+  log(SUBSYSTEM.CORE, '=== Checking Default artifacts for updates ===');
+
+  const savedArtifacts = get_settings('operation_artifacts');
+  if (!savedArtifacts) {
+    log(SUBSYSTEM.CORE, 'No artifacts in storage, skipping update');
+    return false;
+  }
+
+  let updated = false;
+
+  for (const operationType of OPERATION_TYPES) {
+    const savedOperationArtifacts = savedArtifacts[operationType];
+    if (!savedOperationArtifacts || !Array.isArray(savedOperationArtifacts)) {
+      continue;
+    }
+
+    const savedDefault = savedOperationArtifacts.find(a => a.isDefault);
+    const codeDefault = default_settings.operation_artifacts?.[operationType]?.[0];
+
+    if (!savedDefault || !codeDefault) {
+      continue;
+    }
+
+    if (!savedDefault.internalVersion || savedDefault.internalVersion < codeDefault.internalVersion) {
+      log(SUBSYSTEM.CORE, `Updating Default artifact for ${operationType} from v${savedDefault.internalVersion || 0} to v${codeDefault.internalVersion}`);
+
+      const index = savedOperationArtifacts.findIndex(a => a.isDefault);
+      savedOperationArtifacts[index] = structuredClone(codeDefault);
+      updated = true;
+    }
+  }
+
+  if (updated) {
+    set_settings('operation_artifacts', savedArtifacts);
+    saveSettingsDebounced();
+    log(SUBSYSTEM.CORE, '=== Default artifacts updated ===');
+  } else {
+    log(SUBSYSTEM.CORE, '=== All Default artifacts up to date ===');
+  }
+
+  return updated;
+}
