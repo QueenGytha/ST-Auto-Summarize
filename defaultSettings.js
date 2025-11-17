@@ -317,6 +317,7 @@ export const default_settings = {
     }
   },
 
+  active_operations_preset_global: null,
   character_sticky_presets: {},
   chat_sticky_presets: {}
 };
