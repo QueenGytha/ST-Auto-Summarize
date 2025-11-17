@@ -214,7 +214,7 @@ export const default_settings = {
         completion_preset_name: '',
         include_preset_prompts: false,
         isDefault: true,
-        internalVersion: 1,
+        internalVersion: 2,
         createdAt: Date.now(),
         modifiedAt: Date.now(),
         customLabel: null
