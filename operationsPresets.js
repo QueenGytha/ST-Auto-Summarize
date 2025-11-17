@@ -52,7 +52,8 @@ export function updatePreset(presetName, updates) {
     throw new Error(ERROR_PRESET_NAME_REQUIRED);
   }
 
-  const presets = get_settings('operations_presets') || {};
+  const existingPresets = get_settings('operations_presets') || {};
+  const presets = structuredClone(existingPresets);
   const preset = presets[presetName];
 
   if (!preset) {
@@ -87,7 +88,8 @@ export function deletePreset(presetName) {
     throw new Error(ERROR_PRESET_NAME_REQUIRED);
   }
 
-  const presets = get_settings('operations_presets') || {};
+  const existingPresets = get_settings('operations_presets') || {};
+  const presets = structuredClone(existingPresets);
   const preset = presets[presetName];
 
   if (!preset) {
@@ -101,7 +103,8 @@ export function deletePreset(presetName) {
   delete presets[presetName];
   set_settings('operations_presets', presets);
 
-  const characterStickies = get_settings('character_sticky_presets') || {};
+  const existingCharStickies = get_settings('character_sticky_presets') || {};
+  const characterStickies = structuredClone(existingCharStickies);
   for (const [charKey, stickyPreset] of Object.entries(characterStickies)) {
     if (stickyPreset === presetName) {
       delete characterStickies[charKey];
@@ -109,7 +112,8 @@ export function deletePreset(presetName) {
   }
   set_settings('character_sticky_presets', characterStickies);
 
-  const chatStickies = get_settings('chat_sticky_presets') || {};
+  const existingChatStickies = get_settings('chat_sticky_presets') || {};
+  const chatStickies = structuredClone(existingChatStickies);
   for (const [chatId, stickyPreset] of Object.entries(chatStickies)) {
     if (stickyPreset === presetName) {
       delete chatStickies[chatId];
@@ -117,7 +121,8 @@ export function deletePreset(presetName) {
   }
   set_settings('chat_sticky_presets', chatStickies);
 
-  const profiles = get_settings('profiles') || {};
+  const existingProfiles = get_settings('profiles') || {};
+  const profiles = structuredClone(existingProfiles);
   for (const profile of Object.values(profiles)) {
     if (profile.active_operations_preset === presetName) {
       profile.active_operations_preset = 'Default';
@@ -153,7 +158,8 @@ export function duplicatePreset(presetName, newName) {
     throw new Error('New name is required and must be a string');
   }
 
-  const presets = get_settings('operations_presets') || {};
+  const existingPresets = get_settings('operations_presets') || {};
+  const presets = structuredClone(existingPresets);
   const sourcePreset = presets[presetName];
 
   if (!sourcePreset) {
@@ -189,7 +195,8 @@ export function renamePreset(oldName, newName) {
     throw new Error('New name is required and must be a string');
   }
 
-  const presets = get_settings('operations_presets') || {};
+  const existingPresets = get_settings('operations_presets') || {};
+  const presets = structuredClone(existingPresets);
   const preset = presets[oldName];
 
   if (!preset) {
@@ -211,7 +218,8 @@ export function renamePreset(oldName, newName) {
   delete presets[oldName];
   set_settings('operations_presets', presets);
 
-  const characterStickies = get_settings('character_sticky_presets') || {};
+  const existingCharStickies = get_settings('character_sticky_presets') || {};
+  const characterStickies = structuredClone(existingCharStickies);
   for (const [charKey, stickyPreset] of Object.entries(characterStickies)) {
     if (stickyPreset === oldName) {
       characterStickies[charKey] = newName;
@@ -219,7 +227,8 @@ export function renamePreset(oldName, newName) {
   }
   set_settings('character_sticky_presets', characterStickies);
 
-  const chatStickies = get_settings('chat_sticky_presets') || {};
+  const existingChatStickies = get_settings('chat_sticky_presets') || {};
+  const chatStickies = structuredClone(existingChatStickies);
   for (const [chatId, stickyPreset] of Object.entries(chatStickies)) {
     if (stickyPreset === oldName) {
       chatStickies[chatId] = newName;
@@ -227,7 +236,8 @@ export function renamePreset(oldName, newName) {
   }
   set_settings('chat_sticky_presets', chatStickies);
 
-  const profiles = get_settings('profiles') || {};
+  const existingProfiles = get_settings('profiles') || {};
+  const profiles = structuredClone(existingProfiles);
   for (const profile of Object.values(profiles)) {
     if (profile.active_operations_preset === oldName) {
       profile.active_operations_preset = newName;
@@ -254,7 +264,8 @@ export function setCharacterStickyPreset(characterKey, presetName) {
     throw new Error(`Preset not found: ${presetName}`);
   }
 
-  const characterStickies = get_settings('character_sticky_presets') || {};
+  const existingStickies = get_settings('character_sticky_presets') || {};
+  const characterStickies = structuredClone(existingStickies);
   characterStickies[characterKey] = presetName;
   set_settings('character_sticky_presets', characterStickies);
   saveSettingsDebounced();
@@ -285,7 +296,8 @@ export function setChatStickyPreset(chatId, presetName) {
     throw new Error(`Preset not found: ${presetName}`);
   }
 
-  const chatStickies = get_settings('chat_sticky_presets') || {};
+  const existingStickies = get_settings('chat_sticky_presets') || {};
+  const chatStickies = structuredClone(existingStickies);
   chatStickies[chatId] = presetName;
   set_settings('chat_sticky_presets', chatStickies);
   saveSettingsDebounced();
@@ -308,7 +320,8 @@ export function clearCharacterSticky(characterKey) {
     throw new Error('Character key is required and must be a string');
   }
 
-  const characterStickies = get_settings('character_sticky_presets') || {};
+  const existingStickies = get_settings('character_sticky_presets') || {};
+  const characterStickies = structuredClone(existingStickies);
   if (characterStickies[characterKey]) {
     delete characterStickies[characterKey];
     set_settings('character_sticky_presets', characterStickies);
@@ -325,7 +338,8 @@ export function clearChatSticky(chatId) {
     throw new Error('Chat ID is required and must be a string');
   }
 
-  const chatStickies = get_settings('chat_sticky_presets') || {};
+  const existingStickies = get_settings('chat_sticky_presets') || {};
+  const chatStickies = structuredClone(existingStickies);
   if (chatStickies[chatId]) {
     delete chatStickies[chatId];
     set_settings('chat_sticky_presets', chatStickies);
