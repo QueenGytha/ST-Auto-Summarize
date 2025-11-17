@@ -267,9 +267,6 @@ export function setCharacterStickyPreset(characterKey, presetName) {
 
   const characterStickies = getStickiesForModification('character');
   characterStickies[characterKey] = presetName;
-
-  set_settings('active_operations_preset_global', null);
-
   saveSettingsDebounced();
 
   log(SUBSYSTEM.CORE, `Set character sticky preset: "${characterKey}" → "${presetName}"`);
@@ -300,9 +297,6 @@ export function setChatStickyPreset(chatId, presetName) {
 
   const chatStickies = getStickiesForModification('chat');
   chatStickies[chatId] = presetName;
-
-  set_settings('active_operations_preset_global', null);
-
   saveSettingsDebounced();
 
   log(SUBSYSTEM.CORE, `Set chat sticky preset: "${chatId}" → "${presetName}"`);
