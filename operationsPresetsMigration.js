@@ -217,7 +217,7 @@ function deepEqualConfigs(config1, config2) {
 }
 
 export function updateDefaultArtifacts() {
-  log(SUBSYSTEM.CORE, '=== Checking Default artifacts for updates ===');
+  log(SUBSYSTEM.CORE, '=== Updating Default artifacts from code ===');
 
   const savedArtifacts = get_settings('operation_artifacts');
   if (!savedArtifacts) {
@@ -233,17 +233,15 @@ export function updateDefaultArtifacts() {
       continue;
     }
 
-    const savedDefault = savedOperationArtifacts.find(a => a.isDefault);
     const codeDefault = default_settings.operation_artifacts?.[operationType]?.[0];
 
-    if (!savedDefault || !codeDefault) {
+    if (!codeDefault) {
       continue;
     }
 
-    if (!savedDefault.internalVersion || savedDefault.internalVersion < codeDefault.internalVersion) {
-      log(SUBSYSTEM.CORE, `Updating Default artifact for ${operationType} from v${savedDefault.internalVersion || 0} to v${codeDefault.internalVersion}`);
-
-      const index = savedOperationArtifacts.findIndex(a => a.isDefault);
+    const index = savedOperationArtifacts.findIndex(a => a.isDefault);
+    if (index !== -1) {
+      log(SUBSYSTEM.CORE, `Updating Default artifact for ${operationType} from code`);
       savedOperationArtifacts[index] = structuredClone(codeDefault);
       updated = true;
     }
@@ -254,7 +252,7 @@ export function updateDefaultArtifacts() {
     saveSettingsDebounced();
     log(SUBSYSTEM.CORE, '=== Default artifacts updated ===');
   } else {
-    log(SUBSYSTEM.CORE, '=== All Default artifacts up to date ===');
+    log(SUBSYSTEM.CORE, '=== No Default artifacts found to update ===');
   }
 
   return updated;
