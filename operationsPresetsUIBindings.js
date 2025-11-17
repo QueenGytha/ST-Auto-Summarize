@@ -55,6 +55,12 @@ function ensureNotDefaultPreset() {
 
   duplicatePreset('Default', newName);
   saveSettingsDebounced();
+
+  if (!getPreset(newName)) {
+    toast('Failed to create preset, please try again', 'error');
+    return null;
+  }
+
   refreshPresetSelector();
   $(selectorsExtension.operationsPresets.selector).val(newName);
   setUserSelectedPreset(newName);
@@ -286,6 +292,10 @@ function bindArtifactControls() {
       const selectedArtifact = $(getArtifactSelector(operationType)).val();
       const presetName = ensureNotDefaultPreset();
 
+      if (!presetName) {
+        return;
+      }
+
       // Update preset with new artifact selection
       updatePreset(presetName, {
         operations: {
@@ -375,6 +385,10 @@ function bindArtifactControls() {
     const artifactName = $(getArtifactSelector(operationType)).val();
 
     const presetName = ensureNotDefaultPreset();
+    if (!presetName) {
+      return;
+    }
+
     const newArtifactName = createNewArtifactVersion(operationType, artifactName);
 
     // Update preset to reference the new artifact

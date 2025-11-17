@@ -30,7 +30,12 @@ const global_settings = {
   chats_enabled: {}, // dict of chat IDs to whether memory is enabled
   global_toggle_state: true, // global state of memory (used when a profile uses the global state)
   disabled_group_characters: {}, // group chat IDs mapped to a list of disabled character keys
-  memory_edit_interface_settings: {} // settings last used in the memory edit interface
+  memory_edit_interface_settings: {}, // settings last used in the memory edit interface
+  operations_presets: {}, // operations presets (global, not profile-specific)
+  operation_artifacts: {}, // operation artifacts (global, not profile-specific)
+  active_operations_preset_global: null, // user-selected operations preset (global, not profile-specific)
+  character_sticky_presets: {}, // character-specific preset overrides (global, not profile-specific)
+  chat_sticky_presets: {} // chat-specific preset overrides (global, not profile-specific)
 };
 const settings_ui_map = {}; // map of settings to UI elements
 
