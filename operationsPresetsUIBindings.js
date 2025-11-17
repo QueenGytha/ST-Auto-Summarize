@@ -587,6 +587,11 @@ function refreshPresetBadge() {
 
 function refreshPresetDescription() {
   const presetName = $(selectorsExtension.operationsPresets.selector).val();
+
+  if (!presetName || typeof presetName !== 'string') {
+    return;
+  }
+
   const preset = getPreset(presetName);
   const $description = $(selectorsExtension.operationsPresets.description);
 
@@ -654,6 +659,11 @@ function refreshArtifactSelector(operationType, selectValue = null) {
 
 function refreshAllArtifactSelectors() {
   const presetName = $(selectorsExtension.operationsPresets.selector).val();
+
+  if (!presetName || typeof presetName !== 'string') {
+    return;
+  }
+
   const preset = getPreset(presetName);
 
   if (!preset) {
