@@ -78,21 +78,12 @@ You MUST respond with valid JSON in this format:
 }`;
 }
 
-function getRecapProcessingSetting(key , defaultValue  = null) {
-  // defaultValue and return value are any type - can be various types - legitimate use of any
-  try {
-    // ALL recap processing settings are per-profile
-    const settingKey = `auto_lorebooks_recap_${key}`;
-    return get_settings(settingKey) ?? defaultValue;
-  } catch (err) {
-    error("Error getting recap processing setting", err);
-    return defaultValue;
-  }
-}
+async function createMergePrompt(existingContent , newContent , entryName  = '') {
+  const { resolveOperationConfig } = await import('./index.js');
+  const config = resolveOperationConfig('auto_lorebooks_recap_merge');
 
-function createMergePrompt(existingContent , newContent , entryName  = '') {
-  const template = getRecapProcessingSetting('merge_prompt') || getDefaultMergePrompt();
-  const prefill = getRecapProcessingSetting('merge_prefill') || '';
+  const template = config.prompt || getDefaultMergePrompt();
+  const prefill = config.prefill || '';
 
   // DEBUG: Log what template we got
   debug('Merge prompt template first 300 chars:', template.slice(0, DEBUG_OUTPUT_LONG_LENGTH));
@@ -105,18 +96,18 @@ function createMergePrompt(existingContent , newContent , entryName  = '') {
   replace(/\{\{new_update\}\}/g, newContent || '') // Alternate name
   .replace(/\{\{entry_name\}\}/g, entryName || ''); // Entry name for name resolution
 
-  return { prompt, prefill };
+  return { prompt, prefill, config };
 }
 
 async function callAIForMerge(existingContent , newContent , entryName  = '', connectionProfile  = '', completionPreset  = '') {
   try {
-    const { prompt, prefill } = createMergePrompt(existingContent, newContent, entryName);
+    const { prompt, prefill, config } = await createMergePrompt(existingContent, newContent, entryName);
 
     debug('Calling AI for entry merge...');
     debug('Prompt:', prompt.slice(0, DEBUG_OUTPUT_MEDIUM_LENGTH) + '...');
 
-    // Get include_preset_prompts setting
-    const include_preset_prompts = getRecapProcessingSetting('merge_include_preset_prompts', false);
+    // Get include_preset_prompts from config (not old settings)
+    const include_preset_prompts = config.include_preset_prompts ?? false;
 
     debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] entryName:', entryName);
     debug(SUBSYSTEM.LOREBOOK,'[callAIForMerge] include_preset_prompts:', include_preset_prompts);
@@ -392,9 +383,11 @@ export async function executeMerge(lorebookName , existingEntry , newEntryData )
   try {
     debug(`Executing merge for entry: ${existingEntry.comment}`);
 
-    // Get connection settings for merge operation
-    const connectionProfile = getRecapProcessingSetting('merge_connection_profile', '');
-    const completionPreset = getRecapProcessingSetting('merge_completion_preset', '');
+    // Get connection settings for merge operation from operations presets
+    const { resolveOperationConfig } = await import('./index.js');
+    const config = resolveOperationConfig('auto_lorebooks_recap_merge');
+    const connectionProfile = config.connection_profile || '';
+    const completionPreset = config.completion_preset_name || '';
 
     // Call AI to merge content (now returns object with mergedContent and optional canonicalName)
     const mergeResult = await callAIForMerge(
