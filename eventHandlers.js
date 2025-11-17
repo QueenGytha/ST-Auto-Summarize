@@ -269,6 +269,16 @@ async function initializeExtension() {
   await migrateConnectionProfileSettings();
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Connection profile migration complete');
 
+  // Migrate settings to operations presets system
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checking for operations presets migration...');
+  const { needsOperationsPresetsMigration, migrateToOperationsPresets } = await import('./operationsPresetsMigration.js');
+  if (needsOperationsPresetsMigration()) {
+    await migrateToOperationsPresets();
+    saveSettingsDebounced();
+    log(SUBSYSTEM.CORE, 'Operations presets migration completed');
+  }
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Operations presets migration check complete');
+
   // initialize UI stuff
   await initialize_settings_listeners();
   initialize_popout();

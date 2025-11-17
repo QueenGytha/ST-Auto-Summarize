@@ -10,7 +10,8 @@ import {
   log,
   SUBSYSTEM,
   count_tokens,
-  saveChatDebounced } from
+  saveChatDebounced,
+  resolveOperationConfig } from
 './index.js';
 import { pauseQueue } from './operationQueue.js';
 import {
@@ -799,13 +800,15 @@ async function reduceMessagesUntilTokenFit(config) {
 }
 
 function loadSceneBreakPromptSettings(forceSelection) {
+  const config = resolveOperationConfig('auto_scene_break');
+
   if (forceSelection) {
-    const forcedPrompt = get_settings('auto_scene_break_forced_prompt');
-    const forcedPrefill = get_settings('auto_scene_break_forced_prefill');
+    const forcedPrompt = config.forced_prompt;
+    const forcedPrefill = config.forced_prefill;
 
     // Use forced settings if provided, otherwise fallback to regular settings
-    const promptTemplate = forcedPrompt || get_settings('auto_scene_break_prompt');
-    const prefill = forcedPrefill || get_settings('auto_scene_break_prefill') || '';
+    const promptTemplate = forcedPrompt || config.prompt;
+    const prefill = forcedPrefill || config.prefill || '';
 
     if (forcedPrompt) {
       debug(SUBSYSTEM.OPERATIONS, `[forceSelection] Using forced detection prompt (${forcedPrompt.length} chars)`);
@@ -823,8 +826,8 @@ function loadSceneBreakPromptSettings(forceSelection) {
   }
 
   return {
-    promptTemplate: get_settings('auto_scene_break_prompt'),
-    prefill: get_settings('auto_scene_break_prefill') || ''
+    promptTemplate: config.prompt,
+    prefill: config.prefill || ''
   };
 }
 
@@ -843,9 +846,10 @@ _operationId  = null)
     // Get settings - use forced settings when forceSelection=true, fallback to regular if empty
     const { promptTemplate, prefill } = loadSceneBreakPromptSettings(forceSelection);
 
-    const profile = get_settings('auto_scene_break_connection_profile');
-    const presetSetting = get_settings('auto_scene_break_completion_preset');
-    const includePresetPrompts = get_settings('auto_scene_break_include_preset_prompts') ?? false;
+    const config = resolveOperationConfig('auto_scene_break');
+    const profile = config.connection_profile;
+    const presetSetting = config.completion_preset_name;
+    const includePresetPrompts = config.include_preset_prompts ?? false;
     const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
     const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
 

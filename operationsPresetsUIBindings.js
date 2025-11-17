@@ -1,9 +1,23 @@
 import {
   toast,
-  selectorsExtension
+  selectorsExtension,
+  extension_settings,
+  MODULE_NAME,
+  get_current_character_identifier,
+  get_current_chat_identifier,
+  saveSettingsDebounced
 } from './index.js';
+import { get_connection_profile_objects } from './connectionProfiles.js';
+import { get_presets } from './presetManager.js';
+import { updatePreset, deletePreset, duplicatePreset, renamePreset, setCharacterStickyPreset, setChatStickyPreset, listPresets } from './operationsPresets.js';
+import { updateArtifact, deleteArtifact, listArtifacts, createNewArtifactVersion } from './operationArtifacts.js';
+import { resolveOperationConfig } from './operationsPresetsResolution.js';
+import { get_settings } from './index.js';
+import { exportPreset } from './operationsPresetsExport.js';
+import { importPreset } from './operationsPresetsImport.js';
 
 const MODAL_FADE_DURATION_MS = 200;
+const OPERATION_TYPE_DATA_KEY = 'operation-type';
 
 /**
  * Initialize operations presets UI bindings
@@ -21,39 +35,147 @@ export function initializeOperationsPresetsUI() {
  */
 function bindPresetControls() {
   $(selectorsExtension.operationsPresets.save).on('click', () => {
-    toast('Preset save functionality not yet implemented', 'info');
+    const presetName = $(selectorsExtension.operationsPresets.selector).val();
+    try {
+      updatePreset(presetName, { modifiedAt: Date.now() });
+      saveSettingsDebounced();
+      toast(`Saved preset: "${presetName}"`, 'success');
+    } catch (err) {
+      toast(`Failed to save preset: ${err.message}`, 'error');
+    }
   });
 
   $(selectorsExtension.operationsPresets.rename).on('click', () => {
-    toast('Preset rename functionality not yet implemented', 'info');
+    const oldName = $(selectorsExtension.operationsPresets.selector).val();
+    const newName = prompt('Enter new preset name:', oldName);
+    if (!newName || newName === oldName) {
+      return;
+    }
+
+    try {
+      renamePreset(oldName, newName);
+      saveSettingsDebounced();
+      refreshPresetSelector();
+      $(selectorsExtension.operationsPresets.selector).val(newName);
+      toast(`Renamed preset to: "${newName}"`, 'success');
+    } catch (err) {
+      toast(`Failed to rename preset: ${err.message}`, 'error');
+    }
   });
 
   $(selectorsExtension.operationsPresets.delete).on('click', () => {
-    toast('Preset delete functionality not yet implemented', 'info');
+    const presetName = $(selectorsExtension.operationsPresets.selector).val();
+    if (presetName === 'Default') {
+      toast('Cannot delete Default preset', 'error');
+      return;
+    }
+
+    if (!confirm(`Delete preset "${presetName}"?`)) {
+      return;
+    }
+
+    try {
+      deletePreset(presetName);
+      saveSettingsDebounced();
+      refreshPresetSelector();
+      toast(`Deleted preset: "${presetName}"`, 'success');
+    } catch (err) {
+      toast(`Failed to delete preset: ${err.message}`, 'error');
+    }
   });
 
   $(selectorsExtension.operationsPresets.import).on('click', () => {
     $(selectorsExtension.operationsPresets.importFile).click();
   });
 
-  $(selectorsExtension.operationsPresets.importFile).on('change', () => {
-    toast('Preset import functionality not yet implemented', 'info');
+  $(selectorsExtension.operationsPresets.importFile).on('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      const jsonString = await file.text();
+      const presetName = importPreset(jsonString);
+      saveSettingsDebounced();
+      refreshPresetSelector();
+      $(selectorsExtension.operationsPresets.selector).val(presetName);
+      toast(`Imported preset: "${presetName}"`, 'success');
+    } catch (err) {
+      toast(`Failed to import preset: ${err.message}`, 'error');
+    } finally {
+      e.target.value = '';
+    }
   });
 
   $(selectorsExtension.operationsPresets.export).on('click', () => {
-    toast('Preset export functionality not yet implemented', 'info');
+    const presetName = $(selectorsExtension.operationsPresets.selector).val();
+    try {
+      const jsonString = exportPreset(presetName);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${presetName.replace(/[^a-z0-9]/gi, '_')}_preset.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast(`Exported preset: "${presetName}"`, 'success');
+    } catch (err) {
+      toast(`Failed to export preset: ${err.message}`, 'error');
+    }
   });
 
   $(selectorsExtension.operationsPresets.duplicate).on('click', () => {
-    toast('Preset duplicate functionality not yet implemented', 'info');
+    const presetName = $(selectorsExtension.operationsPresets.selector).val();
+    const newName = `Copy of ${presetName}`;
+
+    try {
+      duplicatePreset(presetName, newName);
+      saveSettingsDebounced();
+      refreshPresetSelector();
+      $(selectorsExtension.operationsPresets.selector).val(newName);
+      toast(`Duplicated preset as: "${newName}"`, 'success');
+    } catch (err) {
+      toast(`Failed to duplicate preset: ${err.message}`, 'error');
+    }
   });
 
   $(selectorsExtension.operationsPresets.stickyCharacter).on('click', () => {
-    toast('Sticky to character functionality not yet implemented', 'info');
+    const presetName = $(selectorsExtension.operationsPresets.selector).val();
+    const characterKey = get_current_character_identifier();
+
+    if (!characterKey) {
+      toast('No character selected', 'error');
+      return;
+    }
+
+    try {
+      setCharacterStickyPreset(characterKey, presetName);
+      saveSettingsDebounced();
+      toast(`Preset "${presetName}" stickied to character`, 'success');
+      refreshPresetBadge();
+    } catch (err) {
+      toast(`Failed to set character sticky: ${err.message}`, 'error');
+    }
   });
 
   $(selectorsExtension.operationsPresets.stickyChat).on('click', () => {
-    toast('Sticky to chat functionality not yet implemented', 'info');
+    const presetName = $(selectorsExtension.operationsPresets.selector).val();
+    const chatId = get_current_chat_identifier();
+
+    if (!chatId) {
+      toast('No chat selected', 'error');
+      return;
+    }
+
+    try {
+      setChatStickyPreset(chatId, presetName);
+      saveSettingsDebounced();
+      toast(`Preset "${presetName}" stickied to chat`, 'success');
+      refreshPresetBadge();
+    } catch (err) {
+      toast(`Failed to set chat sticky: ${err.message}`, 'error');
+    }
   });
 }
 
@@ -61,21 +183,80 @@ function bindPresetControls() {
  * Bind artifact-level controls (edit, rename, delete, duplicate)
  */
 function bindArtifactControls() {
-  $(document).on('click', selectorsExtension.operationsPresets.artifactEditClass, (e) => {
-    const operationType = $(e.currentTarget).data('operation-type');
-    openArtifactEditor(operationType);
+  $(document).on('click', selectorsExtension.operationsPresets.artifactEditClass, async (e) => {
+    const operationType = $(e.currentTarget).data(OPERATION_TYPE_DATA_KEY);
+    await openArtifactEditor(operationType);
   });
 
-  $(document).on('click', selectorsExtension.operationsPresets.artifactRenameClass, () => {
-    toast('Artifact rename functionality not yet implemented', 'info');
+  $(document).on('click', selectorsExtension.operationsPresets.artifactRenameClass, (e) => {
+    const operationType = $(e.currentTarget).data(OPERATION_TYPE_DATA_KEY);
+
+    const config = resolveOperationConfig(operationType);
+    const currentName = config.name;
+
+    if (config.isDefault) {
+      toast('Cannot rename Default artifact. Duplicate it first.', 'error');
+      return;
+    }
+
+    const newName = prompt('Enter new artifact name:', currentName);
+
+    if (!newName || newName === currentName) {
+      return;
+    }
+
+    try {
+      const artifacts = get_settings('operation_artifacts')?.[operationType] || [];
+      const artifact = artifacts.find(a => a.name === currentName);
+      if (!artifact) {
+        throw new Error(`Artifact not found: ${currentName}`);
+      }
+      artifact.name = newName;
+      artifact.modifiedAt = Date.now();
+      saveSettingsDebounced();
+      toast(`Renamed artifact to: "${newName}"`, 'success');
+    } catch (err) {
+      toast(`Failed to rename artifact: ${err.message}`, 'error');
+    }
   });
 
-  $(document).on('click', selectorsExtension.operationsPresets.artifactDeleteClass, () => {
-    toast('Artifact delete functionality not yet implemented', 'info');
+  $(document).on('click', selectorsExtension.operationsPresets.artifactDeleteClass, (e) => {
+    const operationType = $(e.currentTarget).data(OPERATION_TYPE_DATA_KEY);
+
+    const config = resolveOperationConfig(operationType);
+    const artifactName = config.name;
+
+    if (config.isDefault) {
+      toast('Cannot delete Default artifact', 'error');
+      return;
+    }
+
+    if (!confirm(`Delete artifact "${artifactName}"?`)) {
+      return;
+    }
+
+    try {
+      deleteArtifact(operationType, artifactName);
+      saveSettingsDebounced();
+      toast(`Deleted artifact: "${artifactName}"`, 'success');
+    } catch (err) {
+      toast(`Failed to delete artifact: ${err.message}`, 'error');
+    }
   });
 
-  $(document).on('click', selectorsExtension.operationsPresets.artifactDuplicateClass, () => {
-    toast('Artifact duplicate functionality not yet implemented', 'info');
+  $(document).on('click', selectorsExtension.operationsPresets.artifactDuplicateClass, (e) => {
+    const operationType = $(e.currentTarget).data(OPERATION_TYPE_DATA_KEY);
+
+    const config = resolveOperationConfig(operationType);
+    const artifactName = config.name;
+
+    try {
+      const newArtifactName = createNewArtifactVersion(operationType, artifactName);
+      saveSettingsDebounced();
+      toast(`Duplicated artifact as: "${newArtifactName}"`, 'success');
+    } catch (err) {
+      toast(`Failed to duplicate artifact: ${err.message}`, 'error');
+    }
   });
 }
 
@@ -87,18 +268,86 @@ function bindArtifactEditorModal() {
   $(selectorsExtension.operationsPresets.modalCancel).on('click', closeArtifactEditor);
 
   $(selectorsExtension.operationsPresets.modalSave).on('click', () => {
-    toast('Save functionality not yet implemented', 'info');
-    closeArtifactEditor();
+    const operationType = $(selectorsExtension.operationsPresets.modal).data(OPERATION_TYPE_DATA_KEY);
+    const artifactName = $(selectorsExtension.operationsPresets.modalName).val();
+
+    const artifactData = {
+      name: artifactName,
+      description: $(selectorsExtension.operationsPresets.modalDescription).val(),
+      prompt: $(selectorsExtension.operationsPresets.modalPrompt).val(),
+      prefill: $(selectorsExtension.operationsPresets.modalPrefill).val(),
+      connection_profile: $(selectorsExtension.operationsPresets.modalConnection).val() || null,
+      completion_preset_name: $(selectorsExtension.operationsPresets.modalPreset).val(),
+      include_preset_prompts: $(selectorsExtension.operationsPresets.modalIncludeFlag).prop('checked')
+    };
+
+    if (operationType === 'auto_scene_break') {
+      artifactData.forced_prompt = $(selectorsExtension.operationsPresets.modalForcedPrompt).val();
+      artifactData.forced_prefill = $(selectorsExtension.operationsPresets.modalForcedPrefill).val();
+    }
+
+    try {
+      updateArtifact(operationType, artifactName, artifactData);
+      saveSettingsDebounced();
+      toast('Artifact saved successfully', 'success');
+      closeArtifactEditor();
+      refreshArtifactSelector(operationType);
+    } catch (err) {
+      toast(`Failed to save artifact: ${err.message}`, 'error');
+    }
   });
 
   $(selectorsExtension.operationsPresets.modalBackdrop).on('click', closeArtifactEditor);
+}
+
+
+/**
+ * Populate connection profile dropdown
+ */
+function populateConnectionProfileDropdown() {
+  const $select = $(selectorsExtension.operationsPresets.modalConnection);
+  const currentValue = $select.val();
+  const connection_profiles = get_connection_profile_objects();
+
+  $select.empty();
+  $select.append($('<option>').val('').text('Use Current Connection'));
+
+  if (connection_profiles && Array.isArray(connection_profiles)) {
+    for (const profile of connection_profiles) {
+      $select.append($('<option>').val(profile.id).text(profile.name));
+    }
+  }
+
+  if (currentValue) {
+    $select.val(currentValue);
+  }
+}
+
+/**
+ * Populate completion preset dropdown
+ */
+async function populateCompletionPresetDropdown() {
+  const $select = $(selectorsExtension.operationsPresets.modalPreset);
+  const currentValue = $select.val();
+  const preset_options = await get_presets();
+
+  $select.empty();
+  $select.append($('<option>').val('').text('Use Default Preset'));
+
+  for (const option of preset_options) {
+    $select.append($('<option>').val(option).text(option));
+  }
+
+  if (currentValue) {
+    $select.val(currentValue);
+  }
 }
 
 /**
  * Open the artifact editor modal for a specific operation type
  * @param {string} operationType - The operation type to edit
  */
-function openArtifactEditor(operationType) {
+async function openArtifactEditor(operationType) {
   const operationNames = {
     'scene_recap': 'Scene Recap',
     'scene_recap_error_detection': 'Scene Recap Error Detection',
@@ -111,17 +360,29 @@ function openArtifactEditor(operationType) {
   };
 
   const operationName = operationNames[operationType] || operationType;
+  const config = resolveOperationConfig(operationType);
+
+  populateConnectionProfileDropdown();
+  await populateCompletionPresetDropdown();
 
   $(selectorsExtension.operationsPresets.modalTitle).text(`Edit Operation Artifact - ${operationName}`);
+  $(selectorsExtension.operationsPresets.modalName).val(config.name);
+  $(selectorsExtension.operationsPresets.modalDescription).val(config.customLabel || '');
+  $(selectorsExtension.operationsPresets.modalPrompt).val(config.prompt);
+  $(selectorsExtension.operationsPresets.modalPrefill).val(config.prefill);
+  $(selectorsExtension.operationsPresets.modalConnection).val(config.connection_profile || '');
+  $(selectorsExtension.operationsPresets.modalPreset).val(config.completion_preset_name);
+  $(selectorsExtension.operationsPresets.modalIncludeFlag).prop('checked', config.include_preset_prompts);
 
-  $(selectorsExtension.operationsPresets.modalName).val('Default');
-  $(selectorsExtension.operationsPresets.modalDescription).val('');
-  $(selectorsExtension.operationsPresets.modalPrompt).val('(Placeholder prompt text)');
-  $(selectorsExtension.operationsPresets.modalPrefill).val('{');
-  $(selectorsExtension.operationsPresets.modalConnection).val('');
-  $(selectorsExtension.operationsPresets.modalPreset).val('');
-  $(selectorsExtension.operationsPresets.modalIncludeFlag).prop('checked', false);
+  if (operationType === 'auto_scene_break') {
+    $(selectorsExtension.operationsPresets.modalForcedPrompt).val(config.forced_prompt || '');
+    $(selectorsExtension.operationsPresets.modalForcedPrefill).val(config.forced_prefill || '');
+    $(selectorsExtension.operationsPresets.modalForcedSection).show();
+  } else {
+    $(selectorsExtension.operationsPresets.modalForcedSection).hide();
+  }
 
+  $(selectorsExtension.operationsPresets.modal).data(OPERATION_TYPE_DATA_KEY, operationType);
   $(selectorsExtension.operationsPresets.modal).fadeIn(MODAL_FADE_DURATION_MS);
 }
 
@@ -131,3 +392,52 @@ function openArtifactEditor(operationType) {
 function closeArtifactEditor() {
   $(selectorsExtension.operationsPresets.modal).fadeOut(MODAL_FADE_DURATION_MS);
 }
+
+function refreshPresetSelector() {
+  const presets = listPresets();
+  const $selector = $(selectorsExtension.operationsPresets.selector);
+  const currentValue = $selector.val();
+
+  $selector.empty();
+  for (const preset of presets) {
+    $selector.append($('<option>').val(preset.name).text(preset.name));
+  }
+
+  if (presets.some(p => p.name === currentValue)) {
+    $selector.val(currentValue);
+  }
+}
+
+function refreshPresetBadge() {
+  const chatId = get_current_chat_identifier();
+  const characterKey = get_current_character_identifier();
+
+  const chatSticky = extension_settings[MODULE_NAME].chat_sticky_presets?.[chatId];
+  const characterSticky = extension_settings[MODULE_NAME].character_sticky_presets?.[characterKey];
+
+  let badge = '📄';
+  if (chatSticky) {
+    badge = '💬';
+  } else if (characterSticky) {
+    badge = '👤';
+  }
+
+  $(selectorsExtension.operationsPresets.badge).text(badge);
+}
+
+function refreshArtifactSelector(operationType) {
+  const artifacts = listArtifacts(operationType);
+  const $selector = $(`[data-operation-section="${operationType}"] select`);
+  const currentValue = $selector.val();
+
+  $selector.empty();
+  for (const artifact of artifacts) {
+    $selector.append($('<option>').val(artifact.name).text(artifact.name));
+  }
+
+  if (artifacts.some(a => a.name === currentValue)) {
+    $selector.val(currentValue);
+  }
+}
+
+export { refreshPresetSelector, refreshPresetBadge, refreshArtifactSelector };

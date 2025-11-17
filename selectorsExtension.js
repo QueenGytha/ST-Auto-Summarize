@@ -106,6 +106,12 @@ export const selectorsExtension = {
     modalConnection: '[data-testid="artifact-editor-connection"]',     // #auto_recap_artifact_editor_connection
     modalPreset: '[data-testid="artifact-editor-preset"]',             // #auto_recap_artifact_editor_preset
     modalIncludeFlag: '[data-testid="artifact-editor-include-flag"]',  // #auto_recap_artifact_editor_include_flag
+    modalForcedPrompt: '[data-testid="artifact-editor-forced-prompt"]',  // #auto_recap_artifact_editor_forced_prompt
+    modalForcedPrefill: '[data-testid="artifact-editor-forced-prefill"]',  // #auto_recap_artifact_editor_forced_prefill
+    modalForcedConnection: '[data-testid="artifact-editor-forced-connection"]',  // #auto_recap_artifact_editor_forced_connection
+    modalForcedPreset: '[data-testid="artifact-editor-forced-preset"]',  // #auto_recap_artifact_editor_forced_preset
+    modalForcedIncludeFlag: '[data-testid="artifact-editor-forced-include-flag"]',  // #auto_recap_artifact_editor_forced_include_flag
+    modalForcedSection: '[data-testid="artifact-editor-forced-section"]',  // #auto_recap_artifact_editor_forced_section
     modalSave: '[data-testid="artifact-editor-save"]',                 // #auto_recap_artifact_editor_save
     modalCancel: '[data-testid="artifact-editor-cancel"]',             // #auto_recap_artifact_editor_cancel
   },
@@ -125,13 +131,10 @@ export const selectorsExtension = {
   validation: {
     enabled: '[data-testid="validation-enabled"]',                    // #error_detection_enabled
     sceneEnabled: '[data-testid="validation-scene-enabled"]',         // #scene_recap_error_detection_enabled
-    sceneEditPrompt: '[data-testid="validation-scene-edit-prompt"]',  // #edit_scene_recap_error_detection_prompt
-    scenePreset: '[data-testid="validation-scene-preset"]',           // #scene_recap_error_detection_preset
-    sceneIncludePresetPrompts: '[data-testid="validation-scene-include-preset-prompts"]',  // #scene_recap_error_detection_include_preset_prompts
-    scenePrefill: '[data-testid="validation-scene-prefill"]',         // #scene_recap_error_detection_prefill
     sceneRetries: '[data-testid="validation-scene-retries"]',         // #scene_recap_error_detection_retries
-    scenePrompt: '[data-testid="validation-scene-prompt"]',           // #scene_recap_error_detection_prompt
     errorDetectionSetting: '.error_detection_setting',                // Class for error detection settings
+    // Legacy selectors for profileUI.js (UI elements removed, kept for backward compatibility)
+    scenePreset: '[data-testid="validation-scene-preset"]',           // Removed from UI
   },
 
   // Scene Recap Settings
@@ -140,17 +143,13 @@ export const selectorsExtension = {
     navFontSize: '[data-testid="scene-nav-font-size"]',              // #scene_recap_navigator_font_size
     defaultCollapsed: '[data-testid="scene-default-collapsed"]',     // #scene_recap_default_collapsed
     nameAppendRange: '[data-testid="scene-name-append-range"]',      // #scene_name_append_range
-    editPrompt: '[data-testid="scene-edit-prompt"]',                 // #edit_scene_recap_prompt
-    prompt: '[data-testid="scene-prompt"]',                          // #scene_recap_prompt
-    defaultPrompt: '[data-testid="scene-default-prompt"]',           // #scene_recap_default_prompt
-    completionPreset: '[data-testid="scene-completion-preset"]',     // #scene_recap_completion_preset
-    includePresetPrompts: '[data-testid="scene-include-preset-prompts"]',  // #scene_recap_include_preset_prompts
-    includeActiveSettingLore: '[data-testid="scene-include-active-setting-lore"]',  // #scene_recap_include_active_setting_lore
-    connectionProfile: '[data-testid="scene-connection-profile"]',   // #scene_recap_connection_profile
-    prefill: '[data-testid="scene-prefill"]',                        // #scene_recap_prefill
+    includeActiveSettingLore: '[data-testid="scene-include-active-setting-lore"]',  // #scene_recap_include_active_setting_prompts
     messageTypes: '[data-testid="scene-message-types"]',             // #scene_recap_message_types
     historyCount: '[data-testid="scene-history-count"]',             // #scene_recap_history_count
     historyCountDisplay: '[data-testid="scene-history-count-display"]',  // #scene_recap_history_count_display
+    // Legacy selectors for profileUI.js (UI elements removed, kept for backward compatibility)
+    connectionProfile: '[data-testid="scene-connection-profile"]',   // Removed from UI
+    completionPreset: '[data-testid="scene-completion-preset"]',     // Removed from UI
   },
 
   // Running Scene Recap Settings
@@ -160,16 +159,13 @@ export const selectorsExtension = {
     autoGenerate: '[data-testid="running-auto-generate"]',                    // #running_scene_recap_auto_generate
     showNavbar: '[data-testid="running-show-navbar"]',                        // #running_scene_recap_show_navbar
     view: '[data-testid="running-view"]',                                     // #view_running_scene_recap
-    editPrompt: '[data-testid="running-edit-prompt"]',                        // #edit_running_scene_recap_prompt
-    prompt: '[data-testid="running-prompt"]',                                 // #running_scene_recap_prompt
-    completionPreset: '[data-testid="running-completion-preset"]',            // #running_scene_recap_completion_preset
-    includePresetPrompts: '[data-testid="running-include-preset-prompts"]',   // #running_scene_recap_include_preset_prompts
-    connectionProfile: '[data-testid="running-connection-profile"]',          // #running_scene_recap_connection_profile
-    prefill: '[data-testid="running-prefill"]',                               // #running_scene_recap_prefill
     position: '[data-testid="running-position"]',                             // #running_scene_recap_position
     depth: '[data-testid="running-depth"]',                                   // #running_scene_recap_depth
     role: '[data-testid="running-role"]',                                     // #running_scene_recap_role
     scan: '[data-testid="running-scan"]',                                     // #running_scene_recap_scan
+    // Legacy selectors for profileUI.js (UI elements removed, kept for backward compatibility)
+    connectionProfile: '[data-testid="running-connection-profile"]',          // Removed from UI
+    completionPreset: '[data-testid="running-completion-preset"]',            // Removed from UI
   },
 
   // Auto Scene Break Detection Settings
@@ -182,15 +178,9 @@ export const selectorsExtension = {
     checkWhich: '[data-testid="auto-scene-check-which"]',             // #auto_scene_break_check_which_messages
     minLength: '[data-testid="auto-scene-min-length"]',               // #auto_scene_break_minimum_scene_length
     minLengthDisplay: '[data-testid="auto-scene-min-length-display"]', // #auto_scene_break_minimum_scene_length_value
-    editPrompt: '[data-testid="auto-scene-edit-prompt"]',             // #edit_auto_scene_break_prompt
-    prompt: '[data-testid="auto-scene-prompt"]',                      // #auto_scene_break_prompt
-    editForcedPrompt: '[data-testid="auto-scene-edit-forced-prompt"]', // #edit_auto_scene_break_forced_prompt
-    forcedPrompt: '[data-testid="auto-scene-forced-prompt"]',         // #auto_scene_break_forced_prompt
-    forcedPrefill: '[data-testid="auto-scene-forced-prefill"]',       // #auto_scene_break_forced_prefill
-    connectionProfile: '[data-testid="auto-scene-connection-profile"]',  // #auto_scene_break_connection_profile
-    completionPreset: '[data-testid="auto-scene-completion-preset"]',    // #auto_scene_break_completion_preset
-    includePresetPrompts: '[data-testid="auto-scene-include-preset-prompts"]',  // #auto_scene_break_include_preset_prompts
-    prefill: '[data-testid="auto-scene-prefill"]',                    // #auto_scene_break_prefill
+    // Legacy selectors for profileUI.js (UI elements removed, kept for backward compatibility)
+    connectionProfile: '[data-testid="auto-scene-connection-profile"]',  // Removed from UI
+    completionPreset: '[data-testid="auto-scene-completion-preset"]',    // Removed from UI
   },
 
   // Auto-Lorebooks Settings
@@ -207,24 +197,22 @@ export const selectorsExtension = {
     entryPreventRecursion: '[data-testid="lorebook-entry-prevent-recursion"]',  // #autolorebooks-entry-prevent-recursion
     entryIgnoreBudget: '[data-testid="lorebook-entry-ignore-budget"]',          // #autolorebooks-entry-ignore-budget
     entrySticky: '[data-testid="lorebook-entry-sticky"]',                       // #autolorebooks-entry-sticky
-    mergeConnection: '[data-testid="lorebook-merge-connection"]',         // #autolorebooks-recap-merge-connection
-    mergePreset: '[data-testid="lorebook-merge-preset"]',                 // #autolorebooks-recap-merge-preset
-    mergeIncludePresetPrompts: '[data-testid="lorebook-merge-include-preset-prompts"]',  // #auto_lorebooks_recap_merge_include_preset_prompts
-    mergePrefill: '[data-testid="lorebook-merge-prefill"]',               // #autolorebooks-recap-merge-prefill
-    mergePrompt: '[data-testid="lorebook-merge-prompt"]',                 // #autolorebooks-recap-merge-prompt
-    editMergePrompt: '[data-testid="lorebook-edit-merge-prompt"]',        // #edit_autolorebooks_recap_merge_prompt
-    lookupConnection: '[data-testid="lorebook-lookup-connection"]',       // #autolorebooks-recap-lorebook-entry-lookup-connection
-    lookupPreset: '[data-testid="lorebook-lookup-preset"]',               // #autolorebooks-recap-lorebook-entry-lookup-preset
-    lookupIncludePresetPrompts: '[data-testid="lorebook-lookup-include-preset-prompts"]',  // #auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts
-    lookupPrefill: '[data-testid="lorebook-lookup-prefill"]',             // #autolorebooks-recap-lorebook-entry-lookup-prefill
-    lookupPrompt: '[data-testid="lorebook-lookup-prompt"]',               // #autolorebooks-recap-lorebook-entry-lookup-prompt
-    editLookupPrompt: '[data-testid="lorebook-edit-lookup-prompt"]',      // #edit_autolorebooks_recap_lorebook_entry_lookup_prompt
-    dedupeConnection: '[data-testid="lorebook-dedupe-connection"]',       // #autolorebooks-recap-entry-deduplicate-connection
-    dedupePreset: '[data-testid="lorebook-dedupe-preset"]',               // #autolorebooks-recap-entry-deduplicate-preset
-    dedupeIncludePresetPrompts: '[data-testid="lorebook-dedupe-include-preset-prompts"]',  // #auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts
-    dedupePrefill: '[data-testid="lorebook-dedupe-prefill"]',             // #autolorebooks-recap-entry-deduplicate-prefill
-    dedupePrompt: '[data-testid="lorebook-dedupe-prompt"]',               // #autolorebooks-recap-entry-deduplicate-prompt
-    editDedupePrompt: '[data-testid="lorebook-edit-dedupe-prompt"]',      // #edit_autolorebooks_recap_entry_deduplicate_prompt
+    // Legacy selectors for profileUI.js (UI elements removed, kept for backward compatibility)
+    mergeConnection: '[data-testid="lorebook-merge-connection"]',                // Removed from UI
+    mergePreset: '[data-testid="lorebook-merge-preset"]',                        // Removed from UI
+    mergeIncludePresetPrompts: '[data-testid="lorebook-merge-include-preset-prompts"]',  // Removed from UI
+    mergePrefill: '[data-testid="lorebook-merge-prefill"]',                      // Removed from UI
+    mergePrompt: '[data-testid="lorebook-merge-prompt"]',                        // Removed from UI
+    lookupConnection: '[data-testid="lorebook-lookup-connection"]',              // Removed from UI
+    lookupPreset: '[data-testid="lorebook-lookup-preset"]',                      // Removed from UI
+    lookupIncludePresetPrompts: '[data-testid="lorebook-lookup-include-preset-prompts"]',  // Removed from UI
+    lookupPrefill: '[data-testid="lorebook-lookup-prefill"]',                    // Removed from UI
+    lookupPrompt: '[data-testid="lorebook-lookup-prompt"]',                      // Removed from UI
+    dedupeConnection: '[data-testid="lorebook-dedupe-connection"]',              // Removed from UI
+    dedupePreset: '[data-testid="lorebook-dedupe-preset"]',                      // Removed from UI
+    dedupeIncludePresetPrompts: '[data-testid="lorebook-dedupe-include-preset-prompts"]',  // Removed from UI
+    dedupePrefill: '[data-testid="lorebook-dedupe-prefill"]',                    // Removed from UI
+    dedupePrompt: '[data-testid="lorebook-dedupe-prompt"]',                      // Removed from UI
   },
 
   // Operation Queue UI (dynamically created)

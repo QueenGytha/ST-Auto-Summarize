@@ -11,7 +11,8 @@ import {
   get_data,
   saveChatDebounced,
   saveMetadata,
-  getCurrentChatId } from
+  getCurrentChatId,
+  resolveOperationConfig } from
 './index.js';
 import { running_scene_recap_prompt } from './defaultPrompts.js';
 // Lorebook processing for running recap has been disabled; no queue integration needed here.
@@ -320,14 +321,15 @@ async function generate_running_scene_recap(skipQueue  = false) {
   const current_recap = get_current_running_recap_content();
 
   // Build prompt with macro replacement
-  const template = get_settings('running_scene_recap_prompt') || running_scene_recap_prompt;
-  const prefillSetting = get_settings('running_scene_recap_prefill');
+  const config = resolveOperationConfig('running_scene_recap');
+  const template = config.prompt || running_scene_recap_prompt;
+  const prefillSetting = config.prefill;
   const { prompt, prefill } = processPromptMacros(template, current_recap, scene_recaps_text, prefillSetting);
 
   // Get connection profile and preset settings
-  const running_preset = get_settings('running_scene_recap_completion_preset');
-  const running_profile = get_settings('running_scene_recap_connection_profile') || '';
-  const include_preset_prompts = get_settings('running_scene_recap_include_preset_prompts');
+  const running_preset = config.completion_preset_name;
+  const running_profile = config.connection_profile || '';
+  const include_preset_prompts = config.include_preset_prompts;
 
   try {
     // Add new version - for bulk generation, track from 0 to last scene index
@@ -437,7 +439,8 @@ function extractRecapFromJSON(scene_recap ) {
 }
 
 function buildCombinePrompt(current_recap , scene_recaps_text ) {
-  let prompt = get_settings('running_scene_recap_prompt') || running_scene_recap_prompt;
+  const config = resolveOperationConfig('running_scene_recap');
+  let prompt = config.prompt || running_scene_recap_prompt;
 
   // Replace macros
   prompt = prompt.replace(/\{\{current_running_recap\}\}/g, current_recap || "");
@@ -452,16 +455,17 @@ function buildCombinePrompt(current_recap , scene_recaps_text ) {
   }
 
   // Get prefill if configured
-  const prefill = get_settings('running_scene_recap_prefill') || '';
+  const prefill = config.prefill || '';
 
   return { prompt, prefill };
 }
 
 async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index ) {
   // Get connection profile and preset settings
-  const running_preset = get_settings('running_scene_recap_completion_preset');
-  const running_profile = get_settings('running_scene_recap_connection_profile') || '';
-  const include_preset_prompts = get_settings('running_scene_recap_include_preset_prompts');
+  const config = resolveOperationConfig('running_scene_recap');
+  const running_preset = config.completion_preset_name;
+  const running_profile = config.connection_profile || '';
+  const include_preset_prompts = config.include_preset_prompts;
 
   debug(SUBSYSTEM.RUNNING, `Sending prompt to LLM to combine with ${scene_name}`);
 

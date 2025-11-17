@@ -14,7 +14,8 @@ import {
   error,
   toast,
   SUBSYSTEM,
-  chat_metadata } from
+  chat_metadata,
+  resolveOperationConfig } from
 './index.js';
 import { get_previous_running_recap_version_before_scene } from './runningSceneRecap.js';
 import { MAX_RECAP_ATTEMPTS, HIGH_PRIORITY_OFFSET, OPERATION_ID_LENGTH } from './constants.js';
@@ -223,8 +224,7 @@ recapHash ,
 options )
 {
   // Capture settings at enqueue time for tooltip display
-  const prefill = get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prefill') || '';
-  const includePresetPrompts = get_settings('auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts') ?? false;
+  const lookupConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_lookup');
 
   return enqueueOperation(
     OperationType.LOREBOOK_ENTRY_LOOKUP,
@@ -237,8 +237,8 @@ options )
         entry_comment: context.normalizedEntry.comment,
         message_index: messageIndex,
         recap_hash: recapHash || null,
-        hasPrefill: Boolean(prefill && prefill.trim().length > 0),
-        includePresetPrompts,
+        hasPrefill: Boolean(lookupConfig.prefill && lookupConfig.prefill.trim().length > 0),
+        includePresetPrompts: lookupConfig.include_preset_prompts ?? false,
         ...options.metadata
       }
     }

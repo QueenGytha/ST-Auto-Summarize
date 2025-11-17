@@ -16,7 +16,8 @@ import {
   convertLiteralNewlinesToActual,
   convertActualNewlinesToLiteral,
   MODULE_NAME,
-  count_tokens } from
+  count_tokens,
+  resolveOperationConfig } from
 './index.js';
 import {
   queueCombineSceneWithRunning,
@@ -959,8 +960,9 @@ endIdx ,
 get_data ,
 skipSettingsModification = false)
 {
-  const promptTemplate = get_settings('scene_recap_prompt');
-  const prefill = get_settings('scene_recap_prefill') || "";
+  const config = resolveOperationConfig('scene_recap');
+  const promptTemplate = config.prompt;
+  const prefill = config.prefill || "";
   const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
   let lorebookTypesMacro = formatEntityTypeListForPrompt(typeDefinitions);
   if (!lorebookTypesMacro) {
@@ -1413,9 +1415,10 @@ export async function generateSceneRecap(config) {
   const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data);
 
   // Generate recap with connection profile/preset switching
-  const profile_name = get_settings('scene_recap_connection_profile') || '';
-  const preset_name = get_settings('scene_recap_completion_preset');
-  const include_preset_prompts = get_settings('scene_recap_include_preset_prompts');
+  const operationConfig = resolveOperationConfig('scene_recap');
+  const profile_name = operationConfig.connection_profile || '';
+  const preset_name = operationConfig.completion_preset_name;
+  const include_preset_prompts = operationConfig.include_preset_prompts;
 
   const { OperationType } = await import('./operationTypes.js');
   const { resolveProfileId } = await import('./profileResolution.js');

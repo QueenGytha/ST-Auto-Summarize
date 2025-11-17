@@ -191,6 +191,12 @@ export * from './operationQueue.js';
 export * from './operationQueueUI.js';
 export * from './operationHandlers.js';
 export * from './queueIntegration.js';
+export * from './operationArtifacts.js';
+export * from './operationsPresets.js';
+export * from './operationsPresetsResolution.js';
+export * from './operationsPresetsMigration.js';
+export * from './operationsPresetsExport.js';
+export * from './operationsPresetsImport.js';
 
 // Lorebooks functionality (merged from ST-Auto-Lorebooks)
 export * from './lorebookManager.js';

@@ -76,28 +76,6 @@
                     </div>
                 </div>
 
-                <!-- Token Counting -->
-                <hr>
-                <div class="inline-drawer">
-                    <div class="inline-drawer-toggle inline-drawer-header">
-                        <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Token Counting <i class="fa-solid fa-info-circle" title="Configure how token counts are calculated and adjusted for different LLM providers."></i></h4>
-                        </div>
-                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                    </div>
-                    <div class="inline-drawer-content">
-                        <label title="Correction factor for tokenizer discrepancies between SillyTavern and actual LLM providers. Values >1.0 increase estimates (for undercounting), values <1.0 decrease estimates (for overcounting). Claude models typically need 1.35 (35% undercount). OpenAI models use 1.0 (accurate).">
-                            <input id="tokenizer_correction_factor" data-testid="token-correction-factor" class="text_pole widthUnset inline_setting" type="number" min="0.5" max="2.0" step="0.05" />
-                            <span>Tokenizer Correction Factor</span>
-                        </label>
-
-                        <div class="note-block">
-                            <i class="fa-solid fa-info-circle"></i>
-                            <span>SillyTavern uses tokenizer approximations that may not match the provider's actual tokenizer. This multiplier adjusts token estimates for more accurate budget calculations. <strong>Recommended values:</strong> Claude: <code>1.35</code> (ST undercounts by ~35%), OpenAI: <code>1.0</code> (tiktoken is accurate).</span>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Operations Configuration -->
                 <hr>
                 <div class="inline-drawer">
@@ -126,36 +104,22 @@
                             </div>
 
                             <!-- Preset Action Buttons -->
-                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 10px;">
-                                <button id="auto_recap_preset_save" data-testid="operations-preset-save" class="menu_button" title="Save current state as new version (auto-increment)" disabled>
-                                    <i class="fa-solid fa-floppy-disk"></i> Save
-                                </button>
-                                <button id="auto_recap_preset_rename" data-testid="operations-preset-rename" class="menu_button" title="Rename this preset" disabled>
-                                    <i class="fa-solid fa-pencil"></i> Rename
-                                </button>
-                                <button id="auto_recap_preset_delete" data-testid="operations-preset-delete" class="menu_button" title="Delete this preset" disabled>
-                                    <i class="fa-solid fa-trash-can"></i> Delete
-                                </button>
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 10px; gap: 5px;">
+                                <button id="auto_recap_preset_save" data-testid="operations-preset-save" class="menu_button fa-solid fa-floppy-disk" title="Save current state as new version (auto-increment)" disabled></button>
+                                <button id="auto_recap_preset_rename" data-testid="operations-preset-rename" class="menu_button fa-solid fa-pencil" title="Rename this preset" disabled></button>
+                                <button id="auto_recap_preset_delete" data-testid="operations-preset-delete" class="menu_button fa-solid fa-trash-can" title="Delete this preset" disabled></button>
+                                <button id="auto_recap_preset_import" data-testid="operations-preset-import" class="menu_button fa-solid fa-file-import" title="Import preset from JSON file"></button>
+                                <button id="auto_recap_preset_export" data-testid="operations-preset-export" class="menu_button fa-solid fa-file-export" title="Export preset to JSON file"></button>
+                                <button id="auto_recap_preset_duplicate" data-testid="operations-preset-duplicate" class="menu_button fa-solid fa-copy" title="Create a copy of this preset"></button>
                             </div>
 
-                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px;">
-                                <button id="auto_recap_preset_import" data-testid="operations-preset-import" class="menu_button" title="Import preset from JSON file">
-                                    <i class="fa-solid fa-file-import"></i> Import
+                            <!-- Sticky Preset Buttons -->
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px; gap: 5px;">
+                                <button id="auto_recap_preset_sticky_character" data-testid="operations-preset-sticky-character" class="menu_button" title="Sticky this preset to current character">
+                                    <i class="fa-solid fa-thumbtack"></i> Character
                                 </button>
-                                <button id="auto_recap_preset_export" data-testid="operations-preset-export" class="menu_button" title="Export preset to JSON file">
-                                    <i class="fa-solid fa-file-export"></i> Export
-                                </button>
-                                <button id="auto_recap_preset_duplicate" data-testid="operations-preset-duplicate" class="menu_button" title="Create a copy of this preset">
-                                    <i class="fa-solid fa-copy"></i> Duplicate
-                                </button>
-                            </div>
-
-                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px;">
-                                <button id="auto_recap_preset_sticky_character" data-testid="operations-preset-sticky-character" class="menu_button flex1" title="Sticky this preset to current character">
-                                    <i class="fa-solid fa-thumbtack"></i> Sticky to Character
-                                </button>
-                                <button id="auto_recap_preset_sticky_chat" data-testid="operations-preset-sticky-chat" class="menu_button flex1" title="Sticky this preset to current chat">
-                                    <i class="fa-solid fa-thumbtack"></i> Sticky to Chat
+                                <button id="auto_recap_preset_sticky_chat" data-testid="operations-preset-sticky-chat" class="menu_button" title="Sticky this preset to current chat">
+                                    <i class="fa-solid fa-map-pin"></i> Chat
                                 </button>
                             </div>
 
@@ -167,273 +131,145 @@
                         <!-- Operation Type Selectors -->
                         <!-- Scene Recap -->
                         <div class="auto_recap_operation_type_section" data-testid="operation-type-scene-recap">
-                            <div class="inline-drawer">
-                                <div class="inline-drawer-toggle inline-drawer-header">
-                                    <span>Scene Recap</span>
-                                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                                </div>
-                                <div class="inline-drawer-content">
-                                    <div class="flex-container alignitemscenter">
-                                        <label class="flex1">
-                                            <span>Artifact:</span>
-                                            <select id="auto_recap_artifact_scene_recap" data-testid="artifact-scene-recap" class="text_pole">
-                                                <option value="Default">Default</option>
-                                            </select>
-                                        </label>
-                                    </div>
-                                    <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px;">
-                                        <button data-operation-type="scene_recap" class="auto_recap_artifact_edit menu_button" data-testid="artifact-edit-scene-recap" title="Edit this artifact">
-                                            <i class="fa-solid fa-pencil"></i> Edit
-                                        </button>
-                                        <button data-operation-type="scene_recap" class="auto_recap_artifact_rename menu_button" data-testid="artifact-rename-scene-recap" title="Rename this artifact" disabled>
-                                            <i class="fa-solid fa-i-cursor"></i> Rename
-                                        </button>
-                                        <button data-operation-type="scene_recap" class="auto_recap_artifact_delete menu_button" data-testid="artifact-delete-scene-recap" title="Delete this artifact" disabled>
-                                            <i class="fa-solid fa-trash-can"></i> Delete
-                                        </button>
-                                        <button data-operation-type="scene_recap" class="auto_recap_artifact_duplicate menu_button" data-testid="artifact-duplicate-scene-recap" title="Duplicate this artifact">
-                                            <i class="fa-solid fa-copy"></i> Duplicate
-                                        </button>
-                                    </div>
-                                </div>
+                            <div class="flex-container alignitemscenter">
+                                <label class="flex1">
+                                    <span>Scene Recap:</span>
+                                    <select id="auto_recap_artifact_scene_recap" data-testid="artifact-scene-recap" class="text_pole">
+                                        <option value="Default">Default</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px; gap: 5px;">
+                                <button data-operation-type="scene_recap" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-scene-recap" title="Edit this artifact"></button>
+                                <button data-operation-type="scene_recap" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-scene-recap" title="Rename this artifact" disabled></button>
+                                <button data-operation-type="scene_recap" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-scene-recap" title="Delete this artifact" disabled></button>
+                                <button data-operation-type="scene_recap" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-scene-recap" title="Duplicate this artifact"></button>
                             </div>
                         </div>
 
                         <!-- Scene Recap Error Detection -->
                         <div class="auto_recap_operation_type_section" data-testid="operation-type-scene-recap-error">
-                            <div class="inline-drawer">
-                                <div class="inline-drawer-toggle inline-drawer-header">
-                                    <span>Scene Recap Error Detection</span>
-                                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                                </div>
-                                <div class="inline-drawer-content">
-                                    <div class="flex-container alignitemscenter">
-                                        <label class="flex1">
-                                            <span>Artifact:</span>
-                                            <select id="auto_recap_artifact_scene_recap_error_detection" data-testid="artifact-scene-recap-error" class="text_pole">
-                                                <option value="Default">Default</option>
-                                            </select>
-                                        </label>
-                                    </div>
-                                    <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px;">
-                                        <button data-operation-type="scene_recap_error_detection" class="auto_recap_artifact_edit menu_button" data-testid="artifact-edit-scene-recap-error" title="Edit this artifact">
-                                            <i class="fa-solid fa-pencil"></i> Edit
-                                        </button>
-                                        <button data-operation-type="scene_recap_error_detection" class="auto_recap_artifact_rename menu_button" data-testid="artifact-rename-scene-recap-error" title="Rename this artifact" disabled>
-                                            <i class="fa-solid fa-i-cursor"></i> Rename
-                                        </button>
-                                        <button data-operation-type="scene_recap_error_detection" class="auto_recap_artifact_delete menu_button" data-testid="artifact-delete-scene-recap-error" title="Delete this artifact" disabled>
-                                            <i class="fa-solid fa-trash-can"></i> Delete
-                                        </button>
-                                        <button data-operation-type="scene_recap_error_detection" class="auto_recap_artifact_duplicate menu_button" data-testid="artifact-duplicate-scene-recap-error" title="Duplicate this artifact">
-                                            <i class="fa-solid fa-copy"></i> Duplicate
-                                        </button>
-                                    </div>
-                                </div>
+                            <div class="flex-container alignitemscenter">
+                                <label class="flex1">
+                                    <span>Scene Recap Error Detection:</span>
+                                    <select id="auto_recap_artifact_scene_recap_error_detection" data-testid="artifact-scene-recap-error" class="text_pole">
+                                        <option value="Default">Default</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px; gap: 5px;">
+                                <button data-operation-type="scene_recap_error_detection" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-scene-recap-error" title="Edit this artifact"></button>
+                                <button data-operation-type="scene_recap_error_detection" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-scene-recap-error" title="Rename this artifact" disabled></button>
+                                <button data-operation-type="scene_recap_error_detection" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-scene-recap-error" title="Delete this artifact" disabled></button>
+                                <button data-operation-type="scene_recap_error_detection" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-scene-recap-error" title="Duplicate this artifact"></button>
                             </div>
                         </div>
 
                         <!-- Auto Scene Break -->
                         <div class="auto_recap_operation_type_section" data-testid="operation-type-auto-scene-break">
-                            <div class="inline-drawer">
-                                <div class="inline-drawer-toggle inline-drawer-header">
-                                    <span>Auto Scene Break Detection</span>
-                                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                                </div>
-                                <div class="inline-drawer-content">
-                                    <div class="flex-container alignitemscenter">
-                                        <label class="flex1">
-                                            <span>Artifact:</span>
-                                            <select id="auto_recap_artifact_auto_scene_break" data-testid="artifact-auto-scene-break" class="text_pole">
-                                                <option value="Default">Default</option>
-                                            </select>
-                                        </label>
-                                    </div>
-                                    <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px;">
-                                        <button data-operation-type="auto_scene_break" class="auto_recap_artifact_edit menu_button" data-testid="artifact-edit-auto-scene-break" title="Edit this artifact">
-                                            <i class="fa-solid fa-pencil"></i> Edit
-                                        </button>
-                                        <button data-operation-type="auto_scene_break" class="auto_recap_artifact_rename menu_button" data-testid="artifact-rename-auto-scene-break" title="Rename this artifact" disabled>
-                                            <i class="fa-solid fa-i-cursor"></i> Rename
-                                        </button>
-                                        <button data-operation-type="auto_scene_break" class="auto_recap_artifact_delete menu_button" data-testid="artifact-delete-auto-scene-break" title="Delete this artifact" disabled>
-                                            <i class="fa-solid fa-trash-can"></i> Delete
-                                        </button>
-                                        <button data-operation-type="auto_scene_break" class="auto_recap_artifact_duplicate menu_button" data-testid="artifact-duplicate-auto-scene-break" title="Duplicate this artifact">
-                                            <i class="fa-solid fa-copy"></i> Duplicate
-                                        </button>
-                                    </div>
-                                </div>
+                            <div class="flex-container alignitemscenter">
+                                <label class="flex1">
+                                    <span>Auto Scene Break Detection:</span>
+                                    <select id="auto_recap_artifact_auto_scene_break" data-testid="artifact-auto-scene-break" class="text_pole">
+                                        <option value="Default">Default</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px; gap: 5px;">
+                                <button data-operation-type="auto_scene_break" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-auto-scene-break" title="Edit this artifact"></button>
+                                <button data-operation-type="auto_scene_break" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-auto-scene-break" title="Rename this artifact" disabled></button>
+                                <button data-operation-type="auto_scene_break" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-auto-scene-break" title="Delete this artifact" disabled></button>
+                                <button data-operation-type="auto_scene_break" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-auto-scene-break" title="Duplicate this artifact"></button>
                             </div>
                         </div>
 
                         <!-- Running Scene Recap -->
                         <div class="auto_recap_operation_type_section" data-testid="operation-type-running-scene-recap">
-                            <div class="inline-drawer">
-                                <div class="inline-drawer-toggle inline-drawer-header">
-                                    <span>Running Scene Recap</span>
-                                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                                </div>
-                                <div class="inline-drawer-content">
-                                    <div class="flex-container alignitemscenter">
-                                        <label class="flex1">
-                                            <span>Artifact:</span>
-                                            <select id="auto_recap_artifact_running_scene_recap" data-testid="artifact-running-scene-recap" class="text_pole">
-                                                <option value="Default">Default</option>
-                                            </select>
-                                        </label>
-                                    </div>
-                                    <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px;">
-                                        <button data-operation-type="running_scene_recap" class="auto_recap_artifact_edit menu_button" data-testid="artifact-edit-running-scene-recap" title="Edit this artifact">
-                                            <i class="fa-solid fa-pencil"></i> Edit
-                                        </button>
-                                        <button data-operation-type="running_scene_recap" class="auto_recap_artifact_rename menu_button" data-testid="artifact-rename-running-scene-recap" title="Rename this artifact" disabled>
-                                            <i class="fa-solid fa-i-cursor"></i> Rename
-                                        </button>
-                                        <button data-operation-type="running_scene_recap" class="auto_recap_artifact_delete menu_button" data-testid="artifact-delete-running-scene-recap" title="Delete this artifact" disabled>
-                                            <i class="fa-solid fa-trash-can"></i> Delete
-                                        </button>
-                                        <button data-operation-type="running_scene_recap" class="auto_recap_artifact_duplicate menu_button" data-testid="artifact-duplicate-running-scene-recap" title="Duplicate this artifact">
-                                            <i class="fa-solid fa-copy"></i> Duplicate
-                                        </button>
-                                    </div>
-                                </div>
+                            <div class="flex-container alignitemscenter">
+                                <label class="flex1">
+                                    <span>Running Scene Recap:</span>
+                                    <select id="auto_recap_artifact_running_scene_recap" data-testid="artifact-running-scene-recap" class="text_pole">
+                                        <option value="Default">Default</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px; gap: 5px;">
+                                <button data-operation-type="running_scene_recap" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-running-scene-recap" title="Edit this artifact"></button>
+                                <button data-operation-type="running_scene_recap" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-running-scene-recap" title="Rename this artifact" disabled></button>
+                                <button data-operation-type="running_scene_recap" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-running-scene-recap" title="Delete this artifact" disabled></button>
+                                <button data-operation-type="running_scene_recap" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-running-scene-recap" title="Duplicate this artifact"></button>
                             </div>
                         </div>
 
                         <!-- Auto-Lorebooks: Recap Merge -->
                         <div class="auto_recap_operation_type_section" data-testid="operation-type-lorebooks-merge">
-                            <div class="inline-drawer">
-                                <div class="inline-drawer-toggle inline-drawer-header">
-                                    <span>Auto-Lorebooks: Recap Merge</span>
-                                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                                </div>
-                                <div class="inline-drawer-content">
-                                    <div class="flex-container alignitemscenter">
-                                        <label class="flex1">
-                                            <span>Artifact:</span>
-                                            <select id="auto_recap_artifact_auto_lorebooks_recap_merge" data-testid="artifact-lorebooks-merge" class="text_pole">
-                                                <option value="Default">Default</option>
-                                            </select>
-                                        </label>
-                                    </div>
-                                    <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px;">
-                                        <button data-operation-type="auto_lorebooks_recap_merge" class="auto_recap_artifact_edit menu_button" data-testid="artifact-edit-lorebooks-merge" title="Edit this artifact">
-                                            <i class="fa-solid fa-pencil"></i> Edit
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_recap_merge" class="auto_recap_artifact_rename menu_button" data-testid="artifact-rename-lorebooks-merge" title="Rename this artifact" disabled>
-                                            <i class="fa-solid fa-i-cursor"></i> Rename
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_recap_merge" class="auto_recap_artifact_delete menu_button" data-testid="artifact-delete-lorebooks-merge" title="Delete this artifact" disabled>
-                                            <i class="fa-solid fa-trash-can"></i> Delete
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_recap_merge" class="auto_recap_artifact_duplicate menu_button" data-testid="artifact-duplicate-lorebooks-merge" title="Duplicate this artifact">
-                                            <i class="fa-solid fa-copy"></i> Duplicate
-                                        </button>
-                                    </div>
-                                </div>
+                            <div class="flex-container alignitemscenter">
+                                <label class="flex1">
+                                    <span>Auto-Lorebooks: Recap Merge:</span>
+                                    <select id="auto_recap_artifact_auto_lorebooks_recap_merge" data-testid="artifact-lorebooks-merge" class="text_pole">
+                                        <option value="Default">Default</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px; gap: 5px;">
+                                <button data-operation-type="auto_lorebooks_recap_merge" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-lorebooks-merge" title="Edit this artifact"></button>
+                                <button data-operation-type="auto_lorebooks_recap_merge" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-lorebooks-merge" title="Rename this artifact" disabled></button>
+                                <button data-operation-type="auto_lorebooks_recap_merge" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-lorebooks-merge" title="Delete this artifact" disabled></button>
+                                <button data-operation-type="auto_lorebooks_recap_merge" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-lorebooks-merge" title="Duplicate this artifact"></button>
                             </div>
                         </div>
 
                         <!-- Auto-Lorebooks: Entry Lookup -->
                         <div class="auto_recap_operation_type_section" data-testid="operation-type-lorebooks-lookup">
-                            <div class="inline-drawer">
-                                <div class="inline-drawer-toggle inline-drawer-header">
-                                    <span>Auto-Lorebooks: Entry Lookup</span>
-                                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                                </div>
-                                <div class="inline-drawer-content">
-                                    <div class="flex-container alignitemscenter">
-                                        <label class="flex1">
-                                            <span>Artifact:</span>
-                                            <select id="auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_lookup" data-testid="artifact-lorebooks-lookup" class="text_pole">
-                                                <option value="Default">Default</option>
-                                            </select>
-                                        </label>
-                                    </div>
-                                    <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px;">
-                                        <button data-operation-type="auto_lorebooks_recap_lorebook_entry_lookup" class="auto_recap_artifact_edit menu_button" data-testid="artifact-edit-lorebooks-lookup" title="Edit this artifact">
-                                            <i class="fa-solid fa-pencil"></i> Edit
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_recap_lorebook_entry_lookup" class="auto_recap_artifact_rename menu_button" data-testid="artifact-rename-lorebooks-lookup" title="Rename this artifact" disabled>
-                                            <i class="fa-solid fa-i-cursor"></i> Rename
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_recap_lorebook_entry_lookup" class="auto_recap_artifact_delete menu_button" data-testid="artifact-delete-lorebooks-lookup" title="Delete this artifact" disabled>
-                                            <i class="fa-solid fa-trash-can"></i> Delete
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_recap_lorebook_entry_lookup" class="auto_recap_artifact_duplicate menu_button" data-testid="artifact-duplicate-lorebooks-lookup" title="Duplicate this artifact">
-                                            <i class="fa-solid fa-copy"></i> Duplicate
-                                        </button>
-                                    </div>
-                                </div>
+                            <div class="flex-container alignitemscenter">
+                                <label class="flex1">
+                                    <span>Auto-Lorebooks: Entry Lookup:</span>
+                                    <select id="auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_lookup" data-testid="artifact-lorebooks-lookup" class="text_pole">
+                                        <option value="Default">Default</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px; gap: 5px;">
+                                <button data-operation-type="auto_lorebooks_recap_lorebook_entry_lookup" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-lorebooks-lookup" title="Edit this artifact"></button>
+                                <button data-operation-type="auto_lorebooks_recap_lorebook_entry_lookup" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-lorebooks-lookup" title="Rename this artifact" disabled></button>
+                                <button data-operation-type="auto_lorebooks_recap_lorebook_entry_lookup" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-lorebooks-lookup" title="Delete this artifact" disabled></button>
+                                <button data-operation-type="auto_lorebooks_recap_lorebook_entry_lookup" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-lorebooks-lookup" title="Duplicate this artifact"></button>
                             </div>
                         </div>
 
                         <!-- Auto-Lorebooks: Entry Deduplicate -->
                         <div class="auto_recap_operation_type_section" data-testid="operation-type-lorebooks-deduplicate">
-                            <div class="inline-drawer">
-                                <div class="inline-drawer-toggle inline-drawer-header">
-                                    <span>Auto-Lorebooks: Entry Deduplicate</span>
-                                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                                </div>
-                                <div class="inline-drawer-content">
-                                    <div class="flex-container alignitemscenter">
-                                        <label class="flex1">
-                                            <span>Artifact:</span>
-                                            <select id="auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_deduplicate" data-testid="artifact-lorebooks-deduplicate" class="text_pole">
-                                                <option value="Default">Default</option>
-                                            </select>
-                                        </label>
-                                    </div>
-                                    <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px;">
-                                        <button data-operation-type="auto_lorebooks_recap_lorebook_entry_deduplicate" class="auto_recap_artifact_edit menu_button" data-testid="artifact-edit-lorebooks-deduplicate" title="Edit this artifact">
-                                            <i class="fa-solid fa-pencil"></i> Edit
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_recap_lorebook_entry_deduplicate" class="auto_recap_artifact_rename menu_button" data-testid="artifact-rename-lorebooks-deduplicate" title="Rename this artifact" disabled>
-                                            <i class="fa-solid fa-i-cursor"></i> Rename
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_recap_lorebook_entry_deduplicate" class="auto_recap_artifact_delete menu_button" data-testid="artifact-delete-lorebooks-deduplicate" title="Delete this artifact" disabled>
-                                            <i class="fa-solid fa-trash-can"></i> Delete
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_recap_lorebook_entry_deduplicate" class="auto_recap_artifact_duplicate menu_button" data-testid="artifact-duplicate-lorebooks-deduplicate" title="Duplicate this artifact">
-                                            <i class="fa-solid fa-copy"></i> Duplicate
-                                        </button>
-                                    </div>
-                                </div>
+                            <div class="flex-container alignitemscenter">
+                                <label class="flex1">
+                                    <span>Auto-Lorebooks: Entry Deduplicate:</span>
+                                    <select id="auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_deduplicate" data-testid="artifact-lorebooks-deduplicate" class="text_pole">
+                                        <option value="Default">Default</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px; gap: 5px;">
+                                <button data-operation-type="auto_lorebooks_recap_lorebook_entry_deduplicate" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-lorebooks-deduplicate" title="Edit this artifact"></button>
+                                <button data-operation-type="auto_lorebooks_recap_lorebook_entry_deduplicate" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-lorebooks-deduplicate" title="Rename this artifact" disabled></button>
+                                <button data-operation-type="auto_lorebooks_recap_lorebook_entry_deduplicate" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-lorebooks-deduplicate" title="Delete this artifact" disabled></button>
+                                <button data-operation-type="auto_lorebooks_recap_lorebook_entry_deduplicate" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-lorebooks-deduplicate" title="Duplicate this artifact"></button>
                             </div>
                         </div>
 
                         <!-- Auto-Lorebooks: Bulk Populate -->
                         <div class="auto_recap_operation_type_section" data-testid="operation-type-lorebooks-bulk-populate">
-                            <div class="inline-drawer">
-                                <div class="inline-drawer-toggle inline-drawer-header">
-                                    <span>Auto-Lorebooks: Bulk Populate</span>
-                                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                                </div>
-                                <div class="inline-drawer-content">
-                                    <div class="flex-container alignitemscenter">
-                                        <label class="flex1">
-                                            <span>Artifact:</span>
-                                            <select id="auto_recap_artifact_auto_lorebooks_bulk_populate" data-testid="artifact-lorebooks-bulk-populate" class="text_pole">
-                                                <option value="Default">Default</option>
-                                            </select>
-                                        </label>
-                                    </div>
-                                    <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px;">
-                                        <button data-operation-type="auto_lorebooks_bulk_populate" class="auto_recap_artifact_edit menu_button" data-testid="artifact-edit-lorebooks-bulk-populate" title="Edit this artifact">
-                                            <i class="fa-solid fa-pencil"></i> Edit
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_bulk_populate" class="auto_recap_artifact_rename menu_button" data-testid="artifact-rename-lorebooks-bulk-populate" title="Rename this artifact" disabled>
-                                            <i class="fa-solid fa-i-cursor"></i> Rename
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_bulk_populate" class="auto_recap_artifact_delete menu_button" data-testid="artifact-delete-lorebooks-bulk-populate" title="Delete this artifact" disabled>
-                                            <i class="fa-solid fa-trash-can"></i> Delete
-                                        </button>
-                                        <button data-operation-type="auto_lorebooks_bulk_populate" class="auto_recap_artifact_duplicate menu_button" data-testid="artifact-duplicate-lorebooks-bulk-populate" title="Duplicate this artifact">
-                                            <i class="fa-solid fa-copy"></i> Duplicate
-                                        </button>
-                                    </div>
-                                </div>
+                            <div class="flex-container alignitemscenter">
+                                <label class="flex1">
+                                    <span>Auto-Lorebooks: Bulk Populate:</span>
+                                    <select id="auto_recap_artifact_auto_lorebooks_bulk_populate" data-testid="artifact-lorebooks-bulk-populate" class="text_pole">
+                                        <option value="Default">Default</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px; gap: 5px;">
+                                <button data-operation-type="auto_lorebooks_bulk_populate" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-lorebooks-bulk-populate" title="Edit this artifact"></button>
+                                <button data-operation-type="auto_lorebooks_bulk_populate" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-lorebooks-bulk-populate" title="Rename this artifact" disabled></button>
+                                <button data-operation-type="auto_lorebooks_bulk_populate" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-lorebooks-bulk-populate" title="Delete this artifact" disabled></button>
+                                <button data-operation-type="auto_lorebooks_bulk_populate" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-lorebooks-bulk-populate" title="Duplicate this artifact"></button>
                             </div>
                         </div>
 
@@ -467,42 +303,11 @@
                             <input id="scene_name_append_range" data-testid="scene-name-append-range" type="checkbox" />
                             <span>Append Message Range to Scene Names</span>
                         </label>
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_scene_recap_prompt" data-testid="scene-edit-prompt" class="menu_button flex1" title="Edit the scene recap prompt"><span>Edit Scene Prompt</span></button>
-                        </div>
-                        <input id="scene_recap_prompt" data-testid="scene-prompt" type="hidden" />
-                        <input id="scene_recap_default_prompt" data-testid="scene-default-prompt" type="hidden" value="[Default scene recap prompt here]" />
+                        <label class="checkbox_label" title="Include active lorebook entries in the scene recap prompt to provide context. Only new or changed information from lorebooks will be included.">
+                            <input id="scene_recap_include_active_setting_lore" data-testid="scene-include-active-setting-lore" type="checkbox" />
+                            <span>Include Active setting_lore Entries</span>
+                        </label>
                         <table>
-                            <tr>
-                                <td><span>Scene Connection Profile</span></td>
-                                <td><select id="scene_recap_connection_profile" data-testid="scene-connection-profile" class="text_pole"></select></td>
-                            </tr>
-                            <tr>
-                                <td></td>
-                                <td>
-                                    <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                        <input id="scene_recap_include_preset_prompts" data-testid="scene-include-preset-prompts" type="checkbox" />
-                                        <span>Include Preset Prompts</span>
-                                    </label>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td></td>
-                                <td>
-                                    <label class="checkbox_label" title="Include active lorebook entries in the scene recap prompt to provide context. Only new or changed information from lorebooks will be included.">
-                                        <input id="scene_recap_include_active_setting_lore" data-testid="scene-include-active-setting-lore" type="checkbox" />
-                                        <span>Include Active setting_lore Entries</span>
-                                    </label>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span>Scene Completion Preset</span></td>
-                                <td><select id="scene_recap_completion_preset" data-testid="scene-completion-preset" class="text_pole"></select></td>
-                            </tr>
-                            <tr>
-                                <td><span>Scene Recap Prefill</span></td>
-                                <td><input id="scene_recap_prefill" data-testid="scene-prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
-                            </tr>
                             <tr>
                                 <td><span>Include Message Types</span></td>
                                 <td>
@@ -551,35 +356,7 @@
                             <span>Show Navbar Version Controls</span>
                         </label>
 
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="view_running_scene_recap" data-testid="running-view" class="menu_button flex2" title="View/edit the current running scene recap"><span>View Running Recap</span></button>
-                            <button id="edit_running_scene_recap_prompt" data-testid="running-edit-prompt" class="menu_button flex1" title="Edit the running scene recap prompt"><span>Edit Running Recap Prompt</span></button>
-                        </div>
-                        <input id="running_scene_recap_prompt" data-testid="running-prompt" type="hidden" />
-
-                        <table>
-                            <tr>
-                                <td><span>Running Recap Connection Profile</span></td>
-                                <td><select id="running_scene_recap_connection_profile" data-testid="running-connection-profile" class="text_pole"></select></td>
-                            </tr>
-                            <tr>
-                                <td></td>
-                                <td>
-                                    <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                        <input id="running_scene_recap_include_preset_prompts" data-testid="running-include-preset-prompts" type="checkbox" />
-                                        <span>Include Preset Prompts</span>
-                                    </label>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span>Running Recap Completion Preset</span></td>
-                                <td><select id="running_scene_recap_completion_preset" data-testid="running-completion-preset" class="text_pole"></select></td>
-                            </tr>
-                            <tr>
-                                <td><span>Running Recap Prefill</span></td>
-                                <td><input id="running_scene_recap_prefill" data-testid="running-prefill" class="text_pole" type="text" placeholder="Start reply with..."></td>
-                            </tr>
-                        </table>
+                        <button id="view_running_scene_recap" data-testid="running-view" class="menu_button" title="View/edit the current running scene recap"><span>View Running Recap</span></button>
 
                         <label title="Where to inject the running scene recap.">
                             <select id="running_scene_recap_position" data-testid="running-position" class="text_pole">
@@ -653,56 +430,6 @@
                             <input id="auto_scene_break_minimum_scene_length" data-testid="auto-scene-min-length" class="text_pole" type="number" min="1" max="50" step="1" value="4" />
                         </label>
                         <small style="display:block; margin-bottom:0.5em;">Counts only messages matching the selected message type filter above.</small>
-
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_auto_scene_break_prompt" data-testid="auto-scene-edit-prompt" class="menu_button flex1" title="Edit the auto scene break detection prompt"><span>Edit Detection Prompt</span></button>
-                        </div>
-
-                        <input id="auto_scene_break_prompt" data-testid="auto-scene-prompt" type="hidden" />
-
-                        <table>
-                            <tr title="The connection profile to use for scene break detection. Leave empty to use current profile.">
-                                <td><span>Detection Connection Profile</span></td>
-                                <td><select id="auto_scene_break_connection_profile" data-testid="auto-scene-connection-profile" class="text_pole"></select></td>
-                            </tr>
-                            <tr>
-                                <td></td>
-                                <td>
-                                    <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                        <input id="auto_scene_break_include_preset_prompts" data-testid="auto-scene-include-preset-prompts" type="checkbox" />
-                                        <span>Include Preset Prompts</span>
-                                    </label>
-                                </td>
-                            </tr>
-                            <tr title="The completion preset to use for scene break detection. Leave empty to use current preset.">
-                                <td><span>Detection Completion Preset</span></td>
-                                <td><select id="auto_scene_break_completion_preset" data-testid="auto-scene-completion-preset" class="text_pole"></select></td>
-                            </tr>
-                            <tr title="Start the detection with this prefilled text to enforce true/false output.">
-                                <td><span>Detection Prefill</span></td>
-                                <td><input id="auto_scene_break_prefill" data-testid="auto-scene-prefill" class="text_pole" type="text" placeholder=""></td>
-                            </tr>
-                        </table>
-
-                        <!-- Context Limit Force Break Settings -->
-                        <hr style="margin-top: 1em; margin-bottom: 0.5em;">
-                        <div style="margin-bottom: 0.5em;">
-                            <h5 style="margin-top: 0.5em; margin-bottom: 0.5em;">Context Limit Force Break Settings <i class="fa-solid fa-info-circle" title="Alternative prompt/prefill used when range reduction forces a scene break selection due to token limits."></i></h5>
-                            <small style="display:block; margin-bottom:0.5em;">When scene detection hits token limits and reduces the message range, these alternative settings are used instead of the regular detection prompt/prefill. Leave empty to use regular detection settings.</small>
-                        </div>
-
-                        <div class="flex-container justifyspacebetween alignitemscenter">
-                            <button id="edit_auto_scene_break_forced_prompt" data-testid="auto-scene-edit-forced-prompt" class="menu_button flex1" title="Edit the forced scene break detection prompt (used when range is reduced due to context limits)"><span>Edit Forced Detection Prompt</span></button>
-                        </div>
-
-                        <input id="auto_scene_break_forced_prompt" data-testid="auto-scene-forced-prompt" type="hidden" />
-
-                        <table>
-                            <tr title="Prefill used when context limits force a scene break selection. Leave empty to use regular detection prefill.">
-                                <td><span>Forced Detection Prefill</span></td>
-                                <td><input id="auto_scene_break_forced_prefill" data-testid="auto-scene-forced-prefill" class="text_pole" type="text" placeholder="(use regular detection prefill)"></td>
-                            </tr>
-                        </table>
                     </div>
                 </div>
 
@@ -726,33 +453,12 @@
                     <input id="scene_recap_error_detection_enabled" data-testid="validation-scene-enabled" type="checkbox" />
                     <span>Validate Scene Recaps</span>
                 </label>
-                <div class="flex-container justifyspacebetween alignitemscenter">
-                    <button id="edit_scene_recap_error_detection_prompt" data-testid="validation-scene-edit-prompt" class="menu_button flex1 error_detection_setting" title="Edit the validation prompt for scene recaps"><span>Edit Scene Recap Validation Prompt</span></button>
-                </div>
                 <table class="scene_error_detection_container">
-                    <tr>
-                        <td></td>
-                        <td>
-                            <label class="checkbox_label scene_error_detection_setting" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                <input id="scene_recap_error_detection_include_preset_prompts" data-testid="validation-scene-include-preset-prompts" type="checkbox" class="scene_error_detection_setting" />
-                                <span>Include Preset Prompts</span>
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><span>Scene Recap Validation Preset</span></td>
-                        <td><select id="scene_recap_error_detection_preset" data-testid="validation-scene-preset" class="text_pole scene_error_detection_setting"></select></td>
-                    </tr>
-                    <tr>
-                        <td><span>Scene Recap Validation Prefill</span></td>
-                        <td><input id="scene_recap_error_detection_prefill" data-testid="validation-scene-prefill" class="text_pole scene_error_detection_setting" type="text" placeholder="Start reply with..."></td>
-                    </tr>
                     <tr>
                         <td><span>Scene Recap Max Retry Attempts</span></td>
                         <td><input id="scene_recap_error_detection_retries" data-testid="validation-scene-retries" class="text_pole scene_error_detection_setting" type="number" min="1" max="10" value="3"></td>
                     </tr>
                 </table>
-                <input id="scene_recap_error_detection_prompt" data-testid="validation-scene-prompt" type="hidden" />
                     </div>
                 </div>
 
@@ -793,6 +499,18 @@
                             <input id="use_global_toggle_state" data-testid="misc-global-toggle" type="checkbox" />
                             <span>Use Global Toggle State</span>
                         </label>
+
+                        <hr>
+
+                        <label title="Correction factor for tokenizer discrepancies between SillyTavern and actual LLM providers. Values >1.0 increase estimates (for undercounting), values <1.0 decrease estimates (for overcounting). Claude models typically need 1.35 (35% undercount). OpenAI models use 1.0 (accurate).">
+                            <input id="tokenizer_correction_factor" data-testid="token-correction-factor" class="text_pole widthUnset inline_setting" type="number" min="0.5" max="2.0" step="0.05" />
+                            <span>Tokenizer Correction Factor</span>
+                        </label>
+
+                        <div class="note-block">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span>SillyTavern uses tokenizer approximations that may not match the provider's actual tokenizer. This multiplier adjusts token estimates for more accurate budget calculations. <strong>Recommended values:</strong> Claude: <code>1.35</code> (ST undercounts by ~35%), OpenAI: <code>1.0</code> (tiktoken is accurate).</span>
+                        </div>
                     </div>
                 </div>
 
@@ -893,147 +611,6 @@
                             </div>
                         </div>
 
-                        <div class="inline-drawer margin-top-10px">
-                            <div class="inline-drawer-toggle inline-drawer-header">
-                                <div class="flex-container alignitemscenter margin0">
-                                    <span>Entry Merge Settings (When Processing Recaps)</span>
-                                </div>
-                                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                            </div>
-                            <div class="inline-drawer-content">
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-merge-connection">
-                                        <span>Connection Profile:</span>
-                                        <small class="displayBlock opacity50p">Which API to use for merging lorebook entries (empty = use main API)</small>
-                                    </label>
-                                    <select id="autolorebooks-recap-merge-connection" data-testid="lorebook-merge-connection" class="text_pole">
-                                        <option value="">Main API</option>
-                                    </select>
-                                </div>
-
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-merge-preset">
-                                        <span>Completion Preset:</span>
-                                        <small class="displayBlock opacity50p">Preset to use for merging entries (empty = use default)</small>
-                                    </label>
-                                    <select id="autolorebooks-recap-merge-preset" data-testid="lorebook-merge-preset" class="text_pole">
-                                        <option value="">Default</option>
-                                    </select>
-                                    <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                        <input id="auto_lorebooks_recap_merge_include_preset_prompts" data-testid="lorebook-merge-include-preset-prompts" type="checkbox" />
-                                        <span>Include Preset Prompts</span>
-                                    </label>
-                                </div>
-
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-merge-prefill">
-                                        <span>Prefill (Claude models):</span>
-                                        <small class="displayBlock opacity50p">Text to prefill AI response</small>
-                                    </label>
-                                    <input type="text" id="autolorebooks-recap-merge-prefill" data-testid="lorebook-merge-prefill" class="text_pole" placeholder="" />
-                                </div>
-
-                                <div class="margin-bot-10px">
-                                    <label>
-                                        <span>Lorebook entry merge prompt:</span>
-                                    </label>
-                                    <div class="flex-container justifyspacebetween alignitemscenter">
-                                        <button id="edit_autolorebooks_recap_merge_prompt" data-testid="lorebook-edit-merge-prompt" class="menu_button flex1" title="Edit the lorebook entry merge prompt"><span>Edit Merge Prompt</span></button>
-                                    </div>
-                                    <input id="autolorebooks-recap-merge-prompt" data-testid="lorebook-merge-prompt" type="hidden" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="inline-drawer margin-top-10px">
-                            <div class="inline-drawer-toggle inline-drawer-header">
-                                <div class="flex-container alignitemscenter margin0">
-                                    <span>Duplicate Detection Settings</span>
-                                </div>
-                                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                            </div>
-                            <div class="inline-drawer-content">
-                                <h5 class="margin-top-0">Stage 1 – Registry Lorebook Entry Lookup</h5>
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-lorebook-entry-lookup-connection">
-                                        <span>Connection Profile:</span>
-                                        <small class="displayBlock opacity50p">API profile to use when screening new entries (empty = use main API)</small>
-                                    </label>
-                                    <select id="autolorebooks-recap-lorebook-entry-lookup-connection" data-testid="lorebook-lookup-connection" class="text_pole">
-                                        <option value="">Main API</option>
-                                    </select>
-                                </div>
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-lorebook-entry-lookup-preset">
-                                        <span>Completion Preset:</span>
-                                        <small class="displayBlock opacity50p">Preset for triage calls (empty = use default)</small>
-                                    </label>
-                                    <select id="autolorebooks-recap-lorebook-entry-lookup-preset" data-testid="lorebook-lookup-preset" class="text_pole">
-                                        <option value="">Default</option>
-                                    </select>
-                                    <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                        <input id="auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts" data-testid="lorebook-lookup-include-preset-prompts" type="checkbox" />
-                                        <span>Include Preset Prompts</span>
-                                    </label>
-                                </div>
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-lorebook-entry-lookup-prefill">
-                                        <span>Prefill (Claude models):</span>
-                                        <small class="displayBlock opacity50p">Optional text to prefill AI responses during triage</small>
-                                    </label>
-                                    <input type="text" id="autolorebooks-recap-lorebook-entry-lookup-prefill" data-testid="lorebook-lookup-prefill" class="text_pole" placeholder="" />
-                                </div>
-                                <div class="margin-bot-10px">
-                                    <label>
-                                        <span>Lorebook Entry Lookup prompt:</span>
-                                    </label>
-                                    <div class="flex-container justifyspacebetween alignitemscenter">
-                                        <button id="edit_autolorebooks_recap_lorebook_entry_lookup_prompt" data-testid="lorebook-edit-lookup-prompt" class="menu_button flex1" title="Edit the lorebook entry lookup prompt"><span>Edit Lookup Prompt</span></button>
-                                    </div>
-                                    <input id="autolorebooks-recap-lorebook-entry-lookup-prompt" data-testid="lorebook-lookup-prompt" type="hidden" />
-                                </div>
-
-                                <h5>Stage 2 – Full LorebookEntryDeduplicate</h5>
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-entry-deduplicate-connection">
-                                        <span>Connection Profile:</span>
-                                        <small class="displayBlock opacity50p">API profile when comparing full entries (empty = use main API)</small>
-                                    </label>
-                                    <select id="autolorebooks-recap-entry-deduplicate-connection" data-testid="lorebook-dedupe-connection" class="text_pole">
-                                        <option value="">Main API</option>
-                                    </select>
-                                </div>
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-entry-deduplicate-preset">
-                                        <span>Completion Preset:</span>
-                                        <small class="displayBlock opacity50p">Preset for the follow-up comparison call (empty = use default)</small>
-                                    </label>
-                                    <select id="autolorebooks-recap-entry-deduplicate-preset" data-testid="lorebook-dedupe-preset" class="text_pole">
-                                        <option value="">Default</option>
-                                    </select>
-                                    <label class="checkbox_label" title="Include prompts from the completion preset (system prompts, jailbreak, etc.) before extension prompts">
-                                        <input id="auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts" data-testid="lorebook-dedupe-include-preset-prompts" type="checkbox" />
-                                        <span>Include Preset Prompts</span>
-                                    </label>
-                                </div>
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-recap-entry-deduplicate-prefill">
-                                        <span>Prefill (Claude models):</span>
-                                        <small class="displayBlock opacity50p">Optional text to prefill the comparison response</small>
-                                    </label>
-                                    <input type="text" id="autolorebooks-recap-entry-deduplicate-prefill" data-testid="lorebook-dedupe-prefill" class="text_pole" placeholder="" />
-                                </div>
-                                <div class="margin-bot-10px">
-                                    <label>
-                                        <span>LorebookEntryDeduplicate prompt:</span>
-                                    </label>
-                                    <div class="flex-container justifyspacebetween alignitemscenter">
-                                        <button id="edit_autolorebooks_recap_entry_deduplicate_prompt" data-testid="lorebook-edit-dedupe-prompt" class="menu_button flex1" title="Edit the lorebook entry deduplicate prompt"><span>Edit Dedupe Prompt</span></button>
-                                    </div>
-                                    <input id="autolorebooks-recap-entry-deduplicate-prompt" data-testid="lorebook-dedupe-prompt" type="hidden" />
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -1109,10 +686,12 @@
             <!-- Completion Preset -->
             <div class="auto_recap_form_group">
                 <label for="auto_recap_artifact_editor_preset">
-                    <span>Completion Preset Name:</span>
+                    <span>Completion Preset:</span>
                     <small class="displayBlock opacity50p">Temperature/top_p settings (empty = use default)</small>
                 </label>
-                <input id="auto_recap_artifact_editor_preset" data-testid="artifact-editor-preset" type="text" class="text_pole" placeholder="e.g., Creative" />
+                <select id="auto_recap_artifact_editor_preset" data-testid="artifact-editor-preset" class="text_pole">
+                    <option value="">Use Default Preset</option>
+                </select>
             </div>
 
             <!-- Include Preset Prompts -->
@@ -1123,7 +702,63 @@
                 </label>
             </div>
 
-            <hr>
+            <!-- Forced Detection Settings Section (only for auto_scene_break) -->
+            <div id="auto_recap_artifact_editor_forced_section" data-testid="artifact-editor-forced-section" style="display: none;">
+                <hr>
+
+                <!-- Forced Detection Settings -->
+                <h4 style="margin: 15px 0 10px 0;">
+                    <i class="fa-solid fa-bolt"></i> Forced Detection Settings
+                    <i class="fa-solid fa-info-circle opacity50p" style="font-size: 0.85em; margin-left: 5px;" title="Used when context limits require a scene break to be selected (forceSelection=true)."></i>
+                </h4>
+
+            <!-- Forced Detection Prompt -->
+            <div class="auto_recap_form_group">
+                <label for="auto_recap_artifact_editor_forced_prompt">
+                    <span>Forced Detection Prompt:</span>
+                </label>
+                <textarea id="auto_recap_artifact_editor_forced_prompt" data-testid="artifact-editor-forced-prompt" class="text_pole" rows="8"></textarea>
+            </div>
+
+            <!-- Forced Detection Prefill -->
+            <div class="auto_recap_form_group">
+                <label for="auto_recap_artifact_editor_forced_prefill">
+                    <span>Forced Detection Prefill:</span>
+                </label>
+                <input id="auto_recap_artifact_editor_forced_prefill" data-testid="artifact-editor-forced-prefill" type="text" class="text_pole" />
+            </div>
+
+            <!-- Forced Detection Connection Profile -->
+            <div class="auto_recap_form_group">
+                <label for="auto_recap_artifact_editor_forced_connection">
+                    <span>Forced Detection Connection Profile:</span>
+                </label>
+                <select id="auto_recap_artifact_editor_forced_connection" data-testid="artifact-editor-forced-connection" class="text_pole">
+                    <option value=""></option>
+                </select>
+            </div>
+
+            <!-- Forced Detection Completion Preset -->
+            <div class="auto_recap_form_group">
+                <label for="auto_recap_artifact_editor_forced_preset">
+                    <span>Forced Detection Completion Preset:</span>
+                </label>
+                <select id="auto_recap_artifact_editor_forced_preset" data-testid="artifact-editor-forced-preset" class="text_pole">
+                    <option value=""></option>
+                </select>
+            </div>
+
+            <!-- Forced Detection Include Preset Prompts -->
+            <div class="auto_recap_form_group">
+                <label class="checkbox_label">
+                    <input id="auto_recap_artifact_editor_forced_include_flag" data-testid="artifact-editor-forced-include-flag" type="checkbox" />
+                    <span>Forced Detection: Include Preset Prompts</span>
+                </label>
+            </div>
+
+                <hr>
+            </div>
+            <!-- End Forced Detection Settings Section -->
 
             <!-- Auto-save Warning -->
             <div class="note-block">

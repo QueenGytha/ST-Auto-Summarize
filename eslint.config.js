@@ -47,6 +47,7 @@ export default [
       clearInterval: 'readonly',
       confirm: 'readonly',
       URL: 'readonly',
+      Blob: 'readonly',
       structuredClone: 'readonly',
 
       // jQuery

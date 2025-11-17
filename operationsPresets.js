@@ -1,0 +1,338 @@
+
+import { get_settings, set_settings, log, SUBSYSTEM, saveSettingsDebounced } from './index.js';
+
+const ERROR_PRESET_NAME_REQUIRED = 'Preset name is required and must be a string';
+
+const OPERATION_TYPES = [
+  'scene_recap',
+  'scene_recap_error_detection',
+  'auto_scene_break',
+  'running_scene_recap',
+  'auto_lorebooks_recap_merge',
+  'auto_lorebooks_recap_lorebook_entry_lookup',
+  'auto_lorebooks_recap_lorebook_entry_deduplicate',
+  'auto_lorebooks_bulk_populate'
+];
+
+export function createPreset(presetName, description = null) {
+  if (!presetName || typeof presetName !== 'string') {
+    throw new Error(ERROR_PRESET_NAME_REQUIRED);
+  }
+
+  const presets = get_settings('operations_presets') || {};
+
+  if (presets[presetName]) {
+    throw new Error(`Preset already exists: ${presetName}`);
+  }
+
+  const operations = {};
+  for (const operationType of OPERATION_TYPES) {
+    operations[operationType] = 'Default';
+  }
+
+  const newPreset = {
+    name: presetName,
+    isDefault: false,
+    operations: operations,
+    createdAt: Date.now(),
+    modifiedAt: Date.now(),
+    description: description
+  };
+
+  presets[presetName] = newPreset;
+  set_settings('operations_presets', presets);
+  saveSettingsDebounced();
+
+  log(SUBSYSTEM.CORE, `Created preset: "${presetName}"`);
+  return newPreset;
+}
+
+export function updatePreset(presetName, updates) {
+  if (!presetName || typeof presetName !== 'string') {
+    throw new Error(ERROR_PRESET_NAME_REQUIRED);
+  }
+
+  const presets = get_settings('operations_presets') || {};
+  const preset = presets[presetName];
+
+  if (!preset) {
+    throw new Error(`Preset not found: ${presetName}`);
+  }
+
+  if (updates.operations) {
+    for (const [operationType, artifactName] of Object.entries(updates.operations)) {
+      if (!OPERATION_TYPES.includes(operationType)) {
+        throw new Error(`Invalid operation type: ${operationType}`);
+      }
+      preset.operations[operationType] = artifactName;
+    }
+  }
+
+  if (updates.description !== undefined) {
+    preset.description = updates.description;
+  }
+
+  preset.modifiedAt = Date.now();
+
+  presets[presetName] = preset;
+  set_settings('operations_presets', presets);
+  saveSettingsDebounced();
+
+  log(SUBSYSTEM.CORE, `Updated preset: "${presetName}"`);
+  return preset;
+}
+
+export function deletePreset(presetName) {
+  if (!presetName || typeof presetName !== 'string') {
+    throw new Error(ERROR_PRESET_NAME_REQUIRED);
+  }
+
+  const presets = get_settings('operations_presets') || {};
+  const preset = presets[presetName];
+
+  if (!preset) {
+    throw new Error(`Preset not found: ${presetName}`);
+  }
+
+  if (preset.isDefault) {
+    throw new Error('Cannot delete Default preset');
+  }
+
+  delete presets[presetName];
+  set_settings('operations_presets', presets);
+
+  const characterStickies = get_settings('character_sticky_presets') || {};
+  for (const [charKey, stickyPreset] of Object.entries(characterStickies)) {
+    if (stickyPreset === presetName) {
+      delete characterStickies[charKey];
+    }
+  }
+  set_settings('character_sticky_presets', characterStickies);
+
+  const chatStickies = get_settings('chat_sticky_presets') || {};
+  for (const [chatId, stickyPreset] of Object.entries(chatStickies)) {
+    if (stickyPreset === presetName) {
+      delete chatStickies[chatId];
+    }
+  }
+  set_settings('chat_sticky_presets', chatStickies);
+
+  const profiles = get_settings('profiles') || {};
+  for (const profile of Object.values(profiles)) {
+    if (profile.active_operations_preset === presetName) {
+      profile.active_operations_preset = 'Default';
+    }
+  }
+  set_settings('profiles', profiles);
+
+  saveSettingsDebounced();
+
+  log(SUBSYSTEM.CORE, `Deleted preset: "${presetName}"`);
+  return true;
+}
+
+export function getPreset(presetName) {
+  if (!presetName || typeof presetName !== 'string') {
+    throw new Error(ERROR_PRESET_NAME_REQUIRED);
+  }
+
+  const presets = get_settings('operations_presets') || {};
+  return presets[presetName] || null;
+}
+
+export function listPresets() {
+  const presets = get_settings('operations_presets') || {};
+  return Object.values(presets);
+}
+
+export function duplicatePreset(presetName, newName) {
+  if (!presetName || typeof presetName !== 'string') {
+    throw new Error(ERROR_PRESET_NAME_REQUIRED);
+  }
+  if (!newName || typeof newName !== 'string') {
+    throw new Error('New name is required and must be a string');
+  }
+
+  const presets = get_settings('operations_presets') || {};
+  const sourcePreset = presets[presetName];
+
+  if (!sourcePreset) {
+    throw new Error(`Preset not found: ${presetName}`);
+  }
+
+  if (presets[newName]) {
+    throw new Error(`Preset already exists: ${newName}`);
+  }
+
+  const duplicatedPreset = {
+    name: newName,
+    isDefault: false,
+    operations: { ...sourcePreset.operations },
+    createdAt: Date.now(),
+    modifiedAt: Date.now(),
+    description: sourcePreset.description
+  };
+
+  presets[newName] = duplicatedPreset;
+  set_settings('operations_presets', presets);
+  saveSettingsDebounced();
+
+  log(SUBSYSTEM.CORE, `Duplicated preset "${presetName}" → "${newName}"`);
+  return duplicatedPreset;
+}
+
+export function renamePreset(oldName, newName) {
+  if (!oldName || typeof oldName !== 'string') {
+    throw new Error('Old name is required and must be a string');
+  }
+  if (!newName || typeof newName !== 'string') {
+    throw new Error('New name is required and must be a string');
+  }
+
+  const presets = get_settings('operations_presets') || {};
+  const preset = presets[oldName];
+
+  if (!preset) {
+    throw new Error(`Preset not found: ${oldName}`);
+  }
+
+  if (preset.isDefault) {
+    throw new Error('Cannot rename Default preset');
+  }
+
+  if (presets[newName]) {
+    throw new Error(`Preset already exists: ${newName}`);
+  }
+
+  preset.name = newName;
+  preset.modifiedAt = Date.now();
+
+  presets[newName] = preset;
+  delete presets[oldName];
+  set_settings('operations_presets', presets);
+
+  const characterStickies = get_settings('character_sticky_presets') || {};
+  for (const [charKey, stickyPreset] of Object.entries(characterStickies)) {
+    if (stickyPreset === oldName) {
+      characterStickies[charKey] = newName;
+    }
+  }
+  set_settings('character_sticky_presets', characterStickies);
+
+  const chatStickies = get_settings('chat_sticky_presets') || {};
+  for (const [chatId, stickyPreset] of Object.entries(chatStickies)) {
+    if (stickyPreset === oldName) {
+      chatStickies[chatId] = newName;
+    }
+  }
+  set_settings('chat_sticky_presets', chatStickies);
+
+  const profiles = get_settings('profiles') || {};
+  for (const profile of Object.values(profiles)) {
+    if (profile.active_operations_preset === oldName) {
+      profile.active_operations_preset = newName;
+    }
+  }
+  set_settings('profiles', profiles);
+
+  saveSettingsDebounced();
+
+  log(SUBSYSTEM.CORE, `Renamed preset "${oldName}" → "${newName}"`);
+  return preset;
+}
+
+export function setCharacterStickyPreset(characterKey, presetName) {
+  if (!characterKey || typeof characterKey !== 'string') {
+    throw new Error('Character key is required and must be a string');
+  }
+  if (!presetName || typeof presetName !== 'string') {
+    throw new Error(ERROR_PRESET_NAME_REQUIRED);
+  }
+
+  const presets = get_settings('operations_presets') || {};
+  if (!presets[presetName]) {
+    throw new Error(`Preset not found: ${presetName}`);
+  }
+
+  const characterStickies = get_settings('character_sticky_presets') || {};
+  characterStickies[characterKey] = presetName;
+  set_settings('character_sticky_presets', characterStickies);
+  saveSettingsDebounced();
+
+  log(SUBSYSTEM.CORE, `Set character sticky preset: "${characterKey}" → "${presetName}"`);
+  return true;
+}
+
+export function getCharacterStickyPreset(characterKey) {
+  if (!characterKey || typeof characterKey !== 'string') {
+    throw new Error('Character key is required and must be a string');
+  }
+
+  const characterStickies = get_settings('character_sticky_presets') || {};
+  return characterStickies[characterKey] || null;
+}
+
+export function setChatStickyPreset(chatId, presetName) {
+  if (!chatId || typeof chatId !== 'string') {
+    throw new Error('Chat ID is required and must be a string');
+  }
+  if (!presetName || typeof presetName !== 'string') {
+    throw new Error(ERROR_PRESET_NAME_REQUIRED);
+  }
+
+  const presets = get_settings('operations_presets') || {};
+  if (!presets[presetName]) {
+    throw new Error(`Preset not found: ${presetName}`);
+  }
+
+  const chatStickies = get_settings('chat_sticky_presets') || {};
+  chatStickies[chatId] = presetName;
+  set_settings('chat_sticky_presets', chatStickies);
+  saveSettingsDebounced();
+
+  log(SUBSYSTEM.CORE, `Set chat sticky preset: "${chatId}" → "${presetName}"`);
+  return true;
+}
+
+export function getChatStickyPreset(chatId) {
+  if (!chatId || typeof chatId !== 'string') {
+    throw new Error('Chat ID is required and must be a string');
+  }
+
+  const chatStickies = get_settings('chat_sticky_presets') || {};
+  return chatStickies[chatId] || null;
+}
+
+export function clearCharacterSticky(characterKey) {
+  if (!characterKey || typeof characterKey !== 'string') {
+    throw new Error('Character key is required and must be a string');
+  }
+
+  const characterStickies = get_settings('character_sticky_presets') || {};
+  if (characterStickies[characterKey]) {
+    delete characterStickies[characterKey];
+    set_settings('character_sticky_presets', characterStickies);
+    saveSettingsDebounced();
+    log(SUBSYSTEM.CORE, `Cleared character sticky preset for: "${characterKey}"`);
+    return true;
+  }
+
+  return false;
+}
+
+export function clearChatSticky(chatId) {
+  if (!chatId || typeof chatId !== 'string') {
+    throw new Error('Chat ID is required and must be a string');
+  }
+
+  const chatStickies = get_settings('chat_sticky_presets') || {};
+  if (chatStickies[chatId]) {
+    delete chatStickies[chatId];
+    set_settings('chat_sticky_presets', chatStickies);
+    saveSettingsDebounced();
+    log(SUBSYSTEM.CORE, `Cleared chat sticky preset for: "${chatId}"`);
+    return true;
+  }
+
+  return false;
+}

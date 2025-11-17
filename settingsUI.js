@@ -18,7 +18,6 @@ import {
   toggle_chat_enabled,
   refresh_settings,
   refresh_memory,
-  get_user_setting_text_input,
   bind_setting,
   bind_function,
   reset_settings,
@@ -45,7 +44,6 @@ import {
 } from './constants.js';
 
 // UI initialization
-// eslint-disable-next-line max-lines-per-function -- Sequential UI bindings for 50+ settings controls (226 lines is acceptable for initialization)
 async function initialize_settings_listeners() {
   log("Initializing settings listeners");
 
@@ -109,8 +107,6 @@ async function initialize_settings_listeners() {
   });
   bind_setting(selectorsExtension.scene.defaultCollapsed, 'scene_recap_default_collapsed', 'boolean');
   bind_setting(selectorsExtension.scene.nameAppendRange, 'scene_name_append_range', 'boolean');
-  bind_setting(selectorsExtension.scene.prompt, 'scene_recap_prompt', 'text');
-  bind_setting(selectorsExtension.scene.prefill, 'scene_recap_prefill', 'text');
   bind_setting(selectorsExtension.scene.messageTypes, 'scene_recap_message_types', 'text');
 
   // Persist and display scene_recap_history_count
@@ -132,42 +128,9 @@ async function initialize_settings_listeners() {
 
   // --- Scene Recap Validation Settings ---
   bind_setting(selectorsExtension.validation.sceneEnabled, 'scene_recap_error_detection_enabled', 'boolean');
-  bind_setting(selectorsExtension.validation.scenePreset, 'scene_recap_error_detection_preset', 'text');
-  bind_setting(selectorsExtension.validation.sceneIncludePresetPrompts, 'scene_recap_error_detection_include_preset_prompts', 'boolean');
-  bind_setting(selectorsExtension.validation.scenePrefill, 'scene_recap_error_detection_prefill', 'text');
   bind_setting(selectorsExtension.validation.sceneRetries, 'scene_recap_error_detection_retries', 'number');
-  bind_setting(selectorsExtension.validation.scenePrompt, 'scene_recap_error_detection_prompt', 'text');
 
-  bind_function(selectorsExtension.validation.sceneEditPrompt, async () => {
-    const description = `
-Configure the prompt used to verify that scene recaps meet your criteria.
-The prompt should return "VALID" for acceptable recaps and "INVALID" for unacceptable ones.
-
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{recap}}:</b> The generated scene recap to validate.</li>
-</ul>`;
-    await get_user_setting_text_input('scene_recap_error_detection_prompt', 'Edit Scene Recap Error Detection Prompt', description);
-  });
-  bind_function(selectorsExtension.scene.editPrompt, async () => {
-    const description = `
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{message}}:</b> The scene content to recap.</li>
-    <li><b>{{history}}:</b> The message history as configured by the "Scene Message History Mode" setting.</li>
-    <li><b>{{words}}:</b> The token limit as defined by the chosen completion preset.</li>
-    <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
-    <li><b>{{active_setting_lore}}:</b> Active setting_lore entries at the time of the scene summary (if enabled in settings).</li>
-</ul>
-`;
-    await get_user_setting_text_input('scene_recap_prompt', 'Edit Scene Recap Prompt', description);
-  });
-
-  // Scene recap preset and connection profile
-  bind_setting(selectorsExtension.scene.completionPreset, 'scene_recap_completion_preset', 'text');
-  bind_setting(selectorsExtension.scene.includePresetPrompts, 'scene_recap_include_preset_prompts', 'boolean');
   bind_setting(selectorsExtension.scene.includeActiveSettingLore, 'scene_recap_include_active_setting_lore', 'boolean');
-  bind_setting(selectorsExtension.scene.connectionProfile, 'scene_recap_connection_profile', 'text');
 
   // --- Running Scene Recap Settings ---
   bind_setting(selectorsExtension.running.autoGenerate, 'running_scene_recap_auto_generate', 'boolean');
@@ -175,11 +138,6 @@ Available Macros:
     // Refresh navbar buttons visibility
     if (window.updateRunningSceneRecapNavbar) {window.updateRunningSceneRecapNavbar();}
   });
-  bind_setting(selectorsExtension.running.prompt, 'running_scene_recap_prompt', 'text');
-  bind_setting(selectorsExtension.running.prefill, 'running_scene_recap_prefill', 'text');
-  bind_setting(selectorsExtension.running.completionPreset, 'running_scene_recap_completion_preset', 'text');
-  bind_setting(selectorsExtension.running.includePresetPrompts, 'running_scene_recap_include_preset_prompts', 'boolean');
-  bind_setting(selectorsExtension.running.connectionProfile, 'running_scene_recap_connection_profile', 'text');
   bind_setting(selectorsExtension.running.position, 'running_scene_recap_position', 'number');
   bind_setting(selectorsExtension.running.depth, 'running_scene_recap_depth', 'number');
   bind_setting(selectorsExtension.running.role, 'running_scene_recap_role');
@@ -254,19 +212,6 @@ Available Macros:
     }
   });
 
-  // Edit running scene recap prompt button
-  bind_function(selectorsExtension.running.editPrompt, async () => {
-    const description = `
-Configure the prompt used to combine multiple scene recaps into a cohesive narrative memory.
-
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{current_running_recap}}:</b> The current running recap (if exists).</li>
-    <li><b>{{scene_recaps}}:</b> The individual scene recaps to merge.</li>
-</ul>`;
-    await get_user_setting_text_input('running_scene_recap_prompt', 'Edit Running Scene Recap Prompt', description);
-  });
-
   // --- Auto Scene Break Detection Settings ---
   bind_setting(selectorsExtension.autoScene.onLoad, 'auto_scene_break_on_load', 'boolean');
   bind_setting(selectorsExtension.autoScene.onMessage, 'auto_scene_break_on_new_message', 'boolean');
@@ -291,14 +236,6 @@ Available Macros:
     $autoSceneMinLengthDisplay.text(val);
   });
 
-  bind_setting(selectorsExtension.autoScene.prompt, 'auto_scene_break_prompt', 'text');
-  bind_setting(selectorsExtension.autoScene.prefill, 'auto_scene_break_prefill', 'text');
-  bind_setting(selectorsExtension.autoScene.forcedPrompt, 'auto_scene_break_forced_prompt', 'text');
-  bind_setting(selectorsExtension.autoScene.forcedPrefill, 'auto_scene_break_forced_prefill', 'text');
-  bind_setting(selectorsExtension.autoScene.connectionProfile, 'auto_scene_break_connection_profile', 'text');
-  bind_setting(selectorsExtension.autoScene.completionPreset, 'auto_scene_break_completion_preset', 'text');
-  bind_setting(selectorsExtension.autoScene.includePresetPrompts, 'auto_scene_break_include_preset_prompts', 'boolean');
-
   // Message offset with live display update
   const $autoSceneBreakOffset = $(selectorsExtension.autoScene.messageOffset);
   const $autoSceneBreakOffsetValue = $(selectorsExtension.autoScene.offsetDisplay);
@@ -315,34 +252,6 @@ Available Macros:
     save_profile(); // auto-save when changed
     $autoSceneBreakOffset.val(val);
     $autoSceneBreakOffsetValue.text(val);
-  });
-
-  // Edit prompt button
-  bind_function(selectorsExtension.autoScene.editPrompt, async () => {
-    const description = `
-Configure the prompt used to detect scene breaks automatically.
-The prompt should return "true" if the message is a scene break, or "false" if it is not.
-
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{message}}:</b> The message text to analyze for scene break detection.</li>
-</ul>`;
-    await get_user_setting_text_input('auto_scene_break_prompt', 'Edit Auto Scene Break Detection Prompt', description);
-  });
-
-  // Edit forced prompt button
-  bind_function(selectorsExtension.autoScene.editForcedPrompt, async () => {
-    const description = `
-Configure the alternative prompt used when context limits force a scene break selection (when range is reduced due to token limits).
-Leave empty to use the regular detection prompt.
-
-This prompt is used when the system has reduced the message range and needs to force a scene break selection.
-
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{message}}:</b> The message text to analyze for scene break detection.</li>
-</ul>`;
-    await get_user_setting_text_input('auto_scene_break_forced_prompt', 'Edit Forced Scene Break Detection Prompt', description);
   });
 
   // Initialize running scene recap navbar
@@ -415,124 +324,6 @@ function initialize_lorebooks_settings_listeners() {
     set_settings('auto_lorebooks_recap_skip_duplicates', value);
     save_profile();
   });
-
-  $(document).on('change', '#autolorebooks-recap-merge-connection', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_merge_connection_profile', value);
-    save_profile();
-  });
-
-  $(document).on('change', '#autolorebooks-recap-merge-preset', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_merge_completion_preset', value);
-    save_profile();
-  });
-
-  $(document).on('change', selectorsExtension.lorebook.mergeIncludePresetPrompts, function () {
-    const value = $(this).prop('checked');
-    set_settings('auto_lorebooks_recap_merge_include_preset_prompts', value);
-    save_profile();
-  });
-
-  $(document).on('input', '#autolorebooks-recap-merge-prefill', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_merge_prefill', value);
-    save_profile();
-  });
-
-  bind_setting('#autolorebooks-recap-merge-prompt', 'auto_lorebooks_recap_merge_prompt', 'text');
-  bind_function('#edit_autolorebooks_recap_merge_prompt', async () => {
-    const description = `
-Configure the prompt used to merge new recap information with existing lorebook entry content.
-
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{existing_content}}:</b> Current lorebook entry content.</li>
-    <li><b>{{new_content}}:</b> New information from recap to merge.</li>
-    <li><b>{{entry_name}}:</b> Name of the lorebook entry being updated.</li>
-</ul>`;
-    await get_user_setting_text_input('auto_lorebooks_recap_merge_prompt', 'Edit Lorebook Merge Prompt', description);
-  });
-
-  // Duplicate Detection – Stage 1: Registry Lorebook Entry Lookup
-  // Bind to correct IDs from settings.html to ensure selections persist
-  $(document).on('change', '#autolorebooks-recap-lorebook-entry-lookup-connection', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_lorebook_entry_lookup_connection_profile', value);
-    save_profile();
-  });
-
-  $(document).on('change', '#autolorebooks-recap-lorebook-entry-lookup-preset', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_lorebook_entry_lookup_completion_preset', value);
-    save_profile();
-  });
-
-  $(document).on('change', selectorsExtension.lorebook.lookupIncludePresetPrompts, function () {
-    const value = $(this).prop('checked');
-    set_settings('auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts', value);
-    save_profile();
-  });
-
-  $(document).on('input', '#autolorebooks-recap-lorebook-entry-lookup-prefill', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_lorebook_entry_lookup_prefill', value);
-    save_profile();
-  });
-
-  bind_setting('#autolorebooks-recap-lorebook-entry-lookup-prompt', 'auto_lorebooks_recap_lorebook_entry_lookup_prompt', 'text');
-  bind_function('#edit_autolorebooks_recap_lorebook_entry_lookup_prompt', async () => {
-    const description = `
-Configure the prompt used to look up potentially matching lorebook entries for duplicate detection.
-
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
-    <li><b>{{new_entry}}:</b> New entry to check for duplicates.</li>
-    <li><b>{{candidate_registry}}:</b> List of candidate entries to compare against.</li>
-</ul>`;
-    await get_user_setting_text_input('auto_lorebooks_recap_lorebook_entry_lookup_prompt', 'Edit Lorebook Lookup Prompt', description);
-  });
-
-  $(document).on('change', '#autolorebooks-recap-entry-deduplicate-connection', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_connection_profile', value);
-    save_profile();
-  });
-
-  $(document).on('change', '#autolorebooks-recap-entry-deduplicate-preset', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_completion_preset', value);
-    save_profile();
-  });
-
-  $(document).on('change', selectorsExtension.lorebook.dedupeIncludePresetPrompts, function () {
-    const value = $(this).prop('checked');
-    set_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts', value);
-    save_profile();
-  });
-
-  $(document).on('input', '#autolorebooks-recap-entry-deduplicate-prefill', function () {
-    const value = $(this).val();
-    set_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill', value);
-    save_profile();
-  });
-
-  bind_setting('#autolorebooks-recap-entry-deduplicate-prompt', 'auto_lorebooks_recap_lorebook_entry_deduplicate_prompt', 'text');
-  bind_function('#edit_autolorebooks_recap_entry_deduplicate_prompt', async () => {
-    const description = `
-Configure the prompt used to deduplicate entries by comparing full entry details.
-
-Available Macros:
-<ul style="text-align: left; font-size: smaller;">
-    <li><b>{{lorebook_entry_types}}:</b> Pipe-delimited list of enabled lorebook entry types.</li>
-    <li><b>{{new_entry}}:</b> New entry to check for duplicates.</li>
-    <li><b>{{triage_synopsis}}:</b> Synopsis from the lookup stage.</li>
-    <li><b>{{candidate_entries}}:</b> Full candidate entries for comparison.</li>
-</ul>`;
-    await get_user_setting_text_input('auto_lorebooks_recap_lorebook_entry_deduplicate_prompt', 'Edit Lorebook Dedupe Prompt', description);
-  });
-
 
   $(document).on('change', '#autolorebooks-entry-exclude-recursion', function () {
     const value = $(this).prop('checked');

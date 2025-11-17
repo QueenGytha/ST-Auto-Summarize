@@ -75,7 +75,8 @@ import {
   log,
   toast,
   SUBSYSTEM,
-  selectorsExtension } from
+  selectorsExtension,
+  resolveOperationConfig } from
 './index.js';
 import { saveMetadata } from '../../../../script.js';
 import { queueCombineSceneWithRunning } from './queueIntegration.js';
@@ -713,23 +714,27 @@ export function registerAllOperationHandlers() {
     debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] ⚙️ Starting for: ${entryData.comment || 'Unknown'}, entryId: ${entryId}`);
     debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Operation ID: ${operation.id}, Status: ${operation.status}`);
 
-    // Build settings from profile
+    // Build settings from resolved configs
+    const mergeConfig = resolveOperationConfig('auto_lorebooks_recap_merge');
+    const lookupConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_lookup');
+    const deduplicateConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_deduplicate');
+
     const settings = {
-      merge_connection_profile: get_settings('auto_lorebooks_recap_merge_connection_profile') || '',
-      merge_completion_preset: get_settings('auto_lorebooks_recap_merge_completion_preset') || '',
-      merge_prefill: get_settings('auto_lorebooks_recap_merge_prefill') || '',
-      merge_prompt: get_settings('auto_lorebooks_recap_merge_prompt') || '',
-      lorebook_entry_lookup_connection_profile: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_connection_profile') || '',
-      lorebook_entry_lookup_completion_preset: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_completion_preset') || '',
-      lorebook_entry_lookup_prefill: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prefill') || '',
-      lorebook_entry_lookup_prompt: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prompt') || '',
-      lorebook_entry_deduplicate_connection_profile: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_connection_profile') || '',
-      lorebook_entry_deduplicate_completion_preset: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_completion_preset') || '',
-      lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill') || '',
-      lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prompt') || '',
-      merge_include_preset_prompts: get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false,
-      lorebook_entry_lookup_include_preset_prompts: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts') ?? false,
-      lorebook_entry_deduplicate_include_preset_prompts: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts') ?? false,
+      merge_connection_profile: mergeConfig.connection_profile || '',
+      merge_completion_preset: mergeConfig.completion_preset_name || '',
+      merge_prefill: mergeConfig.prefill || '',
+      merge_prompt: mergeConfig.prompt || '',
+      lorebook_entry_lookup_connection_profile: lookupConfig.connection_profile || '',
+      lorebook_entry_lookup_completion_preset: lookupConfig.completion_preset_name || '',
+      lorebook_entry_lookup_prefill: lookupConfig.prefill || '',
+      lorebook_entry_lookup_prompt: lookupConfig.prompt || '',
+      lorebook_entry_deduplicate_connection_profile: deduplicateConfig.connection_profile || '',
+      lorebook_entry_deduplicate_completion_preset: deduplicateConfig.completion_preset_name || '',
+      lorebook_entry_deduplicate_prefill: deduplicateConfig.prefill || '',
+      lorebook_entry_deduplicate_prompt: deduplicateConfig.prompt || '',
+      merge_include_preset_prompts: mergeConfig.include_preset_prompts ?? false,
+      lorebook_entry_lookup_include_preset_prompts: lookupConfig.include_preset_prompts ?? false,
+      lorebook_entry_deduplicate_include_preset_prompts: deduplicateConfig.include_preset_prompts ?? false,
       skip_duplicates: get_settings('auto_lorebooks_recap_skip_duplicates') ?? true
     };
 
@@ -764,9 +769,6 @@ export function registerAllOperationHandlers() {
 
     if (needsResolution) {
       // Need lorebook entry deduplication - handles both uncertain matches AND multiple definite matches
-      const deduplicatePrefill = get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill') || '';
-      const deduplicateIncludePresetPrompts = get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts') ?? false;
-
       const nextOpId = await enqueueOperation(
         OperationType.RESOLVE_LOREBOOK_ENTRY,
         { entryId },
@@ -775,8 +777,8 @@ export function registerAllOperationHandlers() {
           queueVersion: operation.queueVersion,
           metadata: {
             entry_comment: entryData.comment,
-            hasPrefill: Boolean(deduplicatePrefill && deduplicatePrefill.trim().length > 0),
-            includePresetPrompts: deduplicateIncludePresetPrompts
+            hasPrefill: Boolean(deduplicateConfig.prefill && deduplicateConfig.prefill.trim().length > 0),
+            includePresetPrompts: deduplicateConfig.include_preset_prompts ?? false
           }
         }
       );
@@ -787,9 +789,6 @@ export function registerAllOperationHandlers() {
       setLorebookEntryDeduplicateResult(entryId, { resolvedUid, synopsis: lorebookEntryLookupResult.synopsis, duplicateUids: [] });
       markStageInProgress(entryId, 'lorebook_entry_deduplicate_complete');
 
-      const mergePrefill = get_settings('auto_lorebooks_recap_merge_prefill') || '';
-      const mergeIncludePresetPrompts = get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false;
-
       const nextOpId = await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
         { entryId, action: 'merge', resolvedUid },
@@ -798,8 +797,8 @@ export function registerAllOperationHandlers() {
           queueVersion: operation.queueVersion,
           metadata: {
             entry_comment: entryData.comment,
-            hasPrefill: Boolean(mergePrefill && mergePrefill.trim().length > 0),
-            includePresetPrompts: mergeIncludePresetPrompts
+            hasPrefill: Boolean(mergeConfig.prefill && mergeConfig.prefill.trim().length > 0),
+            includePresetPrompts: mergeConfig.include_preset_prompts ?? false
           }
         }
       );
@@ -840,23 +839,27 @@ export function registerAllOperationHandlers() {
 
     debug(SUBSYSTEM.QUEUE, `Executing RESOLVE_LOREBOOK_ENTRY for: ${entryData.comment || 'Unknown'}`);
 
-    // Build settings from profile
+    // Build settings from resolved configs
+    const mergeConfig = resolveOperationConfig('auto_lorebooks_recap_merge');
+    const lookupConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_lookup');
+    const deduplicateConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_deduplicate');
+
     const settings = {
-      merge_connection_profile: get_settings('auto_lorebooks_recap_merge_connection_profile') || '',
-      merge_completion_preset: get_settings('auto_lorebooks_recap_merge_completion_preset') || '',
-      merge_prefill: get_settings('auto_lorebooks_recap_merge_prefill') || '',
-      merge_prompt: get_settings('auto_lorebooks_recap_merge_prompt') || '',
-      lorebook_entry_lookup_connection_profile: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_connection_profile') || '',
-      lorebook_entry_lookup_completion_preset: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_completion_preset') || '',
-      lorebook_entry_lookup_prefill: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prefill') || '',
-      lorebook_entry_lookup_prompt: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prompt') || '',
-      lorebook_entry_deduplicate_connection_profile: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_connection_profile') || '',
-      lorebook_entry_deduplicate_completion_preset: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_completion_preset') || '',
-      lorebook_entry_deduplicate_prefill: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill') || '',
-      lorebook_entry_deduplicate_prompt: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prompt') || '',
-      merge_include_preset_prompts: get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false,
-      lorebook_entry_lookup_include_preset_prompts: get_settings('auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts') ?? false,
-      lorebook_entry_deduplicate_include_preset_prompts: get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts') ?? false,
+      merge_connection_profile: mergeConfig.connection_profile || '',
+      merge_completion_preset: mergeConfig.completion_preset_name || '',
+      merge_prefill: mergeConfig.prefill || '',
+      merge_prompt: mergeConfig.prompt || '',
+      lorebook_entry_lookup_connection_profile: lookupConfig.connection_profile || '',
+      lorebook_entry_lookup_completion_preset: lookupConfig.completion_preset_name || '',
+      lorebook_entry_lookup_prefill: lookupConfig.prefill || '',
+      lorebook_entry_lookup_prompt: lookupConfig.prompt || '',
+      lorebook_entry_deduplicate_connection_profile: deduplicateConfig.connection_profile || '',
+      lorebook_entry_deduplicate_completion_preset: deduplicateConfig.completion_preset_name || '',
+      lorebook_entry_deduplicate_prefill: deduplicateConfig.prefill || '',
+      lorebook_entry_deduplicate_prompt: deduplicateConfig.prompt || '',
+      merge_include_preset_prompts: mergeConfig.include_preset_prompts ?? false,
+      lorebook_entry_lookup_include_preset_prompts: lookupConfig.include_preset_prompts ?? false,
+      lorebook_entry_deduplicate_include_preset_prompts: deduplicateConfig.include_preset_prompts ?? false,
       skip_duplicates: get_settings('auto_lorebooks_recap_skip_duplicates') ?? true
     };
 
@@ -933,9 +936,6 @@ export function registerAllOperationHandlers() {
     // Enqueue next operation - capture settings at enqueue time
     if (lorebookEntryDeduplicateResult.resolvedUid) {
       // Match found - merge
-      const mergePrefill = get_settings('auto_lorebooks_recap_merge_prefill') || '';
-      const mergeIncludePresetPrompts = get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false;
-
       const nextOpId = await enqueueOperation(
         OperationType.CREATE_LOREBOOK_ENTRY,
         { entryId, action: 'merge', resolvedUid: lorebookEntryDeduplicateResult.resolvedUid },
@@ -944,8 +944,8 @@ export function registerAllOperationHandlers() {
           queueVersion: operation.queueVersion,
           metadata: {
             entry_comment: entryData.comment,
-            hasPrefill: Boolean(mergePrefill && mergePrefill.trim().length > 0),
-            includePresetPrompts: mergeIncludePresetPrompts
+            hasPrefill: Boolean(mergeConfig.prefill && mergeConfig.prefill.trim().length > 0),
+            includePresetPrompts: mergeConfig.include_preset_prompts ?? false
           }
         }
       );
@@ -1275,12 +1275,14 @@ export function registerAllOperationHandlers() {
 
     debug(SUBSYSTEM.QUEUE, `Executing POPULATE_REGISTRIES for ${entries.length} entries`);
 
+    const bulkPopulateConfig = resolveOperationConfig('auto_lorebooks_bulk_populate');
+
     const settings = {
-      bulk_populate_prompt: get_settings('auto_lorebooks_bulk_populate_prompt'),
-      bulk_populate_prefill: get_settings('auto_lorebooks_bulk_populate_prefill'),
-      bulk_populate_connection_profile: get_settings('auto_lorebooks_bulk_populate_connection_profile'),
-      bulk_populate_completion_preset: get_settings('auto_lorebooks_bulk_populate_completion_preset'),
-      bulk_populate_include_preset_prompts: get_settings('auto_lorebooks_bulk_populate_include_preset_prompts')
+      bulk_populate_prompt: bulkPopulateConfig.prompt,
+      bulk_populate_prefill: bulkPopulateConfig.prefill,
+      bulk_populate_connection_profile: bulkPopulateConfig.connection_profile,
+      bulk_populate_completion_preset: bulkPopulateConfig.completion_preset_name,
+      bulk_populate_include_preset_prompts: bulkPopulateConfig.include_preset_prompts
     };
 
     const typeList = getConfiguredEntityTypeDefinitions().

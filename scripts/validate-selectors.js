@@ -13,6 +13,9 @@
  * requiring all selectors to come from selectorsExtension.js or selectorsSillyTavern.js
  */
 
+/* eslint-disable no-console, unicorn/no-array-for-each, no-magic-numbers, sonarjs/no-extra-arguments, unicorn/prefer-optional-catch-binding, no-unused-vars -- Node.js validation script */
+/* global process -- Node.js global for exit codes */
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -44,8 +47,8 @@ const HARDCODED_PATTERNS = [
     examples: ["$('#myId')", "$('.myClass')", "$('[data-testid=\"foo\"]')"]
   },
   {
-    regex: /\$\s*\(\s*['"`][^'"`]*['"`]\s*\)/,
-    description: 'jQuery selector with string literal',
+    regex: /\$\s*\(\s*['"`](?!<)[^'"`]*['"`]\s*\)/,
+    description: 'jQuery selector with string literal (excluding element creation)',
     examples: ["$('#id')", "$('.class')"]
   },
 
