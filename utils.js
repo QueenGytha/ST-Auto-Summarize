@@ -486,10 +486,10 @@ function escapeControlCharactersInJsonStrings(jsonString) {
  *
  * @param {string} jsonString - Potentially malformed JSON string
  * @param {string} context - Context for logging (e.g., "scene break detection")
- * @returns {Promise<Object>} Parsed JSON object
+ * @returns {Object} Parsed JSON object
  * @throws {Error} If repair attempts fail
  */
-async function repairAndParseJson(jsonString, context = 'JSON repair') {
+function repairAndParseJson(jsonString, context = 'JSON repair') {
   let repaired = jsonString;
 
   // Layer 0: Escape literal control characters in string values
@@ -522,18 +522,7 @@ async function repairAndParseJson(jsonString, context = 'JSON repair') {
     debug(SUBSYSTEM.CORE, `[JSON Repair] Native parse failed in ${context}, trying advanced repairs`);
   }
 
-  // Layer 3: Advanced repair using jsonrepair library
-  try {
-    const { jsonrepair } = await import('jsonrepair');
-    const repairedJson = jsonrepair(repaired);
-    const parsed = JSON.parse(repairedJson);
-    debug(SUBSYSTEM.CORE, `[JSON Repair] Successfully repaired JSON using jsonrepair library in ${context}`);
-    return parsed;
-  } catch (repairErr) {
-    error(SUBSYSTEM.CORE, `[JSON Repair] jsonrepair library failed in ${context}:`, repairErr);
-  }
-
-  // Layer 4: Fallback manual repair techniques
+  // Layer 3: Advanced repair techniques
   try {
     // Remove trailing commas before } or ]
     repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
@@ -551,7 +540,7 @@ async function repairAndParseJson(jsonString, context = 'JSON repair') {
 
     // Try parsing again
     const parsed = JSON.parse(repaired);
-    debug(SUBSYSTEM.CORE, `[JSON Repair] Successfully repaired JSON using manual techniques in ${context}`);
+    debug(SUBSYSTEM.CORE, `[JSON Repair] Successfully repaired JSON using advanced techniques in ${context}`);
     return parsed;
   } catch (repairErr) {
     error(SUBSYSTEM.CORE, `[JSON Repair] All repair attempts failed in ${context}:`, repairErr);
@@ -616,10 +605,10 @@ function preprocessJsonString(jsonString, context) {
  * @param {Object} options - Optional validation and extraction options
  * @param {string[]} options.requiredFields - Array of field names that must exist in the parsed JSON
  * @param {string} options.context - Context string for error messages (e.g., "merge operation", "scene recap")
- * @returns {Promise<Object>} The parsed JSON object
+ * @returns {Object} The parsed JSON object
  * @throws {Error} If JSON cannot be extracted or parsed, or if required fields are missing
  */
-export async function extractJsonFromResponse(rawResponse, options = {}) {
+export function extractJsonFromResponse(rawResponse, options = {}) {
   const { requiredFields = [], context = 'AI response' } = options;
 
   // Handle both primitive strings and String objects (from llmClient token breakdown attachment)
@@ -637,7 +626,7 @@ export async function extractJsonFromResponse(rawResponse, options = {}) {
   // Parse JSON with comprehensive repair
   let parsed;
   try {
-    parsed = await repairAndParseJson(cleaned, context);
+    parsed = repairAndParseJson(cleaned, context);
   } catch (parseErr) {
     // repairAndParseJson already logged the error details
     error(SUBSYSTEM.CORE, `[JSON Extract] Attempted to parse:`, cleaned.slice(0, DEBUG_OUTPUT_MEDIUM_LENGTH));

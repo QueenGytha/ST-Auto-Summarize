@@ -337,7 +337,7 @@ async function generate_running_scene_recap(skipQueue  = false) {
 
     // Parse JSON response using centralized helper
     const { extractJsonFromResponse } = await import('./utils.js');
-    const parsed = await extractJsonFromResponse(result, {
+    const parsed = extractJsonFromResponse(result, {
       requiredFields: ['recap'],
       context: 'running scene recap generation'
     });
@@ -465,7 +465,7 @@ async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index
 
     // Parse JSON response using centralized helper
     const { extractJsonFromResponse } = await import('./utils.js');
-    const parsed = await extractJsonFromResponse(result, {
+    const parsed = extractJsonFromResponse(result, {
       requiredFields: ['recap'],
       context: 'running scene recap combine'
     });

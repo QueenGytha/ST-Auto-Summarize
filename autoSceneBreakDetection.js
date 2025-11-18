@@ -475,7 +475,7 @@ async function parseSceneBreakResponse(response, _startIndex, _endIndex, _filter
   // Try to parse as JSON first using centralized helper
   try {
     const { extractJsonFromResponse } = await import('./utils.js');
-    const parsed = await extractJsonFromResponse(response, {
+    const parsed = extractJsonFromResponse(response, {
       requiredFields: ['sceneBreakAt'],
       context: 'scene break detection'
     });
