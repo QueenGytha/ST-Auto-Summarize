@@ -1315,7 +1315,7 @@ async function loadRecapContext(config ) {
     enabled: get_settings('auto_lorebooks_enabled_by_default') ?? false
   };
 
-  const typeList = config.entityTypeDefs.map((def) => def.name).filter(Boolean).join('|') || 'character';
+  const typeList = config.entityTypeDefs || [];
 
   // Validate critical settings are loaded
   if (!recapSettings.lorebook_entry_lookup_prompt) {

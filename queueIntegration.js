@@ -211,7 +211,7 @@ async function prepareLorebookEntryLookupContext(entryData ) {
   const registryState = ensureRegistryState();
   const registryListing = buildRegistryListing(registryState);
   const entityTypeDefs = getConfiguredEntityTypeDefinitions(get_settings('autoLorebooks')?.entity_types);
-  const typeList = entityTypeDefs.map((def) => def.name).filter(Boolean).join('|') || 'character';
+  const typeList = entityTypeDefs;
 
   return { entryId, normalizedEntry, registryListing, typeList };
 }

@@ -1245,10 +1245,7 @@ export function registerAllOperationHandlers() {
       bulk_populate_include_preset_prompts: bulkPopulateConfig.include_preset_prompts
     };
 
-    const typeList = getConfiguredEntityTypeDefinitions().
-    map((def) => def.name).
-    filter(Boolean).
-    join('|');
+    const typeList = getConfiguredEntityTypeDefinitions();
 
     const result = await runBulkRegistryPopulation(entries, typeList, settings);
     const results = result?.results || result;
