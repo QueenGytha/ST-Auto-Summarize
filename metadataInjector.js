@@ -40,6 +40,7 @@ export async function isMetadataInjectionEnabled(operationType) {
   try {
     // Automatically detect if using first-hop proxy based on connection profile
     const enabled = await should_send_chat_details(operationType);
+    debug(SUBSYSTEM.CORE, `[Metadata] Injection enabled for "${operationType}": ${enabled}`);
     return enabled === true;
   } catch (err) {
     console.error('[Auto-Recap:Metadata] Error checking if enabled:', err);
@@ -102,9 +103,11 @@ export function createMetadataBlock(options  = {}) {
   try {
     const operationsPreset = resolveOperationsPreset();
     metadata.operations_preset = operationsPreset;
+    debug(SUBSYSTEM.CORE, `[Metadata] Operations preset: "${operationsPreset}"`);
 
     // If operationType is provided, include artifact information
     if (options?.operationType) {
+      debug(SUBSYSTEM.CORE, `[Metadata] Resolving artifact for operationType="${options.operationType}"`);
       const artifact = resolveOperationConfig(options.operationType);
 
       if (artifact) {
@@ -121,7 +124,13 @@ export function createMetadataBlock(options  = {}) {
           completion_preset: presetName,
           completion_preset_source: usingSTCurrentPreset ? 'ST Current' : 'artifact'
         };
+
+        debug(SUBSYSTEM.CORE, `[Metadata] Artifact: ${artifact.name} v${artifact.internalVersion}, profile: ${profileName}, preset: ${presetName}`);
+      } else {
+        debug(SUBSYSTEM.CORE, `[Metadata] No artifact found for operationType="${options.operationType}"`);
       }
+    } else {
+      debug(SUBSYSTEM.CORE, `[Metadata] No operationType provided in options, skipping artifact info`);
     }
   } catch (err) {
     debug(SUBSYSTEM.CORE, '[Metadata] Failed to include operations preset/artifact info:', err);

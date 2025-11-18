@@ -302,6 +302,8 @@ export async function calculateAndInjectTokenBreakdown(messages, operation, maxC
     }
   }
 
+  debug(SUBSYSTEM.CORE, `[TokenBreakdown] Injecting metadata for operation="${operation}", mapped operationType="${baseOperationType}"`);
+
   await injectMetadata(messagesWithMetadata, {
     operation,
     operationType: baseOperationType,
