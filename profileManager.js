@@ -111,7 +111,16 @@ function export_profile(profile  = null) {
 
   log("Exporting Configuration Profile: " + profile);
   const data = JSON.stringify(settings, null, JSON_INDENT_SPACES);
-  download(data, `${profile}.json`, 'application/json');
+
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${profile.replace(/[^a-z0-9]/gi, '_')}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  toast(`Exported profile: "${profile}"`, 'success');
 }
 async function import_profile(e ) {
   // e is a DOM event object - legitimate use of any
