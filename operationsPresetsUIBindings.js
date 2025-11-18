@@ -184,10 +184,10 @@ function bindPresetControls() {
 
     try {
       const jsonString = await file.text();
-      const presetName = importPreset(jsonString);
+      const presetName = await importPreset(jsonString);
       saveSettingsDebounced();
-      refreshPresetSelector();
-      $(selectorsExtension.operationsPresets.selector).val(presetName);
+      setUserSelectedPreset(presetName);
+      loadActivePreset();
       toast(`Imported preset: "${presetName}"`, 'success');
     } catch (err) {
       toast(`Failed to import preset: ${err.message}`, 'error');
