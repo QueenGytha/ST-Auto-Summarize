@@ -1383,7 +1383,7 @@ export async function generateSceneRecap(config) {
   const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data);
 
   // Generate recap with connection profile/preset switching
-  const operationConfig = resolveOperationConfig('scene_recap');
+  const operationConfig = await resolveOperationConfig('scene_recap');
   const profile_name = operationConfig.connection_profile || '';
   const preset_name = operationConfig.completion_preset_name;
   const include_preset_prompts = operationConfig.include_preset_prompts;

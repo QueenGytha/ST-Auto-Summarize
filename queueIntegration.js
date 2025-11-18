@@ -216,7 +216,7 @@ async function prepareLorebookEntryLookupContext(entryData ) {
   return { entryId, normalizedEntry, registryListing, typeList };
 }
 
-function enqueueLorebookEntryLookupOperation(
+async function enqueueLorebookEntryLookupOperation(
 context ,
 entryName ,
 messageIndex ,
@@ -224,7 +224,7 @@ recapHash ,
 options )
 {
   // Capture settings at enqueue time for tooltip display
-  const lookupConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_lookup');
+  const lookupConfig = await resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_lookup');
 
   return enqueueOperation(
     OperationType.LOREBOOK_ENTRY_LOOKUP,
