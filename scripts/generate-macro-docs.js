@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console, no-undef, no-await-in-loop, no-magic-numbers -- Node.js build script: uses console for CLI output, process for exit codes, sequential file reading, and string manipulation constants */
 
 import { readdir, readFile, writeFile } from 'fs/promises';
 import { dirname, join } from 'path';
@@ -15,7 +16,7 @@ async function extractMacroInfo(filePath) {
 
   // Extract name
   const nameMatch = content.match(/export const name = ['"]([^'"]+)['"]/);
-  if (!nameMatch) return null;
+  if (!nameMatch) {return null;}
   const name = nameMatch[1];
 
   // Extract build function signature
@@ -24,7 +25,7 @@ async function extractMacroInfo(filePath) {
 
   // Extract description object (multi-line aware, handle nested braces)
   const descMatch = content.match(/export const description = \{([\s\S]*?)\n\};/);
-  if (!descMatch) return { name, params, description: null };
+  if (!descMatch) {return { name, params, description: null };}
 
   const descContent = descMatch[1];
 
@@ -108,7 +109,7 @@ Each macro:
 
   // Write each category
   for (const [category, macroList] of Object.entries(categories)) {
-    if (macroList.length === 0) continue;
+    if (macroList.length === 0) {continue;}
 
     md += `\n## ${category} (${macroList.length} macros)\n\n`;
 
@@ -129,7 +130,7 @@ Each macro:
 
   for (const macro of macros) {
     const shortSource = macro.description.source.length > 50
-      ? macro.description.source.substring(0, 47) + '...'
+      ? macro.description.source.slice(0, 47) + '...'
       : macro.description.source;
     const usedBy = macro.description.usedBy.join(', ');
     md += `| \`${macro.name}\` | ${shortSource} | ${usedBy} |\n`;

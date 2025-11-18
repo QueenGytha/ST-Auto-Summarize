@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console, no-undef -- Node.js build script: console and process are required for CLI output and exit codes */
 
 import { readdir, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
