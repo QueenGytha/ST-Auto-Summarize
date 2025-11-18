@@ -1099,7 +1099,7 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
 
       // Extract and validate JSON using centralized helper
       const { extractJsonFromResponse } = await import('./utils.js');
-      const parsed = extractJsonFromResponse(rawResponse, {
+      const parsed = await extractJsonFromResponse(rawResponse, {
         requiredFields: ['recap'],
         context: 'scene recap generation'
       });

@@ -682,7 +682,7 @@ settings )
   let parsed;
   try {
     const { extractJsonFromResponse } = await import('./utils.js');
-    parsed = extractJsonFromResponse(response, {
+    parsed = await extractJsonFromResponse(response, {
       requiredFields: ['type'],
       context: 'lorebook entry lookup'
     });
@@ -763,7 +763,7 @@ async function parseLorebookEntryDeduplicateResponse(response , fallbackSynopsis
   let parsed;
   try {
     const { extractJsonFromResponse } = await import('./utils.js');
-    parsed = extractJsonFromResponse(response, {
+    parsed = await extractJsonFromResponse(response, {
       requiredFields: ['resolvedUid'],
       context: 'lorebook entry deduplication'
     });
@@ -883,7 +883,7 @@ export async function runBulkRegistryPopulation(entriesArray , typeList , settin
   let parsed;
   try {
     const { extractJsonFromResponse } = await import('./utils.js');
-    parsed = extractJsonFromResponse(response, {
+    parsed = await extractJsonFromResponse(response, {
       requiredFields: ['results'],
       context: 'bulk registry population'
     });
