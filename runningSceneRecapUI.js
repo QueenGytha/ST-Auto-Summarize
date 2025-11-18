@@ -144,7 +144,7 @@ function createRunningSceneRecapNavbar() {
             <div>
                 <h3>Edit Running Scene Recap</h3>
                 <p>Editing will create a new version.</p>
-                <textarea id="running_recap_edit_textarea" data-testid="running-edit-textarea" rows="20" style="width: 100%; height: 400px;">${current.content || ""}</textarea>
+                <textarea id="running_recap_edit_textarea" data-testid="running-edit-textarea" rows="20" style="width: 100%; height: 70vh;">${current.content || ""}</textarea>
             </div>
         `;
 
