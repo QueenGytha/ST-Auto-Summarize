@@ -68,3 +68,28 @@ export function getAllOperationProfiles() {
   }
   return profiles;
 }
+
+export function getConnectionProfileById(profileId) {
+  if (!profileId) {
+    return null;
+  }
+  const ctx = getContext();
+  return ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === profileId) || null;
+}
+
+export function getPresetManagerType(profileId) {
+  const profile = getConnectionProfileById(profileId);
+  if (!profile) {
+    return 'openai'; // default
+  }
+
+  // Map SillyTavern API types to preset manager types
+  // 'custom' API type uses OpenAI-compatible format, so use 'openai' preset manager
+  const apiType = profile.api;
+
+  if (apiType === 'custom') {
+    return 'openai';
+  }
+
+  return apiType || 'openai';
+}

@@ -39,8 +39,10 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
   }
 
   const { getPresetManager } = await import('../../../preset-manager.js');
-  const apiType = profile.api || 'openai';
-  const presetManager = getPresetManager(apiType);
+  const { getPresetManagerType } = await import('./profileResolution.js');
+  const presetManagerType = getPresetManagerType(profileId);
+  const apiType = presetManagerType; // For system prompt checks
+  const presetManager = getPresetManager(presetManagerType);
 
   let effectivePresetName;
   if (options.preset === '') {

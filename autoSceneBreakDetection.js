@@ -324,18 +324,11 @@ function calculateReductionAmount(checkWhich, chat, currentEndIndex) {
 
 async function calculateAvailableContext(preset, profile) {
   const { getPresetManager } = await import('../../../preset-manager.js');
+  const { getPresetManagerType } = await import('./profileResolution.js');
 
-  // Determine API type from connection profile
-  let apiType = 'openai'; // default
-  if (profile) {
-    const { getConnectionProfileById } = await import('./profileResolution.js');
-    const profileData = getConnectionProfileById(profile);
-    if (profileData?.api_type) {
-      apiType = profileData.api_type;
-    }
-  }
-
-  const presetManager = getPresetManager(apiType);
+  // Get correct preset manager type for this profile
+  const presetManagerType = getPresetManagerType(profile);
+  const presetManager = getPresetManager(presetManagerType);
 
   let effectivePresetName;
   if (preset === '') {
@@ -656,7 +649,7 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
   return tokens;
 }
 
-// eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Complex reduction algorithm with multiple phases and state management
+// eslint-disable-next-line sonarjs/cognitive-complexity -- Complex reduction algorithm with multiple phases and state management
 async function reduceMessagesUntilTokenFit(config) {
   const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false, profile, effectiveProfile } = config;
 
@@ -746,11 +739,15 @@ async function reduceMessagesUntilTokenFit(config) {
 
     if (maxAllowedTokens === null || tokenCount <= maxAllowedTokens) {
       if (reductionPhase === 'coarse' && lastReduction > 0) {
-        // We reduced and now we're under - switch to backtrack to add some back
-        reductionPhase = 'backtrack';
-        debug(SUBSYSTEM.OPERATIONS, `Under limit - switching to backtrack phase`);
+        // We reduced and now we're under - undo the last halving and switch to fine-tuning
+        const targetIndex = currentEndIndex + lastReduction;
+        const validCutoff = findValidCutoffIndex(chat, targetIndex, checkWhich, startIndex);
+        currentEndIndex = validCutoff;
+        reductionPhase = 'fine';
+        debug(SUBSYSTEM.OPERATIONS, `Under limit after coarse reduction - undoing last halving: adding back ${lastReduction} messages to index ${currentEndIndex}, switching to fine-tuning`);
+        // Continue loop to recalculate with backtracked range
       } else {
-        // Either first iteration (no reduction yet) or in backtrack/fine phase - try to send
+        // Fine phase or first iteration (no reduction yet) - under limit, send it
         const largerPromptType = sceneRecapTokens > sceneBreakTokens ? 'scene recap (with lorebooks)' : 'scene break detection';
         debug(SUBSYSTEM.OPERATIONS, `${largerPromptType}: ${tokenCount} tokens (including overhead), fits within limit per calculation`);
 
@@ -782,17 +779,11 @@ async function reduceMessagesUntilTokenFit(config) {
         lastReduction = currentEndIndex - validCutoff;
         currentEndIndex = validCutoff;
         debug(SUBSYSTEM.OPERATIONS, `Coarse reduction: halved range by ${lastReduction} messages to index ${currentEndIndex}`);
-      } else if (reductionPhase === 'backtrack') {
-        const backtrackAmount = Math.floor(lastReduction / 2);
-        const targetIndex = currentEndIndex + backtrackAmount;
-        const validCutoff = findValidCutoffIndex(chat, targetIndex, checkWhich, startIndex);
-        currentEndIndex = validCutoff;
-        reductionPhase = 'fine';
-        debug(SUBSYSTEM.OPERATIONS, `Backtrack: added back ${backtrackAmount} messages (adjusted to valid cutoff), switching to fine-tuning`);
       } else {
+        // Fine phase: reduce by 1 or 2 messages depending on checkWhich setting
         const reductionAmount = calculateReductionAmount(checkWhich, chat, currentEndIndex);
         currentEndIndex -= reductionAmount;
-        debug(SUBSYSTEM.OPERATIONS, `Fine reduction: reduced by ${reductionAmount} messages`);
+        debug(SUBSYSTEM.OPERATIONS, `Fine reduction: reduced by ${reductionAmount} messages to index ${currentEndIndex}`);
       }
     }
 
@@ -863,7 +854,6 @@ function loadSceneBreakPromptSettings(forceSelection) {
   };
 }
 
-// eslint-disable-next-line complexity -- Profile resolution adds complexity
 async function detectSceneBreak(
 startIndex ,
 endIndex ,
@@ -889,22 +879,16 @@ _operationId  = null)
     const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
     const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
 
-    // Resolve profile ID early so we can use it for token counting and API type detection
-    const { resolveProfileId, getConnectionProfileById } = await import('./profileResolution.js');
+    // Resolve profile ID early so we can use it for token counting and preset resolution
+    const { resolveProfileId, getPresetManagerType } = await import('./profileResolution.js');
     const effectiveProfile = resolveProfileId(profile);
-
-    // Determine API type from profile
-    let apiType = 'openai'; // default
-    const profileData = getConnectionProfileById(effectiveProfile);
-    if (profileData?.api_type) {
-      apiType = profileData.api_type;
-    }
 
     // CRITICAL: Resolve preset name NOW, before any profile switching that might change the active preset
     let preset = presetSetting;
     if (preset === '') {
       const { getPresetManager } = await import('../../../preset-manager.js');
-      const presetManager = getPresetManager(apiType);
+      const presetManagerType = getPresetManagerType(effectiveProfile);
+      const presetManager = getPresetManager(presetManagerType);
       preset = presetManager?.getSelectedPresetName() || '';
       debug(SUBSYSTEM.OPERATIONS, `[detectSceneBreak] Empty preset resolved to current active BEFORE profile switch: "${preset}"`);
     }
