@@ -543,6 +543,17 @@ class RequestLogger:
             if not content or not isinstance(content, str):
                 return None
 
+            # Strip code fences if present (e.g., ```json\n...\n```)
+            content = content.strip()
+            if content.startswith('```'):
+                # Remove opening fence
+                lines = content.split('\n', 1)
+                if len(lines) > 1:
+                    content = lines[1]
+                # Remove closing fence
+                if content.endswith('```'):
+                    content = content[:-3].rstrip()
+
             # Try to parse the content as JSON
             try:
                 parsed_content = json.loads(content)
@@ -578,6 +589,46 @@ class RequestLogger:
                 lines.append("")
 
                 for i, entry in enumerate(setting_lore):
+                    if not isinstance(entry, dict):
+                        continue
+
+                    entry_name = entry.get('name', f'Entry {i+1}')
+                    entry_type = entry.get('type', 'unknown')
+
+                    lines.append(f"### {entry_name} ({entry_type})")
+                    lines.append("")
+
+                    # Entry content
+                    content = entry.get('content', '')
+                    if content:
+                        lines.append("```text")
+                        lines.append(content)
+                        lines.append("```")
+                        lines.append("")
+
+                    # Keywords
+                    keywords = entry.get('keywords')
+                    if keywords and isinstance(keywords, list):
+                        lines.append(f"**Keywords:** {', '.join(keywords)}")
+                        lines.append("")
+
+                    # Secondary keys
+                    secondary_keys = entry.get('secondaryKeys')
+                    if secondary_keys and isinstance(secondary_keys, list):
+                        lines.append(f"**Secondary Keys:** {', '.join(secondary_keys)}")
+                        lines.append("")
+
+            # lorebook entries (alternative field name, especially for scene recaps)
+            lorebook = parsed_content.get('lorebook')
+            if lorebook and isinstance(lorebook, list) and len(lorebook) > 0:
+                entry_count = len(lorebook)
+                plural = "entries" if entry_count != 1 else "entry"
+                lines.append(f"### Lorebook Entries")
+                lines.append("")
+                lines.append(f"*{entry_count} {plural}*")
+                lines.append("")
+
+                for i, entry in enumerate(lorebook):
                     if not isinstance(entry, dict):
                         continue
 

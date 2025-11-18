@@ -57,6 +57,33 @@ export function getDefaultMetadata() {
   };
 }
 
+function parseOperationType(operation) {
+  if (!operation || typeof operation !== 'string') {
+    return null;
+  }
+
+  const operationTypeMap = {
+    'detect_scene_break_FORCED': 'auto_scene_break',
+    'detect_scene_break': 'auto_scene_break',
+    'generate_scene_recap': 'scene_recap',
+    'scene_recap': 'scene_recap',
+    'generate_running_recap': 'running_scene_recap',
+    'running_scene_recap': 'running_scene_recap',
+    'recap_merge': 'auto_lorebooks_recap_merge',
+    'lorebook_entry_lookup': 'auto_lorebooks_recap_lorebook_entry_lookup',
+    'lorebook_entry_deduplicate': 'auto_lorebooks_recap_lorebook_entry_deduplicate',
+    'bulk_populate': 'auto_lorebooks_bulk_populate'
+  };
+
+  for (const [key, value] of Object.entries(operationTypeMap)) {
+    if (operation.startsWith(key)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
 function buildTokenMetadata(tokenBreakdown) {
   return {
     max_context: tokenBreakdown.max_context || null,
@@ -80,6 +107,96 @@ function buildTokenMetadata(tokenBreakdown) {
   };
 }
 
+function extractArtifactConfig(artifact, operationString) {
+  const isForced = operationString && operationString.includes('_FORCED');
+
+  if (isForced && artifact.forced_connection_profile !== undefined) {
+    debug(SUBSYSTEM.CORE, `[Metadata] Using FORCED artifact config`);
+    return {
+      profileId: artifact.forced_connection_profile,
+      presetName: artifact.forced_completion_preset_name,
+      includePresetPrompts: artifact.forced_include_preset_prompts,
+      isForced: true
+    };
+  }
+
+  return {
+    profileId: artifact.connection_profile,
+    presetName: artifact.completion_preset_name,
+    includePresetPrompts: artifact.include_preset_prompts,
+    isForced: false
+  };
+}
+
+function resolveArtifactMetadata(operationType, operationString) {
+  if (!operationType) {
+    return null;
+  }
+
+  debug(SUBSYSTEM.CORE, `[Metadata] Resolving artifact for operationType="${operationType}"`);
+  const artifact = resolveOperationConfig(operationType);
+
+  if (!artifact) {
+    debug(SUBSYSTEM.CORE, `[Metadata] No artifact found for operationType="${operationType}"`);
+    return null;
+  }
+
+  const { profileId, presetName, includePresetPrompts, isForced } = extractArtifactConfig(artifact, operationString);
+
+  const { profileName, presetName: completionPresetName, usingSTCurrentProfile, usingSTCurrentPreset } =
+    resolveActualProfileAndPreset(profileId, presetName);
+
+  debug(SUBSYSTEM.CORE, `[Metadata] Artifact: ${artifact.name} v${artifact.internalVersion}, profile: ${profileName}, preset: ${completionPresetName}, includePresetPrompts: ${includePresetPrompts}`);
+
+  const metadata = {
+    operation_type: operationType,
+    name: artifact.name,
+    version: artifact.internalVersion,
+    connection_profile: profileName,
+    completion_preset: completionPresetName,
+    include_preset_prompts: includePresetPrompts || false
+  };
+
+  if (isForced) {
+    metadata.using_forced_config = true;
+  }
+
+  if (usingSTCurrentProfile) {
+    metadata.using_st_current_profile = true;
+  }
+
+  if (usingSTCurrentPreset) {
+    metadata.using_st_current_preset = true;
+  }
+
+  return metadata;
+}
+
+function addPresetAndArtifactMetadata(metadata, options) {
+  try {
+    const { presetName, source } = resolveOperationsPreset();
+    metadata.operations_preset = {
+      name: presetName,
+      source: source
+    };
+    debug(SUBSYSTEM.CORE, `[Metadata] Operations preset: "${presetName}" (source: ${source})`);
+
+    let operationType = options?.operationType;
+    if (!operationType && options?.operation) {
+      operationType = parseOperationType(options.operation);
+    }
+
+    const artifactMetadata = resolveArtifactMetadata(operationType, options?.operation);
+    if (artifactMetadata) {
+      metadata.artifact = artifactMetadata;
+    } else if (!operationType) {
+      debug(SUBSYSTEM.CORE, `[Metadata] No operationType available (operation: ${options?.operation}), skipping artifact info`);
+    }
+  } catch (err) {
+    debug(SUBSYSTEM.CORE, '[Metadata] Failed to include operations preset/artifact info:', err);
+  }
+}
+
 export function createMetadataBlock(options  = {}) {
   const metadata  = getDefaultMetadata();
 
@@ -99,42 +216,7 @@ export function createMetadataBlock(options  = {}) {
     metadata.custom = options.custom;
   }
 
-  // Add operations preset and artifact information
-  try {
-    const operationsPreset = resolveOperationsPreset();
-    metadata.operations_preset = operationsPreset;
-    debug(SUBSYSTEM.CORE, `[Metadata] Operations preset: "${operationsPreset}"`);
-
-    // If operationType is provided, include artifact information
-    if (options?.operationType) {
-      debug(SUBSYSTEM.CORE, `[Metadata] Resolving artifact for operationType="${options.operationType}"`);
-      const artifact = resolveOperationConfig(options.operationType);
-
-      if (artifact) {
-        // Resolve actual profile/preset names being used
-        const { profileName, presetName, usingSTCurrentProfile, usingSTCurrentPreset } =
-          resolveActualProfileAndPreset(artifact.connection_profile, artifact.completion_preset_name);
-
-        metadata.artifact = {
-          operation_type: options.operationType,
-          name: artifact.name,
-          version: artifact.internalVersion,
-          connection_profile: profileName,
-          connection_profile_source: usingSTCurrentProfile ? 'ST Current' : 'artifact',
-          completion_preset: presetName,
-          completion_preset_source: usingSTCurrentPreset ? 'ST Current' : 'artifact'
-        };
-
-        debug(SUBSYSTEM.CORE, `[Metadata] Artifact: ${artifact.name} v${artifact.internalVersion}, profile: ${profileName}, preset: ${presetName}`);
-      } else {
-        debug(SUBSYSTEM.CORE, `[Metadata] No artifact found for operationType="${options.operationType}"`);
-      }
-    } else {
-      debug(SUBSYSTEM.CORE, `[Metadata] No operationType provided in options, skipping artifact info`);
-    }
-  } catch (err) {
-    debug(SUBSYSTEM.CORE, '[Metadata] Failed to include operations preset/artifact info:', err);
-  }
+  addPresetAndArtifactMetadata(metadata, options);
 
   return metadata;
 }

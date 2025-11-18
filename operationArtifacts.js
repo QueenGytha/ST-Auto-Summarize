@@ -153,7 +153,7 @@ export function deleteArtifact(operationType, artifactName) {
     throw new Error('Cannot delete Default artifact');
   }
 
-  const currentPreset = resolveOperationsPreset();
+  const { presetName: currentPreset } = resolveOperationsPreset();
   const referencedNames = getReferencedArtifactNames(currentPreset);
   if (referencedNames.has(artifactName)) {
     throw new Error(`Artifact "${artifactName}" is referenced in one or more presets other than "${currentPreset}"`);

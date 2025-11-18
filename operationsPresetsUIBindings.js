@@ -92,7 +92,7 @@ export function initializeOperationsPresetsUI() {
 export function loadActivePreset() {
   isLoadingPreset = true;
   refreshPresetSelector();
-  const presetName = resolveOperationsPreset();
+  const { presetName } = resolveOperationsPreset();
   $(selectorsExtension.operationsPresets.selector).val(presetName);
   refreshPresetBadge();
   refreshPresetButtons();

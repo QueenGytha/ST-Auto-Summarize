@@ -89,7 +89,7 @@ class ErrorLogger:
 
         return max_num + 1
 
-    def _get_sequenced_error_filename(self, operation: str, folder: str) -> Tuple[str, str]:
+    def _get_sequenced_error_filename(self, operation: str, folder: str, retry_attempt: Optional[int] = None) -> Tuple[str, str]:
         """
         Generate filename with sequential numbering, operation type, and ERROR suffix.
         Thread-safe: Uses lock to prevent race conditions in log numbering.
@@ -98,14 +98,20 @@ class ErrorLogger:
         Args:
             operation: Operation type (e.g., 'chat', 'lorebook')
             folder: Error log folder path to check for existing logs
+            retry_attempt: Retry attempt number if this is a retry from the proxy
 
         Returns:
             Tuple of (filename, full_filepath)
-            Filename in format: <number>-<operation>-ERROR.md (e.g., 00019-chat-ERROR.md)
+            Filename format:
+            - Original request: <number>-<operation>-ERROR.md (e.g., 00019-chat-ERROR.md)
+            - Proxy retry: <number>-<operation>-PROXY-ERROR.md (e.g., 00019-chat-PROXY-ERROR.md)
         """
         with self._log_number_lock:
             log_number = self._get_next_error_log_number(folder, operation)
-            filename = f"{log_number:05d}-{operation}-ERROR.md"
+            if retry_attempt is not None and retry_attempt > 0:
+                filename = f"{log_number:05d}-{operation}-PROXY-ERROR.md"
+            else:
+                filename = f"{log_number:05d}-{operation}-ERROR.md"
             filepath = os.path.join(folder, filename)
 
             # Create empty file immediately to claim this log number
@@ -243,7 +249,7 @@ class ErrorLogger:
         # Use sequenced filename if we have character_chat_info, otherwise use error code + timestamp
         if character_chat_info:
             character, timestamp, operation = character_chat_info
-            filename, filepath = self._get_sequenced_error_filename(operation, folder)
+            filename, filepath = self._get_sequenced_error_filename(operation, folder, retry_attempt)
         else:
             filename = self._get_error_filename(error_code)
             filepath = os.path.join(folder, filename)
@@ -409,8 +415,18 @@ class ErrorLogger:
                     file_stat = os.stat(filepath)
 
                     # Parse error code from filename
-                    # Format: 00019-operation-ERROR.md or code_timestamp-ERROR.md
-                    if filename.endswith('-ERROR.md'):
+                    # Format: 00019-operation-ERROR.md, 00019-operation-PROXY-ERROR.md, or code_timestamp-ERROR.md
+                    if filename.endswith('-PROXY-ERROR.md'):
+                        # Remove the -PROXY-ERROR.md suffix
+                        base = filename.replace('-PROXY-ERROR.md', '')
+                        parts = base.split('-')
+                        if len(parts) >= 2 and parts[0].isdigit():
+                            # Sequenced format: 00019-operation
+                            error_code = parts[1]
+                        else:
+                            # Legacy format: code_timestamp
+                            error_code = parts[0].split('_')[0]
+                    elif filename.endswith('-ERROR.md'):
                         # Remove the -ERROR.md suffix
                         base = filename.replace('-ERROR.md', '')
                         parts = base.split('-')

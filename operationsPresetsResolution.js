@@ -23,7 +23,7 @@ export function resolveOperationsPreset() {
       const chatPreset = chatStickies[chatId];
       if (chatPreset && presetExists(chatPreset)) {
         log(SUBSYSTEM.CORE, `Resolved preset from chat sticky: "${chatPreset}"`);
-        return chatPreset;
+        return { presetName: chatPreset, source: 'chat-sticky' };
       }
     }
 
@@ -33,14 +33,14 @@ export function resolveOperationsPreset() {
       const characterPreset = characterStickies[characterKey];
       if (characterPreset && presetExists(characterPreset)) {
         log(SUBSYSTEM.CORE, `Resolved preset from character sticky: "${characterPreset}"`);
-        return characterPreset;
+        return { presetName: characterPreset, source: 'character-sticky' };
       }
     }
 
     const userSelection = get_settings('active_operations_preset_global');
     if (userSelection && presetExists(userSelection)) {
       log(SUBSYSTEM.CORE, `Resolved preset from user selection: "${userSelection}"`);
-      return userSelection;
+      return { presetName: userSelection, source: 'global-selection' };
     }
 
     const profile = get_settings('profile');
@@ -48,15 +48,15 @@ export function resolveOperationsPreset() {
     const activePreset = profiles[profile]?.active_operations_preset;
     if (activePreset && presetExists(activePreset)) {
       log(SUBSYSTEM.CORE, `Resolved preset from profile: "${activePreset}"`);
-      return activePreset;
+      return { presetName: activePreset, source: 'profile' };
     }
 
     log(SUBSYSTEM.CORE, 'Resolved preset to Default (fallback)');
-    return 'Default';
+    return { presetName: 'Default', source: 'fallback' };
 
   } catch (err) {
     error(SUBSYSTEM.CORE, 'Failed to resolve operations preset:', err);
-    return 'Default';
+    return { presetName: 'Default', source: 'fallback' };
   }
 }
 
@@ -152,7 +152,7 @@ export function getDefaultArtifact(operationType) {
   }
 
   // Log default artifact usage with resolved names
-  const presetName = resolveOperationsPreset();
+  const { presetName } = resolveOperationsPreset();
   const { profileDisplay, presetDisplay } = resolveDisplayNames(
     defaultArtifact.connection_profile,
     defaultArtifact.completion_preset_name
@@ -168,7 +168,7 @@ export function getDefaultArtifact(operationType) {
 
 export function resolveOperationConfig(operationType) {
   try {
-    const presetName = resolveOperationsPreset();
+    const { presetName } = resolveOperationsPreset();
     const presets = get_settings('operations_presets') || {};
     const preset = presets[presetName];
 
