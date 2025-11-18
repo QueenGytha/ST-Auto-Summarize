@@ -557,7 +557,12 @@ function repairAndParseJson(jsonString, context = 'JSON repair') {
 function preprocessJsonString(jsonString, context) {
   let cleaned = jsonString.trim();
 
-  const codeFenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  // Try to strip code fences - handle both actual newlines and escaped \n
+  let codeFenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  if (!codeFenceMatch) {
+    // Try with literal \n (escaped newlines)
+    codeFenceMatch = cleaned.match(/```(?:json)?\\n([\s\S]*?)\\n```/);
+  }
   if (codeFenceMatch) {
     cleaned = codeFenceMatch[1].trim();
     debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped code fences from ${context}`);
