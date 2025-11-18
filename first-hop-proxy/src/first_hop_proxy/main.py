@@ -426,37 +426,11 @@ def models_endpoint(config_path):
 
         response_data = models_error_handler.retry_with_backoff(make_models_request, context)
 
-        # Log the models request
-        if request_logger:
-            try:
-                request_logger.log_models_request(
-                    request_id=request_id,
-                    headers=dict(request.headers),
-                    response_data=response_data,
-                    error=None,
-                    character_chat_info=character_chat_info
-                )
-            except Exception as log_error:
-                logger.error(f"Failed to log models request: {log_error}")
-
         return jsonify(response_data)
 
     except Exception as e:
         logger.error(f"Error in models endpoint: {e}")
         error = e
-
-        # Log the failed models request
-        if request_logger:
-            try:
-                request_logger.log_models_request(
-                    request_id=request_id,
-                    headers=dict(request.headers),
-                    response_data=None,
-                    error=error,
-                    character_chat_info=character_chat_info
-                )
-            except Exception as log_error:
-                logger.error(f"Failed to log models request error: {log_error}")
 
         # Return fallback models if target proxy fails
         from .constants import DEFAULT_MODELS
