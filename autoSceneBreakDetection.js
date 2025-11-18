@@ -629,7 +629,7 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
   // Use working lorebook lookup (don't skip settings modification - direct mutation causes read-only property errors)
   const { prompt, prefill, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIndex, get_data, false);
 
-  const config = resolveOperationConfig('scene_recap');
+  const config = await resolveOperationConfig('scene_recap');
   const preset = config.completion_preset_name || '';
   const includePresetPrompts = config.include_preset_prompts ?? false;
 
@@ -822,8 +822,8 @@ async function reduceMessagesUntilTokenFit(config) {
   }
 }
 
-function loadSceneBreakPromptSettings(forceSelection) {
-  const config = resolveOperationConfig('auto_scene_break');
+async function loadSceneBreakPromptSettings(forceSelection) {
+  const config = await resolveOperationConfig('auto_scene_break');
 
   if (forceSelection) {
     const forcedPrompt = config.forced_prompt;
@@ -887,7 +887,7 @@ _operationId  = null)
     debug('Checking message range', startIndex, 'to', endIndex, 'for scene break (offset:', offset, ')');
 
     // Get settings - use forced settings when forceSelection=true, fallback to regular if empty
-    const { promptTemplate, prefill, connectionProfile, completionPreset, includePresetPrompts } = loadSceneBreakPromptSettings(forceSelection);
+    const { promptTemplate, prefill, connectionProfile, completionPreset, includePresetPrompts } = await loadSceneBreakPromptSettings(forceSelection);
 
     // Note: Configuration is logged by resolveOperationConfig() in loadSceneBreakPromptSettings()
     if (forceSelection) {

@@ -938,7 +938,7 @@ get_data ,
 skipSettingsModification = false)
 {
   // Configuration is logged by resolveOperationConfig()
-  const config = resolveOperationConfig('scene_recap');
+  const config = await resolveOperationConfig('scene_recap');
 
   const promptTemplate = config.prompt;
   const prefill = config.prefill || "";

@@ -84,7 +84,7 @@ You MUST respond with valid JSON in this format:
 
 async function createMergePrompt(existingContent , newContent , entryName  = '') {
   const { resolveOperationConfig } = await import('./index.js');
-  const config = resolveOperationConfig('auto_lorebooks_recap_merge');
+  const config = await resolveOperationConfig('auto_lorebooks_recap_merge');
 
   const template = config.prompt || getDefaultMergePrompt();
   const prefill = config.prefill || '';
@@ -391,7 +391,7 @@ export async function executeMerge(lorebookName , existingEntry , newEntryData )
 
     // Get connection settings for merge operation from operations presets
     const { resolveOperationConfig } = await import('./index.js');
-    const config = resolveOperationConfig('auto_lorebooks_recap_merge');
+    const config = await resolveOperationConfig('auto_lorebooks_recap_merge');
     const connectionProfile = config.connection_profile || '';
     const completionPreset = config.completion_preset_name || '';
 

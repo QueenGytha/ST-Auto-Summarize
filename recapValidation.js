@@ -29,7 +29,7 @@ async function validate_recap(recap , type  = "scene") {
   try {
     // Get configuration from operations presets system
     const { resolveOperationConfig } = await import('./index.js');
-    const config = resolveOperationConfig('scene_recap_error_detection');
+    const config = await resolveOperationConfig('scene_recap_error_detection');
 
     const validation_profile = config.connection_profile || '';
     const validation_preset = config.completion_preset_name || '';

@@ -279,7 +279,7 @@ async function generate_running_scene_recap(skipQueue  = false) {
 
   // Build prompt with macro replacement
   // Configuration is logged by resolveOperationConfig()
-  const config = resolveOperationConfig('running_scene_recap');
+  const config = await resolveOperationConfig('running_scene_recap');
 
   const template = config.prompt || running_scene_recap_prompt;
   const prefillSetting = config.prefill;
@@ -407,8 +407,8 @@ function extractRecapFromJSON(scene_recap ) {
   return extracted_text;
 }
 
-function buildCombinePrompt(current_recap , scene_recaps_text ) {
-  const config = resolveOperationConfig('running_scene_recap');
+async function buildCombinePrompt(current_recap , scene_recaps_text ) {
+  const config = await resolveOperationConfig('running_scene_recap');
   let prompt = config.prompt || running_scene_recap_prompt;
 
   // Replace macros
@@ -431,7 +431,7 @@ function buildCombinePrompt(current_recap , scene_recaps_text ) {
 
 async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index ) {
   // Get connection profile and preset settings
-  const config = resolveOperationConfig('running_scene_recap');
+  const config = await resolveOperationConfig('running_scene_recap');
   const running_preset = config.completion_preset_name;
   const running_profile = config.connection_profile || '';
   const include_preset_prompts = config.include_preset_prompts;
@@ -514,7 +514,7 @@ async function combine_scene_with_running_recap(scene_index ) {
   const previous_recap = previous_version ? previous_version.content : "";
   const scene_recaps_text = `[${scene_name}]\n${extractedRecap}`;
 
-  const { prompt, prefill } = buildCombinePrompt(previous_recap, scene_recaps_text);
+  const { prompt, prefill } = await buildCombinePrompt(previous_recap, scene_recaps_text);
 
   try {
     const { recap, tokenBreakdown } = await executeCombineLLMCall(prompt, prefill, scene_name, scene_index);

@@ -397,7 +397,8 @@ export function registerAllOperationHandlers() {
 
           if (remainingFiltered >= minimumSceneLength + 1) {
             // Calculate tokens for remaining range
-            const config = resolveOperationConfig('auto_scene_break');
+            // eslint-disable-next-line no-await-in-loop -- Continuation logic runs before return, no actual iteration
+            const config = await resolveOperationConfig('auto_scene_break');
             const preset = config.completion_preset_name || '';
             const connectionProfile = config.connection_profile;
             // eslint-disable-next-line no-await-in-loop -- Continuation logic runs before return, no actual iteration
