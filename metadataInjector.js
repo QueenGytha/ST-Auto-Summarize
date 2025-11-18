@@ -63,17 +63,21 @@ function parseOperationType(operation) {
   }
 
   const operationTypeMap = {
+    'validate_recap': 'scene_recap_error_detection',
     'detect_scene_break_FORCED': 'auto_scene_break',
     'detect_scene_break': 'auto_scene_break',
     'generate_scene_recap': 'scene_recap',
     'scene_recap': 'scene_recap',
     'generate_running_recap': 'running_scene_recap',
     'running_scene_recap': 'running_scene_recap',
+    'combine_scene_with_running': 'running_scene_recap',
     'recap_merge': 'auto_lorebooks_recap_merge',
     'lorebook_entry_lookup': 'auto_lorebooks_recap_lorebook_entry_lookup',
     'lorebook_entry_deduplicate': 'auto_lorebooks_recap_lorebook_entry_deduplicate',
+    'resolve_lorebook_entry': 'auto_lorebooks_recap_lorebook_entry_deduplicate',
     'populate_registries': 'auto_lorebooks_bulk_populate',
-    'bulk_populate': 'auto_lorebooks_bulk_populate'
+    'bulk_populate': 'auto_lorebooks_bulk_populate',
+    'merge_lorebook_entry': 'auto_lorebooks_recap_merge'
   };
 
   for (const [key, value] of Object.entries(operationTypeMap)) {
