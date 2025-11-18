@@ -226,10 +226,6 @@ class ErrorHandler:
                 # Extract character/chat info from context for organized logging
                 character_chat_info = context.get("character_chat_info") if context else None
 
-                # Log error if error logger is available
-                if self.error_logger:
-                    self.error_logger.log_error(e, context, retry_attempt=attempt,
-                                              character_chat_info=character_chat_info)
 
                 # Check if we should retry this exception
                 if not self.should_retry_exception(e):
@@ -291,10 +287,6 @@ class ErrorHandler:
                 if hasattr(e, 'response') and e.response is not None:
                     status_code = e.response.status_code
 
-                    # Log error if error logger is available
-                    if self.error_logger:
-                        self.error_logger.log_error(e, context, retry_attempt=attempt,
-                                                  character_chat_info=character_chat_info)
 
                     # Check hard stop conditions first
                     hard_stop_rule = self.check_hard_stop_conditions(e.response)
