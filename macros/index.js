@@ -36,16 +36,34 @@ for (const mod of macroModules) {
   MACRO_NAMES[upperName] = mod.name;
 }
 
-// Build macroBuilders object for easy access
-export const macroBuilders = {};
-for (const mod of macroModules) {
-  macroBuilders[mod.name] = mod.build;
-}
-
 // Build macroDescriptions for documentation
 export const macroDescriptions = {};
 for (const mod of macroModules) {
   macroDescriptions[mod.name] = mod.description;
+}
+
+// Validation wrapper for macro builders
+function validateMacroResult(macroName, args, result) {
+  const isEmpty = result === null || result === undefined || result === '';
+
+  if (isEmpty) {
+    console.error(`[MACRO ERROR] Macro '${macroName}' returned empty result!`);
+    console.error(`  Input args:`, args);
+    console.error(`  Result:`, result);
+    console.error(`  Stack trace:`, new Error(`Macro ${macroName} validation failed`).stack);
+  }
+
+  return result;
+}
+
+// Build macroBuilders object with validation wrappers
+export const macroBuilders = {};
+for (const mod of macroModules) {
+  const originalBuilder = mod.build;
+  macroBuilders[mod.name] = function(...args) {
+    const result = originalBuilder(...args);
+    return validateMacroResult(mod.name, args, result);
+  };
 }
 
 // Helper to get builder by name
