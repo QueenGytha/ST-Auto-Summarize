@@ -139,7 +139,7 @@ async function resolveArtifactMetadata(operationType, operationString) {
   }
 
   debug(SUBSYSTEM.CORE, `[Metadata] Resolving artifact for operationType="${operationType}"`);
-  const artifact = resolveOperationConfig(operationType);
+  const artifact = await resolveOperationConfig(operationType);
 
   if (!artifact) {
     debug(SUBSYSTEM.CORE, `[Metadata] No artifact found for operationType="${operationType}"`);
