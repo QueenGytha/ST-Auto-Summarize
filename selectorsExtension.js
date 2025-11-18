@@ -129,6 +129,7 @@ export const selectorsExtension = {
     modalForcedSection: '[data-testid="artifact-editor-forced-section"]',  // #auto_recap_artifact_editor_forced_section
     modalSave: '[data-testid="artifact-editor-save"]',                 // #auto_recap_artifact_editor_save
     modalCancel: '[data-testid="artifact-editor-cancel"]',             // #auto_recap_artifact_editor_cancel
+    modalMacroReferenceContent: '#auto_recap_macro_reference_content',  // Macro reference content container
   },
 
   // Miscellaneous Settings

@@ -161,7 +161,7 @@ export {
 export * from './profileUI.js';
 export * from './settingsUI.js';
 export * from './profileManager.js';
-export * from './defaultPrompts.js';
+export * from './default-prompts/index.js';
 export * from './defaultSettings.js';
 export * from './constants.js';
 export * from './sceneBreak.js';
@@ -180,6 +180,7 @@ export * from './popout.js';
 export * from './buttonBindings.js';
 export * from './connectionProfiles.js';
 export * from './promptUtils.js';
+export * from './macros/index.js';
 export * from './presetPromptLoader.js';
 export * from './recapValidation.js';
 export * from './presetManager.js';

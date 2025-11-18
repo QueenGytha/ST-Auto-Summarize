@@ -526,7 +526,7 @@ async function openArtifactEditor(operationType) {
     const $forcedConnectionSelect = $(selectorsExtension.operationsPresets.modalForcedConnection);
     const connection_profiles = get_connection_profile_objects();
     $forcedConnectionSelect.empty();
-    $forcedConnectionSelect.append('<option value="">Use Regular Setting</option>');
+    $forcedConnectionSelect.append('<option value="">Use Current Connection</option>');
     for (const profile of connection_profiles) {
       $forcedConnectionSelect.append(`<option value="${profile.id}">${profile.name}</option>`);
     }
@@ -534,7 +534,7 @@ async function openArtifactEditor(operationType) {
     const $forcedPresetSelect = $(selectorsExtension.operationsPresets.modalForcedPreset);
     const preset_options = await get_presets();
     $forcedPresetSelect.empty();
-    $forcedPresetSelect.append('<option value="">Use Currently Active Preset</option>');
+    $forcedPresetSelect.append('<option value="">Use Default Preset</option>');
     for (const preset of preset_options) {
       $forcedPresetSelect.append(`<option value="${preset}">${preset}</option>`);
     }
@@ -561,7 +561,92 @@ async function openArtifactEditor(operationType) {
   }
 
   $(selectorsExtension.operationsPresets.modal).data(OPERATION_TYPE_DATA_KEY, operationType);
+
+  // Populate macro reference (async, don't block modal)
+  void populateMacroReference();
+
   $(selectorsExtension.operationsPresets.modal).fadeIn(MODAL_FADE_DURATION_MS);
+}
+
+/**
+ * Populate the macro reference dropdown with available macros
+ */
+async function populateMacroReference() {
+  try {
+    const { macroDescriptions } = await import('./macros/index.js');
+
+    if (!macroDescriptions || Object.keys(macroDescriptions).length === 0) {
+      $(selectorsExtension.operationsPresets.modalMacroReferenceContent).html('<p class="opacity50p">No macros available.</p>');
+      return;
+    }
+
+    // Build HTML for macro reference
+    let html = '<div style="font-size: 0.9em;">';
+
+    // Group by category (extract from usedBy)
+    const categories = {
+      'Scene Recap': [],
+      'Running Scene Recap': [],
+      'Scene Break Detection': [],
+      'Lorebook Processing': [],
+      'General': []
+    };
+
+    for (const [macroName, desc] of Object.entries(macroDescriptions)) {
+      const usedByText = (desc.usedBy || []).join(', ');
+      let category = 'General';
+
+      if (usedByText.includes('scene-recap') || usedByText.includes('sceneBreak')) {
+        category = 'Scene Recap';
+      } else if (usedByText.includes('running-scene-recap')) {
+        category = 'Running Scene Recap';
+      } else if (usedByText.includes('scene-break-detection')) {
+        category = 'Scene Break Detection';
+      } else if (usedByText.includes('lorebook') || usedByText.includes('merge')) {
+        category = 'Lorebook Processing';
+      }
+
+      categories[category].push({ name: macroName, desc });
+    }
+
+    const MAX_FORMAT_LENGTH = 80;
+    const FORMAT_TRUNCATE_LENGTH = 77;
+
+    // Render each category
+    for (const [category, macros] of Object.entries(categories)) {
+      if (macros.length === 0) {
+        continue;
+      }
+
+      html += `<div style="margin-bottom: 15px;">`;
+      html += `<h5 style="margin: 10px 0 8px 0; color: rgba(255,255,255,0.7); font-size: 0.95em; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">${category}</h5>`;
+
+      for (const { name, desc } of macros) {
+        html += `<div style="margin-bottom: 12px; padding: 8px; background: rgba(0,0,0,0.2); border-left: 3px solid rgba(100,150,255,0.5); border-radius: 3px;">`;
+        html += `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">`;
+        html += `<code style="background: rgba(100,150,255,0.15); padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-weight: 600;">{{${name}}}</code>`;
+        html += `<button onclick="navigator.clipboard.writeText('{{${name}}}'); window.toastr?.success('Copied to clipboard!')" style="padding: 2px 8px; font-size: 0.75em; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; cursor: pointer;" title="Copy macro">📋</button>`;
+        html += `</div>`;
+        html += `<div style="font-size: 0.85em; opacity: 0.7; margin-top: 4px;">`;
+        html += `<div><strong>Input:</strong> ${desc.source || 'N/A'}</div>`;
+        if (desc.format) {
+          const shortFormat = desc.format.length > MAX_FORMAT_LENGTH ? desc.format.slice(0, FORMAT_TRUNCATE_LENGTH) + '...' : desc.format;
+          html += `<div><strong>Output:</strong> ${shortFormat}</div>`;
+        }
+        html += `</div>`;
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+    }
+
+    html += '</div>';
+    $(selectorsExtension.operationsPresets.modalMacroReferenceContent).html(html);
+
+  } catch (error) {
+    console.error('Failed to load macro reference:', error);
+    $(selectorsExtension.operationsPresets.modalMacroReferenceContent).html('<p class="opacity50p">Error loading macros.</p>');
+  }
 }
 
 /**

@@ -5,6 +5,7 @@
 import { getCurrentChatId } from '../../../../script.js';
 import { selected_group, groups } from '../../../group-chats.js';
 import { debug, SUBSYSTEM, should_send_chat_details } from './index.js';
+import { resolveOperationsPreset, resolveOperationConfig, resolveActualProfileAndPreset } from './operationsPresetsResolution.js';
 
 export function initMetadataInjector() {
   // No longer needs to import get_settings
@@ -95,6 +96,35 @@ export function createMetadataBlock(options  = {}) {
 
   if (options?.custom && typeof options.custom === 'object') {
     metadata.custom = options.custom;
+  }
+
+  // Add operations preset and artifact information
+  try {
+    const operationsPreset = resolveOperationsPreset();
+    metadata.operations_preset = operationsPreset;
+
+    // If operationType is provided, include artifact information
+    if (options?.operationType) {
+      const artifact = resolveOperationConfig(options.operationType);
+
+      if (artifact) {
+        // Resolve actual profile/preset names being used
+        const { profileName, presetName, usingSTCurrentProfile, usingSTCurrentPreset } =
+          resolveActualProfileAndPreset(artifact.connection_profile, artifact.completion_preset_name);
+
+        metadata.artifact = {
+          operation_type: options.operationType,
+          name: artifact.name,
+          version: artifact.internalVersion,
+          connection_profile: profileName,
+          connection_profile_source: usingSTCurrentProfile ? 'ST Current' : 'artifact',
+          completion_preset: presetName,
+          completion_preset_source: usingSTCurrentPreset ? 'ST Current' : 'artifact'
+        };
+      }
+    }
+  } catch (err) {
+    debug(SUBSYSTEM.CORE, '[Metadata] Failed to include operations preset/artifact info:', err);
   }
 
   return metadata;

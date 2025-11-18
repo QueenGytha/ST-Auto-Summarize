@@ -192,23 +192,37 @@ class ErrorHandler:
         # Ensure delay doesn't exceed max_delay
         return min(delay, self.max_delay)
     
-    def retry_with_backoff(self, func: Callable, context: Optional[Dict[str, Any]] = None, *args, **kwargs) -> Any:
-        """Retry a function with exponential backoff"""
+    def retry_with_backoff(self, func: Callable, context: Optional[Dict[str, Any]] = None,
+                          on_retry: Optional[Callable[[int, Exception, float], None]] = None,
+                          *args, **kwargs) -> Any:
+        """Retry a function with exponential backoff
+
+        Args:
+            func: Function to retry
+            context: Context dictionary for error logging
+            on_retry: Optional callback called before each retry with (attempt_number, exception, delay)
+                     This is used to finalize the previous log and create a new one for the retry
+            *args: Arguments to pass to func
+            **kwargs: Keyword arguments to pass to func
+
+        Returns:
+            Result from successful function call
+        """
         last_exception = None
         context = context or {}
-        
+
         for attempt in range(1, self.max_retries + 2):  # +2 because we start at 1 and include the initial attempt
             try:
                 result = func(*args, **kwargs)
-                
+
                 # If we get here, the function succeeded
                 if attempt > 1:
                     logger.info(f"Function succeeded after {attempt} attempts")
                 return result
-                
+
             except Exception as e:
                 last_exception = e
-                
+
                 # Extract character/chat info from context for organized logging
                 character_chat_info = context.get("character_chat_info") if context else None
 
@@ -241,9 +255,16 @@ class ErrorHandler:
                 if self.error_logger:
                     self.error_logger.log_retry_attempt(e, attempt, delay, context,
                                                       character_chat_info=character_chat_info)
-                
+
+                # Call retry callback if provided (for log management)
+                if on_retry:
+                    try:
+                        on_retry(attempt, e, delay)
+                    except Exception as callback_error:
+                        logger.error(f"Error in retry callback: {callback_error}")
+
                 time.sleep(delay)
-        
+
         # This should never be reached, but just in case
         raise last_exception
     

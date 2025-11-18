@@ -24,8 +24,13 @@ import {
   queueProcessLorebookEntry } from
 './queueIntegration.js';
 import { clearCheckedFlagsInRange, setCheckedFlagsInRange } from './autoSceneBreakDetection.js';
-import { getConfiguredEntityTypeDefinitions, formatEntityTypeListForPrompt } from './entityTypes.js';
+import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
 import { getAttachedLorebook } from './lorebookManager.js';
+import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.js';
+import { build as buildSceneMessages } from './macros/scene_messages.js';
+import { build as buildActiveSettingLore } from './macros/active_setting_lore.js';
+import { build as buildPrefill } from './macros/prefill.js';
+import { substitute_params } from './promptUtils.js';
 
 import {
   MAX_RECAP_ATTEMPTS,
@@ -923,34 +928,6 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
   }
 }
 
-// Helper: Format lorebook entries for prompt with inline instructions
-export function formatSettingLoreForPrompt(entries) {
-  if (!entries || entries.length === 0) {
-    return '';
-  }
-
-  const instructions = `INSTRUCTIONS: The following <setting_lore> entries contain context that is active for this scene. Only include information from these entries that is new or has changed in the scene. If the scene rehashes something already captured in these entries, omit it to avoid duplication.\n\n`;
-  const formattedEntries = entries.map(e => {
-    const name = e.comment || 'Unnamed Entry';
-    const uid = e.uid || '';
-    const world = e.world || '';
-    const position = e.position !== undefined ? e.position : '';
-    const order = e.order !== undefined ? e.order : '';
-    const keys = (e.key || []).join('|');
-
-    // Strip existing <setting_lore> tags from content if present to prevent double-wrapping
-    const unwrappedContent = (e.content || '')
-      .trim()
-      .replace(/^<setting_lore[^>]*>\s*/i, '')
-      .replace(/\s*<\/setting_lore>$/i, '')
-      .trim();
-
-    return `<setting_lore name="${name}" uid="${uid}" world="${world}" position="${position}" order="${order}" keys="${keys}">\n${unwrappedContent}\n</setting_lore>`;
-  }).join('\n\n');
-
-  return instructions + formattedEntries;
-}
-
 // Helper: Prepare scene recap prompt
 // eslint-disable-next-line complexity -- Building lorebook and message breakdowns requires detailed processing
 export async function prepareScenePrompt(
@@ -960,18 +937,20 @@ endIdx ,
 get_data ,
 skipSettingsModification = false)
 {
+  // Configuration is logged by resolveOperationConfig()
   const config = resolveOperationConfig('scene_recap');
+
   const promptTemplate = config.prompt;
   const prefill = config.prefill || "";
   const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
-  let lorebookTypesMacro = formatEntityTypeListForPrompt(typeDefinitions);
+  let lorebookTypesMacro = buildLorebookEntryTypes(typeDefinitions);
   if (!lorebookTypesMacro) {
-    lorebookTypesMacro = formatEntityTypeListForPrompt(getConfiguredEntityTypeDefinitions());
+    lorebookTypesMacro = buildLorebookEntryTypes(getConfiguredEntityTypeDefinitions());
   }
 
   // Get active lorebooks if enabled (now returns { entries, metadata })
   const { entries: activeEntries, metadata: lorebookMetadata } = await getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSettingsModification);
-  const activeSettingLoreText = formatSettingLoreForPrompt(activeEntries);
+  const activeSettingLoreText = buildActiveSettingLore(activeEntries);
 
   // Build individual lorebook entry token breakdown
   const lorebookBreakdown = [];
@@ -1002,9 +981,8 @@ skipSettingsModification = false)
     });
   }
 
-  // Format scene messages with speaker labels to prevent substituteParamsExtended from stripping them
-  // Also build individual message token breakdown
-  const messageTexts = [];
+  // Format scene messages using macro (also build individual message token breakdown)
+  const formattedMessages = buildSceneMessages(sceneObjects);
   const messageBreakdown = [];
 
   for (const obj of sceneObjects) {
@@ -1017,7 +995,6 @@ skipSettingsModification = false)
     }
 
     if (formatted) {
-      messageTexts.push(formatted);
       const tokens = count_tokens(formatted);
       const MAX_PREVIEW = 80;
       const previewText = obj.type === 'message' ? obj.text : obj.recap;
@@ -1032,28 +1009,19 @@ skipSettingsModification = false)
     }
   }
 
-  const formattedMessages = messageTexts.join('\n\n');
-
   // Count tokens for messages and lorebooks separately for proper breakdown
   const messagesTokenCount = count_tokens(formattedMessages);
   const lorebooksTokenCount = count_tokens(activeSettingLoreText);
 
-  let prompt = promptTemplate;
-  if (ctx.substituteParamsExtended) {
-    prompt = ctx.substituteParamsExtended(prompt, {
-      scene_messages: formattedMessages,
-      message: JSON.stringify(sceneObjects, null, 2), // Keep for backward compatibility
-      prefill,
-      lorebook_entry_types: lorebookTypesMacro,
-      active_setting_lore: activeSettingLoreText
-    }) || prompt;
-  }
-  // Fallback replacements
-  prompt = prompt.replace(/\{\{scene_messages\}\}/g, formattedMessages);
-  prompt = prompt.replace(/\{\{message\}\}/g, JSON.stringify(sceneObjects, null, 2));
-  prompt = prompt.replace(/\{\{lorebook_entry_types\}\}/g, lorebookTypesMacro);
-  // Support both legacy and new macro names
-  prompt = prompt.replace(/\{\{active_setting_lore\}\}/g, activeSettingLoreText);
+  // Build macro values
+  const params = {
+    scene_messages: formattedMessages,
+    lorebook_entry_types: lorebookTypesMacro,
+    active_setting_lore: activeSettingLoreText,
+    prefill: buildPrefill(prefill)
+  };
+
+  const prompt = substitute_params(promptTemplate, params);
 
   return { prompt, prefill, lorebookMetadata: { ...lorebookMetadata, entries: activeEntries }, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown };
 }

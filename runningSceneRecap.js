@@ -14,7 +14,11 @@ import {
   getCurrentChatId,
   resolveOperationConfig } from
 './index.js';
-import { running_scene_recap_prompt } from './defaultPrompts.js';
+import { running_scene_recap_prompt } from './default-prompts/index.js';
+import { build as buildSceneRecaps } from './macros/scene_recaps.js';
+import { build as buildCurrentRunningRecap } from './macros/current_running_recap.js';
+import { build as buildPrefill } from './macros/prefill.js';
+import { substitute_params, substitute_conditionals } from './promptUtils.js';
 // Lorebook processing for running recap has been disabled; no queue integration needed here.
 
 function get_running_recap_storage() {
@@ -216,61 +220,6 @@ function collect_scene_recap_indexes_for_running() {
   return indexes;
 }
 
-function extractRecapText(scene_recap ) {
-  let extracted_text = scene_recap;
-
-  // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
-  let json_to_parse = scene_recap.trim();
-  const code_fence_match = json_to_parse.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-  if (code_fence_match) {
-    json_to_parse = code_fence_match[1].trim();
-  }
-
-  try {
-    const parsed = JSON.parse(json_to_parse);
-    if (parsed && typeof parsed === 'object') {
-      // Valid JSON but no 'recap' property - use empty string
-      extracted_text = parsed.recap || "";
-    }
-  } catch {
-
-    // Not JSON or parsing failed - use the whole text as-is
-  }
-  return extracted_text;
-}
-
-function buildSceneRecapsText(indexes , chat ) {
-  return indexes.map((idx, i) => {
-    const msg = chat[idx];
-    const scene_recap = get_data(msg, 'scene_recap_memory') || "";
-    const name = get_data(msg, 'scene_break_name') || `Scene ${i + 1}`;
-    const extractedRecap = extractRecapText(scene_recap);
-    return `[Scene ${i + 1}: ${name}]\n${extractedRecap}`;
-  }).join('\n\n');
-}
-
-function processPromptMacros(
-prompt ,
-current_recap ,
-scene_recaps_text ,
-prefill )
-{
-  // Replace macros
-  let processed = prompt.replace(/\{\{current_running_recap\}\}/g, current_recap || "");
-  processed = processed.replace(/\{\{scene_recaps\}\}/g, scene_recaps_text);
-
-  // Handle Handlebars conditionals manually (simplified)
-  if (current_recap) {
-    processed = processed.replace(/\{\{#if current_running_recap\}\}/g, '');
-    processed = processed.replace(/\{\{\/if\}\}/g, '');
-  } else {
-    // Remove the conditional block if no current recap
-    processed = processed.replace(/\{\{#if current_running_recap\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-  }
-
-  return { prompt: processed, prefill: prefill || '' };
-}
-
 async function generate_running_scene_recap(skipQueue  = false) {
   const ctx = getContext();
   const chat = ctx.chat;
@@ -314,17 +263,37 @@ async function generate_running_scene_recap(skipQueue  = false) {
 
   debug(SUBSYSTEM.RUNNING, `Found ${indexes.length} scene recaps (excluding latest ${exclude_count})`);
 
-  // Build scene recaps text (extract only 'recap' field, exclude 'lorebooks')
-  const scene_recaps_text = buildSceneRecapsText(indexes, chat);
+  // Pre-process scene data for macro
+  const sceneDataArray = indexes.map((idx, i) => {
+    const msg = chat[idx];
+    const scene_recap = get_data(msg, 'scene_recap_memory') || "";
+    const name = get_data(msg, 'scene_break_name') || `Scene ${i + 1}`;
+    return { name, recap: scene_recap };
+  });
+
+  // Build scene recaps text using macro
+  const scene_recaps_text = buildSceneRecaps(sceneDataArray);
 
   // Get current running recap if exists
   const current_recap = get_current_running_recap_content();
 
   // Build prompt with macro replacement
+  // Configuration is logged by resolveOperationConfig()
   const config = resolveOperationConfig('running_scene_recap');
+
   const template = config.prompt || running_scene_recap_prompt;
   const prefillSetting = config.prefill;
-  const { prompt, prefill } = processPromptMacros(template, current_recap, scene_recaps_text, prefillSetting);
+
+  // Build macro values
+  const params = {
+    current_running_recap: buildCurrentRunningRecap(current_recap),
+    scene_recaps: scene_recaps_text,
+    prefill: buildPrefill(prefillSetting)
+  };
+
+  let prompt = substitute_conditionals(template, params);
+  prompt = substitute_params(prompt, params);
+  const prefill = prefillSetting || '';
 
   // Get connection profile and preset settings
   const running_preset = config.completion_preset_name;

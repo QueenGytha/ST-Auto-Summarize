@@ -5,6 +5,8 @@
   "description": "Auto-Recap extension for SillyTavern",
   "main": "index.js",
   "scripts": {
+    "generate-macros": "node scripts/generate-macro-index.js",
+    "generate-macro-docs": "node scripts/generate-macro-docs.js",
     "lint": "eslint *.js --ignore-pattern syntax-check.js --no-warn-ignored --max-warnings 0",
     "lint:quiet": "eslint *.js --ignore-pattern syntax-check.js --quiet --no-warn-ignored --max-warnings 0",
     "lint:fix": "eslint *.js --ignore-pattern syntax-check.js --no-warn-ignored --fix",

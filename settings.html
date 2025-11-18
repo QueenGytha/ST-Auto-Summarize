@@ -644,6 +644,20 @@
                 <textarea id="auto_recap_artifact_editor_prompt" data-testid="artifact-editor-prompt" class="text_pole" rows="10" placeholder="Enter the prompt text here..."></textarea>
             </div>
 
+            <!-- Macro Reference -->
+            <div class="auto_recap_form_group">
+                <details id="auto_recap_macro_reference" style="margin-bottom: 15px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; background: rgba(0,0,0,0.2);">
+                    <summary style="cursor: pointer; font-weight: 600; user-select: none; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-code"></i>
+                        <span>Available Macros</span>
+                        <small class="opacity50p" style="font-weight: normal; margin-left: auto;">(Click to expand)</small>
+                    </summary>
+                    <div id="auto_recap_macro_reference_content" style="margin-top: 12px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                        <p class="opacity50p" style="margin: 0;">Loading macros...</p>
+                    </div>
+                </details>
+            </div>
+
             <!-- Prefill -->
             <div class="auto_recap_form_group">
                 <label for="auto_recap_artifact_editor_prefill">

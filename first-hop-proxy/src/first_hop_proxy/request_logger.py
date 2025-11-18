@@ -85,41 +85,48 @@ class RequestLogger:
 
         return max_num + 1
 
-    def _get_sequenced_filename(self, operation: str, folder: str, error: Exception = None) -> Tuple[str, str]:
+    def _get_sequenced_filename(self, operation: str, folder: str, error: Exception = None,
+                                is_proxy_retry: bool = False) -> Tuple[str, str]:
         """
-        Generate filename with sequential numbering, operation type, and optional error suffix.
+        Generate filename with sequential numbering, operation type, and optional suffixes.
         Thread-safe: Uses lock to prevent race conditions in log numbering.
         Creates an empty file immediately to claim the number.
 
         Args:
             operation: Operation type (e.g., 'chat', 'lorebook')
             folder: Log folder path to check for existing logs
-            error: Exception if request failed (determines suffix)
+            error: Exception if request failed (determines error suffix)
+            is_proxy_retry: True if this is a proxy-initiated retry (adds -PROXY suffix)
 
         Returns:
             Tuple of (filename, full_filepath)
-            Filename in format: <number>-<operation>[-STATUS].md
+            Filename in format: <number>-<operation>[-PROXY][-ERROR_TYPE].md
             Examples:
                 00001-chat.md (success)
-                00002-lorebook-RATELIMIT.md (rate limited)
-                00003-summary-FAILED.md (other error)
+                00002-lorebook-PROXY.md (proxy retry in progress)
+                00003-summary-PROXY-TIMEOUT.md (proxy retry that timed out)
+                00004-chat-RATELIMIT.md (upstream request that was rate limited, no retry)
         """
         with self._log_number_lock:
             log_number = self._get_next_log_number(folder, operation)
 
-            # Determine status suffix based on error type
-            status_suffix = ""
+            # Build suffix components
+            proxy_suffix = "-PROXY" if is_proxy_retry else ""
+
+            # Determine error status suffix based on error type
+            error_suffix = ""
             if error:
                 error_str = str(error).lower()
                 error_type = type(error).__name__
 
                 # Check for rate limit errors (429)
                 if "429" in error_str or "rate limit" in error_str or "quota" in error_str:
-                    status_suffix = "-RATELIMIT"
+                    error_suffix = "-RATELIMIT"
                 else:
-                    status_suffix = "-FAILED"
+                    error_suffix = "-FAILED"
 
-            filename = f"{log_number:05d}-{operation}{status_suffix}.md"
+            # Combine suffixes: operation + proxy + error
+            filename = f"{log_number:05d}-{operation}{proxy_suffix}{error_suffix}.md"
             filepath = os.path.join(folder, filename)
 
             # Create empty file immediately to claim this log number
@@ -149,7 +156,8 @@ class RequestLogger:
                           character_chat_info: Optional[Tuple[str, str, str]] = None,
                           original_request_data: Optional[Dict[str, Any]] = None,
                           stripped_metadata: Optional[List[Dict[str, Any]]] = None,
-                          lorebook_entries: Optional[List[Dict[str, Any]]] = None) -> str:
+                          lorebook_entries: Optional[List[Dict[str, Any]]] = None,
+                          is_proxy_retry: bool = False) -> str:
         """Create initial log file when request is received
 
         Args:
@@ -162,6 +170,7 @@ class RequestLogger:
             original_request_data: Original request data before ST_METADATA stripping
             stripped_metadata: List of ST_METADATA dicts that were stripped
             lorebook_entries: List of lorebook entry dicts extracted from messages
+            is_proxy_retry: True if this is a proxy-initiated retry attempt
 
         Returns:
             Path to log file if successful, empty string otherwise
@@ -174,7 +183,8 @@ class RequestLogger:
         # Use sequenced filename if we have character_chat_info, otherwise use timestamp
         if character_chat_info:
             character, timestamp, operation = character_chat_info
-            filename, filepath = self._get_sequenced_filename(operation, folder, error=None)
+            filename, filepath = self._get_sequenced_filename(operation, folder, error=None,
+                                                             is_proxy_retry=is_proxy_retry)
         else:
             filename = self._get_timestamp_filename(request_id)
             filepath = os.path.join(folder, filename)
@@ -294,6 +304,76 @@ class RequestLogger:
                     "log_type": "start_request"
                 })
             return ""
+
+    def finalize_log_with_error(self, filepath: str, error: Exception,
+                                end_time: float = None, duration: float = None) -> str:
+        """Finalize log file with error information and rename with error suffix
+
+        This is used during retry flow to complete a failed attempt's log and
+        rename it with the appropriate error suffix before starting a new attempt.
+
+        Args:
+            filepath: Path to existing log file
+            error: Exception that caused the failure
+            end_time: Request end timestamp
+            duration: Request duration in seconds
+
+        Returns:
+            Path to renamed log file if successful, original filepath otherwise
+        """
+        if not self.enabled or not filepath or not os.path.exists(filepath):
+            return filepath
+
+        try:
+            # Determine error suffix based on error type
+            error_str = str(error).lower()
+            error_type = type(error).__name__
+
+            # Check for rate limit errors (429, 504, 503)
+            if "429" in error_str or "rate limit" in error_str or "quota" in error_str:
+                status_suffix = "-RATELIMIT"
+            elif "504" in error_str or "gateway timeout" in error_str or "timeout" in error_str:
+                status_suffix = "-TIMEOUT"
+            elif "503" in error_str or "service unavailable" in error_str:
+                status_suffix = "-UNAVAILABLE"
+            else:
+                status_suffix = "-FAILED"
+
+            # Determine new filename by adding suffix before .md extension
+            # Handle both formats: 00001-operation.md -> 00001-operation-RATELIMIT.md
+            directory = os.path.dirname(filepath)
+            filename = os.path.basename(filepath)
+
+            # If it already has an error suffix, don't add another one
+            if any(suffix in filename for suffix in ["-RATELIMIT", "-TIMEOUT", "-UNAVAILABLE", "-FAILED"]):
+                new_filepath = filepath
+            else:
+                # Remove .md extension, add suffix, re-add .md
+                base_name = filename.replace('.md', '')
+                new_filename = f"{base_name}{status_suffix}.md"
+                new_filepath = os.path.join(directory, new_filename)
+
+            # Complete the log with error information
+            self.complete_request_log(
+                filepath=filepath,
+                response_data=None,
+                response_headers=None,
+                end_time=end_time,
+                duration=duration,
+                error=error
+            )
+
+            # Rename file if suffix was added
+            if new_filepath != filepath:
+                os.rename(filepath, new_filepath)
+                logger.info(f"Renamed log file for retry: {filename} -> {os.path.basename(new_filepath)}")
+                return new_filepath
+            else:
+                return filepath
+
+        except Exception as e:
+            logger.error(f"Failed to finalize log with error: {e}")
+            return filepath
 
     def complete_request_log(self, filepath: str, response_data: Any = None,
                             response_headers: Dict[str, str] = None, end_time: float = None,

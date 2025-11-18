@@ -1,5 +1,6 @@
 
 import { get_settings, set_settings, log, SUBSYSTEM, saveSettingsDebounced, default_settings } from './index.js';
+import { resolveOperationsPreset } from './operationsPresetsResolution.js';
 
 const OPERATION_TYPES = [
   'scene_recap',
@@ -49,6 +50,9 @@ export function createArtifact(operationType, artifactData) {
   if (operationType === 'auto_scene_break') {
     newArtifact.forced_prompt = artifactData.forced_prompt || '';
     newArtifact.forced_prefill = artifactData.forced_prefill || '';
+    newArtifact.forced_connection_profile = artifactData.forced_connection_profile || null;
+    newArtifact.forced_completion_preset_name = artifactData.forced_completion_preset_name || '';
+    newArtifact.forced_include_preset_prompts = artifactData.forced_include_preset_prompts || false;
   }
 
   operationArtifacts.push(newArtifact);
@@ -110,6 +114,15 @@ export function updateArtifact(operationType, artifactName, changes) {
     if (changes.forced_prefill !== undefined) {
       targetArtifact.forced_prefill = changes.forced_prefill;
     }
+    if (changes.forced_connection_profile !== undefined) {
+      targetArtifact.forced_connection_profile = changes.forced_connection_profile;
+    }
+    if (changes.forced_completion_preset_name !== undefined) {
+      targetArtifact.forced_completion_preset_name = changes.forced_completion_preset_name;
+    }
+    if (changes.forced_include_preset_prompts !== undefined) {
+      targetArtifact.forced_include_preset_prompts = changes.forced_include_preset_prompts;
+    }
   }
 
   targetArtifact.modifiedAt = Date.now();
@@ -140,9 +153,10 @@ export function deleteArtifact(operationType, artifactName) {
     throw new Error('Cannot delete Default artifact');
   }
 
-  const referencedNames = getReferencedArtifactNames();
+  const currentPreset = resolveOperationsPreset();
+  const referencedNames = getReferencedArtifactNames(currentPreset);
   if (referencedNames.has(artifactName)) {
-    throw new Error(`Artifact "${artifactName}" is referenced in one or more presets`);
+    throw new Error(`Artifact "${artifactName}" is referenced in one or more presets other than "${currentPreset}"`);
   }
 
   artifacts[operationType] = operationArtifacts.filter(a => a.name !== artifactName);
@@ -301,11 +315,14 @@ export function pruneArtifactVersions(operationType, maxVersions = 10) {
   return removedCount;
 }
 
-export function getReferencedArtifactNames() {
+export function getReferencedArtifactNames(excludePresetName = null) {
   const presets = get_settings('operations_presets') || {};
   const referenced = new Set();
 
-  for (const preset of Object.values(presets)) {
+  for (const [presetName, preset] of Object.entries(presets)) {
+    if (excludePresetName && presetName === excludePresetName) {
+      continue;
+    }
     for (const artifactName of Object.values(preset.operations)) {
       referenced.add(artifactName);
     }

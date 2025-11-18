@@ -204,8 +204,54 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
             "character_chat_info": character_chat_info
         }
 
-        # Use error handler for retries
-        response_data = error_handler.retry_with_backoff(make_request, context)
+        # Create retry callback for log management
+        # Use a mutable container to track the current log filepath across retries
+        log_state = {"filepath": log_filepath, "attempt_start_time": start_time}
+
+        def on_retry_callback(attempt_number: int, exception: Exception, delay: float):
+            """Handle log finalization and new log creation for retry attempts"""
+            nonlocal log_filepath  # Allow modifying outer scope variable
+
+            if request_logger and log_state["filepath"]:
+                try:
+                    # Finalize current log with error suffix
+                    attempt_duration = time.time() - log_state["attempt_start_time"]
+                    finalized_path = request_logger.finalize_log_with_error(
+                        filepath=log_state["filepath"],
+                        error=exception,
+                        end_time=time.time(),
+                        duration=attempt_duration
+                    )
+                    logger.info(f"Finalized log for failed attempt {attempt_number}: {os.path.basename(finalized_path)}")
+
+                    # Create new log file for the retry attempt
+                    new_start_time = time.time()
+                    log_state["attempt_start_time"] = new_start_time
+
+                    new_log_filepath = request_logger.start_request_log(
+                        request_id=f"{request_id}-retry{attempt_number}",
+                        endpoint="/chat/completions",
+                        request_data=request_data,
+                        headers=headers or {},
+                        start_time=new_start_time,
+                        character_chat_info=character_chat_info,
+                        original_request_data=original_request_data,
+                        stripped_metadata=stripped_metadata,
+                        lorebook_entries=lorebook_entries,
+                        is_proxy_retry=True
+                    )
+
+                    # Update both the state container and outer variable
+                    log_state["filepath"] = new_log_filepath
+                    log_filepath = new_log_filepath
+
+                    logger.info(f"Created new log for retry attempt {attempt_number + 1}: {os.path.basename(new_log_filepath)}")
+
+                except Exception as log_error:
+                    logger.error(f"Failed to manage logs during retry: {log_error}")
+
+        # Use error handler for retries with callback
+        response_data = error_handler.retry_with_backoff(make_request, context, on_retry=on_retry_callback)
 
         # Check if this is an error response (dict with _proxy_error flag)
         if isinstance(response_data, dict) and response_data.get('_proxy_error'):
@@ -256,7 +302,8 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
     finally:
         # Complete request log with response data
         end_time = time.time()
-        duration = end_time - start_time
+        # Calculate duration for the current attempt (not total duration across all retries)
+        attempt_duration = end_time - log_state.get("attempt_start_time", start_time)
 
         if request_logger and log_filepath:
             try:
@@ -265,7 +312,7 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
                     response_data=response_data,
                     response_headers={},
                     end_time=end_time,
-                    duration=duration,
+                    duration=attempt_duration,
                     error=error
                 )
             except Exception as log_error:

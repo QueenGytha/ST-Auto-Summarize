@@ -14,6 +14,13 @@ import {
 './entityTypes.js';
 
 import { SUBSYSTEM } from './index.js';
+import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.js';
+import { build as buildNewEntry } from './macros/new_entry.js';
+import { build as buildNewEntries } from './macros/new_entries.js';
+import { build as buildCandidateRegistry } from './macros/candidate_registry.js';
+import { build as buildCandidateEntries } from './macros/candidate_entries.js';
+import { build as buildLorebookEntryLookupSynopsis } from './macros/lorebook_entry_lookup_synopsis.js';
+import { substitute_params } from './promptUtils.js';
 
 import {
   MAX_RECAP_ATTEMPTS,
@@ -651,10 +658,12 @@ settings )
     return { type: '', synopsis: '', sameEntityUids: [], needsFullContextUids: [] };
   }
   const payload = buildNewEntryPayload(normalizedEntry);
-  const prompt = promptTemplate.
-  replace(/\{\{lorebook_entry_types\}\}/g, typeList).
-  replace(/\{\{new_entry\}\}/g, JSON.stringify(payload, null, 2)).
-  replace(/\{\{candidate_registry\}\}/g, registryListing);
+  const params = {
+    lorebook_entry_types: buildLorebookEntryTypes(typeList),
+    new_entry: buildNewEntry(payload),
+    candidate_registry: buildCandidateRegistry(registryListing)
+  };
+  const prompt = substitute_params(promptTemplate, params);
 
   const config = {
     prompt,
@@ -726,11 +735,13 @@ settings )
 {
   const payload = buildNewEntryPayload(normalizedEntry);
   const promptTemplate = settings?.lorebook_entry_deduplicate_prompt || '';
-  return promptTemplate.
-  replace(/\{\{lorebook_entry_types\}\}/g, singleType || '').
-  replace(/\{\{new_entry\}\}/g, JSON.stringify(payload, null, 2)).
-  replace(/\{\{lorebook_entry_lookup_synopsis\}\}/g, lorebookEntryLookupSynopsis || '').
-  replace(/\{\{candidate_entries\}\}/g, JSON.stringify(candidateEntries, null, 2));
+  const params = {
+    lorebook_entry_types: buildLorebookEntryTypes(singleType ? [{ name: singleType }] : []),
+    new_entry: buildNewEntry(payload),
+    lorebook_entry_lookup_synopsis: buildLorebookEntryLookupSynopsis(lorebookEntryLookupSynopsis),
+    candidate_entries: buildCandidateEntries(candidateEntries)
+  };
+  return substitute_params(promptTemplate, params);
 }
 
 // eslint-disable-next-line require-await -- Async function returns promise from runModelWithSettings
@@ -850,9 +861,11 @@ export async function runBulkRegistryPopulation(entriesArray , typeList , settin
     return [];
   }
 
-  const prompt = promptTemplate.
-  replace(/\{\{lorebook_entry_types\}\}/g, typeList).
-  replace(/\{\{new_entries\}\}/g, JSON.stringify(entriesArray, null, 2));
+  const params = {
+    lorebook_entry_types: buildLorebookEntryTypes(typeList),
+    new_entries: buildNewEntries(entriesArray)
+  };
+  const prompt = substitute_params(promptTemplate, params);
 
   const config = {
     prompt,
@@ -1267,7 +1280,7 @@ function extractAndValidateEntities(recap ) {
   return { valid: true, entries: lorebookData.entries };
 }
 
-// eslint-disable-next-line complexity -- Complex validation logic with multiple conditional paths
+ 
 async function loadRecapContext(config ) {
   const lorebookName = getAttachedLorebook();
   if (!lorebookName) {
@@ -1295,25 +1308,10 @@ async function loadRecapContext(config ) {
   const registryState = ensureRegistryState();
 
   // Build recapSettings from operations presets system
-  const { resolveOperationConfig } = await import('./index.js');
-  const mergeConfig = resolveOperationConfig('auto_lorebooks_recap_merge');
-  const lookupConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_lookup');
-  const deduplicateConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_deduplicate');
-
+  // Configuration is logged by resolveOperationConfig() for each operation type
+  const { buildLorebookOperationsSettings } = await import('./index.js');
   const recapSettings = {
-    merge_connection_profile: mergeConfig.connection_profile || '',
-    merge_completion_preset: mergeConfig.completion_preset_name || '',
-    merge_prefill: mergeConfig.prefill || '',
-    merge_prompt: mergeConfig.prompt || '',
-    lorebook_entry_lookup_connection_profile: lookupConfig.connection_profile || '',
-    lorebook_entry_lookup_completion_preset: lookupConfig.completion_preset_name || '',
-    lorebook_entry_lookup_prefill: lookupConfig.prefill || '',
-    lorebook_entry_lookup_prompt: lookupConfig.prompt || '',
-    lorebook_entry_deduplicate_connection_profile: deduplicateConfig.connection_profile || '',
-    lorebook_entry_deduplicate_completion_preset: deduplicateConfig.completion_preset_name || '',
-    lorebook_entry_deduplicate_prefill: deduplicateConfig.prefill || '',
-    lorebook_entry_deduplicate_prompt: deduplicateConfig.prompt || '',
-    skip_duplicates: get_settings('auto_lorebooks_recap_skip_duplicates') ?? true,
+    ...buildLorebookOperationsSettings(),
     enabled: get_settings('auto_lorebooks_enabled_by_default') ?? false
   };
 

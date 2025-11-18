@@ -27,17 +27,20 @@ async function validate_recap(recap , type  = "scene") {
   ctx.deactivateSendButtons();
 
   try {
-    // Get connection profile and preset for validation
-    const validation_profile = get_settings(getValidationKey(type, 'error_detection_connection_profile')) || '';
-    const validation_preset = get_settings(getValidationKey(type, 'error_detection_preset'));
-    const include_preset_prompts = get_settings(getValidationKey(type, 'error_detection_include_preset_prompts'));
+    // Get configuration from operations presets system
+    const { resolveOperationConfig } = await import('./index.js');
+    const config = resolveOperationConfig('scene_recap_error_detection');
+
+    const validation_profile = config.connection_profile || '';
+    const validation_preset = config.completion_preset_name || '';
+    const include_preset_prompts = config.include_preset_prompts ?? false;
 
     // Get the error detection prompt
-    let prompt = get_settings(getValidationKey(type, 'error_detection_prompt'));
+    let prompt = config.prompt || '';
     prompt = prompt.replace("{{recap}}", recap);
 
     // Get prefill if configured
-    const prefill = get_settings(getValidationKey(type, 'error_detection_prefill')) || '';
+    const prefill = config.prefill || '';
     if (prefill) {
       debug(SUBSYSTEM.VALIDATION, `Using prefill for validation prompt`);
     }

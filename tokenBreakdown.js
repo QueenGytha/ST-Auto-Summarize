@@ -281,8 +281,30 @@ export async function calculateAndInjectTokenBreakdown(messages, operation, maxC
 
   // Inject metadata with preliminary breakdown
   const messagesWithMetadata = [...messages];
+
+  // Extract base operation type from full operation string (e.g., "detect_scene_break-0-45" -> "detect_scene_break")
+  // Map operation types to their config keys
+  const operationTypeMap = {
+    'detect_scene_break': 'auto_scene_break',
+    'scene_recap': 'scene_recap',
+    'running_scene_recap': 'running_scene_recap',
+    'recap_merge': 'auto_lorebooks_recap_merge',
+    'lorebook_entry_lookup': 'auto_lorebooks_recap_lorebook_entry_lookup',
+    'lorebook_entry_deduplicate': 'auto_lorebooks_recap_lorebook_entry_deduplicate',
+    'bulk_populate': 'auto_lorebooks_bulk_populate'
+  };
+
+  let baseOperationType = null;
+  for (const [key, value] of Object.entries(operationTypeMap)) {
+    if (operation.startsWith(key)) {
+      baseOperationType = value;
+      break;
+    }
+  }
+
   await injectMetadata(messagesWithMetadata, {
     operation,
+    operationType: baseOperationType,
     tokenBreakdown: preliminaryBreakdown
   });
 

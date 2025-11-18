@@ -1,3 +1,11 @@
+# Generate macro index from macros folder
+echo "Generating macro index..."
+npm run generate-macros || exit 1
+
+# Generate macro documentation
+echo "Generating macro documentation..."
+npm run generate-macro-docs || exit 1
+
 # Run selector validation
 echo "Running selector validation..."
 npm run validate-selectors || exit 1

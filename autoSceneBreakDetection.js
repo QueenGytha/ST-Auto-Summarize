@@ -19,6 +19,11 @@ import {
   prepareScenePrompt,
   calculateSceneRecapTokens } from
 './sceneBreak.js';
+import { build as buildMessages } from './macros/messages.js';
+import { build as buildMinimumSceneLength } from './macros/minimum_scene_length.js';
+import { build as buildEarliestAllowedBreak } from './macros/earliest_allowed_break.js';
+import { build as buildPrefill } from './macros/prefill.js';
+import { substitute_params } from './promptUtils.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 3;
 
@@ -570,21 +575,14 @@ function buildFormattedMessagesWithTokens(chat, filteredIndices, earliestAllowed
 
 function buildPromptFromTemplate(ctx, promptTemplate, options) {
   const { formattedForPrompt, minimumSceneLength, earliestAllowedBreak, prefill } = options;
-  let prompt = promptTemplate;
-  if (ctx.substituteParamsExtended) {
-    prompt = ctx.substituteParamsExtended(prompt, {
-      messages: formattedForPrompt,
-      minimum_scene_length: String(minimumSceneLength),
-      earliest_allowed_break: String(earliestAllowedBreak),
-      prefill
-    }) || prompt;
-  }
+  const params = {
+    messages: buildMessages(formattedForPrompt),
+    minimum_scene_length: buildMinimumSceneLength(minimumSceneLength),
+    earliest_allowed_break: buildEarliestAllowedBreak(earliestAllowedBreak),
+    prefill: buildPrefill(prefill)
+  };
 
-  prompt = prompt.replace(/\{\{messages\}\}/g, formattedForPrompt);
-  prompt = prompt.replace(/\{\{minimum_scene_length\}\}/g, String(minimumSceneLength));
-  prompt = prompt.replace(/\{\{earliest_allowed_break\}\}/g, String(earliestAllowedBreak));
-
-  return prompt;
+  return substitute_params(promptTemplate, params);
 }
 
 async function calculateTotalRequestTokens(options) {
@@ -866,6 +864,11 @@ _operationId  = null)
 
     // Get settings - use forced settings when forceSelection=true, fallback to regular if empty
     const { promptTemplate, prefill, connectionProfile, completionPreset, includePresetPrompts } = loadSceneBreakPromptSettings(forceSelection);
+
+    // Note: Configuration is logged by resolveOperationConfig() in loadSceneBreakPromptSettings()
+    if (forceSelection) {
+      debug(SUBSYSTEM.OPERATIONS, `[auto_scene_break] Force selection mode active`);
+    }
 
     const profile = connectionProfile;
     const presetSetting = completionPreset;

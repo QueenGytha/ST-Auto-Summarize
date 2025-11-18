@@ -211,6 +211,14 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
       { ...generationParams, ...options.overridePayload }
     );
 
+    // DEBUG: Log raw ConnectionManager response
+    debug(SUBSYSTEM.CORE, `[LLMClient] ConnectionManager raw response type: ${typeof result}`);
+    debug(SUBSYSTEM.CORE, `[LLMClient] ConnectionManager raw response:`, result);
+    if (result && typeof result === 'object') {
+      debug(SUBSYSTEM.CORE, `[LLMClient] Response object keys:`, Object.keys(result));
+      debug(SUBSYSTEM.CORE, `[LLMClient] Response.content type: ${typeof result.content}, value:`, result.content);
+    }
+
     // Response structure varies by API: string, {content}, {content, reasoning}, etc.
     // Normalize to string in next step
 
@@ -220,6 +228,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     let finalResult = result;
     if (finalResult && typeof finalResult === 'object' && 'content' in finalResult) {
       finalResult = finalResult.content || '';
+      debug(SUBSYSTEM.CORE, `[LLMClient] Normalized object response to string, length: ${finalResult.length}`);
     }
 
     // 12. SENTENCE TRIMMING (if enabled in ST settings)
