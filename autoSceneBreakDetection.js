@@ -322,9 +322,20 @@ function calculateReductionAmount(checkWhich, chat, currentEndIndex) {
   return 1;
 }
 
-async function calculateAvailableContext(preset) {
+async function calculateAvailableContext(preset, profile) {
   const { getPresetManager } = await import('../../../preset-manager.js');
-  const presetManager = getPresetManager('openai');
+
+  // Determine API type from connection profile
+  let apiType = 'openai'; // default
+  if (profile) {
+    const { getConnectionProfileById } = await import('./profileResolution.js');
+    const profileData = getConnectionProfileById(profile);
+    if (profileData?.api_type) {
+      apiType = profileData.api_type;
+    }
+  }
+
+  const presetManager = getPresetManager(apiType);
 
   let effectivePresetName;
   if (preset === '') {
@@ -645,7 +656,7 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
   return tokens;
 }
 
-// eslint-disable-next-line sonarjs/cognitive-complexity -- Complex reduction algorithm with multiple phases and state management
+// eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Complex reduction algorithm with multiple phases and state management
 async function reduceMessagesUntilTokenFit(config) {
   const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false, profile, effectiveProfile } = config;
 
@@ -656,7 +667,7 @@ async function reduceMessagesUntilTokenFit(config) {
   let currentFormattedForPrompt;
   let prompt;
 
-  const maxAllowedTokens = await calculateAvailableContext(preset);
+  const maxAllowedTokens = await calculateAvailableContext(preset, effectiveProfile);
 
   let reductionPhase = 'coarse';
   let lastReduction = 0;
@@ -734,10 +745,12 @@ async function reduceMessagesUntilTokenFit(config) {
     }
 
     if (maxAllowedTokens === null || tokenCount <= maxAllowedTokens) {
-      if (reductionPhase === 'coarse') {
+      if (reductionPhase === 'coarse' && lastReduction > 0) {
+        // We reduced and now we're under - switch to backtrack to add some back
         reductionPhase = 'backtrack';
         debug(SUBSYSTEM.OPERATIONS, `Under limit - switching to backtrack phase`);
       } else {
+        // Either first iteration (no reduction yet) or in backtrack/fine phase - try to send
         const largerPromptType = sceneRecapTokens > sceneBreakTokens ? 'scene recap (with lorebooks)' : 'scene break detection';
         debug(SUBSYSTEM.OPERATIONS, `${largerPromptType}: ${tokenCount} tokens (including overhead), fits within limit per calculation`);
 
@@ -850,6 +863,7 @@ function loadSceneBreakPromptSettings(forceSelection) {
   };
 }
 
+// eslint-disable-next-line complexity -- Profile resolution adds complexity
 async function detectSceneBreak(
 startIndex ,
 endIndex ,
@@ -875,18 +889,25 @@ _operationId  = null)
     const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
     const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
 
+    // Resolve profile ID early so we can use it for token counting and API type detection
+    const { resolveProfileId, getConnectionProfileById } = await import('./profileResolution.js');
+    const effectiveProfile = resolveProfileId(profile);
+
+    // Determine API type from profile
+    let apiType = 'openai'; // default
+    const profileData = getConnectionProfileById(effectiveProfile);
+    if (profileData?.api_type) {
+      apiType = profileData.api_type;
+    }
+
     // CRITICAL: Resolve preset name NOW, before any profile switching that might change the active preset
     let preset = presetSetting;
     if (preset === '') {
       const { getPresetManager } = await import('../../../preset-manager.js');
-      const presetManager = getPresetManager('openai');
+      const presetManager = getPresetManager(apiType);
       preset = presetManager?.getSelectedPresetName() || '';
       debug(SUBSYSTEM.OPERATIONS, `[detectSceneBreak] Empty preset resolved to current active BEFORE profile switch: "${preset}"`);
     }
-
-    // Resolve profile ID early so we can use it for token counting
-    const { resolveProfileId } = await import('./profileResolution.js');
-    const effectiveProfile = resolveProfileId(profile);
 
     const chat = ctx.chat || [];
 

@@ -180,11 +180,6 @@ function resolveArtifactMetadata(operationType, operationString) {
 function addPresetAndArtifactMetadata(metadata, options) {
   try {
     const { presetName, source } = resolveOperationsPreset();
-    metadata.operations_preset = {
-      name: presetName,
-      source: source
-    };
-    debug(SUBSYSTEM.CORE, `[Metadata] Operations preset: "${presetName}" (source: ${source})`);
 
     let operationType = options?.operationType;
     if (!operationType && options?.operation) {
@@ -192,6 +187,16 @@ function addPresetAndArtifactMetadata(metadata, options) {
     }
 
     const artifactMetadata = resolveArtifactMetadata(operationType, options?.operation);
+
+    metadata.operations_preset = {
+      name: presetName,
+      source: source,
+      connection_profile: artifactMetadata?.connection_profile || null,
+      completion_preset: artifactMetadata?.completion_preset || null
+    };
+
+    debug(SUBSYSTEM.CORE, `[Metadata] Operations preset: "${presetName}" (source: ${source}), profile: ${artifactMetadata?.connection_profile || 'null'}, preset: ${artifactMetadata?.completion_preset || 'null'}`);
+
     if (artifactMetadata) {
       metadata.artifact = artifactMetadata;
     } else if (!operationType) {

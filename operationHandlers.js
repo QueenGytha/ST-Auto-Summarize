@@ -399,8 +399,12 @@ export function registerAllOperationHandlers() {
             // Calculate tokens for remaining range
             const config = resolveOperationConfig('auto_scene_break');
             const preset = config.completion_preset_name || '';
+            const connectionProfile = config.connection_profile;
             // eslint-disable-next-line no-await-in-loop -- Continuation logic runs before return, no actual iteration
-            const maxAllowedTokens = await calculateAvailableContext(preset);
+            const { resolveProfileId } = await import('./profileResolution.js');
+            const effectiveProfile = resolveProfileId(connectionProfile);
+            // eslint-disable-next-line no-await-in-loop -- Continuation logic runs before return, no actual iteration
+            const maxAllowedTokens = await calculateAvailableContext(preset, effectiveProfile);
             // eslint-disable-next-line no-await-in-loop -- Continuation logic runs before return, no actual iteration
             const sceneRecapTokens = await calculateSceneRecapTokensForRange(remainingStart, originalEndIndex, chat, ctx);
 

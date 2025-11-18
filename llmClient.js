@@ -3,7 +3,7 @@
 
 import { getContext } from '../../../extensions.js';
 import { getOperationSuffix } from './operationContext.js';
-import { debug, error, SUBSYSTEM, count_tokens, main_api, trimToEndSentence, loadPresetPrompts } from './index.js';
+import { debug, error, SUBSYSTEM, count_tokens, trimToEndSentence, loadPresetPrompts } from './index.js';
 
 // eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Complete LLM wrapper
 export async function sendLLMRequest(profileId, prompt, operationType, options = {}) {
@@ -39,7 +39,8 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
   }
 
   const { getPresetManager } = await import('../../../preset-manager.js');
-  const presetManager = getPresetManager('openai');
+  const apiType = profile.api || 'openai';
+  const presetManager = getPresetManager(apiType);
 
   let effectivePresetName;
   if (options.preset === '') {
@@ -103,7 +104,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     // Build messages array with preset prompts
     if (typeof prompt === 'string') {
       // Add system prompt for OpenAI if needed
-      const systemPrompt = main_api === 'openai'
+      const systemPrompt = apiType === 'openai'
         ? "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content."
         : null;
 
@@ -119,7 +120,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
   } else {
     // No preset - simple message construction
     if (typeof prompt === 'string') {
-      const systemPrompt = main_api === 'openai'
+      const systemPrompt = apiType === 'openai'
         ? "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content."
         : null;
 

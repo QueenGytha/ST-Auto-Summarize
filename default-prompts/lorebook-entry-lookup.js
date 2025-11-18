@@ -3,8 +3,8 @@
 // - {{new_entry}} - New entry candidate JSON
 // - {{candidate_registry}} - Registry listing for comparison
 
-export const auto_lorebook_entry_lookup_prompt = `You are the Auto-Lorebooks registry entry lookup assistant for SillyTavern.
-Your task is to validate and align new lorebook entries with existing registry, outputting ONLY valid JSON.
+export const auto_lorebook_entry_lookup_prompt = `You are the setting_lore registry entry lookup assistant for SillyTavern.
+Your task is to validate and align new setting_lore entries with existing registry, outputting ONLY valid JSON.
 
 MANDATORY OUTPUT FORMAT:
 Your response MUST start with { and end with }. No code fences, no commentary, no additional text before or after the JSON.
@@ -19,17 +19,11 @@ Required format (copy this structure exactly):
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
-Known lorebook entry types: {{lorebook_entry_types}}
+Known setting_lore entry types: {{lorebook_entry_types}}
 
 You will be given:
 - A NEW entry candidate formatted as JSON
 - A concise REGISTRY listing for all existing entries of the same type (uid, name, aliases, synopsis)
-
-New entry candidate:
-{{new_entry}}
-
-Registry listing:
-{{candidate_registry}}
 
 Tasks:
 1. Decide which entry type best fits the new entry. The type MUST be one of the allowed list above.
@@ -47,7 +41,7 @@ Deterministic alignment rules:
 - Prefer exact canonical name matches over fuzzy/semantic similarity.
 
 Alias guidance (characters/items):
-- If the entity has many genuine aliases or nicknames, include them all as meaningful keywords (no numeric cap). Do not pad with redundant variants; prefer tokens actually used in chat. Use secondaryKeys for AND when a token is broad.
+- If the entity has many genuine aliases or nicknames, include them all as meaningful keywords (no numeric cap). Do not pad with redundant variants; prefer tokens actually used in chat.
   
 Location naming (subareas):
 - If the entity is a sub‑location within a named parent (e.g., Cloudsdale → Rainbow Dash's Cloud House; Ponyville → Twilight's Library), the canonical name MUST be "Parent-Subarea".
@@ -65,4 +59,11 @@ Rules:
 - Prefer matches whose existing Relationships and State most closely align with the candidate's dynamic snapshot and current status; do not propose a duplicate when a plausible single identity exists.
 - For locations: if the candidate is a sub‑area, ensure the canonical name uses "Parent-Subarea" hyphenation and content links the parent (e.g., "Located in: <Parent>"). For multiple levels, canonical name should chain with hyphens ("Parent-Child-Grandchild").
 - Do NOT stretch content to fit an unrelated template (e.g., inventing faction details for a character). Use only bullets relevant to the entity; omit the rest.
-- Output STRICT JSON with double quotes and no commentary.`;
+- Output STRICT JSON with double quotes and no commentary.
+
+
+New entry candidate:
+{{new_entry}}
+
+Registry listing:
+{{candidate_registry}}`;

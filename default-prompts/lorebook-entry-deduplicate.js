@@ -4,7 +4,7 @@
 // - {{lorebook_entry_lookup_synopsis}} - Synopsis from Stage 1
 // - {{candidate_entries}} - Candidate entries with full content
 
-export const auto_lorebook_entry_deduplicate_prompt = `You are the Auto-Lorebooks duplicate resolver for SillyTavern.
+export const auto_lorebook_entry_deduplicate_prompt = `You are the setting_lore duplicate resolver for SillyTavern.
 Your task is to resolve duplicate entries by matching or creating new entries, outputting ONLY valid JSON.
 
 MANDATORY OUTPUT FORMAT:
@@ -19,7 +19,7 @@ Required format (copy this structure exactly):
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
-Known lorebook entry types: {{lorebook_entry_types}}
+Known setting_lore entry types: {{lorebook_entry_types}}
 
 The Stage 1 lookup flagged possible duplicates and requested full context. You must make the final decision.
 
@@ -29,7 +29,7 @@ New entry candidate:
 Stage 1 synopsis:
 {{lorebook_entry_lookup_synopsis}}
 
-Candidate lorebook entries (full content, JSON array):
+Candidate setting_lore entries (full content, JSON array):
 {{candidate_entries}}
 
 Rules:
