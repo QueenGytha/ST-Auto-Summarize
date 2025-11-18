@@ -109,7 +109,7 @@ class ErrorLogger:
         with self._log_number_lock:
             log_number = self._get_next_error_log_number(folder, operation)
             if retry_attempt is not None and retry_attempt > 0:
-                filename = f"{log_number:05d}-{operation}-PROXY-ERROR.md"
+                filename = f"{log_number:05d}-{operation}-attempt{retry_attempt}-PROXY-ERROR.md"
             else:
                 filename = f"{log_number:05d}-{operation}-ERROR.md"
             filepath = os.path.join(folder, filename)
@@ -180,7 +180,7 @@ class ErrorLogger:
                 "status_text": error.reason,
                 "url": error.url,
                 "headers": dict(error.headers),
-                "response_text": error.text[:1000] if error.text else None,  # Limit response text
+                "response_text": error.text if error.text else None,
             })
         
         # Add exception-specific information
@@ -202,7 +202,7 @@ class ErrorLogger:
                     "http_status_text": error.response.reason,
                     "http_url": error.response.url,
                     "http_headers": dict(error.response.headers),
-                    "http_response_text": error.response.text[:1000] if error.response.text else None,
+                    "http_response_text": error.response.text if error.response.text else None,
                 })
         
         # Add context information if enabled
