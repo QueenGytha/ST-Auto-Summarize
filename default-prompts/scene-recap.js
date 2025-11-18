@@ -5,7 +5,7 @@
 // - {{active_setting_lore}} - Active lorebook entries formatted with instructions
 
 export const scene_recap_prompt = `You are a structured data extraction system analyzing roleplay transcripts.
-Your task is to extract scene information into JSON according to the specifications below.
+Your task is to extract information into JSON according to the specifications below.
 You are NOT participating in the roleplay. You are analyzing completed roleplay text.
 
 MANDATORY OUTPUT FORMAT:
@@ -30,9 +30,7 @@ Required format (copy this structure exactly):
 }
 
 Example valid response:
-{"scene_name": "Hidden Chamber Revelation", "recap": "## Current Situation\n- At the waterfall, party stands by a newly found chamber\n\n## Key Developments\n- [discovery] Hidden chamber found behind waterfall; murals show the First War\n\n## Tone & Style\n- curious; reverent; ancient mystery\n\n## Pending Threads\n- Return with tools to study murals", "atmosphere": "Late afternoon; golden light through mist; tense anticipation", "emotional_beats": "Alice: awe mixed with apprehension at ancient history discovery; Bob: cautious excitement, driven by artifact obsession", "setting_lore": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: Secret chamber behind waterfall with First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "murals", "waterfall"], "secondaryKeys": ["chamber"]}]}
-
-CRITICAL: Ensure your response begins with the opening curly brace { character
+{"scene_name": "Hidden Chamber Revelation", "recap": "## Key Developments\n- [discovery] Hidden chamber found behind waterfall; murals show the First War\n\n## Tone & Style\n- curious; reverent; ancient mystery\n\n## Pending Threads\n- Return with tools to study murals", "atmosphere": "Late afternoon; golden light through mist; tense anticipation", "emotional_beats": "Alice: awe mixed with apprehension at ancient history discovery; Bob: cautious excitement, driven by artifact obsession", "setting_lore": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: Secret chamber behind waterfall with First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "murals", "waterfall"], "secondaryKeys": ["chamber"]}]}
 
 ⚠️ CRITICAL: USE ONLY THE SCENE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️
 - If the scene does not state a fact, it does not exist
@@ -104,9 +102,7 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //
 // recap field (string):
 // Use markdown headers and bullets in this exact order:
-//   ## Current Situation   -> Where the scene ends; who is present; unresolved stakes
-//                           Include explicit time and location only if stated (e.g., "dawn", "later that night", a named place).
-//   ## Key Developments    -> One bullet per significant change/outcome in this scene
+//   ## Key Developments    -> One bullet per significant change/outcome in this scene (events, decisions, discoveries, state changes)
 //                           Optional category tag at start of bullet to aid scanning: [reveal], [decision], [travel], [combat], [transfer], [relationship], [plan], [discovery], [state], [document]. Use at most one tag per bullet and only when it adds clarity.
 //                           [document] tag: Use for written content that characters read/received (letters, contracts, inscriptions, prophecies, etc.). Capture verbatim in quotes.
 //                           For plot events NOT captured in lorebook entries, use cause → effect format when causal relationships exist (e.g., "- [event] X happened (because Y) → resulting in Z" or "- Character revealed secret → trust damaged").
@@ -132,22 +128,21 @@ CRITICAL: Ensure your response begins with the opening curly brace { character
 //                             - "Motifs: technology vs. nature; corporate jargon masking violence; neon-lit urban decay"
 //                             - "Format: mindspeak in italics with colons (*:text:*); alternating POV chapters; letters/journal entries"
 //                           Examples of BAD Tone & Style bullets (these are character states, NOT writing style):
-//                             ❌ "tense; conflicted; determined" - these are emotions, belong in Key Developments
+//                             ❌ "tense; conflicted; determined" - these are emotions, belong in emotional_beats
 //                             ❌ "Alice distrusts Bob" - this is relationship, belongs in Key Developments or setting_lore entries
-//                             ❌ "mounting pressure" - this is plot state, belongs in Current Situation
 //                           Purpose: Give future LLM the context needed to WRITE in the same style when old messages scroll out of context
 //                           Update only when writing style itself changes (new POV, genre shift, new narrative device introduced)
 //   ## Pending Threads      -> Goals, deadlines, secrets, obligations that carry forward
 // Rules:
 // - One fact per bullet; be specific (names, items, places).
-// - Do not narrate blow-by-blow; focus on durable outcomes.
+// - Do not narrate blow-by-blow; focus on durable outcomes and what happened.
 // - Avoid describing traits/backstory here—put those in setting_lore entries.
 // - When relationship dynamics between named entities shift, include a compact dynamic snapshot in Key Developments (tone, interaction patterns, salient past interactions). Evidence style: add EITHER a short quote (≤ 12 words) OR an explicit cue (e.g., "averts gaze"), not both. Avoid numeric scoring (no "+1 suspicion"). Include how they address each other if it changes (pet names, titles, honorifics). If the shift hinged on a single micro‑moment, reflect it as a Moment Anchor in Tone & Style.
 // - Explicit uncertainty: When the text states uncertainty, capture it using prefixes like "Likely:" or "Uncertain:", but never invent or upgrade uncertainty to fact.
 // - Pending Threads should be actionable: verb+noun+anchor when present (e.g., "Retrieve Sunblade (before dawn)", "Meet Clara (east gate, first light)").
 // - All sections MUST be present; if a section has no content, include a single line with "—".
 // - Final check before responding: durable outcomes covered; Tone & Style describes WRITING STYLE (genre, POV, prose patterns, dialogue format, motifs) NOT character emotions; dynamic snapshots updated if relationships shifted.
-// - Coherence note: If a new or updated lorebook entity is introduced, reference it by name once in recap (Current Situation or Key Developments) so context remains coherent.
+// - Coherence note: If a new or updated lorebook entity is introduced, reference it by name once in recap (Key Developments) so context remains coherent.
 //
 // atmosphere field (string):
 // - Brief sensory and mood context to ground the scene in a specific feeling and time
