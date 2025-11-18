@@ -1241,7 +1241,7 @@ export function registerAllOperationHandlers() {
 
     debug(SUBSYSTEM.QUEUE, `Executing POPULATE_REGISTRIES for ${entries.length} entries`);
 
-    const bulkPopulateConfig = resolveOperationConfig('auto_lorebooks_bulk_populate');
+    const bulkPopulateConfig = await resolveOperationConfig('auto_lorebooks_bulk_populate');
 
     const settings = {
       bulk_populate_prompt: bulkPopulateConfig.prompt,
