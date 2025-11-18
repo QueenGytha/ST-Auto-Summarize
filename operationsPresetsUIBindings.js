@@ -435,11 +435,26 @@ function bindArtifactEditorModal() {
     }
 
     try {
-      updateArtifact(operationType, artifactName, artifactData);
+      const resultArtifactName = updateArtifact(operationType, artifactName, artifactData);
+      const wasDefaultEdited = resultArtifactName !== artifactName;
+
+      if (wasDefaultEdited) {
+        const presetName = ensureNotDefaultPreset();
+        if (!presetName) {
+          return;
+        }
+
+        updatePreset(presetName, {
+          operations: {
+            [operationType]: resultArtifactName
+          }
+        });
+      }
+
       saveSettingsDebounced();
       toast('Artifact saved successfully', 'success');
       closeArtifactEditor();
-      refreshArtifactSelector(operationType);
+      refreshArtifactSelector(operationType, resultArtifactName);
     } catch (err) {
       toast(`Failed to save artifact: ${err.message}`, 'error');
     }

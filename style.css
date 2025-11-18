@@ -25,6 +25,9 @@
 
 .auto_recap_scene_break_hidden { display: none !important; }
 
+/* Hide scene recap error detection UI (feature disabled) */
+[data-testid="operation-type-scene-recap-error"] { display: none !important; }
+
 /* tables for formatting settings */
 .auto_recap_memory_settings_content table {
     width: 100%;
