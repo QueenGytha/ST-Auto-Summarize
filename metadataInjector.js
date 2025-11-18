@@ -133,7 +133,7 @@ function extractArtifactConfig(artifact, operationString) {
   };
 }
 
-function resolveArtifactMetadata(operationType, operationString) {
+async function resolveArtifactMetadata(operationType, operationString) {
   if (!operationType) {
     return null;
   }
@@ -149,7 +149,7 @@ function resolveArtifactMetadata(operationType, operationString) {
   const { profileId, presetName, includePresetPrompts, isForced } = extractArtifactConfig(artifact, operationString);
 
   const { profileName, presetName: completionPresetName, usingSTCurrentProfile, usingSTCurrentPreset } =
-    resolveActualProfileAndPreset(profileId, presetName);
+    await resolveActualProfileAndPreset(profileId, presetName);
 
   debug(SUBSYSTEM.CORE, `[Metadata] Artifact: ${artifact.name} v${artifact.internalVersion}, profile: ${profileName}, preset: ${completionPresetName}, includePresetPrompts: ${includePresetPrompts}`);
 
@@ -177,7 +177,7 @@ function resolveArtifactMetadata(operationType, operationString) {
   return metadata;
 }
 
-function addPresetAndArtifactMetadata(metadata, options) {
+async function addPresetAndArtifactMetadata(metadata, options) {
   try {
     const { presetName, source } = resolveOperationsPreset();
 
@@ -186,7 +186,7 @@ function addPresetAndArtifactMetadata(metadata, options) {
       operationType = parseOperationType(options.operation);
     }
 
-    const artifactMetadata = resolveArtifactMetadata(operationType, options?.operation);
+    const artifactMetadata = await resolveArtifactMetadata(operationType, options?.operation);
 
     metadata.operations_preset = {
       name: presetName,
@@ -207,7 +207,7 @@ function addPresetAndArtifactMetadata(metadata, options) {
   }
 }
 
-export function createMetadataBlock(options  = {}) {
+export async function createMetadataBlock(options  = {}) {
   const metadata  = getDefaultMetadata();
 
   if (options?.operation) {
@@ -226,7 +226,7 @@ export function createMetadataBlock(options  = {}) {
     metadata.custom = options.custom;
   }
 
-  addPresetAndArtifactMetadata(metadata, options);
+  await addPresetAndArtifactMetadata(metadata, options);
 
   return metadata;
 }
@@ -252,7 +252,7 @@ options  = {})
     }
 
     // Create metadata block
-    const metadata = createMetadataBlock(options);
+    const metadata = await createMetadataBlock(options);
 
     // Format as string
     const metadataStr = formatMetadataBlock(metadata);
@@ -354,7 +354,7 @@ options  = {})
     }
 
     // Create metadata block
-    const metadata = createMetadataBlock(options);
+    const metadata = await createMetadataBlock(options);
     const metadataStr = formatMetadataBlock(metadata);
 
     // Find first system message, or create one if none exists

@@ -1311,7 +1311,7 @@ async function loadRecapContext(config ) {
   // Configuration is logged by resolveOperationConfig() for each operation type
   const { buildLorebookOperationsSettings } = await import('./index.js');
   const recapSettings = {
-    ...buildLorebookOperationsSettings(),
+    ...(await buildLorebookOperationsSettings()),
     enabled: get_settings('auto_lorebooks_enabled_by_default') ?? false
   };
 

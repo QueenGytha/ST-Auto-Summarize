@@ -723,7 +723,7 @@ export function registerAllOperationHandlers() {
     debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Operation ID: ${operation.id}, Status: ${operation.status}`);
 
     // Build settings from resolved configs
-    const settings = buildLorebookOperationsSettings();
+    const settings = await buildLorebookOperationsSettings();
 
     debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Settings - skip_duplicates: ${settings.skip_duplicates}`);
 
@@ -827,7 +827,7 @@ export function registerAllOperationHandlers() {
     debug(SUBSYSTEM.QUEUE, `Executing RESOLVE_LOREBOOK_ENTRY for: ${entryData.comment || 'Unknown'}`);
 
     // Build settings from resolved configs
-    const settings = buildLorebookOperationsSettings();
+    const settings = await buildLorebookOperationsSettings();
 
     const lorebookName = getAttachedLorebook();
 

@@ -66,22 +66,23 @@ export function resolveOperationsPreset() {
  * @param {string} artifactPresetName - Completion preset name from artifact (may be empty)
  * @returns {{profileName: string, presetName: string, usingSTCurrentProfile: boolean, usingSTCurrentPreset: boolean}}
  */
-export function resolveActualProfileAndPreset(artifactProfileId, artifactPresetName) {
+export async function resolveActualProfileAndPreset(artifactProfileId, artifactPresetName) {
   const ctx = getContext();
   let profileName = null;
   let usingSTCurrentProfile = false;
+  let profileData = null;
 
   // Resolve profile
   if (artifactProfileId && artifactProfileId !== '') {
-    const profile = ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === artifactProfileId);
-    profileName = profile?.name || null;
+    profileData = ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === artifactProfileId);
+    profileName = profileData?.name || null;
   } else {
     // Using ST current
     usingSTCurrentProfile = true;
     const selectedProfileId = ctx.extensionSettings.connectionManager?.selectedProfile;
     if (selectedProfileId) {
-      const profile = ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === selectedProfileId);
-      profileName = profile?.name || null;
+      profileData = ctx.extensionSettings.connectionManager?.profiles?.find(p => p.id === selectedProfileId);
+      profileName = profileData?.name || null;
     }
   }
 
@@ -92,10 +93,18 @@ export function resolveActualProfileAndPreset(artifactProfileId, artifactPresetN
   if (artifactPresetName && artifactPresetName !== '') {
     presetName = artifactPresetName;
   } else {
-    // Using ST current
+    // Using ST current - get the actual preset name from preset manager
     usingSTCurrentPreset = true;
     try {
-      presetName = ctx.presetSettings?.name || ctx.chatCompletionSettings?.name || null;
+      // Determine API type from profile
+      let apiType = 'openai'; // default
+      if (profileData?.api_type) {
+        apiType = profileData.api_type;
+      }
+
+      const { getPresetManager } = await import('../../../preset-manager.js');
+      const presetManager = getPresetManager(apiType);
+      presetName = presetManager?.getSelectedPresetName() || null;
     } catch {
       presetName = null;
     }
@@ -115,10 +124,10 @@ export function resolveActualProfileAndPreset(artifactProfileId, artifactPresetN
  * @param {string} artifactPresetName - Completion preset name from artifact (may be empty)
  * @returns {{profileDisplay: string, presetDisplay: string}} Formatted names for logging
  */
-function resolveDisplayNames(artifactProfileId, artifactPresetName) {
+async function resolveDisplayNames(artifactProfileId, artifactPresetName) {
   // Use the single source of truth
   const { profileName, presetName, usingSTCurrentProfile, usingSTCurrentPreset } =
-    resolveActualProfileAndPreset(artifactProfileId, artifactPresetName);
+    await resolveActualProfileAndPreset(artifactProfileId, artifactPresetName);
 
   // Format for display
   let profileDisplay;
@@ -142,7 +151,7 @@ function resolveDisplayNames(artifactProfileId, artifactPresetName) {
   return { profileDisplay, presetDisplay };
 }
 
-export function getDefaultArtifact(operationType) {
+export async function getDefaultArtifact(operationType) {
   const artifacts = get_settings('operation_artifacts') || {};
   const operationArtifacts = artifacts[operationType] || [];
   const defaultArtifact = operationArtifacts.find(a => a.isDefault);
@@ -153,7 +162,7 @@ export function getDefaultArtifact(operationType) {
 
   // Log default artifact usage with resolved names
   const { presetName } = resolveOperationsPreset();
-  const { profileDisplay, presetDisplay } = resolveDisplayNames(
+  const { profileDisplay, presetDisplay } = await resolveDisplayNames(
     defaultArtifact.connection_profile,
     defaultArtifact.completion_preset_name
   );
@@ -166,7 +175,7 @@ export function getDefaultArtifact(operationType) {
   return defaultArtifact;
 }
 
-export function resolveOperationConfig(operationType) {
+export async function resolveOperationConfig(operationType) {
   try {
     const { presetName } = resolveOperationsPreset();
     const presets = get_settings('operations_presets') || {};
@@ -174,13 +183,13 @@ export function resolveOperationConfig(operationType) {
 
     if (!preset) {
       error(SUBSYSTEM.CORE, `Preset not found: ${presetName}, using Default`);
-      return getDefaultArtifact(operationType);
+      return await getDefaultArtifact(operationType);
     }
 
     const artifactName = preset.operations[operationType];
     if (!artifactName) {
       error(SUBSYSTEM.CORE, `No artifact defined for ${operationType} in preset ${presetName}`);
-      return getDefaultArtifact(operationType);
+      return await getDefaultArtifact(operationType);
     }
 
     const artifacts = get_settings('operation_artifacts') || {};
@@ -189,11 +198,11 @@ export function resolveOperationConfig(operationType) {
 
     if (!artifact) {
       error(SUBSYSTEM.CORE, `Artifact not found: ${artifactName} for ${operationType}`);
-      return getDefaultArtifact(operationType);
+      return await getDefaultArtifact(operationType);
     }
 
     // Log resolved configuration with actual profile/preset names
-    const { profileDisplay, presetDisplay } = resolveDisplayNames(
+    const { profileDisplay, presetDisplay } = await resolveDisplayNames(
       artifact.connection_profile,
       artifact.completion_preset_name
     );
@@ -208,14 +217,14 @@ export function resolveOperationConfig(operationType) {
 
   } catch (err) {
     error(SUBSYSTEM.CORE, `Failed to resolve operation config for ${operationType}:`, err);
-    return getDefaultArtifact(operationType);
+    return await getDefaultArtifact(operationType);
   }
 }
 
-export function buildLorebookOperationsSettings() {
-  const mergeConfig = resolveOperationConfig('auto_lorebooks_recap_merge');
-  const lookupConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_lookup');
-  const deduplicateConfig = resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_deduplicate');
+export async function buildLorebookOperationsSettings() {
+  const mergeConfig = await resolveOperationConfig('auto_lorebooks_recap_merge');
+  const lookupConfig = await resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_lookup');
+  const deduplicateConfig = await resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_deduplicate');
 
   return {
     merge_connection_profile: mergeConfig.connection_profile || '',
