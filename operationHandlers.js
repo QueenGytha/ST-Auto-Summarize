@@ -367,10 +367,12 @@ export function registerAllOperationHandlers() {
           return await handleBelowMinimumRejection({ operation, startIndex, originalEndIndex, offset, sceneBreakAt, filteredIndices, minimumSceneLength, validation, chat });
         }
 
+        // Other validation errors (out of range, not in filtered set, etc.) - retry indefinitely
+        retryCount++;
         error(SUBSYSTEM.QUEUE, `Invalid scene break response for range ${startIndex}-${endIndex}: ${validation.reason}`);
         error(SUBSYSTEM.QUEUE, `  sceneBreakAt: ${sceneBreakAt}, rationale: ${rationale}`);
-        toast(`⚠ Invalid scene break detection response - will retry`, 'warning');
-        return { sceneBreakAt: false, rationale: `Invalid: ${validation.reason}` };
+        toast(`⚠ Invalid scene break response - retrying (attempt #${retryCount})`, 'warning');
+        continue; // Retry the detection
       }
 
       if (sceneBreakAt === false) {
