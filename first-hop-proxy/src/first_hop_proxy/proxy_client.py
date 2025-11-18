@@ -217,17 +217,42 @@ class ProxyClient:
             # The API error details are in the response body
             if 400 <= response.status_code < 500:
                 logger.warning(f"Client error {response.status_code}, returning error response body")
+                # Try to parse JSON, fall back to text if it fails
+                try:
+                    error_data = response.json()
+                except json.JSONDecodeError:
+                    # Non-JSON response (e.g., CloudFlare HTML error page)
+                    logger.warning(f"Non-JSON error response, capturing as text")
+                    error_data = {
+                        'error': {
+                            'message': f'HTTP {response.status_code} error',
+                            'type': 'non_json_error',
+                            'response_text': response.text[:1000]  # Limit size
+                        }
+                    }
+
                 # Return a dict with error flag and status code
                 return {
                     '_proxy_error': True,
                     '_status_code': response.status_code,
-                    **response.json()
+                    **error_data
                 }
 
             # For server errors (5xx), raise so retry logic kicks in
             response.raise_for_status()
 
-        return response.json()
+        # Fallback (should be unreachable, but handle gracefully)
+        try:
+            return response.json()
+        except json.JSONDecodeError:
+            logger.error(f"Unexpected non-JSON response at fallback return")
+            return {
+                'error': {
+                    'message': 'Unexpected non-JSON response',
+                    'type': 'fallback_error',
+                    'response_text': response.text[:1000]
+                }
+            }
     
     def _is_blank_response(self, response_json: Dict[str, Any]) -> bool:
         """Check if the response has blank content that should trigger a retry"""
