@@ -64,7 +64,7 @@ export const default_settings = {
   scene_recap_error_detection_enabled: false,
   scene_recap_history_count: 1,
   scene_recap_error_detection_retries: 3,
-  auto_hide_scene_count: 2, // Hide messages older than last 2 scenes
+  auto_hide_scene_count: 1, // Hide messages older than last 2 scenes
 
   // --- Auto Scene Break Detection Settings --- (always available; governed by per-event settings)
   auto_scene_break_on_load: false,
