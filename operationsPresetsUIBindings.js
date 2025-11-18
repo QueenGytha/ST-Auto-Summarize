@@ -165,7 +165,7 @@ function bindPresetControls() {
     try {
       deletePreset(presetName);
       saveSettingsDebounced();
-      refreshPresetSelector();
+      loadActivePreset();
       toast(`Deleted preset: "${presetName}"`, 'success');
     } catch (err) {
       toast(`Failed to delete preset: ${err.message}`, 'error');
