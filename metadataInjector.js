@@ -72,6 +72,7 @@ function parseOperationType(operation) {
     'recap_merge': 'auto_lorebooks_recap_merge',
     'lorebook_entry_lookup': 'auto_lorebooks_recap_lorebook_entry_lookup',
     'lorebook_entry_deduplicate': 'auto_lorebooks_recap_lorebook_entry_deduplicate',
+    'populate_registries': 'auto_lorebooks_bulk_populate',
     'bulk_populate': 'auto_lorebooks_bulk_populate'
   };
 
