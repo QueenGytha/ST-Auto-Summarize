@@ -1,5 +1,5 @@
 
-import { get_settings, error } from './index.js';
+import { get_settings, error, debug } from './index.js';
 import { getArtifact } from './operationArtifacts.js';
 
 const OPERATION_TYPES = [
@@ -72,14 +72,14 @@ function getConnectionProfileName(uuid) {
   try {
     const connectionManager = window.SillyTavern?.connectionManager;
     if (!connectionManager) {
-      error('ConnectionManager not available');
+      debug('ConnectionManager not available during preset export');
       return null;
     }
 
     const profile = connectionManager.getProfileByUuid(uuid);
     return profile?.name || null;
   } catch (err) {
-    error(`Failed to get connection profile name for UUID ${uuid}:`, err);
+    debug(`Failed to get connection profile name for UUID ${uuid}:`, err);
     return null;
   }
 }
