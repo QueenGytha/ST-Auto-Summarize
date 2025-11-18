@@ -651,9 +651,10 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
 
 // eslint-disable-next-line sonarjs/cognitive-complexity -- Complex reduction algorithm with multiple phases and state management
 async function reduceMessagesUntilTokenFit(config) {
-  const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false, profile, effectiveProfile } = config;
+  const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false, profile, effectiveProfile, operationId } = config;
 
   let currentEndIndex = endIndex;
+  const originalEndIndex = endIndex;
   let currentFilteredIndices = filteredIndices;
   let currentMaxEligibleIndex = maxEligibleIndex;
   let currentEarliestAllowedBreak;
@@ -664,6 +665,19 @@ async function reduceMessagesUntilTokenFit(config) {
 
   let reductionPhase = 'coarse';
   let lastReduction = 0;
+
+  // Helper to update operation metadata when range changes
+  const updateOperationRange = async (newEndIndex, phase) => {
+    if (operationId && newEndIndex !== originalEndIndex) {
+      const { updateOperationMetadata } = await import('./operationQueue.js');
+      await updateOperationMetadata(operationId, {
+        range_reduced: true,
+        original_end_index: originalEndIndex,
+        current_end_index: newEndIndex,
+        reduction_phase: phase
+      });
+    }
+  };
 
   while (true) {
     const currentEligibleFilteredIndices = filterEligibleIndices(currentFilteredIndices, currentMaxEligibleIndex);
@@ -745,6 +759,8 @@ async function reduceMessagesUntilTokenFit(config) {
         currentEndIndex = validCutoff;
         reductionPhase = 'fine';
         debug(SUBSYSTEM.OPERATIONS, `Under limit after coarse reduction - undoing last halving: adding back ${lastReduction} messages to index ${currentEndIndex}, switching to fine-tuning`);
+        // eslint-disable-next-line no-await-in-loop -- Update operation metadata after backtrack
+        await updateOperationRange(currentEndIndex, 'backtrack');
         // Continue loop to recalculate with backtracked range
       } else {
         // Fine phase or first iteration (no reduction yet) - under limit, send it
@@ -779,11 +795,15 @@ async function reduceMessagesUntilTokenFit(config) {
         lastReduction = currentEndIndex - validCutoff;
         currentEndIndex = validCutoff;
         debug(SUBSYSTEM.OPERATIONS, `Coarse reduction: halved range by ${lastReduction} messages to index ${currentEndIndex}`);
+        // eslint-disable-next-line no-await-in-loop -- Update operation metadata after coarse reduction
+        await updateOperationRange(currentEndIndex, 'coarse');
       } else {
         // Fine phase: reduce by 1 or 2 messages depending on checkWhich setting
         const reductionAmount = calculateReductionAmount(checkWhich, chat, currentEndIndex);
         currentEndIndex -= reductionAmount;
         debug(SUBSYSTEM.OPERATIONS, `Fine reduction: reduced by ${reductionAmount} messages to index ${currentEndIndex}`);
+        // eslint-disable-next-line no-await-in-loop -- Update operation metadata after fine reduction
+        await updateOperationRange(currentEndIndex, 'fine');
       }
     }
 
@@ -956,7 +976,8 @@ _operationId  = null)
       forceSelection,
       includePresetPrompts,
       profile: effectiveProfile,
-      effectiveProfile: effectiveProfile
+      effectiveProfile: effectiveProfile,
+      operationId: _operationId
     });
 
     if (reductionResult.sceneBreakAt !== undefined) {
