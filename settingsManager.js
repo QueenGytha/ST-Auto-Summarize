@@ -165,11 +165,12 @@ async function reset_settings() {
     </div>
   `;
 
-  const confirmed = await ctx.callPopup?.(html, 'text', undefined, {
+  const popup = new ctx.Popup(html, ctx.POPUP_TYPE.CONFIRM, '', {
     okButton: 'Restore Defaults',
-    cancelButton: 'Cancel',
     wide: true
   });
+
+  const confirmed = await popup.show();
 
   if (!confirmed) {
     log("Reset settings cancelled by user");
