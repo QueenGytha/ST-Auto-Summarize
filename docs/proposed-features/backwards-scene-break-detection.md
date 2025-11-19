@@ -1708,11 +1708,207 @@ if (newEndIndex >= endIndex) {
 
 ---
 
-## Implementation Verification Strategy
+## Testing Strategy
 
-**Problem:** I cannot run the code. I can only write it and verify it compiles/lints.
+### Test Infrastructure Required
 
-**My verification approach during implementation:**
+**Unit tests for pure functions:**
+- `calculateLatestAllowedBreak(filteredIndices, endIndex, minimumSceneLength)` - returns number
+- `findPreviousSceneBreak(chat, beforeIndex)` - returns number
+
+**Integration tests using LLM override mechanism:**
+
+The codebase already has `globalThis.__TEST_RECAP_TEXT_RESPONSE` for controlling LLM responses.
+
+**Add test override for scene break detection:**
+
+```javascript
+// In detectSceneBreak() before LLM call
+if (globalThis.__TEST_SCENE_BREAK_RESPONSE !== undefined) {
+  const testResponse = globalThis.__TEST_SCENE_BREAK_RESPONSE;
+  globalThis.__TEST_SCENE_BREAK_RESPONSE = undefined; // consume once
+  return testResponse; // { sceneBreakAt: number | false, rationale: string }
+}
+```
+
+**This enables testing:**
+1. Set `globalThis.__TEST_SCENE_BREAK_RESPONSE = { sceneBreakAt: 15, rationale: 'test' }`
+2. Trigger backwards detection
+3. Verify backwards chain executes correctly
+4. Inspect queue state using queue API
+5. Verify message state using get_data()
+
+### Test Cases
+
+**Unit Tests (pure functions)**
+
+```javascript
+// Test calculateLatestAllowedBreak
+describe('calculateLatestAllowedBreak', () => {
+  test('returns -1 when no valid position exists', () => {
+    const filteredIndices = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28];
+    const result = calculateLatestAllowedBreak(filteredIndices, 29, 10);
+    expect(result).toBe(8); // 10 messages after: [10,12,14,16,18,20,22,24,26,28]
+  });
+
+  test('returns -1 when insufficient messages', () => {
+    const filteredIndices = [0, 2, 4, 6];
+    const result = calculateLatestAllowedBreak(filteredIndices, 6, 10);
+    expect(result).toBe(-1);
+  });
+});
+
+// Test findPreviousSceneBreak
+describe('findPreviousSceneBreak', () => {
+  test('returns 0 when no previous break', () => {
+    const chat = createMockChat(30);
+    const result = findPreviousSceneBreak(chat, 20);
+    expect(result).toBe(0);
+  });
+
+  test('returns index of previous break', () => {
+    const chat = createMockChat(30);
+    set_data(chat[10], 'scene_break', true);
+    const result = findPreviousSceneBreak(chat, 20);
+    expect(result).toBe(10);
+  });
+});
+```
+
+**Integration Tests (controlled LLM responses)**
+
+```javascript
+describe('Backwards chain detection', () => {
+  test('finds multiple breaks via recursion', async () => {
+    const chat = createMockChat(50);
+
+    // Control LLM responses in sequence
+    const responses = [
+      { sceneBreakAt: 30, rationale: 'First break' },  // Forward finds 30
+      { sceneBreakAt: 15, rationale: 'Second break' }, // Backwards finds 15
+      { sceneBreakAt: 7, rationale: 'Third break' },   // Backwards finds 7
+      { sceneBreakAt: false, rationale: 'No more breaks' } // Backwards terminates
+    ];
+
+    let responseIndex = 0;
+    globalThis.__TEST_SCENE_BREAK_RESPONSE_QUEUE = responses;
+
+    // Trigger detection
+    await detectSceneBreaksInRange(0, 50);
+
+    // Wait for queue to complete
+    await waitForQueueEmpty();
+
+    // Verify breaks placed
+    expect(get_data(chat[7], 'scene_break')).toBe(true);
+    expect(get_data(chat[15], 'scene_break')).toBe(true);
+    expect(get_data(chat[30], 'scene_break')).toBe(true);
+
+    // Verify recaps queued in chronological order
+    const recapOps = getCompletedOperationsOfType(OperationType.SCENE_RECAP);
+    expect(recapOps.map(op => op.metadata.message_id)).toEqual([7, 15, 30]);
+
+    // Verify messages marked as checked
+    for (let i = 0; i < 7; i++) {
+      expect(get_data(chat[i], 'auto_scene_break_checked')).toBe(true);
+    }
+  });
+
+  test('terminates when range too small', async () => {
+    const chat = createMockChat(25);
+
+    globalThis.__TEST_SCENE_BREAK_RESPONSE_QUEUE = [
+      { sceneBreakAt: 20, rationale: 'Break' }
+    ];
+
+    await detectSceneBreaksInRange(0, 25);
+    await waitForQueueEmpty();
+
+    // Verify no backwards recursion (insufficient messages)
+    const backwardsOps = getOperationsOfType(OperationType.DETECT_SCENE_BREAK_BACKWARDS);
+    expect(backwardsOps.length).toBe(1); // Only initial backwards op queued, then terminated
+  });
+
+  test('handles invalid LLM response (break >= nextBreakIndex)', async () => {
+    const chat = createMockChat(50);
+
+    globalThis.__TEST_SCENE_BREAK_RESPONSE_QUEUE = [
+      { sceneBreakAt: 30, rationale: 'Forward break' },
+      { sceneBreakAt: 35, rationale: 'INVALID - after next break' } // Should be rejected
+    ];
+
+    await detectSceneBreaksInRange(0, 50);
+    await waitForQueueEmpty();
+
+    // Verify validation caught it
+    expect(get_data(chat[35], 'scene_break')).toBe(undefined);
+    expect(get_data(chat[30], 'scene_break')).toBe(true);
+
+    // Verify backwards chain terminated gracefully
+    const backwardsOps = getOperationsOfType(OperationType.DETECT_SCENE_BREAK_BACKWARDS);
+    expect(backwardsOps.every(op => op.status === 'completed')).toBe(true);
+  });
+});
+```
+
+### Test Helpers Needed
+
+```javascript
+// Create mock chat with N messages
+function createMockChat(numMessages) {
+  const chat = [];
+  for (let i = 0; i < numMessages; i++) {
+    chat.push({
+      mes: `Message ${i}`,
+      is_user: i % 2 === 0,
+      extra: {}
+    });
+  }
+  return chat;
+}
+
+// Wait for operation queue to empty
+async function waitForQueueEmpty(timeout = 30000) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    const queue = getOperationQueue();
+    if (queue.operations.every(op => op.status === 'completed')) {
+      return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  throw new Error('Queue did not empty within timeout');
+}
+
+// Get operations of specific type
+function getOperationsOfType(type) {
+  const queue = getOperationQueue();
+  return queue.operations.filter(op => op.type === type);
+}
+
+// Get completed operations of specific type
+function getCompletedOperationsOfType(type) {
+  return getOperationsOfType(type).filter(op => op.status === 'completed');
+}
+```
+
+### Implementation Override Points
+
+**In `autoSceneBreakDetection.js` - detectSceneBreak():**
+
+```javascript
+// Before making LLM request (line ~991)
+if (globalThis.__TEST_SCENE_BREAK_RESPONSE_QUEUE?.length > 0) {
+  const testResponse = globalThis.__TEST_SCENE_BREAK_RESPONSE_QUEUE.shift();
+  debug(SUBSYSTEM.CORE, `Using test override response: ${JSON.stringify(testResponse)}`);
+  return testResponse;
+}
+
+// Normal LLM call continues here
+const response = await llmClient.makeRequest({...});
+```
+
+### My Verification Strategy During Implementation
 
 ### 1. Pattern Matching Against Existing Code
 
