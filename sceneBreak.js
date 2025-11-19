@@ -661,6 +661,10 @@ saveChatDebounced )
 async function tryQueueSceneRecap(index ) {
   debug(SUBSYSTEM.SCENE, `[Queue] Queueing scene recap generation for index ${index}`);
 
+  // Ensure chat lorebook exists and populate registries BEFORE queueing scene recap
+  const { ensureChatLorebook } = await import('./lorebookManager.js');
+  await ensureChatLorebook();
+
   const { queueGenerateSceneRecap } = await import('./queueIntegration.js');
   const operationId = await queueGenerateSceneRecap(index);
 
