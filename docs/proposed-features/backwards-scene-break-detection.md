@@ -1708,228 +1708,193 @@ if (newEndIndex >= endIndex) {
 
 ---
 
-## Manual Testing & Verification
+## Implementation Verification Strategy
 
-**Reality Check:** There is NO automated test infrastructure. All verification is observational - you run the feature, watch what happens, and check if it looks right.
+**Problem:** I cannot run the code. I can only write it and verify it compiles/lints.
 
-**What you CAN actually verify:**
-- Console logs (if debug logging works)
-- Queue UI operations and priorities
-- Scene break markers appearing in chat
-- Whether the feature crashes or not
-- Whether LLM calls happen in the right order
+**My verification approach during implementation:**
 
-**What you CANNOT easily verify without test infrastructure:**
-- Internal function behavior (not exposed to console)
-- Invalid LLM responses (can't mock without test infrastructure)
-- Exact message checked state (would need to inspect chat object manually)
-- Edge cases that don't naturally occur
+### 1. Pattern Matching Against Existing Code
 
----
+**Read and copy existing patterns exactly:**
 
-### Basic Smoke Test
+- Read `handleDetectSceneBreak` handler to understand:
+  - How operations access metadata
+  - How to call `enqueueOperation`
+  - How to call `toggleSceneBreak` (6 parameters, NOT async)
+  - How to call `markRangeAsChecked`
+  - Error handling patterns
+  - Debug logging patterns
 
-**Goal:** Verify the feature doesn't crash and appears to work
+- Read existing backwards-searching code (if any) to match patterns
 
-```
-Setup:
-1. Create chat with 50+ messages containing obvious scene changes
-2. Set minimumSceneLength = 5 (easier to test with lower threshold)
-3. Enable debug logging for SUBSYSTEM.OPERATIONS
-4. Open browser DevTools console
+- Verify operation metadata structure matches existing operations:
+  ```javascript
+  // Check existing operations use this pattern
+  operation.metadata.start_index
+  operation.metadata.end_index
+  // NOT function parameters
+  ```
 
-Test Steps:
-1. Trigger /scenebreak
-2. Watch console logs for:
-   - "Backwards detection: [X, Y]" entries
-   - Range numbers decreasing over time (proving recursion)
-   - No red errors
-3. Watch queue UI for:
-   - DETECT_SCENE_BREAK_BACKWARDS operations appearing
-   - Priority 15 for backwards ops
-   - Priority 20 for recap ops
-   - Priority 5 for forward continuation
-4. Wait for all operations to complete
-5. Look at chat - should see multiple scene break markers
-6. Check console - no errors
+### 2. Syntax and Lint Verification
 
-Success Criteria:
-- No crashes
-- Multiple backwards operations executed
-- Scene breaks placed in chat
-- Recaps generated (if enabled)
-- No infinite loops (operations eventually complete)
+**Automated checks that WILL run:**
+
+```bash
+npm run syntax-check    # Verify JavaScript parses
+npm run lint           # Verify ESLint passes (max-warnings: 0)
 ```
 
----
+**These catch:**
+- Syntax errors
+- Undefined variables
+- Unused imports
+- Complexity violations
+- Promise handling errors
 
-### Page Reload Test
+**These DON'T catch:**
+- Logic errors
+- Wrong parameter order
+- Off-by-one errors
+- Invalid state transitions
 
-**Goal:** Verify queue persistence works during backwards chain
+### 3. Mental Execution Trace
 
-```
-Test Steps:
-1. Start /scenebreak on chat with 100+ messages
-2. Watch queue UI until backwards operations appear
-3. Note the current operation ID in queue
-4. Reload page (F5) mid-operation
-5. After reload, check queue UI:
-   - Queue still has operations
-   - Operations resume processing
-   - No duplicate operations created
-6. Let it finish
-7. Check chat has scene breaks
+**For each code path, trace execution mentally:**
 
-Success Criteria:
-- Page reload doesn't lose queue state
-- Detection completes successfully after reload
-- No duplicate breaks created
-```
-
----
-
-### Queue Clear Test
-
-**Goal:** Verify graceful termination when user clears queue
+**Example: Backwards chain with 2 recursions**
 
 ```
-Test Steps:
-1. Start /scenebreak on chat with 100+ messages
-2. Wait until backwards operations are in queue
-3. Click "Clear Queue" button
-4. Verify:
-   - Queue empties
-   - No new operations added
-   - Console has no errors
-   - Scene breaks already placed remain in chat
-5. Trigger /scenebreak again
-6. Verify it works normally
+Initial state:
+- Forward finds break at 30
+- Queues backwards op with metadata: { start_index: 0, end_index: 29, next_break_index: 30 }
 
-Success Criteria:
-- Queue clearing doesn't crash
-- Can restart detection after clearing
-- Already-placed breaks don't get removed or duplicated
+Trace backwards operation 1:
+1. Extract from metadata: startIndex=0, endIndex=29, nextBreakIndex=30
+2. Un-mark [0, 29] as checked ✓
+3. Call detectSceneBreak(0, 29, offset=0, isBackwards=true, nextBreakIndex=30)
+4. Assume LLM returns sceneBreakAt=15
+5. Place break at 15 ✓
+6. Mark [16, 29] as checked ✓
+7. Add 15 to discovered_breaks: [15] ✓
+8. Calculate newEndIndex = 15 - 1 = 14 ✓
+9. Verify 14 < 29 (range shrinks) ✓
+10. Queue next backwards op with metadata: { start_index: 0, end_index: 14, next_break_index: 15, discovered_breaks: [15] }
+11. Queue recap for 15 ✓
+
+Trace backwards operation 2:
+1. Extract: startIndex=0, endIndex=14, nextBreakIndex=15, discovered_breaks=[15]
+2. Un-mark [0, 14] ✓
+3. Call detectSceneBreak(0, 14, offset=0, isBackwards=true, nextBreakIndex=15)
+4. Assume LLM returns false (no break)
+5. Mark [0, 14] as checked ✓
+6. Call terminateBackwardsChain(operation)
+
+Trace terminateBackwardsChain:
+1. Extract: discovered_breaks=[15], next_break_index=15, forward_continuation={...}
+2. Sort chronologically: [15] ✓
+3. Queue SCENE_RECAP(15) with no dependencies ✓
+4. Queue SCENE_RECAP(30) depending on prev recap ✓
+5. Queue DETECT_SCENE_BREAK(31, 50) depending on last recap ✓
 ```
 
----
+**Check at each step:**
+- Are metadata fields accessed correctly?
+- Are parameters passed in correct order?
+- Are all required fields present?
+- Does state flow correctly between operations?
 
-### Insufficient Messages Test
+### 4. Calculation Verification
 
-**Goal:** Verify backwards chain terminates when range too small
-
-```
-Setup:
-1. Create chat with exactly 25 messages
-2. Set minimumSceneLength = 10
-3. Manually place scene break at message 20 using button menu
-4. Enable debug logging
-
-Test Steps:
-1. Trigger /scenebreak from message 20 to end (will process range after break)
-2. Separately trigger detection on range [0, 19] if possible
-   OR wait for detection to naturally search that range
-3. Watch console for:
-   - "Insufficient messages for two-sided minimum scene length constraint"
-   - OR "Terminating backwards chain"
-4. Verify backwards chain stops (no infinite recursion)
-
-Success Criteria:
-- Backwards chain terminates when range too small
-- No crash
-- No infinite loop
-```
-
----
-
-### Visual Inspection Checklist
-
-**After running /scenebreak on a large chat, manually verify:**
-
-1. **Scene Break Markers**
-   - [ ] Multiple scene breaks visible in chat (colored bars)
-   - [ ] Breaks appear in chronological order
-   - [ ] No duplicate breaks at same message
-
-2. **Console Logs** (if debug enabled)
-   - [ ] Logs show "Backwards detection: [X, Y]" with decreasing Y values
-   - [ ] Logs show "Found backwards break at N"
-   - [ ] Logs show "Terminating backwards chain"
-   - [ ] Logs show discovered_breaks array
-   - [ ] No error logs (red text)
-
-3. **Queue UI**
-   - [ ] DETECT_SCENE_BREAK_BACKWARDS operations appeared
-   - [ ] Priority 15 shown for backwards ops
-   - [ ] SCENE_RECAP operations appeared after backwards ops
-   - [ ] Priority 20 for recap ops
-   - [ ] DETECT_SCENE_BREAK forward continuation appeared last
-   - [ ] Priority 5 for forward continuation
-   - [ ] Operations completed in order (no deadlocks)
-
-4. **Recaps** (if enabled)
-   - [ ] Scene recaps generated for each scene break
-   - [ ] Recaps appear in message UI below scene break messages
-   - [ ] Recap order is chronological (earliest scene first)
-
-5. **Performance**
-   - [ ] No UI freezing during detection
-   - [ ] Operations complete in reasonable time
-   - [ ] Browser doesn't crash or hang
-
----
-
-### What to Log During Implementation
-
-**Add these debug logs to verify behavior during manual testing:**
+**For calculateLatestAllowedBreak, verify logic by hand:**
 
 ```javascript
-// In handleDetectSceneBreakBackwards - start
-debug(SUBSYSTEM.OPERATIONS, `Backwards detection: [${startIndex}, ${endIndex}], next break: ${nextBreakIndex}`);
+// Given: range [0, 29], minimumSceneLength=10
+// filteredIndices = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28] (15 messages)
 
-// In handleDetectSceneBreakBackwards - break found
-debug(SUBSYSTEM.OPERATIONS, `Found backwards break at ${sceneBreakAt}`);
-debug(SUBSYSTEM.OPERATIONS, `Discovered breaks so far: ${JSON.stringify([...discoveredBreaks, sceneBreakAt])}`);
+// earliestAllowedBreak = eligibleFilteredIndices[10] = 20
+// Need: scene [0, X] has >=10 filtered messages
+// If X=20: [0,2,4,6,8,10,12,14,16,18,20] = 11 messages ✓
 
-// In handleDetectSceneBreakBackwards - no break found
-debug(SUBSYSTEM.OPERATIONS, `No break found in backwards range [${startIndex}, ${endIndex}]`);
+// latestAllowedBreak = calculateLatestAllowedBreak(filteredIndices, endIndex=29, min=10)
+// Need: scene (X, 29] has >=10 filtered messages
 
-// In handleDetectSceneBreakBackwards - termination
-debug(SUBSYSTEM.OPERATIONS, `Range did not shrink, terminating backwards chain`);
-debug(SUBSYSTEM.OPERATIONS, `Insufficient messages for further backwards detection`);
+// Try candidateBreak = 28 (i=14):
+//   messagesAfter = count of indices where idx > 28 AND idx <= 29
+//   = count([]) = 0 messages ✗
 
-// In terminateBackwardsChain
-debug(SUBSYSTEM.OPERATIONS, `Terminating backwards chain. Discovered breaks: ${discoveredBreaks.join(', ')}`);
-debug(SUBSYSTEM.OPERATIONS, `Queuing ${chronologicalBreaks.length} recaps in chronological order`);
-debug(SUBSYSTEM.OPERATIONS, `Queued forward continuation: ${forwardOp.id}`);
+// Try candidateBreak = 26 (i=13):
+//   messagesAfter = count of indices where idx > 26 AND idx <= 29
+//   = count([28]) = 1 message ✗
 
-// In detectSceneBreak - backwards mode
-debug(SUBSYSTEM.CORE, `Backwards mode: valid range [${earliestAllowedBreak}, ${latestAllowedBreak}]`);
-debug(SUBSYSTEM.CORE, `No valid break positions with two-sided minimum scene length`);
+// Try candidateBreak = 8 (i=4):
+//   messagesAfter = count where idx > 8 AND idx <= 29
+//   = count([10,12,14,16,18,20,22,24,26,28]) = 10 messages ✓
+//   Return 8
+
+// Valid range: [20, 8] → 20 > 8 = INVALID (no valid positions)
 ```
 
-**These logs let you observe:**
-- Range shrinking over backwards recursions
-- Discovered breaks accumulating
-- Termination conditions triggering
-- Valid break position calculations
+Verify this matches example in docs at lines 556-580.
 
----
+### 5. Cross-Reference Against Specification
 
-### Known Limitations of Manual Testing
+**Before marking implementation complete, verify:**
 
-**Cannot easily verify:**
-- Helper function correctness (need unit tests or console access)
-- Invalid LLM response handling (need mock infrastructure)
-- Exact edge case behavior (need targeted test cases)
-- Performance under all conditions (need benchmarking)
-- Race conditions (need stress testing)
+- [ ] All operation types added to `operationTypes.js`
+- [ ] All handlers registered in handler registry Map
+- [ ] All metadata fields documented in spec are present
+- [ ] All function signatures match spec exactly
+- [ ] All validation checks from spec are implemented
+- [ ] All debug logs from spec are present
+- [ ] State stored in metadata, NOT function parameters
+- [ ] Using `get_data`/`set_data` for message properties
+- [ ] Handler follows async/await patterns from existing handlers
+- [ ] Error handling matches existing patterns
 
-**Best effort verification:**
-- Run feature on various chat sizes
-- Watch for crashes and errors
-- Check output looks reasonable
-- Hope edge cases don't occur in production
-- Fix bugs when users report them
+### 6. Dependency Order Verification
+
+**Check operation dependencies are correct:**
+
+```javascript
+// Backwards op 1: no dependencies (runs immediately)
+{ type: DETECT_SCENE_BREAK_BACKWARDS, dependencies: [] }
+
+// Backwards op 2: no dependencies (runs after op 1 completes naturally)
+{ type: DETECT_SCENE_BREAK_BACKWARDS, dependencies: [] }
+
+// Recap 1: no dependencies (runs first in chronological order)
+{ type: SCENE_RECAP, dependencies: [] }
+
+// Recap 2: depends on recap 1
+{ type: SCENE_RECAP, dependencies: [recap1.id] }
+
+// Forward continuation: depends on last recap
+{ type: DETECT_SCENE_BREAK, dependencies: [lastRecap.id] }
+```
+
+### 7. What I CANNOT Verify
+
+**Without running the code, I cannot verify:**
+
+- Actual LLM responses
+- Actual queue execution order
+- Actual message state changes
+- Edge cases that don't occur in mental trace
+- Performance characteristics
+- Race conditions
+- Integration with existing code at runtime
+
+**What happens if I'm wrong:**
+
+1. User runs manual test
+2. Code crashes or behaves incorrectly
+3. User reports error/behavior
+4. I read error message and debug
+5. I fix bug
+6. Repeat until it works
+
+**This is normal for this codebase.**
 
 ---
 
