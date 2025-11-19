@@ -59,25 +59,66 @@ Location naming (subareas):
 Your task:
 1. Compare existing content with new information.
 2. Merge carefully while maintaining BREVITY and bullet structure:
+
+   **ADDING NEW INFORMATION:**
    - Add ONLY truly new facts not already present (even in different wording)
    - Update facts that changed
-   - Remove contradicted/invalid information
-   - Preserve important existing bullets that remain true
-   - DO NOT rewrite existing content to be more verbose - preserve or improve brevity
-   - DO NOT duplicate facts in different words (e.g., don't add "tall stature" if "tall" exists)
    - Pack related facts with semicolons on same line
    - Use fragments, not sentences; omit articles; use abbreviations
    - Use causal format "[trigger] → [reaction] → [consequence]" for Psychology/Relationships/Tension
+
+   **PRUNING & CONSOLIDATION (CRITICAL - PREVENTS BLOAT):**
+   ⚠️ These entries replace chat messages - they are the memory system. DO NOT lose story-critical history.
+
+   **PRESERVE story-critical history using causal chains:**
+   - Relationship evolution: "enemies (blamed him for sister's death) → alliance during siege → lovers after he saved her"
+   - Character arcs: "guilt over betrayal → sought redemption → earned trust"
+   - State changes that explain current context: "injured in duel w/ Marcus → healed but limps"
+   - Use → format to show progression while staying brief
+
+   **PRUNE only actual redundancy and trivia:**
+   - Duplicate facts in different words:
+     * "tall" + "tall stature" → keep "tall" (same fact)
+     * "distrusts Marcus" + "suspicious of Marcus" → keep "distrusts Marcus" (same fact)
+   - Trivial temporary details with no narrative impact:
+     * "wore blue dress to ball" when outfit has no story significance
+     * "stopped at inn" when location has no ongoing relevance
+   - Truly superseded minor details:
+     * "blonde hair" when dyed "black hair" (unless original color matters to story)
+
+   **DEDUPLICATE within fields (remove REDUNDANT items, keep DISTINCT items):**
+   - State: ⚠️ CRITICAL - State is CURRENT state, NOT chronological event log. Remove historical states unless story-critical. Example: "at castle; healed but limps" NOT "was at tavern → moved to castle → was injured → received healing → still limps"
+   - Psychology: Consolidate repetitive word patterns (if "strategic" appears 5+ times with slight variations, consolidate to 1-2 instances); keep distinct drives/fears/conflicts
+   - Relationships: Each bullet must add distinct information; consolidate redundant descriptions of same dynamic; preserve evolution using → format
+   - Micro-Moments: If multiple quotes show the SAME relationship dynamic ("he cares about her"), consolidate to most representative; if each shows DIFFERENT facet (trust, protectiveness, tension), keep all
+   - Notable Dialogue: Be highly selective; remove quotes showing same speech pattern; keep only most voice-representative examples
+   - Intimacy & Romance: Consolidate redundant descriptions of same acts/preferences; keep distinct patterns/preferences
+
+   **DO NOT prune:**
+   - History that explains current state ("enemies → lovers" needs the "enemies" context)
+   - Distinct items that each add unique information
+   - Story-critical past events/states that inform future scenes
+   - Evolution/progression in relationships, psychology, states
+
+   **QUALITY STANDARDS:**
+   - DO NOT rewrite existing content to be more verbose - preserve or improve brevity
+   - DO NOT lose narrative-critical context that explains current state
+   - DO NOT accumulate every trivial detail - focus on story-relevant information
+   - Each bullet must add actionable, distinct information
+
 3. Name resolution:
    - If current name is relational/vague (e.g., "amelia's sister", "the bartender") and proper name available, set canonicalName to that proper name
    - Ensure Identity bullet uses canonical name after merging
-4. If no new information is added, return original content EXACTLY. Do not rewrite or reorder it.
+4. If no new information is added AND no pruning needed, return original content EXACTLY. Do not rewrite or reorder it.
 
 ⚠️ ANTI-BLOAT CHECK BEFORE SUBMITTING:
 - Did you preserve brevity from existing content or make it worse?
 - Did you add duplicate facts in different words?
 - Did you use complete sentences instead of fragments?
-- Did you add filler words like "currently", "seems to be", "appears to"?
+- Did you add filler words like "currently", "seems to be", "appears to", "maintaining", "showing", "displaying", "increasingly", "ultimately", "potentially"?
+- Did State field become a chronological event log instead of current state?
+- Did you consolidate repetitive word patterns (e.g., "strategic" appearing 5+ times)?
+- Did you prune redundant relationship bullets that say the same thing differently?
 If YES to any, revise to be more concise.
 
 MERGE EXAMPLES (showing how to add new info without bloating):
@@ -99,6 +140,48 @@ Example 3 - Adding emotional state without prose:
   New: "conflicted bc duty vs desire → initiated intimacy w/ Adam → regret after"
   ✅ GOOD merge: "- Psychology: driven by revenge against Marcus; fears abandonment; conflicted bc duty vs desire → initiated intimacy w/ Adam → regret after"
   ❌ BAD merge: "- Psychology: She is driven by a desire for revenge against Marcus and fears abandonment. She recently felt conflicted between her duty and her desires, which led her to initiate intimacy with Adam, after which she experienced regret."
+
+PRUNING EXAMPLES (showing when and how to remove information):
+
+Example 4 - Pruning redundant facts, preserving story-critical history:
+  Existing: "- Relationships: Alice ↔ Bob — enemies (blamed him for sister's death); deep hatred; refuses to speak to him"
+  New: "Alice ↔ Bob — tentative alliance during siege; working together; still wary"
+  ✅ GOOD merge: "- Relationships: Alice ↔ Bob — enemies (blamed him for sister's death) → tentative alliance during siege; still wary"
+  ❌ BAD merge (loses history): "- Relationships: Alice ↔ Bob — tentative alliance during siege; working together; still wary"
+  ❌ BAD merge (bloated): "- Relationships: Alice ↔ Bob — They were enemies because she blamed him for her sister's death and had deep hatred and refused to speak to him. Now they have a tentative alliance during the siege and are working together but she is still wary."
+
+Example 5 - Consolidating duplicate facts:
+  Existing: "- Attributes: tall; above average height; silver hair; violet eyes; tall stature"
+  New: "scar on left cheek"
+  ✅ GOOD merge: "- Attributes: tall; silver hair; violet eyes; scar on left cheek"
+  ❌ BAD merge: "- Attributes: tall; above average height; silver hair; violet eyes; tall stature; scar on left cheek"
+
+Example 6 - Deduplicating Micro-Moments (keep distinct, remove redundant):
+  Existing:
+    "- Micro-Moments: 'I'll protect you' (hand on shoulder) — first showed care
+    - 'You can trust me' (gave her weapon) — demonstrated trust
+    - 'I won't leave you' (stayed during attack) — reinforced commitment"
+  New: "'I'm here for you' (held her hand) — showed support"
+  ✅ GOOD merge (consolidate similar care/support moments): "- Micro-Moments: 'I'll protect you' (stayed during attack) — commitment to protect; 'You can trust me' (gave her weapon) — demonstrated trust"
+  ❌ BAD merge (accumulates redundant moments): All 4 quotes kept despite showing overlapping "he cares" dynamic
+
+Example 7 - Pruning trivia, preserving story-critical state:
+  Existing: "- State: at tavern; wearing blue cloak; carrying journal; injured arm"
+  New: "at castle; healed from injury; discovered journal contains prophecy"
+  ✅ GOOD merge: "- State: at castle; healed (was injured in arm); journal contains prophecy"
+  ❌ BAD merge (accumulates trivia): "- State: was at tavern; wearing blue cloak; carrying journal; had injured arm; now at castle; healed from injury; discovered journal contains prophecy"
+
+Example 8 - Consolidating repetitive word patterns in Psychology:
+  Existing: "- Psychology: strategic thinker; military pragmatism; strategic network-building; strategic in establishing position; strategic provocation; strategic even during intimacy; strategic planning beneath casual demeanor"
+  New: "builds alliances deliberately; tests reactions to gauge trustworthiness"
+  ✅ GOOD merge: "- Psychology: strategic thinker; uses every interaction for intelligence/positioning; deliberate provocation as tactic; tests reactions to gauge trustworthiness"
+  ❌ BAD merge (keeps redundancy): "- Psychology: strategic thinker; military pragmatism; strategic network-building; strategic in establishing position; strategic provocation; strategic even during intimacy; strategic planning beneath casual demeanor; builds alliances deliberately; tests reactions to gauge trustworthiness"
+
+Example 9 - Pruning State chronological event log:
+  Existing: "- State: moved to cottage; experienced memory-merge; received Trainee Greys; scheduled training; defeated Alberich; suffered injuries; received healing; scheduled meetings; met with Queen; approved as advisor; cleared for exercise"
+  New: "attending Council meetings"
+  ✅ GOOD merge: "- State: at cottage; Herald-trainee + special advisor to Queen; cleared for strenuous exercise; attending Council meetings"
+  ❌ BAD merge (accumulates events): Keeps entire chronological log plus adds new event
 
 
 OUTPUT INSTRUCTIONS:

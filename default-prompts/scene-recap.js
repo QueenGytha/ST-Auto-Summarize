@@ -63,6 +63,15 @@ Examples of brevity (GOOD vs BAD):
   ✅ GOOD: "Alice ↔ Bob — wary trust after betrayal → protective when threatened"
   ❌ BAD: "Alice's relationship with Bob is characterized by wary trust following his betrayal, though she becomes protective of him when he is threatened"
 
+  ✅ GOOD: "mysterious isolated kingdom; borders magically sealed w/ barrier; outsiders repelled; rare contact via traders/diplomats"
+  ❌ BAD: "It is a mysterious isolated kingdom. Its borders are magically sealed with a barrier. Outsiders are repelled. Contact is rare and occurs only through traders or diplomats."
+
+  ✅ GOOD (State): "at castle; healed but limps (duel injury); carrying journal w/ prophecy"
+  ❌ BAD (State): "moved from tavern to castle; was injured in duel with Marcus; received healing but still limps; picked up journal; discovered journal contains prophecy"
+
+  ✅ GOOD (Psychology - consolidated): "strategic thinker; uses every interaction for intelligence/positioning; deliberate provocation as tactic"
+  ❌ BAD (Psychology - repetitive): "strategic thinker; military pragmatism; strategic network-building; strategic in establishing position; strategic provocation; strategic even during intimacy; strategic planning beneath casual demeanor"
+
 // ============================================================
 // CRITICAL CROSS-CUTTING REQUIREMENTS
 // ============================================================
@@ -145,8 +154,10 @@ Examples of brevity (GOOD vs BAD):
 //   * Example: "Marcus" found but NO uid shown → omit uid field
 //   * WARNING: Wrong uid CORRUPTS database by overwriting unrelated entries
 // - CAUSAL FORMAT: Use "[trigger] → [reaction] → [consequence]" format in Psychology, Relationships, Tension/Triggers fields
-// - OMIT REDUNDANT CONTEXT: Don't repeat entity name in every line; don't explain obvious cause-effect; don't use filler words like "currently", "seems to be", "appears to"
+// - OMIT REDUNDANT CONTEXT: Don't repeat entity name in every line; don't explain obvious cause-effect; don't use filler words like "currently", "seems to be", "appears to", "maintaining", "showing", "displaying", "increasingly", "ultimately", "potentially"
 // - OMIT EMPTY FIELDS: Only include bullet fields that have NEW data. If field has no new information, don't include it. NO empty placeholders like "- State: —"
+// - CONSOLIDATE REPETITIVE PATTERNS: If you use same word/concept multiple times in one field (e.g., "strategic" appears 5 times in Psychology), consolidate to 1-2 instances max
+// - DEDUPLICATE WITHIN ENTRY: Before finalizing, scan each field for redundant bullets expressing same fact differently; remove duplicates; keep most concise phrasing
 // - NO ENTRY IF NO NEW DATA: If entity appears in scene but reveals NO new information vs active_setting_lore, do NOT create entry for them
 // - Content = bullet points starting w/ Identity:
 //   - Identity: <Type> — <Canonical Name>
@@ -158,6 +169,7 @@ Examples of brevity (GOOD vs BAD):
 //   - Intimacy & Romance: <preferences/patterns from THIS CHAR's actions/words — roles, pace, ACTS (oral, penetrative, manual, positions, kink), aftercare, jealousy>. NO EUPHEMISMS - direct language ("had sex", "oral sex", "touched/penetrated [specifics]"). Include physical + emotional context. Add only if new.
 //   - Micro‑Moments: <RELATIONSHIP-DEFINING quotes with physical context and impact on dynamics> — "'exact words' (physical cue) — impact on relationship". These are TURNING POINTS in relationships. Example: "'I trust you' (gave him the key) — first time showed vulnerability". ≤12 words per quote. Prune duplicates.
 //   - State: <current status/location/owner/effects> (temporary only). "state (bc [cause])" when relevant. Locations: durable state only.
+//            ⚠️ CRITICAL: State is CURRENT state, NOT chronological event log. Remove historical states unless story-critical to understanding current state.
 //   - Secrets/Leverage: <what/who knows>
 //   - Tension/Triggers: <what escalates/defuses THIS CHAR; what THIS CHAR does to escalate/defuse>. Use causal format.
 //   - Style Notes: <HOW THIS CHAR SPEAKS - their verbal quirks> (syntax patterns, punctuation habits, recurring phrases they say). Example: "uses short sentences; frequent em-dashes; says 'innit' often". NOT about addressing others - that's Interaction Defaults.
@@ -176,6 +188,16 @@ Examples of brevity (GOOD vs BAD):
 // Item: Identity, Synopsis, Attributes, Provenance, Owner change, State
 // - Relationship storage: Store under most relevant entity; avoid mirroring everywhere
 // - Locations with subareas: Use "Parent-Subarea" format (e.g., "Old Town-Unnamed Alley")
+
+// ⚠️ ANTI-BLOAT CHECK BEFORE SUBMITTING:
+// Review each setting_lore entry you're creating:
+// - Did you use complete sentences instead of fragments?
+// - Did you add filler words ("currently", "seems to be", "appears to", "maintaining", "showing", "displaying", "increasingly", "ultimately", "potentially")?
+// - Did State field become a chronological event log instead of current state?
+// - Did you use same word/concept multiple times in one field (e.g., "strategic" appearing 5+ times in Psychology)?
+// - Did you add redundant bullets within a field that express the same fact differently?
+// - Did you include bullets with no new information vs active_setting_lore below?
+// If YES to any, revise that entry to be more concise.
 
 // ============================================================
 // ACTIVE SETTING_LORE ENTRIES (EXISTING DATA)
