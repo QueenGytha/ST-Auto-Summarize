@@ -1,5 +1,5 @@
 
-import { formatInstructModeChat } from './index.js';
+import { formatInstructModeChat, debug, SUBSYSTEM } from './index.js';
 import { SLICE_TRIM_LAST_TWO } from './constants.js';
 
 function system_prompt_split(text ) {
@@ -56,9 +56,25 @@ function substitute_params(text , params ) {
 
 async function substitute_params_and_builtin(text , params ) {
   // First replace our custom macros, then replace ST's built-in macros ({{user}}, {{char}}, etc.)
-  const { substituteParams } = await import('../../../../script.js');
+  const { substituteParams, name1, name2 } = await import('../../../../script.js');
   let result = substitute_params(text, params);  // Our custom macros
-  result = substituteParams(result);  // ST's built-in macros
+
+  // Debug: Check if {{user}} exists before ST substitution
+  if (result.includes('{{user}}')) {
+    debug(SUBSYSTEM.CORE, 'Found {{user}} in prompt before ST substituteParams');
+    debug(SUBSYSTEM.CORE, `ST name1 (user): ${name1}, name2 (char): ${name2}`);
+  }
+
+  // Call ST's substituteParams with explicit name1 and name2
+  result = substituteParams(result, name1, name2);  // ST's built-in macros
+
+  // Debug: Check if {{user}} still exists after ST substitution
+  if (result.includes('{{user}}')) {
+    debug(SUBSYSTEM.CORE, '{{user}} STILL IN PROMPT after ST substituteParams - ST function may not be working');
+  } else {
+    debug(SUBSYSTEM.CORE, 'ST substituteParams successfully replaced {{user}}');
+  }
+
   return result;
 }
 

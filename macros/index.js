@@ -81,4 +81,4 @@ export function buildMacroValue(macroName, ...args) {
 }
 
 // Re-export substitute functions from promptUtils
-export { substitute_params, substitute_conditionals, substitute_params_and_builtin } from '../promptUtils.js';
+export { substitute_params, substitute_conditionals } from '../promptUtils.js';
