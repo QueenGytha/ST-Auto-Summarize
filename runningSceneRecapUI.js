@@ -281,6 +281,44 @@ function formatCount(count, noun) {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }
 
+function buildClearRecapsMessage(result, lorebookDeleted) {
+  const breakdown = [];
+  if (result.singleRecapsCleared) {
+    breakdown.push(formatCount(result.singleRecapsCleared, 'single-message recap'));
+  }
+  if (result.sceneRecapsCleared) {
+    breakdown.push(formatCount(result.sceneRecapsCleared, 'scene recap'));
+  }
+
+  const extras = [];
+  if (result.runningRecapCleared) {
+    extras.push(formatCount(result.runningRecapCleared, 'running recap version'));
+  }
+  if (result.sceneBreaksCleared) {
+    extras.push(formatCount(result.sceneBreaksCleared, 'scene break marker'));
+  }
+  if (result.checkedFlagsCleared) {
+    extras.push(formatCount(result.checkedFlagsCleared, 'checked flag'));
+  }
+  if (result.swipeRecapsCleared) {
+    extras.push(formatCount(result.swipeRecapsCleared, 'swipe record'));
+  }
+
+  let message = '';
+  if (result.messageMetadataCleared) {
+    const details = breakdown.length ? ` (${breakdown.join(', ')})` : '';
+    message = `Removed recap metadata from ${formatCount(result.messageMetadataCleared, 'message')}${details}.`;
+  }
+  if (extras.length) {
+    message += `${message ? ' ' : ''}Also cleared ${extras.join(', ')}.`;
+  }
+  if (lorebookDeleted) {
+    message += `${message ? ' ' : ''}Deleted chat lorebook.`;
+  }
+
+  return message.trim() || 'Cleared recap data.';
+}
+
 async function handleLorebookDeletion() {
   const currentLorebook = getAttachedLorebook();
   if (!currentLorebook) {
@@ -361,15 +399,16 @@ async function handleClearAllRecapsClick() {
     const result = clear_all_recaps_for_chat();
     const anyCleared = Object.values(result).some((count) => typeof count === 'number' && count > 0);
 
-    if (!anyCleared) {
-      toast('No recap data found to clear for this chat', 'info');
-      return;
-    }
-
-    // Handle lorebook deletion if requested
+    // Handle lorebook deletion if requested (before early return check)
     let lorebookDeleted = false;
     if (shouldDeleteLorebook) {
       lorebookDeleted = await handleLorebookDeletion();
+    }
+
+    // Check if anything was actually done
+    if (!anyCleared && !lorebookDeleted) {
+      toast('No recap data or lorebook found to clear for this chat', 'info');
+      return;
     }
 
     refresh_memory();
@@ -377,41 +416,8 @@ async function handleClearAllRecapsClick() {
     updateRunningSceneRecapNavbar();
     updateVersionSelector();
 
-    const breakdown = [];
-    if (result.singleRecapsCleared) {
-      breakdown.push(formatCount(result.singleRecapsCleared, 'single-message recap'));
-    }
-    if (result.sceneRecapsCleared) {
-      breakdown.push(formatCount(result.sceneRecapsCleared, 'scene recap'));
-    }
-
-    const extras = [];
-    if (result.runningRecapCleared) {
-      extras.push(formatCount(result.runningRecapCleared, 'running recap version'));
-    }
-    if (result.sceneBreaksCleared) {
-      extras.push(formatCount(result.sceneBreaksCleared, 'scene break marker'));
-    }
-    if (result.checkedFlagsCleared) {
-      extras.push(formatCount(result.checkedFlagsCleared, 'checked flag'));
-    }
-    if (result.swipeRecapsCleared) {
-      extras.push(formatCount(result.swipeRecapsCleared, 'swipe record'));
-    }
-
-    let message = '';
-    if (result.messageMetadataCleared) {
-      const details = breakdown.length ? ` (${breakdown.join(', ')})` : '';
-      message = `Removed recap metadata from ${formatCount(result.messageMetadataCleared, 'message')}${details}.`;
-    }
-    if (extras.length) {
-      message += `${message ? ' ' : ''}Also cleared ${extras.join(', ')}.`;
-    }
-    if (lorebookDeleted) {
-      message += `${message ? ' ' : ''}Deleted chat lorebook.`;
-    }
-
-    toast(message.trim() || 'Cleared recap data.', 'success');
+    const message = buildClearRecapsMessage(result, lorebookDeleted);
+    toast(message, 'success');
     debug(SUBSYSTEM.RUNNING, '[Reset] Cleared recaps successfully', result);
   } catch (err) {
     error(SUBSYSTEM.RUNNING, 'Failed to clear recaps', err);
