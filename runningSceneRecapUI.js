@@ -151,12 +151,13 @@ function createRunningSceneRecapNavbar() {
         `;
 
     try {
-      const result = await ctx.callPopup(popupHtml, 'text', undefined, {
+      const popup = new ctx.Popup(popupHtml, ctx.POPUP_TYPE.CONFIRM, '', {
         okButton: "Save",
-        cancelButton: "Cancel",
         wide: true,
         large: true
       });
+
+      const result = await popup.show();
 
       if (result) {
         const edited = $(selectorsExtension.runningUI.editTextarea).val();

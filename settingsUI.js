@@ -180,12 +180,13 @@ async function initialize_settings_listeners() {
         `;
 
     try {
-      const result = await ctx.callPopup(html, 'text', undefined, {
+      const popup = new ctx.Popup(html, ctx.POPUP_TYPE.CONFIRM, '', {
         okButton: "Save",
-        cancelButton: "Cancel",
         wide: true,
         large: true
       });
+
+      const result = await popup.show();
 
       if (result) {
         const edited = $(selectorsExtension.viewRunning.textarea).val();
