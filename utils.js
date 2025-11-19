@@ -23,7 +23,6 @@ import {
   CHAR_CODE_TAB,
   CHAR_CODE_BACKSPACE,
   CHAR_CODE_FORM_FEED,
-  JSON_LOOKAHEAD_LENGTH,
   JSON_FIELD_START_ADVANCE
 } from './constants.js';
 
@@ -353,8 +352,11 @@ function isLikelyClosingQuote(jsonString, index) {
  * @returns {boolean} True if this newline likely ends the value
  */
 function isValueEndingNewline(jsonString, index) {
-  const peekAhead = jsonString.slice(index, index + JSON_LOOKAHEAD_LENGTH);
-  return /^\n\s*[}\]]/.test(peekAhead) || index === jsonString.length - 1;
+  // ONLY treat newline as ending value at absolute EOF
+  // Previous logic (/^\n\s*[}\]]/) was too aggressive and caused false positives
+  // when multi-line string content happened to contain patterns like "\n  }"
+  // Let JSON repair logic handle truly malformed strings instead of guessing
+  return index === jsonString.length - 1;
 }
 
 /**
