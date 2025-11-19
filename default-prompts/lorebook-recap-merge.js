@@ -18,7 +18,7 @@ Do NOT use pronouns or vague references ("him", "her", "it", "the protagonist").
 Entries injected into EVERY prompt. Fragments only; no articles; semicolons; abbreviations (bc/w/→); NO filler words (currently/seems/appears).
 PRESERVE brevity from new_content - don't make compact content verbose.
 
-Format: Identity, Synopsis (≤10 words), Attributes (NO VERBS), Psychology ([trigger] → [response] → [outcome]), Relationships (X ↔ Y — [evolution]), Interaction Defaults, Intimacy & Romance (direct language), Micro-Moments (≤12 words; limit 1-2), State (current only, NO event log), Secrets/Leverage, Tension/Triggers, Style Notes, Notable Dialogue (≤12 words; max 2)
+Format: Identity, Synopsis (≤10 words), Attributes (NO VERBS), Psychology ([trigger] → [response] → [outcome]), Relationships (X ↔ Y — [evolution]), Interaction Defaults, Intimacy & Romance (direct language), Micro-Moments (≤12 words each), State (current only, NO event log), Secrets/Leverage, Tension/Triggers, Style Notes, Notable Dialogue (≤12 words; max 3)
 
 Location naming (subareas):
 - If this entry is a sub‑location within a named parent (e.g., Cloudsdale → Rainbow Dash's Cloud House; Ponyville → Twilight's Library),
