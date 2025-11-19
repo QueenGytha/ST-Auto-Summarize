@@ -20,7 +20,7 @@ import { build as buildNewEntries } from './macros/new_entries.js';
 import { build as buildCandidateRegistry } from './macros/candidate_registry.js';
 import { build as buildCandidateEntries } from './macros/candidate_entries.js';
 import { build as buildLorebookEntryLookupSynopsis } from './macros/lorebook_entry_lookup_synopsis.js';
-import { substitute_params_and_builtin } from './promptUtils.js';
+import { substitute_params } from './promptUtils.js';
 
 import {
   MAX_RECAP_ATTEMPTS,
@@ -663,7 +663,7 @@ settings )
     new_entry: buildNewEntry(payload),
     candidate_registry: buildCandidateRegistry(registryListing)
   };
-  const prompt = await substitute_params_and_builtin(promptTemplate, params);
+  const prompt = await substitute_params(promptTemplate, params);
 
   const config = {
     prompt,
@@ -741,7 +741,7 @@ settings )
     lorebook_entry_lookup_synopsis: buildLorebookEntryLookupSynopsis(lorebookEntryLookupSynopsis),
     candidate_entries: buildCandidateEntries(candidateEntries)
   };
-  return await substitute_params_and_builtin(promptTemplate, params);
+  return await substitute_params(promptTemplate, params);
 }
 
 // eslint-disable-next-line require-await -- Async function returns promise from runModelWithSettings
@@ -865,7 +865,7 @@ export async function runBulkRegistryPopulation(entriesArray , typeList , settin
     lorebook_entry_types: buildLorebookEntryTypes(typeList),
     new_entries: buildNewEntries(entriesArray)
   };
-  const prompt = await substitute_params_and_builtin(promptTemplate, params);
+  const prompt = await substitute_params(promptTemplate, params);
 
   const config = {
     prompt,

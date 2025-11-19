@@ -30,7 +30,7 @@ import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.
 import { build as buildSceneMessages } from './macros/scene_messages.js';
 import { build as buildActiveSettingLore } from './macros/active_setting_lore.js';
 import { build as buildPrefill } from './macros/prefill.js';
-import { substitute_params_and_builtin } from './promptUtils.js';
+import { substitute_params } from './promptUtils.js';
 
 import {
   MAX_RECAP_ATTEMPTS,
@@ -1025,7 +1025,7 @@ skipSettingsModification = false)
     prefill: buildPrefill(prefill)
   };
 
-  const prompt = await substitute_params_and_builtin(promptTemplate, params);
+  const prompt = await substitute_params(promptTemplate, params);
 
   return { prompt, prefill, lorebookMetadata: { ...lorebookMetadata, entries: activeEntries }, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown };
 }

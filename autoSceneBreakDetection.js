@@ -23,7 +23,7 @@ import { build as buildMessages } from './macros/messages.js';
 import { build as buildMinimumSceneLength } from './macros/minimum_scene_length.js';
 import { build as buildEarliestAllowedBreak } from './macros/earliest_allowed_break.js';
 import { build as buildPrefill } from './macros/prefill.js';
-import { substitute_params_and_builtin } from './promptUtils.js';
+import { substitute_params } from './promptUtils.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 3;
 
@@ -614,7 +614,7 @@ async function buildPromptFromTemplate(ctx, promptTemplate, options) {
     prefill: buildPrefill(prefill)
   };
 
-  return await substitute_params_and_builtin(promptTemplate, params);
+  return await substitute_params(promptTemplate, params);
 }
 
 async function calculateTotalRequestTokens(options) {

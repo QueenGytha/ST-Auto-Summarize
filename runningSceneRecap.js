@@ -18,7 +18,7 @@ import { running_scene_recap_prompt } from './default-prompts/index.js';
 import { build as buildSceneRecaps } from './macros/scene_recaps.js';
 import { build as buildCurrentRunningRecap } from './macros/current_running_recap.js';
 import { build as buildPrefill } from './macros/prefill.js';
-import { substitute_params_and_builtin, substitute_conditionals } from './promptUtils.js';
+import { substitute_params, substitute_conditionals } from './promptUtils.js';
 // Lorebook processing for running recap has been disabled; no queue integration needed here.
 
 function get_running_recap_storage() {
@@ -292,7 +292,7 @@ async function generate_running_scene_recap(skipQueue  = false) {
   };
 
   let prompt = substitute_conditionals(template, params);
-  prompt = await substitute_params_and_builtin(prompt, params);
+  prompt = await substitute_params(prompt, params);
   const prefill = prefillSetting || '';
 
   // Get connection profile and preset settings

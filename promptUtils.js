@@ -1,6 +1,5 @@
 
-import { formatInstructModeChat, debug, SUBSYSTEM } from './index.js';
-import { SLICE_TRIM_LAST_TWO } from './constants.js';
+import { formatInstructModeChat } from './index.js';
 
 function system_prompt_split(text ) {
   // Given text with some number of {{macro}} items, split the text by these items and format the rest as system messages surrounding the macros
@@ -38,44 +37,22 @@ function substitute_conditionals(text , params ) {
   });
   return formatted.join('');
 }
-function substitute_params(text , params ) {
-  // Custom function to replace extension-specific macros
-  // Does NOT take into account {{#if macro}} ... {{/if}} blocks, that is done in substitute_conditionals()
-  // If the macro is not found in the params object, it is replaced with an empty string
+async function substitute_params(text , params ) {
+  // Use ST's substituteParams() with our custom macros passed as additionalMacro
+  // This way ST handles ALL macro substitution ({{user}}, {{char}}, and our custom ones)
+  const { substituteParams } = await import('../../../../script.js');
 
-  const parts = text.split(/(\{\{.*?}})/g);
-  const formatted = parts.map((part) => {
-    if (!part) {return "";}
-    if (!part.startsWith('{{') || !part.endsWith('}}')) {return part;}
-    const trimmed = part.trim(); // clean whitespace
-    const macro = trimmed.slice(2, SLICE_TRIM_LAST_TWO);
-    return params[macro] ?? "";
-  });
-  return formatted.join('');
+  // ST's substituteParams uses the 7th parameter for additional macros
+  // Pass undefined for params 2-6 to use defaults, then our macros as additionalMacro
+  return substituteParams(
+    text,
+    undefined,  // _name1 (uses global name1)
+    undefined,  // _name2 (uses global name2)
+    undefined,  // _original
+    undefined,  // _group
+    true,       // _replaceCharacterCard
+    params      // additionalMacro - our custom macros
+  );
 }
 
-async function substitute_params_and_builtin(text , params ) {
-  // First replace our custom macros, then replace ST's built-in macros ({{user}}, {{char}}, etc.)
-  const { substituteParams, name1, name2 } = await import('../../../../script.js');
-  let result = substitute_params(text, params);  // Our custom macros
-
-  // Debug: Check if {{user}} exists before ST substitution
-  if (result.includes('{{user}}')) {
-    debug(SUBSYSTEM.CORE, 'Found {{user}} in prompt before ST substituteParams');
-    debug(SUBSYSTEM.CORE, `ST name1 (user): ${name1}, name2 (char): ${name2}`);
-  }
-
-  // Call ST's substituteParams with explicit name1 and name2
-  result = substituteParams(result, name1, name2);  // ST's built-in macros
-
-  // Debug: Check if {{user}} still exists after ST substitution
-  if (result.includes('{{user}}')) {
-    debug(SUBSYSTEM.CORE, '{{user}} STILL IN PROMPT after ST substituteParams - ST function may not be working');
-  } else {
-    debug(SUBSYSTEM.CORE, 'ST substituteParams successfully replaced {{user}}');
-  }
-
-  return result;
-}
-
-export { system_prompt_split, substitute_conditionals, substitute_params, substitute_params_and_builtin };
+export { system_prompt_split, substitute_conditionals, substitute_params };

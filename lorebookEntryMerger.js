@@ -6,7 +6,7 @@ import { DEBUG_OUTPUT_LONG_LENGTH, DEBUG_OUTPUT_MEDIUM_LENGTH } from './constant
 import { build as buildExistingContent } from './macros/existing_content.js';
 import { build as buildNewContent } from './macros/new_content.js';
 import { build as buildEntryName } from './macros/entry_name.js';
-import { substitute_params_and_builtin } from './promptUtils.js';
+import { substitute_params } from './promptUtils.js';
 
 // Will be imported from index.js via barrel exports
 let log , debug , error ; // Logging functions - any type is legitimate
@@ -100,7 +100,7 @@ async function createMergePrompt(existingContent , newContent , entryName  = '')
     new_update: buildNewContent(newContent),
     entry_name: buildEntryName(entryName)
   };
-  const prompt = await substitute_params_and_builtin(template, params);
+  const prompt = await substitute_params(template, params);
 
   return { prompt, prefill, config };
 }

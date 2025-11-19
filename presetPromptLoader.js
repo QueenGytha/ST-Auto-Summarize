@@ -17,7 +17,7 @@ import { DEBUG_OUTPUT_SHORT_LENGTH, DEFAULT_CHARACTER_ID } from './constants.js'
 export async function loadPresetPrompts(presetName) {
     try {
         // Import SillyTavern APIs
-        const { substituteParams, name1, name2, main_api } = await import('../../../../script.js');
+        const { substituteParams, main_api } = await import('../../../../script.js');
         const { getPresetManager } = await import('../../../preset-manager.js');
 
         if (!presetName) {
@@ -77,8 +77,8 @@ export async function loadPresetPrompts(presetName) {
             .map(p => ({
                 // Preserve all prompt properties for proper injection
                 ...p,
-                // Substitute params in content (pass name1/name2 explicitly for {{user}}/{{char}} macros)
-                content: substituteParams(p.content || '', name1, name2)
+                // Substitute params in content - ST's substituteParams will use global name1/name2
+                content: substituteParams(p.content || '')
             }))
             .sort((a, b) => {
                 // Sort by injection order if specified
