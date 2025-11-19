@@ -322,19 +322,35 @@ async function handleClearAllRecapsClick() {
     `;
 
   try {
+    // Capture checkbox state before popup closes
+    let shouldDeleteLorebook = false;
+
+    // Use event delegation to capture checkbox changes
+    const changeHandler = function (event) {
+      if (event.target.id === 'clear_recaps_delete_lorebook') {
+        shouldDeleteLorebook = $(event.target).prop('checked');
+        debug(SUBSYSTEM.RUNNING, `[Reset] Checkbox changed: ${shouldDeleteLorebook}`);
+      }
+    };
+
+    $(document).on('change', changeHandler);
+
     const confirmed = await ctx.callPopup?.(html, 'text', undefined, {
       okButton: 'Clear Everything',
       cancelButton: 'Cancel',
       wide: true
     });
 
+    // Clean up event handler
+    $(document).off('change', changeHandler);
+
     if (!confirmed) {
       debug(SUBSYSTEM.RUNNING, '[Reset] Clear recaps cancelled by user');
       return;
     }
 
-    // Check if lorebook deletion was requested
-    const shouldDeleteLorebook = $(selectorsExtension.runningUI.clearDeleteLorebook).prop('checked');
+    // Use captured checkbox state
+    debug(SUBSYSTEM.RUNNING, `[Reset] Lorebook deletion requested: ${shouldDeleteLorebook}`);
 
     // Clear any pending operations first (only after confirmation)
     const clearedCount = await clearAllOperations();
