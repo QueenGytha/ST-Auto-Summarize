@@ -373,11 +373,12 @@ async function handleClearAllRecapsClick() {
 
     $(document).on('change', changeHandler);
 
-    const confirmed = await ctx.callPopup?.(html, 'text', undefined, {
+    const popup = new ctx.Popup(html, ctx.POPUP_TYPE.CONFIRM, '', {
       okButton: 'Clear Everything',
-      cancelButton: 'Cancel',
       wide: true
     });
+
+    const confirmed = await popup.show();
 
     // Clean up event handler
     $(document).off('change', changeHandler);
