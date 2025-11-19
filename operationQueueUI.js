@@ -490,7 +490,8 @@ function formatOperationType(type) {
     [OperationType.RESOLVE_LOREBOOK_ENTRY]: 'Lorebook - Dedupe',
     [OperationType.CREATE_LOREBOOK_ENTRY]: 'Lorebook - Create',
     [OperationType.MERGE_LOREBOOK_ENTRY]: 'Lorebook - Merge',
-    [OperationType.UPDATE_LOREBOOK_REGISTRY]: 'Lorebook - Registry'
+    [OperationType.UPDATE_LOREBOOK_REGISTRY]: 'Lorebook - Registry',
+    [OperationType.POPULATE_REGISTRIES]: 'Lorebook - Bulk Process'
   };
 
   return names[type] || type;

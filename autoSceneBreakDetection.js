@@ -883,10 +883,6 @@ _operationId  = null)
 {
   const ctx = getContext();
 
-  // Ensure chat lorebook exists before attempting scene break detection
-  const { ensureChatLorebook } = await import('./lorebookManager.js');
-  await ensureChatLorebook();
-
   try {
     debug('Checking message range', startIndex, 'to', endIndex, 'for scene break (offset:', offset, ')');
 
@@ -1081,6 +1077,10 @@ async function tryQueueSceneBreaks(config) {
     toast(`Not enough eligible messages for scene break detection (${filteredCount} < ${minimumSceneLength + 1} required)`, 'info');
     return { queued: true, count: 0 };
   }
+
+  // Ensure chat lorebook exists and populate registries BEFORE queueing scene break detection
+  const { ensureChatLorebook } = await import('./lorebookManager.js');
+  await ensureChatLorebook();
 
   // Queue single range-based detection operation
   const operationId = await enqueueOperation(

@@ -523,10 +523,6 @@ export function registerAllOperationHandlers() {
     debug(SUBSYSTEM.QUEUE, `Executing GENERATE_SCENE_RECAP for index ${index}`);
     toast(`Generating scene recap for message ${index}...`, 'info');
 
-    // Ensure chat lorebook exists before generating scene recap
-    const { ensureChatLorebook } = await import('./lorebookManager.js');
-    await ensureChatLorebook();
-
     try {
       // Set loading state in recap box
       const $msgDiv = get_message_div(index);

@@ -264,9 +264,8 @@ export async function handleMissingLorebook(missingLorebookName ) {
 
     saveMetadata();
 
-    // Check if auto-lorebooks is enabled for this chat
     // Create a new lorebook to replace the deleted one
-    log("Auto-lorebooks enabled: creating replacement lorebook");
+    log("Creating replacement lorebook");
     const newLorebookName = await createChatLorebook();
 
     if (!newLorebookName) {
@@ -393,6 +392,44 @@ function buildDuplicateEntryData(entry , settings ) {
   return entryData;
 }
 
+async function processSingleEntryForDuplication(entry , existingComments , chatLorebookName , settings ) {
+  if (!entry) {
+    debug?.(`Skipping null/undefined entry`);
+    return null;
+  }
+
+  const comment = entry.comment || '';
+  debug?.(`Checking entry with comment: "${comment}" (keys: ${Array.isArray(entry.key) ? entry.key.join(', ') : 'none'})`);
+
+  if (isInternalEntry(comment)) {
+    debug?.(`Skipping internal entry: ${comment}`);
+    return null;
+  }
+  if (existingComments.has(comment)) {
+    debug?.(`Skipping duplicate entry: ${comment}`);
+    return null;
+  }
+
+  const entryData = buildDuplicateEntryData(entry, settings);
+  debug?.(`Attempting to add entry to lorebook: ${chatLorebookName}`);
+  const created = await addLorebookEntry(chatLorebookName, entryData);
+
+  if (created) {
+    debug?.(`✓ Duplicated entry: ${comment} (uid: ${created.uid})`);
+    existingComments.add(comment);
+    return {
+      id: String(created.uid),
+      uid: created.uid,
+      comment: created.comment || '',
+      content: created.content || '',
+      keys: Array.isArray(created.key) ? created.key : []
+    };
+  }
+
+  debug?.(`✗ Failed to add entry: ${comment}`);
+  return null;
+}
+
 async function processLorebookForDuplication(bookName , existingComments , chatLorebookName , settings ) {
   if (!world_names.includes(bookName)) {
     debug?.(`Skipping non-existent lorebook: ${bookName}`);
@@ -409,31 +446,14 @@ async function processLorebookForDuplication(bookName , existingComments , chatL
   const createdEntries = [];
   let count = 0;
 
+  debug?.(`Processing ${entries.length} entries from lorebook: ${bookName}`);
+
   for (const entry of entries) {
-    if (!entry) {continue;}
-
-    const comment = entry.comment || '';
-    if (isInternalEntry(comment) || existingComments.has(comment)) {
-      if (existingComments.has(comment)) {
-        debug?.(`Skipping duplicate entry: ${comment}`);
-      }
-      continue;
-    }
-
-    const entryData = buildDuplicateEntryData(entry, settings);
     // eslint-disable-next-line no-await-in-loop -- Sequential execution required: each call modifies and saves the same lorebook
-    const created = await addLorebookEntry(chatLorebookName, entryData);
-
+    const created = await processSingleEntryForDuplication(entry, existingComments, chatLorebookName, settings);
     if (created) {
       count++;
-      existingComments.add(comment);
-      createdEntries.push({
-        id: String(created.uid),
-        uid: created.uid,
-        comment: created.comment || '',
-        content: created.content || '',
-        keys: Array.isArray(created.key) ? created.key : []
-      });
+      createdEntries.push(created);
     }
   }
 
@@ -452,6 +472,8 @@ async function prepareDuplicationContext(chatLorebookName ) {
     map(entry => entry?.comment).
     filter(Boolean)
   );
+
+  debug?.(`Chat lorebook has ${Object.keys(chatData.entries).length} total entries, ${existingComments.size} unique comments`);
 
   const settings = {
     stickyRounds: get_settings?.('auto_lorebooks_entry_sticky') ?? DEFAULT_STICKY_ROUNDS,
@@ -472,14 +494,14 @@ async function enqueueBulkRegistryPopulation(allCreatedEntries , chatLorebookNam
       lorebookName: chatLorebookName
     },
     {
-      priority: 15,
+      priority: 100,
       metadata: {
         entry_count: allCreatedEntries.length,
         source: 'duplicate_active_lorebooks'
       }
     }
   );
-  debug?.(`Enqueued POPULATE_REGISTRIES for ${allCreatedEntries.length} entries`);
+  debug?.(`Enqueued POPULATE_REGISTRIES with priority 100 for ${allCreatedEntries.length} entries`);
 }
 
 async function duplicateActiveLorebookEntries(chatLorebookName ) {
@@ -582,11 +604,12 @@ export async function createChatLorebook() {
 
 export async function ensureChatLorebook() {
   try {
-    // Check if enabled
     // Check if already has lorebook
     const existingLorebook = getAttachedLorebook();
     if (existingLorebook) {
       debug(`Chat already has lorebook: ${existingLorebook}`);
+      // Import/update entries from active global/character lorebooks
+      await duplicateActiveLorebookEntries(existingLorebook);
       return true;
     }
 
@@ -759,16 +782,12 @@ export async function addLorebookEntry(lorebookName , entryData  = {}) {
       return null;
     }
 
-    if (!world_names || !world_names.includes(lorebookName)) {
-      error(`Cannot add entry: lorebook "${lorebookName}" does not exist`);
-      return null;
-    }
-
     debug(`Adding entry to lorebook: ${lorebookName}`, entryData);
 
+    // Load the lorebook directly (world_names may be stale/cached)
     const data = await loadWorldInfo(lorebookName);
     if (!data) {
-      error(`Failed to load lorebook data for: ${lorebookName}`);
+      error(`Cannot add entry: lorebook "${lorebookName}" does not exist or failed to load`);
       return null;
     }
 
@@ -803,11 +822,6 @@ function validateModifyParams(lorebookName , uid ) {
 
   if (uid === undefined || uid == null) {
     error("Cannot modify entry: UID is required");
-    return false;
-  }
-
-  if (!world_names || !world_names.includes(lorebookName)) {
-    error(`Cannot modify entry: lorebook "${lorebookName}" does not exist`);
     return false;
   }
 
@@ -906,18 +920,12 @@ export async function deleteLorebookEntry(lorebookName , uid , silent  = true) {
       return false;
     }
 
-    // Verify lorebook exists
-    if (!world_names || !world_names.includes(lorebookName)) {
-      error(`Cannot delete entry: lorebook "${lorebookName}" does not exist`);
-      return false;
-    }
-
     debug(`Deleting entry UID ${uid} from lorebook: ${lorebookName}`);
 
-    // Load lorebook data
+    // Load lorebook data (world_names may be stale/cached)
     const data = await loadWorldInfo(lorebookName);
     if (!data) {
-      error(`Failed to load lorebook data for: ${lorebookName}`);
+      error(`Cannot delete entry: lorebook "${lorebookName}" does not exist or failed to load`);
       return false;
     }
 
@@ -996,18 +1004,12 @@ export async function reorderLorebookEntriesAlphabetically(lorebookName ) {
       return false;
     }
 
-    // Verify lorebook exists
-    if (!world_names || !world_names.includes(lorebookName)) {
-      error(`Cannot reorder entries: lorebook "${lorebookName}" does not exist`);
-      return false;
-    }
-
     debug(`Reordering entries alphabetically in lorebook: ${lorebookName}`);
 
-    // Load lorebook data
+    // Load lorebook data (world_names may be stale/cached)
     const data = await loadWorldInfo(lorebookName);
     if (!data) {
-      error(`Failed to load lorebook data for: ${lorebookName}`);
+      error(`Cannot reorder entries: lorebook "${lorebookName}" does not exist or failed to load`);
       return false;
     }
 
