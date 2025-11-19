@@ -69,17 +69,7 @@ async function handleChatChanged() {
   // Auto scene break detection on chat load
   processSceneBreakOnChatLoad();
 
-  // Ensure chat lorebook exists
-  try {
-    const lorebookManager = await import('./lorebookManager.js');
-    // Make sure lorebook utils are wired
-    lorebookManager.initLorebookManager(lorebookUtils);
-    await lorebookManager.initializeChatLorebook();
-  } catch (err) {
-    debug('[Lorebooks] Failed to initialize lorebook on chat change:', String(err));
-  }
-
-  // Reload queue from new chat's lorebook (after ensuring it's available)
+  // Reload queue from new chat's lorebook
   // Skip reload if processor is actively processing operations to prevent race conditions
   if (operationQueueModule) {
     if (operationQueueModule.isQueueProcessorActive()) {

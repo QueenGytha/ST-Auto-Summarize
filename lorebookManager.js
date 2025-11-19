@@ -227,10 +227,6 @@ export function getCurrentContext() {
   }
 }
 
-export function isAutoLorebooksEnabled() {
-  return true;
-}
-
 export function getAttachedLorebook() {
   try {
     return chat_metadata?.[METADATA_KEY] || null;
@@ -1053,7 +1049,6 @@ export async function reorderLorebookEntriesAlphabetically(lorebookName ) {
 export default {
   initLorebookManager,
   getCurrentContext,
-  isAutoLorebooksEnabled,
   getAttachedLorebook,
   lorebookExists,
   handleMissingLorebook,

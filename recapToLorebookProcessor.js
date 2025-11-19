@@ -1312,7 +1312,7 @@ async function loadRecapContext(config ) {
   const { buildLorebookOperationsSettings } = await import('./index.js');
   const recapSettings = {
     ...(await buildLorebookOperationsSettings()),
-    enabled: get_settings('auto_lorebooks_enabled_by_default') ?? false
+    enabled: true
   };
 
   const typeList = config.entityTypeDefs || [];

@@ -135,15 +135,15 @@ Examples of brevity (GOOD vs BAD):
 // - Each object updates ONE entity (character, location, item, faction, quest, rule)
 // - Fields: name, type (one of {{lorebook_entry_types}}), keywords, content, optional uid
 // - uid (CRITICAL UID RULES):
-//   * ONLY include uid if the EXACT entity NAME appears in active_setting_lore below WITH a uid
-//   * You MUST verify: Does "<setting_lore name="X" uid="Y">" exist below where X EXACTLY matches this entity's name?
-//   * If YES and name matches exactly → Copy that exact uid value
-//   * If NO or name doesn't match → DO NOT include uid field AT ALL (omit it entirely)
-//   * NEVER reuse UIDs from different entities
-//   * NEVER guess or invent UIDs
-//   * Example: Creating entry for "Cozy Glow" but only "character-Sweetie Belle uid=8" exists below → OMIT uid (new character)
-//   * Example: Updating "Sweetie Belle" and "character-Sweetie Belle uid=8" exists below → include "uid": "8"
-//   * WARNING: Incorrect uid assignment OVERWRITES wrong entries and CORRUPTS the database
+//   * Search active_setting_lore below for this EXACT entity name
+//   * Found with uid? → Copy that NUMERIC uid value into your JSON
+//   * Not found OR no uid? → OMIT the uid field completely from your JSON
+//   * NEVER write placeholder text like "existing_uid_if_any" or "uid_if_exists"
+//   * NEVER copy UIDs from different entity names
+//   * Example: "Talia" found as name="character-Talia" uid="42" below → use "uid": "42"
+//   * Example: "Talia" NOT found below → omit uid field entirely: {"type": "character", "name": "Talia", ...}
+//   * Example: "Marcus" found but NO uid shown → omit uid field
+//   * WARNING: Wrong uid CORRUPTS database by overwriting unrelated entries
 // - CAUSAL FORMAT: Use "[trigger] → [reaction] → [consequence]" format in Psychology, Relationships, Tension/Triggers fields
 // - OMIT REDUNDANT CONTEXT: Don't repeat entity name in every line; don't explain obvious cause-effect; don't use filler words like "currently", "seems to be", "appears to"
 // - OMIT EMPTY FIELDS: Only include bullet fields that have NEW data. If field has no new information, don't include it. NO empty placeholders like "- State: —"

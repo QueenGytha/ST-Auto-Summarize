@@ -883,6 +883,10 @@ _operationId  = null)
 {
   const ctx = getContext();
 
+  // Ensure chat lorebook exists before attempting scene break detection
+  const { ensureChatLorebook } = await import('./lorebookManager.js');
+  await ensureChatLorebook();
+
   try {
     debug('Checking message range', startIndex, 'to', endIndex, 'for scene break (offset:', offset, ')');
 

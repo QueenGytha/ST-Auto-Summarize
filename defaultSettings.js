@@ -86,7 +86,6 @@ export const default_settings = {
   running_scene_recap_show_navbar: true, // Show version controls in navbar
 
   // --- Auto-Lorebooks Settings ---
-  auto_lorebooks_enabled_by_default: true, // Enable auto-lorebooks for new chats
   auto_lorebooks_name_template: 'z-AutoLB-{{chat}}', // Naming template for auto-created lorebooks
   auto_lorebooks_delete_on_chat_delete: true, // Delete lorebook when chat is deleted
   autoReorderAlphabetically: true, // Automatically reorder lorebook entries alphabetically when created or renamed

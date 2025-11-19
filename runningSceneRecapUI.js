@@ -14,7 +14,9 @@ import {
   clear_all_recaps_for_chat,
   clearAllOperations,
   selectorsExtension,
-  selectorsSillyTavern } from
+  selectorsSillyTavern,
+  getAttachedLorebook,
+  deleteChatLorebook } from
 './index.js';
 import {
   get_running_recap_versions,
@@ -279,15 +281,43 @@ function formatCount(count, noun) {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }
 
+async function handleLorebookDeletion() {
+  const currentLorebook = getAttachedLorebook();
+  if (!currentLorebook) {
+    debug(SUBSYSTEM.RUNNING, 'No lorebook attached to delete');
+    return false;
+  }
+
+  debug(SUBSYSTEM.RUNNING, `Deleting lorebook: ${currentLorebook}`);
+  const deleted = await deleteChatLorebook(currentLorebook);
+
+  if (!deleted) {
+    error(SUBSYSTEM.RUNNING, 'Failed to delete lorebook');
+    toast('Failed to delete lorebook', 'error');
+    return false;
+  }
+
+  debug(SUBSYSTEM.RUNNING, `Successfully deleted lorebook: ${currentLorebook}`);
+  return true;
+}
+
 async function handleClearAllRecapsClick() {
   const ctx = getContext();
 
   const html = `
-        <div style="max-width: 420px;">
-            <h3>Clear All Recaps?</h3>
-            <p>This removes every generated recap, scene break marker, running scene recap version, and scene break scan history for the current chat.</p>
-            <p>Messages and lorebooks stay untouched.</p>
-            <p><strong>This action cannot be undone.</strong></p>
+        <div style="text-align: center !important; width: 100% !important;">
+            <div style="max-width: 420px; margin: 0 auto; text-align: center !important;">
+                <h3 style="text-align: center !important; margin: 0 0 10px 0;">Clear All Recaps?</h3>
+                <p style="text-align: center !important; margin: 10px 0;">This removes every generated recap, scene break marker, running scene recap version, and scene break scan history for the current chat.</p>
+                <p style="text-align: center !important; margin: 10px 0;">Messages stay untouched.</p>
+                <div style="margin: 15px 0; text-align: center !important;">
+                    <label style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="clear_recaps_delete_lorebook" data-testid="clear-recaps-delete-lorebook" style="cursor: pointer;">
+                        <span>Also delete chat lorebook</span>
+                    </label>
+                </div>
+                <p style="text-align: center !important; margin: 10px 0;"><strong>This action cannot be undone.</strong></p>
+            </div>
         </div>
     `;
 
@@ -303,6 +333,9 @@ async function handleClearAllRecapsClick() {
       return;
     }
 
+    // Check if lorebook deletion was requested
+    const shouldDeleteLorebook = $(selectorsExtension.runningUI.clearDeleteLorebook).prop('checked');
+
     // Clear any pending operations first (only after confirmation)
     const clearedCount = await clearAllOperations();
     if (clearedCount > 0) {
@@ -315,6 +348,12 @@ async function handleClearAllRecapsClick() {
     if (!anyCleared) {
       toast('No recap data found to clear for this chat', 'info');
       return;
+    }
+
+    // Handle lorebook deletion if requested
+    let lorebookDeleted = false;
+    if (shouldDeleteLorebook) {
+      lorebookDeleted = await handleLorebookDeletion();
     }
 
     refresh_memory();
@@ -351,6 +390,9 @@ async function handleClearAllRecapsClick() {
     }
     if (extras.length) {
       message += `${message ? ' ' : ''}Also cleared ${extras.join(', ')}.`;
+    }
+    if (lorebookDeleted) {
+      message += `${message ? ' ' : ''}Deleted chat lorebook.`;
     }
 
     toast(message.trim() || 'Cleared recap data.', 'success');

@@ -250,6 +250,7 @@ export const selectorsExtension = {
     editBtn: '[data-testid="running-edit-btn"]',                   // #running_recap_edit_btn
     scanBreaksBtn: '[data-testid="running-scan-breaks-btn"]',      // #running_recap_scan_breaks_btn
     clearAllBtn: '[data-testid="running-clear-all-btn"]',          // #running_recap_clear_all_btn
+    clearDeleteLorebook: '[data-testid="clear-recaps-delete-lorebook"]',  // #clear_recaps_delete_lorebook
     editTextarea: '[data-testid="running-edit-textarea"]',         // #running_recap_edit_textarea
     controls: '[data-testid="running-recap-controls"]',          // .running-recap-controls
   },
