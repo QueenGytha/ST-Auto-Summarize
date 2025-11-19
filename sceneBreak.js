@@ -1386,6 +1386,11 @@ export async function generateSceneRecap(config) {
   // Prepare prompt (now returns lorebook metadata and token counts)
   const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data);
 
+  // Debug: Check if {{user}} is in the final prompt
+  if (prompt.includes('{{user}}')) {
+    debug(SUBSYSTEM.SCENE, 'WARNING: {{user}} macro still in prompt after prepareScenePrompt!');
+  }
+
   // Generate recap with connection profile/preset switching
   const operationConfig = await resolveOperationConfig('scene_recap');
   const profile_name = operationConfig.connection_profile || '';
