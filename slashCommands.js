@@ -287,12 +287,24 @@ function initialize_slash_commands() {
       const { lorebookTokens, lorebookEntryCount } = await count_lorebook_tokens(context);
       const runningRecapTokens = await count_running_recap_tokens(context);
 
-      const summary = `Token Count Summary:\n• Messages: ${chat.length} (${messageTokens.toLocaleString()} tokens, avg ${Math.round(messageTokens / chat.length)})\n  - Hidden: ${hiddenCount} (${hiddenTokens.toLocaleString()} tokens)\n  - Visible: ${visibleCount} (${visibleTokens.toLocaleString()} tokens)\n• Chat Lorebook Entries: ${lorebookEntryCount} (${lorebookTokens.toLocaleString()} tokens)\n• Running Scene Recap: ${runningRecapTokens.toLocaleString()} tokens`;
+      const tokensSaved = hiddenTokens - lorebookTokens - runningRecapTokens;
+      const totalRemainingTokens = visibleTokens + lorebookTokens + runningRecapTokens;
+
+      const summary = `Token Count Summary:
+• Messages: ${chat.length} (${messageTokens.toLocaleString()} tokens, avg ${Math.round(messageTokens / chat.length)})
+  - Hidden: ${hiddenCount} (${hiddenTokens.toLocaleString()} tokens)
+  - Visible: ${visibleCount} (${visibleTokens.toLocaleString()} tokens)
+• Chat Lorebook Entries: ${lorebookEntryCount} (${lorebookTokens.toLocaleString()} tokens)
+• Running Scene Recap: ${runningRecapTokens.toLocaleString()} tokens
+• Tokens Saved: ${tokensSaved.toLocaleString()} tokens
+• Total Remaining Tokens: ${totalRemainingTokens.toLocaleString()} tokens`;
 
       log('[Token Count] Summary:', summary);
       log('[Token Count] Per-message breakdown:', messageTokenCounts);
       log('[Token Count] Chat lorebook entries:', lorebookEntryCount, 'tokens:', lorebookTokens);
       log('[Token Count] Running recap tokens:', runningRecapTokens);
+      log('[Token Count] Tokens saved:', tokensSaved);
+      log('[Token Count] Total remaining tokens:', totalRemainingTokens);
 
       toast(summary, 'info');
       return summary;
