@@ -624,8 +624,8 @@ export async function ensureChatLorebook() {
       // CRITICAL: Verify the lorebook actually exists in world_names
       // Metadata can be stale/out of sync with actual lorebook availability
       if (!lorebookExists(existingLorebook)) {
-        error(`CRITICAL: Chat metadata says lorebook "${existingLorebook}" is attached, but it's NOT in world_names!`);
-        debug(`This can happen if lorebook was deleted or world_names is stale. Attempting recovery...`);
+        log(`Chat metadata says lorebook "${existingLorebook}" is attached, but it's NOT in world_names! Attempting recovery...`);
+        debug(`This can happen if lorebook was deleted or world_names is stale.`);
 
         // Try to refresh world_names in case it's just stale
         await updateWorldInfoList();
