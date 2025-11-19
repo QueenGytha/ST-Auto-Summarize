@@ -39,7 +39,7 @@ function substitute_conditionals(text , params ) {
   return formatted.join('');
 }
 function substitute_params(text , params ) {
-  // custom function to parse macros because I literally cannot find where ST does it in their code.
+  // Custom function to replace extension-specific macros
   // Does NOT take into account {{#if macro}} ... {{/if}} blocks, that is done in substitute_conditionals()
   // If the macro is not found in the params object, it is replaced with an empty string
 
@@ -54,4 +54,12 @@ function substitute_params(text , params ) {
   return formatted.join('');
 }
 
-export { system_prompt_split, substitute_conditionals, substitute_params };
+async function substitute_params_and_builtin(text , params ) {
+  // First replace our custom macros, then replace ST's built-in macros ({{user}}, {{char}}, etc.)
+  const { substituteParams } = await import('../../../../script.js');
+  let result = substitute_params(text, params);  // Our custom macros
+  result = substituteParams(result);  // ST's built-in macros
+  return result;
+}
+
+export { system_prompt_split, substitute_conditionals, substitute_params, substitute_params_and_builtin };

@@ -23,7 +23,7 @@ import { build as buildMessages } from './macros/messages.js';
 import { build as buildMinimumSceneLength } from './macros/minimum_scene_length.js';
 import { build as buildEarliestAllowedBreak } from './macros/earliest_allowed_break.js';
 import { build as buildPrefill } from './macros/prefill.js';
-import { substitute_params } from './promptUtils.js';
+import { substitute_params_and_builtin } from './promptUtils.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 3;
 
@@ -605,7 +605,7 @@ function calculateLatestAllowedBreak(eligibleFilteredIndices, endIndex, minimumS
   return -1; // No valid position found
 }
 
-function buildPromptFromTemplate(ctx, promptTemplate, options) {
+async function buildPromptFromTemplate(ctx, promptTemplate, options) {
   const { formattedForPrompt, minimumSceneLength, earliestAllowedBreak, prefill } = options;
   const params = {
     messages: buildMessages(formattedForPrompt),
@@ -614,7 +614,7 @@ function buildPromptFromTemplate(ctx, promptTemplate, options) {
     prefill: buildPrefill(prefill)
   };
 
-  return substitute_params(promptTemplate, params);
+  return await substitute_params_and_builtin(promptTemplate, params);
 }
 
 async function calculateTotalRequestTokens(options) {
@@ -736,7 +736,8 @@ async function reduceMessagesUntilTokenFit(config) {
     currentFormattedForPrompt = messagesResult.formatted;
     const messageBreakdown = messagesResult.breakdown;
 
-    prompt = buildPromptFromTemplate(ctx, promptTemplate, {
+    // eslint-disable-next-line no-await-in-loop -- Need to build prompt in loop to check if token reduction is needed
+    prompt = await buildPromptFromTemplate(ctx, promptTemplate, {
       formattedForPrompt: currentFormattedForPrompt,
       minimumSceneLength,
       earliestAllowedBreak: currentEarliestAllowedBreak,

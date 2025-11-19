@@ -403,14 +403,25 @@ function normalizeJsonStringValues(jsonString) {
   let i = 0;
 
   while (i < jsonString.length) {
-    const isFieldStart = i < jsonString.length - 2 &&
+    // Handle both spaced (`: "`) and compact (`:"`) JSON formats
+    // Mobile browsers may return compact JSON without spaces after colons
+    const hasSpace = i < jsonString.length - 2 &&
       jsonString[i] === ':' &&
       /\s/.test(jsonString[i + 1]) &&
       jsonString[i + 2] === '"';
 
-    if (isFieldStart) {
+    const isCompact = i < jsonString.length - 1 &&
+      jsonString[i] === ':' &&
+      jsonString[i + 1] === '"';
+
+    if (hasSpace) {
       normalized += ': "';
       const processed = processJsonStringValue(jsonString, i + JSON_FIELD_START_ADVANCE);
+      normalized += processed.result;
+      i = processed.nextIndex;
+    } else if (isCompact) {
+      normalized += ':"';
+      const processed = processJsonStringValue(jsonString, i + 2); // Skip : and "
       normalized += processed.result;
       i = processed.nextIndex;
     } else {
