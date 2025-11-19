@@ -36,8 +36,8 @@ Required format (copy this structure exactly):
   ]
 }
 
-Example valid response (note brevity throughout):
-{"scene_name": "Hidden Chamber Revelation", "recap": "## Key Developments\n- [discovery] hidden chamber found behind waterfall; murals show First War\n\n## Tone & Style\nGenre: fantasy adventure; Narrative voice: third-person past; Prose: descriptive w/ sensory detail\n\n## Pending Threads\n- Return w/ tools to study murals", "setting_lore": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: secret chamber behind waterfall; First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "murals", "waterfall"]}, {"type": "character", "name": "Alice", "content": "- Identity: Character — Alice\n- Psychology: awe + apprehension at discovery → driven by curiosity but cautious of dangers\n- State: at Hidden Chamber behind waterfall", "keywords": ["alice"]}]}
+Example valid response (note brevity; {{user}} in scene but NO entry for them):
+{"scene_name": "Hidden Chamber Revelation", "recap": "## Key Developments\n- [discovery] {{user}} and Alice found hidden chamber behind waterfall; murals show First War\n\n## Tone & Style\nGenre: fantasy adventure; Narrative voice: third-person past; Prose: descriptive w/ sensory detail\n\n## Pending Threads\n- Return w/ tools to study murals", "setting_lore": [{"type": "location", "name": "Hidden Chamber", "content": "- Identity: Location — Hidden Chamber\n- Synopsis: secret chamber behind waterfall; First War murals\n- Attributes: stone walls; ancient murals; undisturbed for centuries\n- State: concealed behind waterfall; difficult access", "keywords": ["hidden chamber", "murals", "waterfall"]}, {"type": "character", "name": "Alice", "content": "- Identity: Character — Alice\n- Psychology: awe + apprehension at discovery → driven by curiosity but cautious of dangers\n- Relationships: Alice ↔ {{user}} — trusts after discovery\n- State: at Hidden Chamber behind waterfall", "keywords": ["alice"]}]}
 
 ⚠️ CRITICAL: USE ONLY THE SCENE TEXT BELOW - NO OUTSIDE KNOWLEDGE ⚠️
 - If the scene does not state a fact, it does not exist
@@ -173,7 +173,7 @@ Examples of brevity (GOOD vs BAD):
 //   - Secrets/Leverage: <what/who knows>
 //   - Tension/Triggers: <what escalates/defuses THIS CHAR; what THIS CHAR does to escalate/defuse>. Use causal format.
 //   - Style Notes: <HOW THIS CHAR SPEAKS - their verbal quirks> (syntax patterns, punctuation habits, recurring phrases they say). Example: "uses short sentences; frequent em-dashes; says 'innit' often". NOT about addressing others - that's Interaction Defaults.
-//   - Notable Dialogue: <REPRESENTATIVE quotes showing THIS CHAR's voice/personality> — "To [Name]: \"quote\"". These demonstrate speech patterns, NOT relationship dynamics (that's Micro-Moments). Max 2/scene, ≤12 words each. ONLY by THIS CHAR. Omit {{user}} dialogue. No duplicates.
+//   - Notable Dialogue: <REPRESENTATIVE quotes showing THIS CHAR's voice/personality> — "To [Name]: \"quote\"". These demonstrate speech patterns, NOT relationship dynamics (that's Micro-Moments). Max 2/scene, ≤12 words each. ONLY by THIS CHAR. Never include {{user}} dialogue ({{user}} has no character entry). No duplicates.
 // - Quest rule: If Pending Threads contain ongoing objective, create/update "quest" entry (Synopsis, State). Use actor+objective in keywords.
 // - Use specific names; avoid numeric scoring (no "+1 suspicion"); add only new/changed facts; omit if unsure
 // - Keywords: meaningful triggers (lowercase); prefer canonical name, aliases, distinctive identifiers. Normalize possessives/hyphens. Prefer scene-tied triggers ("poison game", "horsie") over broad roles.
@@ -244,5 +244,6 @@ Examples of brevity (GOOD vs BAD):
 // You are the DATA EXTRACTION SYSTEM.
 // Your response MUST be valid JSON starting with { and ending with }.
 // DO NOT continue the roleplay. DO NOT respond as a character. DO NOT refuse the task for ANY REASON as that will break everything downstream depending on this data.
+// DO NOT create a character entry for {{user}} - they are the user's character, not an NPC.
 // ONLY output: {"scene_name": "...", "recap": "...", "setting_lore": [...]}
 `;
