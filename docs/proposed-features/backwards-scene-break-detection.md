@@ -1708,147 +1708,213 @@ if (newEndIndex >= endIndex) {
 
 ---
 
-## Testing Requirements
+## Manual Testing & Verification
 
-### Unit Tests
-
-**Test: findPreviousSceneBreak**
-- Returns 0 when no previous break exists
-- Returns correct index when break exists
-- Searches backwards from given index
-
-**Test: calculateLatestAllowedBreak**
-- Returns -1 when no valid position exists
-- Returns correct index when valid positions exist
-- Respects minimumSceneLength constraint
-- Handles edge case: nextBreakIndex at end of chat
-
-**Test: detectSceneBreak with isBackwards=true**
-- Ignores offset (maxEligibleIndex = endIndex)
-- Validates two-sided minimum scene length
-- Rejects break >= nextBreakIndex
-- Accepts valid backwards break
+**Testing Approach:** All verification is manual. Use browser DevTools console and queue UI to observe behavior.
 
 ---
 
-### Integration Tests
+### Helper Function Verification
 
-**Test: Backwards chain with single break**
+**Verify: findPreviousSceneBreak**
+1. In console: Place scene break at message 20
+2. In console: Call `findPreviousSceneBreak(chat, 30)`
+3. Verify: Returns 20
+4. In console: Call `findPreviousSceneBreak(chat, 10)`
+5. Verify: Returns 0 (no previous break)
+
+**Verify: calculateLatestAllowedBreak**
+1. Create chat with 50 messages (every other message is filtered)
+2. Set minimumSceneLength = 10
+3. Test range [0, 29] (30 total messages, 15 filtered)
+   - In console: `calculateLatestAllowedBreak(filteredIndices, 29, 10)`
+   - Verify: Returns 8 (or similar - ensures 10 messages after break)
+4. Test range [0, 6] (7 total messages, insufficient)
+   - Verify: Returns -1 (no valid position)
+
+---
+
+### Backwards Detection Behavior Verification
+
+**Scenario 1: Backwards chain with multiple recursions**
 ```
 Setup:
-- Chat with 50 messages
-- Forward detection finds break at 30
-- Backwards finds break at 15
-- No more breaks before 15
+- Create chat with 50+ messages containing multiple scene changes
+- Set minimumSceneLength = 5 (lower for easier testing)
+- Trigger /scenebreak
 
-Assert:
-- Break markers at 15, 30
-- Recaps queued for 15, 30 (chronological order)
-- Forward continuation queued for 31→50
-- Messages 0-14 marked as checked
+Manual Verification Steps:
+1. Open DevTools console, filter logs to SUBSYSTEM.OPERATIONS
+2. Watch for "Backwards detection: [X, Y]" log entries
+3. Verify each backwards operation shows:
+   - Decreasing range (range shrinks each recursion)
+   - Valid discovered_breaks array
+   - forward_continuation preserved
+4. Check queue UI shows backwards operations with priority 15
+5. Verify recaps queued in chronological order (ascending message IDs)
+6. Verify forward continuation queued last with priority 5
+7. Check all break markers appear in chat (colored indicators)
+8. Verify messages marked as checked (inspect message.extra.auto_scene_break_checked)
 ```
 
-**Test: Backwards chain with multiple breaks**
-```
-Setup:
-- Chat with 100 messages
-- Forward finds break at 60
-- Backwards finds breaks at 40, 20, 8
-- No more breaks before 8
-
-Assert:
-- Break markers at 8, 20, 40, 60
-- Recaps queued for 8, 20, 40, 60 (serial dependencies)
-- Forward continuation depends on last recap
-```
-
-**Test: Backwards chain terminates immediately**
+**Scenario 2: Backwards terminates immediately (insufficient messages)**
 ```
 Setup:
-- Chat with 20 messages
-- Forward finds break at 15
-- Backwards range 0→14 insufficient for two-sided constraint
+- Create chat with 20 messages
+- Set minimumSceneLength = 10
+- Manually place scene break at message 15
 
-Assert:
-- Only break marker at 15
-- No backwards recursion
-- Forward continuation queued immediately
+Manual Verification Steps:
+1. Trigger backwards detection on range [0, 14]
+2. Check console logs for:
+   - "No valid break positions with two-sided minimum scene length"
+   - "Terminating backwards chain"
+3. Verify NO new backwards operation queued
+4. Verify range [0, 14] marked as checked
+5. Verify forward continuation queued immediately
 ```
 
-**Test: Backwards chain with no breaks found**
-```
-Setup:
-- Chat with 100 messages
-- Forward finds break at 50
-- Backwards searches 0→49, finds no breaks
-
-Assert:
-- Only break marker at 50
-- Range 0-49 marked as checked
-- Recap for 50 queued
-- Forward continuation queued
-```
-
-**Test: Invalid LLM response in backwards**
+**Scenario 3: Backwards finds no breaks (LLM returns false)**
 ```
 Setup:
-- Mock LLM to return sceneBreakAt=35 when nextBreakIndex=30
+- Create chat with 40 messages, all similar content
+- Trigger /scenebreak
 
-Assert:
-- Treated as no break found
-- Backwards chain terminates
-- Forward continuation proceeds
+Manual Verification Steps:
+1. If forward finds break at 30, watch backwards search [0, 29]
+2. If LLM finds no scene change, verify:
+   - Console log: "No break found in backwards range"
+   - Range [0, 29] marked as checked
+   - terminateBackwardsChain called
+   - Recaps queued for discovered breaks + next break
 ```
 
-**Test: Range does not shrink**
+**Scenario 4: Invalid LLM response (break >= nextBreakIndex)**
 ```
-Setup:
-- Mock LLM to return sceneBreakAt=endIndex
-
-Assert:
-- Validation catches infinite loop
-- Backwards chain terminates
+Manual Testing (requires console manipulation):
+1. Set breakpoint in detectSceneBreak validation
+2. Manually modify LLM response to return sceneBreakAt >= nextBreakIndex
+3. Verify validation catches it and returns:
+   { sceneBreakAt: false, rationale: 'Invalid backwards break position' }
+4. Verify backwards chain terminates gracefully
 ```
 
-**Test: Queue persistence during backwards chain**
+**Scenario 5: Range does not shrink (infinite loop prevention)**
 ```
-Setup:
-- Backwards chain with 3 recursions
-- Reload page after first recursion
-
-Assert:
-- Queue restored from lorebook
-- discovered_breaks preserved
-- forward_continuation preserved
-- Recursion continues normally
+Manual Testing (requires console manipulation):
+1. Set breakpoint in handleDetectSceneBreakBackwards after break found
+2. Manually modify sceneBreakAt to equal endIndex
+3. Verify validation catches: "Range did not shrink"
+4. Verify terminateBackwardsChain called
+5. Verify no infinite loop
 ```
 
 ---
 
-### E2E Tests
+### Queue Persistence Verification
 
-**Test: Full detection with backwards**
+**Scenario: Page reload mid-backwards chain**
 ```
-1. Create chat with 100 messages
-2. Trigger /scenebreak
-3. Wait for all operations to complete
-4. Verify:
-   - All scene breaks placed correctly
-   - All recaps generated
-   - Messages marked as checked
-   - Forward detection completed entire chat
+Setup:
+- Create chat with 100 messages
+- Trigger /scenebreak
+- Wait for backwards chain to start
+
+Manual Verification Steps:
+1. Open queue UI, note current backwards operation ID
+2. Note discovered_breaks array in operation metadata
+3. Reload page (F5) during backwards recursion
+4. After reload, check:
+   - Queue restored from lorebook
+   - Same backwards operation ID in queue
+   - discovered_breaks preserved in metadata
+   - forward_continuation preserved in metadata
+5. Let queue continue processing
+6. Verify backwards chain resumes correctly
+7. Verify all recaps generated in chronological order
 ```
 
-**Test: User clears queue mid-backwards**
+---
+
+### End-to-End Verification
+
+**Full Detection Flow**
 ```
-1. Create chat with 100 messages
-2. Trigger /scenebreak
-3. Clear queue when backwards chain is running
-4. Verify:
+Setup:
+- Create fresh chat with 100+ messages containing 3-5 scene changes
+- Set minimumSceneLength = 10
+- Enable auto_scene_break_generate_recap
+
+Manual Verification Steps:
+1. Trigger /scenebreak
+2. Monitor queue UI and console logs
+3. Verify complete flow:
+   a. Forward finds first break (e.g., at message 30)
+   b. Backwards chain queued with priority 15
+   c. Backwards searches [0, 29], finds earlier breaks
+   d. Each backwards recursion decreases range
+   e. Backwards terminates when no more breaks or insufficient messages
+   f. Recaps queued in chronological order (priority 20)
+   g. Forward continuation queued (priority 5)
+   h. Forward finds next break, repeats process
+4. After all operations complete:
+   - Count scene break markers in chat
+   - Verify all scenes have recaps generated
+   - Verify no duplicate breaks
+   - Check console for no errors
+   - Verify all messages marked as checked
+```
+
+**Queue Clearing Mid-Backwards**
+```
+Manual Verification Steps:
+1. Start /scenebreak on large chat
+2. When backwards operations appear in queue, click "Clear Queue"
+3. Verify:
    - Backwards chain stops
-   - Placed breaks remain
+   - Already-placed break markers remain
    - No errors in console
+   - Chat remains functional
+4. Can trigger /scenebreak again successfully
 ```
+
+---
+
+### Debug Logging Verification
+
+**Check all debug logs are present:**
+```javascript
+// In handleDetectSceneBreakBackwards
+"Backwards detection: [startIndex, endIndex], next break: nextBreakIndex"
+"No break found in backwards range [startIndex, endIndex]"
+"Found backwards break at X"
+"Range did not shrink, terminating backwards chain"
+"Insufficient messages for further backwards detection"
+"Queued next backwards operation: op_id"
+
+// In terminateBackwardsChain
+"Terminating backwards chain. Discovered breaks: [...]"
+"Queued forward continuation: op_id"
+"Backwards chain terminated successfully"
+
+// In detectSceneBreak (backwards mode)
+"Backwards mode: valid range [earliestAllowedBreak, latestAllowedBreak]"
+"No valid break positions with two-sided minimum scene length"
+"Invalid backwards break: X >= nextBreakIndex Y"
+```
+
+---
+
+### Performance Verification
+
+**Monitor for performance issues:**
+1. Run /scenebreak on chat with 500+ messages
+2. Monitor:
+   - Time to complete full detection
+   - Number of LLM calls (should be ~O(n) where n = number of breaks)
+   - Memory usage (check browser task manager)
+   - No UI freezing during detection
+3. Verify queue processes smoothly without blocking chat
 
 ---
 
