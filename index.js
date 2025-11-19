@@ -245,7 +245,21 @@ export function installEnterKeyInterceptor() {
 
     textarea.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) {
-        // Check if chat is blocked by queue (synchronous check)
+        // Get SillyTavern's context to check if Enter actually sends
+        const ctx = getContext();
+
+        // Only block if Enter would actually send the message
+        // On mobile, Enter creates line breaks (shouldSendOnEnter = false)
+        // On desktop with default settings, Enter sends (shouldSendOnEnter = true)
+        const willSend = ctx?.shouldSendOnEnter?.() ?? true;
+
+        if (!willSend) {
+          // Enter won't send (mobile or custom setting) - allow line break
+          debug(SUBSYSTEM.UI, '[Queue] Allowing Enter - won\'t send message (mobile or user setting)');
+          return;
+        }
+
+        // Enter will send - check if we should block
         if (isQueueBlocking) {
           e.preventDefault();
           e.stopPropagation();
