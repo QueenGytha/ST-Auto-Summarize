@@ -135,7 +135,7 @@ function soft_reset_settings() {
     set_settings('profiles', profiles);
   }
 }
-function reset_settings() {
+async function reset_settings() {
   // Reset ONLY the currently selected profile to defaults plus the global Auto-Lorebooks settings
   // Preserves all other profiles
 
@@ -145,6 +145,34 @@ function reset_settings() {
   if (!currentProfile) {
     log("No profile selected, cannot reset");
     toast("No profile selected", "error");
+    return;
+  }
+
+  const ctx = getContext();
+  const html = `
+    <div>
+      <h3>Restore All Defaults?</h3>
+      <p>This will reset the current profile "${currentProfile}" to factory defaults.</p>
+      <p><strong>All settings will be lost:</strong></p>
+      <ul>
+        <li>Connection profiles and completion presets</li>
+        <li>Prompts and templates</li>
+        <li>All feature configurations</li>
+        <li>Auto-Lorebooks settings</li>
+      </ul>
+      <p>Other profiles will not be affected.</p>
+      <p><strong>This action cannot be undone.</strong></p>
+    </div>
+  `;
+
+  const confirmed = await ctx.callPopup?.(html, 'text', undefined, {
+    okButton: 'Restore Defaults',
+    cancelButton: 'Cancel',
+    wide: true
+  });
+
+  if (!confirmed) {
+    log("Reset settings cancelled by user");
     return;
   }
 
