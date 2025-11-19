@@ -2,14 +2,14 @@
 // - {{messages}} - Messages to analyze for scene breaks
 // - {{earliest_allowed_break}} - Minimum message number for breaks
 
-export const auto_scene_break_detection_prompt = `Find the most significant scene break in this roleplay transcript.
+export const auto_scene_break_detection_prompt = `Analyze this roleplay transcript to determine if a significant scene break exists.
 
-Your task: Identify where the current scene ENDS (the message immediately before a new scene starts).
+Your task: IF there is a natural narrative boundary, identify where the current scene ends (the message immediately before a new scene starts). If no clear break exists, return false.
 
 OUTPUT (valid JSON only, no code fences):
 {
   "sceneBreakAt": false OR message number,
-  "rationale": "Quote from message showing the break"
+  "rationale": "Quote showing the break" OR "No clear scene break found"
 }
 
 WHAT IS A SCENE BREAK?
@@ -31,10 +31,11 @@ INELIGIBLE:
 
 INSTRUCTIONS:
 1. Read all eligible messages
-2. Find the STRONGEST scene transition (if multiple exist, pick the most significant)
-3. Return that message number, or false if no clear break exists
+2. Evaluate if ANY message represents a clear scene transition
+3. If multiple clear breaks exist, return the STRONGEST one
+4. If no clear break exists, return false - do NOT force a weak break
 
 Messages to analyze:
 {{messages}}
 
-Return the best scene break, or false if none exist.`;
+Only return a scene break if it clearly meets the criteria above.`;
