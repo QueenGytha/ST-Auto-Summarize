@@ -8,6 +8,7 @@ import {
   saveWorldInfo,
   createWorldInfoEntry,
   deleteWorldInfoEntry,
+  updateWorldInfoList,
   METADATA_KEY,
   world_names,
   selected_world_info,
@@ -580,6 +581,17 @@ export async function createChatLorebook() {
 
     log(`Created lorebook: ${uniqueName}`);
 
+    // CRITICAL: Refresh world_names list after creating the lorebook
+    // Without this, world_names won't include the new lorebook, causing silent failures
+    await updateWorldInfoList();
+
+    // Verify the lorebook is now in world_names
+    if (!world_names || !world_names.includes(uniqueName)) {
+      error(`CRITICAL: Created lorebook "${uniqueName}" but it's not in world_names list!`);
+      error(`world_names contents: ${JSON.stringify(world_names)}`);
+      toast(`CRITICAL ERROR: Lorebook created but not accessible. Extension may not work correctly.`, "error");
+    }
+
     // Clear cached registry BEFORE creating stub entries to prevent stale data
     // This ensures the registry starts fresh, matching the new empty lorebook state
     if (chat_metadata?.auto_lorebooks?.registry) {
@@ -608,6 +620,45 @@ export async function ensureChatLorebook() {
     const existingLorebook = getAttachedLorebook();
     if (existingLorebook) {
       debug(`Chat already has lorebook: ${existingLorebook}`);
+
+      // CRITICAL: Verify the lorebook actually exists in world_names
+      // Metadata can be stale/out of sync with actual lorebook availability
+      if (!lorebookExists(existingLorebook)) {
+        error(`CRITICAL: Chat metadata says lorebook "${existingLorebook}" is attached, but it's NOT in world_names!`);
+        debug(`This can happen if lorebook was deleted or world_names is stale. Attempting recovery...`);
+
+        // Try to refresh world_names in case it's just stale
+        await updateWorldInfoList();
+
+        // Check again after refresh
+        if (!lorebookExists(existingLorebook)) {
+          // Lorebook file is actually missing - this is expected after "clear all recaps"
+          log(`Lorebook "${existingLorebook}" doesn't exist. Will create replacement.`);
+          await handleMissingLorebook(existingLorebook);
+          return false;
+        } else {
+          // Lorebook exists but wasn't attached - reattach it now
+          log(`Lorebook found in world_names after refresh. Reattaching to chat...`);
+          const reattached = attachLorebook(existingLorebook);
+          if (!reattached) {
+            error(`CRITICAL: Failed to reattach lorebook "${existingLorebook}"`);
+            toast(`Failed to reattach lorebook! Extension may not work.`, "error");
+            return false;
+          }
+
+          // Verify the reattachment actually worked
+          const nowAttached = getAttachedLorebook();
+          if (nowAttached !== existingLorebook) {
+            error(`CRITICAL: Reattached lorebook but metadata shows "${nowAttached}" instead of "${existingLorebook}"`);
+            toast(`Lorebook reattachment verification failed!`, "error");
+            return false;
+          }
+
+          log(`Successfully reattached and verified lorebook: ${existingLorebook}`);
+          toast(`Lorebook reattached successfully`, "success");
+        }
+      }
+
       // Import/update entries from active global/character lorebooks
       await duplicateActiveLorebookEntries(existingLorebook);
       return true;
@@ -623,6 +674,23 @@ export async function ensureChatLorebook() {
     const attached = attachLorebook(lorebookName);
     if (!attached) {
       error("Created lorebook but failed to attach");
+      toast("Failed to attach lorebook to chat", "error");
+      return false;
+    }
+
+    // Verify attachment succeeded
+    const nowAttached = getAttachedLorebook();
+    if (nowAttached !== lorebookName) {
+      error(`CRITICAL: Attempted to attach "${lorebookName}" but getAttachedLorebook() returns "${nowAttached}"`);
+      toast("Lorebook attachment verification failed", "error");
+      return false;
+    }
+
+    // Verify it's in world_names (SillyTavern won't send entries if it's not in this list)
+    if (!lorebookExists(lorebookName)) {
+      error(`CRITICAL: Lorebook "${lorebookName}" is attached in metadata but NOT in world_names!`);
+      error(`SillyTavern will NOT send lorebook entries to the LLM!`);
+      toast("CRITICAL: Lorebook won't be sent to LLM! Check console.", "error");
       return false;
     }
 

@@ -98,6 +98,22 @@ function markRangeAsChecked(chat, startIdx, endIdx) {
   }
 }
 
+/**
+ * Find the index of the scene break before the given index
+ * @param {Array} chat - Chat messages
+ * @param {number} beforeIndex - Search backwards from this index (exclusive)
+ * @returns {number} Index of previous scene break, or 0 if none found
+ */
+// eslint-disable-next-line no-unused-vars -- Reserved for future use
+function findPreviousSceneBreak(chat, beforeIndex) {
+  for (let i = beforeIndex - 1; i >= 0; i--) {
+    if (get_data(chat[i], 'scene_break')) {
+      return i;
+    }
+  }
+  return 0;
+}
+
 // Helper: Count filtered messages in a range
 function countRemainingFilteredMessages(chat, startIndex, endIndex, checkWhich) {
   let count = 0;
@@ -298,7 +314,7 @@ export function registerAllOperationHandlers() {
       }
 
       // eslint-disable-next-line no-await-in-loop -- Intentional retry loop for forced scene break detection
-      result = await detectSceneBreak(startIndex, endIndex, offset, forceSelection, operation.id);
+      result = await detectSceneBreak(startIndex, endIndex, offset, forceSelection, operation.id, false, null);
 
       // Check if cancelled after detection (before side effects)
       throwIfAborted(signal, 'DETECT_SCENE_BREAK', 'LLM call');
@@ -468,37 +484,59 @@ export function registerAllOperationHandlers() {
     markRangeAsChecked(chat, startIndex, sceneBreakAt);
     saveChatDebounced();
 
-    // Queue new detection for remaining range if there are enough messages
-    // Use originalEndIndex (not the potentially reduced endIndex) for continuation
-    if (sceneBreakAt < originalEndIndex) {
-      const remainingStart = sceneBreakAt + 1;
-      const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
-      const remainingFiltered = countRemainingFilteredMessages(chat, remainingStart, originalEndIndex, checkWhich);
-
-      if (remainingFiltered >= minimumSceneLength + 1) {
-        debug(SUBSYSTEM.QUEUE, `Enqueueing DETECT_SCENE_BREAK for remaining range ${remainingStart} to ${originalEndIndex}`);
-        await enqueueOperation(
-          OperationType.DETECT_SCENE_BREAK,
-          { startIndex: remainingStart, endIndex: originalEndIndex, offset },
-          {
-            priority: 5,
-            queueVersion: operation.queueVersion,
-            metadata: {
-              triggered_by: 'scene_break_found_in_range',
-              start_index: remainingStart,
-              end_index: originalEndIndex
-            }
+    // Queue backwards chain to find earlier breaks in the range before this one
+    const checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both';
+    const backwardsOp = await enqueueOperation(
+      OperationType.DETECT_SCENE_BREAK_BACKWARDS,
+      { startIndex: startIndex, endIndex: sceneBreakAt - 1 },
+      {
+        priority: 15, // HIGH - runs before forward continuation
+        queueVersion: operation.queueVersion,
+        metadata: {
+          next_break_index: sceneBreakAt,
+          original_next_break_index: sceneBreakAt,  // Preserve original break that triggered backwards
+          discovered_breaks: [],
+          check_which: checkWhich,
+          forward_continuation: {
+            start_index: sceneBreakAt + 1,
+            end_index: originalEndIndex,
+            original_operation_id: operation.id
           }
-        );
-      } else {
-        debug(SUBSYSTEM.QUEUE, `Not enough remaining messages (${remainingFiltered} < ${minimumSceneLength + 1}) - not queuing new detection`);
+        }
+      }
+    );
+
+    // Fallback: if backwards operation fails to queue, queue forward continuation directly
+    if (!backwardsOp) {
+      debug(SUBSYSTEM.OPERATIONS, 'Failed to queue backwards operation, queueing forward continuation directly');
+      if (sceneBreakAt < originalEndIndex) {
+        const remainingStart = sceneBreakAt + 1;
+        const remainingFiltered = countRemainingFilteredMessages(chat, remainingStart, originalEndIndex, checkWhich);
+
+        if (remainingFiltered >= minimumSceneLength + 1) {
+          debug(SUBSYSTEM.QUEUE, `Enqueueing DETECT_SCENE_BREAK for remaining range ${remainingStart} to ${originalEndIndex}`);
+          await enqueueOperation(
+            OperationType.DETECT_SCENE_BREAK,
+            { startIndex: remainingStart, endIndex: originalEndIndex, offset },
+            {
+              priority: 5,
+              queueVersion: operation.queueVersion,
+              metadata: {
+                triggered_by: 'backwards_chain_fallback',
+                start_index: remainingStart,
+                end_index: originalEndIndex
+              }
+            }
+          );
+        }
       }
     }
 
     // Auto-generate scene recap if enabled
-    if (get_settings('auto_scene_break_generate_recap')) {
-      debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_RECAP for message ${sceneBreakAt}`);
-      const recapOpId = await enqueueOperation(
+    // NOTE: If backwards operation was queued, DON'T queue recap here - terminateBackwardsChain will handle it
+    if (get_settings('auto_scene_break_generate_recap') && !backwardsOp) {
+      debug(SUBSYSTEM.QUEUE, `Enqueueing GENERATE_SCENE_RECAP for message ${sceneBreakAt} (no backwards chain)`);
+      await enqueueOperation(
         OperationType.GENERATE_SCENE_RECAP,
         { index: sceneBreakAt },
         {
@@ -510,11 +548,243 @@ export function registerAllOperationHandlers() {
           }
         }
       );
-      debug(SUBSYSTEM.QUEUE, `✓ Enqueued GENERATE_SCENE_RECAP (${recapOpId ?? 'null'}) for message ${sceneBreakAt}`);
+    } else if (backwardsOp) {
+      debug(SUBSYSTEM.QUEUE, `Recap for message ${sceneBreakAt} will be queued by backwards chain`);
     }
 
     return result;
   });
+
+  /**
+   * Handle backwards scene break detection operation
+   * Recursively searches backwards from next_break_index to find earlier breaks
+   */
+  registerOperationHandler(OperationType.DETECT_SCENE_BREAK_BACKWARDS, async (operation) => {
+    const ctx = getContext();
+    const chat = ctx.chat;
+    const signal = getAbortSignal(operation);
+
+    // Extract from PARAMS (execution data)
+    const { startIndex, endIndex } = operation.params;
+
+    // Extract from METADATA (tracking/state data)
+    const {
+      next_break_index: nextBreakIndex,
+      original_next_break_index: originalNextBreakIndex,
+      discovered_breaks: discoveredBreaks = [],
+      check_which: checkWhich = 'both',
+      forward_continuation: forwardContinuation
+    } = operation.metadata;
+
+    // Validate required parameters
+    if (nextBreakIndex === undefined || nextBreakIndex === null) {
+      throw new Error('next_break_index is required for backwards detection');
+    }
+
+    debug(SUBSYSTEM.OPERATIONS, `Backwards detection: [${startIndex}, ${endIndex}], next break: ${nextBreakIndex}`);
+
+    // Un-mark checked state to allow re-evaluation
+    for (let i = startIndex; i < nextBreakIndex; i++) {
+      set_data(chat[i], 'auto_scene_break_checked', false);
+    }
+
+    // Attempt backwards detection
+    let result;
+    try {
+      result = await detectSceneBreak(
+        startIndex,
+        endIndex,
+        0, // offset = 0 for backwards
+        false, // forceSelection
+        operation.id, // operationId
+        true, // isBackwards = true
+        nextBreakIndex // nextBreakIndex
+      );
+
+      // Check if cancelled after detection
+      throwIfAborted(signal, 'DETECT_SCENE_BREAK_BACKWARDS', 'LLM call');
+    } catch (err) {
+      debug(SUBSYSTEM.OPERATIONS, `Error in backwards detection: ${err.message}`);
+      await terminateBackwardsChain(operation);
+      return;
+    }
+
+    const { sceneBreakAt, rationale } = result;
+
+    // Case 1: No break found - terminate backwards chain
+    if (sceneBreakAt === false) {
+      debug(SUBSYSTEM.OPERATIONS, `No break found in backwards range [${startIndex}, ${endIndex}]`);
+      debug(SUBSYSTEM.OPERATIONS, `Rationale: ${rationale}`);
+
+      markRangeAsChecked(chat, startIndex, endIndex);
+      saveChatDebounced();
+
+      await terminateBackwardsChain(operation);
+      return;
+    }
+
+    // Case 2: Break found - place marker and continue recursion
+    debug(SUBSYSTEM.OPERATIONS, `Found backwards break at ${sceneBreakAt}`);
+
+    // Place break marker - 6 dependency injection parameters
+    toggleSceneBreak(sceneBreakAt, get_message_div, getContext, set_data, get_data, saveChatDebounced);
+
+    // Mark intermediate range as checked (between break and next break)
+    if (sceneBreakAt + 1 < nextBreakIndex) {
+      markRangeAsChecked(chat, sceneBreakAt + 1, nextBreakIndex - 1);
+    }
+    saveChatDebounced();
+
+    // Add to discovered breaks
+    const updatedDiscoveredBreaks = [...discoveredBreaks, sceneBreakAt];
+    debug(SUBSYSTEM.OPERATIONS, `Discovered breaks so far: ${JSON.stringify(updatedDiscoveredBreaks)}`);
+
+    // Validate that range shrinks
+    const newEndIndex = sceneBreakAt - 1;
+    if (newEndIndex >= endIndex) {
+      debug(SUBSYSTEM.OPERATIONS, 'Range did not shrink, terminating backwards chain');
+      await terminateBackwardsChain({
+        ...operation,
+        metadata: {
+          ...operation.metadata,
+          discovered_breaks: updatedDiscoveredBreaks
+        }
+      });
+      return;
+    }
+
+    // Check if enough messages remain for another backwards recursion
+    const minSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
+    const remainingRange = newEndIndex - startIndex + 1;
+    if (remainingRange < minSceneLength * 2) {
+      debug(SUBSYSTEM.OPERATIONS, 'Insufficient messages for further backwards detection');
+
+      markRangeAsChecked(chat, startIndex, newEndIndex);
+      saveChatDebounced();
+
+      await terminateBackwardsChain({
+        ...operation,
+        metadata: {
+          ...operation.metadata,
+          discovered_breaks: updatedDiscoveredBreaks
+        }
+      });
+      return;
+    }
+
+    // Queue next backwards recursion
+    const nextBackwardsOp = await enqueueOperation(
+      OperationType.DETECT_SCENE_BREAK_BACKWARDS,  // type
+      { startIndex: startIndex, endIndex: newEndIndex },  // params
+      {
+        priority: 15,  // HIGH
+        queueVersion: operation.queueVersion,
+        metadata: {
+          next_break_index: sceneBreakAt,
+          original_next_break_index: originalNextBreakIndex,  // Pass through original
+          discovered_breaks: updatedDiscoveredBreaks,
+          check_which: checkWhich,
+          forward_continuation: forwardContinuation
+        }
+      }
+    );
+
+    if (!nextBackwardsOp) {
+      debug(SUBSYSTEM.OPERATIONS, 'Failed to queue next backwards operation, terminating chain');
+      await terminateBackwardsChain({
+        ...operation,
+        metadata: {
+          ...operation.metadata,
+          discovered_breaks: updatedDiscoveredBreaks
+        }
+      });
+      return;
+    }
+
+    debug(SUBSYSTEM.OPERATIONS, `Queued next backwards operation: ${nextBackwardsOp.id}`);
+  });
+
+  /**
+   * Terminate backwards chain and queue all recaps + forward continuation
+   */
+  async function terminateBackwardsChain(operation) {
+    const {
+      discovered_breaks: discoveredBreaks = [],
+      forward_continuation: forwardContinuation,
+      original_next_break_index: originalNextBreakIndex
+    } = operation.metadata;
+
+    debug(SUBSYSTEM.OPERATIONS, `Terminating backwards chain. Discovered breaks: ${discoveredBreaks.join(', ')}`);
+    debug(SUBSYSTEM.OPERATIONS, `Original next break index (forward-detected): ${originalNextBreakIndex}`);
+
+    // Sort breaks in chronological order (ascending)
+    const chronologicalBreaks = [...discoveredBreaks].sort((a, b) => a - b);
+
+    // Add the original forward-detected break to the end
+    const allBreaks = [...chronologicalBreaks, originalNextBreakIndex];
+
+    debug(SUBSYSTEM.OPERATIONS, `Queueing ${allBreaks.length} recaps in chronological order: ${allBreaks.join(', ')}`);
+
+    // Queue ONLY THE FIRST recap - each COMBINE operation will queue the next
+    const generateRecaps = get_settings('auto_scene_break_generate_recap');
+
+    if (generateRecaps && allBreaks.length > 0) {
+      const firstBreak = allBreaks[0];
+      const remainingBreaks = allBreaks.slice(1);
+
+      const firstRecapOp = await enqueueOperation(
+        OperationType.GENERATE_SCENE_RECAP,
+        { index: firstBreak },
+        {
+          priority: 20,  // HIGHEST
+          queueVersion: operation.queueVersion,
+          metadata: {
+            triggered_by: 'backwards_detection',
+            backwards_chain: true,
+            backwards_chain_remaining: remainingBreaks,
+            backwards_chain_forward_continuation: forwardContinuation
+          }
+        }
+      );
+
+      if (firstRecapOp) {
+        debug(SUBSYSTEM.OPERATIONS, `✓ Queued first recap for break ${firstBreak}, remaining: ${remainingBreaks.join(', ')}`);
+      } else {
+        debug(SUBSYSTEM.OPERATIONS, `Failed to queue first recap for break ${firstBreak}`);
+      }
+    }
+
+    // Forward continuation will be queued by the LAST COMBINE operation in the chain
+    // If no recaps are being generated, queue forward continuation now
+    if (!generateRecaps && forwardContinuation) {
+      const forwardOp = await enqueueOperation(
+        OperationType.DETECT_SCENE_BREAK,  // type
+        {
+          startIndex: forwardContinuation.start_index,
+          endIndex: forwardContinuation.end_index,
+          offset: get_settings('auto_scene_break_message_offset') || 2
+        },  // params
+        {
+          priority: 5,  // NORMAL
+          queueVersion: operation.queueVersion,
+          metadata: {
+            triggered_by: 'backwards_chain_completion_no_recaps',
+            original_operation_id: forwardContinuation.original_operation_id
+          }
+        }
+      );
+
+      if (forwardOp) {
+        debug(SUBSYSTEM.OPERATIONS, `✓ Queued forward continuation (no recaps): ${forwardOp.id}`);
+      } else {
+        debug(SUBSYSTEM.OPERATIONS, 'Failed to queue forward continuation');
+      }
+    } else if (generateRecaps) {
+      debug(SUBSYSTEM.OPERATIONS, 'Forward continuation will be queued by last COMBINE operation');
+    }
+
+    debug(SUBSYSTEM.OPERATIONS, 'Backwards chain terminated successfully');
+  }
 
   // Generate scene recap
   registerOperationHandler(OperationType.GENERATE_SCENE_RECAP, async (operation) => {
@@ -562,9 +832,19 @@ export function registerAllOperationHandlers() {
       // Queue running recap combine as a separate operation, depending on lorebook operations
       if (get_settings('running_scene_recap_auto_generate')) {
         debug(SUBSYSTEM.QUEUE, `Queueing COMBINE_SCENE_WITH_RUNNING for scene at index ${index} (depends on ${result.lorebookOpIds.length} lorebook operations)`);
+
+        // Pass through backwards chain metadata if present
+        const combineMetadata = {};
+        if (operation.metadata.backwards_chain) {
+          combineMetadata.backwards_chain = true;
+          combineMetadata.backwards_chain_remaining = operation.metadata.backwards_chain_remaining;
+          combineMetadata.backwards_chain_forward_continuation = operation.metadata.backwards_chain_forward_continuation;
+        }
+
         await queueCombineSceneWithRunning(index, {
           dependencies: result.lorebookOpIds,
-          queueVersion: operation.queueVersion
+          queueVersion: operation.queueVersion,
+          metadata: combineMetadata
         });
       }
 
@@ -677,6 +957,56 @@ export function registerAllOperationHandlers() {
         max_tokens: result.tokenBreakdown.max_tokens
       });
       await updateOperationMetadata(operation.id, tokenMetadata);
+    }
+
+    // Check if this is part of a backwards chain and queue next recap
+    if (operation.metadata.backwards_chain && operation.metadata.backwards_chain_remaining) {
+      const remainingBreaks = operation.metadata.backwards_chain_remaining;
+
+      if (remainingBreaks.length > 0) {
+        const nextBreak = remainingBreaks[0];
+        const newRemaining = remainingBreaks.slice(1);
+
+        debug(SUBSYSTEM.OPERATIONS, `Backwards chain: queueing next recap for break ${nextBreak}, ${newRemaining.length} remaining`);
+
+        await enqueueOperation(
+          OperationType.GENERATE_SCENE_RECAP,
+          { index: nextBreak },
+          {
+            priority: 20,  // HIGHEST
+            queueVersion: operation.queueVersion,
+            metadata: {
+              triggered_by: 'backwards_chain_continuation',
+              backwards_chain: true,
+              backwards_chain_remaining: newRemaining,
+              backwards_chain_forward_continuation: operation.metadata.backwards_chain_forward_continuation
+            }
+          }
+        );
+      } else {
+        // No more recaps - queue forward continuation if present
+        const forwardContinuation = operation.metadata.backwards_chain_forward_continuation;
+        if (forwardContinuation) {
+          debug(SUBSYSTEM.OPERATIONS, 'Backwards chain complete, queueing forward continuation');
+
+          await enqueueOperation(
+            OperationType.DETECT_SCENE_BREAK,
+            {
+              startIndex: forwardContinuation.start_index,
+              endIndex: forwardContinuation.end_index,
+              offset: get_settings('auto_scene_break_message_offset') || 2
+            },
+            {
+              priority: 5,  // NORMAL
+              queueVersion: operation.queueVersion,
+              metadata: {
+                triggered_by: 'backwards_chain_completion',
+                original_operation_id: forwardContinuation.original_operation_id
+              }
+            }
+          );
+        }
+      }
     }
 
     return { recap: result?.recap || result };

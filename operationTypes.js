@@ -4,6 +4,7 @@
 export const OperationType = {
   VALIDATE_RECAP: 'validate_recap',
   DETECT_SCENE_BREAK: 'detect_scene_break',
+  DETECT_SCENE_BREAK_BACKWARDS: 'detect_scene_break_backwards',
   GENERATE_SCENE_RECAP: 'generate_scene_recap',
   GENERATE_RUNNING_RECAP: 'generate_running_recap',
   COMBINE_SCENE_WITH_RUNNING: 'combine_scene_with_running',

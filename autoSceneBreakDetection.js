@@ -577,6 +577,34 @@ function buildFormattedMessagesWithTokens(chat, filteredIndices, earliestAllowed
   };
 }
 
+/**
+ * Calculate the latest allowed break position for backwards detection
+ * Ensures Scene 2 (from break to range END) has at least minimumSceneLength filtered messages
+ *
+ * @param {number[]} eligibleFilteredIndices - Filtered message indices in backwards detection range [startIndex, endIndex]
+ * @param {number} endIndex - END of backwards detection range (= nextBreakIndex - 1)
+ * @param {number} minimumSceneLength - Minimum scene length requirement
+ * @returns {number} Latest valid break index, or -1 if no valid position exists
+ */
+function calculateLatestAllowedBreak(eligibleFilteredIndices, endIndex, minimumSceneLength) {
+  // For each candidate break position (from latest to earliest)
+  for (let i = eligibleFilteredIndices.length - 1; i >= 0; i--) {
+    const candidateBreak = eligibleFilteredIndices[i];
+
+    // Count filtered messages from this break to range END
+    // Scene 2 would be (candidateBreak, endIndex]
+    const messagesAfter = eligibleFilteredIndices.filter(
+      idx => idx > candidateBreak && idx <= endIndex
+    ).length;
+
+    if (messagesAfter >= minimumSceneLength) {
+      return candidateBreak;
+    }
+  }
+
+  return -1; // No valid position found
+}
+
 function buildPromptFromTemplate(ctx, promptTemplate, options) {
   const { formattedForPrompt, minimumSceneLength, earliestAllowedBreak, prefill } = options;
   const params = {
@@ -874,14 +902,22 @@ async function loadSceneBreakPromptSettings(forceSelection) {
   };
 }
 
+// eslint-disable-next-line max-params, complexity -- Backwards detection requires additional parameters and complexity
 async function detectSceneBreak(
 startIndex ,
 endIndex ,
 offset  = 0,
 forceSelection  = false,
-_operationId  = null)
+_operationId  = null,
+isBackwards  = false,
+nextBreakIndex  = null)
 {
   const ctx = getContext();
+
+  // Validate backwards mode parameters
+  if (isBackwards && (nextBreakIndex === undefined || nextBreakIndex === null)) {
+    throw new Error('nextBreakIndex is required when isBackwards=true');
+  }
 
   try {
     debug('Checking message range', startIndex, 'to', endIndex, 'for scene break (offset:', offset, ')');
@@ -916,8 +952,8 @@ _operationId  = null)
     const chat = ctx.chat || [];
 
     // Calculate max eligible index (messages after this are in offset zone)
-    // When forceSelection=true, disable offset zone (all messages up to endIndex are eligible)
-    const maxEligibleIndex = forceSelection ? endIndex : endIndex - offset;
+    // When forceSelection=true or isBackwards=true, disable offset zone (all messages up to endIndex are eligible)
+    const maxEligibleIndex = forceSelection || isBackwards ? endIndex : endIndex - offset;
 
     // Format all messages in range with their ST indices
     const { filteredIndices } = formatMessagesForRangeDetection(chat, startIndex, endIndex, checkWhich);
@@ -944,9 +980,35 @@ _operationId  = null)
     debug('Earliest allowed scene break index by minimum rule:', earliestAllowedBreak);
     debug('Max eligible index by offset rule:', maxEligibleIndex);
 
+    // For backwards mode, enforce two-sided minimum scene length
+    let latestAllowedBreak = maxEligibleIndex;
+    if (isBackwards) {
+      // Calculate latest position where Scene 2 (from break to range END) has ≥ minimumSceneLength filtered messages
+      latestAllowedBreak = calculateLatestAllowedBreak(
+        eligibleFilteredIndices,
+        endIndex,  // Use endIndex as the range END
+        minimumSceneLength
+      );
+
+      if (latestAllowedBreak === -1 || latestAllowedBreak < earliestAllowedBreak) {
+        debug(SUBSYSTEM.CORE, 'No valid break positions with two-sided minimum scene length');
+        return {
+          sceneBreakAt: false,
+          rationale: 'Insufficient messages for two-sided minimum scene length constraint',
+          filteredIndices,
+          maxEligibleIndex,
+          rangeWasReduced: false,
+          currentEndIndex: endIndex
+        };
+      }
+
+      debug(SUBSYSTEM.CORE, `Backwards mode: valid range [${earliestAllowedBreak}, ${latestAllowedBreak}]`);
+    }
+
     // Count how many messages are actually valid choices (not marked as "invalid choice")
-    // A message is valid if: earliestAllowedBreak <= i <= maxEligibleIndex
-    const validChoices = filteredIndices.filter(i => i >= earliestAllowedBreak && i <= maxEligibleIndex);
+    // A message is valid if: earliestAllowedBreak <= i <= (isBackwards ? latestAllowedBreak : maxEligibleIndex)
+    const effectiveMaxEligible = isBackwards ? latestAllowedBreak : maxEligibleIndex;
+    const validChoices = filteredIndices.filter(i => i >= earliestAllowedBreak && i <= effectiveMaxEligible);
     if (validChoices.length === 0) {
       debug('No valid choices after applying minimum scene length and offset rules');
       return {
@@ -968,7 +1030,7 @@ _operationId  = null)
       offset,
       checkWhich,
       filteredIndices,
-      maxEligibleIndex,
+      maxEligibleIndex: effectiveMaxEligible,  // Use effectiveMaxEligible for backwards mode
       preset,
       promptTemplate,
       minimumSceneLength,
@@ -991,7 +1053,16 @@ _operationId  = null)
     debug('AI raw response for range', startIndex, 'to', currentEndIndex, ':', response);
 
     // Parse response for message number or false
-    const { sceneBreakAt, rationale } = await parseSceneBreakResponse(response, startIndex, currentEndIndex, currentFilteredIndices);
+    let { sceneBreakAt, rationale } = await parseSceneBreakResponse(response, startIndex, currentEndIndex, currentFilteredIndices);
+
+    // Additional validation for backwards mode
+    if (isBackwards && sceneBreakAt !== false) {
+      if (sceneBreakAt >= nextBreakIndex) {
+        debug(SUBSYSTEM.CORE, `Invalid backwards break: ${sceneBreakAt} >= nextBreakIndex ${nextBreakIndex}`);
+        sceneBreakAt = false;
+        rationale = `Invalid backwards break position (>= next break at ${nextBreakIndex})`;
+      }
+    }
 
     // Log the decision
     if (sceneBreakAt === false) {

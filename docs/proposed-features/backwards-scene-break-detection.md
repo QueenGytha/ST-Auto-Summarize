@@ -8,14 +8,43 @@
 
 ## ⚠️ CRITICAL IMPLEMENTATION NOTES
 
+### Operation Structure: params vs metadata
+**Operations have TWO separate data storage locations:**
+```javascript
+const operation = {
+  type: 'detect_scene_break_backwards',
+  params: {                    // Execution data - what operation needs to run
+    startIndex: 0,
+    endIndex: 29
+  },
+  metadata: {                  // Tracking data - for UI/debugging/state persistence
+    next_break_index: 30,
+    discovered_breaks: [],
+    triggered_by: 'forward_detection'
+  }
+};
+```
+
+**enqueueOperation takes 3 arguments:**
+```javascript
+await enqueueOperation(
+  OperationType.DETECT_SCENE_BREAK_BACKWARDS,  // arg 1: type
+  { startIndex: 0, endIndex: 29 },             // arg 2: params
+  {                                            // arg 3: options
+    priority: 15,
+    metadata: { next_break_index: 30, ... },
+    dependencies: []
+  }
+);
+```
+
 ### Queue-Based State Management
-**ALL state MUST be stored in operation.metadata to survive reload/crash:**
-- `discovered_breaks` array: in operation.metadata, NOT function parameters
-- `forward_continuation` object: in operation.metadata, NOT function parameters
-- `next_break_index`: in operation.metadata, NOT function parameters
-- **NEVER pass state as function parameters between operations**
-- Each operation is self-contained with ALL state in its metadata
-- Queue persists to lorebook - survives ST reload/crash
+**Backwards chain state MUST be stored in operation.metadata to survive reload/crash:**
+- `next_break_index`: in operation.metadata
+- `discovered_breaks` array: in operation.metadata
+- `forward_continuation` object: in operation.metadata
+- **State persists across page reloads** via lorebook storage
+- Each operation is self-contained with ALL chain state in its metadata
 
 ### Property Access Requirements
 **ALL scene break and checked state access MUST use get_data/set_data:**
@@ -27,6 +56,39 @@
 **Handlers are registered via Map, NOT switch statement:**
 ```javascript
 registerOperationHandler(OperationType.DETECT_SCENE_BREAK_BACKWARDS, handleDetectSceneBreakBackwards);
+// OR inline:
+registerOperationHandler(OperationType.DETECT_SCENE_BREAK_BACKWARDS, async (operation) => {
+  // Handler implementation
+});
+```
+
+### Critical Function Signatures
+
+**detectSceneBreak** (autoSceneBreakDetection.js) - Gets context internally, NOT via parameters:
+```javascript
+async function detectSceneBreak(
+  startIndex,
+  endIndex,
+  offset = 0,
+  forceSelection = false,
+  _operationId = null
+)
+// Gets chat from: getContext().chat
+// Gets settings from: get_settings() and loadSceneBreakPromptSettings()
+// Gets checkWhich from: get_settings('auto_scene_break_check_which_messages')
+```
+
+**toggleSceneBreak** (sceneBreak.js) - Uses dependency injection pattern:
+```javascript
+toggleSceneBreak(index, get_message_div, getContext, set_data, get_data, saveChatDebounced)
+// Required imports from index.js: get_message_div, getContext, set_data, get_data, saveChatDebounced
+```
+
+**markRangeAsChecked** (operationHandlers.js:92, local helper) - Simple 3-param function:
+```javascript
+function markRangeAsChecked(chat, startIdx, endIdx) {
+  // Marks ALL messages in range (does NOT filter by checkWhich)
+}
 ```
 
 ### Validation Requirements
@@ -80,57 +142,60 @@ This constraint is applied to the **START and END of the backwards detection ran
 
 ### 1. Forward Detection Flow (As-Is)
 
-**Entry Point:** User triggers `/scenebreak` or auto-detection on new message
+**Entry Point:** Auto-detection on new message or manual trigger via UI
 
 **File:** `autoSceneBreakDetection.js`
 
-**Function:** `detectSceneBreaksInRange(startIndex, endIndex)` (lines **1113-1192**)
+**Function:** `detectSceneBreaksInRange(chat, options)` - async function (lines **1113+**)
 
 **Flow:**
 ```
 1. Calculate range parameters:
-   - offset = settings.auto_scene_break_message_offset (default: 5)
+   - offset = settings.auto_scene_break_message_offset (default: 2)
    - maxEligibleIndex = endIndex - offset
-   - minimumSceneLength = settings.minimum_scene_length (default: 10)
+   - minimumSceneLength = settings.auto_scene_break_minimum_scene_length (default: 3)
 
-2. Find latest visible scene break (lines 1141-1151)
+2. Find latest visible scene break:
    - Search backwards from endIndex to find previous break marker
    - Uses get_data(message, 'scene_break') to check for breaks
    - If found: previousBreak = index
    - If not found: previousBreak = 0
 
-3. Calculate eligible range (lines 1127-1132):
+3. Calculate eligible range:
    - start = previousBreak
    - end = maxEligibleIndex
    - Must have at least (minimumSceneLength + 1) filtered messages
 
-4. Queue DETECT_SCENE_BREAK operation (lines 1179-1182):
-   - Priority: 5 (normal)
+4. Queue DETECT_SCENE_BREAK operation:
+   - Type: OperationType.DETECT_SCENE_BREAK
    - Params: { startIndex: start, endIndex: end, offset }
-   - Metadata: { triggered_by, start_index, end_index, ... }
+   - Options: { priority: 5, metadata: { triggered_by, ... } }
 ```
 
 **File:** `operationHandlers.js`
 
-**Handler:** `DETECT_SCENE_BREAK` (lines 269-517)
+**Handler:** `DETECT_SCENE_BREAK` (inline handler registered at line 269+)
 
 **Flow:**
 ```
-5. Execute detection (lines 301-461):
-   - Call detectSceneBreak() with retry logic
-   - If forceSelection=true and returns false, retry with reduced range
+5. Execute detection:
+   - Call detectSceneBreak(startIndex, endIndex, offset, forceSelection, operation.id)
+   - Retry logic: if forceSelection=true and returns false, retry with reduced range
    - Returns: { sceneBreakAt: number | false, rationale: string }
 
 6a. If break found (sceneBreakAt !== false):
-   - Line 465: toggleSceneBreak() - places break marker (requires 6 parameters, NOT async)
-   - Lines 468-469: markRangeAsChecked() - marks messages as checked via set_data()
-   - Lines 473-496: Queue forward continuation
-     - remainingStart = sceneBreakAt + 1
-     - remainingEnd = originalEndIndex
+   - Line ~465: toggleSceneBreak(sceneBreakAt, get_message_div, getContext, set_data, get_data, saveChatDebounced)
+     - Takes 6 dependency injection parameters (functions imported from index.js)
+   - Line ~468: markRangeAsChecked(chat, startIndex, sceneBreakAt) - local helper, 3 params
+   - Lines ~473-496: Queue forward continuation
+     - Type: DETECT_SCENE_BREAK
+     - Params: { startIndex: sceneBreakAt + 1, endIndex: originalEndIndex }
      - Only if remainingFiltered >= minimumSceneLength + 1
-     - Priority: 5
-   - Lines 499-514: Queue scene recap generation
-     - Priority: 20 (HIGHEST - runs before next detection)
+     - Options: { priority: 5 }
+   - Lines ~499-514: Queue scene recap generation
+     - Type: GENERATE_SCENE_RECAP
+     - Params: { index: sceneBreakAt }
+     - Options: { priority: 20 } - HIGHEST, runs before next detection
      - Only if auto_scene_break_generate_recap enabled
 
 6b. If NO break found (sceneBreakAt === false):
@@ -141,11 +206,16 @@ This constraint is applied to the **START and END of the backwards detection ran
 
 **File:** `autoSceneBreakDetection.js`
 
-**Function:** `detectSceneBreak()` (lines 877-**1019**)
+**Function:** `detectSceneBreak(startIndex, endIndex, offset=0, forceSelection=false, _operationId=null)` - async (lines 877+)
+- Gets chat from `getContext().chat`
+- Gets settings from `get_settings()` and `loadSceneBreakPromptSettings()`
+- Gets checkWhich from `get_settings('auto_scene_break_check_which_messages')`
 
 **Flow:**
 ```
-7. Format and filter messages (lines 922-963):
+7. Format and filter messages:
+   - chat = getContext().chat
+   - checkWhich = get_settings('auto_scene_break_check_which_messages') || 'both'
    - maxEligibleIndex = forceSelection ? endIndex : endIndex - offset
    - Filter messages by checkWhich ('user', 'character', or 'both')
    - filteredIndices = array of message indices matching filter
@@ -312,16 +382,21 @@ registerOperationHandler(OperationType.SCENE_RECAP, handleSceneRecap);
 
 **Storage:** Message-level data via `set_data(message, 'auto_scene_break_checked', true/false)`
 
-**File:** `autoSceneBreakDetection.js`
+**File:** `operationHandlers.js` (NOT autoSceneBreakDetection.js!)
 
-**Function:** `markRangeAsChecked()` (lines 1062-1083)
+**Function:** `markRangeAsChecked()` - Local helper function (line 92-99)
 ```javascript
-function markRangeAsChecked(chat, startIndex, endIndex, checkWhich = 'both') {
-  // For each message in range:
-  // - set_data(message, 'auto_scene_break_checked', true)
-  // - Respects checkWhich filter (only mark messages that would be checked)
+function markRangeAsChecked(chat, startIdx, endIdx) {
+  for (let i = startIdx; i <= endIdx; i++) {
+    const msg = chat[i];
+    if (msg) {
+      set_data(msg, 'auto_scene_break_checked', true);
+    }
+  }
 }
 ```
+
+**NOTE:** This is a LOCAL HELPER in operationHandlers.js with 3 parameters. It does NOT filter by checkWhich - it marks ALL messages in range.
 
 **Usage in Forward Detection:**
 - After placing break marker: mark range [startIndex, sceneBreakAt] as checked
@@ -363,7 +438,7 @@ function markRangeAsChecked(chat, startIndex, endIndex, checkWhich = 'both') {
 
 **Step 1: User triggers forward detection**
 ```
-User: /scenebreak
+User triggers manual detection via UI button
 → detectSceneBreaksInRange(0, 50)
   → Queue op_1: DETECT_SCENE_BREAK (0, 50)
 ```
@@ -371,162 +446,169 @@ User: /scenebreak
 **Step 2: Forward detection finds break at 30**
 ```
 op_1 executes:
-  → detectSceneBreak(0, 50, offset=5) returns { sceneBreakAt: 30 }
-  → Place break marker at 30
-  → Mark [0, 30] as checked
+  → detectSceneBreak(0, 50, 5, false, 'op_1') returns { sceneBreakAt: 30 }
+  → toggleSceneBreak(30, get_message_div, getContext, set_data, get_data, saveChatDebounced)
+  → markRangeAsChecked(chat, 0, 30)
 
   → Queue backwards chain:
-    op_2: DETECT_SCENE_BREAK_BACKWARDS
-      metadata: {
-        start_index: 0,           // Range START (chat start)
-        end_index: 29,            // Range END (nextBreakIndex - 1)
-        next_break_index: 30,     // The break that triggered backwards search
-        discovered_breaks: [],    // No breaks found yet
-        check_which: 'both',      // Message filter setting
-        forward_continuation: {
-          start_index: 31,        // Where forward should continue from
-          end_index: 50,          // Where forward should continue to
-          original_operation_id: 'op_1'
-        }
+    await enqueueOperation(
+      OperationType.DETECT_SCENE_BREAK_BACKWARDS,  // type
+      {
+        // Params: execution data
+        startIndex: 0,
+        endIndex: 29
+      },
+      {
+        // Options
+        priority: 15,  // HIGH - runs before forward continuation
+        metadata: {
+          // Tracking/state data
+          next_break_index: 30,
+          discovered_breaks: [],
+          check_which: 'both',
+          forward_continuation: {
+            start_index: 31,
+            end_index: 50,
+            original_operation_id: 'op_1'
+          }
+        },
+        dependencies: []
       }
-      dependencies: []
-      priority: 15 (HIGH - runs before forward continuation)
+    );
 
   → DO NOT queue forward continuation yet (deferred)
-  → Queue recap: op_3: SCENE_RECAP (30), depends on op_2
+  → Queue recap (depends on backwards op completing)
 ```
 
 **Step 3: First backwards detection searches range [0, 29]**
 ```
-op_2 executes:
-  → Backwards detection range: [0, 29]
-    - Range START: 0 (chat start, no previous break)
-    - Range END: 29 (nextBreakIndex - 1 = 30 - 1)
+op_2 executes (DETECT_SCENE_BREAK_BACKWARDS handler):
+  → Extract from operation.params: startIndex=0, endIndex=29
+  → Extract from operation.metadata: next_break_index=30, discovered_breaks=[], etc.
 
-  → Un-mark [0, 29] as checked (allow re-evaluation of this range)
+  → Un-mark checked state: for (i=0; i < 30; i++) set_data(chat[i], 'auto_scene_break_checked', false)
 
-  → detectSceneBreak(
-      startIndex: 0,
-      endIndex: 29,
-      offset: 0,           // NO offset in backwards mode
-      isBackwards: true,
-      nextBreakIndex: 30
-    )
+  → detectSceneBreak(0, 29, 0, false, 'op_2', true, 30)
+      // args: startIndex, endIndex, offset, forceSelection, operationId, isBackwards, nextBreakIndex
 
   → LLM searches range [0, 29] and finds break at 15
 
-  → Place break marker at 15
-  → Mark [16, 29] as checked (range from break to range END)
+  → toggleSceneBreak(15, get_message_div, getContext, set_data, get_data, saveChatDebounced)
+  → markRangeAsChecked(chat, 16, 29) // Mark from break to next break
 
-  → Add 15 to discovered_breaks: [15]
+  → updatedDiscoveredBreaks = [15]
 
   → Queue next backwards recursion:
-    op_4: DETECT_SCENE_BREAK_BACKWARDS
-      metadata: {
-        start_index: 0,           // Same START (chat start)
-        end_index: 14,            // New END (found break - 1 = 15 - 1)
-        next_break_index: 15,     // The break just found
-        discovered_breaks: [15],  // Accumulate discovered breaks
-        check_which: 'both',
-        forward_continuation: { ... } // Carry forward (unchanged)
+    await enqueueOperation(
+      OperationType.DETECT_SCENE_BREAK_BACKWARDS,
+      { startIndex: 0, endIndex: 14 },  // params
+      {
+        priority: 15,
+        metadata: {
+          next_break_index: 15,
+          discovered_breaks: [15],
+          check_which: 'both',
+          forward_continuation: { ... }  // unchanged
+        },
+        dependencies: []
       }
-      dependencies: []
-      priority: 15
-
-  → Queue recap: op_5: SCENE_RECAP (15), depends on op_4
+    );
 ```
 
 **Step 4: Second backwards detection searches range [0, 14]**
 ```
-op_4 executes:
-  → Backwards detection range: [0, 14]
-    - Range START: 0 (chat start, still no previous break)
-    - Range END: 14 (nextBreakIndex - 1 = 15 - 1)
+op_4 executes (DETECT_SCENE_BREAK_BACKWARDS handler):
+  → Extract from operation.params: startIndex=0, endIndex=14
+  → Extract from operation.metadata: next_break_index=15, discovered_breaks=[15], etc.
 
-  → Un-mark [0, 14] as checked
+  → Un-mark checked state: for (i=0; i < 15; i++) set_data(chat[i], 'auto_scene_break_checked', false)
 
-  → detectSceneBreak(
-      startIndex: 0,
-      endIndex: 14,
-      offset: 0,
-      isBackwards: true,
-      nextBreakIndex: 15
-    )
+  → detectSceneBreak(0, 14, 0, false, 'op_4', true, 15)
 
   → LLM searches range [0, 14] and finds break at 7
 
-  → Place break marker at 7
-  → Mark [8, 14] as checked (range from break to range END)
+  → toggleSceneBreak(7, get_message_div, getContext, set_data, get_data, saveChatDebounced)
+  → markRangeAsChecked(chat, 8, 14)
 
-  → Add 7 to discovered_breaks: [15, 7]
+  → updatedDiscoveredBreaks = [15, 7]  // reverse chronological order
 
   → Queue next backwards recursion:
-    op_6: DETECT_SCENE_BREAK_BACKWARDS
-      metadata: {
-        start_index: 0,
-        end_index: 6,             // New END (found break - 1 = 7 - 1)
-        next_break_index: 7,
-        discovered_breaks: [15, 7],
-        check_which: 'both',
-        forward_continuation: { ... }
+    await enqueueOperation(
+      OperationType.DETECT_SCENE_BREAK_BACKWARDS,
+      { startIndex: 0, endIndex: 6 },
+      {
+        priority: 15,
+        metadata: {
+          next_break_index: 7,
+          discovered_breaks: [15, 7],
+          check_which: 'both',
+          forward_continuation: { ... }
+        },
+        dependencies: []
       }
-      dependencies: []
-      priority: 15
-
-  → Queue recap: op_7: SCENE_RECAP (7), depends on op_6
+    );
 ```
 
 **Step 5: Third backwards detection searches range [0, 6] - TERMINATES**
 ```
-op_6 executes:
-  → Backwards detection range: [0, 6]
-    - Range START: 0 (chat start)
-    - Range END: 6 (nextBreakIndex - 1 = 7 - 1)
+op_6 executes (DETECT_SCENE_BREAK_BACKWARDS handler):
+  → Extract from operation.params: startIndex=0, endIndex=6
+  → Extract from operation.metadata: next_break_index=7, discovered_breaks=[15, 7], etc.
 
-  → Un-mark [0, 6] as checked
+  → Un-mark checked state: for (i=0; i < 7; i++) set_data(chat[i], 'auto_scene_break_checked', false)
 
-  → detectSceneBreak(
-      startIndex: 0,
-      endIndex: 6,
-      offset: 0,
-      isBackwards: true,
-      nextBreakIndex: 7
-    )
+  → detectSceneBreak(0, 6, 0, false, 'op_6', true, 7)
 
-  → LLM returns NO BREAK (insufficient messages for two-sided constraint,
-     or no scene change detected in range)
-  → { sceneBreakAt: false, rationale: 'Insufficient messages for two-sided minimum scene length constraint' }
+  → LLM returns NO BREAK (insufficient messages for two-sided constraint)
+  → { sceneBreakAt: false, rationale: 'Insufficient messages...' }
 
-  → Mark [0, 6] as checked (final range from chat START to first break)
+  → markRangeAsChecked(chat, 0, 6)
 
   → discovered_breaks: [15, 7] (in reverse chronological order)
-  → TERMINATE backwards chain - call terminateBackwardsChain()
+  → TERMINATE backwards chain - call terminateBackwardsChain(operation)
 
-terminateBackwardsChain() executes:
-  → Sort discovered_breaks chronologically: [7, 15]
+terminateBackwardsChain(operation) executes:
+  → chronologicalBreaks = [15, 7].sort() = [7, 15]
 
   → Queue recaps in CHRONOLOGICAL order with serial dependencies:
-    op_8: SCENE_RECAP (7)
-      dependencies: []       // First recap, no dependencies
-      priority: 20 (HIGHEST)
+    lastRecapId = null
+    for each breakIndex in [7, 15]:
+      await enqueueOperation(
+        OperationType.GENERATE_SCENE_RECAP,
+        { index: breakIndex },
+        {
+          priority: 20,
+          metadata: { triggered_by: 'backwards_detection', backwards_chain: true },
+          dependencies: lastRecapId ? [lastRecapId] : []
+        }
+      )
+      lastRecapId = recapOp.id
 
-    op_9: SCENE_RECAP (15)
-      dependencies: [op_8]   // Waits for previous recap
-      priority: 20 (HIGHEST)
-
-    op_10: SCENE_RECAP (30)
-      dependencies: [op_9]   // Waits for previous recap
-      priority: 20 (HIGHEST)
+    // Recap for the next break (30 - the one that triggered backwards)
+    await enqueueOperation(
+      OperationType.GENERATE_SCENE_RECAP,
+      { index: 30 },
+      {
+        priority: 20,
+        metadata: { triggered_by: 'backwards_detection', backwards_chain: true },
+        dependencies: [lastRecapId]
+      }
+    )
+    lastRecapId = nextBreakRecapOp.id
 
   → Queue forward continuation:
-    op_11: DETECT_SCENE_BREAK
-      metadata: {
-        start_index: 31,     // From saved forward_continuation
-        end_index: 50,       // From saved forward_continuation
-        triggered_by: 'backwards_chain_completion'
+    await enqueueOperation(
+      OperationType.DETECT_SCENE_BREAK,
+      { startIndex: 31, endIndex: 50 },  // From forward_continuation
+      {
+        priority: 5,
+        metadata: {
+          triggered_by: 'backwards_chain_completion',
+          original_operation_id: 'op_1'
+        },
+        dependencies: [lastRecapId]  // Wait for all recaps
       }
-      dependencies: [op_10]  // Waits for all recaps to complete
-      priority: 5 (NORMAL)
+    )
 ```
 
 ---
@@ -535,25 +617,33 @@ terminateBackwardsChain() executes:
 
 **Step 6: Forward continuation from 31→50**
 ```
-op_11 executes (after all recaps complete):
-  → detectSceneBreak(31, 50)
+op_11 executes (DETECT_SCENE_BREAK handler, after all recaps complete):
+  → detectSceneBreak(31, 50, 5, false, 'op_11')
   → Finds break at 45
-  → Place break marker at 45
-  → Mark [31, 45] as checked
+  → toggleSceneBreak(45, get_message_div, getContext, set_data, get_data, saveChatDebounced)
+  → markRangeAsChecked(chat, 31, 45)
 
   → Queue backwards chain:
-    op_12: DETECT_SCENE_BREAK_BACKWARDS (31, 45)
-      metadata: {
-        next_break_index: 45,
-        discovered_breaks: [],
-        forward_continuation: {
-          startIndex: 46,
-          endIndex: 50,
-          originalOperation: 'op_11'
-        }
+    await enqueueOperation(
+      OperationType.DETECT_SCENE_BREAK_BACKWARDS,
+      { startIndex: 31, endIndex: 44 },
+      {
+        priority: 15,
+        metadata: {
+          next_break_index: 45,
+          discovered_breaks: [],
+          check_which: 'both',
+          forward_continuation: {
+            start_index: 46,
+            end_index: 50,
+            original_operation_id: 'op_11'
+          }
+        },
+        dependencies: []
       }
+    );
 
-  → Queue recap: op_13: SCENE_RECAP (45), depends on op_12
+  → Queue recap (depends on backwards completing)
 ```
 
 **Steps 7-N: Repeat backwards chain for 31→45 range**
@@ -777,12 +867,9 @@ for (let i = startIndex; i < next_break_index; i++) {
 
 **Implementation in terminateBackwardsChain():**
 ```javascript
-// Mark remaining range as checked (startIndex to first discovered break or nextBreakIndex)
-const firstBreakIndex = discovered_breaks.length > 0
-  ? Math.min(...discovered_breaks)
-  : next_break_index;
-
-markRangeAsChecked(chat, startIndex, firstBreakIndex - 1, checkWhich);
+// NOTE: The backwards handler already marks ranges as checked during execution.
+// terminateBackwardsChain doesn't need to re-mark - it just queues recaps and forward continuation.
+// The last backwards operation that found no break marks the final range as checked.
 ```
 
 ---
@@ -794,14 +881,16 @@ markRangeAsChecked(chat, startIndex, firstBreakIndex - 1, checkWhich);
 **Add new operation type:**
 
 ```javascript
-// Line ~50 (after existing operation types)
+// Add after DETECT_SCENE_BREAK (line ~5 in operationTypes.js or line ~51 in operationQueue.js)
 export const OperationType = {
   // ... existing types
-  DETECT_SCENE_BREAK: 'DETECT_SCENE_BREAK',
-  DETECT_SCENE_BREAK_BACKWARDS: 'DETECT_SCENE_BREAK_BACKWARDS', // NEW
+  DETECT_SCENE_BREAK: 'detect_scene_break',
+  DETECT_SCENE_BREAK_BACKWARDS: 'detect_scene_break_backwards',  // NEW
   // ... rest
 };
 ```
+
+**NOTE:** The OperationType enum exists in BOTH `operationTypes.js` AND `operationQueue.js` (duplicate definitions). Add to whichever file is the canonical source, or add to both if they're kept in sync manually.
 
 ---
 
@@ -809,89 +898,119 @@ export const OperationType = {
 
 #### Refactoring Note: Existing detectSceneBreak Calls
 
-Throughout the handler, there are calls to:
+The existing DETECT_SCENE_BREAK handler calls detectSceneBreak like this:
 ```javascript
-detectSceneBreak(chat, settings, startIndex, endIndex, offset, checkWhich, forceSelection);
+result = await detectSceneBreak(startIndex, endIndex, offset, forceSelection, operation.id);
 ```
 
-These will need to be updated to pass `isBackwards=false` and `nextBreakIndex=null`:
+This will need to be updated to add backwards parameters:
 ```javascript
-detectSceneBreak(chat, settings, startIndex, endIndex, offset, checkWhich, forceSelection, false, null);
+result = await detectSceneBreak(startIndex, endIndex, offset, forceSelection, operation.id, false, null);
+// New params: isBackwards=false, nextBreakIndex=null
 ```
 
 ---
 
-#### Change 1: Modify DETECT_SCENE_BREAK Handler (lines 269-517)
+#### Change 1: Modify DETECT_SCENE_BREAK Handler (lines ~269-517)
 
-**Current code (lines 465-496):**
+**Current code (lines ~465-496):**
 ```javascript
 // After break found:
-toggleSceneBreak(chat, sceneBreakAt, true, false, settings, sceneChangeTypes);
-markRangeAsChecked(chat, startIndex, sceneBreakAt, checkWhich);
+toggleSceneBreak(sceneBreakAt, get_message_div, getContext, set_data, get_data, saveChatDebounced);
+markRangeAsChecked(chat, startIndex, sceneBreakAt);
 
 // Queue forward continuation
 const remainingStart = sceneBreakAt + 1;
 const remainingEnd = originalEndIndex;
-// ... queue DETECT_SCENE_BREAK for remaining range
+await enqueueOperation(
+  OperationType.DETECT_SCENE_BREAK,
+  { startIndex: remainingStart, endIndex: remainingEnd, ... },
+  { priority: 5, ... }
+);
+
+// Queue recap
+if (get_settings('auto_scene_break_generate_recap')) {
+  await enqueueOperation(
+    OperationType.GENERATE_SCENE_RECAP,
+    { index: sceneBreakAt },
+    { priority: 20, ... }
+  );
+}
 ```
 
 **New code:**
 ```javascript
 // After break found:
-toggleSceneBreak(chat, sceneBreakAt, true, false, settings, sceneChangeTypes);
-markRangeAsChecked(chat, startIndex, sceneBreakAt, checkWhich);
+toggleSceneBreak(sceneBreakAt, get_message_div, getContext, set_data, get_data, saveChatDebounced);
+markRangeAsChecked(chat, startIndex, sceneBreakAt);
 
 // Queue backwards chain FIRST
-const backwardsOp = await enqueueOperation({
-  type: OperationType.DETECT_SCENE_BREAK_BACKWARDS,
-  priority: OperationPriority.HIGH, // 15 - runs before forward continuation
-  metadata: {
-    start_index: startIndex,
-    end_index: sceneBreakAt - 1,
-    next_break_index: sceneBreakAt,
-    discovered_breaks: [],
-    check_which: checkWhich,
-    forward_continuation: {
-      start_index: sceneBreakAt + 1,
-      end_index: originalEndIndex,
-      original_operation_id: operation.id
-    }
+const checkWhich = operation.params?.checkWhich || 'both';
+const backwardsOp = await enqueueOperation(
+  OperationType.DETECT_SCENE_BREAK_BACKWARDS,  // type
+  {
+    // Params: execution data
+    startIndex: startIndex,
+    endIndex: sceneBreakAt - 1
+  },
+  {
+    // Options
+    priority: 15,  // HIGH - runs before forward continuation
+    metadata: {
+      // Tracking/state data
+      next_break_index: sceneBreakAt,
+      discovered_breaks: [],
+      check_which: checkWhich,
+      forward_continuation: {
+        start_index: sceneBreakAt + 1,
+        end_index: originalEndIndex,
+        original_operation_id: operation.id
+      }
+    },
+    dependencies: []
   }
-});
+);
 
+// Fallback: if backwards operation fails to queue, queue forward continuation
 if (!backwardsOp) {
   debug(SUBSYSTEM.OPERATIONS, 'Failed to queue backwards operation, queueing forward continuation directly');
-  // Fallback: queue forward continuation
-  const forwardOp = await enqueueOperation({
-    type: OperationType.DETECT_SCENE_BREAK,
-    priority: OperationPriority.NORMAL,
-    metadata: {
-      start_index: sceneBreakAt + 1,
-      end_index: originalEndIndex,
-      // ... existing metadata
+  await enqueueOperation(
+    OperationType.DETECT_SCENE_BREAK,
+    { startIndex: sceneBreakAt + 1, endIndex: originalEndIndex, offset, forceSelection },
+    {
+      priority: 5,
+      metadata: {
+        triggered_by: 'backwards_chain_fallback',
+        original_end_index: originalEndIndex
+      }
     }
-  });
+  );
 }
 
 // Queue scene recap (depends on backwards chain completing)
-if (settings.auto_scene_break_generate_recap) {
-  await enqueueOperation({
-    type: OperationType.SCENE_RECAP,
-    priority: OperationPriority.HIGHEST, // 20
-    metadata: {
-      message_id: sceneBreakAt,
-      // ... existing metadata
-    },
-    dependencies: backwardsOp ? [backwardsOp.id] : []
-  });
+if (get_settings('auto_scene_break_generate_recap')) {
+  await enqueueOperation(
+    OperationType.GENERATE_SCENE_RECAP,
+    { index: sceneBreakAt },
+    {
+      priority: 20,  // HIGHEST
+      metadata: {
+        triggered_by: 'scene_break_detection',
+        scene_break_index: sceneBreakAt
+      },
+      dependencies: backwardsOp ? [backwardsOp.id] : []
+    }
+  );
 }
 ```
 
 **Key changes:**
-1. Queue `DETECT_SCENE_BREAK_BACKWARDS` with HIGH priority (15)
-2. Store forward continuation params in backwards operation metadata
-3. Do NOT queue forward continuation here (deferred to backwards chain termination)
-4. Scene recap depends on backwards operation
+1. Queue `DETECT_SCENE_BREAK_BACKWARDS` with priority 15 (HIGH - runs before forward continuation)
+2. Separate params (startIndex, endIndex) from metadata (tracking data)
+3. Do NOT queue forward continuation here (deferred to backwards chain termination via terminateBackwardsChain)
+4. Scene recap depends on backwards operation completing
+5. Correct toggleSceneBreak signature with 6 dependency injection parameters
+6. markRangeAsChecked takes 3 params (no checkWhich parameter)
 
 ---
 
@@ -926,23 +1045,16 @@ function findPreviousSceneBreak(chat, beforeIndex) {
 /**
  * Handle backwards scene break detection operation
  * Recursively searches backwards from next_break_index to find earlier breaks
- *
- * @param {Object} operation - Operation from queue
- * @param {Object} operation.metadata - Contains:
- *   - start_index: Start of search range
- *   - end_index: End of search range (exclusive, < next_break_index)
- *   - next_break_index: Index of next scene break (search backwards from here)
- *   - discovered_breaks: Array of break indices found so far (reverse chronological)
- *   - check_which: 'user' | 'character' | 'both'
- *   - forward_continuation: { start_index, end_index, original_operation_id }
  */
-async function handleDetectSceneBreakBackwards(operation) {
-  const chat = getContext().chat;
-  const settings = get_settings();
+registerOperationHandler(OperationType.DETECT_SCENE_BREAK_BACKWARDS, async (operation) => {
+  const ctx = getContext();
+  const chat = ctx.chat;
 
+  // Extract from PARAMS (execution data)
+  const { startIndex, endIndex } = operation.params;
+
+  // Extract from METADATA (tracking/state data)
   const {
-    start_index: startIndex,
-    end_index: endIndex,
     next_break_index: nextBreakIndex,
     discovered_breaks: discoveredBreaks = [],
     check_which: checkWhich = 'both',
@@ -965,20 +1077,16 @@ async function handleDetectSceneBreakBackwards(operation) {
   let result;
   try {
     result = await detectSceneBreak(
-      chat,
-      settings,
       startIndex,
       endIndex,
       0, // offset = 0 for backwards
-      checkWhich,
       false, // forceSelection
+      operation.id, // operationId
       true, // isBackwards = true
       nextBreakIndex // nextBreakIndex
     );
   } catch (error) {
     debug(SUBSYSTEM.OPERATIONS, `Error in backwards detection: ${error.message}`);
-
-    // On error, terminate backwards chain and continue forward
     await terminateBackwardsChain(operation);
     return;
   }
@@ -990,10 +1098,8 @@ async function handleDetectSceneBreakBackwards(operation) {
     debug(SUBSYSTEM.OPERATIONS, `No break found in backwards range [${startIndex}, ${endIndex}]`);
     debug(SUBSYSTEM.OPERATIONS, `Rationale: ${rationale}`);
 
-    // Mark range as checked
-    markRangeAsChecked(chat, startIndex, endIndex, checkWhich);
+    markRangeAsChecked(chat, startIndex, endIndex);
 
-    // Terminate chain and queue forward continuation
     await terminateBackwardsChain(operation);
     return;
   }
@@ -1001,13 +1107,12 @@ async function handleDetectSceneBreakBackwards(operation) {
   // Case 2: Break found - place marker and continue recursion
   debug(SUBSYSTEM.OPERATIONS, `Found backwards break at ${sceneBreakAt}`);
 
-  // Place break marker
-  const { sceneChangeTypes } = getContext();
-  toggleSceneBreak(chat, sceneBreakAt, true, false, settings, sceneChangeTypes);
+  // Place break marker - 6 dependency injection parameters
+  toggleSceneBreak(sceneBreakAt, get_message_div, getContext, set_data, get_data, saveChatDebounced);
 
   // Mark intermediate range as checked (between break and next break)
   if (sceneBreakAt + 1 < nextBreakIndex) {
-    markRangeAsChecked(chat, sceneBreakAt + 1, nextBreakIndex - 1, checkWhich);
+    markRangeAsChecked(chat, sceneBreakAt + 1, nextBreakIndex - 1);
   }
 
   // Add to discovered breaks
@@ -1022,14 +1127,13 @@ async function handleDetectSceneBreakBackwards(operation) {
   }
 
   // Check if enough messages remain for another backwards recursion
+  const minSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || 10;
   const remainingRange = newEndIndex - startIndex + 1;
-  if (remainingRange < settings.minimum_scene_length * 2) {
+  if (remainingRange < minSceneLength * 2) {
     debug(SUBSYSTEM.OPERATIONS, 'Insufficient messages for further backwards detection');
 
-    // Mark remaining range as checked
-    markRangeAsChecked(chat, startIndex, newEndIndex, checkWhich);
+    markRangeAsChecked(chat, startIndex, newEndIndex);
 
-    // Terminate chain
     await terminateBackwardsChain({
       ...operation,
       metadata: {
@@ -1041,18 +1145,20 @@ async function handleDetectSceneBreakBackwards(operation) {
   }
 
   // Queue next backwards recursion
-  const nextBackwardsOp = await enqueueOperation({
-    type: OperationType.DETECT_SCENE_BREAK_BACKWARDS,
-    priority: OperationPriority.HIGH, // 15
-    metadata: {
-      start_index: startIndex,
-      end_index: newEndIndex,
-      next_break_index: sceneBreakAt,
-      discovered_breaks: updatedDiscoveredBreaks,
-      check_which: checkWhich,
-      forward_continuation: forwardContinuation
+  const nextBackwardsOp = await enqueueOperation(
+    OperationType.DETECT_SCENE_BREAK_BACKWARDS,  // type
+    { startIndex: startIndex, endIndex: newEndIndex },  // params
+    {
+      priority: 15,  // HIGH
+      metadata: {
+        next_break_index: sceneBreakAt,
+        discovered_breaks: updatedDiscoveredBreaks,
+        check_which: checkWhich,
+        forward_continuation: forwardContinuation
+      },
+      dependencies: []
     }
-  });
+  );
 
   if (!nextBackwardsOp) {
     debug(SUBSYSTEM.OPERATIONS, 'Failed to queue next backwards operation, terminating chain');
@@ -1067,22 +1173,16 @@ async function handleDetectSceneBreakBackwards(operation) {
   }
 
   debug(SUBSYSTEM.OPERATIONS, `Queued next backwards operation: ${nextBackwardsOp.id}`);
-}
+});
 
 /**
  * Terminate backwards chain and queue all recaps + forward continuation
- *
- * @param {Object} operation - Final backwards operation
  */
 async function terminateBackwardsChain(operation) {
-  const chat = getContext().chat;
-  const settings = get_settings();
-
   const {
     discovered_breaks: discoveredBreaks = [],
     forward_continuation: forwardContinuation,
-    next_break_index: nextBreakIndex,
-    check_which: checkWhich
+    next_break_index: nextBreakIndex
   } = operation.metadata;
 
   debug(SUBSYSTEM.OPERATIONS, `Terminating backwards chain. Discovered breaks: ${discoveredBreaks.join(', ')}`);
@@ -1092,23 +1192,24 @@ async function terminateBackwardsChain(operation) {
 
   // Queue recaps in chronological order with serial dependencies
   let lastRecapId = null;
-  const recapIds = [];
 
-  if (settings.auto_scene_break_generate_recap) {
+  const generateRecaps = get_settings('auto_scene_break_generate_recap');
+  if (generateRecaps) {
     for (const breakIndex of chronologicalBreaks) {
-      const recapOp = await enqueueOperation({
-        type: OperationType.SCENE_RECAP,
-        priority: OperationPriority.HIGHEST, // 20
-        metadata: {
-          message_id: breakIndex,
-          triggered_by: 'backwards_detection',
-          backwards_chain: true
-        },
-        dependencies: lastRecapId ? [lastRecapId] : []
-      });
+      const recapOp = await enqueueOperation(
+        OperationType.GENERATE_SCENE_RECAP,  // type
+        { index: breakIndex },  // params
+        {
+          priority: 20,  // HIGHEST
+          metadata: {
+            triggered_by: 'backwards_detection',
+            backwards_chain: true
+          },
+          dependencies: lastRecapId ? [lastRecapId] : []
+        }
+      );
 
       if (recapOp) {
-        recapIds.push(recapOp.id);
         lastRecapId = recapOp.id;
       } else {
         debug(SUBSYSTEM.OPERATIONS, `Failed to queue recap for break ${breakIndex}`);
@@ -1116,16 +1217,18 @@ async function terminateBackwardsChain(operation) {
     }
 
     // Queue recap for the next break (the one that triggered backwards chain)
-    const nextBreakRecapOp = await enqueueOperation({
-      type: OperationType.SCENE_RECAP,
-      priority: OperationPriority.HIGHEST, // 20
-      metadata: {
-        message_id: nextBreakIndex,
-        triggered_by: 'backwards_detection',
-        backwards_chain: true
-      },
-      dependencies: lastRecapId ? [lastRecapId] : []
-    });
+    const nextBreakRecapOp = await enqueueOperation(
+      OperationType.GENERATE_SCENE_RECAP,
+      { index: nextBreakIndex },
+      {
+        priority: 20,
+        metadata: {
+          triggered_by: 'backwards_detection',
+          backwards_chain: true
+        },
+        dependencies: lastRecapId ? [lastRecapId] : []
+      }
+    );
 
     if (nextBreakRecapOp) {
       lastRecapId = nextBreakRecapOp.id;
@@ -1134,17 +1237,21 @@ async function terminateBackwardsChain(operation) {
 
   // Queue forward continuation (depends on last recap if recaps enabled)
   if (forwardContinuation) {
-    const forwardOp = await enqueueOperation({
-      type: OperationType.DETECT_SCENE_BREAK,
-      priority: OperationPriority.NORMAL, // 5
-      metadata: {
-        start_index: forwardContinuation.start_index,
-        end_index: forwardContinuation.end_index,
-        triggered_by: 'backwards_chain_completion',
-        original_operation_id: forwardContinuation.original_operation_id
-      },
-      dependencies: lastRecapId ? [lastRecapId] : []
-    });
+    const forwardOp = await enqueueOperation(
+      OperationType.DETECT_SCENE_BREAK,  // type
+      {
+        startIndex: forwardContinuation.start_index,
+        endIndex: forwardContinuation.end_index
+      },  // params
+      {
+        priority: 5,  // NORMAL
+        metadata: {
+          triggered_by: 'backwards_chain_completion',
+          original_operation_id: forwardContinuation.original_operation_id
+        },
+        dependencies: lastRecapId ? [lastRecapId] : []
+      }
+    );
 
     if (forwardOp) {
       debug(SUBSYSTEM.OPERATIONS, `Queued forward continuation: ${forwardOp.id}`);
@@ -1161,53 +1268,53 @@ async function terminateBackwardsChain(operation) {
 
 #### Change 4: Register Handler
 
-**Location:** Near end of file, in handler registration section (lines ~1280-1290)
+**NOTE:** The backwards handler is registered inline using `registerOperationHandler()` directly in Change 3 above. No separate registration step is needed.
 
+The pattern used is:
 ```javascript
-// Existing registrations
-registerOperationHandler(OperationType.DETECT_SCENE_BREAK, handleDetectSceneBreak);
-registerOperationHandler(OperationType.SCENE_RECAP, handleSceneRecap);
-// ... etc
-
-// NEW: Register backwards handler
-registerOperationHandler(OperationType.DETECT_SCENE_BREAK_BACKWARDS, handleDetectSceneBreakBackwards);
+registerOperationHandler(OperationType.DETECT_SCENE_BREAK_BACKWARDS, async (operation) => {
+  // Handler implementation inline
+});
 ```
+
+This is the standard pattern used throughout the codebase for operation handlers.
 
 ---
 
 ### File 3: `autoSceneBreakDetection.js`
 
-#### Change 1: Modify detectSceneBreak Function Signature (line 877)
+#### Change 1: Modify detectSceneBreak Function Signature (line ~877)
 
 **Current signature:**
 ```javascript
-export async function detectSceneBreak(
-  chat,
-  settings,
+async function detectSceneBreak(
   startIndex,
   endIndex,
-  offset,
-  checkWhich,
-  forceSelection = false
+  offset = 0,
+  forceSelection = false,
+  _operationId = null
 )
 ```
+
+**IMPORTANT:** The function is NOT exported, and does NOT take `chat`, `settings`, or `checkWhich` as parameters. It gets these via:
+- `chat` from `getContext().chat`
+- `settings` from `get_settings()` and `loadSceneBreakPromptSettings()`
+- `checkWhich` from `get_settings('auto_scene_break_check_which_messages')`
 
 **New signature:**
 ```javascript
-export async function detectSceneBreak(
-  chat,
-  settings,
+async function detectSceneBreak(
   startIndex,
   endIndex,
-  offset,
-  checkWhich,
+  offset = 0,
   forceSelection = false,
-  isBackwards = false,
-  nextBreakIndex = null
+  _operationId = null,
+  isBackwards = false,      // NEW
+  nextBreakIndex = null     // NEW
 )
 ```
 
-**Add parameter validation (after line 877):**
+**Add parameter validation (early in function body):**
 ```javascript
 // Validate backwards mode parameters
 if (isBackwards && (nextBreakIndex === undefined || nextBreakIndex === null)) {
@@ -1321,19 +1428,31 @@ function calculateLatestAllowedBreak(eligibleFilteredIndices, endIndex, minimumS
 **Current code:**
 ```javascript
 const parsed = parseSceneBreakResponse(response, filteredIndices);
-return validateSceneBreakResponse(parsed, filteredIndices, earliestAllowedBreak, maxEligibleIndex);
+const validated = validateSceneBreakResponse(parsed.sceneBreakAt, {
+  startIndex,
+  endIndex,
+  filteredIndices,
+  minimumSceneLength,
+  maxEligibleIndex
+});
+return validated;
 ```
+
+**IMPORTANT:** `validateSceneBreakResponse` takes 2 parameters:
+1. `sceneBreakAt` (number or false)
+2. `config` object with fields: startIndex, endIndex, filteredIndices, minimumSceneLength, maxEligibleIndex
 
 **New code:**
 ```javascript
 const parsed = parseSceneBreakResponse(response, filteredIndices);
 
-const validated = validateSceneBreakResponse(
-  parsed,
+const validated = validateSceneBreakResponse(parsed.sceneBreakAt, {
+  startIndex,
+  endIndex,
   filteredIndices,
-  earliestAllowedBreak,
-  isBackwards ? latestAllowedBreak : maxEligibleIndex
-);
+  minimumSceneLength,
+  maxEligibleIndex: isBackwards ? latestAllowedBreak : maxEligibleIndex
+});
 
 // Additional validation for backwards mode
 if (isBackwards && validated.sceneBreakAt !== false) {
@@ -1376,16 +1495,16 @@ const ineligible = (i < earliestAllowedBreak) || (i > maxEligibleIndex);
 
 ### File 4: Priority Constants
 
-**File:** `operationQueue.js` or `constants.js` (wherever priority is defined)
+**NO CHANGES NEEDED** - The codebase does NOT use an `OperationPriority` enum. Priorities are specified as raw numbers:
 
-**Add HIGH priority level:**
+- `20` - HIGHEST - Scene recaps
+- `15` - HIGH - Backwards detection (NEW)
+- `5` - NORMAL - Forward detection
+- `1-4` - LOW - Maintenance operations
+
+Use these numeric values directly in all `enqueueOperation` calls:
 ```javascript
-export const OperationPriority = {
-  HIGHEST: 20, // Scene recaps
-  HIGH: 15,    // NEW - Backwards detection
-  NORMAL: 5,   // Forward detection
-  LOW: 1       // Maintenance operations
-};
+await enqueueOperation(type, params, { priority: 15, ... });  // Backwards detection
 ```
 
 ---
@@ -1616,7 +1735,7 @@ if (hasBackwardsOperations(queue)) {
 
 ### 4. Multiple Forward Detections Concurrent
 
-**Scenario:** User triggers `/scenebreak` twice quickly
+**Scenario:** User triggers manual detection twice quickly via UI
 **Queue:**
 - op_1: DETECT_SCENE_BREAK (0, 50) - finds break at 30
 - op_2: DETECT_SCENE_BREAK (0, 80) - queued before op_1 completes
@@ -1724,12 +1843,13 @@ if (newEndIndex >= endIndex) {
 - Find at least 2-3 existing call sites to see usage patterns
 
 **Example checklist for `toggleSceneBreak`:**
-- [ ] Read function definition in sceneBreak.js
-- [ ] Count parameters: 1=chat, 2=index, 3=state, 4=userTriggered, 5=settings, 6=sceneChangeTypes
+- [ ] Read function definition in sceneBreak.js (line 105)
+- [ ] Count parameters: 1=index, 2=get_message_div, 3=getContext, 4=set_data, 5=get_data, 6=saveChatDebounced
 - [ ] Verify it's NOT async (doesn't return Promise)
 - [ ] Find 3 existing call sites and verify parameter order
-- [ ] Note that settings comes from get_settings(), sceneChangeTypes from getContext()
-- [ ] Verify it uses set_data() internally for scene_break property
+- [ ] Note that this uses DEPENDENCY INJECTION - pass function references, not data
+- [ ] Verify it uses set_data() parameter internally for scene_break property
+- [ ] Note required imports: get_message_div, getContext, set_data, get_data, saveChatDebounced from index.js
 
 **I will NOT:**
 - Guess parameter order
@@ -1738,24 +1858,28 @@ if (newEndIndex >= endIndex) {
 
 ### 2. Verify EVERY Metadata Field Access
 
-**Operation metadata MUST be accessed correctly:**
+**Operation structure MUST be accessed correctly:**
 
 ```javascript
-// Read existing handler FIRST
-const handleDetectSceneBreak = /* find in operationHandlers.js */
+// Read existing handler FIRST - find in operationHandlers.js
 
-// Verify pattern:
-const { start_index, end_index, ... } = operation.metadata;  // ✓ CORRECT
-const startIndex = operation.start_index;  // ✗ WRONG - not in metadata
+// Verify TWO separate data locations:
+const { startIndex, endIndex, offset } = operation.params;  // ✓ Execution data
+const { start_index, end_index } = operation.metadata;      // ✓ Tracking data
 
-// Check ALL metadata accesses follow existing pattern
+// WRONG patterns:
+const startIndex = operation.start_index;  // ✗ WRONG - missing .params or .metadata
+const { next_break_index } = operation.params;  // ✗ WRONG - state should be in metadata
+
+// Check params vs metadata separation
 ```
 
 **Before writing backwards handler, I will:**
-- [ ] Read handleDetectSceneBreak completely
-- [ ] List ALL metadata fields it accesses
-- [ ] Verify destructuring pattern used
-- [ ] Note how it passes metadata to next operations
+- [ ] Read handleDetectSceneBreak completely (line 269+)
+- [ ] List ALL fields in operation.params (startIndex, endIndex, offset, forceSelection)
+- [ ] List ALL fields in operation.metadata (triggered_by, original_end_index, etc.)
+- [ ] Verify params vs metadata separation pattern
+- [ ] Note how enqueueOperation takes (type, params, {priority, metadata, dependencies})
 - [ ] Copy the exact pattern for backwards handler
 
 ### 3. Trace EVERY Code Path on Paper
@@ -1763,33 +1887,44 @@ const startIndex = operation.start_index;  // ✗ WRONG - not in metadata
 **For each handler/function, trace execution on paper:**
 
 ```
-Function: handleDetectSceneBreakBackwards
-Input: operation with metadata { start_index: 0, end_index: 29, next_break_index: 30, discovered_breaks: [] }
+Function: DETECT_SCENE_BREAK_BACKWARDS handler
+Input: operation with params { startIndex: 0, endIndex: 29 }
+       and metadata { next_break_index: 30, discovered_breaks: [], check_which: 'both', ... }
 
 Line-by-line trace:
-1. Extract metadata → startIndex=0, endIndex=29, nextBreakIndex=30, discoveredBreaks=[]
-2. Validate nextBreakIndex !== undefined → ✓ (30)
-3. Loop i from 0 to 29: set_data(chat[i], 'auto_scene_break_checked', false)
-4. Call detectSceneBreak(chat, settings, 0, 29, 0, checkWhich, false, true, 30)
-5. Assume returns { sceneBreakAt: 15, rationale: '...' }
-6. sceneBreakAt !== false → true, go to Case 2
-7. Call toggleSceneBreak(chat, 15, true, false, settings, sceneChangeTypes)
-   - Verify parameters: chat ✓, 15 ✓, true ✓, false ✓, settings ✓, sceneChangeTypes ✓
-8. Calculate markStart = 15 + 1 = 16, markEnd = 30 - 1 = 29
-9. If 16 < 30 → true, call markRangeAsChecked(chat, 16, 29, checkWhich)
-10. updatedDiscoveredBreaks = [15]
-11. newEndIndex = 15 - 1 = 14
-12. If 14 >= 29 → false, continue
-13. remainingRange = 14 - 0 + 1 = 15
-14. If 15 < settings.minimum_scene_length * 2 → check settings value
-15. Queue next backwards op with metadata: { start_index: 0, end_index: 14, next_break_index: 15, discovered_breaks: [15], ... }
-16. Queue recap with metadata: { message_id: 15, ... }, dependencies: [next backwards op id]
+1. Extract from operation.params → startIndex=0, endIndex=29
+2. Extract from operation.metadata → nextBreakIndex=30, discoveredBreaks=[], checkWhich='both'
+3. Validate nextBreakIndex !== undefined → ✓ (30)
+4. Loop i from 0 to 29: set_data(chat[i], 'auto_scene_break_checked', false)
+5. Call detectSceneBreak(0, 29, 0, false, operation.id, true, 30)
+   - Params: startIndex=0, endIndex=29, offset=0, forceSelection=false, operationId, isBackwards=true, nextBreakIndex=30
+6. Assume returns { sceneBreakAt: 15, rationale: '...' }
+7. sceneBreakAt !== false → true, go to Case 2
+8. Call toggleSceneBreak(15, get_message_div, getContext, set_data, get_data, saveChatDebounced)
+   - Verify: 6 dependency injection parameters ✓
+9. Calculate markStart = 15 + 1 = 16, markEnd = 30 - 1 = 29
+10. If 16 < 30 → true, call markRangeAsChecked(chat, 16, 29)
+    - Note: 3 params only (no checkWhich)
+11. updatedDiscoveredBreaks = [15]
+12. newEndIndex = 15 - 1 = 14
+13. If 14 >= 29 → false, continue
+14. remainingRange = 14 - 0 + 1 = 15
+15. minSceneLength = get_settings('auto_scene_break_minimum_scene_length') || 10
+16. If 15 < minSceneLength * 2 → check value
+17. enqueueOperation(
+      OperationType.DETECT_SCENE_BREAK_BACKWARDS,
+      { startIndex: 0, endIndex: 14 },  // params
+      {
+        priority: 15,
+        metadata: { next_break_index: 15, discovered_breaks: [15], ... }
+      }
+    )
 
 Verify each step:
 - Variables calculated correctly? ✓
 - Function calls have correct parameters? ✓
+- params vs metadata separation? ✓
 - Conditions evaluate correctly? ✓
-- Metadata passed correctly? ✓
 ```
 
 **I will trace:**
@@ -1864,12 +1999,15 @@ for (i = 14; i >= 0; i--) {
 - [ ] check_which (not checkWhich)
 - [ ] forward_continuation with start_index, end_index, original_operation_id
 
-**Pass 3: Check all function signatures exactly match spec**
-- [ ] detectSceneBreak(chat, settings, startIndex, endIndex, offset, checkWhich, forceSelection, isBackwards, nextBreakIndex)
+**Pass 3: Check all function signatures exactly match actual code**
+- [ ] detectSceneBreak(startIndex, endIndex, offset=0, forceSelection=false, _operationId=null, isBackwards=false, nextBreakIndex=null)
+  - Gets chat from getContext().chat, settings from get_settings(), checkWhich from get_settings()
 - [ ] calculateLatestAllowedBreak(eligibleFilteredIndices, endIndex, minimumSceneLength)
 - [ ] findPreviousSceneBreak(chat, beforeIndex)
-- [ ] handleDetectSceneBreakBackwards(operation) - async
-- [ ] terminateBackwardsChain(operation) - async
+- [ ] DETECT_SCENE_BREAK_BACKWARDS handler registered via registerOperationHandler (inline arrow function)
+- [ ] terminateBackwardsChain(operation) - async helper function
+- [ ] toggleSceneBreak(index, get_message_div, getContext, set_data, get_data, saveChatDebounced)
+- [ ] markRangeAsChecked(chat, startIdx, endIdx) - 3 params only
 
 ### 6. Lint and Syntax Check BEFORE Committing
 
@@ -2040,16 +2178,18 @@ if (!settings.auto_scene_break_backwards_enabled) {
 
 ---
 
-### Phase 3: Testing
+### Phase 3: Manual Testing
 
-- [ ] Unit tests for `findPreviousSceneBreak`
-- [ ] Unit tests for `calculateLatestAllowedBreak`
-- [ ] Unit tests for backwards mode in `detectSceneBreak`
-- [ ] Integration test: single backwards recursion
-- [ ] Integration test: multiple backwards recursions
-- [ ] Integration test: no breaks found backwards
-- [ ] Integration test: queue persistence
-- [ ] E2E test: full detection with backwards
+**NOTE:** No automated tests exist. All testing is MANUAL.
+
+- [ ] Manual test: Single backwards recursion (create 50-message chat, trigger manual detection via UI, verify multiple breaks found)
+- [ ] Manual test: Multiple backwards recursions (verify chain continues until no breaks)
+- [ ] Manual test: No breaks found backwards (verify graceful termination)
+- [ ] Manual test: Queue persistence (trigger backwards, reload page, verify queue resumes)
+- [ ] Manual test: Full forward+backwards detection on long chat (100+ messages)
+- [ ] Manual test: Verify all discovered breaks have recaps in chronological order
+- [ ] Manual test: Forward continuation after backwards chain completes
+- [ ] Manual test: Check operation queue UI shows backwards operations correctly
 
 ---
 

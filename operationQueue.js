@@ -18,8 +18,14 @@ import {
 import {
   loadWorldInfo,
   saveWorldInfo,
+  updateWorldInfoList,
   METADATA_KEY
 } from '../../../world-info.js';
+
+import {
+  lorebookExists,
+  attachLorebook
+} from './lorebookManager.js';
 
 import {
   ID_GENERATION_BASE,
@@ -49,6 +55,7 @@ export const OperationStatus  = {
 export const OperationType  = {
   VALIDATE_RECAP: 'validate_recap',
   DETECT_SCENE_BREAK: 'detect_scene_break',
+  DETECT_SCENE_BREAK_BACKWARDS: 'detect_scene_break_backwards',
   GENERATE_SCENE_RECAP: 'generate_scene_recap',
   GENERATE_RUNNING_RECAP: 'generate_running_recap',
   COMBINE_SCENE_WITH_RUNNING: 'combine_scene_with_running',
@@ -185,6 +192,42 @@ async function getQueueEntry() {
   }
 
   log(SUBSYSTEM.QUEUE, `Lorebook attached: "${lorebookName}"`);
+
+  // CRITICAL: Verify lorebook is actually in world_names
+  // If not, SillyTavern won't send entries and everything breaks silently
+  if (!lorebookExists(lorebookName)) {
+    error(SUBSYSTEM.QUEUE, `CRITICAL: Lorebook "${lorebookName}" is attached in metadata but NOT in world_names!`);
+    error(SUBSYSTEM.QUEUE, 'This means SillyTavern will NOT send lorebook entries to the LLM.');
+    error(SUBSYSTEM.QUEUE, 'Attempting to refresh world_names and reattach...');
+
+    // Try refreshing world_names
+    await updateWorldInfoList();
+
+    // Check if it exists now
+    if (lorebookExists(lorebookName)) {
+      log(SUBSYSTEM.QUEUE, 'Lorebook found after refresh. Reattaching...');
+      const reattached = attachLorebook(lorebookName);
+      if (!reattached) {
+        error(SUBSYSTEM.QUEUE, 'Failed to reattach lorebook');
+        toast('CRITICAL: Queue lorebook is detached and reattachment failed!', 'error');
+        return null;
+      }
+
+      // Verify the reattachment actually worked
+      const nowAttached = getAttachedLorebook();
+      if (nowAttached !== lorebookName) {
+        error(SUBSYSTEM.QUEUE, `CRITICAL: Reattached lorebook but metadata shows "${nowAttached}" instead of "${lorebookName}"`);
+        toast('CRITICAL: Queue lorebook reattachment verification failed!', 'error');
+        return null;
+      }
+
+      log(SUBSYSTEM.QUEUE, 'Successfully reattached and verified lorebook');
+    } else {
+      error(SUBSYSTEM.QUEUE, 'Lorebook file does not exist at all');
+      toast('CRITICAL: Queue lorebook file is missing! Extension cannot function.', 'error');
+      return null;
+    }
+  }
 
   // Load the lorebook
   const worldInfo = await loadWorldInfo(lorebookName);
