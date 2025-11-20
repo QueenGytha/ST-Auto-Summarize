@@ -10,6 +10,7 @@ import {
   isQueuePaused,
   clearAllOperations,
   removeOperation,
+  toggleOperationPauseFlag,
   registerUIUpdateCallback,
   OperationStatus,
   OperationType } from
@@ -235,7 +236,16 @@ function bindQueueControlEvents() {
   $(document).on('click', '.queue-operation-remove', async function (e) {
     e.stopPropagation(); // Prevent toggling collapse/expand
     const operationId = $(this).data('operation-id');
-    await removeOperation(operationId);
+    if (confirm('Remove this operation from the queue?')) {
+      await removeOperation(operationId);
+    }
+  });
+
+  // Toggle pause flag for individual operation
+  $(document).on('click', '.queue-operation-pause', async function (e) {
+    e.stopPropagation(); // Prevent toggling collapse/expand
+    const operationId = $(this).data('operation-id');
+    await toggleOperationPauseFlag(operationId);
   });
 
   // Navbar toggle (show/hide ENTIRE navbar)
@@ -455,6 +465,15 @@ function renderOperation(operation) {
   // Build tooltip with operation settings
   const tooltip = buildOperationTooltip(operation);
 
+  // Pause button - only for PENDING operations
+  let pauseButton = '';
+  if (operation.status === OperationStatus.PENDING) {
+    const pauseIcon = operation.pauseBeforeExecution ? 'fa-play' : 'fa-pause';
+    const pauseTitle = operation.pauseBeforeExecution ? 'Resume (clear pause flag)' : 'Pause queue before this operation';
+    const pauseStyle = operation.pauseBeforeExecution ? 'color: #ff9800;' : '';
+    pauseButton = `<button class="queue-operation-pause fa-solid ${pauseIcon}" data-operation-id="${operation.id}" title="${pauseTitle}" style="background: none; border: none; cursor: pointer; margin-right: 8px; ${pauseStyle}"></button>`;
+  }
+
   // Remove button - available for ALL states
   // IN_PROGRESS/RETRYING: Attempts to abort the operation before removal
   // PENDING/FAILED/CANCELLED: Immediate removal
@@ -471,7 +490,7 @@ function renderOperation(operation) {
                     <div class="queue-operation-type" title="${tooltip}">${typeName} ${retryText}</div>
                     ${paramsText ? `<div class="queue-operation-params">${paramsText}</div>` : ''}
                 </div>
-                ${removeButton}
+                ${pauseButton}${removeButton}
             </div>
             ${durationText ? `<div class="queue-operation-duration">${durationText}</div>` : ''}
             ${errorText}

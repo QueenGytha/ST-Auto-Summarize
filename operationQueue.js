@@ -347,6 +347,11 @@ async function loadQueue() {
           op.abortController = new AbortController();
         }
 
+        // Initialize pauseBeforeExecution flag if missing (for operations loaded from old queue format)
+        if (op.pauseBeforeExecution === undefined) {
+          op.pauseBeforeExecution = false;
+        }
+
         // Reset stale IN_PROGRESS operations
         if (op.status === OperationStatus.IN_PROGRESS) {
           op.status = OperationStatus.PENDING;
@@ -483,6 +488,7 @@ export async function enqueueOperation(type , params , options  = {}) {
     dependencies: options.dependencies ?? [],
     metadata: options.metadata ?? {},
     queueVersion: queueVersion, // Stamp with current version
+    pauseBeforeExecution: false, // Pause queue before executing this operation
     abortController: new AbortController() // For cancelling operations (not serialized to storage)
   } ;
 
@@ -597,6 +603,20 @@ export async function updateOperationMetadata(operationId , newMetadata ) {
   await saveQueue();
   notifyUIUpdate();
   debug(SUBSYSTEM.QUEUE, `Operation ${operationId} metadata updated`);
+}
+
+export async function toggleOperationPauseFlag(operationId ) {
+  const operation = getOperation(operationId);
+  if (!operation) {
+    error(SUBSYSTEM.QUEUE, `Operation ${operationId} not found`);
+    return false;
+  }
+
+  operation.pauseBeforeExecution = !operation.pauseBeforeExecution;
+  await saveQueue();
+  notifyUIUpdate();
+  debug(SUBSYSTEM.QUEUE, `Operation ${operationId} pause flag toggled to ${String(operation.pauseBeforeExecution)}`);
+  return operation.pauseBeforeExecution;
 }
 
 export async function removeOperation(operationId ) {
@@ -1024,6 +1044,21 @@ function startQueueProcessor() {
 
       debug(SUBSYSTEM.QUEUE, `[LOOP] Found operation: ${operation.type}, id: ${operation.id}`);
 
+      // Check if operation has pause flag set
+      if (operation.pauseBeforeExecution) {
+        log(SUBSYSTEM.QUEUE, `Operation ${operation.id} (${operation.type}) has pause flag set - pausing queue`);
+        operation.pauseBeforeExecution = false; // Clear flag so it doesn't pause again
+        currentQueue.paused = true;
+        // Sequential execution required: queue must be saved before pausing
+        // eslint-disable-next-line no-await-in-loop -- Queue state must be persisted before pausing
+        await saveQueue();
+        toast(`Queue paused before: ${operation.type}`, 'info');
+        queueProcessor = null;
+        isProcessorActive = false;
+        notifyUIUpdate();
+        return;
+      }
+
       // Mark operation as in progress BEFORE saving
       currentQueue.current_operation_id = operation.id;
       operation.status = OperationStatus.IN_PROGRESS ;
@@ -1097,6 +1132,8 @@ export default {
   getCompletedOperations,
   getFailedOperations,
   updateOperationStatus,
+  updateOperationMetadata,
+  toggleOperationPauseFlag,
   removeOperation,
   clearCompletedOperations,
   clearAllOperations,
