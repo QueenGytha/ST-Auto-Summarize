@@ -471,7 +471,7 @@ function renderOperation(operation) {
     const pauseIcon = operation.pauseBeforeExecution ? 'fa-play' : 'fa-pause';
     const pauseTitle = operation.pauseBeforeExecution ? 'Resume (clear pause flag)' : 'Pause queue before this operation';
     const pauseStyle = operation.pauseBeforeExecution ? 'color: #ff9800;' : '';
-    pauseButton = `<button class="queue-operation-pause fa-solid ${pauseIcon}" data-operation-id="${operation.id}" title="${pauseTitle}" style="background: none; border: none; cursor: pointer; margin-right: 8px; ${pauseStyle}"></button>`;
+    pauseButton = `<button class="queue-operation-pause fa-solid ${pauseIcon}" data-operation-id="${operation.id}" title="${pauseTitle}" style="background: none; border: none; cursor: pointer; ${pauseStyle}"></button>`;
   }
 
   // Remove button - available for ALL states

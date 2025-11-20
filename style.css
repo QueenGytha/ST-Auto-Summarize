@@ -492,14 +492,13 @@ dialog:has(#auto_recap_memory_state_interface) {
 
 .queue-operation-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.4em;
     margin-bottom: 0.2em;
 }
 
 .queue-operation-icon {
     flex-shrink: 0;
-    margin-top: 0.1em;
 }
 
 .queue-operation-content {
@@ -600,7 +599,8 @@ button, .scene-nav-link, #queue_toggle_visibility {
     background: rgba(255, 255, 255, 0.1);
 }
 
-/* Queue operation remove button - larger touch target */
+/* Queue operation buttons - larger touch target */
+.queue-operation-pause,
 .queue-operation-remove {
     min-width: 44px;
     min-height: 44px;
@@ -608,6 +608,7 @@ button, .scene-nav-link, #queue_toggle_visibility {
     opacity: 0.7 !important;
 }
 
+.queue-operation-pause:active,
 .queue-operation-remove:active {
     opacity: 1 !important;
 }
