@@ -34,13 +34,23 @@ let isQueueBlocking = false;
 let queueIndicatorButton = null;
 
 // Lorebook tracking state (must be declared early to avoid TDZ errors in event handlers)
-const activeLorebooksPerMessage = new Map();
-const activeStickyEntries = new Map(); // uid -> {entry, stickyCount, messageIndex}
-let currentGenerationType = null;
-let targetMessageIndex = null;
+// Exported to ensure they're accessible in event handler closures
+export const activeLorebooksPerMessage = new Map();
+export const activeStickyEntries = new Map(); // uid -> {entry, stickyCount, messageIndex}
+export let currentGenerationType = null;
+export let targetMessageIndex = null;
+
+// Setters for the let variables
+export function setCurrentGenerationType(value) {
+  currentGenerationType = value;
+}
+
+export function setTargetMessageIndex(value) {
+  targetMessageIndex = value;
+}
 
 // Version marker to verify TDZ fix is loaded
-console.warn('[AutoRecap] TDZ fix loaded - variables initialized at module top (v2025-11-20)');
+console.warn('[AutoRecap] TDZ fix loaded - variables initialized at module top (v2025-11-20-exported)');
 window.__AutoRecapTDZFixLoaded = true;
 
 // Function for queue to control blocking state
@@ -214,6 +224,8 @@ export * from './lorebookManager.js';
 export * from './lorebookEntryMerger.js';
 export * from './categoryIndexes.js';
 export * from './recapToLorebookProcessor.js';
+export * from './lorebookReconstruction.js';
+export * from './checkpointLorebookIntegration.js';
 
 // Metadata injection for LLM requests
 export * from './metadataInjector.js';
@@ -531,19 +543,19 @@ export function installWorldInfoActivationLogger() {
   setTimeout(() => {
     // Track generation type and target message index
     eventSource.on(event_types.GENERATION_STARTED, (genType) => {
-      currentGenerationType = genType;
+      setCurrentGenerationType(genType);
       const chatLength = ctx.chat?.length || 0;
 
       // Calculate target message index based on generation type
       if (genType === 'swipe') {
         // Swipe replaces the last message
-        targetMessageIndex = Math.max(0, chatLength - 1);
+        setTargetMessageIndex(Math.max(0, chatLength - 1));
       } else if (genType === 'continue') {
         // Continue appends to the last message
-        targetMessageIndex = Math.max(0, chatLength - 1);
+        setTargetMessageIndex(Math.max(0, chatLength - 1));
       } else {
         // Normal generation or impersonate creates new message
-        targetMessageIndex = chatLength;
+        setTargetMessageIndex(chatLength);
       }
 
       debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Generation started: type=${genType}, targetIndex=${targetMessageIndex}`);
@@ -648,8 +660,8 @@ export function installWorldInfoActivationLogger() {
     eventSource.on(event_types.CHAT_CHANGED, () => {
       debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] Chat changed, clearing sticky entry state');
       activeStickyEntries.clear();
-      currentGenerationType = null;
-      targetMessageIndex = null;
+      setCurrentGenerationType(null);
+      setTargetMessageIndex(null);
     });
 
     debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] ✓ Tracker installed successfully (deferred)');
