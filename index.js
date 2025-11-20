@@ -27,6 +27,9 @@ import { debug, SUBSYSTEM, toast } from './utils.js';
 // Import settings functions for window.AutoRecap export
 import { get_settings, set_settings, global_settings as default_settings } from './settingsManager.js';
 
+// Import message data functions
+import { get_data } from './messageData.js';
+
 // Track if queue is blocking (set by operationQueue.js)
 let isQueueBlocking = false;
 
@@ -306,23 +309,39 @@ export function installEnterKeyInterceptor() {
 
 /**
  * Get active lorebook entries for a specific message
- * First checks message.extra for persisted data, falls back to in-memory Map
+ * Reads from versioned metadata to support multiple swipes
  */
 export function getActiveLorebooksForMessage(messageIndex) {
   const ctx = getContext();
   const message = ctx?.chat?.[messageIndex];
 
-  // Try to load from persisted data first
+  if (!message) {
+    return null;
+  }
+
+  // Try to load from versioned metadata FIRST (supports multiple swipes)
+  const metadata = get_data(message, 'scene_recap_metadata');
+  if (metadata) {
+    const currentVersionIndex = get_data(message, 'scene_recap_current_index') ?? 0;
+    const versionMetadata = metadata[currentVersionIndex];
+
+    if (versionMetadata?.entries && Array.isArray(versionMetadata.entries)) {
+      return versionMetadata.entries;
+    }
+  }
+
+  // Fall back to legacy message.extra (old scene breaks before versioning)
   if (message?.extra?.activeLorebookEntries) {
     return message.extra.activeLorebookEntries;
   }
 
-  // Fall back to in-memory storage
+  // Fall back to in-memory storage (very old behavior)
   return activeLorebooksPerMessage.get(messageIndex) || null;
 }
 
 /**
  * Get inactive lorebook entries for a specific message
+ * Reads from versioned metadata to support multiple swipes
  * @param {number} messageIndex - The message index
  * @returns {Array|null} Array of inactive lorebook entry objects, or null if none
  */
@@ -330,6 +349,24 @@ export function getInactiveLorebooksForMessage(messageIndex) {
   const ctx = getContext();
   const message = ctx?.chat?.[messageIndex];
 
+  if (!message) {
+    return null;
+  }
+
+  // Try to load from versioned metadata FIRST (supports multiple swipes)
+  const metadata = get_data(message, 'scene_recap_metadata');
+  if (metadata) {
+    const currentVersionIndex = get_data(message, 'scene_recap_current_index') ?? 0;
+    const versionMetadata = metadata[currentVersionIndex];
+
+    // For new snapshots, inactive entries are ALL entries minus active entries
+    if (versionMetadata?.allEntries && Array.isArray(versionMetadata.allEntries)) {
+      const activeUIDs = new Set((versionMetadata.entries || []).map(e => e.uid));
+      return versionMetadata.allEntries.filter(entry => !activeUIDs.has(entry.uid));
+    }
+  }
+
+  // Fall back to legacy message.extra (old scene breaks before versioning)
   if (message?.extra?.inactiveLorebookEntries) {
     return message.extra.inactiveLorebookEntries;
   }
