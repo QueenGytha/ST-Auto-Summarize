@@ -14,7 +14,6 @@ import {
   clearAllCheckedFlags,
   selectorsSillyTavern,
   get_data,
-  chat_metadata,
   toast,
   SUBSYSTEM } from
 './index.js';
@@ -107,21 +106,6 @@ function initialize_menu_buttons() {
   add_menu_button("Clear Scene Break Checks", "fa-solid fa-eraser", clearAllCheckedFlags, "Clear the 'checked' flag from all messages so they can be re-scanned for scene breaks.");
 }
 
-function checkSceneIncludedInRunningRecap(messageIndex ) {
-  const storage = chat_metadata.auto_recap_running_scene_recaps;
-  if (!storage || !storage.versions || storage.versions.length === 0) {
-    return false;
-  }
-
-  const currentVersion = storage.versions.find(v => v.version === storage.current_version);
-  if (!currentVersion) {
-    return false;
-  }
-
-  const sceneIndex = currentVersion.new_scene_index ?? 0;
-  return messageIndex <= sceneIndex;
-}
-
 function canCreateCheckpointOrBranch(messageIndex ) {
   const ctx = getContext();
   const chat = ctx.chat;
@@ -130,8 +114,6 @@ function canCreateCheckpointOrBranch(messageIndex ) {
     return { allowed: false, reason: 'Message not found' };
   }
 
-  const message = chat[messageIndex];
-
   const queueStats = getQueueStats();
   const queueEmpty = queueStats.pending === 0 && queueStats.in_progress === 0;
 
@@ -139,34 +121,6 @@ function canCreateCheckpointOrBranch(messageIndex ) {
     return {
       allowed: false,
       reason: `Queue is not empty (${queueStats.pending} pending, ${queueStats.in_progress} in progress)`
-    };
-  }
-
-  const hasSceneBreak = get_data(message, 'scene_break');
-  if (!hasSceneBreak) {
-    return {
-      allowed: false,
-      reason: 'Message does not have a scene break'
-    };
-  }
-
-  const metadata = get_data(message, 'scene_recap_metadata');
-  const currentVersionIndex = get_data(message, 'scene_recap_current_index') ?? 0;
-  const versionMetadata = metadata?.[currentVersionIndex];
-  const hasLorebookEntry = versionMetadata && (versionMetadata.totalActivatedEntries ?? 0) > 0;
-
-  if (!hasLorebookEntry) {
-    return {
-      allowed: false,
-      reason: 'Scene break does not have a completed lorebook entry'
-    };
-  }
-
-  const includedInRunningRecap = checkSceneIncludedInRunningRecap(messageIndex);
-  if (!includedInRunningRecap) {
-    return {
-      allowed: false,
-      reason: 'Scene has not been included in the running recap yet'
     };
   }
 
@@ -234,16 +188,48 @@ function initialize_checkpoint_branch_interceptor() {
       const { openCharacterChat } = await import('../../../../script.js');
       await openCharacterChat(newChatName);
 
-      debug(SUBSYSTEM.UI, `Switched to ${buttonType}: ${newChatName}, now creating lorebook`);
+      debug(SUBSYSTEM.UI, `Switched to ${buttonType}: ${newChatName}`);
 
-      // Now create lorebook from scene break metadata snapshot
-      const { createCheckpointLorebook } = await import('./checkpointLorebookIntegration.js');
-      const lorebookName = await createCheckpointLorebook(messageIndex, newChatName);
+      // Find the most recent scene break with a lorebook snapshot (at or before this message)
+      const ctx = getContext();
+      const chat = ctx.chat;
+      let sceneBreakIndexForLorebook = null;
 
-      debug(SUBSYSTEM.UI, `${buttonType} created successfully with lorebook ${lorebookName}`);
+      for (let i = messageIndex; i >= 0; i--) {
+        const msg = chat[i];
+        const hasSceneBreak = get_data(msg, 'scene_break');
+        if (!hasSceneBreak) {
+          continue;
+        }
+
+        const metadata = get_data(msg, 'scene_recap_metadata');
+        const currentVersionIndex = get_data(msg, 'scene_recap_current_index') ?? 0;
+        const versionMetadata = metadata?.[currentVersionIndex];
+        const hasLorebookSnapshot = versionMetadata && (versionMetadata.totalActivatedEntries ?? 0) > 0;
+
+        if (hasLorebookSnapshot) {
+          sceneBreakIndexForLorebook = i;
+          break;
+        }
+      }
+
+      if (sceneBreakIndexForLorebook !== null) {
+        debug(SUBSYSTEM.UI, `Found scene break with lorebook snapshot at message ${sceneBreakIndexForLorebook}, creating lorebook`);
+        try {
+          const { createCheckpointLorebook } = await import('./checkpointLorebookIntegration.js');
+          const lorebookName = await createCheckpointLorebook(sceneBreakIndexForLorebook, newChatName);
+          debug(SUBSYSTEM.UI, `${buttonType} created successfully with lorebook ${lorebookName}`);
+        } catch (lorebookErr) {
+          error(SUBSYSTEM.UI, `Failed to create lorebook for ${buttonType}:`, lorebookErr);
+          toast(`${buttonType} created but lorebook creation failed: ${lorebookErr.message}`, 'warning');
+        }
+      } else {
+        debug(SUBSYSTEM.UI, `${buttonType} created successfully (no previous scene break with lorebook snapshot found)`);
+        toast(`${buttonType} created (no lorebook - no previous scene break with snapshot)`, 'info');
+      }
 
     } catch (err) {
-      error(SUBSYSTEM.UI, `Failed to create ${buttonType} with lorebook:`, err);
+      error(SUBSYSTEM.UI, `Failed to create ${buttonType}:`, err);
       toast(`Failed to create ${buttonType}: ${err.message}`, 'error');
     }
   }, { capture: true });
