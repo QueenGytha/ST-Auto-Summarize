@@ -4,6 +4,7 @@
 import { getContext, selectorsSillyTavern } from './index.js';
 import { getActiveLorebooksForMessage, getInactiveLorebooksForMessage } from './index.js';
 import { debug, SUBSYSTEM } from './index.js';
+import { count_tokens } from './index.js';
 
 const LOREBOOK_VIEWER_BUTTON_CLASS = 'lorebook-viewer-button';
 
@@ -58,6 +59,20 @@ function buildStrategyBreakdown(entries) {
   return '';
 }
 
+function calculateEntriesTokenCount(entries) {
+  if (!entries || entries.length === 0) {
+    return 0;
+  }
+
+  let total = 0;
+  for (const entry of entries) {
+    if (entry.content) {
+      total += count_tokens(entry.content);
+    }
+  }
+  return total;
+}
+
 export function showLorebookEntriesModal(messageIndex) {
   const ctx = getContext();
   const activeEntries = getActiveLorebooksForMessage(messageIndex);
@@ -80,6 +95,11 @@ export function showLorebookEntriesModal(messageIndex) {
     }
     return;
   }
+
+  // Calculate token counts
+  const activeTokens = calculateEntriesTokenCount(activeEntries);
+  const inactiveTokens = calculateEntriesTokenCount(inactiveEntries);
+  const totalTokens = activeTokens + inactiveTokens;
 
   // Strategy emoji mapping
   const strategyEmoji = {
@@ -158,6 +178,15 @@ export function showLorebookEntriesModal(messageIndex) {
   const html = `
     <div>
       <h3>Lorebook Snapshot - Message #${messageIndex}</h3>
+
+      <div style="margin-bottom: 1.5em; padding: 0.75em; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;">
+        <div style="font-size: 0.95em; color: #ccc;">
+          <strong>Token Usage:</strong>
+          <span style="color: #4CAF50;">Active: ${activeTokens.toLocaleString()}</span> |
+          <span style="color: #888;">Inactive: ${inactiveTokens.toLocaleString()}</span> |
+          <span style="color: #fff;">Total: ${totalTokens.toLocaleString()}</span>
+        </div>
+      </div>
 
       <div style="margin-bottom: 1.5em;">
         <h4 style="color: #4CAF50; margin-bottom: 0.5em;">✓ Active Entries (${activeEntries?.length || 0})</h4>
