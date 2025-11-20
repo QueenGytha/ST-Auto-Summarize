@@ -9,6 +9,7 @@ import { get_data } from './index.js';
 import { debug, error, SUBSYSTEM } from './utils.js';
 import { createNewWorldInfo } from '../../../world-info.js';
 import { getSanitizedFilename } from '../../../../scripts/utils.js';
+import { getRequestHeaders } from '../../../../script.js';
 
 // Constants for lorebook entry defaults
 const DEFAULT_DEPTH = 4;
@@ -180,8 +181,9 @@ async function createLorebookEntry(lorebookName, entryData) {
   // Load the lorebook
   const response = await fetch('/api/worldinfo/get', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: lorebookName })
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name: lorebookName }),
+    cache: 'no-cache'
   });
 
   if (!response.ok) {
@@ -206,8 +208,9 @@ async function createLorebookEntry(lorebookName, entryData) {
   // Save lorebook back
   const saveResponse = await fetch('/api/worldinfo/edit', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: lorebookName, data: lorebook })
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name: lorebookName, data: lorebook }),
+    cache: 'no-cache'
   });
 
   if (!saveResponse.ok) {
