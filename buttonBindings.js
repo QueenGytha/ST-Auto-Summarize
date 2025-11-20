@@ -220,15 +220,6 @@ function initialize_checkpoint_branch_interceptor() {
     debug(SUBSYSTEM.UI, `${buttonType} creation allowed: proceeding with ${buttonType} creation`);
 
     try {
-      // Get the original chat's lorebook name BEFORE creating branch
-      const originalLorebookName = chat_metadata.world_info;
-
-      if (!originalLorebookName) {
-        throw new Error('No lorebook attached to current chat - cannot create point-in-time snapshot');
-      }
-
-      debug(SUBSYSTEM.UI, `Original chat lorebook: ${originalLorebookName}`);
-
       // Create the checkpoint/branch (creates file but doesn't switch)
       const { createBranch, createBookmark } = await import('../../../../scripts/bookmarks.js');
       const newChatName = await (buttonType === 'branch' ? createBranch(messageIndex) : createBookmark(messageIndex));
@@ -245,9 +236,9 @@ function initialize_checkpoint_branch_interceptor() {
 
       debug(SUBSYSTEM.UI, `Switched to ${buttonType}: ${newChatName}, now creating lorebook`);
 
-      // Now create lorebook (passing original lorebook name, new chat name)
+      // Now create lorebook from scene break metadata snapshot
       const { createCheckpointLorebook } = await import('./checkpointLorebookIntegration.js');
-      const lorebookName = await createCheckpointLorebook(messageIndex, newChatName, originalLorebookName);
+      const lorebookName = await createCheckpointLorebook(messageIndex, newChatName);
 
       debug(SUBSYSTEM.UI, `${buttonType} created successfully with lorebook ${lorebookName}`);
 

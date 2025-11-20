@@ -938,6 +938,52 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
         content: entry.content || ''
       }));
 
+      // Load ALL entries from the chat lorebook (for point-in-time snapshot)
+      let allLorebookEntries = [];
+      if (chatLorebookName) {
+        try {
+          const { loadWorldInfo } = await import('../../../world-info.js');
+          const worldData = await loadWorldInfo(chatLorebookName);
+          if (worldData?.entries) {
+            allLorebookEntries = Object.values(worldData.entries)
+              // Exclude operation queue
+              .filter(entry => entry.comment !== '__operation_queue')
+              .map(entry => ({
+                comment: entry.comment || '(unnamed)',
+                uid: entry.uid,
+                world: chatLorebookName,
+                key: entry.key || [],
+                keysecondary: entry.keysecondary || [],
+                content: entry.content || '',
+                position: entry.position,
+                depth: entry.depth,
+                order: entry.order,
+                role: entry.role,
+                constant: entry.constant || false,
+                vectorized: entry.vectorized || false,
+                selective: entry.selective,
+                selectiveLogic: entry.selectiveLogic,
+                sticky: entry.sticky,
+                disable: entry.disable || false,
+                addMemo: entry.addMemo || false,
+                excludeRecursion: entry.excludeRecursion || false,
+                preventRecursion: entry.preventRecursion || false,
+                ignoreBudget: entry.ignoreBudget || false,
+                probability: entry.probability,
+                useProbability: entry.useProbability,
+                group: entry.group,
+                groupOverride: entry.groupOverride,
+                groupWeight: entry.groupWeight,
+                tags: entry.tags || [],
+                strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal')
+              }));
+            debug(SUBSYSTEM.SCENE, `Loaded ${allLorebookEntries.length} total entries from lorebook for snapshot (excluding operation queue)`);
+          }
+        } catch (err) {
+          debug(SUBSYSTEM.SCENE, `Failed to load full lorebook for snapshot: ${err.message}`);
+        }
+      }
+
       return {
         entries: enhancedEntries,
         metadata: {
@@ -948,7 +994,8 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
           totalBeforeFiltering,
           chatLorebookName: chatLorebookName || null,
           suppressOtherLorebooks,
-          entryNames: enhancedEntries.map(e => e.comment || e.uid || 'Unnamed')
+          entryNames: enhancedEntries.map(e => e.comment || e.uid || 'Unnamed'),
+          allEntries: allLorebookEntries // Point-in-time snapshot of ALL entries
         }
       };
     } finally {

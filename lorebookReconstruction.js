@@ -17,13 +17,12 @@ const DEFAULT_ORDER = 100;
 const DEFAULT_PROBABILITY = 100;
 
 /**
- * Extract historical lorebook state by loading the ENTIRE lorebook
+ * Extract historical lorebook state from scene break metadata snapshot
  *
  * @param {number} messageIndex - Message index with scene break
- * @param {string} sourceLorebookName - Name of the source lorebook to reconstruct from
- * @returns {Promise<Object>} Historical state with entries and metadata
+ * @returns {Object} Historical state with entries and metadata
  */
-export async function extractHistoricalLorebookState(messageIndex, sourceLorebookName) {
+export function extractHistoricalLorebookState(messageIndex) {
   const ctx = window.SillyTavern.getContext();
   const chat = ctx.chat;
   const message = chat[messageIndex];
@@ -38,44 +37,32 @@ export async function extractHistoricalLorebookState(messageIndex, sourceLoreboo
     throw new Error(`Message ${messageIndex} does not have a scene break`);
   }
 
-  if (!sourceLorebookName) {
-    throw new Error('No source lorebook name provided - cannot reconstruct point-in-time snapshot');
+  // Get scene recap metadata
+  const metadata = get_data(message, 'scene_recap_metadata');
+  if (!metadata || Object.keys(metadata).length === 0) {
+    throw new Error(`Message ${messageIndex} has no scene recap metadata`);
   }
 
-  debug(SUBSYSTEM.LOREBOOK, `Loading entire lorebook: ${sourceLorebookName}`);
+  // Get current version
+  const currentVersionIndex = get_data(message, 'scene_recap_current_index') ?? 0;
+  const versionMetadata = metadata[currentVersionIndex];
 
-  // Load the ENTIRE lorebook (all entries, not just active ones)
-  const response = await fetch('/api/worldinfo/get', {
-    method: 'POST',
-    headers: getRequestHeaders(),
-    body: JSON.stringify({ name: sourceLorebookName }),
-    cache: 'no-cache'
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to load lorebook: ${sourceLorebookName}`);
+  if (!versionMetadata) {
+    throw new Error(`No metadata found for version ${currentVersionIndex} at message ${messageIndex}`);
   }
 
-  const lorebook = await response.json();
-
-  if (!lorebook.entries || Object.keys(lorebook.entries).length === 0) {
-    throw new Error(`Lorebook ${sourceLorebookName} has no entries`);
+  // Get ALL entries from snapshot (including disabled registries)
+  const allEntries = versionMetadata.allEntries;
+  if (!allEntries || !Array.isArray(allEntries) || allEntries.length === 0) {
+    throw new Error(`Scene break at message ${messageIndex} has no allEntries in metadata snapshot`);
   }
 
-  // Convert entries object to array
-  const allEntries = Object.values(lorebook.entries);
-
-  // Filter out operation queue entry (must be excluded)
-  const contentEntries = allEntries.filter(
-    entry => entry.comment !== '__operation_queue'
+  debug(SUBSYSTEM.LOREBOOK,
+    `Loaded ${allEntries.length} entries from scene break snapshot at message ${messageIndex}`
   );
 
-  if (contentEntries.length === 0) {
-    throw new Error('Lorebook has no content entries (only operation queue)');
-  }
-
   // Sort by UID ascending (creation order)
-  const sortedEntries = [...contentEntries].sort((a, b) => a.uid - b.uid);
+  const sortedEntries = [...allEntries].sort((a, b) => a.uid - b.uid);
 
   // Check if UIDs are sequential starting from 0
   const firstUID = sortedEntries[0].uid;
@@ -95,12 +82,12 @@ export async function extractHistoricalLorebookState(messageIndex, sourceLoreboo
   }
 
   debug(SUBSYSTEM.LOREBOOK,
-    `Extracted ${sortedEntries.length} entries (including registries) from lorebook ${sourceLorebookName}`
+    `Extracted ${sortedEntries.length} entries (including registries) from scene break snapshot`
   );
 
   return {
     entries: sortedEntries,
-    sourceLorebookName,
+    sourceLorebookName: versionMetadata.chatLorebookName || 'Unknown',
     totalEntries: sortedEntries.length,
     sourceMessageIndex: messageIndex,
     hasUIDGaps: hasGaps || firstUID !== 0
@@ -389,20 +376,19 @@ async function createOperationQueueEntry(lorebookName) {
  *
  * @param {number} messageIndex - Message index with scene break
  * @param {string} targetLorebookName - Name for the new lorebook
- * @param {string} sourceLorebookName - Name of the source lorebook to reconstruct from
  * @returns {Promise<Object>} Reconstruction result with metadata
  */
-export async function reconstructPointInTimeLorebook(messageIndex, targetLorebookName, sourceLorebookName) {
+export async function reconstructPointInTimeLorebook(messageIndex, targetLorebookName) {
   try {
     debug(SUBSYSTEM.LOREBOOK,
       `Starting point-in-time lorebook reconstruction for message ${messageIndex}`
     );
     debug(SUBSYSTEM.LOREBOOK,
-      `Source lorebook: ${sourceLorebookName}, Target: ${targetLorebookName}`
+      `Target lorebook: ${targetLorebookName}`
     );
 
-    // Step 1: Extract historical state from source lorebook (entire lorebook, excluding operation queue)
-    const historicalState = await extractHistoricalLorebookState(messageIndex, sourceLorebookName);
+    // Step 1: Extract historical state from scene break metadata snapshot
+    const historicalState = extractHistoricalLorebookState(messageIndex);
 
     // Step 2: Create new lorebook (returns sanitized name)
     const sanitizedLorebookName = await createLorebookForSnapshot(targetLorebookName);

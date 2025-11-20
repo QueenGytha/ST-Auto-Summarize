@@ -17,10 +17,9 @@ const processedMessages = new Set();
  * Create lorebook for checkpoint/branch at the given message
  * @param {number} messageIndex - Message index where checkpoint/branch will be created
  * @param {string} newChatName - The NEW chat name (branch/checkpoint name)
- * @param {string} originalLorebookName - The ORIGINAL chat's lorebook name (to reconstruct from)
  * @returns {Promise<string>} Lorebook name
  */
-export async function createCheckpointLorebook(messageIndex, newChatName, originalLorebookName) {
+export async function createCheckpointLorebook(messageIndex, newChatName) {
   // Check if already processed
   if (processedMessages.has(messageIndex)) {
     debug(SUBSYSTEM.LOREBOOK, `Lorebook already created for message ${messageIndex}, skipping`);
@@ -39,13 +38,12 @@ export async function createCheckpointLorebook(messageIndex, newChatName, origin
   const lorebookName = getUniqueLorebookName(baseName, world_names);
 
   debug(SUBSYSTEM.LOREBOOK, `Creating lorebook for checkpoint/branch: ${lorebookName}`);
-  debug(SUBSYSTEM.LOREBOOK, `Source lorebook: ${originalLorebookName}`);
 
   toast('Creating point-in-time lorebook snapshot...', 'info');
 
   try {
-    // Reconstruct lorebook from original chat's lorebook
-    const result = await reconstructPointInTimeLorebook(messageIndex, lorebookName, originalLorebookName);
+    // Reconstruct lorebook from scene break metadata snapshot
+    const result = await reconstructPointInTimeLorebook(messageIndex, lorebookName);
 
     debug(SUBSYSTEM.LOREBOOK,
       `✓ Lorebook reconstructed: ${result.lorebookName} ` +
