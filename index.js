@@ -532,117 +532,117 @@ export function installWorldInfoActivationLogger() {
     // Track generation type and target message index
     eventSource.on(event_types.GENERATION_STARTED, (genType) => {
       currentGenerationType = genType;
-    const chatLength = ctx.chat?.length || 0;
+      const chatLength = ctx.chat?.length || 0;
 
-    // Calculate target message index based on generation type
-    if (genType === 'swipe') {
-      // Swipe replaces the last message
-      targetMessageIndex = Math.max(0, chatLength - 1);
-    } else if (genType === 'continue') {
-      // Continue appends to the last message
-      targetMessageIndex = Math.max(0, chatLength - 1);
-    } else {
-      // Normal generation or impersonate creates new message
-      targetMessageIndex = chatLength;
-    }
+      // Calculate target message index based on generation type
+      if (genType === 'swipe') {
+        // Swipe replaces the last message
+        targetMessageIndex = Math.max(0, chatLength - 1);
+      } else if (genType === 'continue') {
+        // Continue appends to the last message
+        targetMessageIndex = Math.max(0, chatLength - 1);
+      } else {
+        // Normal generation or impersonate creates new message
+        targetMessageIndex = chatLength;
+      }
 
-    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Generation started: type=${genType}, targetIndex=${targetMessageIndex}`);
-  });
-
-  // Track world info activations
-  eventSource.on(event_types.WORLD_INFO_ACTIVATED, async (entries) => {
-    const chatLength = ctx.chat?.length || 0;
-
-    // Use calculated target index, fallback to last message
-    const messageIndex = targetMessageIndex !== null ? targetMessageIndex : Math.max(0, chatLength - 1);
-
-    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Event fired - Chat length: ${chatLength}, Target message: ${messageIndex}, Type: ${currentGenerationType}`);
-    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] ${entries.length} newly activated entries`);
-
-    // First, decrement sticky counters for ongoing entries
-    decrementStickyCounters();
-
-    // Get still-active sticky/constant entries
-    const stillActive = getStillActiveEntries();
-    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] ${stillActive.length} still-active sticky/constant entries`);
-
-    // Capture rich entry data with all metadata
-    const enhancedEntries = entries.map(entry => {
-      const strategy = getEntryStrategy(entry);
-      return {
-        comment: entry.comment || '(unnamed)',
-        uid: entry.uid,
-        world: entry.world,
-        key: entry.key || [],
-        position: entry.position,
-        depth: entry.depth,
-        order: entry.order,
-        role: entry.role,
-        constant: entry.constant || false,
-        vectorized: entry.vectorized || false,
-        sticky: entry.sticky || 0,
-        strategy: strategy,
-        content: entry.content || ''
-      };
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Generation started: type=${genType}, targetIndex=${targetMessageIndex}`);
     });
 
-    // Update sticky tracking with newly activated entries
-    updateStickyTracking(enhancedEntries, messageIndex);
+    // Track world info activations
+    eventSource.on(event_types.WORLD_INFO_ACTIVATED, async (entries) => {
+      const chatLength = ctx.chat?.length || 0;
 
-    // Merge newly activated + still-active entries
-    // Deduplicate by uid (newly activated entries take precedence)
-    const entryMap = new Map();
+      // Use calculated target index, fallback to last message
+      const messageIndex = targetMessageIndex !== null ? targetMessageIndex : Math.max(0, chatLength - 1);
 
-    // Add still-active entries first
-    for (const entry of stillActive) {
-      entryMap.set(entry.uid, entry);
-    }
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Event fired - Chat length: ${chatLength}, Target message: ${messageIndex}, Type: ${currentGenerationType}`);
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] ${entries.length} newly activated entries`);
 
-    // Add/replace with newly activated entries
-    for (const entry of enhancedEntries) {
-      entryMap.set(entry.uid, entry);
-    }
+      // First, decrement sticky counters for ongoing entries
+      decrementStickyCounters();
 
-    const mergedEntries = Array.from(entryMap.values());
-    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Total active entries for message ${messageIndex}: ${mergedEntries.length} (${enhancedEntries.length} new + ${stillActive.length} still-active)`);
+      // Get still-active sticky/constant entries
+      const stillActive = getStillActiveEntries();
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] ${stillActive.length} still-active sticky/constant entries`);
 
-    // Capture ALL entries from lorebooks for complete snapshot
-    const allLorebookEntries = await getAllLorebookEntries(mergedEntries);
-    const activeUIDs = new Set(mergedEntries.map(e => e.uid));
+      // Capture rich entry data with all metadata
+      const enhancedEntries = entries.map(entry => {
+        const strategy = getEntryStrategy(entry);
+        return {
+          comment: entry.comment || '(unnamed)',
+          uid: entry.uid,
+          world: entry.world,
+          key: entry.key || [],
+          position: entry.position,
+          depth: entry.depth,
+          order: entry.order,
+          role: entry.role,
+          constant: entry.constant || false,
+          vectorized: entry.vectorized || false,
+          sticky: entry.sticky || 0,
+          strategy: strategy,
+          content: entry.content || ''
+        };
+      });
 
-    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Active UIDs set contains ${activeUIDs.size} UIDs: ${Array.from(activeUIDs).join(', ')}`);
-    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] allLorebookEntries contains ${allLorebookEntries.length} total entries`);
+      // Update sticky tracking with newly activated entries
+      updateStickyTracking(enhancedEntries, messageIndex);
 
-    // Parse ALL entries into active/inactive based on activation state
-    const activeEntriesFromAll = [];
-    const inactiveEntries = [];
+      // Merge newly activated + still-active entries
+      // Deduplicate by uid (newly activated entries take precedence)
+      const entryMap = new Map();
 
-    for (const entry of allLorebookEntries) {
-      if (activeUIDs.has(entry.uid)) {
-        activeEntriesFromAll.push(entry);
-        debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Entry "${entry.comment}" (${entry.uid}) classified as ACTIVE`);
-      } else {
-        inactiveEntries.push(entry);
-        debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Entry "${entry.comment}" (${entry.uid}) classified as INACTIVE`);
+      // Add still-active entries first
+      for (const entry of stillActive) {
+        entryMap.set(entry.uid, entry);
       }
-    }
 
-    // Store in memory (use original mergedEntries which has sticky/metadata)
-    activeLorebooksPerMessage.set(messageIndex, mergedEntries);
+      // Add/replace with newly activated entries
+      for (const entry of enhancedEntries) {
+        entryMap.set(entry.uid, entry);
+      }
 
-    // Persist to message.extra
-    persistToMessage(messageIndex, mergedEntries);
-    persistInactiveToMessage(messageIndex, inactiveEntries);
+      const mergedEntries = Array.from(entryMap.values());
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Total active entries for message ${messageIndex}: ${mergedEntries.length} (${enhancedEntries.length} new + ${stillActive.length} still-active)`);
 
-    debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Complete snapshot: ${allLorebookEntries.length} total entries (${activeEntriesFromAll.length} active, ${inactiveEntries.length} inactive)`);
+      // Capture ALL entries from lorebooks for complete snapshot
+      const allLorebookEntries = await getAllLorebookEntries(mergedEntries);
+      const activeUIDs = new Set(mergedEntries.map(e => e.uid));
 
-    // Log entry details for debugging
-    for (const [i, entry] of mergedEntries.entries()) {
-      const stickyInfo = entry.sticky > 0 ? ` (sticky: ${entry.sticky})` : '';
-      const constantInfo = entry.constant ? ' (constant)' : '';
-      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Entry ${i + 1}: ${entry.strategy} - ${entry.comment}${stickyInfo}${constantInfo}`);
-    }
-  });
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Active UIDs set contains ${activeUIDs.size} UIDs: ${Array.from(activeUIDs).join(', ')}`);
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] allLorebookEntries contains ${allLorebookEntries.length} total entries`);
+
+      // Parse ALL entries into active/inactive based on activation state
+      const activeEntriesFromAll = [];
+      const inactiveEntries = [];
+
+      for (const entry of allLorebookEntries) {
+        if (activeUIDs.has(entry.uid)) {
+          activeEntriesFromAll.push(entry);
+          debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Entry "${entry.comment}" (${entry.uid}) classified as ACTIVE`);
+        } else {
+          inactiveEntries.push(entry);
+          debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Entry "${entry.comment}" (${entry.uid}) classified as INACTIVE`);
+        }
+      }
+
+      // Store in memory (use original mergedEntries which has sticky/metadata)
+      activeLorebooksPerMessage.set(messageIndex, mergedEntries);
+
+      // Persist to message.extra
+      persistToMessage(messageIndex, mergedEntries);
+      persistInactiveToMessage(messageIndex, inactiveEntries);
+
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Complete snapshot: ${allLorebookEntries.length} total entries (${activeEntriesFromAll.length} active, ${inactiveEntries.length} inactive)`);
+
+      // Log entry details for debugging
+      for (const [i, entry] of mergedEntries.entries()) {
+        const stickyInfo = entry.sticky > 0 ? ` (sticky: ${entry.sticky})` : '';
+        const constantInfo = entry.constant ? ' (constant)' : '';
+        debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Entry ${i + 1}: ${entry.strategy} - ${entry.comment}${stickyInfo}${constantInfo}`);
+      }
+    });
 
     // Clear sticky state on chat change
     eventSource.on(event_types.CHAT_CHANGED, () => {
