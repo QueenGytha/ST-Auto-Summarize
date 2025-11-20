@@ -188,9 +188,6 @@ function initialize_checkpoint_branch_interceptor() {
       return;
     }
 
-    e.stopImmediatePropagation();
-    e.preventDefault();
-
     const mesElement = target.closest('.mes');
     if (!mesElement) {
       error('Could not find message element for checkpoint/branch button');
@@ -208,12 +205,15 @@ function initialize_checkpoint_branch_interceptor() {
     const check = canCreateCheckpointOrBranch(messageIndex);
 
     if (check.allowed) {
-      toast(`${buttonType} creation is currently disabled (testing conditions)`, 'warning');
-      debug(SUBSYSTEM.UI, `${buttonType} creation blocked (hard disabled for testing): message ${messageIndex}`);
-    } else {
-      toast(`Cannot create ${buttonType}: ${check.reason}`, 'warning');
-      debug(SUBSYSTEM.UI, `${buttonType} creation blocked: ${check.reason} (message ${messageIndex})`);
+      debug(SUBSYSTEM.UI, `${buttonType} creation allowed: all conditions met for message ${messageIndex}`);
+      return;
     }
+
+    e.stopImmediatePropagation();
+    e.preventDefault();
+
+    toast(`Cannot create ${buttonType}: ${check.reason}`, 'warning');
+    debug(SUBSYSTEM.UI, `${buttonType} creation blocked: ${check.reason} (message ${messageIndex})`);
   }, { capture: true });
 
   debug(SUBSYSTEM.UI, 'Checkpoint/branch button interceptor installed');
