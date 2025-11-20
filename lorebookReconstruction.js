@@ -16,12 +16,13 @@ const DEFAULT_DEPTH = 4;
 const DEFAULT_ORDER = 100;
 
 /**
- * Extract historical lorebook state from scene break metadata
+ * Extract historical lorebook state by loading the ENTIRE lorebook
  *
  * @param {number} messageIndex - Message index with scene break
- * @returns {Object} Historical state with entries and metadata
+ * @param {string} sourceLorebookName - Name of the source lorebook to reconstruct from
+ * @returns {Promise<Object>} Historical state with entries and metadata
  */
-export function extractHistoricalLorebookState(messageIndex) {
+export async function extractHistoricalLorebookState(messageIndex, sourceLorebookName) {
   const ctx = window.SillyTavern.getContext();
   const chat = ctx.chat;
   const message = chat[messageIndex];
@@ -36,27 +37,40 @@ export function extractHistoricalLorebookState(messageIndex) {
     throw new Error(`Message ${messageIndex} does not have a scene break`);
   }
 
-  // Get scene recap metadata
-  const metadata = get_data(message, 'scene_recap_metadata');
-  if (!metadata || metadata.length === 0) {
-    throw new Error(`Message ${messageIndex} has no scene recap metadata`);
+  if (!sourceLorebookName) {
+    throw new Error('No source lorebook name provided - cannot reconstruct point-in-time snapshot');
   }
 
-  // Get current version
-  const currentVersionIndex = get_data(message, 'scene_recap_current_index') ?? 0;
-  const versionMetadata = metadata[currentVersionIndex];
+  debug(SUBSYSTEM.LOREBOOK, `Loading entire lorebook: ${sourceLorebookName}`);
 
-  if (!versionMetadata?.entries || versionMetadata.entries.length === 0) {
-    throw new Error(`Scene break at message ${messageIndex} has no lorebook entries in metadata`);
+  // Load the ENTIRE lorebook (all entries, not just active ones)
+  const response = await fetch('/api/worldinfo/get', {
+    method: 'POST',
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name: sourceLorebookName }),
+    cache: 'no-cache'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load lorebook: ${sourceLorebookName}`);
   }
+
+  const lorebook = await response.json();
+
+  if (!lorebook.entries || Object.keys(lorebook.entries).length === 0) {
+    throw new Error(`Lorebook ${sourceLorebookName} has no entries`);
+  }
+
+  // Convert entries object to array
+  const allEntries = Object.values(lorebook.entries);
 
   // Filter out operation queue entry (must be excluded)
-  const contentEntries = versionMetadata.entries.filter(
+  const contentEntries = allEntries.filter(
     entry => entry.comment !== '__operation_queue'
   );
 
   if (contentEntries.length === 0) {
-    throw new Error(`Scene break has no content entries (only operation queue)`);
+    throw new Error('Lorebook has no content entries (only operation queue)');
   }
 
   // Sort by UID ascending (creation order)
@@ -80,12 +94,12 @@ export function extractHistoricalLorebookState(messageIndex) {
   }
 
   debug(SUBSYSTEM.LOREBOOK,
-    `Extracted ${sortedEntries.length} entries from scene break at message ${messageIndex}`
+    `Extracted ${sortedEntries.length} entries (including registries) from lorebook ${sourceLorebookName}`
   );
 
   return {
     entries: sortedEntries,
-    chatLorebookName: versionMetadata.metadata?.chatLorebookName,
+    sourceLorebookName,
     totalEntries: sortedEntries.length,
     sourceMessageIndex: messageIndex,
     hasUIDGaps: hasGaps || firstUID !== 0
@@ -267,39 +281,148 @@ export async function reconstructLorebookEntries(lorebookName, historicalState) 
 }
 
 /**
+ * Create operation queue entry for the new lorebook
+ *
+ * @param {string} lorebookName - Target lorebook name
+ * @returns {Promise<void>}
+ */
+async function createOperationQueueEntry(lorebookName) {
+  debug(SUBSYSTEM.LOREBOOK, `Creating operation queue entry for ${lorebookName}`);
+
+  // Load the lorebook
+  const response = await fetch('/api/worldinfo/get', {
+    method: 'POST',
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name: lorebookName }),
+    cache: 'no-cache'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load lorebook: ${lorebookName}`);
+  }
+
+  const lorebook = await response.json();
+
+  // Create empty queue structure
+  const emptyQueue = {
+    queue: [],
+    current_operation_id: null,
+    paused: false,
+    version: 1
+  };
+
+  // Generate timestamp UID for operation queue
+  const timestampUID = Date.now();
+
+  // Create operation queue entry
+  const queueEntry = {
+    uid: timestampUID,
+    key: [],
+    keysecondary: [],
+    content: JSON.stringify(emptyQueue, null, 2),
+    comment: '__operation_queue',
+    constant: false,
+    disable: true, // Never inject into context
+    excludeRecursion: true, // Never trigger other entries
+    order: 9999, // Low priority
+    position: 0,
+    depth: 4,
+    selectiveLogic: 0,
+    addMemo: false,
+    displayIndex: timestampUID,
+    probability: 100,
+    useProbability: true,
+
+    // SillyTavern required fields
+    enabled: false,
+    vectorized: false,
+    selective: true,
+    role: 0,
+    sticky: null,
+    preventRecursion: false,
+    ignoreBudget: false,
+    matchPersonaDescription: false,
+    matchCharacterDescription: false,
+    matchCharacterPersonality: false,
+    matchCharacterDepthPrompt: false,
+    matchScenario: false,
+    matchCreatorNotes: false,
+    delayUntilRecursion: 0,
+    groupOverride: false,
+    groupWeight: 100,
+    scanDepth: null,
+    caseSensitive: null,
+    matchWholeWords: null,
+    useGroupScoring: null,
+    automationId: '',
+    cooldown: null,
+    delay: null,
+    triggers: [],
+    tags: [],
+    group: ''
+  };
+
+  if (!lorebook.entries) {
+    lorebook.entries = {};
+  }
+  lorebook.entries[timestampUID] = queueEntry;
+
+  // Save lorebook back
+  const saveResponse = await fetch('/api/worldinfo/edit', {
+    method: 'POST',
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name: lorebookName, data: lorebook }),
+    cache: 'no-cache'
+  });
+
+  if (!saveResponse.ok) {
+    throw new Error(`Failed to save operation queue entry to lorebook: ${lorebookName}`);
+  }
+
+  debug(SUBSYSTEM.LOREBOOK, `✓ Created operation queue entry with UID: ${timestampUID}`);
+}
+
+/**
  * Main function: Reconstruct point-in-time lorebook from scene break
  *
  * @param {number} messageIndex - Message index with scene break
  * @param {string} targetLorebookName - Name for the new lorebook
+ * @param {string} sourceLorebookName - Name of the source lorebook to reconstruct from
  * @returns {Promise<Object>} Reconstruction result with metadata
  */
-export async function reconstructPointInTimeLorebook(messageIndex, targetLorebookName) {
+export async function reconstructPointInTimeLorebook(messageIndex, targetLorebookName, sourceLorebookName) {
   try {
     debug(SUBSYSTEM.LOREBOOK,
       `Starting point-in-time lorebook reconstruction for message ${messageIndex}`
     );
+    debug(SUBSYSTEM.LOREBOOK,
+      `Source lorebook: ${sourceLorebookName}, Target: ${targetLorebookName}`
+    );
 
-    // Step 1: Extract historical state from scene break metadata
-    const historicalState = extractHistoricalLorebookState(messageIndex);
+    // Step 1: Extract historical state from source lorebook (entire lorebook, excluding operation queue)
+    const historicalState = await extractHistoricalLorebookState(messageIndex, sourceLorebookName);
 
     // Step 2: Create new lorebook (returns sanitized name)
     const sanitizedLorebookName = await createLorebookForSnapshot(targetLorebookName);
 
-    // Step 3: Reconstruct all entries in UID order using sanitized name
+    // Step 3: Reconstruct all entries in UID order (registries + content)
     await reconstructLorebookEntries(sanitizedLorebookName, historicalState);
+
+    // Step 4: Create operation queue entry with timestamp UID
+    await createOperationQueueEntry(sanitizedLorebookName);
 
     // Return result with sanitized name
     const result = {
       lorebookName: sanitizedLorebookName,
       entriesReconstructed: historicalState.totalEntries,
       sourceMessageIndex: messageIndex,
-      sourceLorebookName: historicalState.chatLorebookName,
+      sourceLorebookName: historicalState.sourceLorebookName,
       hadUIDGaps: historicalState.hasUIDGaps
     };
 
     debug(SUBSYSTEM.LOREBOOK,
       `✓ Point-in-time lorebook reconstruction complete: ${sanitizedLorebookName} ` +
-      `(${result.entriesReconstructed} entries from message ${messageIndex})`
+      `(${result.entriesReconstructed} entries + operation queue from message ${messageIndex})`
     );
 
     return result;

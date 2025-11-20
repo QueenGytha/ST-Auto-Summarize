@@ -213,14 +213,23 @@ function initialize_checkpoint_branch_interceptor() {
       return;
     }
 
-    // Validation passed - block event and create lorebook first
+    // Validation passed - block event and create branch/checkpoint with lorebook
     e.stopImmediatePropagation();
     e.preventDefault();
 
     debug(SUBSYSTEM.UI, `${buttonType} creation allowed: proceeding with ${buttonType} creation`);
 
     try {
-      // Create the checkpoint/branch FIRST to get the new chat name
+      // Get the original chat's lorebook name BEFORE creating branch
+      const originalLorebookName = chat_metadata.world_info;
+
+      if (!originalLorebookName) {
+        throw new Error('No lorebook attached to current chat - cannot create point-in-time snapshot');
+      }
+
+      debug(SUBSYSTEM.UI, `Original chat lorebook: ${originalLorebookName}`);
+
+      // Create the checkpoint/branch (creates file but doesn't switch)
       const { createBranch, createBookmark } = await import('../../../../scripts/bookmarks.js');
       const newChatName = await (buttonType === 'branch' ? createBranch(messageIndex) : createBookmark(messageIndex));
 
@@ -228,11 +237,17 @@ function initialize_checkpoint_branch_interceptor() {
         throw new Error(`Failed to create ${buttonType} - no chat name returned`);
       }
 
-      debug(SUBSYSTEM.UI, `${buttonType} created: ${newChatName}, now creating lorebook`);
+      debug(SUBSYSTEM.UI, `${buttonType} created: ${newChatName}`);
 
-      // Now create lorebook with the NEW chat name
+      // Switch to the new branch/checkpoint
+      const { openCharacterChat } = await import('../../../../script.js');
+      await openCharacterChat(newChatName);
+
+      debug(SUBSYSTEM.UI, `Switched to ${buttonType}: ${newChatName}, now creating lorebook`);
+
+      // Now create lorebook (passing original lorebook name, new chat name)
       const { createCheckpointLorebook } = await import('./checkpointLorebookIntegration.js');
-      const lorebookName = await createCheckpointLorebook(messageIndex, newChatName);
+      const lorebookName = await createCheckpointLorebook(messageIndex, newChatName, originalLorebookName);
 
       debug(SUBSYSTEM.UI, `${buttonType} created successfully with lorebook ${lorebookName}`);
 
