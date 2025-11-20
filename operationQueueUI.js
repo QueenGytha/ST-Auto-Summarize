@@ -510,6 +510,7 @@ function formatOperationType(type) {
     [OperationType.CREATE_LOREBOOK_ENTRY]: 'Lorebook - Create',
     [OperationType.MERGE_LOREBOOK_ENTRY]: 'Lorebook - Merge',
     [OperationType.UPDATE_LOREBOOK_REGISTRY]: 'Lorebook - Registry',
+    [OperationType.UPDATE_LOREBOOK_SNAPSHOT]: 'Update Snapshot',
     [OperationType.POPULATE_REGISTRIES]: 'Lorebook - Bulk Process'
   };
 

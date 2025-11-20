@@ -14,5 +14,6 @@ export const OperationType = {
   MERGE_LOREBOOK_ENTRY: 'merge_lorebook_entry',
   POPULATE_REGISTRIES: 'populate_registries',
   UPDATE_LOREBOOK_REGISTRY: 'update_lorebook_registry',
+  UPDATE_LOREBOOK_SNAPSHOT: 'update_lorebook_snapshot',
   CHAT: 'chat'
 };

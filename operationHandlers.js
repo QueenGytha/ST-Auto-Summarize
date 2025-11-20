@@ -950,8 +950,24 @@ export function registerAllOperationHandlers() {
           queueVersion: operation.queueVersion,
           metadata: combineMetadata
         });
-      } else if (isManual) {
-        debug(SUBSYSTEM.QUEUE, `Skipping auto-combine for manual scene recap at index ${index}`);
+        // Snapshot update will happen in COMBINE_SCENE_WITH_RUNNING handler
+      } else {
+        debug(SUBSYSTEM.QUEUE, `Skipping auto-combine for ${isManual ? 'manual' : 'disabled'} scene recap at index ${index}`);
+
+        // If COMBINE won't run, queue snapshot update directly (depends on lorebook ops)
+        if (result.lorebookOpIds && result.lorebookOpIds.length > 0) {
+          debug(SUBSYSTEM.QUEUE, `Queueing snapshot update for scene at index ${index} (depends on ${result.lorebookOpIds.length} lorebook operations)`);
+          await enqueueOperation(
+            OperationType.UPDATE_LOREBOOK_SNAPSHOT,
+            { messageIndex: index },
+            {
+              priority: 15,
+              dependencies: result.lorebookOpIds,
+              queueVersion: operation.queueVersion,
+              metadata: { scene_index: index }
+            }
+          );
+        }
       }
 
       return { recap: result.recap };
@@ -1063,6 +1079,12 @@ export function registerAllOperationHandlers() {
         max_tokens: result.tokenBreakdown.max_tokens
       });
       await updateOperationMetadata(operation.id, tokenMetadata);
+    }
+
+    // Update lorebook snapshot AFTER all lorebook entries are created
+    // (This operation depends on all lorebook operations, so they're all complete now)
+    if (index !== undefined) {
+      await updateSceneLorebookSnapshot(index);
     }
 
     // Check if this is part of a backwards chain and queue next recap
@@ -1657,7 +1679,6 @@ export function registerAllOperationHandlers() {
   registerOperationHandler(OperationType.UPDATE_LOREBOOK_REGISTRY, async (operation) => {
     const { entryId, entityType, entityId, action } = operation.params;
     const entryData = getEntryData(entryId);
-    const messageIndex = operation.metadata?.message_index;
 
     debug(SUBSYSTEM.QUEUE, `Executing UPDATE_LOREBOOK_REGISTRY for type=${entityType}, id=${entityId}`);
 
@@ -1683,14 +1704,21 @@ export function registerAllOperationHandlers() {
     // Complete pending entry (cleanup)
     completePendingEntry(entryId);
 
-    // Update scene lorebook snapshot if this entry belongs to a scene
-    if (messageIndex !== undefined) {
-      await updateSceneLorebookSnapshot(messageIndex);
-    }
-
     // Show success toast
     const comment = entryData?.comment || 'Entry';
     toast(`✓ Lorebook ${action}: ${comment}`, 'success');
+
+    return { success: true };
+  });
+
+  // UPDATE_LOREBOOK_SNAPSHOT - Update scene lorebook snapshot after all entries are created
+  registerOperationHandler(OperationType.UPDATE_LOREBOOK_SNAPSHOT, async (operation) => {
+    const { messageIndex } = operation.params;
+    debug(SUBSYSTEM.QUEUE, `Executing UPDATE_LOREBOOK_SNAPSHOT for scene ${messageIndex}`);
+
+    if (messageIndex !== undefined) {
+      await updateSceneLorebookSnapshot(messageIndex);
+    }
 
     return { success: true };
   });
