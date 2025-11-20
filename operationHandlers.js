@@ -131,6 +131,16 @@ async function updateSceneLorebookSnapshot(messageIndex) {
       return;
     }
 
+    // Ensure metadata exists for this version (defensive)
+    if (!metadata[currentVersionIndex]) {
+      metadata[currentVersionIndex] = {
+        timestamp: Date.now(),
+        allEntries: [],
+        entries: [],
+        created_entry_uids: []
+      };
+    }
+
     // Get created entry UIDs for this specific recap version
     const createdUids = metadata[currentVersionIndex].created_entry_uids || [];
     const createdUidSet = new Set(createdUids.map(uid => String(uid)));
@@ -1699,17 +1709,27 @@ export function registerAllOperationHandlers() {
       const message = ctx.chat[messageIndex];
       if (message) {
         const metadata = get_data(message, 'scene_recap_metadata') || {};
-        if (metadata[versionIndex]) {
-          if (!metadata[versionIndex].created_entry_uids) {
-            metadata[versionIndex].created_entry_uids = [];
-          }
-          const uid = String(result.entityUid);
-          if (!metadata[versionIndex].created_entry_uids.includes(uid)) {
-            metadata[versionIndex].created_entry_uids.push(uid);
-            set_data(message, 'scene_recap_metadata', metadata);
-            saveChatDebounced();
-            debug(SUBSYSTEM.QUEUE, `Tracked entry UID ${uid} for message ${messageIndex}, version ${versionIndex}`);
-          }
+
+        // Ensure metadata exists for this version (defensive)
+        if (!metadata[versionIndex]) {
+          metadata[versionIndex] = {
+            timestamp: Date.now(),
+            allEntries: [],
+            entries: [],
+            created_entry_uids: []
+          };
+        }
+
+        if (!metadata[versionIndex].created_entry_uids) {
+          metadata[versionIndex].created_entry_uids = [];
+        }
+
+        const uid = String(result.entityUid);
+        if (!metadata[versionIndex].created_entry_uids.includes(uid)) {
+          metadata[versionIndex].created_entry_uids.push(uid);
+          set_data(message, 'scene_recap_metadata', metadata);
+          saveChatDebounced();
+          debug(SUBSYSTEM.QUEUE, `Tracked entry UID ${uid} for message ${messageIndex}, version ${versionIndex}`);
         }
       }
     }

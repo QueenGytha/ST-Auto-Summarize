@@ -369,12 +369,9 @@ function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - an
   const collapseIcon = isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up';
   const collapseTitle = isCollapsed ? 'Expand scene recap' : 'Collapse scene recap';
 
-  // Disable nav/combine buttons if scene has been combined (processed and locked in)
-  // Keep Generate enabled to allow creating new unlocked version
-  const navDisabledAttr = isCombined ? 'disabled' : '';
-  const navDisabledStyle = isCombined ? 'opacity:0.5; cursor:not-allowed;' : '';
-  const combineDisabledAttr = isCombined ? 'disabled' : '';
-  const combineDisabledStyle = isCombined ? 'opacity:0.5; cursor:not-allowed;' : '';
+  // Disable all buttons if scene has been combined (processed and locked in)
+  const disabledAttr = isCombined ? 'disabled' : '';
+  const disabledStyle = isCombined ? 'opacity:0.5; cursor:not-allowed;' : '';
 
   // Show different message depending on why it's locked
   const lockedBadge = isCombined ? (hasLaterCombinedScene ?
@@ -391,12 +388,12 @@ function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - an
             <div style="font-size:0.95em; color:inherit; margin-bottom:0.5em;">
                 Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}${lorebookIcon}${lockedBadge}
             </div>
-            <textarea class="scene-recap-box auto_recap_memory_text" data-testid="scene-recap-box" placeholder="Scene recap..." ${isCombined ? 'disabled' : ''}>${sceneRecap}</textarea>
+            <textarea class="scene-recap-box auto_recap_memory_text" data-testid="scene-recap-box" placeholder="Scene recap..." ${disabledAttr}>${sceneRecap}</textarea>
             <div class="scene-recap-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
-                <button class="scene-rollback-recap menu_button" data-testid="scene-rollback-recap" title="Go to previous recap" style="white-space:nowrap; ${navDisabledStyle}" ${navDisabledAttr}><i class="fa-solid fa-rotate-left"></i> Previous Recap</button>
-                <button class="scene-generate-recap menu_button" data-testid="scene-generate-recap" title="Generate new recap (creates unlocked version)" style="white-space:nowrap;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
-                <button class="scene-rollforward-recap menu_button" data-testid="scene-rollforward-recap" title="Go to next recap" style="white-space:nowrap; ${navDisabledStyle}" ${navDisabledAttr}><i class="fa-solid fa-rotate-right"></i> Next Recap</button>
-                <button class="scene-regenerate-running menu_button" data-testid="scene-regenerate-running" title="Combine this scene with current running recap" style="margin-left:auto; white-space:nowrap; ${combineDisabledStyle}" ${combineDisabledAttr}><i class="fa-solid fa-sync-alt"></i> Combine</button>
+                <button class="scene-rollback-recap menu_button" data-testid="scene-rollback-recap" title="Go to previous recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-rotate-left"></i> Previous Recap</button>
+                <button class="scene-generate-recap menu_button" data-testid="scene-generate-recap" title="Generate new recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
+                <button class="scene-rollforward-recap menu_button" data-testid="scene-rollforward-recap" title="Go to next recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-rotate-right"></i> Next Recap</button>
+                <button class="scene-regenerate-running menu_button" data-testid="scene-regenerate-running" title="Combine this scene with current running recap" style="margin-left:auto; white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-sync-alt"></i> Combine</button>
                 <span style="align-self:center; font-size:0.9em; color:inherit; margin-left:0.5em;">${versions.length > 1 ? `[${currentIdx + 1}/${versions.length}]` : ''}</span>
             </div>
         </div>
