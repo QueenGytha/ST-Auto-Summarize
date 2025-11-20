@@ -39,6 +39,10 @@ const activeStickyEntries = new Map(); // uid -> {entry, stickyCount, messageInd
 let currentGenerationType = null;
 let targetMessageIndex = null;
 
+// Version marker to verify TDZ fix is loaded
+console.warn('[AutoRecap] TDZ fix loaded - variables initialized at module top (v2025-11-20)');
+window.__AutoRecapTDZFixLoaded = true;
+
 // Function for queue to control blocking state
 export function setQueueBlocking(blocking ) {
   debug(SUBSYSTEM.UI, '[ButtonControl] setQueueBlocking:', blocking);

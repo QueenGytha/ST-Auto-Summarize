@@ -1,0 +1,26 @@
+To clear browser cache and load the fixed code:
+
+1. **Hard Refresh the Browser:**
+   - Chrome/Edge: Ctrl + Shift + R  (or Ctrl + F5)
+   - Firefox: Ctrl + Shift + R
+   - This forces the browser to reload all JavaScript files
+
+2. **Clear Browser Cache:**
+   - Open DevTools (F12)
+   - Right-click the refresh button
+   - Select "Empty Cache and Hard Reload"
+
+3. **Restart SillyTavern Server:**
+   - Stop the ST server (Ctrl+C in the terminal)
+   - Start it again
+   - Then hard refresh browser
+
+4. **Nuclear Option - Clear All Cache:**
+   - Browser Settings → Privacy → Clear browsing data
+   - Select "Cached images and files"
+   - Time range: "All time"
+   - Clear data
+   - Restart browser
+
+The fix IS in the code (verified at lines 37-40 of index.js).
+The error you're seeing is the OLD cached version running in your browser.
