@@ -1,3 +1,26 @@
+// CRITICAL: Lorebook state must be declared FIRST, before any imports
+// This ensures it's initialized before circular dependency resolution with eventHandlers.js
+export const lorebookState = {
+  activeLorebooksPerMessage: new Map(),
+  activeStickyEntries: new Map(),
+  currentGenerationType: null,
+  targetMessageIndex: null
+};
+
+// Setter functions for mutable properties
+export function setCurrentGenerationType(value) {
+  lorebookState.currentGenerationType = value;
+}
+
+export function setTargetMessageIndex(value) {
+  lorebookState.targetMessageIndex = value;
+}
+
+// Version marker to verify TDZ fix is loaded
+console.warn('[AutoRecap] TDZ fix loaded - declared before imports (v2025-11-21-top)');
+if (typeof window !== 'undefined') {
+  window.__AutoRecapTDZFixLoaded = true;
+}
 
 // Imports from SillyTavern
 import { getPresetManager } from '../../../preset-manager.js';
@@ -32,28 +55,6 @@ let isQueueBlocking = false;
 
 // Queue indicator button element
 let queueIndicatorButton = null;
-
-// Lorebook tracking state - simple object initialization to avoid TDZ
-// All access must be through lorebookState.property to avoid circular dependency issues
-export const lorebookState = {
-  activeLorebooksPerMessage: new Map(),
-  activeStickyEntries: new Map(),
-  currentGenerationType: null,
-  targetMessageIndex: null
-};
-
-// Setter functions for mutable properties
-export function setCurrentGenerationType(value) {
-  lorebookState.currentGenerationType = value;
-}
-
-export function setTargetMessageIndex(value) {
-  lorebookState.targetMessageIndex = value;
-}
-
-// Version marker to verify TDZ fix is loaded
-console.warn('[AutoRecap] TDZ fix loaded - simple object (v2025-11-21-simple)');
-window.__AutoRecapTDZFixLoaded = true;
 
 // Function for queue to control blocking state
 export function setQueueBlocking(blocking ) {
