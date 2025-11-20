@@ -14,7 +14,6 @@ import {
   selectorsExtension,
   selectorsSillyTavern,
   convertLiteralNewlinesToActual,
-  convertActualNewlinesToLiteral,
   MODULE_NAME,
   count_tokens,
   resolveOperationConfig } from
@@ -509,17 +508,17 @@ saveChatDebounced )
     const updatedVersions = getSceneRecapVersions(message, get_data).slice();
     const idx = getCurrentSceneRecapIndex(message, get_data);
 
-    // Compact JSON back to single line for storage
+    // Get value from textarea (has actual newlines from prettified display)
     let newRecap = $(this).val();
     try {
-      const parsed = JSON.parse(convertActualNewlinesToLiteral(newRecap));
-      // Store as compact JSON if valid object, otherwise with literal newlines
+      // Parse directly (textarea has actual newlines, not literal \n strings)
+      const parsed = JSON.parse(newRecap);
+      // Store as compact JSON (single line, no whitespace)
       newRecap = (parsed && typeof parsed === 'object')
         ? JSON.stringify(parsed)
-        : convertActualNewlinesToLiteral(newRecap);
+        : newRecap;
     } catch {
-      // Not valid JSON, store as-is with literal newlines
-      newRecap = convertActualNewlinesToLiteral(newRecap);
+      // Not valid JSON, store as-is (no modification needed)
     }
 
     updatedVersions[idx] = newRecap;
