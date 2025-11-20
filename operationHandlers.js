@@ -1474,9 +1474,9 @@ export function registerAllOperationHandlers() {
     });
 
     if (dup) {
-      // Pause the queue and throw an explicit error
-      await pauseQueue();
-      throw new Error(`DUPLICATE DETECTED: Cannot create entry for "${targetName}" (${finalType}). Existing entry UID=${dup.uid}, comment="${dup.comment}"`);
+      // Hard guard caught a duplicate that LLM lookup missed - fallback to merge
+      debug(SUBSYSTEM.QUEUE, `Hard guard detected duplicate: "${targetName}" (${finalType}) exists as UID=${dup.uid}. Falling back to merge.`);
+      return { success: false, fallbackToMerge: true, resolvedUid: String(dup.uid) };
     }
 
     const createdEntry = await contextAddLorebookEntry(lorebookName, entryData);
@@ -1511,6 +1511,13 @@ export function registerAllOperationHandlers() {
       }
     } else {
       result = await executeCreateAction(context);
+      if (result.fallbackToMerge) {
+        // Hard guard detected duplicate - retry as merge
+        debug(SUBSYSTEM.QUEUE, `Retrying as merge operation for UID ${result.resolvedUid}`);
+        context.action = 'merge';
+        context.resolvedUid = result.resolvedUid;
+        result = await executeMergeAction(context);
+      }
     }
 
     if (!result.success || !result.entityId || result.entityUid === undefined || result.entityUid === null) {
