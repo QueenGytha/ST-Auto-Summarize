@@ -1009,6 +1009,62 @@ export function registerAllOperationHandlers() {
       }
     }
 
+    // Re-scan and update lorebook entries to reflect final state after processing
+    try {
+      const ctx = getContext();
+      const chat = ctx.chat;
+      const message = chat[index];
+
+      if (message) {
+        const { getActiveLorebooksAtPosition } = await import('./sceneBreak.js');
+        const { entries: updatedEntries, metadata: updatedMetadata } = await getActiveLorebooksAtPosition(index, ctx, get_data, true);
+
+        // Update active entries
+        if (!message.extra) {
+          message.extra = {};
+        }
+        message.extra.activeLorebookEntries = updatedEntries;
+        debug(SUBSYSTEM.QUEUE, `Updated activeLorebookEntries for scene ${index}: ${updatedEntries.length} entries`);
+
+        // Update inactive entries
+        const chatLorebookName = updatedMetadata.chatLorebookName;
+        if (chatLorebookName) {
+          const { loadWorldInfo } = await import('../../../world-info.js');
+          const worldData = await loadWorldInfo(chatLorebookName);
+
+          if (worldData?.entries) {
+            const allEntries = Object.values(worldData.entries);
+            const activeUIDs = new Set(updatedEntries.map(e => e.uid));
+
+            const inactiveEntries = allEntries
+              .filter(entry => !activeUIDs.has(entry.uid))
+              .map(entry => ({
+                comment: entry.comment || '(unnamed)',
+                uid: entry.uid,
+                world: chatLorebookName,
+                key: entry.key || [],
+                position: entry.position,
+                depth: entry.depth,
+                order: entry.order,
+                role: entry.role,
+                constant: entry.constant || false,
+                vectorized: entry.vectorized || false,
+                sticky: entry.sticky || 0,
+                strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal'),
+                content: entry.content || ''
+              }));
+
+            message.extra.inactiveLorebookEntries = inactiveEntries;
+            debug(SUBSYSTEM.QUEUE, `Updated inactiveLorebookEntries for scene ${index}: ${inactiveEntries.length} entries (${allEntries.length} total)`);
+          }
+        }
+
+        saveChatDebounced();
+      }
+    } catch (err) {
+      error(SUBSYSTEM.QUEUE, `Failed to update lorebook entries for scene ${index}:`, err);
+    }
+
     return { recap: result?.recap || result };
   });
 
