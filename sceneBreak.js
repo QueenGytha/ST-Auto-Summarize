@@ -300,7 +300,7 @@ saveChatDebounced )
   return { versions, currentIdx };
 }
 
-// Helper: Find scene boundaries
+// Helper: Find scene boundaries (skips empty bookmark breaks to avoid orphaning messages)
 function findSceneBoundaries(
 chat ,
 index ,
@@ -308,12 +308,19 @@ get_data  // Returns any type - legitimate
 ) {
   let startIdx = 0;
   for (let i = index - 1; i >= 0; i--) {
-    if (
-    get_data(chat[i], SCENE_BREAK_KEY) && (
-    get_data(chat[i], SCENE_BREAK_VISIBLE_KEY) === undefined || get_data(chat[i], SCENE_BREAK_VISIBLE_KEY)))
-    {
-      startIdx = i + 1;
-      break;
+    const isSceneBreak = get_data(chat[i], SCENE_BREAK_KEY);
+    const isVisible = get_data(chat[i], SCENE_BREAK_VISIBLE_KEY);
+
+    if (isSceneBreak && (isVisible === undefined || isVisible)) {
+      // Check if this is a real scene (has recap data) or just a bookmark
+      const hasRecapData = get_data(chat[i], SCENE_RECAP_MEMORY_KEY);
+
+      if (hasRecapData) {
+        // Real scene - use as boundary
+        startIdx = i + 1;
+        break;
+      }
+      // Empty bookmark - skip it and continue searching backwards
     }
   }
 
@@ -325,9 +332,32 @@ get_data  // Returns any type - legitimate
   return { startIdx, sceneMessages };
 }
 
+// Helper: Check if any later scene has been combined (blocks earlier scenes from regenerating)
+function hasLaterCombinedScenes(index, chat, get_data) {
+  for (let i = index + 1; i < chat.length; i++) {
+    const laterMessage = chat[i];
+    if (!get_data(laterMessage, SCENE_BREAK_KEY)) {
+      continue;
+    }
+
+    // Only count real scenes (with recap data), not empty bookmarks
+    const laterRecap = get_data(laterMessage, SCENE_RECAP_MEMORY_KEY);
+    if (!laterRecap) {
+      continue;
+    }
+
+    const laterMetadata = get_data(laterMessage, SCENE_RECAP_METADATA_KEY) || {};
+    const laterCurrentIdx = get_data(laterMessage, 'scene_recap_current_index') ?? 0;
+    if (laterMetadata[laterCurrentIdx]?.combined_at) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Helper: Build scene break HTML element
 function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - any is appropriate
-  const { startIdx, sceneMessages, sceneName, sceneRecap, isVisible, isCollapsed, versions, currentIdx } = sceneData;
+  const { startIdx, sceneMessages, sceneName, sceneRecap, isVisible, isCollapsed, versions, currentIdx, isCombined, hasLaterCombinedScene } = sceneData;
 
   const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-testid="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
   const previewIcon = `<i class="fa-solid fa-eye scene-preview-recap" data-testid="scene-preview-recap" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
@@ -339,6 +369,18 @@ function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - an
   const collapseIcon = isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up';
   const collapseTitle = isCollapsed ? 'Expand scene recap' : 'Collapse scene recap';
 
+  // Disable nav/combine buttons if scene has been combined (processed and locked in)
+  // Keep Generate enabled to allow creating new unlocked version
+  const navDisabledAttr = isCombined ? 'disabled' : '';
+  const navDisabledStyle = isCombined ? 'opacity:0.5; cursor:not-allowed;' : '';
+  const combineDisabledAttr = isCombined ? 'disabled' : '';
+  const combineDisabledStyle = isCombined ? 'opacity:0.5; cursor:not-allowed;' : '';
+
+  // Show different message depending on why it's locked
+  const lockedBadge = isCombined ? (hasLaterCombinedScene ?
+    '<span style="color:#888; font-size:0.85em; margin-left:0.5em;" title="Cannot modify - later scenes already combined">[Locked - Later scenes exist]</span>' :
+    '<span style="color:#888; font-size:0.85em; margin-left:0.5em;" title="Scene already combined">[Locked]</span>') : '';
+
   return $(`
     <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass} ${collapsedClass}" data-testid="scene-break-div" style="margin:0 0 5px 0;" tabindex="0">
         <div class="sceneBreak-header" style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.5em;">
@@ -347,14 +389,14 @@ function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - an
         </div>
         <div class="sceneBreak-content">
             <div style="font-size:0.95em; color:inherit; margin-bottom:0.5em;">
-                Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}${lorebookIcon}
+                Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}${lorebookIcon}${lockedBadge}
             </div>
-            <textarea class="scene-recap-box auto_recap_memory_text" data-testid="scene-recap-box" placeholder="Scene recap...">${sceneRecap}</textarea>
+            <textarea class="scene-recap-box auto_recap_memory_text" data-testid="scene-recap-box" placeholder="Scene recap..." ${isCombined ? 'disabled' : ''}>${sceneRecap}</textarea>
             <div class="scene-recap-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
-                <button class="scene-rollback-recap menu_button" data-testid="scene-rollback-recap" title="Go to previous recap" style="white-space:nowrap;"><i class="fa-solid fa-rotate-left"></i> Previous Recap</button>
-                <button class="scene-generate-recap menu_button" data-testid="scene-generate-recap" title="Generate recap for this scene" style="white-space:nowrap;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
-                <button class="scene-rollforward-recap menu_button" data-testid="scene-rollforward-recap" title="Go to next recap" style="white-space:nowrap;"><i class="fa-solid fa-rotate-right"></i> Next Recap</button>
-                <button class="scene-regenerate-running menu_button" data-testid="scene-regenerate-running" title="Combine this scene with current running recap" style="margin-left:auto; white-space:nowrap;"><i class="fa-solid fa-sync-alt"></i> Combine</button>
+                <button class="scene-rollback-recap menu_button" data-testid="scene-rollback-recap" title="Go to previous recap" style="white-space:nowrap; ${navDisabledStyle}" ${navDisabledAttr}><i class="fa-solid fa-rotate-left"></i> Previous Recap</button>
+                <button class="scene-generate-recap menu_button" data-testid="scene-generate-recap" title="Generate new recap (creates unlocked version)" style="white-space:nowrap;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
+                <button class="scene-rollforward-recap menu_button" data-testid="scene-rollforward-recap" title="Go to next recap" style="white-space:nowrap; ${navDisabledStyle}" ${navDisabledAttr}><i class="fa-solid fa-rotate-right"></i> Next Recap</button>
+                <button class="scene-regenerate-running menu_button" data-testid="scene-regenerate-running" title="Combine this scene with current running recap" style="margin-left:auto; white-space:nowrap; ${combineDisabledStyle}" ${combineDisabledAttr}><i class="fa-solid fa-sync-alt"></i> Combine</button>
                 <span style="align-self:center; font-size:0.9em; color:inherit; margin-left:0.5em;">${versions.length > 1 ? `[${currentIdx + 1}/${versions.length}]` : ''}</span>
             </div>
         </div>
@@ -410,6 +452,12 @@ saveChatDebounced )
   // Find scene boundaries
   const { startIdx, sceneMessages } = findSceneBoundaries(chat, index, get_data);
 
+  // Check if this scene has been combined OR if any later scene has been combined
+  const metadata = get_data(message, SCENE_RECAP_METADATA_KEY) || {};
+  const thisSceneCombined = metadata[currentIdx]?.combined_at !== undefined;
+  const hasLaterCombinedScene = hasLaterCombinedScenes(index, chat, get_data);
+  const isCombined = thisSceneCombined || hasLaterCombinedScene;
+
   // Build scene break element
   const sceneData = {
     startIdx,
@@ -420,6 +468,8 @@ saveChatDebounced )
     isCollapsed,
     versions,
     currentIdx,
+    isCombined,
+    hasLaterCombinedScene,
   };
   const $sceneBreak = buildSceneBreakElement(index, sceneData);
 
@@ -609,9 +659,9 @@ saveChatDebounced )
 
     // Extract and queue lorebook entries from the CURRENT version
     const recapHash = computeRecapHash(currentRecap);
-    const lorebookOpIds = await extractAndQueueLorebookEntries(currentRecap, index);
+    const lorebookOpIds = await extractAndQueueLorebookEntries(currentRecap, index, selectedIdx);
 
-    debug(SUBSYSTEM.SCENE, `Queued ${lorebookOpIds.length} lorebook operations from current recap version`);
+    debug(SUBSYSTEM.SCENE, `Queued ${lorebookOpIds.length} lorebook operations from recap version ${selectedIdx}`);
 
     // Queue combine operation with lorebook ops as dependencies
     const opId = await queueCombineSceneWithRunning(index, {
@@ -1269,7 +1319,9 @@ async function saveSceneRecap(config) {
       ...metadataWithoutSnapshot,
       // Placeholder empty arrays - will be populated by updateSceneLorebookSnapshot()
       allEntries: [],
-      entries: []
+      entries: [],
+      // Track which lorebook entry UIDs were created by this recap version
+      created_entry_uids: []
     };
     set_data(message, SCENE_RECAP_METADATA_KEY, existingMetadata);
     debug(SUBSYSTEM.SCENE, `Stored lorebook metadata for version ${versionIndex} (snapshot pending)`);
@@ -1334,9 +1386,10 @@ async function saveSceneRecap(config) {
   // Extract and queue lorebook entries (skip for manual generation)
   let lorebookOpIds = [];
   if (recap && !manual) {
-    debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] Calling extractAndQueueLorebookEntries for message ${messageIndex}...`);
-    lorebookOpIds = await extractAndQueueLorebookEntries(recap, messageIndex);
-    debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] extractAndQueueLorebookEntries completed for message ${messageIndex}`);
+    const versionIndex = updatedVersions.length - 1;
+    debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] Calling extractAndQueueLorebookEntries for message ${messageIndex}, version ${versionIndex}...`);
+    lorebookOpIds = await extractAndQueueLorebookEntries(recap, messageIndex, versionIndex);
+    debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] extractAndQueueLorebookEntries completed for message ${messageIndex}, version ${versionIndex}`);
   } else if (manual) {
     debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] Skipping lorebook extraction - manual generation`);
   } else {
@@ -1349,9 +1402,11 @@ async function saveSceneRecap(config) {
 // Note: Recap should already be clean JSON from executeSceneRecapGeneration()
 async function extractAndQueueLorebookEntries(
 recap ,
-messageIndex )
+messageIndex ,
+versionIndex
+)
 {
-  debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Starting for message ${messageIndex}`);
+  debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Starting for message ${messageIndex}, version ${versionIndex}`);
   try {
     const recapHash = computeRecapHash(recap);
     debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Recap hash: ${recapHash}`);
@@ -1391,7 +1446,7 @@ messageIndex )
         // Sequential execution required: entries must be queued in order
         debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Calling queueProcessLorebookEntry for: ${entry.name || entry.comment}`);
         // eslint-disable-next-line no-await-in-loop -- Lorebook entries must be queued sequentially to maintain processing order
-        const opId = await queueProcessLorebookEntry(entry, messageIndex, recapHash);
+        const opId = await queueProcessLorebookEntry(entry, messageIndex, recapHash, { metadata: { version_index: versionIndex } });
         if (opId) {
           debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✓ Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);
           lorebookOpIds.push(opId);

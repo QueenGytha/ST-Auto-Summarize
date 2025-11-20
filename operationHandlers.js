@@ -131,9 +131,19 @@ async function updateSceneLorebookSnapshot(messageIndex) {
       return;
     }
 
-    // Get ALL entries (including registries), excluding only operation queue
+    // Get created entry UIDs for this specific recap version
+    const createdUids = metadata[currentVersionIndex].created_entry_uids || [];
+    const createdUidSet = new Set(createdUids.map(uid => String(uid)));
+
+    debug(SUBSYSTEM.QUEUE, `Filtering snapshot to ${createdUids.length} created UIDs for version ${currentVersionIndex}: [${createdUids.join(', ')}]`);
+
+    // Filter entries to ONLY include those created by this recap version
     const allLorebookEntries = Object.values(worldData.entries)
-      .filter(entry => entry && entry.comment !== '__operation_queue')
+      .filter(entry => {
+        if (!entry || entry.comment === '__operation_queue') {return false;}
+        const uid = String(entry.uid);
+        return createdUidSet.has(uid);
+      })
       .map(entry => ({
         comment: entry.comment || '(unnamed)',
         uid: entry.uid,
@@ -164,11 +174,14 @@ async function updateSceneLorebookSnapshot(messageIndex) {
         strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal')
       }));
 
-    // Get ACTIVE entries by re-running lorebook activation check
+    // Get ACTIVE entries by re-running lorebook activation check, then filter to created UIDs
     const { getActiveLorebooksAtPosition } = await import('./sceneBreak.js');
     const lorebookResult = await getActiveLorebooksAtPosition(messageIndex, ctx, get_data, false);
 
-    const activeEntries = lorebookResult?.entries || [];
+    const activeEntries = (lorebookResult?.entries || []).filter(entry => {
+      const uid = String(entry.uid);
+      return createdUidSet.has(uid);
+    });
 
     // Update the versioned metadata with the NEW snapshot (AFTER state)
     metadata[currentVersionIndex].allEntries = allLorebookEntries;
@@ -1081,10 +1094,26 @@ export function registerAllOperationHandlers() {
       await updateOperationMetadata(operation.id, tokenMetadata);
     }
 
-    // Update lorebook snapshot AFTER all lorebook entries are created
-    // (This operation depends on all lorebook operations, so they're all complete now)
+    // Update lorebook snapshot AFTER all lorebook operations complete
+    // Snapshot will only include entries created by this specific recap version
     if (index !== undefined) {
+      const lorebookOpsCount = (operation.dependencies && operation.dependencies.length) || 0;
+      debug(SUBSYSTEM.QUEUE, `Updating lorebook snapshot for scene ${index} (${lorebookOpsCount} lorebook operations completed)`);
       await updateSceneLorebookSnapshot(index);
+
+      // Mark this scene/version as combined (locked in - prevents further modification)
+      const ctx = getContext();
+      const message = ctx.chat[index];
+      if (message) {
+        const metadata = get_data(message, 'scene_recap_metadata') || {};
+        const currentVersionIndex = get_data(message, 'scene_recap_current_index') ?? 0;
+        if (metadata[currentVersionIndex]) {
+          metadata[currentVersionIndex].combined_at = Date.now();
+          set_data(message, 'scene_recap_metadata', metadata);
+          saveChatDebounced();
+          debug(SUBSYSTEM.QUEUE, `Marked scene ${index} version ${currentVersionIndex} as combined (locked)`);
+        }
+      }
     }
 
     // Check if this is part of a backwards chain and queue next recap
@@ -1662,11 +1691,34 @@ export function registerAllOperationHandlers() {
       throw new Error('Failed to create or merge entry');
     }
 
+    // Track created entry UID for this recap version
+    const messageIndex = operation.metadata?.message_index;
+    const versionIndex = operation.metadata?.version_index;
+    if (messageIndex !== undefined && versionIndex !== undefined) {
+      const ctx = getContext();
+      const message = ctx.chat[messageIndex];
+      if (message) {
+        const metadata = get_data(message, 'scene_recap_metadata') || {};
+        if (metadata[versionIndex]) {
+          if (!metadata[versionIndex].created_entry_uids) {
+            metadata[versionIndex].created_entry_uids = [];
+          }
+          const uid = String(result.entityUid);
+          if (!metadata[versionIndex].created_entry_uids.includes(uid)) {
+            metadata[versionIndex].created_entry_uids.push(uid);
+            set_data(message, 'scene_recap_metadata', metadata);
+            saveChatDebounced();
+            debug(SUBSYSTEM.QUEUE, `Tracked entry UID ${uid} for message ${messageIndex}, version ${versionIndex}`);
+          }
+        }
+      }
+    }
+
     // Enqueue registry update
     await enqueueOperation(
       OperationType.UPDATE_LOREBOOK_REGISTRY,
       { entryId: context.entryId, entityType: context.finalType, entityId: result.entityId, action: result.action },
-      { priority: 14, queueVersion: operation.queueVersion, metadata: { entry_comment: context.entryData.comment, message_index: operation.metadata?.message_index } }
+      { priority: 14, queueVersion: operation.queueVersion, metadata: { entry_comment: context.entryData.comment, message_index: operation.metadata?.message_index, version_index: operation.metadata?.version_index } }
     );
 
     return { success: true, entityId: result.entityId, entityUid: result.entityUid, action: result.action };

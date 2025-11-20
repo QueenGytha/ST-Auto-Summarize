@@ -762,12 +762,18 @@ async function reduceMessagesUntilTokenFit(config) {
     });
 
     // ALSO calculate tokens for scene recap generation (which includes lorebooks)
-    // The scene that would be recapped starts from the previous scene break (or chat start) to currentEndIndex
+    // The scene that would be recapped starts from the previous REAL scene break (or chat start) to currentEndIndex
+    // Skip empty bookmarks - only count scenes with recap data
     let sceneRecapStartIndex = 0;
     for (let i = startIndex - 1; i >= 0; i--) {
       if (get_data(chat[i], 'scene_break')) {
-        sceneRecapStartIndex = i + 1;
-        break;
+        // Check if this is a real scene (has recap data) or just a bookmark
+        const hasRecapData = get_data(chat[i], 'scene_recap_memory');
+        if (hasRecapData) {
+          sceneRecapStartIndex = i + 1;
+          break;
+        }
+        // Empty bookmark - skip it and continue searching backwards
       }
     }
 
