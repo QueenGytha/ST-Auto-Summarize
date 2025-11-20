@@ -527,9 +527,11 @@ export function installWorldInfoActivationLogger() {
     return;
   }
 
-  // Track generation type and target message index
-  eventSource.on(event_types.GENERATION_STARTED, (genType) => {
-    currentGenerationType = genType;
+  // Defer event handler registration to next tick to ensure module initialization completes
+  setTimeout(() => {
+    // Track generation type and target message index
+    eventSource.on(event_types.GENERATION_STARTED, (genType) => {
+      currentGenerationType = genType;
     const chatLength = ctx.chat?.length || 0;
 
     // Calculate target message index based on generation type
@@ -642,15 +644,18 @@ export function installWorldInfoActivationLogger() {
     }
   });
 
-  // Clear sticky state on chat change
-  eventSource.on(event_types.CHAT_CHANGED, () => {
-    debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] Chat changed, clearing sticky entry state');
-    activeStickyEntries.clear();
-    currentGenerationType = null;
-    targetMessageIndex = null;
-  });
+    // Clear sticky state on chat change
+    eventSource.on(event_types.CHAT_CHANGED, () => {
+      debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] Chat changed, clearing sticky entry state');
+      activeStickyEntries.clear();
+      currentGenerationType = null;
+      targetMessageIndex = null;
+    });
 
-  debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] ✓ Tracker installed successfully');
+    debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] ✓ Tracker installed successfully (deferred)');
+  }, 0);
+
+  debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] ✓ Tracker registration scheduled');
 }
 
 /**
