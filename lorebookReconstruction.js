@@ -8,6 +8,7 @@
 import { get_data } from './index.js';
 import { debug, error, SUBSYSTEM } from './utils.js';
 import { createNewWorldInfo } from '../../../world-info.js';
+import { getSanitizedFilename } from '../../../../scripts/utils.js';
 
 // Constants for lorebook entry defaults
 const DEFAULT_DEPTH = 4;
@@ -94,18 +95,22 @@ export function extractHistoricalLorebookState(messageIndex) {
  * Create a new lorebook with the given name
  *
  * @param {string} lorebookName - Name for the new lorebook
- * @returns {Promise<string>} The lorebook name
+ * @returns {Promise<string>} The sanitized lorebook name (what it's actually saved as)
  */
 export async function createLorebookForSnapshot(lorebookName) {
   debug(SUBSYSTEM.LOREBOOK, `Creating lorebook: ${lorebookName}`);
+
+  // Get sanitized filename (SillyTavern removes special characters)
+  const sanitizedName = await getSanitizedFilename(lorebookName);
+  debug(SUBSYSTEM.LOREBOOK, `Sanitized lorebook name: ${sanitizedName}`);
 
   const created = await createNewWorldInfo(lorebookName);
   if (!created) {
     throw new Error(`Failed to create lorebook: ${lorebookName}`);
   }
 
-  debug(SUBSYSTEM.LOREBOOK, `✓ Created lorebook: ${lorebookName}`);
-  return lorebookName;
+  debug(SUBSYSTEM.LOREBOOK, `✓ Created lorebook: ${sanitizedName}`);
+  return sanitizedName;
 }
 
 /**
@@ -274,15 +279,15 @@ export async function reconstructPointInTimeLorebook(messageIndex, targetLoreboo
     // Step 1: Extract historical state from scene break metadata
     const historicalState = extractHistoricalLorebookState(messageIndex);
 
-    // Step 2: Create new lorebook
-    await createLorebookForSnapshot(targetLorebookName);
+    // Step 2: Create new lorebook (returns sanitized name)
+    const sanitizedLorebookName = await createLorebookForSnapshot(targetLorebookName);
 
-    // Step 3: Reconstruct all entries in UID order
-    await reconstructLorebookEntries(targetLorebookName, historicalState);
+    // Step 3: Reconstruct all entries in UID order using sanitized name
+    await reconstructLorebookEntries(sanitizedLorebookName, historicalState);
 
-    // Return result
+    // Return result with sanitized name
     const result = {
-      lorebookName: targetLorebookName,
+      lorebookName: sanitizedLorebookName,
       entriesReconstructed: historicalState.totalEntries,
       sourceMessageIndex: messageIndex,
       sourceLorebookName: historicalState.chatLorebookName,
@@ -290,7 +295,7 @@ export async function reconstructPointInTimeLorebook(messageIndex, targetLoreboo
     };
 
     debug(SUBSYSTEM.LOREBOOK,
-      `✓ Point-in-time lorebook reconstruction complete: ${targetLorebookName} ` +
+      `✓ Point-in-time lorebook reconstruction complete: ${sanitizedLorebookName} ` +
       `(${result.entriesReconstructed} entries from message ${messageIndex})`
     );
 
