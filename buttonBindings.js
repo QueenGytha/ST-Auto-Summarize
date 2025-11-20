@@ -221,7 +221,7 @@ function initialize_checkpoint_branch_interceptor() {
 
     try {
       // Create the checkpoint/branch FIRST to get the new chat name
-      const { createBranch, createBookmark } = await import('../../../scripts/bookmarks.js');
+      const { createBranch, createBookmark } = await import('../../../../scripts/bookmarks.js');
       const newChatName = await (buttonType === 'branch' ? createBranch(messageIndex) : createBookmark(messageIndex));
 
       if (!newChatName) {
