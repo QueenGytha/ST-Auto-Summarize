@@ -1,26 +1,28 @@
-// CRITICAL: Lorebook state must be declared FIRST, before any imports
-// This ensures it's initialized before circular dependency resolution with eventHandlers.js
-export const lorebookState = {
+// CRITICAL FIX for circular dependency TDZ:
+// Initialize state on globalThis IMMEDIATELY, before any imports
+// This breaks the TDZ cycle because globalThis lookup happens at runtime, not during module linking
+globalThis.__autorecap_lorebookState = {
   activeLorebooksPerMessage: new Map(),
   activeStickyEntries: new Map(),
   currentGenerationType: null,
   targetMessageIndex: null
 };
 
+// Export accessor that always references globalThis (no TDZ possible)
+export const lorebookState = globalThis.__autorecap_lorebookState;
+
 // Setter functions for mutable properties
 export function setCurrentGenerationType(value) {
-  lorebookState.currentGenerationType = value;
+  globalThis.__autorecap_lorebookState.currentGenerationType = value;
 }
 
 export function setTargetMessageIndex(value) {
-  lorebookState.targetMessageIndex = value;
+  globalThis.__autorecap_lorebookState.targetMessageIndex = value;
 }
 
 // Version marker to verify TDZ fix is loaded
-console.warn('[AutoRecap] TDZ fix loaded - declared before imports (v2025-11-21-top)');
-if (typeof window !== 'undefined') {
-  window.__AutoRecapTDZFixLoaded = true;
-}
+console.warn('[AutoRecap] TDZ fix loaded - globalThis state (v2025-11-21-global)');
+globalThis.__AutoRecapTDZFixLoaded = true;
 
 // Imports from SillyTavern
 import { getPresetManager } from '../../../preset-manager.js';
