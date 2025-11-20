@@ -217,19 +217,22 @@ function initialize_checkpoint_branch_interceptor() {
     e.stopImmediatePropagation();
     e.preventDefault();
 
-    debug(SUBSYSTEM.UI, `${buttonType} creation allowed: creating lorebook for message ${messageIndex}`);
+    debug(SUBSYSTEM.UI, `${buttonType} creation allowed: proceeding with ${buttonType} creation`);
 
     try {
-      // Create lorebook first
-      const { createCheckpointLorebook } = await import('./checkpointLorebookIntegration.js');
-      const lorebookName = await createCheckpointLorebook(messageIndex);
-
-      debug(SUBSYSTEM.UI, `Lorebook created: ${lorebookName}, proceeding with ${buttonType} creation`);
-
-      // Now create the checkpoint/branch by importing and calling the underlying function
+      // Create the checkpoint/branch FIRST to get the new chat name
       const { createBranch, createBookmark } = await import('../../../scripts/bookmarks.js');
+      const newChatName = await (buttonType === 'branch' ? createBranch(messageIndex) : createBookmark(messageIndex));
 
-      await (buttonType === 'branch' ? createBranch(messageIndex) : createBookmark(messageIndex));
+      if (!newChatName) {
+        throw new Error(`Failed to create ${buttonType} - no chat name returned`);
+      }
+
+      debug(SUBSYSTEM.UI, `${buttonType} created: ${newChatName}, now creating lorebook`);
+
+      // Now create lorebook with the NEW chat name
+      const { createCheckpointLorebook } = await import('./checkpointLorebookIntegration.js');
+      const lorebookName = await createCheckpointLorebook(messageIndex, newChatName);
 
       debug(SUBSYSTEM.UI, `${buttonType} created successfully with lorebook ${lorebookName}`);
 
