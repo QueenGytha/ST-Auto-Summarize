@@ -56,6 +56,11 @@ export async function createCheckpointLorebook(messageIndex, newChatName, origin
     chat_metadata.world_info = result.lorebookName;
     await saveMetadata();
 
+    // Clear worldInfoCache so entries load on next generation
+    const { worldInfoCache } = await import('../../../world-info.js');
+    worldInfoCache.delete(result.lorebookName);
+    debug(SUBSYSTEM.LOREBOOK, `Cleared cache for lorebook: ${result.lorebookName}`);
+
     toast(`Lorebook snapshot created: ${result.entriesReconstructed} entries`, 'success');
 
     // Mark as processed
