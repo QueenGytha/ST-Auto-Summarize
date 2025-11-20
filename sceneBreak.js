@@ -1244,47 +1244,6 @@ function getMessageRangeForSceneName(lorebookMetadata) {
   return range;
 }
 
-async function persistInactiveLorebookEntries(message, messageIndex, lorebookMetadata) {
-  const chatLorebookName = lorebookMetadata.chatLorebookName;
-  if (!chatLorebookName) {
-    return;
-  }
-
-  try {
-    const { loadWorldInfo } = await import('../../../world-info.js');
-    const worldData = await loadWorldInfo(chatLorebookName);
-
-    if (!worldData?.entries) {
-      return;
-    }
-
-    const allEntries = Object.values(worldData.entries);
-    const activeUIDs = new Set(lorebookMetadata.entries.map(e => e.uid));
-
-    const inactiveEntries = allEntries
-      .filter(entry => !activeUIDs.has(entry.uid))
-      .map(entry => ({
-        comment: entry.comment || '(unnamed)',
-        uid: entry.uid,
-        world: chatLorebookName,
-        key: entry.key || [],
-        position: entry.position,
-        depth: entry.depth,
-        order: entry.order,
-        role: entry.role,
-        constant: entry.constant || false,
-        vectorized: entry.vectorized || false,
-        sticky: entry.sticky || 0,
-        strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal'),
-        content: entry.content || ''
-      }));
-
-    message.extra.inactiveLorebookEntries = inactiveEntries;
-    debug(SUBSYSTEM.SCENE, `Persisted ${inactiveEntries.length} inactive entries to message ${messageIndex}.extra (${allEntries.length} total in lorebook)`);
-  } catch (err) {
-    debug(SUBSYSTEM.SCENE, `Failed to load inactive entries: ${err.message}`);
-  }
-}
 
 async function saveSceneRecap(config) {
   const { message, recap, get_data, set_data, saveChatDebounced, messageIndex, lorebookMetadata, manual = false } = config;
@@ -1300,24 +1259,25 @@ async function saveSceneRecap(config) {
   if (lorebookMetadata) {
     const existingMetadata = get_data(message, SCENE_RECAP_METADATA_KEY) || {};
     const versionIndex = updatedVersions.length - 1;
+
+    // Store metadata WITHOUT snapshot data (allEntries/entries)
+    // Snapshot will be populated by updateSceneLorebookSnapshot() after lorebook entries are created
+    const { allEntries, entries, entryNames, ...metadataWithoutSnapshot } = lorebookMetadata;
+
     existingMetadata[versionIndex] = {
       timestamp: Date.now(),
-      ...lorebookMetadata
+      ...metadataWithoutSnapshot,
+      // Placeholder empty arrays - will be populated by updateSceneLorebookSnapshot()
+      allEntries: [],
+      entries: []
     };
     set_data(message, SCENE_RECAP_METADATA_KEY, existingMetadata);
-    debug(SUBSYSTEM.SCENE, `Stored lorebook metadata for version ${versionIndex}: ${lorebookMetadata.totalActivatedEntries || 0} entries`);
+    debug(SUBSYSTEM.SCENE, `Stored lorebook metadata for version ${versionIndex} (snapshot pending)`);
 
-    // Persist manually looked-up lorebook entries to message.extra for display
-    if (lorebookMetadata.entries && Array.isArray(lorebookMetadata.entries) && lorebookMetadata.entries.length > 0) {
-      if (!message.extra) {
-        message.extra = {};
-      }
-      message.extra.activeLorebookEntries = lorebookMetadata.entries;
-      debug(SUBSYSTEM.SCENE, `Persisted ${lorebookMetadata.entries.length} manually looked-up entries to message ${messageIndex}.extra`);
-
-      // Load and persist inactive entries
-      await persistInactiveLorebookEntries(message, messageIndex, lorebookMetadata);
-    }
+    // NOTE: We no longer persist to message.extra here because:
+    // 1. It would store BEFORE state (wrong snapshot)
+    // 2. Versioned metadata is now the primary source (message.extra is legacy fallback only)
+    // 3. updateSceneLorebookSnapshot() will populate the correct AFTER state snapshot
   }
 
   saveChatDebounced();
