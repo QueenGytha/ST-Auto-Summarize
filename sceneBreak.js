@@ -31,6 +31,7 @@ import { build as buildSceneMessages } from './macros/scene_messages.js';
 import { build as buildActiveSettingLore } from './macros/active_setting_lore.js';
 import { build as buildPrefill } from './macros/prefill.js';
 import { substitute_params } from './promptUtils.js';
+import { formatSceneRecapForDisplay, compactSceneRecap, parseSceneRecap } from './recapFormatter.js';
 
 import {
   MAX_RECAP_ATTEMPTS,
@@ -388,7 +389,10 @@ saveChatDebounced )
   // Initialize versioned recaps
   const { versions, currentIdx } = initializeSceneRecapVersions(message, get_data, set_data, saveChatDebounced);
   const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
-  const sceneRecap = convertLiteralNewlinesToActual(versions[currentIdx] || '');
+
+  // Format recap for display with line breaks between sections
+  const rawRecap = convertLiteralNewlinesToActual(versions[currentIdx] || '');
+  const sceneRecap = formatSceneRecapForDisplay(rawRecap);
 
   let isCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
   if (isCollapsed === undefined) {
@@ -449,7 +453,12 @@ saveChatDebounced )
     // Update the current version in the versions array
     const updatedVersions = getSceneRecapVersions(message, get_data).slice();
     const idx = getCurrentSceneRecapIndex(message, get_data);
-    const newRecap = convertActualNewlinesToLiteral($(this).val());
+
+    // Convert formatted text back to compact JSON
+    const formattedText = $(this).val();
+    const compactJson = compactSceneRecap(formattedText);
+    const newRecap = convertActualNewlinesToLiteral(compactJson);
+
     updatedVersions[idx] = newRecap;
     setSceneRecapVersions(message, set_data, updatedVersions);
     // Also update the legacy recap field for compatibility
@@ -1254,8 +1263,8 @@ async function saveSceneRecap(config) {
   // If the recap is JSON and contains a scene_name, use it (standardized format)
   debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] Starting auto scene name check for message ${messageIndex}`);
   try {
-    const parsed = JSON.parse(recap);
-    debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] JSON parse succeeded for message ${messageIndex}`);
+    const parsed = parseSceneRecap(recap);
+    debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] Recap parse succeeded for message ${messageIndex}`);
 
     const maybeName = typeof parsed.scene_name === 'string' ? parsed.scene_name : '';
     const existing = get_data(message, SCENE_BREAK_NAME_KEY);
@@ -1324,8 +1333,8 @@ messageIndex )
     const recapHash = computeRecapHash(recap);
     debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Recap hash: ${recapHash}`);
 
-    // Parse JSON (should already be clean from generation)
-    const parsed = JSON.parse(recap);
+    // Parse recap (handles both JSON and formatted text)
+    const parsed = parseSceneRecap(recap);
 
     // Expect canonical 'setting_lore' field only (no legacy compatibility)
     const entriesArray = Array.isArray(parsed.setting_lore) ? parsed.setting_lore : null;
