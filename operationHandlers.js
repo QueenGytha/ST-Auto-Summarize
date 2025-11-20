@@ -1201,6 +1201,7 @@ export function registerAllOperationHandlers() {
           queueVersion: operation.queueVersion,
           metadata: {
             entry_comment: entryData.comment,
+            message_index: operation.metadata?.message_index,
             hasPrefill: Boolean(settings.lorebook_entry_deduplicate_prefill && settings.lorebook_entry_deduplicate_prefill.trim().length > 0),
             includePresetPrompts: settings.lorebook_entry_deduplicate_include_preset_prompts ?? false
           }
@@ -1221,6 +1222,7 @@ export function registerAllOperationHandlers() {
           queueVersion: operation.queueVersion,
           metadata: {
             entry_comment: entryData.comment,
+            message_index: operation.metadata?.message_index,
             hasPrefill: Boolean(settings.merge_prefill && settings.merge_prefill.trim().length > 0),
             includePresetPrompts: settings.merge_include_preset_prompts ?? false
           }
@@ -1237,6 +1239,7 @@ export function registerAllOperationHandlers() {
           queueVersion: operation.queueVersion,
           metadata: {
             entry_comment: entryData.comment,
+            message_index: operation.metadata?.message_index,
             hasPrefill: false,
             includePresetPrompts: false
           }
@@ -1248,9 +1251,31 @@ export function registerAllOperationHandlers() {
     return { success: true, lorebookEntryLookupResult };
   });
 
+  // Helper: Merge duplicate UIDs from LLM and LOOKUP results
+  function mergeDuplicateUidsFromLookup(lorebookEntryDeduplicateResult, lorebookEntryLookupResult) {
+    if (lorebookEntryDeduplicateResult.resolvedUid &&
+        lorebookEntryLookupResult.sameEntityUids &&
+        lorebookEntryLookupResult.sameEntityUids.length > 1) {
+      // LOOKUP identified multiple same entities - ensure ALL are in duplicateUids for consolidation
+      const llmDuplicates = lorebookEntryDeduplicateResult.duplicateUids || [];
+      const lookupDuplicates = lorebookEntryLookupResult.sameEntityUids
+        .filter(uid => String(uid) !== String(lorebookEntryDeduplicateResult.resolvedUid))
+        .map(uid => String(uid));
+
+      // Merge both sources, deduplicate
+      const allDuplicates = [...new Set([...llmDuplicates, ...lookupDuplicates])];
+
+      if (allDuplicates.length !== llmDuplicates.length) {
+        debug(SUBSYSTEM.QUEUE, `Merged duplicates: LLM provided [${llmDuplicates.join(', ')}], LOOKUP identified [${lookupDuplicates.join(', ')}], final: [${allDuplicates.join(', ')}]`);
+      }
+
+      lorebookEntryDeduplicateResult.duplicateUids = allDuplicates;
+    }
+  }
+
   // RESOLVE_LOREBOOK_ENTRY - Second stage (conditional) - get full context for uncertain matches
   // Pipeline state machine: determines next stage based on AI results
-   
+
   registerOperationHandler(OperationType.RESOLVE_LOREBOOK_ENTRY, async (operation) => {
     const { entryId } = operation.params;
     const signal = getAbortSignal(operation);
@@ -1313,24 +1338,7 @@ export function registerAllOperationHandlers() {
 
     // Store lorebook entry deduplicate result
     // Merge duplicateUids from LLM with sameEntityUids from LOOKUP to ensure we consolidate everything
-    if (lorebookEntryDeduplicateResult.resolvedUid &&
-        lorebookEntryLookupResult.sameEntityUids &&
-        lorebookEntryLookupResult.sameEntityUids.length > 1) {
-      // LOOKUP identified multiple same entities - ensure ALL are in duplicateUids for consolidation
-      const llmDuplicates = lorebookEntryDeduplicateResult.duplicateUids || [];
-      const lookupDuplicates = lorebookEntryLookupResult.sameEntityUids
-        .filter(uid => String(uid) !== String(lorebookEntryDeduplicateResult.resolvedUid))
-        .map(uid => String(uid));
-
-      // Merge both sources, deduplicate
-      const allDuplicates = [...new Set([...llmDuplicates, ...lookupDuplicates])];
-
-      if (allDuplicates.length !== llmDuplicates.length) {
-        debug(SUBSYSTEM.QUEUE, `Merged duplicates: LLM provided [${llmDuplicates.join(', ')}], LOOKUP identified [${lookupDuplicates.join(', ')}], final: [${allDuplicates.join(', ')}]`);
-      }
-
-      lorebookEntryDeduplicateResult.duplicateUids = allDuplicates;
-    }
+    mergeDuplicateUidsFromLookup(lorebookEntryDeduplicateResult, lorebookEntryLookupResult);
     setLorebookEntryDeduplicateResult(entryId, lorebookEntryDeduplicateResult);
     markStageInProgress(entryId, 'lorebook_entry_deduplicate_complete');
 
@@ -1347,6 +1355,7 @@ export function registerAllOperationHandlers() {
           queueVersion: operation.queueVersion,
           metadata: {
             entry_comment: entryData.comment,
+            message_index: operation.metadata?.message_index,
             hasPrefill: Boolean(settings.merge_prefill && settings.merge_prefill.trim().length > 0),
             includePresetPrompts: settings.merge_include_preset_prompts ?? false
           }
@@ -1363,6 +1372,7 @@ export function registerAllOperationHandlers() {
           queueVersion: operation.queueVersion,
           metadata: {
             entry_comment: entryData.comment,
+            message_index: operation.metadata?.message_index,
             hasPrefill: false,
             includePresetPrompts: false
           }
