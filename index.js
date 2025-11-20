@@ -33,33 +33,26 @@ let isQueueBlocking = false;
 // Queue indicator button element
 let queueIndicatorButton = null;
 
-// Lorebook tracking state using IIFE to avoid TDZ issues in circular dependencies
-export const lorebookState = (() => ({
+// Lorebook tracking state - simple object initialization to avoid TDZ
+// All access must be through lorebookState.property to avoid circular dependency issues
+export const lorebookState = {
   activeLorebooksPerMessage: new Map(),
   activeStickyEntries: new Map(),
   currentGenerationType: null,
   targetMessageIndex: null
-}))();
+};
 
-// Re-export individual properties for backward compatibility
-export const activeLorebooksPerMessage = lorebookState.activeLorebooksPerMessage;
-export const activeStickyEntries = lorebookState.activeStickyEntries;
-export let currentGenerationType = lorebookState.currentGenerationType;
-export let targetMessageIndex = lorebookState.targetMessageIndex;
-
-// Setters for the let variables that update both the state object and module-level variables
+// Setter functions for mutable properties
 export function setCurrentGenerationType(value) {
   lorebookState.currentGenerationType = value;
-  currentGenerationType = value;
 }
 
 export function setTargetMessageIndex(value) {
   lorebookState.targetMessageIndex = value;
-  targetMessageIndex = value;
 }
 
 // Version marker to verify TDZ fix is loaded
-console.warn('[AutoRecap] TDZ fix loaded - IIFE state wrapper (v2025-11-21-iife)');
+console.warn('[AutoRecap] TDZ fix loaded - simple object (v2025-11-21-simple)');
 window.__AutoRecapTDZFixLoaded = true;
 
 // Function for queue to control blocking state
@@ -327,7 +320,7 @@ export function getActiveLorebooksForMessage(messageIndex) {
   }
 
   // Fall back to in-memory storage
-  return activeLorebooksPerMessage.get(messageIndex) || null;
+  return lorebookState.activeLorebooksPerMessage.get(messageIndex) || null;
 }
 
 /**
@@ -350,10 +343,10 @@ export function getInactiveLorebooksForMessage(messageIndex) {
  * Clear all lorebook tracking data
  */
 export function clearActiveLorebooksData() {
-  activeLorebooksPerMessage.clear();
-  activeStickyEntries.clear();
-  currentGenerationType = null;
-  targetMessageIndex = null;
+  lorebookState.lorebookState.activeLorebooksPerMessage.clear();
+  lorebookState.lorebookState.activeStickyEntries.clear();
+  lorebookState.lorebookState.currentGenerationType = null;
+  lorebookState.lorebookState.targetMessageIndex = null;
 }
 
 /**
@@ -372,7 +365,7 @@ function getEntryStrategy(entry) {
 function decrementStickyCounters() {
   const toRemove = [];
 
-  for (const [uid, stickyData] of activeStickyEntries.entries()) {
+  for (const [uid, stickyData] of lorebookState.activeStickyEntries.entries()) {
     if (stickyData.stickyCount > 0) {
       stickyData.stickyCount--;
       debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Decremented sticky count for ${stickyData.entry.comment}: ${stickyData.stickyCount} remaining`);
@@ -385,9 +378,9 @@ function decrementStickyCounters() {
 
   // Remove expired entries
   for (const uid of toRemove) {
-    const removed = activeStickyEntries.get(uid);
+    const removed = lorebookState.activeStickyEntries.get(uid);
     debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Removed expired sticky entry: ${removed.entry.comment}`);
-    activeStickyEntries.delete(uid);
+    lorebookState.activeStickyEntries.delete(uid);
   }
 }
 
@@ -398,7 +391,7 @@ function decrementStickyCounters() {
 function getStillActiveEntries() {
   const stillActive = [];
 
-  for (const [, stickyData] of activeStickyEntries.entries()) {
+  for (const [, stickyData] of lorebookState.activeStickyEntries.entries()) {
     // Include if: constant OR sticky count > 0
     if (stickyData.entry.constant || stickyData.stickyCount > 0) {
       stillActive.push(stickyData.entry);
@@ -417,7 +410,7 @@ function updateStickyTracking(entries, messageIndex) {
 
     // Track sticky entries
     if (entry.sticky && entry.sticky > 0) {
-      activeStickyEntries.set(entry.uid, {
+      lorebookState.activeStickyEntries.set(entry.uid, {
         entry: entry,
         stickyCount: entry.sticky,
         messageIndex: messageIndex
@@ -427,7 +420,7 @@ function updateStickyTracking(entries, messageIndex) {
 
     // Track constant entries (always active)
     if (strategy === 'constant') {
-      activeStickyEntries.set(entry.uid, {
+      lorebookState.activeStickyEntries.set(entry.uid, {
         entry: entry,
         stickyCount: Infinity, // Never expires
         messageIndex: messageIndex
@@ -567,7 +560,7 @@ export function installWorldInfoActivationLogger() {
         setTargetMessageIndex(chatLength);
       }
 
-      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Generation started: type=${genType}, targetIndex=${targetMessageIndex}`);
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Generation started: type=${genType}, targetIndex=${lorebookState.targetMessageIndex}`);
     });
 
     // Track world info activations
@@ -575,9 +568,9 @@ export function installWorldInfoActivationLogger() {
       const chatLength = ctx.chat?.length || 0;
 
       // Use calculated target index, fallback to last message
-      const messageIndex = targetMessageIndex !== null ? targetMessageIndex : Math.max(0, chatLength - 1);
+      const messageIndex = lorebookState.targetMessageIndex !== null ? lorebookState.targetMessageIndex : Math.max(0, chatLength - 1);
 
-      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Event fired - Chat length: ${chatLength}, Target message: ${messageIndex}, Type: ${currentGenerationType}`);
+      debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] Event fired - Chat length: ${chatLength}, Target message: ${messageIndex}, Type: ${lorebookState.currentGenerationType}`);
       debug(SUBSYSTEM.LOREBOOK, `[worldinfoactive] ${entries.length} newly activated entries`);
 
       // First, decrement sticky counters for ongoing entries
@@ -649,7 +642,7 @@ export function installWorldInfoActivationLogger() {
       }
 
       // Store in memory (use original mergedEntries which has sticky/metadata)
-      activeLorebooksPerMessage.set(messageIndex, mergedEntries);
+      lorebookState.activeLorebooksPerMessage.set(messageIndex, mergedEntries);
 
       // Persist to message.extra
       persistToMessage(messageIndex, mergedEntries);
@@ -668,7 +661,7 @@ export function installWorldInfoActivationLogger() {
     // Clear sticky state on chat change
     eventSource.on(event_types.CHAT_CHANGED, () => {
       debug(SUBSYSTEM.LOREBOOK, '[worldinfoactive] Chat changed, clearing sticky entry state');
-      activeStickyEntries.clear();
+      lorebookState.activeStickyEntries.clear();
       setCurrentGenerationType(null);
       setTargetMessageIndex(null);
     });
