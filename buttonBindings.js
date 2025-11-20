@@ -182,7 +182,7 @@ function initialize_checkpoint_branch_interceptor() {
     return;
   }
 
-  chatContainer.addEventListener('click', (e) => {
+  chatContainer.addEventListener('click', async (e) => {
     const target = e.target.closest('.mes_create_bookmark, .mes_create_branch');
     if (!target) {
       return;
@@ -202,18 +202,41 @@ function initialize_checkpoint_branch_interceptor() {
 
     const buttonType = target.classList.contains('mes_create_bookmark') ? 'checkpoint' : 'branch';
 
+    // Validate checkpoint/branch creation
     const check = canCreateCheckpointOrBranch(messageIndex);
 
-    if (check.allowed) {
-      debug(SUBSYSTEM.UI, `${buttonType} creation allowed: all conditions met for message ${messageIndex}`);
+    if (!check.allowed) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      toast(`Cannot create ${buttonType}: ${check.reason}`, 'warning');
+      debug(SUBSYSTEM.UI, `${buttonType} creation blocked: ${check.reason} (message ${messageIndex})`);
       return;
     }
 
+    // Validation passed - block event and create lorebook first
     e.stopImmediatePropagation();
     e.preventDefault();
 
-    toast(`Cannot create ${buttonType}: ${check.reason}`, 'warning');
-    debug(SUBSYSTEM.UI, `${buttonType} creation blocked: ${check.reason} (message ${messageIndex})`);
+    debug(SUBSYSTEM.UI, `${buttonType} creation allowed: creating lorebook for message ${messageIndex}`);
+
+    try {
+      // Create lorebook first
+      const { createCheckpointLorebook } = await import('./checkpointLorebookIntegration.js');
+      const lorebookName = await createCheckpointLorebook(messageIndex);
+
+      debug(SUBSYSTEM.UI, `Lorebook created: ${lorebookName}, proceeding with ${buttonType} creation`);
+
+      // Now create the checkpoint/branch by importing and calling the underlying function
+      const { createBranch, createBookmark } = await import('../../../scripts/bookmarks.js');
+
+      await (buttonType === 'branch' ? createBranch(messageIndex) : createBookmark(messageIndex));
+
+      debug(SUBSYSTEM.UI, `${buttonType} created successfully with lorebook ${lorebookName}`);
+
+    } catch (err) {
+      error(SUBSYSTEM.UI, `Failed to create ${buttonType} with lorebook:`, err);
+      toast(`Failed to create ${buttonType}: ${err.message}`, 'error');
+    }
   }, { capture: true });
 
   debug(SUBSYSTEM.UI, 'Checkpoint/branch button interceptor installed');
