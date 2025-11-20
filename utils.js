@@ -436,61 +436,170 @@ function normalizeJsonStringValues(jsonString) {
 }
 
 /**
- * Escape literal control characters in JSON string values.
- * LLMs sometimes return JSON with literal newlines/tabs instead of escaped sequences.
- * This function preprocesses the JSON to escape those control characters.
+ * Escape unescaped quotes and control characters in JSON string values.
+ * Handles cases where LLMs include literal quotes in dialogue or other content.
+ * Uses state tracking to distinguish between keys, values, and string content.
  *
- * @param {string} jsonString - JSON string that may contain literal control characters
- * @returns {string} JSON string with control characters properly escaped
+ * @param {string} jsonString - JSON string that may contain unescaped quotes and control characters
+ * @returns {string} JSON string with quotes and control characters properly escaped
  */
 function escapeControlCharactersInJsonStrings(jsonString) {
-
   let result = '';
-  let insideString = false;
-  let escaped = false;
+  let i = 0;
+  const depthStack = [];
 
-  for (let i = 0; i < jsonString.length; i++) {
+  while (i < jsonString.length) {
     const char = jsonString[i];
-    const charCode = jsonString.charCodeAt(i);
 
-    if (escaped) {
+    if (char === '{') {
+      depthStack.push('object');
       result += char;
-      escaped = false;
+      i++;
       continue;
     }
 
-    if (char === '\\') {
+    if (char === '[') {
+      depthStack.push('array');
       result += char;
-      escaped = true;
+      i++;
+      continue;
+    }
+
+    if (char === '}' || char === ']') {
+      depthStack.pop();
+      result += char;
+      i++;
       continue;
     }
 
     if (char === '"') {
-      result += char;
-      insideString = !insideString;
-      continue;
-    }
+      const prevNonWhitespace = findPrevNonWhitespace(jsonString, i - 1);
+      const currentContext = depthStack[depthStack.length - 1];
 
-    if (insideString) {
-      if (charCode === CHAR_CODE_LF) {
-        result += '\\n';
-      } else if (charCode === CHAR_CODE_CR) {
-        result += '\\r';
-      } else if (charCode === CHAR_CODE_TAB) {
-        result += '\\t';
-      } else if (charCode === CHAR_CODE_BACKSPACE) {
-        result += '\\b';
-      } else if (charCode === CHAR_CODE_FORM_FEED) {
-        result += '\\f';
-      } else {
-        result += char;
+      const isAfterColon = prevNonWhitespace === ':';
+      const isAfterOpenBracket = prevNonWhitespace === '[';
+      const isAfterCommaInArray = prevNonWhitespace === ',' && currentContext === 'array';
+
+      const isValueContext = isAfterColon || isAfterOpenBracket || isAfterCommaInArray;
+
+      result += char;
+      i++;
+
+      const stringContent = extractAndEscapeJsonStringValue(jsonString, i, isValueContext);
+      result += stringContent.escaped;
+      i = stringContent.endIndex;
+
+      if (i < jsonString.length && jsonString[i] === '"') {
+        result += '"';
+        i++;
       }
     } else {
       result += char;
+      i++;
     }
   }
 
   return result;
+}
+
+/**
+ * Find previous non-whitespace character.
+ * @param {string} str - String to search
+ * @param {number} startIndex - Index to start searching backwards from
+ * @returns {string} Previous non-whitespace character or empty string
+ */
+function findPrevNonWhitespace(str, startIndex) {
+  for (let i = startIndex; i >= 0; i--) {
+    if (!/\s/.test(str[i])) {
+      return str[i];
+    }
+  }
+  return '';
+}
+
+/**
+ * Extract and escape the content of a JSON string value.
+ * Handles unescaped quotes, control characters, and already-escaped sequences.
+ *
+ * @param {string} jsonString - Full JSON string
+ * @param {number} startIndex - Index where string content starts (after opening quote)
+ * @param {boolean} isValue - Whether this is a value context (not a key)
+ * @returns {{escaped: string, endIndex: number}} Escaped content and index after closing quote
+ */
+function extractAndEscapeJsonStringValue(jsonString, startIndex, isValue) {
+  let escaped = '';
+  let i = startIndex;
+  let consecutiveBackslashes = 0;
+
+  while (i < jsonString.length) {
+    const char = jsonString[i];
+    const charCode = jsonString.charCodeAt(i);
+
+    if (char === '\\') {
+      consecutiveBackslashes++;
+      escaped += char;
+      i++;
+      continue;
+    }
+
+    if (char === '"') {
+      const isEscaped = consecutiveBackslashes % 2 === 1;
+      consecutiveBackslashes = 0;
+
+      if (isEscaped) {
+        escaped += char;
+        i++;
+        continue;
+      }
+
+      const nextNonWhitespace = findNextNonWhitespace(jsonString, i + 1);
+      const nextNonWhitespaceChar = nextNonWhitespace.char;
+      const isStructuralEnd = !nextNonWhitespaceChar || nextNonWhitespaceChar === ',' || nextNonWhitespaceChar === '}' || nextNonWhitespaceChar === ']';
+
+      if (!isValue || isStructuralEnd) {
+        return { escaped, endIndex: i };
+      }
+
+      escaped += '\\' + char;
+      i++;
+      continue;
+    }
+
+    consecutiveBackslashes = 0;
+
+    if (charCode === CHAR_CODE_LF) {
+      escaped += '\\n';
+    } else if (charCode === CHAR_CODE_CR) {
+      escaped += '\\r';
+    } else if (charCode === CHAR_CODE_TAB) {
+      escaped += '\\t';
+    } else if (charCode === CHAR_CODE_BACKSPACE) {
+      escaped += '\\b';
+    } else if (charCode === CHAR_CODE_FORM_FEED) {
+      escaped += '\\f';
+    } else {
+      escaped += char;
+    }
+
+    i++;
+  }
+
+  return { escaped, endIndex: i };
+}
+
+/**
+ * Find next non-whitespace character.
+ * @param {string} str - String to search
+ * @param {number} startIndex - Index to start searching from
+ * @returns {{char: string, index: number}} Next non-whitespace character and its index
+ */
+function findNextNonWhitespace(str, startIndex) {
+  for (let i = startIndex; i < str.length; i++) {
+    if (!/\s/.test(str[i])) {
+      return { char: str[i], index: i };
+    }
+  }
+  return { char: '', index: -1 };
 }
 
 /**
