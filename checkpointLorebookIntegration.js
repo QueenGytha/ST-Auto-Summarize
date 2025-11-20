@@ -33,6 +33,36 @@ export function installCheckpointLorebookHook() {
     return;
   }
 
+  // Helper: Handle checkpoint/branch lorebook reconstruction
+  async function handleCheckpointLorebook(options) {
+    debug(SUBSYSTEM.LOREBOOK,
+      `Checkpoint/branch detected: ${options.chatName} from message ${options.mesId}`
+    );
+
+    // Generate lorebook name using template system
+    const template = extension_settings?.autoLorebooks?.nameTemplate || 'z-AutoLB-{{chat}}';
+    const characterName = ctx.name2 || ctx.characterName || 'Unknown';
+    const baseName = generateLorebookName(template, characterName, options.chatName);
+    const lorebookName = getUniqueLorebookName(baseName, world_names);
+
+    debug(SUBSYSTEM.LOREBOOK, `Generated lorebook name: ${lorebookName} (from template: ${template})`);
+
+    toast('Creating point-in-time lorebook snapshot...', 'info');
+
+    // Block until reconstruction completes - don't create branch/checkpoint if it fails
+    const result = await reconstructPointInTimeLorebook(options.mesId, lorebookName);
+
+    debug(SUBSYSTEM.LOREBOOK,
+      `✓ Lorebook reconstructed: ${result.lorebookName} ` +
+      `(${result.entriesReconstructed} entries from message ${result.sourceMessageIndex})`
+    );
+
+    // Inject lorebook name into checkpoint/branch metadata
+    options.withMetadata.world_info = result.lorebookName;
+
+    toast(`Lorebook snapshot created: ${result.entriesReconstructed} entries`, 'success');
+  }
+
   // Wrap saveChat to intercept checkpoint/branch creation
   ctx.saveChat = async function wrappedSaveChat(options) {
     debug(SUBSYSTEM.LOREBOOK, `saveChat wrapper called with options: ${JSON.stringify({
@@ -47,39 +77,7 @@ export function installCheckpointLorebookHook() {
       const isCheckpointOrBranch = options?.withMetadata?.main_chat !== undefined;
 
       if (isCheckpointOrBranch && options?.chatName && options?.mesId !== undefined) {
-        debug(SUBSYSTEM.LOREBOOK,
-          `Checkpoint/branch detected: ${options.chatName} from message ${options.mesId}`
-        );
-
-        // Generate lorebook name using template system
-        const template = extension_settings?.autoLorebooks?.nameTemplate || 'z-AutoLB-{{chat}}';
-        const characterName = ctx.name2 || ctx.characterName || 'Unknown';
-        const baseName = generateLorebookName(template, characterName, options.chatName);
-        const lorebookName = getUniqueLorebookName(baseName, world_names);
-
-        debug(SUBSYSTEM.LOREBOOK, `Generated lorebook name: ${lorebookName} (from template: ${template})`);
-
-        toast('Creating point-in-time lorebook snapshot...', 'info');
-
-        try {
-          const result = await reconstructPointInTimeLorebook(options.mesId, lorebookName);
-
-          debug(SUBSYSTEM.LOREBOOK,
-            `✓ Lorebook reconstructed: ${result.lorebookName} ` +
-            `(${result.entriesReconstructed} entries from message ${result.sourceMessageIndex})`
-          );
-
-          // Inject lorebook name into checkpoint/branch metadata
-          options.withMetadata.world_info = result.lorebookName;
-
-          toast(`Lorebook snapshot created: ${result.entriesReconstructed} entries`, 'success');
-
-        } catch (err) {
-          error(SUBSYSTEM.LOREBOOK, 'Lorebook reconstruction failed:', err);
-          toast(`Lorebook reconstruction failed: ${err.message}`, 'error');
-          // Don't throw - let checkpoint/branch be created without custom lorebook
-          // User can manually fix the lorebook attachment
-        }
+        await handleCheckpointLorebook(options);
       }
 
       // Call original saveChat with potentially modified metadata
@@ -87,7 +85,15 @@ export function installCheckpointLorebookHook() {
 
     } catch (err) {
       error(SUBSYSTEM.LOREBOOK, 'Error in saveChat wrapper:', err);
-      // Call original on error to ensure checkpoint/branch creation doesn't break
+
+      // If this was a checkpoint/branch creation, throw error to block it
+      const wasCheckpointOrBranch = options?.withMetadata?.main_chat !== undefined;
+      if (wasCheckpointOrBranch) {
+        toast('Checkpoint/branch creation blocked due to lorebook reconstruction failure', 'error');
+        throw err;
+      }
+
+      // For regular saves, continue despite error
       return await originalSaveChat.call(this, options);
     }
   };
