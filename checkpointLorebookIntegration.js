@@ -10,6 +10,7 @@ import { debug, error, toast, SUBSYSTEM, generateLorebookName, getUniqueLorebook
 import { getContext } from './index.js';
 import { extension_settings } from '../../../extensions.js';
 import { world_names } from '../../../world-info.js';
+import * as ScriptModule from '../../../script.js';
 
 let originalSaveChat = null;
 let hookInstalled = false;
@@ -25,11 +26,12 @@ export function installCheckpointLorebookHook() {
 
   const ctx = getContext();
 
-  // Save reference to original saveChat
-  originalSaveChat = ctx.saveChat;
+  // Import and wrap the actual saveChat function from script.js
+  // This is what bookmarks.js calls, NOT ctx.saveChat
+  originalSaveChat = ScriptModule.saveChat;
 
   if (!originalSaveChat) {
-    error(SUBSYSTEM.LOREBOOK, 'Cannot install checkpoint lorebook hook: saveChat not found');
+    error(SUBSYSTEM.LOREBOOK, 'Cannot install checkpoint lorebook hook: saveChat not found in script.js');
     return;
   }
 
@@ -63,9 +65,9 @@ export function installCheckpointLorebookHook() {
     toast(`Lorebook snapshot created: ${result.entriesReconstructed} entries`, 'success');
   }
 
-  // Wrap saveChat to intercept checkpoint/branch creation
+  // Wrap saveChat on the module to intercept all calls (including from bookmarks.js)
   // eslint-disable-next-line complexity -- Wrapper requires conditional logic for checkpoint detection and error handling
-  ctx.saveChat = async function wrappedSaveChat(options) {
+  ScriptModule.saveChat = async function wrappedSaveChat(options) {
     // eslint-disable-next-line no-console -- Diagnostic logging for debugging hook execution
     console.log('[AUTO-RECAP] saveChat WRAPPER CALLED:', JSON.stringify({
       chatName: options?.chatName,
@@ -121,8 +123,7 @@ export function uninstallCheckpointLorebookHook() {
     return;
   }
 
-  const ctx = getContext();
-  ctx.saveChat = originalSaveChat;
+  ScriptModule.saveChat = originalSaveChat;
   originalSaveChat = null;
   hookInstalled = false;
 
