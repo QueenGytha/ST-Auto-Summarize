@@ -284,9 +284,15 @@ async function initializeExtension() {
   initialize_checkpoint_branch_interceptor();
 
   // Install checkpoint/branch lorebook reconstruction hook
+  // eslint-disable-next-line no-console -- Diagnostic logging for hook installation
+  console.log('[AUTO-RECAP] ========== INSTALLING CHECKPOINT HOOK ==========');
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Installing checkpoint lorebook hook...');
   const { installCheckpointLorebookHook } = await import('./checkpointLorebookIntegration.js');
+  // eslint-disable-next-line no-console -- Diagnostic logging for hook installation
+  console.log('[AUTO-RECAP] Import successful, calling install function...');
   installCheckpointLorebookHook();
+  // eslint-disable-next-line no-console -- Diagnostic logging for hook installation
+  console.log('[AUTO-RECAP] ========== CHECKPOINT HOOK INSTALLED ==========');
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checkpoint lorebook hook installed');
 
   initialize_slash_commands();

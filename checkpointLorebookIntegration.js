@@ -64,7 +64,16 @@ export function installCheckpointLorebookHook() {
   }
 
   // Wrap saveChat to intercept checkpoint/branch creation
+  // eslint-disable-next-line complexity -- Wrapper requires conditional logic for checkpoint detection and error handling
   ctx.saveChat = async function wrappedSaveChat(options) {
+    // eslint-disable-next-line no-console -- Diagnostic logging for debugging hook execution
+    console.log('[AUTO-RECAP] saveChat WRAPPER CALLED:', JSON.stringify({
+      chatName: options?.chatName,
+      mesId: options?.mesId,
+      hasWithMetadata: !!options?.withMetadata,
+      hasMainChat: options?.withMetadata?.main_chat !== undefined
+    }));
+
     debug(SUBSYSTEM.LOREBOOK, `saveChat wrapper called with options: ${JSON.stringify({
       chatName: options?.chatName,
       mesId: options?.mesId,
@@ -77,6 +86,8 @@ export function installCheckpointLorebookHook() {
       const isCheckpointOrBranch = options?.withMetadata?.main_chat !== undefined;
 
       if (isCheckpointOrBranch && options?.chatName && options?.mesId !== undefined) {
+        // eslint-disable-next-line no-console -- Diagnostic logging for debugging checkpoint detection
+        console.log('[AUTO-RECAP] CHECKPOINT/BRANCH DETECTED - starting reconstruction');
         await handleCheckpointLorebook(options);
       }
 
