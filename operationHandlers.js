@@ -1634,7 +1634,7 @@ export function registerAllOperationHandlers() {
     await enqueueOperation(
       OperationType.UPDATE_LOREBOOK_REGISTRY,
       { entryId: context.entryId, entityType: context.finalType, entityId: result.entityId, action: result.action },
-      { priority: 14, queueVersion: operation.queueVersion, metadata: { entry_comment: context.entryData.comment } }
+      { priority: 14, queueVersion: operation.queueVersion, metadata: { entry_comment: context.entryData.comment, message_index: operation.metadata?.message_index } }
     );
 
     return { success: true, entityId: result.entityId, entityUid: result.entityUid, action: result.action };
@@ -1647,7 +1647,7 @@ export function registerAllOperationHandlers() {
   registerOperationHandler(OperationType.UPDATE_LOREBOOK_REGISTRY, async (operation) => {
     const { entryId, entityType, entityId, action } = operation.params;
     const entryData = getEntryData(entryId);
-    const messageIndex = entryData?.messageIndex;
+    const messageIndex = operation.metadata?.message_index;
 
     debug(SUBSYSTEM.QUEUE, `Executing UPDATE_LOREBOOK_REGISTRY for type=${entityType}, id=${entityId}`);
 
