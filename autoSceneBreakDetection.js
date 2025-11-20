@@ -677,7 +677,7 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
   return tokens;
 }
 
-// eslint-disable-next-line sonarjs/cognitive-complexity -- Complex reduction algorithm with multiple phases and state management
+// eslint-disable-next-line sonarjs/cognitive-complexity, complexity -- Complex reduction algorithm with three-phase token fitting (coarse → medium → fine)
 async function reduceMessagesUntilTokenFit(config) {
   const { ctx, chat, startIndex, endIndex, offset, checkWhich, filteredIndices, maxEligibleIndex, preset, promptTemplate, minimumSceneLength, prefill, forceSelection = false, includePresetPrompts = false, profile, effectiveProfile, operationId } = config;
 
@@ -691,8 +691,9 @@ async function reduceMessagesUntilTokenFit(config) {
 
   const maxAllowedTokens = await calculateAvailableContext(preset, effectiveProfile);
 
-  let reductionPhase = 'coarse';
-  let lastReduction = 0;
+  let reductionPhase = 'coarse';  // 'coarse', 'medium', or 'fine'
+  let lastCoarseReduction = 0;    // Track coarse step reductions
+  let lastMediumReduction = 0;    // Track medium step reductions
 
   // Helper to update operation metadata when range changes
   const updateOperationRange = async (newEndIndex, phase) => {
@@ -781,15 +782,25 @@ async function reduceMessagesUntilTokenFit(config) {
     }
 
     if (maxAllowedTokens === null || tokenCount <= maxAllowedTokens) {
-      if (reductionPhase === 'coarse' && lastReduction > 0) {
-        // We reduced and now we're under - undo the last halving and switch to fine-tuning
-        const targetIndex = currentEndIndex + lastReduction;
+      if (reductionPhase === 'coarse' && lastCoarseReduction > 0) {
+        // We reduced and now we're under - undo the last halving and switch to medium phase
+        const targetIndex = currentEndIndex + lastCoarseReduction;
+        const validCutoff = findValidCutoffIndex(chat, targetIndex, checkWhich, startIndex);
+        currentEndIndex = validCutoff;
+        reductionPhase = 'medium';
+        debug(SUBSYSTEM.OPERATIONS, `Under limit after coarse reduction - undoing last halving: adding back ${lastCoarseReduction} messages to index ${currentEndIndex}, switching to medium phase`);
+        // eslint-disable-next-line no-await-in-loop -- Update operation metadata after backtrack
+        await updateOperationRange(currentEndIndex, 'backtrack_coarse');
+        // Continue loop to recalculate with backtracked range
+      } else if (reductionPhase === 'medium' && lastMediumReduction > 0) {
+        // We reduced in medium phase and now we're under - undo the last quarter reduction and switch to fine-tuning
+        const targetIndex = currentEndIndex + lastMediumReduction;
         const validCutoff = findValidCutoffIndex(chat, targetIndex, checkWhich, startIndex);
         currentEndIndex = validCutoff;
         reductionPhase = 'fine';
-        debug(SUBSYSTEM.OPERATIONS, `Under limit after coarse reduction - undoing last halving: adding back ${lastReduction} messages to index ${currentEndIndex}, switching to fine-tuning`);
+        debug(SUBSYSTEM.OPERATIONS, `Under limit after medium reduction - undoing last quarter reduction: adding back ${lastMediumReduction} messages to index ${currentEndIndex}, switching to fine-tuning`);
         // eslint-disable-next-line no-await-in-loop -- Update operation metadata after backtrack
-        await updateOperationRange(currentEndIndex, 'backtrack');
+        await updateOperationRange(currentEndIndex, 'backtrack_medium');
         // Continue loop to recalculate with backtracked range
       } else {
         // Fine phase or first iteration (no reduction yet) - under limit, send it
@@ -812,6 +823,8 @@ async function reduceMessagesUntilTokenFit(config) {
 
         debug(SUBSYSTEM.OPERATIONS, `API rejected request (context exceeded), continuing reduction from ${currentEndIndex}`);
         reductionPhase = 'coarse';
+        lastCoarseReduction = 0;
+        lastMediumReduction = 0;
       }
     } else {
       const largerPromptType = sceneRecapTokens > sceneBreakTokens ? 'scene recap (with lorebooks)' : 'scene break detection';
@@ -821,11 +834,22 @@ async function reduceMessagesUntilTokenFit(config) {
         const messageRange = currentEndIndex - startIndex;
         const halfwayPoint = startIndex + Math.floor(messageRange / 2);
         const validCutoff = findValidCutoffIndex(chat, halfwayPoint, checkWhich, startIndex);
-        lastReduction = currentEndIndex - validCutoff;
+        lastCoarseReduction = currentEndIndex - validCutoff;
         currentEndIndex = validCutoff;
-        debug(SUBSYSTEM.OPERATIONS, `Coarse reduction: halved range by ${lastReduction} messages to index ${currentEndIndex}`);
+        debug(SUBSYSTEM.OPERATIONS, `Coarse reduction: halved range by ${lastCoarseReduction} messages to index ${currentEndIndex}`);
         // eslint-disable-next-line no-await-in-loop -- Update operation metadata after coarse reduction
         await updateOperationRange(currentEndIndex, 'coarse');
+      } else if (reductionPhase === 'medium') {
+        // Medium phase: reduce by 1/4 of remaining range (keep 75% of range)
+        const messageRange = currentEndIndex - startIndex;
+        const THREE_QUARTERS = 0.75;
+        const threeQuarterPoint = startIndex + Math.floor(messageRange * THREE_QUARTERS);
+        const validCutoff = findValidCutoffIndex(chat, threeQuarterPoint, checkWhich, startIndex);
+        lastMediumReduction = currentEndIndex - validCutoff;
+        currentEndIndex = validCutoff;
+        debug(SUBSYSTEM.OPERATIONS, `Medium reduction: quartered range by ${lastMediumReduction} messages to index ${currentEndIndex}`);
+        // eslint-disable-next-line no-await-in-loop -- Update operation metadata after medium reduction
+        await updateOperationRange(currentEndIndex, 'medium');
       } else {
         // Fine phase: reduce by 1 or 2 messages depending on checkWhich setting
         const reductionAmount = calculateReductionAmount(checkWhich, chat, currentEndIndex);
