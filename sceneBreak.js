@@ -269,8 +269,8 @@ saveChatDebounced )
 {
   log(SUBSYSTEM.SCENE, "Generate button clicked for scene at index", index);
 
-  // Use the queue-enabled generateSceneRecap function
-  await generateSceneRecap({ index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue: false });
+  // Use the queue-enabled generateSceneRecap function with manual flag
+  await generateSceneRecap({ index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue: false, manual: true });
 }
 
 // Helper: Initialize versioned recaps for backward compatibility
@@ -362,7 +362,7 @@ function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - an
     `);
 }
 
-/* eslint-disable max-params -- UI rendering: 6 ST functions required */
+/* eslint-disable max-params, max-lines-per-function -- UI rendering: 6 ST functions required, complex UI setup with many event handlers */
 export function renderSceneBreak(
 index ,
 get_message_div , // Returns jQuery object - any is appropriate
@@ -568,20 +568,39 @@ saveChatDebounced )
   // --- Regenerate running recap from this scene onwards ---
   $sceneBreak.find(selectorsExtension.sceneBreak.regenerateRunning).off('click').on('click', async function (e) {
     e.stopPropagation();
-    const loadedSceneRecap = get_data(message, SCENE_RECAP_MEMORY_KEY);
-    if (!loadedSceneRecap) {
+
+    // Get the CURRENTLY SELECTED recap version
+    const currentVersions = getSceneRecapVersions(message, get_data);
+    const selectedIdx = getCurrentSceneRecapIndex(message, get_data);
+    const currentRecap = currentVersions[selectedIdx];
+
+    if (!currentRecap) {
       alert('This scene has no recap yet. Generate a scene recap first.');
       return;
     }
 
-    log(SUBSYSTEM.SCENE, "Combine scene with running recap button clicked for scene at index", index);
+    log(SUBSYSTEM.SCENE, "Combine button clicked for scene at index", index);
+    log(SUBSYSTEM.SCENE, `Using recap version ${selectedIdx + 1}/${currentVersions.length}`);
 
-    // Queue the operation - this will lock the UI and process through the queue
-    const opId = await queueCombineSceneWithRunning(index);
+    // Extract and queue lorebook entries from the CURRENT version
+    const recapHash = computeRecapHash(currentRecap);
+    const lorebookOpIds = await extractAndQueueLorebookEntries(currentRecap, index);
+
+    debug(SUBSYSTEM.SCENE, `Queued ${lorebookOpIds.length} lorebook operations from current recap version`);
+
+    // Queue combine operation with lorebook ops as dependencies
+    const opId = await queueCombineSceneWithRunning(index, {
+      dependencies: lorebookOpIds,
+      metadata: {
+        manual_combine: true,
+        recap_version: selectedIdx,
+        recap_hash: recapHash
+      }
+    });
 
     if (opId) {
       log(SUBSYSTEM.SCENE, "Scene combine operation queued with ID:", opId);
-      toast('Scene combine operation queued', 'success');
+      toast(`Queued combine operation (${lorebookOpIds.length} lorebook entries)`, 'success');
     } else {
       error(SUBSYSTEM.SCENE, "Failed to queue scene combine operation");
       alert('Failed to queue operation. Check console for details.');
@@ -608,7 +627,7 @@ saveChatDebounced )
     $(this).removeClass(SCENE_BREAK_SELECTED_CLASS);
   });
 }
-/* eslint-enable max-params -- Re-enable rule disabled for jQuery UI binding function */
+/* eslint-enable max-params, max-lines-per-function -- Re-enable rules disabled for jQuery UI binding function */
 
 export function collectSceneContent(
 startIdx ,
@@ -658,15 +677,17 @@ saveChatDebounced )
 
 
 // Helper: Try to queue scene recap generation
-async function tryQueueSceneRecap(index ) {
-  debug(SUBSYSTEM.SCENE, `[Queue] Queueing scene recap generation for index ${index}`);
+async function tryQueueSceneRecap(index , manual = false) {
+  debug(SUBSYSTEM.SCENE, `[Queue] Queueing scene recap generation for index ${index} (manual: ${manual})`);
 
   // Ensure chat lorebook exists and populate registries BEFORE queueing scene recap
   const { ensureChatLorebook } = await import('./lorebookManager.js');
   await ensureChatLorebook();
 
   const { queueGenerateSceneRecap } = await import('./queueIntegration.js');
-  const operationId = await queueGenerateSceneRecap(index);
+  const operationId = await queueGenerateSceneRecap(index, {
+    metadata: { manual }
+  });
 
   if (operationId) {
     log(SUBSYSTEM.SCENE, `[Queue] Queued scene recap generation for index ${index}:`, operationId);
@@ -1194,7 +1215,7 @@ async function persistInactiveLorebookEntries(message, messageIndex, lorebookMet
 }
 
 async function saveSceneRecap(config) {
-  const { message, recap, get_data, set_data, saveChatDebounced, messageIndex, lorebookMetadata } = config;
+  const { message, recap, get_data, set_data, saveChatDebounced, messageIndex, lorebookMetadata, manual = false } = config;
   const updatedVersions = getSceneRecapVersions(message, get_data).slice();
   updatedVersions.push(recap);
   setSceneRecapVersions(message, set_data, updatedVersions);
@@ -1278,12 +1299,14 @@ async function saveSceneRecap(config) {
     debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] JSON parse failed for message ${messageIndex}:`, err.message);
   }
 
-  // Extract and queue lorebook entries
+  // Extract and queue lorebook entries (skip for manual generation)
   let lorebookOpIds = [];
-  if (recap) {
+  if (recap && !manual) {
     debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] Calling extractAndQueueLorebookEntries for message ${messageIndex}...`);
     lorebookOpIds = await extractAndQueueLorebookEntries(recap, messageIndex);
     debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] extractAndQueueLorebookEntries completed for message ${messageIndex}`);
+  } else if (manual) {
+    debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] Skipping lorebook extraction - manual generation`);
   } else {
     debug(SUBSYSTEM.SCENE, `[SAVE SCENE RECAP] Skipping lorebook extraction - no recap available`);
   }
@@ -1358,14 +1381,14 @@ messageIndex )
 
 
 export async function generateSceneRecap(config) {
-  const { index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue = false, signal = null } = config;
+  const { index, get_message_div, getContext, get_data, set_data, saveChatDebounced, skipQueue = false, signal = null, manual = false } = config;
   const ctx = getContext();
   const chat = ctx.chat;
   const message = chat[index];
 
   // Try queueing if not bypassed
   if (!skipQueue) {
-    const enqueued = await tryQueueSceneRecap(index);
+    const enqueued = await tryQueueSceneRecap(index, manual);
     if (enqueued) {
       return null;
     }
@@ -1376,7 +1399,7 @@ export async function generateSceneRecap(config) {
   }
 
   // Direct execution path is only used by queue handler (skipQueue=true)
-  debug(SUBSYSTEM.SCENE, `Executing scene recap generation directly for index ${index} (skipQueue=true)`);
+  debug(SUBSYSTEM.SCENE, `Executing scene recap generation directly for index ${index} (skipQueue=true, manual=${manual})`);
 
   // Get scene range and collect objects
   const sceneCount = Number(get_settings('scene_recap_history_count')) || 1;
@@ -1411,7 +1434,7 @@ export async function generateSceneRecap(config) {
   }
 
   // Save and render (returns lorebook operation IDs, now includes lorebook metadata)
-  const lorebookOpIds = await saveSceneRecap({ message, recap, get_data, set_data, saveChatDebounced, messageIndex: index, lorebookMetadata });
+  const lorebookOpIds = await saveSceneRecap({ message, recap, get_data, set_data, saveChatDebounced, messageIndex: index, lorebookMetadata, manual });
 
   // Mark all messages in this scene as checked to prevent auto-detection from splitting the scene
   const markedCount = setCheckedFlagsInRange(startIdx, endIdx);

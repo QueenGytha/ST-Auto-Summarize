@@ -867,6 +867,7 @@ export function registerAllOperationHandlers() {
   }
 
   // Generate scene recap
+  // eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Scene recap handler requires conditional logic for manual vs automatic flow, error handling, and backwards chaining
   registerOperationHandler(OperationType.GENERATE_SCENE_RECAP, async (operation) => {
     const { index } = operation.params;
     const signal = getAbortSignal(operation);
@@ -889,7 +890,8 @@ export function registerAllOperationHandlers() {
         set_data,
         saveChatDebounced,
         skipQueue: true, // skipQueue = true when called from queue handler
-        signal // Pass abort signal to check before side effects
+        signal, // Pass abort signal to check before side effects
+        manual: operation.metadata?.manual === true // Pass manual flag from metadata
       });
 
       // Check if operation was cancelled during execution
@@ -909,8 +911,10 @@ export function registerAllOperationHandlers() {
 
       // Scene naming is now embedded in the scene recap output (scene_name field)
 
-      // Queue running recap combine as a separate operation, depending on lorebook operations
-      if (get_settings('running_scene_recap_auto_generate')) {
+      // Only auto-queue if NOT manual AND auto-generate is enabled
+      const isManual = operation.metadata?.manual === true;
+
+      if (!isManual && get_settings('running_scene_recap_auto_generate')) {
         debug(SUBSYSTEM.QUEUE, `Queueing COMBINE_SCENE_WITH_RUNNING for scene at index ${index} (depends on ${result.lorebookOpIds.length} lorebook operations)`);
 
         // Pass through backwards chain metadata if present
@@ -926,6 +930,8 @@ export function registerAllOperationHandlers() {
           queueVersion: operation.queueVersion,
           metadata: combineMetadata
         });
+      } else if (isManual) {
+        debug(SUBSYSTEM.QUEUE, `Skipping auto-combine for manual scene recap at index ${index}`);
       }
 
       return { recap: result.recap };
