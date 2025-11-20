@@ -166,7 +166,7 @@ async function updateSceneLorebookSnapshot(messageIndex) {
 
     // Get ACTIVE entries by re-running lorebook activation check
     const { getActiveLorebooksAtPosition } = await import('./sceneBreak.js');
-    const lorebookResult = await getActiveLorebooksAtPosition(messageIndex, ctx, get_data, true);
+    const lorebookResult = await getActiveLorebooksAtPosition(messageIndex, ctx, get_data, false);
 
     const activeEntries = lorebookResult?.entries || [];
 
