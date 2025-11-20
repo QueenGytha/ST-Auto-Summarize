@@ -25,6 +25,7 @@ import {
   CHAR_CODE_FORM_FEED,
   JSON_FIELD_START_ADVANCE
 } from './constants.js';
+import { jsonrepair } from './vendor/index.js';
 
 // Consistent prefix for ALL extension logs - easily searchable
 const LOG_PREFIX = '[AutoRecap]';
@@ -436,175 +437,8 @@ function normalizeJsonStringValues(jsonString) {
 }
 
 /**
- * Escape unescaped quotes and control characters in JSON string values.
- * Handles cases where LLMs include literal quotes in dialogue or other content.
- * Uses state tracking to distinguish between keys, values, and string content.
- *
- * @param {string} jsonString - JSON string that may contain unescaped quotes and control characters
- * @returns {string} JSON string with quotes and control characters properly escaped
- */
-function escapeControlCharactersInJsonStrings(jsonString) {
-  let result = '';
-  let i = 0;
-  const depthStack = [];
-
-  while (i < jsonString.length) {
-    const char = jsonString[i];
-
-    if (char === '{') {
-      depthStack.push('object');
-      result += char;
-      i++;
-      continue;
-    }
-
-    if (char === '[') {
-      depthStack.push('array');
-      result += char;
-      i++;
-      continue;
-    }
-
-    if (char === '}' || char === ']') {
-      depthStack.pop();
-      result += char;
-      i++;
-      continue;
-    }
-
-    if (char === '"') {
-      const prevNonWhitespace = findPrevNonWhitespace(jsonString, i - 1);
-      const currentContext = depthStack[depthStack.length - 1];
-
-      const isAfterColon = prevNonWhitespace === ':';
-      const isAfterOpenBracket = prevNonWhitespace === '[';
-      const isAfterCommaInArray = prevNonWhitespace === ',' && currentContext === 'array';
-
-      const isValueContext = isAfterColon || isAfterOpenBracket || isAfterCommaInArray;
-
-      result += char;
-      i++;
-
-      const stringContent = extractAndEscapeJsonStringValue(jsonString, i, isValueContext);
-      result += stringContent.escaped;
-      i = stringContent.endIndex;
-
-      if (i < jsonString.length && jsonString[i] === '"') {
-        result += '"';
-        i++;
-      }
-    } else {
-      result += char;
-      i++;
-    }
-  }
-
-  return result;
-}
-
-/**
- * Find previous non-whitespace character.
- * @param {string} str - String to search
- * @param {number} startIndex - Index to start searching backwards from
- * @returns {string} Previous non-whitespace character or empty string
- */
-function findPrevNonWhitespace(str, startIndex) {
-  for (let i = startIndex; i >= 0; i--) {
-    if (!/\s/.test(str[i])) {
-      return str[i];
-    }
-  }
-  return '';
-}
-
-/**
- * Extract and escape the content of a JSON string value.
- * Handles unescaped quotes, control characters, and already-escaped sequences.
- *
- * @param {string} jsonString - Full JSON string
- * @param {number} startIndex - Index where string content starts (after opening quote)
- * @param {boolean} isValue - Whether this is a value context (not a key)
- * @returns {{escaped: string, endIndex: number}} Escaped content and index after closing quote
- */
-function extractAndEscapeJsonStringValue(jsonString, startIndex, isValue) {
-  let escaped = '';
-  let i = startIndex;
-  let consecutiveBackslashes = 0;
-
-  while (i < jsonString.length) {
-    const char = jsonString[i];
-    const charCode = jsonString.charCodeAt(i);
-
-    if (char === '\\') {
-      consecutiveBackslashes++;
-      escaped += char;
-      i++;
-      continue;
-    }
-
-    if (char === '"') {
-      const isEscaped = consecutiveBackslashes % 2 === 1;
-      consecutiveBackslashes = 0;
-
-      if (isEscaped) {
-        escaped += char;
-        i++;
-        continue;
-      }
-
-      const nextNonWhitespace = findNextNonWhitespace(jsonString, i + 1);
-      const nextNonWhitespaceChar = nextNonWhitespace.char;
-      const isStructuralEnd = !nextNonWhitespaceChar || nextNonWhitespaceChar === ',' || nextNonWhitespaceChar === '}' || nextNonWhitespaceChar === ']';
-
-      if (!isValue || isStructuralEnd) {
-        return { escaped, endIndex: i };
-      }
-
-      escaped += '\\' + char;
-      i++;
-      continue;
-    }
-
-    consecutiveBackslashes = 0;
-
-    if (charCode === CHAR_CODE_LF) {
-      escaped += '\\n';
-    } else if (charCode === CHAR_CODE_CR) {
-      escaped += '\\r';
-    } else if (charCode === CHAR_CODE_TAB) {
-      escaped += '\\t';
-    } else if (charCode === CHAR_CODE_BACKSPACE) {
-      escaped += '\\b';
-    } else if (charCode === CHAR_CODE_FORM_FEED) {
-      escaped += '\\f';
-    } else {
-      escaped += char;
-    }
-
-    i++;
-  }
-
-  return { escaped, endIndex: i };
-}
-
-/**
- * Find next non-whitespace character.
- * @param {string} str - String to search
- * @param {number} startIndex - Index to start searching from
- * @returns {{char: string, index: number}} Next non-whitespace character and its index
- */
-function findNextNonWhitespace(str, startIndex) {
-  for (let i = startIndex; i < str.length; i++) {
-    if (!/\s/.test(str[i])) {
-      return { char: str[i], index: i };
-    }
-  }
-  return { char: '', index: -1 };
-}
-
-/**
- * Comprehensive JSON repair helper - handles all common malformations.
- * Multi-layer approach: control char escaping → brace balancing → format fixes → native parse
+ * Repair and parse malformed JSON using the jsonrepair library.
+ * Handles common LLM output issues: unescaped quotes, control chars, truncation, etc.
  *
  * @param {string} jsonString - Potentially malformed JSON string
  * @param {string} context - Context for logging (e.g., "scene break detection")
@@ -612,60 +446,21 @@ function findNextNonWhitespace(str, startIndex) {
  * @throws {Error} If repair attempts fail
  */
 function repairAndParseJson(jsonString, context = 'JSON repair') {
-  let repaired = jsonString;
-
-  // Layer 0: Escape literal control characters in string values
-  repaired = escapeControlCharactersInJsonStrings(repaired);
-
-  // Layer 1: Balance braces/brackets
-  const openBraces = (repaired.match(/{/g) || []).length;
-  const closeBraces = (repaired.match(/}/g) || []).length;
-  const openBrackets = (repaired.match(/\[/g) || []).length;
-  const closeBrackets = (repaired.match(/]/g) || []).length;
-
-  // Add missing closing braces
-  if (openBraces > closeBraces) {
-    const missing = openBraces - closeBraces;
-    repaired += '}'.repeat(missing);
-    debug(SUBSYSTEM.CORE, `[JSON Repair] Added ${missing} missing closing brace(s) in ${context}`);
-  }
-
-  // Add missing closing brackets
-  if (openBrackets > closeBrackets) {
-    const missing = openBrackets - closeBrackets;
-    repaired += ']'.repeat(missing);
-    debug(SUBSYSTEM.CORE, `[JSON Repair] Added ${missing} missing closing bracket(s) in ${context}`);
-  }
-
-  // Layer 2: Try native parse first (fastest)
+  // Try native parse first (fastest path)
   try {
-    return JSON.parse(repaired);
+    return JSON.parse(jsonString);
   } catch {
-    debug(SUBSYSTEM.CORE, `[JSON Repair] Native parse failed in ${context}, trying advanced repairs`);
+    debug(SUBSYSTEM.CORE, `[JSON Repair] Native parse failed in ${context}, using jsonrepair library`);
   }
 
-  // Layer 3: Advanced repair techniques
+  // Use jsonrepair library for comprehensive repair
   try {
-    // Remove trailing commas before } or ]
-    repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
-
-    // Fix single quotes to double quotes (but not inside strings)
-    // Simple approach: replace single quotes that are likely field delimiters
-    repaired = repaired.replace(/'/g, '"');
-
-    // Remove comments (// and /* */)
-    repaired = repaired.replace(/\/\/.*$/gm, '');
-    repaired = repaired.replace(/\/\*[\s\S]*?\*\//g, '');
-
-    // Fix unquoted keys (simple pattern: word: value)
-    repaired = repaired.replace(/(\{|,)\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":');
-
-    // Try parsing again
+    const repaired = jsonrepair(jsonString);
     const parsed = JSON.parse(repaired);
-    debug(SUBSYSTEM.CORE, `[JSON Repair] Successfully repaired JSON using advanced techniques in ${context}`);
+    debug(SUBSYSTEM.CORE, `[JSON Repair] Successfully repaired JSON using jsonrepair in ${context}`);
     return parsed;
   } catch (repairErr) {
-    error(SUBSYSTEM.CORE, `[JSON Repair] All repair attempts failed in ${context}:`, repairErr);
+    error(SUBSYSTEM.CORE, `[JSON Repair] jsonrepair failed in ${context}:`, repairErr);
     throw new Error(`${context}: Could not repair JSON - ${repairErr.message}`);
   }
 }

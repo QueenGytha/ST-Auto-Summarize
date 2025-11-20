@@ -46,7 +46,7 @@
   "homepage": "https://github.com/QueenGytha/ST-Auto-Recap#readme",
   "lint-staged": {
     "*.js": [
-      "eslint --max-warnings 0 --no-warn-ignored",
+      "eslint --max-warnings 0 --no-warn-ignored --ignore-pattern 'vendor/**'",
       "node syntax-check.js"
     ]
   },
