@@ -946,8 +946,8 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
           const worldData = await loadWorldInfo(chatLorebookName);
           if (worldData?.entries) {
             allLorebookEntries = Object.values(worldData.entries)
-              // Exclude operation queue
-              .filter(entry => entry.comment !== '__operation_queue')
+              // Exclude ONLY operation queue entry (comment === '__operation_queue')
+              .filter(entry => entry && entry.comment !== '__operation_queue')
               .map(entry => ({
                 comment: entry.comment || '(unnamed)',
                 uid: entry.uid,
