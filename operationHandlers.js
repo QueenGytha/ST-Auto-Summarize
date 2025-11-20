@@ -105,14 +105,24 @@ async function updateSceneLorebookSnapshot(messageIndex) {
       return;
     }
 
-    // Get ALL lorebook entries (full snapshot, not filtered by activation)
-    const chatLorebookName = getAttachedLorebook();
+    // Get the current version index
+    const currentVersionIndex = get_data(message, 'scene_recap_current_index') ?? 0;
+    const metadata = get_data(message, 'scene_recap_metadata') || {};
 
-    if (!chatLorebookName) {
-      debug(SUBSYSTEM.QUEUE, `No lorebook attached for scene ${messageIndex}`);
+    if (!metadata[currentVersionIndex]) {
+      debug(SUBSYSTEM.QUEUE, `No metadata found for version ${currentVersionIndex} at message ${messageIndex}`);
       return;
     }
 
+    // Get chatLorebookName from existing metadata (don't re-query, it might have changed)
+    const chatLorebookName = metadata[currentVersionIndex].chatLorebookName;
+
+    if (!chatLorebookName) {
+      debug(SUBSYSTEM.QUEUE, `No lorebook name in metadata for scene ${messageIndex}`);
+      return;
+    }
+
+    // Load ALL entries from the lorebook (excluding only operation queue)
     const { loadWorldInfo } = await import('../../../world-info.js');
     const worldData = await loadWorldInfo(chatLorebookName);
 
@@ -121,46 +131,56 @@ async function updateSceneLorebookSnapshot(messageIndex) {
       return;
     }
 
-    // Convert all entries to snapshot format (excluding internal/system entries)
-    const allEntries = Object.values(worldData.entries);
-    const snapshotEntries = allEntries
-      .filter(entry => {
-        // Filter out internal/system entries
-        if (entry.comment && entry.comment.startsWith('_registry_')) {
-          return false;
-        }
-        if (entry.tags && entry.tags.includes('auto_lorebooks_registry')) {
-          return false;
-        }
-        if (entry.comment === 'Auto-Recap Operations Queue') {
-          return false;
-        }
-        return true;
-      })
+    // Get ALL entries (including registries), excluding only operation queue
+    const allLorebookEntries = Object.values(worldData.entries)
+      .filter(entry => entry && entry.comment !== '__operation_queue')
       .map(entry => ({
         comment: entry.comment || '(unnamed)',
         uid: entry.uid,
         world: chatLorebookName,
-        key: entry.key || [],
+        key: Array.isArray(entry.key) ? [...entry.key] : [],
+        keysecondary: Array.isArray(entry.keysecondary) ? [...entry.keysecondary] : [],
+        content: entry.content || '',
         position: entry.position,
         depth: entry.depth,
         order: entry.order,
         role: entry.role,
         constant: entry.constant || false,
         vectorized: entry.vectorized || false,
-        sticky: entry.sticky || 0,
-        strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal'),
-        content: entry.content || ''
+        selective: entry.selective,
+        selectiveLogic: entry.selectiveLogic,
+        sticky: entry.sticky,
+        disable: entry.disable || false,
+        addMemo: entry.addMemo || false,
+        excludeRecursion: entry.excludeRecursion || false,
+        preventRecursion: entry.preventRecursion || false,
+        ignoreBudget: entry.ignoreBudget || false,
+        probability: entry.probability,
+        useProbability: entry.useProbability,
+        group: entry.group,
+        groupOverride: entry.groupOverride,
+        groupWeight: entry.groupWeight,
+        tags: Array.isArray(entry.tags) ? [...entry.tags] : [],
+        strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal')
       }));
 
-    // Store as activeLorebookEntries (full snapshot)
-    if (!message.extra) {
-      message.extra = {};
-    }
-    message.extra.activeLorebookEntries = snapshotEntries;
-    message.extra.inactiveLorebookEntries = []; // Empty since we're storing everything as active
+    // Get ACTIVE entries by re-running lorebook activation check
+    const { getActiveLorebooksAtPosition } = await import('./sceneBreak.js');
+    const lorebookResult = await getActiveLorebooksAtPosition(messageIndex, ctx, get_data, true);
 
-    debug(SUBSYSTEM.QUEUE, `Updated lorebook snapshot for scene ${messageIndex}: ${snapshotEntries.length} total entries`);
+    const activeEntries = lorebookResult?.entries || [];
+
+    // Update the versioned metadata with the NEW snapshot (AFTER state)
+    metadata[currentVersionIndex].allEntries = allLorebookEntries;
+    metadata[currentVersionIndex].entries = activeEntries;
+    metadata[currentVersionIndex].totalActivatedEntries = activeEntries.length;
+
+    set_data(message, 'scene_recap_metadata', metadata);
+
+    debug(SUBSYSTEM.QUEUE,
+      `Updated lorebook snapshot for scene ${messageIndex} version ${currentVersionIndex}: ` +
+      `${activeEntries.length} active, ${allLorebookEntries.length} total`
+    );
 
     saveChatDebounced();
   } catch (err) {
