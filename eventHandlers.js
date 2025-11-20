@@ -282,6 +282,13 @@ async function initializeExtension() {
   initialize_message_buttons();
   initialize_group_member_buttons();
   initialize_checkpoint_branch_interceptor();
+
+  // Install checkpoint/branch lorebook reconstruction hook
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Installing checkpoint lorebook hook...');
+  const { installCheckpointLorebookHook } = await import('./checkpointLorebookIntegration.js');
+  installCheckpointLorebookHook();
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checkpoint lorebook hook installed');
+
   initialize_slash_commands();
   initialize_menu_buttons();
 
