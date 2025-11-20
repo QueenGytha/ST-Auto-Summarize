@@ -6,8 +6,10 @@
  */
 
 import { reconstructPointInTimeLorebook } from './lorebookReconstruction.js';
-import { debug, error, toast, SUBSYSTEM } from './utils.js';
+import { debug, error, toast, SUBSYSTEM, generateLorebookName, getUniqueLorebookName } from './utils.js';
 import { getContext } from './index.js';
+import { extension_settings } from '../../../extensions.js';
+import { world_names } from '../../../world-info.js';
 
 let originalSaveChat = null;
 let hookInstalled = false;
@@ -33,6 +35,13 @@ export function installCheckpointLorebookHook() {
 
   // Wrap saveChat to intercept checkpoint/branch creation
   ctx.saveChat = async function wrappedSaveChat(options) {
+    debug(SUBSYSTEM.LOREBOOK, `saveChat wrapper called with options: ${JSON.stringify({
+      chatName: options?.chatName,
+      mesId: options?.mesId,
+      hasWithMetadata: !!options?.withMetadata,
+      hasMainChat: options?.withMetadata?.main_chat !== undefined
+    })}`);
+
     try {
       // Check if this is a checkpoint or branch being created
       const isCheckpointOrBranch = options?.withMetadata?.main_chat !== undefined;
@@ -42,8 +51,13 @@ export function installCheckpointLorebookHook() {
           `Checkpoint/branch detected: ${options.chatName} from message ${options.mesId}`
         );
 
-        // Reconstruct lorebook from scene break at mesId
-        const lorebookName = `z-AutoLB-${options.chatName}`;
+        // Generate lorebook name using template system
+        const template = extension_settings?.autoLorebooks?.nameTemplate || 'z-AutoLB-{{chat}}';
+        const characterName = ctx.name2 || ctx.characterName || 'Unknown';
+        const baseName = generateLorebookName(template, characterName, options.chatName);
+        const lorebookName = getUniqueLorebookName(baseName, world_names);
+
+        debug(SUBSYSTEM.LOREBOOK, `Generated lorebook name: ${lorebookName} (from template: ${template})`);
 
         toast('Creating point-in-time lorebook snapshot...', 'info');
 
