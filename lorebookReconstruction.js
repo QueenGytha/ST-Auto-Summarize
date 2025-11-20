@@ -14,6 +14,7 @@ import { getRequestHeaders } from '../../../../script.js';
 // Constants for lorebook entry defaults
 const DEFAULT_DEPTH = 4;
 const DEFAULT_ORDER = 100;
+const DEFAULT_PROBABILITY = 100;
 
 /**
  * Extract historical lorebook state by loading the ENTIRE lorebook
@@ -135,6 +136,7 @@ export async function createLorebookForSnapshot(lorebookName) {
  * @param {Object} entryData - Entry data from scene break metadata
  * @returns {Object} Entry object ready for lorebook
  */
+// eslint-disable-next-line complexity -- Entry object requires mapping many fields from source to maintain full fidelity
 function buildLorebookEntryObject(nextUID, entryData) {
   return {
     uid: nextUID,
@@ -166,11 +168,11 @@ function buildLorebookEntryObject(nextUID, entryData) {
     matchScenario: false,
     matchCreatorNotes: false,
     delayUntilRecursion: 0,
-    probability: 100,
-    useProbability: false,
-    group: '',
-    groupOverride: false,
-    groupWeight: 100,
+    probability: entryData.probability ?? DEFAULT_PROBABILITY,
+    useProbability: entryData.useProbability !== undefined ? entryData.useProbability : false,
+    group: entryData.group || '',
+    groupOverride: entryData.groupOverride || false,
+    groupWeight: entryData.groupWeight ?? DEFAULT_PROBABILITY,
     scanDepth: null,
     caseSensitive: null,
     matchWholeWords: null,
