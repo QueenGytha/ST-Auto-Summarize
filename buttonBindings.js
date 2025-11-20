@@ -151,7 +151,9 @@ function canCreateCheckpointOrBranch(messageIndex ) {
   }
 
   const metadata = get_data(message, 'scene_recap_metadata');
-  const hasLorebookEntry = metadata && (metadata.lorebookEntryCount ?? 0) > 0;
+  const currentVersionIndex = get_data(message, 'scene_recap_current_index') ?? 0;
+  const versionMetadata = metadata?.[currentVersionIndex];
+  const hasLorebookEntry = versionMetadata && (versionMetadata.totalActivatedEntries ?? 0) > 0;
 
   if (!hasLorebookEntry) {
     return {
