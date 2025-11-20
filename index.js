@@ -33,24 +33,33 @@ let isQueueBlocking = false;
 // Queue indicator button element
 let queueIndicatorButton = null;
 
-// Lorebook tracking state (must be declared early to avoid TDZ errors in event handlers)
-// Exported to ensure they're accessible in event handler closures
-export const activeLorebooksPerMessage = new Map();
-export const activeStickyEntries = new Map(); // uid -> {entry, stickyCount, messageIndex}
-export let currentGenerationType = null;
-export let targetMessageIndex = null;
+// Lorebook tracking state using IIFE to avoid TDZ issues in circular dependencies
+export const lorebookState = (() => ({
+  activeLorebooksPerMessage: new Map(),
+  activeStickyEntries: new Map(),
+  currentGenerationType: null,
+  targetMessageIndex: null
+}))();
 
-// Setters for the let variables
+// Re-export individual properties for backward compatibility
+export const activeLorebooksPerMessage = lorebookState.activeLorebooksPerMessage;
+export const activeStickyEntries = lorebookState.activeStickyEntries;
+export let currentGenerationType = lorebookState.currentGenerationType;
+export let targetMessageIndex = lorebookState.targetMessageIndex;
+
+// Setters for the let variables that update both the state object and module-level variables
 export function setCurrentGenerationType(value) {
+  lorebookState.currentGenerationType = value;
   currentGenerationType = value;
 }
 
 export function setTargetMessageIndex(value) {
+  lorebookState.targetMessageIndex = value;
   targetMessageIndex = value;
 }
 
 // Version marker to verify TDZ fix is loaded
-console.warn('[AutoRecap] TDZ fix loaded - variables initialized at module top (v2025-11-20-exported)');
+console.warn('[AutoRecap] TDZ fix loaded - IIFE state wrapper (v2025-11-21-iife)');
 window.__AutoRecapTDZFixLoaded = true;
 
 // Function for queue to control blocking state
