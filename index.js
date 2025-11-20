@@ -33,6 +33,12 @@ let isQueueBlocking = false;
 // Queue indicator button element
 let queueIndicatorButton = null;
 
+// Lorebook tracking state (must be declared early to avoid TDZ errors in event handlers)
+const activeLorebooksPerMessage = new Map();
+const activeStickyEntries = new Map(); // uid -> {entry, stickyCount, messageIndex}
+let currentGenerationType = null;
+let targetMessageIndex = null;
+
 // Function for queue to control blocking state
 export function setQueueBlocking(blocking ) {
   debug(SUBSYSTEM.UI, '[ButtonControl] setQueueBlocking:', blocking);
@@ -280,11 +286,7 @@ export function installEnterKeyInterceptor() {
 // ============================================================================
 // Tracks which lorebook entries are active per message
 // Maintains sticky/constant entry state across generations
-
-const activeLorebooksPerMessage = new Map();
-const activeStickyEntries = new Map(); // uid -> {entry, stickyCount, messageIndex}
-let currentGenerationType = null;
-let targetMessageIndex = null;
+// NOTE: Variables moved to top of file (lines 37-40) to avoid TDZ errors
 
 /**
  * Get active lorebook entries for a specific message
