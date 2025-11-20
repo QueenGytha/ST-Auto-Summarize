@@ -1621,6 +1621,7 @@ export function registerAllOperationHandlers() {
   registerOperationHandler(OperationType.UPDATE_LOREBOOK_REGISTRY, async (operation) => {
     const { entryId, entityType, entityId, action } = operation.params;
     const entryData = getEntryData(entryId);
+    const messageIndex = entryData?.messageIndex;
 
     debug(SUBSYSTEM.QUEUE, `Executing UPDATE_LOREBOOK_REGISTRY for type=${entityType}, id=${entityId}`);
 
@@ -1647,8 +1648,8 @@ export function registerAllOperationHandlers() {
     completePendingEntry(entryId);
 
     // Update scene lorebook snapshot if this entry belongs to a scene
-    if (operation.metadata?.message_index !== undefined) {
-      await updateSceneLorebookSnapshot(operation.metadata.message_index);
+    if (messageIndex !== undefined) {
+      await updateSceneLorebookSnapshot(messageIndex);
     }
 
     // Show success toast
