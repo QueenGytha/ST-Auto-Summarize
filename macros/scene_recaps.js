@@ -1,5 +1,3 @@
-import { extractRecapText as extractRecapTextUtil } from '../recapFormatter.js';
-
 export const name = 'scene_recaps';
 
 export function build(sceneDataArray) {
@@ -16,8 +14,17 @@ function extractRecapText(scene_recap_memory) {
     return "";
   }
 
-  // Use the centralized parser that handles both JSON and formatted text
-  return extractRecapTextUtil(json_to_parse);
+  let extracted_text = json_to_parse;
+
+  try {
+    const parsed = JSON.parse(json_to_parse);
+    if (parsed && typeof parsed === 'object') {
+      extracted_text = parsed.recap || "";
+    }
+  } catch {
+    // Not JSON or parsing failed - use the whole text as-is
+  }
+  return extracted_text;
 }
 
 export const description = {
