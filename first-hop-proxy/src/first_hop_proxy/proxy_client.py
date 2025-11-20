@@ -125,12 +125,16 @@ class ProxyClient:
                     logger.warning(f"DEBUG: parsing_info = {parsing_info}")
                     if parsing_info.get("recategorized", False):
                         logger.info(f"Response status recategorized: {response.status_code} → {new_status}")
-                        # Create a new response object with the recategorized status
+                        # Update response status code
                         response.status_code = new_status
-                        # If it's now an error status, raise HTTPError to trigger retry logic
+                        # If it's now an error status, manually raise HTTPError to trigger retry logic
                         logger.warning(f"DEBUG: About to raise HTTPError for status {new_status}")
                         if new_status >= 400:
-                            response.raise_for_status()
+                            # Manually raise HTTPError instead of calling raise_for_status()
+                            # because modifying response.status_code doesn't update internal state
+                            from requests.exceptions import HTTPError as RequestsHTTPError
+                            error_msg = f"{new_status} Error: {parsing_info.get('description', 'Rate limit or server error')}"
+                            raise RequestsHTTPError(error_msg, response=response)
                 else:
                     logger.warning("DEBUG: response_parser is None! Not checking for rate limits.")
                 
@@ -178,7 +182,9 @@ class ProxyClient:
                         logger.info(f"Response status recategorized: {response.status_code} → {new_status}")
                         response.status_code = new_status
                         if new_status >= 400:
-                            response.raise_for_status()
+                            from requests.exceptions import HTTPError as RequestsHTTPError
+                            error_msg = f"{new_status} Error: {parsing_info.get('description', 'Rate limit or server error')}"
+                            raise RequestsHTTPError(error_msg, response=response)
                 
                 # Log to error logger if available
                 if hasattr(self, 'error_logger') and self.error_logger:
@@ -213,7 +219,16 @@ class ProxyClient:
                     logger.info(f"Response status recategorized: {response.status_code} → {new_status}")
                     response.status_code = new_status
 
-            # For client errors (4xx), don't raise - let the caller handle the error response
+            # For retryable 4xx errors (like 429 rate limit), raise HTTPError to trigger retry logic
+            # Common retryable 4xx codes: 408 (timeout), 429 (rate limit), 423 (locked), etc.
+            retryable_4xx_codes = [408, 423, 429]
+            if response.status_code in retryable_4xx_codes:
+                logger.warning(f"Retryable client error {response.status_code}, raising HTTPError to trigger retry")
+                from requests.exceptions import HTTPError as RequestsHTTPError
+                error_msg = f"{response.status_code} Error: Retryable client error"
+                raise RequestsHTTPError(error_msg, response=response)
+
+            # For permanent client errors (4xx), don't raise - let the caller handle the error response
             # The API error details are in the response body
             if 400 <= response.status_code < 500:
                 logger.warning(f"Client error {response.status_code}, returning error response body")
