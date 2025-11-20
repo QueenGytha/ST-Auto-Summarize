@@ -12,8 +12,13 @@ import {
   toggle_chat_enabled,
   manualSceneBreakDetection,
   clearAllCheckedFlags,
-  selectorsSillyTavern } from
+  selectorsSillyTavern,
+  get_data,
+  chat_metadata,
+  toast,
+  SUBSYSTEM } from
 './index.js';
+import { getQueueStats } from './operationQueue.js';
 
 function initialize_message_buttons() {
   // Hook into SillyTavern's hide/unhide message buttons to refresh memory
@@ -102,9 +107,120 @@ function initialize_menu_buttons() {
   add_menu_button("Clear Scene Break Checks", "fa-solid fa-eraser", clearAllCheckedFlags, "Clear the 'checked' flag from all messages so they can be re-scanned for scene breaks.");
 }
 
+function checkSceneIncludedInRunningRecap(messageIndex ) {
+  const storage = chat_metadata.auto_recap_running_scene_recaps;
+  if (!storage || !storage.versions || storage.versions.length === 0) {
+    return false;
+  }
+
+  const currentVersion = storage.versions.find(v => v.version === storage.current_version);
+  if (!currentVersion) {
+    return false;
+  }
+
+  const sceneIndex = currentVersion.new_scene_index ?? 0;
+  return messageIndex <= sceneIndex;
+}
+
+function canCreateCheckpointOrBranch(messageIndex ) {
+  const ctx = getContext();
+  const chat = ctx.chat;
+
+  if (!chat[messageIndex]) {
+    return { allowed: false, reason: 'Message not found' };
+  }
+
+  const message = chat[messageIndex];
+
+  const queueStats = getQueueStats();
+  const queueEmpty = queueStats.pending === 0 && queueStats.in_progress === 0;
+
+  if (!queueEmpty) {
+    return {
+      allowed: false,
+      reason: `Queue is not empty (${queueStats.pending} pending, ${queueStats.in_progress} in progress)`
+    };
+  }
+
+  const hasSceneBreak = get_data(message, 'scene_break');
+  if (!hasSceneBreak) {
+    return {
+      allowed: false,
+      reason: 'Message does not have a scene break'
+    };
+  }
+
+  const metadata = get_data(message, 'scene_recap_metadata');
+  const hasLorebookEntry = metadata && (metadata.lorebookEntryCount ?? 0) > 0;
+
+  if (!hasLorebookEntry) {
+    return {
+      allowed: false,
+      reason: 'Scene break does not have a completed lorebook entry'
+    };
+  }
+
+  const includedInRunningRecap = checkSceneIncludedInRunningRecap(messageIndex);
+  if (!includedInRunningRecap) {
+    return {
+      allowed: false,
+      reason: 'Scene has not been included in the running recap yet'
+    };
+  }
+
+  return { allowed: true, reason: null };
+}
+
+function initialize_checkpoint_branch_interceptor() {
+  debug(SUBSYSTEM.UI, 'Initializing checkpoint/branch button interceptor');
+
+  const chatContainer = document.querySelector(selectorsSillyTavern.chat.container);
+  if (!chatContainer) {
+    error('Could not find chat container for checkpoint/branch interceptor');
+    return;
+  }
+
+  chatContainer.addEventListener('click', (e) => {
+    const target = e.target.closest('.mes_create_bookmark, .mes_create_branch');
+    if (!target) {
+      return;
+    }
+
+    e.stopImmediatePropagation();
+    e.preventDefault();
+
+    const mesElement = target.closest('.mes');
+    if (!mesElement) {
+      error('Could not find message element for checkpoint/branch button');
+      return;
+    }
+
+    const messageIndex = Number(mesElement.getAttribute('mesid'));
+    if (Number.isNaN(messageIndex)) {
+      error('Invalid message ID for checkpoint/branch button');
+      return;
+    }
+
+    const buttonType = target.classList.contains('mes_create_bookmark') ? 'checkpoint' : 'branch';
+
+    const check = canCreateCheckpointOrBranch(messageIndex);
+
+    if (check.allowed) {
+      toast(`${buttonType} creation is currently disabled (testing conditions)`, 'warning');
+      debug(SUBSYSTEM.UI, `${buttonType} creation blocked (hard disabled for testing): message ${messageIndex}`);
+    } else {
+      toast(`Cannot create ${buttonType}: ${check.reason}`, 'warning');
+      debug(SUBSYSTEM.UI, `${buttonType} creation blocked: ${check.reason} (message ${messageIndex})`);
+    }
+  }, { capture: true });
+
+  debug(SUBSYSTEM.UI, 'Checkpoint/branch button interceptor installed');
+}
+
 export {
   initialize_message_buttons,
   initialize_group_member_buttons,
   set_character_enabled_button_states,
   add_menu_button,
-  initialize_menu_buttons };
+  initialize_menu_buttons,
+  initialize_checkpoint_branch_interceptor };

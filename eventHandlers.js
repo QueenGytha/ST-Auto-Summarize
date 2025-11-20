@@ -22,6 +22,7 @@ import {
   initialize_group_member_buttons,
   initialize_slash_commands,
   initialize_menu_buttons,
+  initialize_checkpoint_branch_interceptor,
   addSceneBreakButton,
   bindSceneBreakButton,
   get_message_div,
@@ -280,6 +281,7 @@ async function initializeExtension() {
   initialize_popout();
   initialize_message_buttons();
   initialize_group_member_buttons();
+  initialize_checkpoint_branch_interceptor();
   initialize_slash_commands();
   initialize_menu_buttons();
 
