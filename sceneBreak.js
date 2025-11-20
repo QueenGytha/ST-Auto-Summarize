@@ -926,7 +926,7 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
         comment: entry.comment || '(unnamed)',
         uid: entry.uid,
         world: entry.world,
-        key: entry.key || [],
+        key: Array.isArray(entry.key) ? [...entry.key] : [],
         position: entry.position,
         depth: entry.depth,
         order: entry.order,
@@ -952,8 +952,8 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
                 comment: entry.comment || '(unnamed)',
                 uid: entry.uid,
                 world: chatLorebookName,
-                key: entry.key || [],
-                keysecondary: entry.keysecondary || [],
+                key: Array.isArray(entry.key) ? [...entry.key] : [],
+                keysecondary: Array.isArray(entry.keysecondary) ? [...entry.keysecondary] : [],
                 content: entry.content || '',
                 position: entry.position,
                 depth: entry.depth,
@@ -974,7 +974,7 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
                 group: entry.group,
                 groupOverride: entry.groupOverride,
                 groupWeight: entry.groupWeight,
-                tags: entry.tags || [],
+                tags: Array.isArray(entry.tags) ? [...entry.tags] : [],
                 strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal')
               }));
             debug(SUBSYSTEM.SCENE, `Loaded ${allLorebookEntries.length} total entries from lorebook for snapshot (excluding operation queue)`);
