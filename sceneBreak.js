@@ -428,12 +428,12 @@ saveChatDebounced )
   const { versions, currentIdx } = initializeSceneRecapVersions(message, get_data, set_data, saveChatDebounced);
   const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
 
-  // Format JSON with spacing between lorebook entries for readability
+  // Get recap for display (prettify JSON for readability)
   let sceneRecap = versions[currentIdx] || '';
   try {
     const parsed = JSON.parse(sceneRecap);
     if (parsed && typeof parsed === 'object') {
-      // Use pretty print with indentation
+      // Prettify for display ONLY (original stored value is compact JSON)
       sceneRecap = JSON.stringify(parsed, null, 2);
     }
   } catch {
@@ -1407,6 +1407,8 @@ versionIndex
   try {
     const recapHash = computeRecapHash(recap);
     debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Recap hash: ${recapHash}`);
+    const RECAP_DEBUG_LENGTH = 200;
+    debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Recap length: ${recap.length}, first ${RECAP_DEBUG_LENGTH} chars: ${recap.slice(0, RECAP_DEBUG_LENGTH)}`);
 
     // Parse JSON (should already be clean from generation)
     const parsed = JSON.parse(recap);
