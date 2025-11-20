@@ -88,6 +88,72 @@ function get_message_div(index) {
   return $(`div[mesid="${index}"]`);
 }
 
+// Helper: Update scene break message with current lorebook snapshot
+async function updateSceneLorebookSnapshot(messageIndex) {
+  try {
+    const ctx = getContext();
+    const chat = ctx.chat;
+    const message = chat[messageIndex];
+
+    if (!message) {
+      return;
+    }
+
+    // Only update if this is actually a scene break message
+    const isSceneBreak = get_data(message, 'scene_break');
+    if (!isSceneBreak) {
+      return;
+    }
+
+    const { getActiveLorebooksAtPosition } = await import('./sceneBreak.js');
+    const { entries: updatedEntries, metadata: updatedMetadata } = await getActiveLorebooksAtPosition(messageIndex, ctx, get_data, true);
+
+    // Update active entries
+    if (!message.extra) {
+      message.extra = {};
+    }
+    message.extra.activeLorebookEntries = updatedEntries;
+    debug(SUBSYSTEM.QUEUE, `Updated lorebook snapshot for scene ${messageIndex}: ${updatedEntries.length} active entries`);
+
+    // Update inactive entries
+    const chatLorebookName = updatedMetadata.chatLorebookName;
+    if (chatLorebookName) {
+      const { loadWorldInfo } = await import('../../../world-info.js');
+      const worldData = await loadWorldInfo(chatLorebookName);
+
+      if (worldData?.entries) {
+        const allEntries = Object.values(worldData.entries);
+        const activeUIDs = new Set(updatedEntries.map(e => e.uid));
+
+        const inactiveEntries = allEntries
+          .filter(entry => !activeUIDs.has(entry.uid))
+          .map(entry => ({
+            comment: entry.comment || '(unnamed)',
+            uid: entry.uid,
+            world: chatLorebookName,
+            key: entry.key || [],
+            position: entry.position,
+            depth: entry.depth,
+            order: entry.order,
+            role: entry.role,
+            constant: entry.constant || false,
+            vectorized: entry.vectorized || false,
+            sticky: entry.sticky || 0,
+            strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal'),
+            content: entry.content || ''
+          }));
+
+        message.extra.inactiveLorebookEntries = inactiveEntries;
+        debug(SUBSYSTEM.QUEUE, `Updated inactive entries for scene ${messageIndex}: ${inactiveEntries.length} entries (${allEntries.length} total)`);
+      }
+    }
+
+    saveChatDebounced();
+  } catch (err) {
+    error(SUBSYSTEM.QUEUE, `Failed to update lorebook snapshot for scene ${messageIndex}:`, err);
+  }
+}
+
 // Helper: Mark range of messages as scene-break-checked
 function markRangeAsChecked(chat, startIdx, endIdx) {
   for (let i = startIdx; i <= endIdx; i++) {
@@ -1621,6 +1687,11 @@ export function registerAllOperationHandlers() {
 
     // Complete pending entry (cleanup)
     completePendingEntry(entryId);
+
+    // Update scene lorebook snapshot if this entry belongs to a scene
+    if (operation.metadata?.message_index !== undefined) {
+      await updateSceneLorebookSnapshot(operation.metadata.message_index);
+    }
 
     // Show success toast
     const comment = entryData?.comment || 'Entry';
