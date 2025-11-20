@@ -388,7 +388,19 @@ saveChatDebounced )
   // Initialize versioned recaps
   const { versions, currentIdx } = initializeSceneRecapVersions(message, get_data, set_data, saveChatDebounced);
   const sceneName = get_data(message, SCENE_BREAK_NAME_KEY) || '';
-  const sceneRecap = convertLiteralNewlinesToActual(versions[currentIdx] || '');
+
+  // Format JSON with spacing between lorebook entries for readability
+  let sceneRecap = versions[currentIdx] || '';
+  try {
+    const parsed = JSON.parse(sceneRecap);
+    if (parsed && typeof parsed === 'object') {
+      // Use pretty print with indentation
+      sceneRecap = JSON.stringify(parsed, null, 2);
+    }
+  } catch {
+    // Not valid JSON, use as-is
+  }
+  sceneRecap = convertLiteralNewlinesToActual(sceneRecap);
 
   let isCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
   if (isCollapsed === undefined) {
@@ -449,7 +461,20 @@ saveChatDebounced )
     // Update the current version in the versions array
     const updatedVersions = getSceneRecapVersions(message, get_data).slice();
     const idx = getCurrentSceneRecapIndex(message, get_data);
-    const newRecap = convertActualNewlinesToLiteral($(this).val());
+
+    // Compact JSON back to single line for storage
+    let newRecap = $(this).val();
+    try {
+      const parsed = JSON.parse(convertActualNewlinesToLiteral(newRecap));
+      // Store as compact JSON if valid object, otherwise with literal newlines
+      newRecap = (parsed && typeof parsed === 'object')
+        ? JSON.stringify(parsed)
+        : convertActualNewlinesToLiteral(newRecap);
+    } catch {
+      // Not valid JSON, store as-is with literal newlines
+      newRecap = convertActualNewlinesToLiteral(newRecap);
+    }
+
     updatedVersions[idx] = newRecap;
     setSceneRecapVersions(message, set_data, updatedVersions);
     // Also update the legacy recap field for compatibility
