@@ -1707,6 +1707,7 @@ export function registerAllOperationHandlers() {
     // Track created entry UID for this recap version
     const messageIndex = operation.metadata?.message_index;
     const versionIndex = operation.metadata?.version_index;
+    debug(SUBSYSTEM.QUEUE, `[UID TRACKING] messageIndex=${messageIndex}, versionIndex=${versionIndex}, uid=${result.entityUid}, metadata exists: ${!!operation.metadata}`);
     if (messageIndex !== undefined && versionIndex !== undefined) {
       const ctx = getContext();
       const message = ctx.chat[messageIndex];
@@ -1733,8 +1734,14 @@ export function registerAllOperationHandlers() {
           set_data(message, 'scene_recap_metadata', metadata);
           saveChatDebounced();
           debug(SUBSYSTEM.QUEUE, `Tracked entry UID ${uid} for message ${messageIndex}, version ${versionIndex}`);
+        } else {
+          debug(SUBSYSTEM.QUEUE, `[UID TRACKING] UID ${uid} already tracked for message ${messageIndex}, version ${versionIndex}`);
         }
+      } else {
+        debug(SUBSYSTEM.QUEUE, `[UID TRACKING] Message ${messageIndex} not found in chat`);
       }
+    } else {
+      debug(SUBSYSTEM.QUEUE, `[UID TRACKING] Skipping - messageIndex or versionIndex undefined`);
     }
 
     // Enqueue registry update
