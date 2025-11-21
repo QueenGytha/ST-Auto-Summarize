@@ -388,8 +388,8 @@ def extract_character_chat_info(headers: Dict[str, Any], request_data: Dict[str,
     """
     Extract character, chat timestamp, and operation from request.
 
-    Looks for ST_METADATA in request messages and parses the chat field
-    to extract character name and timestamp.
+    Looks for ST_METADATA in request messages. Prefers the 'character' field
+    if present, otherwise parses character name from the 'chat' field.
 
     Handles multiple ST_METADATA blocks:
     - If all have same operation type, use it
@@ -411,12 +411,25 @@ def extract_character_chat_info(headers: Dict[str, Any], request_data: Dict[str,
         <ST_METADATA>
         {
           "version": "1.0",
+          "character": "Senta",
           "chat": "Senta - 2025-11-01@20h29m24s",
           "operation": "lorebook"
         }
         </ST_METADATA>
 
         Returns: ("Senta", "2025-11-01@20h29m24s", "lorebook")
+
+        For branches (with character field):
+        <ST_METADATA>
+        {
+          "version": "1.0",
+          "character": "Senta",
+          "chat": "Branch #7 - 2025-11-21@20h36m45s",
+          "operation": "scene_recap"
+        }
+        </ST_METADATA>
+
+        Returns: ("Senta", "Branch #7 - 2025-11-21@20h36m45s", "scene_recap")
     """
     # Extract metadata from messages
     messages = request_data.get('messages', [])
@@ -427,13 +440,15 @@ def extract_character_chat_info(headers: Dict[str, Any], request_data: Dict[str,
     if not all_metadata:
         return None
 
-    # Collect all unique operation types and chat names
+    # Collect all unique operation types, chat names, and character names
     operations = set()
     chats = set()
+    characters = set()
 
     for metadata in all_metadata:
         chat = metadata.get('chat')
         operation = metadata.get('operation')
+        character = metadata.get('character')  # New field
 
         if not chat:
             raise ValueError("ST_METADATA found but missing required 'chat' field")
@@ -444,11 +459,18 @@ def extract_character_chat_info(headers: Dict[str, Any], request_data: Dict[str,
         chats.add(chat)
         operations.add(operation)
 
+        if character:
+            characters.add(character)
+
     # Verify all metadata blocks refer to the same chat
     if len(chats) > 1:
         raise ValueError(f"Multiple ST_METADATA blocks with different 'chat' values: {chats}")
 
     chat = chats.pop()
+
+    # Verify all metadata blocks have the same character (if character field present)
+    if len(characters) > 1:
+        raise ValueError(f"Multiple ST_METADATA blocks with different 'character' values: {characters}")
 
     # Determine which operation to use
     if len(operations) == 1:
@@ -463,8 +485,14 @@ def extract_character_chat_info(headers: Dict[str, Any], request_data: Dict[str,
         raise ValueError(f"Multiple conflicting operation types in ST_METADATA: {operations}. " +
                         "Expected single type or 'chat' + one specific type.")
 
-    # Parse character name and timestamp from chat
-    character, timestamp = parse_chat_name(chat)
+    # Get character name: prefer 'character' field, fallback to parsing 'chat' field
+    if characters:
+        character = characters.pop()
+        # For branches, use the full chat name as timestamp
+        timestamp = chat
+    else:
+        # Legacy behavior: parse character name and timestamp from chat field
+        character, timestamp = parse_chat_name(chat)
 
     # Sanitize for filesystem safety
     character = sanitize_for_filesystem(character)

@@ -4,11 +4,37 @@
 
 import { getCurrentChatId } from '../../../../script.js';
 import { selected_group, groups } from '../../../group-chats.js';
-import { debug, SUBSYSTEM, should_send_chat_details } from './index.js';
+import { debug, SUBSYSTEM, should_send_chat_details, getContext } from './index.js';
 import { resolveOperationsPreset, resolveOperationConfig, resolveActualProfileAndPreset } from './operationsPresetsResolution.js';
 
 export function initMetadataInjector() {
   // No longer needs to import get_settings
+}
+
+export function getCharacterName() {
+  try {
+    const ctx = getContext();
+
+    // For group chats, use group name
+    if (selected_group) {
+      const group = groups?.find((x) => x.id === selected_group);
+      if (group && group.name) {
+        return String(group.name).trim();
+      }
+    }
+
+    // For single character chats, use character name
+    const characterName = ctx?.name2 || ctx?.characterName;
+    if (characterName) {
+      return String(characterName).trim();
+    }
+
+    // Fallback
+    return 'Unknown';
+  } catch (err) {
+    console.error('[Auto-Recap:Metadata] Error getting character name:', err);
+    return 'Unknown';
+  }
 }
 
 export function getChatName() {
@@ -49,10 +75,12 @@ export async function isMetadataInjectionEnabled(operationType) {
 }
 
 export function getDefaultMetadata() {
+  const characterName = getCharacterName();
   const chatName = getChatName();
 
   return {
     version: '1.0',
+    character: characterName,
     chat: chatName
   };
 }
