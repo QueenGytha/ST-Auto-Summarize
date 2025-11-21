@@ -61,9 +61,7 @@ import {
   addLorebookEntry,
   deleteLorebookEntry,
   updateRegistryEntryContent,
-  reorderLorebookEntriesAlphabetically,
-  invalidateLorebookCache,
-  isInternalEntry } from
+  reorderLorebookEntriesAlphabetically } from
 './lorebookManager.js';
 import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
 import {
@@ -91,37 +89,14 @@ function get_message_div(index) {
 }
 
 // Helper: Check if lorebook lookup can be skipped (empty lorebook optimization)
-async function checkCanSkipLorebookLookup(operation, entryData) {
+function checkCanSkipLorebookLookup(operation, entryData) {
   if (operation.metadata?.lorebook_was_empty_at_scene_start !== true) {
     return { canSkip: false };
   }
 
-  debug(SUBSYSTEM.QUEUE, `[SKIP CHECK] Lorebook was flagged as empty at scene start for: ${entryData.comment}`);
+  debug(SUBSYSTEM.QUEUE, `[SKIP] Skipping LLM lookup for "${entryData.comment}" (lorebook empty at message ${operation.metadata?.message_index}, version ${operation.metadata?.version_index})`);
 
-  // MANDATORY re-validation: verify lorebook is still empty
-  let stillEmpty = false;
-  try {
-    const lorebookName = getAttachedLorebook();
-    if (lorebookName) {
-      await invalidateLorebookCache(lorebookName);
-      const entries = await getLorebookEntries(lorebookName);
-      if (entries && Array.isArray(entries)) {
-        const realEntries = entries.filter(entry => !isInternalEntry(entry?.comment));
-        stillEmpty = realEntries.length === 0;
-        debug(SUBSYSTEM.QUEUE, `[SKIP CHECK] Re-validation complete: ${stillEmpty ? 'STILL EMPTY' : 'NOW HAS ENTRIES'} (${entries.length} total, ${realEntries.length} real)`);
-      }
-    }
-  } catch (err) {
-    error(SUBSYSTEM.QUEUE, `[SKIP CHECK] Re-validation failed for ${entryData.comment}:`, err);
-  }
-
-  if (stillEmpty) {
-    debug(SUBSYSTEM.QUEUE, `[SKIP] Skipping LLM lookup for "${entryData.comment}" (lorebook empty at message ${operation.metadata?.message_index}, version ${operation.metadata?.version_index})`);
-  } else {
-    debug(SUBSYSTEM.QUEUE, `[SKIP CHECK] Lorebook no longer empty, running normal lookup for: ${entryData.comment}`);
-  }
-
-  return { canSkip: stillEmpty };
+  return { canSkip: true };
 }
 
 // Helper: Execute skip path for lorebook lookup (when lorebook is empty)
@@ -1291,7 +1266,7 @@ export function registerAllOperationHandlers() {
     debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Settings - skip_duplicates: ${settings.skip_duplicates}`);
 
     // Check for skip path optimization (empty lorebook at scene start)
-    const skipCheck = await checkCanSkipLorebookLookup(operation, entryData);
+    const skipCheck = checkCanSkipLorebookLookup(operation, entryData);
     if (skipCheck.canSkip) {
       return await executeSkipPath(operation, entryId, entryData);
     }
