@@ -429,16 +429,23 @@ saveChatDebounced )
 
   // Get recap for display (prettify JSON for readability)
   let sceneRecap = versions[currentIdx] || '';
+  let isJSON = false;
   try {
     const parsed = JSON.parse(sceneRecap);
     if (parsed && typeof parsed === 'object') {
       // Prettify for display ONLY (original stored value is compact JSON)
       sceneRecap = JSON.stringify(parsed, null, 2);
+      isJSON = true;
     }
   } catch {
     // Not valid JSON, use as-is
   }
-  sceneRecap = convertLiteralNewlinesToActual(sceneRecap);
+
+  // Only convert literal newlines for non-JSON text (legacy plain text recaps)
+  // For JSON, keep escaped newlines in string values to maintain valid JSON
+  if (!isJSON) {
+    sceneRecap = convertLiteralNewlinesToActual(sceneRecap);
+  }
 
   let isCollapsed = get_data(message, SCENE_BREAK_COLLAPSED_KEY);
   if (isCollapsed === undefined) {
