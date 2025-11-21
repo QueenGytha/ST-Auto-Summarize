@@ -571,7 +571,7 @@ export function extractJsonFromResponse(rawResponse, options = {}) {
 export function generateLorebookName(template , characterName , chatId ) {
   const charSeg = sanitizeNameSegment(characterName || 'Unknown');
   const chatSeg = sanitizeNameSegment(chatId || 'Chat');
-  const tpl = template || 'z-AutoLB-{{chat}}';
+  const tpl = template || 'z-AutoLB-{{char}}-{{chat}}';
   return tpl.
   replace(/\{\{\s*char\s*\}\}/g, charSeg).
   replace(/\{\{\s*chat\s*\}\}/g, chatSeg);

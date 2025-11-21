@@ -42,7 +42,7 @@ const settings_ui_map = {}; // map of settings to UI elements
 function getDefaultAutoLorebookSettings() {
   // Build a fresh copy of the global Auto-Lorebooks defaults each time
   return {
-    nameTemplate: 'z-AutoLB-{{chat}}',
+    nameTemplate: 'z-AutoLB-{{char}}-{{chat}}',
     deleteOnChatDelete: true,
     autoReorderAlphabetically: true,
     entity_types: [...DEFAULT_ENTITY_TYPES]

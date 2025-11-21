@@ -281,7 +281,7 @@ function loadLorebooksSettings() {
 function refreshGlobalSettingsUI(settings ) {
   $(selectorsExtension.lorebook.deleteOnChat).prop('checked', settings.deleteOnChatDelete ?? true);
   $(selectorsExtension.lorebook.autoReorder).prop('checked', settings.autoReorderAlphabetically ?? true);
-  $(selectorsExtension.lorebook.nameTemplate).val(settings.nameTemplate || 'z-AutoLB-{{chat}}');
+  $(selectorsExtension.lorebook.nameTemplate).val(settings.nameTemplate || 'z-AutoLB-{{char}}-{{chat}}');
 }
 
 // Removed legacy queue settings UI (queue is mandatory)

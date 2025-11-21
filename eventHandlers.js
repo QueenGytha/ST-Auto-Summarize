@@ -108,7 +108,7 @@ async function handleChatDeleted(deletedChatName ) {
     }
 
     // Reconstruct the lorebook name using the same template we use for creation
-    const template = extension_settings?.autoLorebooks?.nameTemplate || 'z-AutoLB-{{chat}}';
+    const template = extension_settings?.autoLorebooks?.nameTemplate || 'z-AutoLB-{{char}}-{{chat}}';
     const lorebookName = lorebookUtils.generateLorebookName(template, characterName, deletedChatName);
 
     const lorebookManager = await import('./lorebookManager.js');

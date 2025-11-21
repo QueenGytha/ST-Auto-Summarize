@@ -562,7 +562,7 @@ export async function createChatLorebook() {
     }
 
     // Get naming template
-    const template = extension_settings?.autoLorebooks?.nameTemplate || 'z-AutoLB-{{chat}}';
+    const template = extension_settings?.autoLorebooks?.nameTemplate || 'z-AutoLB-{{char}}-{{chat}}';
 
     // Generate name
     const baseName = generateLorebookName(template, context.characterName, context.chatId);

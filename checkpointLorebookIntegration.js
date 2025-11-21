@@ -6,7 +6,7 @@
 
 import { reconstructPointInTimeLorebook } from './lorebookReconstruction.js';
 import { debug, error, toast, SUBSYSTEM, generateLorebookName, getUniqueLorebookName } from './utils.js';
-import { getContext } from './index.js';
+import { getContext, extension_settings } from './index.js';
 import { world_names } from '../../../world-info.js';
 import { chat_metadata, saveMetadata } from '../../../../script.js';
 
@@ -28,9 +28,8 @@ export async function createCheckpointLorebook(messageIndex, newChatName) {
 
   const ctx = getContext();
 
-  // Generate lorebook name with character name + branch name
-  // Use z-AutoLB-{{char}}-{{chat}} format to include character name before branch
-  const template = 'z-AutoLB-{{char}}-{{chat}}';
+  // Get user's configured lorebook naming template
+  const template = extension_settings?.autoLorebooks?.nameTemplate || 'z-AutoLB-{{char}}-{{chat}}';
   const characterName = ctx.name2 || ctx.characterName || 'Unknown';
 
   // Use the NEW branch/checkpoint chat name
