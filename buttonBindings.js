@@ -188,8 +188,8 @@ function initialize_checkpoint_branch_interceptor() {
 
     try {
       // Create the checkpoint/branch (creates file but doesn't switch)
-      const { createBranch, createBookmark } = await import('../../../../scripts/bookmarks.js');
-      const newChatName = await (buttonType === 'branch' ? createBranch(messageIndex) : createBookmark(messageIndex));
+      const { createBranch, createNewBookmark } = await import('../../../../scripts/bookmarks.js');
+      const newChatName = await (buttonType === 'branch' ? createBranch(messageIndex) : createNewBookmark(messageIndex));
 
       if (!newChatName) {
         throw new Error(`Failed to create ${buttonType} - no chat name returned`);
