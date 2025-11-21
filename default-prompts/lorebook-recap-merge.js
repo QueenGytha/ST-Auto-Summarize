@@ -41,7 +41,7 @@ FORMAT (compact fragment lines; omit empty; do not change the existing formattin
 - Attributes; State (current).
 - Psychology: trigger + response + outcome.
 - Relationships: X -> Y ? stance/behavior; note shifts; interaction defaults if shown.
-- Intimacy/Romance/Sexual interests (kinks/turn-ons/boundaries/aftercare/comfort); Secrets/Leverage; Tension/Triggers; Style/Mannerisms (brief diction/cadence/quirks; default speech cadence/catchphrase; keep nuance even if slightly longer); Micro-Moments (brief but include key nuance); Notable dialogue (only when it encodes voice/tone, or seems important for plot; no {{user}} quotes). Include these only if new/changed.
+- Intimacy/Romance/Sexual interests (kinks/turn-ons/boundaries/aftercare/comfort); Secrets/Leverage; Tension/Triggers; Style/Mannerisms (brief diction/cadence/quirks; default speech cadence/catchphrase; keep nuance even if slightly longer); Micro-Moments (brief but include key nuance); Notable dialogue (verbatim, short, max 3, only when it encodes voice/tone or is plot-relevant; no {{user}} quotes; never invent or paraphrase). Include these only if new/changed.
 - Entity/location naming: subareas use "Parent-Subarea"; Identity for locations: "Location - Parent-Subarea". Include "Located in: <Parent>" when applicable.
 
 OUTPUT (JSON only; no code fences):
