@@ -25,6 +25,7 @@ PRIME RULES
 - JSON only; no code fences or prose beyond required fields.
 - If no new/changed setting_lore vs the ACTIVE SETTING LORE block, output "setting_lore": [].
 - Use ACTIVE SETTING LORE for UID lookup. If a name matches a listed entry that has uid, copy that uid; omit uid for new names.
+- UID ENFORCEMENT: If you emit a setting_lore item whose name matches any <setting_lore name="... uid="..."> below, you MUST include that uid. Do not rename/alias to evade uid copying. Omitting a required uid is invalid.
 - No entry for {{user}}. Capture {{user}} relations inside NPC Relationships.
 - Add entries only if NEW or CHANGED vs the ACTIVE SETTING LORE block; otherwise set "setting_lore": [].
 
@@ -57,6 +58,7 @@ CONTENT GUIDELINES (omit empty fields)
 
 PRE-FLIGHT
 - Attributes/State free of verbs/articles? Synopsis <=10 words? Only demonstrated info? No new info vs ACTIVE SETTING LORE -> "setting_lore": [].
+- UID check: every emitted setting_lore whose name matches ACTIVE SETTING LORE with uid has that uid copied; no renamed/aliased entities; else regenerate.
 
 ---------------- ACTIVE SETTING LORE (for UID lookup & change detection) ----------------
 {{active_setting_lore}}
