@@ -50,7 +50,7 @@ SECTION 3 - SETTING_LORE ARRAY ONLY
 - Never reuse the example UIDs; only copy from ACTIVE_SETTING_LORE for the EXACT ENTITY ONLY IF PRESENT.
 - Add entries only if NEW or CHANGED vs ACTIVE_SETTING_LORE.
 - Keywords: lowercase scene triggers; consolidate repeats.
-- User handling: never create a {{user}} entry. If NPC behavior depends on {{user}}, capture it in Relationships for that NPC (e.g., "NPC -> {{user}} ? obligation/consent boundary/leverage") only when demonstrated and consequential.
+- User handling (hard block): never create or include a character-{{user}} setting_lore entry. If NPC behavior depends on {{user}}, put it only in that NPC's Relationships field (e.g., "NPC -> {{user}} ? obligation/consent boundary/leverage") when demonstrated and consequential—do not emit a character-{{user}} entity.
 - Content guidelines (omit empty fields):
   * Style: compact fragment/semicolon lines; no prose sentences or code fences; stay concise but keep nuance.
   * Identity/Synopsis: <=10 words.
@@ -65,6 +65,7 @@ SECTION 3 - SETTING_LORE ARRAY ONLY
 SECTION 4 - PRE-FLIGHT CHECK
 - Attributes/State free of verbs/articles? Synopsis <=10 words? Only demonstrated info?
 - No new info vs ACTIVE_SETTING_LORE.
+- No character-{{user}} entries in setting_lore (if present, remove; output otherwise invalid).
 - Name/type check: any emitted entity matching ACTIVE_SETTING_LORE reuses exact name+type; no aliases.
 - UID check: only copy uid when exact same entity (name+type+identity match) has uid in ACTIVE_SETTING_LORE; otherwise omit. No invented/altered uids.
 
