@@ -15,6 +15,7 @@ import {
   selectorsSillyTavern,
   get_data,
   toast,
+  MODULE_NAME,
   SUBSYSTEM } from
 './index.js';
 import { getQueueStats } from './operationQueue.js';
@@ -127,6 +128,18 @@ function canCreateCheckpointOrBranch(messageIndex ) {
   return { allowed: true, reason: null };
 }
 
+async function deepCloneSceneRecapData() {
+  const ctx = getContext();
+  const chat = ctx.chat;
+  for (let i = 0; i < chat.length; i++) {
+    const msg = chat[i];
+    if (msg.extra && msg.extra[MODULE_NAME]) {
+      msg.extra[MODULE_NAME] = structuredClone(msg.extra[MODULE_NAME]);
+    }
+  }
+  await ctx.saveChat();
+}
+
 function initialize_checkpoint_branch_interceptor() {
   debug(SUBSYSTEM.UI, 'Initializing checkpoint/branch button interceptor');
 
@@ -189,6 +202,9 @@ function initialize_checkpoint_branch_interceptor() {
       await openCharacterChat(newChatName);
 
       debug(SUBSYSTEM.UI, `Switched to ${buttonType}: ${newChatName}`);
+
+      // Deep-clone scene recap data for all messages to prevent shared references
+      await deepCloneSceneRecapData();
 
       // Find the most recent scene break with a lorebook snapshot (at or before this message)
       const ctx = getContext();
