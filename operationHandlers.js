@@ -61,7 +61,9 @@ import {
   addLorebookEntry,
   deleteLorebookEntry,
   updateRegistryEntryContent,
-  reorderLorebookEntriesAlphabetically } from
+  reorderLorebookEntriesAlphabetically,
+  invalidateLorebookCache,
+  isInternalEntry } from
 './lorebookManager.js';
 import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
 import {
@@ -86,6 +88,79 @@ const DEFAULT_MINIMUM_SCENE_LENGTH = 4;
 
 function get_message_div(index) {
   return $(`div[mesid="${index}"]`);
+}
+
+// Helper: Check if lorebook lookup can be skipped (empty lorebook optimization)
+async function checkCanSkipLorebookLookup(operation, entryData) {
+  if (operation.metadata?.lorebook_was_empty_at_scene_start !== true) {
+    return { canSkip: false };
+  }
+
+  debug(SUBSYSTEM.QUEUE, `[SKIP CHECK] Lorebook was flagged as empty at scene start for: ${entryData.comment}`);
+
+  // MANDATORY re-validation: verify lorebook is still empty
+  let stillEmpty = false;
+  try {
+    const lorebookName = getAttachedLorebook();
+    if (lorebookName) {
+      await invalidateLorebookCache(lorebookName);
+      const entries = await getLorebookEntries(lorebookName);
+      if (entries && Array.isArray(entries)) {
+        const realEntries = entries.filter(entry => !isInternalEntry(entry?.comment));
+        stillEmpty = realEntries.length === 0;
+        debug(SUBSYSTEM.QUEUE, `[SKIP CHECK] Re-validation complete: ${stillEmpty ? 'STILL EMPTY' : 'NOW HAS ENTRIES'} (${entries.length} total, ${realEntries.length} real)`);
+      }
+    }
+  } catch (err) {
+    error(SUBSYSTEM.QUEUE, `[SKIP CHECK] Re-validation failed for ${entryData.comment}:`, err);
+  }
+
+  if (stillEmpty) {
+    debug(SUBSYSTEM.QUEUE, `[SKIP] Skipping LLM lookup for "${entryData.comment}" (lorebook empty at message ${operation.metadata?.message_index}, version ${operation.metadata?.version_index})`);
+  } else {
+    debug(SUBSYSTEM.QUEUE, `[SKIP CHECK] Lorebook no longer empty, running normal lookup for: ${entryData.comment}`);
+  }
+
+  return { canSkip: stillEmpty };
+}
+
+// Helper: Execute skip path for lorebook lookup (when lorebook is empty)
+async function executeSkipPath(operation, entryId, entryData) {
+  // Build synthetic result with empty UIDs (matches structure of real LLM result)
+  const syntheticResult = {
+    type: entryData.type || 'unknown',
+    synopsis: entryData.synopsis || '',
+    sameEntityUids: [],
+    needsFullContextUids: []
+  };
+
+  // Store synthetic result and mark stage complete
+  setLorebookEntryLookupResult(entryId, syntheticResult);
+  markStageInProgress(entryId, 'lorebook_entry_lookup_complete');
+
+  debug(SUBSYSTEM.QUEUE, `✓ Lorebook Entry Lookup SKIPPED for ${entryId}: type=${syntheticResult.type}, sameUids=[], needsUids=[]`);
+
+  // Enqueue CREATE operation directly (no match possible in empty lorebook)
+  const nextOpId = await enqueueOperation(
+    OperationType.CREATE_LOREBOOK_ENTRY,
+    { entryId, action: 'create' },
+    {
+      priority: 14,
+      queueVersion: operation.queueVersion,
+      metadata: {
+        entry_comment: entryData.comment,
+        message_index: operation.metadata?.message_index,
+        version_index: operation.metadata?.version_index,
+        hasPrefill: false,
+        includePresetPrompts: false,
+        skipped_llm_lookup: true,
+        skip_reason: 'lorebook_empty_at_scene_start'
+      }
+    }
+  );
+  await transferDependencies(operation.id, nextOpId);
+
+  return { success: true, lorebookEntryLookupResult: syntheticResult, skipped: true };
 }
 
 // Helper: Update scene break message with current lorebook snapshot
@@ -1214,6 +1289,12 @@ export function registerAllOperationHandlers() {
     const settings = await buildLorebookOperationsSettings();
 
     debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Settings - skip_duplicates: ${settings.skip_duplicates}`);
+
+    // Check for skip path optimization (empty lorebook at scene start)
+    const skipCheck = await checkCanSkipLorebookLookup(operation, entryData);
+    if (skipCheck.canSkip) {
+      return await executeSkipPath(operation, entryId, entryData);
+    }
 
     // Run lorebook entry lookup
     debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Running lookup stage...`);

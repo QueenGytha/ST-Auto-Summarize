@@ -38,7 +38,7 @@ export function initLorebookManager(utils ) {
   get_settings = utils.get_settings;
 }
 
-async function invalidateLorebookCache(lorebookName ) {
+export async function invalidateLorebookCache(lorebookName ) {
   if (!lorebookName) {
     return;
   }
@@ -355,9 +355,11 @@ function getActiveLorebookNames() {
   return [...new Set(activeBooks)].filter(Boolean);
 }
 
-function isInternalEntry(comment ) {
-  return comment.startsWith('_registry_') ||
-    comment.startsWith('_operations_queue_');
+export function isInternalEntry(comment) {
+  if (!comment || typeof comment !== 'string') {
+    return false;
+  }
+  return comment.startsWith('_registry_') || comment === '__operation_queue';
 }
 
 const DEFAULT_DEPTH = 4;
@@ -1133,5 +1135,7 @@ export default {
   deleteLorebookEntry,
   getLorebookEntries,
   updateRegistryEntryContent,
-  reorderLorebookEntriesAlphabetically
+  reorderLorebookEntriesAlphabetically,
+  isInternalEntry,
+  invalidateLorebookCache
 };

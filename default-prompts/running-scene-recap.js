@@ -18,6 +18,7 @@ MERGE RULES:
 - Keep relevant facts; drop resolved/superseded; no duplicates.
 - Integrate scene_recaps line-by-line; combine related facts; keep cause->effect traces.
 - Running recap = durable plot/state; setting_lore holds entity detail; minimize descriptors.
+- Resolved threads/plot points: keep as short historical stubs only when needed for continuity (who/what/why outcome); otherwise trim out.
 - Preserve nuance: promises, conditions, timers, obligations, secrets, foreshadowing.
 - Keep canonical names from scene_recaps at least once.
 - Location hierarchy: full chain once; shorten later when unambiguous.

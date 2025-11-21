@@ -24,7 +24,7 @@ import {
 './queueIntegration.js';
 import { clearCheckedFlagsInRange, setCheckedFlagsInRange } from './autoSceneBreakDetection.js';
 import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
-import { getAttachedLorebook } from './lorebookManager.js';
+import { getAttachedLorebook, getLorebookEntries, invalidateLorebookCache, isInternalEntry } from './lorebookManager.js';
 import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.js';
 import { build as buildSceneMessages } from './macros/scene_messages.js';
 import { build as buildActiveSettingLore } from './macros/active_setting_lore.js';
@@ -1401,6 +1401,38 @@ async function saveSceneRecap(config) {
   return lorebookOpIds;
 }
 
+// Helper: Check if lorebook is empty at scene start (only internal entries exist)
+async function checkLorebookEmptyState(messageIndex, versionIndex) {
+  try {
+    const lorebookName = getAttachedLorebook();
+    if (!lorebookName) {
+      debug(SUBSYSTEM.SCENE, `[EMPTY CHECK] No lorebook attached for message ${messageIndex}, version ${versionIndex}`);
+      return false;
+    }
+
+    // Invalidate cache to ensure fresh read
+    await invalidateLorebookCache(lorebookName);
+
+    // Get all entries
+    const entries = await getLorebookEntries(lorebookName);
+    if (!entries || !Array.isArray(entries)) {
+      debug(SUBSYSTEM.SCENE, `[EMPTY CHECK] Failed to load entries for lorebook: ${lorebookName}`);
+      return false;
+    }
+
+    // Filter out internal entries
+    const realEntries = entries.filter(entry => !isInternalEntry(entry?.comment));
+
+    const isEmpty = realEntries.length === 0;
+    debug(SUBSYSTEM.SCENE, `[EMPTY CHECK] Lorebook "${lorebookName}" for message ${messageIndex}, version ${versionIndex}: ${isEmpty ? 'EMPTY' : 'HAS ENTRIES'} (${entries.length} total, ${realEntries.length} real)`);
+
+    return isEmpty;
+  } catch (err) {
+    error(SUBSYSTEM.SCENE, `[EMPTY CHECK] Error checking lorebook empty state for message ${messageIndex}, version ${versionIndex}:`, err);
+    return false;
+  }
+}
+
 // Helper: Extract lorebooks from recap JSON and queue each as individual operation
 // Note: Recap should already be clean JSON from executeSceneRecapGeneration()
 async function extractAndQueueLorebookEntries(
@@ -1423,6 +1455,9 @@ versionIndex
     const entriesArray = Array.isArray(parsed.setting_lore) ? parsed.setting_lore : null;
     if (entriesArray) {
       debug(SUBSYSTEM.SCENE, `Found ${entriesArray.length} setting_lore entries in scene recap at index ${messageIndex}`);
+
+      // Check if lorebook is empty at scene start (optimization for first scene)
+      const lorebookWasEmptyAtSceneStart = await checkLorebookEmptyState(messageIndex, versionIndex);
 
       // Deduplicate entries by name/comment before queueing
       const seenNames  = new Set();
@@ -1451,7 +1486,7 @@ versionIndex
         // Sequential execution required: entries must be queued in order
         debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Calling queueProcessLorebookEntry for: ${entry.name || entry.comment}`);
         // eslint-disable-next-line no-await-in-loop -- Lorebook entries must be queued sequentially to maintain processing order
-        const opId = await queueProcessLorebookEntry(entry, messageIndex, recapHash, { metadata: { version_index: versionIndex } });
+        const opId = await queueProcessLorebookEntry(entry, messageIndex, recapHash, { metadata: { version_index: versionIndex, lorebook_was_empty_at_scene_start: lorebookWasEmptyAtSceneStart } });
         if (opId) {
           debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] ✓ Queued lorebook entry: ${entry.name || entry.comment} (op: ${opId})`);
           lorebookOpIds.push(opId);
