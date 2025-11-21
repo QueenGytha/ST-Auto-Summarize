@@ -25,7 +25,7 @@ import {
   calculateAvailableContext,
   calculateSceneRecapTokensForRange } from
 './autoSceneBreakDetection.js';
-import { generateSceneRecap, toggleSceneBreak, clearSceneBreak } from './sceneBreak.js';
+import { generateSceneRecap, toggleSceneBreak, clearSceneBreak, renderSceneBreak } from './sceneBreak.js';
 import {
   generate_running_scene_recap,
   combine_scene_with_running_recap } from
@@ -1122,6 +1122,9 @@ export function registerAllOperationHandlers() {
           set_data(message, 'scene_recap_metadata', metadata);
           saveChatDebounced();
           debug(SUBSYSTEM.QUEUE, `Marked scene ${index} version ${currentVersionIndex} as combined (locked)`);
+
+          // Re-render scene break UI to immediately show locked state
+          renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
         }
       }
     }
