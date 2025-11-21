@@ -141,19 +141,9 @@ async function updateSceneLorebookSnapshot(messageIndex) {
       };
     }
 
-    // Get created entry UIDs for this specific recap version
-    const createdUids = metadata[currentVersionIndex].created_entry_uids || [];
-    const createdUidSet = new Set(createdUids.map(uid => String(uid)));
-
-    debug(SUBSYSTEM.QUEUE, `Filtering snapshot to ${createdUids.length} created UIDs for version ${currentVersionIndex}: [${createdUids.join(', ')}]`);
-
-    // Filter entries to ONLY include those created by this recap version
+    // Get ALL entries (including registries), excluding only operation queue
     const allLorebookEntries = Object.values(worldData.entries)
-      .filter(entry => {
-        if (!entry || entry.comment === '__operation_queue') {return false;}
-        const uid = String(entry.uid);
-        return createdUidSet.has(uid);
-      })
+      .filter(entry => entry && entry.comment !== '__operation_queue')
       .map(entry => ({
         comment: entry.comment || '(unnamed)',
         uid: entry.uid,
@@ -184,14 +174,11 @@ async function updateSceneLorebookSnapshot(messageIndex) {
         strategy: entry.constant ? 'constant' : (entry.vectorized ? 'vectorized' : 'normal')
       }));
 
-    // Get ACTIVE entries by re-running lorebook activation check, then filter to created UIDs
+    // Get ACTIVE entries by re-running lorebook activation check
     const { getActiveLorebooksAtPosition } = await import('./sceneBreak.js');
     const lorebookResult = await getActiveLorebooksAtPosition(messageIndex, ctx, get_data, false);
 
-    const activeEntries = (lorebookResult?.entries || []).filter(entry => {
-      const uid = String(entry.uid);
-      return createdUidSet.has(uid);
-    });
+    const activeEntries = lorebookResult?.entries || [];
 
     // Update the versioned metadata with the NEW snapshot (AFTER state)
     metadata[currentVersionIndex].allEntries = allLorebookEntries;
