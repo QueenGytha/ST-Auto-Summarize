@@ -15,9 +15,6 @@ import {
   selectorsSillyTavern,
   get_data,
   toast,
-  MODULE_NAME,
-  getCurrentChatId,
-  chat_metadata,
   SUBSYSTEM } from
 './index.js';
 import { getQueueStats } from './operationQueue.js';
@@ -130,23 +127,15 @@ function canCreateCheckpointOrBranch(messageIndex ) {
   return { allowed: true, reason: null };
 }
 
-async function deepCloneSceneRecapData() {
+async function ensureBranchDataPersisted() {
   const ctx = getContext();
-  const chat = ctx.chat;
 
-  // Deep-clone message-level scene recap data
-  for (let i = 0; i < chat.length; i++) {
-    const msg = chat[i];
-    if (msg.extra && msg.extra[MODULE_NAME]) {
-      msg.extra[MODULE_NAME] = structuredClone(msg.extra[MODULE_NAME]);
-    }
-  }
-
-  // Deep-clone chat-level running recap data and update chat_id
-  if (chat_metadata.auto_recap_running_scene_recaps) {
-    chat_metadata.auto_recap_running_scene_recaps = structuredClone(chat_metadata.auto_recap_running_scene_recaps);
-    chat_metadata.auto_recap_running_scene_recaps.chat_id = getCurrentChatId();
-  }
+  // After branch/checkpoint creation, the CHAT_CHANGED event has already fired,
+  // which triggered get_running_recap_storage() to update the chat_id for this branch.
+  // We just need to save the chat to persist that update.
+  //
+  // Note: JSON serialization during saveChat/getChat already deep-copies all data,
+  // so no manual cloning is needed.
 
   await ctx.saveChat();
 }
@@ -214,8 +203,8 @@ function initialize_checkpoint_branch_interceptor() {
 
       debug(SUBSYSTEM.UI, `Switched to ${buttonType}: ${newChatName}`);
 
-      // Deep-clone scene recap data for all messages to prevent shared references
-      await deepCloneSceneRecapData();
+      // Save chat to persist running recap chat_id update from CHAT_CHANGED event
+      await ensureBranchDataPersisted();
 
       // Find the most recent scene break with a lorebook snapshot (at or before this message)
       const ctx = getContext();
