@@ -1266,6 +1266,7 @@ export function registerAllOperationHandlers() {
           metadata: {
             entry_comment: entryData.comment,
             message_index: operation.metadata?.message_index,
+            version_index: operation.metadata?.version_index,
             hasPrefill: Boolean(settings.lorebook_entry_deduplicate_prefill && settings.lorebook_entry_deduplicate_prefill.trim().length > 0),
             includePresetPrompts: settings.lorebook_entry_deduplicate_include_preset_prompts ?? false
           }
@@ -1287,6 +1288,7 @@ export function registerAllOperationHandlers() {
           metadata: {
             entry_comment: entryData.comment,
             message_index: operation.metadata?.message_index,
+            version_index: operation.metadata?.version_index,
             hasPrefill: Boolean(settings.merge_prefill && settings.merge_prefill.trim().length > 0),
             includePresetPrompts: settings.merge_include_preset_prompts ?? false
           }
@@ -1304,6 +1306,7 @@ export function registerAllOperationHandlers() {
           metadata: {
             entry_comment: entryData.comment,
             message_index: operation.metadata?.message_index,
+            version_index: operation.metadata?.version_index,
             hasPrefill: false,
             includePresetPrompts: false
           }
@@ -1420,6 +1423,7 @@ export function registerAllOperationHandlers() {
           metadata: {
             entry_comment: entryData.comment,
             message_index: operation.metadata?.message_index,
+            version_index: operation.metadata?.version_index,
             hasPrefill: Boolean(settings.merge_prefill && settings.merge_prefill.trim().length > 0),
             includePresetPrompts: settings.merge_include_preset_prompts ?? false
           }
@@ -1437,6 +1441,7 @@ export function registerAllOperationHandlers() {
           metadata: {
             entry_comment: entryData.comment,
             message_index: operation.metadata?.message_index,
+            version_index: operation.metadata?.version_index,
             hasPrefill: false,
             includePresetPrompts: false
           }
