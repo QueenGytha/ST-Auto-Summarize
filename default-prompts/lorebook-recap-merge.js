@@ -23,13 +23,13 @@ BREVITY + COMPRESSION
 - Line-oriented fragments; semicolons; abbreviations (bc/w/+). No filler (seems/appears/currently). Do not expand concise inputs.
 - Attributes/State: no verbs/articles. State = current only (not event log).
 - Direct language for intimacy/sexual content; no euphemisms. Important to keep the nuance here for tone, style and consistency.
-- Minimal change: preserve existing lines and ordering; only alter lines that must change; avoid new lines unless truly new info. If nothing to add/change/prune, return original EXACTLY.
+- Minimal output: aggressively deduplicate/compress; you may reorder or rewrite fragments to remove redundancy. If nothing to add/change/prune, return original EXACTLY.
 
 MERGE RULES
 1) Add new facts; update changed facts; pack with semicolons; "+" for causation.
 2) Preserve story-critical history as causal chains: enemies (blamed sister's death) + alliance during siege.
 3) Prune duplicates, trivial fluff, superseded minor details (unless story-relevant). If nothing to add/change and nothing to prune, return original EXACTLY.
-4) Deduplicate: consolidate repeated traits; State is current; Psychology/Relationships merge repeats; Micro-Moments keep distinct facets only.
+4) Deduplicate HARD: consolidate repeated or similar traits; collapse near-duplicate Attributes/Psychology/Relationships/Style into the single most specific fragment; State is current; Micro-Moments keep distinct facets only; remove redundant quotes.
 5) Name resolution: if vague label + proper name provided, set canonicalName to proper name.
 6) Relationship nuance: capture shifts in trust/power/affection/resentment/boundaries/consent/debts/alliances; intimacy/kinks/boundaries when demonstrated.
 7) Voice fidelity: preserve all existing diction/cadence/mannerism/consent cues. Add new cues only when they convey a new facet (e.g., stricter consent line, different cadence, new catchphrase/tone). If a new line is similar but adds nuance, keep the more specific one; if fully redundant, drop the duplicate. Keep micro-quotes that anchor style; do not rewrite unchanged cues.
@@ -41,7 +41,7 @@ FORMAT (compact fragment lines; omit empty; do not change the existing formattin
 - Attributes; State (current).
 - Psychology: trigger + response + outcome.
 - Relationships: X -> Y ? stance/behavior; note shifts; interaction defaults if shown.
-- Intimacy/Romance/Sexual interests (kinks/turn-ons/boundaries/aftercare/comfort); Secrets/Leverage; Tension/Triggers; Style/Mannerisms (brief diction/cadence/quirks; default speech cadence/catchphrase; keep nuance even if slightly longer); Micro-Moments (brief but include key nuance); Notable dialogue (verbatim, short, max 3, only when it encodes voice/tone or is plot-relevant; no {{user}} quotes; never invent or paraphrase). Include these only if new/changed.
+- Intimacy/Romance/Sexual interests (kinks/turn-ons/boundaries/aftercare/comfort); Secrets/Leverage; Tension/Triggers; Style/Mannerisms (brief diction/cadence/quirks; default speech cadence/catchphrase; keep nuance even if slightly longer); Micro-Moments (brief but include key nuance); Notable dialogue: verbatim, short, max 3 total; prioritize plot-relevant quotes; include style/voice quotes only if they add a distinct cadence cue beyond plot quotes; label quotes as "(plot)" or "(style)" for clarity; no {{user}} quotes; never invent or paraphrase. Include these only if new/changed.
 - Entity/location naming: subareas use "Parent-Subarea"; Identity for locations: "Location - Parent-Subarea". Include "Located in: <Parent>" when applicable.
 
 OUTPUT (JSON only; no code fences):

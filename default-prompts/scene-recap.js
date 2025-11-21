@@ -31,6 +31,7 @@ SECTION 1 - GLOBAL RULES (apply to ALL output)
 - JSON only; no code fences or prose beyond required fields.
 - Brevity and compression: fragments; semicolons; digits; drop filler; avoid articles/verbs in Attributes/State. Only demonstrated info; if uncertain, prefix "Likely:"/"Uncertain:". Explicit terms (no euphemisms). No repetition; merge duplicates.
 - Voice fidelity: when diction/cadence/mannerisms/consent boundaries appear or shift, capture in setting_lore as brief Style/Mannerisms or Notable dialogue cues. Prefer canonical names over pronouns for these cues.
+- Changed-only discipline: if an entity has no new or changed facets vs ACTIVE_SETTING_LORE, do NOT emit it. Do not restate unchanged content.
 
 SECTION 2 - RECAP (markdown) ONLY
 - What belongs: plot beats; decisions; documents (quote verbatim); travel/combat; durable relationship shifts; tone/style anchors; pending threads (goals/timers/secrets/obligations).
@@ -48,25 +49,25 @@ SECTION 3 - SETTING_LORE ARRAY ONLY
 - UID policy: copy uid only when the emitted entity is the exact same as an entry in ACTIVE_SETTING_LORE (match name+type+identity/content) and that entry has uid; otherwise omit uid. Never invent/alter uid formats.
 - UID enforcement: if name+type matches an ACTIVE_SETTING_LORE entry with uid, include that uid; omitting when it exists is invalid.
 - Never reuse the example UIDs; only copy from ACTIVE_SETTING_LORE for the EXACT ENTITY ONLY IF PRESENT.
-- Add entries only if NEW or CHANGED vs ACTIVE_SETTING_LORE.
+- Add entries only if NEW or CHANGED vs ACTIVE_SETTING_LORE; if everything matches, omit the entry entirely.
 - Keywords: lowercase scene triggers; consolidate repeats.
 - User handling (hard block): never create or include a character-{{user}} setting_lore entry. If NPC behavior depends on {{user}}, put it only in that NPC's Relationships field (e.g., "NPC -> {{user}} ? obligation/consent boundary/leverage") when demonstrated and consequential.
 - Content guidelines (omit empty fields):
   * Style: compact fragment/semicolon lines; no prose sentences or code fences; stay concise but keep nuance.
   * Identity/Synopsis: <=10 words.
   * Attributes: descriptors; no verbs/articles. State: location; condition (current only, if relevant).
-  * Psychology: trigger -> response -> outcome.
-  * Relationships: X -> Y ? stance/behavior; include shifts, intimacy, consent/boundaries, jealousy, loyalty. Interaction defaults if shown; note trigger+outcome for boundary changes. Only if new/changed vs ACTIVE_SETTING_LORE.
+  * Psychology: trigger -> response -> outcome (dedupe similar phrasing).
+  * Relationships: X -> Y ? stance/behavior; include shifts, intimacy, consent/boundaries, jealousy, loyalty. Interaction defaults if shown; note trigger+outcome for boundary changes. Only if new/changed vs ACTIVE_SETTING_LORE. Collapse near-duplicate lines into one specific line.
   * Intimacy/Romance/Sexual interests: include kinks/turn-ons/boundaries/aftercare/comfort when demonstrated; direct terms for what happened, NO EUPHEMISM. It is important to capture the nuance/tone etc for consistency on the relationship once the messages themselves are removed from context; only if new/changed vs ACTIVE_SETTING_LORE.
-  * Style/Mannerisms: brief diction/cadence/quirks; default speech cadence or catchphrase; keep nuance even if slightly longer.
-  * Notable dialogue: short verbatim snippets (<=12 words), up to 3 per character when present; only if it anchors voice/mood or plot; NO {{user}} QUOTES EVER; do not invent or paraphrase.
+  * Style/Mannerisms: brief diction/cadence/quirks; default speech cadence or catchphrase; keep nuance even if slightly longer; dedupe similar cues.
+  * Notable dialogue: short verbatim snippets; prioritize plot-relevant quotes; only include style/voice quotes if they add a distinct cadence cue beyond the plot quotes; only include style quotes if they are meaningfully different to the existing for the character in ACTIVE_SETTING_LORE. NO {{user}} QUOTES EVER; do not invent or paraphrase.
   * Micro-Moments, Secrets/Leverage, Tension/Triggers: brief but include key nuance; use when they reveal personality, leverage, or boundaries and are new/changed.
   * Entity types: Quest (Status: planned|in-progress|completed|failed), Lore (Reliability: established fact|disputed|legend), Item (Provenance, Owner change), Locations use "Parent-Subarea".
 
 SECTION 4 - PRE-FLIGHT CHECK
 - Attributes/State free of verbs/articles? Synopsis <=10 words? Only demonstrated info?
 - No new info vs ACTIVE_SETTING_LORE.
-- Notable dialogue present in transcript captured verbatim (<=12 words, max 3) per character? None invented?
+- Notable dialogue present in transcript captured verbatim per character? None invented?
 - Name/type check: any emitted entity matching ACTIVE_SETTING_LORE reuses exact name+type; no aliases.
 - UID check: only copy uid when exact same entity (name+type+identity match) has uid in ACTIVE_SETTING_LORE; otherwise omit. No invented/altered uids.
 

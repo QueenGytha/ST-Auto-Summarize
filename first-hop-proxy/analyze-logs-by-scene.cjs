@@ -17,39 +17,57 @@ function parseLogFile(filePath) {
     return { duration, promptTokens, completionTokens };
 }
 
-function isSceneBreakFile(fileName) {
-    return fileName.includes('detect_scene_break');
+function isSceneEndFile(fileName) {
+    return fileName.includes('combine_scene_with_running');
+}
+
+function getOperationType(fileName) {
+    if (fileName.includes('detect_scene_break')) return 'detect_scene_break';
+    if (fileName.includes('generate_scene_recap')) return 'generate_scene_recap';
+    if (fileName.includes('lorebook_entry_lookup')) return 'lorebook_entry_lookup';
+    if (fileName.includes('resolve_lorebook')) return 'resolve_lorebook';
+    if (fileName.includes('merge_lorebook')) return 'merge_lorebook';
+    if (fileName.includes('combine_scene_with_running')) return 'combine_scene_with_running';
+    return 'unknown';
 }
 
 function groupFilesByScene(files) {
     const scenes = [];
-    let currentScene = null;
+    let currentScene = {
+        files: [],
+        sceneNumber: 1,
+        endingFile: null
+    };
+    scenes.push(currentScene);
+
+    let hasSeenSceneEnd = false;
 
     for (const file of files) {
         const fileName = path.basename(file);
+        const isSceneEnd = isSceneEndFile(fileName);
 
-        if (isSceneBreakFile(fileName)) {
-            if (!currentScene || currentScene.files.some(f => !isSceneBreakFile(path.basename(f)))) {
-                currentScene = {
-                    sceneBreakFiles: [],
-                    files: [],
-                    sceneNumber: scenes.length + 1
-                };
-                scenes.push(currentScene);
-            }
-            currentScene.sceneBreakFiles.push(file);
-            currentScene.files.push(file);
-        } else {
-            if (!currentScene) {
-                currentScene = {
-                    sceneBreakFiles: [],
-                    files: [],
-                    sceneNumber: 0
-                };
-                scenes.push(currentScene);
-            }
-            currentScene.files.push(file);
+        // If we've seen a scene-ending file and this is NOT a scene-ending file,
+        // then this is a new scene (the previous scene-ending files were retries)
+        if (hasSeenSceneEnd && !isSceneEnd) {
+            currentScene = {
+                files: [],
+                sceneNumber: scenes.length + 1,
+                endingFile: null
+            };
+            scenes.push(currentScene);
+            hasSeenSceneEnd = false;
         }
+
+        currentScene.files.push(file);
+
+        if (isSceneEnd) {
+            currentScene.endingFile = fileName;
+            hasSeenSceneEnd = true;
+        }
+    }
+
+    if (currentScene.files.length === 0) {
+        scenes.pop();
     }
 
     return scenes;
@@ -61,9 +79,28 @@ function analyzeScene(scene) {
     let totalCompletionTokens = 0;
     let filesProcessed = 0;
 
+    const operationStats = {};
+
     for (const file of scene.files) {
         try {
             const { duration, promptTokens, completionTokens } = parseLogFile(file);
+            const fileName = path.basename(file);
+            const opType = getOperationType(fileName);
+
+            if (!operationStats[opType]) {
+                operationStats[opType] = {
+                    count: 0,
+                    duration: 0,
+                    promptTokens: 0,
+                    completionTokens: 0
+                };
+            }
+
+            operationStats[opType].count++;
+            operationStats[opType].duration += duration;
+            operationStats[opType].promptTokens += promptTokens;
+            operationStats[opType].completionTokens += completionTokens;
+
             totalDuration += duration;
             totalPromptTokens += promptTokens;
             totalCompletionTokens += completionTokens;
@@ -78,7 +115,8 @@ function analyzeScene(scene) {
         totalDuration,
         totalPromptTokens,
         totalCompletionTokens,
-        totalTokens: totalPromptTokens + totalCompletionTokens
+        totalTokens: totalPromptTokens + totalCompletionTokens,
+        operationStats
     };
 }
 
@@ -112,28 +150,50 @@ function analyzeLogs(logsFolder) {
     let grandTotalPromptTokens = 0;
     let grandTotalCompletionTokens = 0;
     let grandTotalFiles = 0;
+    const grandOperationStats = {};
 
     for (const scene of scenes) {
-        const sceneLabel = scene.sceneNumber === 0 ? 'Pre-Scene Logs' : `Scene ${scene.sceneNumber}`;
+        const sceneLabel = `Scene ${scene.sceneNumber}`;
         const stats = analyzeScene(scene);
 
         console.log(`${'-'.repeat(60)}`);
         console.log(`${sceneLabel}`);
-        console.log(`${'-'.repeat(60)}`);
-
-        if (scene.sceneBreakFiles.length > 0) {
-            console.log(`Scene Break Files (${scene.sceneBreakFiles.length}):`);
-            for (const file of scene.sceneBreakFiles) {
-                console.log(`  - ${path.basename(file)}`);
-            }
+        if (scene.endingFile) {
+            console.log(`Ending File: ${scene.endingFile}`);
         }
-
+        console.log(`${'-'.repeat(60)}`);
         console.log(`Files in Scene: ${stats.filesProcessed}`);
         console.log(`Duration: ${stats.totalDuration.toFixed(3)} seconds (${(stats.totalDuration / 60).toFixed(2)} minutes)`);
         console.log(`Prompt Tokens: ${stats.totalPromptTokens.toLocaleString()}`);
         console.log(`Completion Tokens: ${stats.totalCompletionTokens.toLocaleString()}`);
         console.log(`Total Tokens: ${stats.totalTokens.toLocaleString()}`);
         console.log();
+
+        const opTypes = Object.keys(stats.operationStats).sort();
+        if (opTypes.length > 0) {
+            console.log(`Breakdown by Operation:`);
+            for (const opType of opTypes) {
+                const op = stats.operationStats[opType];
+                const totalTokens = op.promptTokens + op.completionTokens;
+                console.log(`  ${opType} (${op.count} file${op.count !== 1 ? 's' : ''}):`);
+                console.log(`    Duration: ${op.duration.toFixed(3)}s`);
+                console.log(`    Prompt: ${op.promptTokens.toLocaleString()}, Completion: ${op.completionTokens.toLocaleString()}, Total: ${totalTokens.toLocaleString()}`);
+
+                if (!grandOperationStats[opType]) {
+                    grandOperationStats[opType] = {
+                        count: 0,
+                        duration: 0,
+                        promptTokens: 0,
+                        completionTokens: 0
+                    };
+                }
+                grandOperationStats[opType].count += op.count;
+                grandOperationStats[opType].duration += op.duration;
+                grandOperationStats[opType].promptTokens += op.promptTokens;
+                grandOperationStats[opType].completionTokens += op.completionTokens;
+            }
+            console.log();
+        }
 
         grandTotalDuration += stats.totalDuration;
         grandTotalPromptTokens += stats.totalPromptTokens;
@@ -146,8 +206,22 @@ function analyzeLogs(logsFolder) {
     console.log(`${'='.repeat(60)}`);
     console.log(`GRAND TOTALS`);
     console.log(`${'='.repeat(60)}`);
+
+    const grandOpTypes = Object.keys(grandOperationStats).sort();
+    if (grandOpTypes.length > 0) {
+        console.log(`Breakdown by Operation (All Scenes):`);
+        for (const opType of grandOpTypes) {
+            const op = grandOperationStats[opType];
+            const totalTokens = op.promptTokens + op.completionTokens;
+            console.log(`  ${opType} (${op.count} file${op.count !== 1 ? 's' : ''}):`);
+            console.log(`    Duration: ${op.duration.toFixed(3)}s (${(op.duration / 60).toFixed(2)} minutes)`);
+            console.log(`    Prompt: ${op.promptTokens.toLocaleString()}, Completion: ${op.completionTokens.toLocaleString()}, Total: ${totalTokens.toLocaleString()}`);
+        }
+        console.log();
+    }
+
     console.log(`Total Files Processed: ${grandTotalFiles}`);
-    console.log(`Total Scenes: ${scenes.filter(s => s.sceneNumber > 0).length}`);
+    console.log(`Total Scenes: ${scenes.length}`);
     console.log(`Total Duration: ${grandTotalDuration.toFixed(3)} seconds (${(grandTotalDuration / 60).toFixed(2)} minutes)`);
     console.log(`Total Prompt Tokens: ${grandTotalPromptTokens.toLocaleString()}`);
     console.log(`Total Completion Tokens: ${grandTotalCompletionTokens.toLocaleString()}`);
@@ -162,8 +236,9 @@ if (args.length === 0) {
     console.log('Usage: node analyze-logs-by-scene.cjs <logs-folder-path>');
     console.log('\nExample:');
     console.log('  node analyze-logs-by-scene.cjs "C:\\Users\\sarah\\...\\logs\\characters\\MyCharacter\\2025-11-16..."');
-    console.log('\nThis script groups logs by scene breaks (detect_scene_break files).');
-    console.log('Consecutive detect_scene_break files are treated as part of the same scene.');
+    console.log('\nThis script groups logs by scenes using combine_scene_with_running files as scene endings.');
+    console.log('All logs up to and including the combine_scene_with_running file are part of that scene.');
+    console.log('The next file after starts a new scene.');
     process.exit(1);
 }
 
