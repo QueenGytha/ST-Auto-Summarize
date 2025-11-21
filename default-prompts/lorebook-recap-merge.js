@@ -25,14 +25,15 @@ MERGE RULES
 4) Deduplicate: consolidate repeated traits; State is current; Psychology/Relationships merge repeats; Micro-Moments keep distinct facets only.
 5) Name resolution: if vague label + proper name provided, set canonicalName to proper name.
 6) Relationship nuance: capture shifts in trust/power/affection/resentment/boundaries/consent/debts/alliances; intimacy/kinks/boundaries when demonstrated.
-7) Minimal change: do not rewrite untouched bullets. If new_content empty -> return original exactly.
+7) Preserve existing voice/mannerism/consent cues unless contradicted; add new ones only if distinct.
+8) Minimal change: do not rewrite untouched bullets. If new_content empty -> return original exactly.
 
 FORMAT (bullet-friendly fields; omit empty)
 - Identity; Synopsis <=10 words.
 - Attributes; State (current).
 - Psychology: trigger + response + outcome.
 - Relationships: X -> Y ? stance/behavior; note shifts; interaction defaults if shown.
-- Intimacy/Romance/Sexual interests; Secrets/Leverage; Tension/Triggers; Style notes; Micro-Moments <=12 words; Notable dialogue <=12 words (max 3).
+- Intimacy/Romance/Sexual interests (kinks/turn-ons/boundaries/aftercare/comfort); Secrets/Leverage; Tension/Triggers; Style/Mannerisms (<=12 words; diction/cadence/quirks); Micro-Moments <=12 words; Notable dialogue <=12 words (max 2). Include these only if new/changed.
 - Entity/location naming: subareas use "Parent-Subarea"; Identity for locations: "Location - Parent-Subarea". Include "Located in: <Parent>" when applicable.
 
 OUTPUT (JSON only; no code fences):
