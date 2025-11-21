@@ -16,6 +16,8 @@ import {
   get_data,
   toast,
   MODULE_NAME,
+  getCurrentChatId,
+  chat_metadata,
   SUBSYSTEM } from
 './index.js';
 import { getQueueStats } from './operationQueue.js';
@@ -131,12 +133,21 @@ function canCreateCheckpointOrBranch(messageIndex ) {
 async function deepCloneSceneRecapData() {
   const ctx = getContext();
   const chat = ctx.chat;
+
+  // Deep-clone message-level scene recap data
   for (let i = 0; i < chat.length; i++) {
     const msg = chat[i];
     if (msg.extra && msg.extra[MODULE_NAME]) {
       msg.extra[MODULE_NAME] = structuredClone(msg.extra[MODULE_NAME]);
     }
   }
+
+  // Deep-clone chat-level running recap data and update chat_id
+  if (chat_metadata.auto_recap_running_scene_recaps) {
+    chat_metadata.auto_recap_running_scene_recaps = structuredClone(chat_metadata.auto_recap_running_scene_recaps);
+    chat_metadata.auto_recap_running_scene_recaps.chat_id = getCurrentChatId();
+  }
+
   await ctx.saveChat();
 }
 
