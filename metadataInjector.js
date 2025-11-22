@@ -103,6 +103,7 @@ function parseOperationType(operation) {
     'lorebook_entry_lookup': 'auto_lorebooks_recap_lorebook_entry_lookup',
     'lorebook_entry_deduplicate': 'auto_lorebooks_recap_lorebook_entry_deduplicate',
     'resolve_lorebook_entry': 'auto_lorebooks_recap_lorebook_entry_deduplicate',
+    'compact_lorebook_entry': 'auto_lorebooks_recap_lorebook_entry_compaction',
     'populate_registries': 'auto_lorebooks_bulk_populate',
     'bulk_populate': 'auto_lorebooks_bulk_populate',
     'merge_lorebook_entry': 'auto_lorebooks_recap_merge'

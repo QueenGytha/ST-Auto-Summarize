@@ -553,9 +553,9 @@ async function callAIForCompaction(existingContent , entryName  = '', connection
   let response;
   try {
     const { sendLLMRequest } = await import('./llmClient.js');
-    const { OperationType: OpType } = await import('./operationTypes.js');
     const { resolveProfileId } = await import('./profileResolution.js');
     const effectiveProfile = resolveProfileId(connectionProfile);
+    const metadataOperationType = 'compact_lorebook_entry';
 
     const options = {
       includePreset: include_preset_prompts,
@@ -564,7 +564,7 @@ async function callAIForCompaction(existingContent , entryName  = '', connection
       trimSentences: false
     };
 
-    response = await sendLLMRequest(effectiveProfile, prompt, OpType.COMPACT_LOREBOOK_ENTRY, options);
+    response = await sendLLMRequest(effectiveProfile, prompt, metadataOperationType, options);
   } finally {
     clearOperationSuffix();
   }

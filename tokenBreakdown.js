@@ -317,6 +317,7 @@ export async function calculateAndInjectTokenBreakdown(messages, operation, maxC
     'lorebook_entry_lookup': 'auto_lorebooks_recap_lorebook_entry_lookup',
     'lorebook_entry_deduplicate': 'auto_lorebooks_recap_lorebook_entry_deduplicate',
     'bulk_populate': 'auto_lorebooks_bulk_populate',
+    'compact_lorebook_entry': 'auto_lorebooks_recap_lorebook_entry_compaction',
     'lorebook_entry_compaction': 'auto_lorebooks_recap_lorebook_entry_compaction'
   };
 

@@ -509,6 +509,7 @@ function formatOperationType(type) {
     [OperationType.RESOLVE_LOREBOOK_ENTRY]: 'Lorebook - Dedupe',
     [OperationType.CREATE_LOREBOOK_ENTRY]: 'Lorebook - Create',
     [OperationType.MERGE_LOREBOOK_ENTRY]: 'Lorebook - Merge',
+    [OperationType.COMPACT_LOREBOOK_ENTRY]: 'Lorebook - Compact',
     [OperationType.UPDATE_LOREBOOK_REGISTRY]: 'Lorebook - Registry',
     [OperationType.UPDATE_LOREBOOK_SNAPSHOT]: 'Update Snapshot',
     [OperationType.POPULATE_REGISTRIES]: 'Lorebook - Bulk Process'
@@ -632,8 +633,13 @@ function buildOperationTooltip(operation) {
 }
 
 function formatLorebookOperationParams(params, metadata) {
-  const entryType = params.entryData?.type || metadata?.entry_type || 'entry';
+  const entryType = params.entryData?.type || metadata?.entry_type || null;
   const entryName = metadata?.entry_name || metadata?.entry_comment || params.entryData?.comment || params.entryData?.name || 'Unknown';
+
+  // If we don't have an entry type, just show the name/comment
+  if (!entryType) {
+    return entryName;
+  }
 
   // Check if name already has type prefix to avoid duplication (e.g., "location-Apartment")
   if (entryName.startsWith(`${entryType}-`)) {
@@ -692,6 +698,7 @@ function formatOperationParams(type, params, metadata) {
     case OperationType.RESOLVE_LOREBOOK_ENTRY:
     case OperationType.CREATE_LOREBOOK_ENTRY:
     case OperationType.MERGE_LOREBOOK_ENTRY:
+    case OperationType.COMPACT_LOREBOOK_ENTRY:
     case OperationType.UPDATE_LOREBOOK_REGISTRY:
       return formatLorebookOperationParams(params, metadata);
 
