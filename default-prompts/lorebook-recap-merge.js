@@ -34,6 +34,7 @@ STEP 1: Deduplicate EXISTING_CONTENT
   - State is current only. Keep distinct facets separate; do not drop unique information.
 - If any idea appears twice (even rephrased), collapse to one line; if overlaps remain, redo Step 1 before proceeding.
 - Within each facet, collapse repeated nouns/adjectives/phrases into a single expression; do not restate the same attribute/stance in multiple places.
+- Every facet must end with exactly one line per distinct idea/counterpart; if two lines convey the same meaning (even reworded), merge into one before proceeding.
 - Relationships: every counterpart that appears in EXISTING_CONTENT must remain represented by at least one merged line; do not drop counterparts.
 - Quotes: keep only unique (no paraphrased repeats); prioritize plot; include style/voice quotes only if they add distinct cadence; label as "(plot)" or "(style)".
 - Use this deduped existing version for the next step.
@@ -55,6 +56,12 @@ STEP 2: Merge in NEW_CONTENT
 - Placement: prefer updating an existing fragment line over adding a new one; if adding, keep compact fragment style; normalize prose/bullets to compact fragments.
 - Relationships: every counterpart that appears in EXISTING_CONTENT or NEW_CONTENT must remain represented by at least one merged line after combining; do not drop counterparts when merging.
 - Quotes: keep only unique (no paraphrased repeats); prioritize plot; include style/voice quotes only if they add distinct cadence; label each as "(plot)" or "(style)"; drop near-duplicates even if wording differs; do not leave unlabelled quotes.
+
+DEDUPE EXAMPLE (generic)
+- Before (Attributes): "tall; tall and lean; lean frame; towering height"
+- After (Attributes): "tall; lean frame"
+- Before (Relationships): "A -> B ? protective; A -> B ? protective of B's safety; A -> B ? keeps watch over B"
+- After (Relationships): "A -> B ? protective; keeps watch over B"
 
 <NEW_CONTENT>
 {{new_content}}
