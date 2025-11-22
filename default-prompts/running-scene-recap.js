@@ -52,10 +52,14 @@ QUALITY CHECK BEFORE RESPONDING:
 
 {{#if current_running_recap}}
 // CURRENT RUNNING RECAP (edit in place):
+<CURRENT_RUNNING_RECAP>
 {{current_running_recap}}
-
+</CURRENT_RUNNING_RECAP>
 {{/if}}
+
 // NEW SCENE RECAP TO MERGE:
+<NEW_SCENE_RECAP>
 {{scene_recaps}}
+</NEW_SCENE_RECAP>
 
 // REMINDER: Output must be valid JSON starting with { and ending with }. Recap field is REQUIRED (markdown string).`;
