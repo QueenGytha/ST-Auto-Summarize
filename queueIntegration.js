@@ -245,9 +245,64 @@ options )
   );
 }
 
-function enqueueMergeLorebookEntry(params ) {
+async function enqueueMergeLorebookEntry(params ) {
   const { lorebookName, entryUid, existingContent, newContent, newKeys, entryName, messageIndex, recapHash } = params;
 
+  // Check if compaction is needed before merge
+  const { getLorebookEntryTokenCount } = await import('./lorebookManager.js');
+  const { DEFAULT_COMPACTION_THRESHOLD } = await import('./constants.js');
+
+  const existingTokenCount = await getLorebookEntryTokenCount(lorebookName, entryUid);
+  const compactionThreshold = get_settings?.('auto_lorebooks_compaction_threshold') ?? DEFAULT_COMPACTION_THRESHOLD;
+
+  // Check if compaction is needed
+  if (existingTokenCount >= compactionThreshold) {
+    debug(SUBSYSTEM.QUEUE, `Entry ${entryUid} has ${existingTokenCount} tokens (threshold: ${compactionThreshold}), queueing compaction before merge`);
+
+    const compactOpId = await enqueueOperation(
+      OperationType.COMPACT_LOREBOOK_ENTRY,
+      {
+        lorebookName,
+        entryUid,
+        existingContent
+      },
+      {
+        priority: 12.5,
+        metadata: {
+          entry_comment: entryName,
+          existing_token_count: existingTokenCount
+        }
+      }
+    );
+
+    // Queue merge to run after compaction
+    return enqueueOperation(
+      OperationType.MERGE_LOREBOOK_ENTRY,
+      {
+        lorebookName,
+        entryUid,
+        existingContent,
+        newContent,
+        newKeys,
+        useCompactedContent: true
+      },
+      {
+        priority: 13,
+        dependencies: [compactOpId],
+        metadata: {
+          entry_name: entryName,
+          entry_uid: entryUid,
+          message_index: messageIndex,
+          recap_hash: recapHash || null,
+          direct_merge: true,
+          existing_entry_token_count: existingTokenCount,
+          was_compacted: true
+        }
+      }
+    );
+  }
+
+  // Direct merge - token count below threshold
   return enqueueOperation(
     OperationType.MERGE_LOREBOOK_ENTRY,
     {
@@ -309,7 +364,7 @@ export async function queueProcessLorebookEntry(entryData , messageIndex , recap
 
       if (existingEntry) {
         debug(SUBSYSTEM.QUEUE, `[QUEUE LOREBOOK] ✓ UID valid, queueing direct merge for ${entryName} (uid: ${providedUid})`);
-        const opId = enqueueMergeLorebookEntry({
+        const opId = await enqueueMergeLorebookEntry({
           lorebookName,
           entryUid: providedUid,
           existingContent: existingEntry.content,
