@@ -223,6 +223,20 @@ export async function handleDeleteSceneClick(
     return;
   }
 
+  // Find the previous scene break (we'll need this for clearing checked flags)
+  // The deleted scene starts right after this previous scene break
+  let previousSceneBreak = 0;
+  for (let i = index - 1; i >= 0; i--) {
+    const isSceneBreak = get_data(chat[i], SCENE_BREAK_KEY);
+    const isVisible = get_data(chat[i], SCENE_BREAK_VISIBLE_KEY);
+    const hasRecapData = get_data(chat[i], SCENE_RECAP_MEMORY_KEY);
+
+    if (isSceneBreak && (isVisible === undefined || isVisible) && hasRecapData) {
+      previousSceneBreak = i;
+      break;
+    }
+  }
+
   // Check if this is the most recent scene (no scene breaks after this one)
   let nextSceneBreakIndex = chat.length;
   for (let i = index + 1; i < chat.length; i++) {
@@ -251,8 +265,9 @@ export async function handleDeleteSceneClick(
 
   // Only mention checked flags if this is the most recent scene
   if (isMostRecentScene) {
-    const estimatedFlagsToCleared = chat.length - index;
-    deletionItems.push(`Checked flags from message ${index} to end of chat (~${estimatedFlagsToCleared} messages - will allow re-detection)`);
+    const clearStartIndex = previousSceneBreak + 1;
+    const estimatedFlagsToCleared = chat.length - clearStartIndex;
+    deletionItems.push(`Checked flags from message ${clearStartIndex} to end of chat (~${estimatedFlagsToCleared} messages - will allow re-detection)`);
   }
 
   const html = `
@@ -295,10 +310,11 @@ export async function handleDeleteSceneClick(
   // Only clear checked flags if this is the most recent scene
   // (Otherwise, later scenes were already processed with knowledge of this scene existing)
   let clearedCount = 0;
+  const clearStartIndex = previousSceneBreak + 1;
   if (isMostRecentScene) {
-    // Clear from the deleted scene's position to end of chat to allow re-detection
-    clearedCount = clearCheckedFlagsInRange(index, chat.length);
-    debug(SUBSYSTEM.SCENE, `Most recent scene deleted - cleared ${clearedCount} checked flags from ${index} to end of chat`);
+    // Clear from start of deleted scene (right after previous scene break) to end of chat
+    clearedCount = clearCheckedFlagsInRange(clearStartIndex, chat.length);
+    debug(SUBSYSTEM.SCENE, `Most recent scene deleted - cleared ${clearedCount} checked flags from ${clearStartIndex} (after previous scene at ${previousSceneBreak}) to end of chat`);
   } else {
     debug(SUBSYSTEM.SCENE, `Not the most recent scene - skipping checked flag clearing to preserve later scene integrity`);
   }
@@ -362,7 +378,7 @@ export async function handleDeleteSceneClick(
     details.push(`${deletedVersionsCount} running recap version${deletedVersionsCount !== 1 ? 's' : ''}`);
   }
   if (clearedCount > 0) {
-    details.push(`${clearedCount} checked message${clearedCount !== 1 ? 's' : ''} (${index} to end)`);
+    details.push(`${clearedCount} checked message${clearedCount !== 1 ? 's' : ''} (${clearStartIndex} to end)`);
   }
 
   let successMessage = 'Scene deleted.';
