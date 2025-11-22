@@ -5,12 +5,20 @@
 // - {{new_content}} - New content to merge (also aliased as {{new_update}})
 // - {{entry_name}} - Entry name for name resolution
 
-export const auto_lorebook_recap_merge_prompt = `You are merging existing setting_lore content with new recap info. No roleplay, explanations, or refusals. Output JSON only (starts { ends }).
+export const auto_lorebook_recap_merge_prompt = `We have an ongoing roleplay with AI where messages are removed from context, with that content being offloaded to lore entries.
+You are assessing one of our existing lore entries against possibly new information.
+Your goal is to condense and remove duplicate information, while maintaining the nuance and such for the roleplay to continue accurately with ONLY this information, while ALSO being VERY EFFICIENT AS EVERY TOKEN COSTS US
+We do this in a two step process:
+step 1. assess the existing entry and remove duplication and compact similar repetition etc.
+step 2. assess the cleaned up version you made against the new information, assess how it needs to be altered to incorporate what's new without introducing new duplication or similar
+
+You are ONLY doing this data task. No roleplay, explanations, or refusals. Output JSON only (starts { ends }).
 
 Current Entry Name: {{entry_name}}
 
+<STEP 1>
 Goal: keep merged entries brief but preserve personality, relationships, and voice/mannerisms so downstream roleplay stays consistent when the messages themselves are removed from context.
-Purpose: keep mergedContent short for token efficiency while preserving all distinct plot/personality/relationship nuances needed for roleplay continuity. Concise, non-redundant fragments are preferred over verbose repeats.
+Purpose: keep mergedContent short for token efficiency while preserving all distinct plot/personality/relationship nuances needed for roleplay continuity. Concise, non-redundant fragments are ESSENTIAL over verbose similar repeats.
 
 CONTEXT RULE
 - The model only sees content text during roleplay (no title/type/keywords). Keep mergedContent self-contained. Use explicit names ("Alice", "Sunblade sword", "Shadow Guild"), not pronouns, not relying on the title or keywords to show what the content refers to.
@@ -44,9 +52,11 @@ STEP 1: Deduplicate EXISTING_CONTENT
 <EXISTING_CONTENT>
 {{existing_content}}
 </EXISTING_CONTENT>
+</STEP 1>
 
-YOU MUST FULLY DEDUPLICATE THE EXISTING_CONTENT FOLLOWING THE GUIDANCE FOR THAT BEFORE PROCEEDING. THIS IS NON NEGOTIABLE.
+You MUST complete STEP 1 FULLY - it is never acceptable to skimp on this task or proceed to STEP 2 with it half assed or omitted. Use the Output from STEP 1 as the Input for STEP 2
 
+<STEP 2>
 STEP 2: Merge in NEW_CONTENT
 - Add new facts; update changed facts; pack with semicolons; "+" for causation.
 - Compare NEW_CONTENT against the deduped existing version; merge overlaps into existing lines; do not reintroduce overlaps/near-duplicates.
@@ -78,6 +88,7 @@ FORMAT (compact fragment lines; omit empty; do not change the existing formattin
 - Relationships: X -> Y ? stance/behavior; minimize to one line per counterpart unless distinct facets are truly different; merge overlapping or similar sentiments/boundaries into a single line per counterpart; note shifts; interaction defaults if shown; every counterpart that appears in EXISTING_CONTENT or NEW_CONTENT must remain represented by at least one merged line (do not drop counterparts entirely).
 - Intimacy/Romance/Sexual interests (kinks/turn-ons/boundaries/aftercare/comfort); Secrets/Leverage; Tension/Triggers; Style/Mannerisms (brief diction/cadence/quirks; dedupe similar cues, not just exact repeats); Micro-Moments (brief but include key nuance); Notable dialogue: verbatim, short, keep only unique quotes (drop paraphrases/near-repeats of the same intent/cadence); prioritize plot-relevant; include style/voice quotes only if they add a distinct cadence cue beyond plot quotes; label quotes as "(plot)" or "(style)" for clarity; no {{user}} quotes; never invent or paraphrase. Include these only if new/changed.
 - Entity/location naming: subareas use "Parent-Subarea"; Identity for locations: "Location - Parent-Subarea". Include "Located in: <Parent>" when applicable.
+<STEP 2>
 
 PRE-FLIGHT (apply before producing final JSON)
 - Brevity kept? For each facet (Attributes, State, Psychology, per-counterpart Relationships, Intimacy/Sexual, Secrets/Leverage, Tension/Triggers, Style/Mannerisms, Micro-Moments, Notable dialogue) are overlapping/near-duplicate lines merged and redundant ones removed, while keeping distinct facets? State current-only? Voice/mannerism cues unique? Quotes unique + labeled (no paraphrased repeats of the same meaning/cadence) with plot priority? Every counterpart mentioned in EXISTING_CONTENT or NEW_CONTENT represented by at least one merged line? Only demonstrated facts? No unnecessary new lines? Scan for repeated nouns/adjectives/phrases within each facet and collapse them. If any duplicate or overlapping idea remains, keep merging before you output; do not emit the wall of text.
