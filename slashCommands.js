@@ -19,6 +19,8 @@ import {
 './index.js';
 import { loadWorldInfo } from '../../../world-info.js';
 import { getAttachedLorebook } from './lorebookManager.js';
+import { get_running_recap_versions, get_previous_running_recap_version_before_scene } from './runningSceneRecap.js';
+import { SCENE_RECAP_METADATA_KEY } from './sceneBreak.js';
 
 async function count_lorebook_tokens(context) {
   const lorebookName = getAttachedLorebook();
@@ -55,6 +57,117 @@ async function count_running_recap_tokens(context) {
   return await context.getTokenCountAsync(runningRecapText);
 }
 
+async function count_enabled_lorebook_tokens_from_snapshot(allEntries, context) {
+  if (!allEntries || allEntries.length === 0) {
+    return { tokenCount: 0, enabledCount: 0 };
+  }
+
+  let tokenCount = 0;
+  let enabledCount = 0;
+
+  for (const entry of allEntries) {
+    if (entry.disable === false && entry.content) {
+      // eslint-disable-next-line no-await-in-loop -- must count tokens sequentially
+      const entryTokens = await context.getTokenCountAsync(entry.content);
+      tokenCount += entryTokens;
+      enabledCount++;
+    }
+  }
+
+  return { tokenCount, enabledCount };
+}
+
+function find_running_recap_version_for_scene(sceneMessageIndex) {
+  const versions = get_running_recap_versions();
+  if (!versions || versions.length === 0) {
+    return null;
+  }
+
+  for (const version of versions) {
+    if (version.new_scene_index === sceneMessageIndex) {
+      return version;
+    }
+  }
+
+  return get_previous_running_recap_version_before_scene(sceneMessageIndex);
+}
+
+async function calculate_tokens_for_messages(messages, context) {
+  if (!messages || messages.length === 0) {
+    return 0;
+  }
+
+  let totalTokens = 0;
+  for (const message of messages) {
+    const messageText = message.mes || '';
+    // eslint-disable-next-line no-await-in-loop -- must count tokens sequentially
+    const tokenCount = await context.getTokenCountAsync(messageText);
+    totalTokens += tokenCount;
+  }
+
+  return totalTokens;
+}
+
+async function analyze_scene_effective_tokens(currentScene, previousScene, chat, context) {
+  const startIdx = currentScene.metadata.startIdx;
+  const endIdx = currentScene.metadata.endIdx;
+
+  const previousLorebookSnapshot = previousScene ? previousScene.metadata.allEntries : [];
+  const { tokenCount: lorebookTokens, enabledCount: lorebookEntryCount } =
+    await count_enabled_lorebook_tokens_from_snapshot(previousLorebookSnapshot, context);
+
+  const runningRecapVersion = find_running_recap_version_for_scene(currentScene.index);
+  const runningRecapText = runningRecapVersion?.content || '';
+  const runningRecapTokens = runningRecapText
+    ? await context.getTokenCountAsync(runningRecapText)
+    : 0;
+
+  const hiddenMessages = chat.slice(0, startIdx);
+  const hiddenTokens = await calculate_tokens_for_messages(hiddenMessages, context);
+
+  const perMessageStats = [];
+  for (let msgIdx = startIdx; msgIdx <= endIdx; msgIdx++) {
+    const visibleMessages = chat.slice(startIdx, msgIdx + 1);
+    // eslint-disable-next-line no-await-in-loop -- message analysis must be sequential
+    const visibleTokens = await calculate_tokens_for_messages(visibleMessages, context);
+
+    const withMemoryTokens = visibleTokens + lorebookTokens + runningRecapTokens;
+    const withoutMemoryTokens = hiddenTokens + visibleTokens;
+    const savings = withoutMemoryTokens - withMemoryTokens;
+
+    perMessageStats.push({
+      messageIndex: msgIdx,
+      visibleTokens: visibleTokens,
+      savings: savings
+    });
+  }
+
+  const totalVisibleTokens = perMessageStats[perMessageStats.length - 1]?.visibleTokens || 0;
+  const totalSavings = perMessageStats[perMessageStats.length - 1]?.savings || 0;
+  const avgSavingsPerMessage = perMessageStats.length > 0
+    ? totalSavings / perMessageStats.length
+    : 0;
+
+  const compressionRatio = (lorebookTokens + runningRecapTokens) > 0
+    ? hiddenTokens / (lorebookTokens + runningRecapTokens)
+    : 0;
+
+  return {
+    startIdx,
+    endIdx,
+    hiddenTokens,
+    totalVisibleTokens,
+    lorebookTokens,
+    lorebookEntryCount,
+    runningRecapTokens,
+    runningRecapVersion,
+    totalSavings,
+    avgSavingsPerMessage,
+    compressionRatio,
+    perMessageStats
+  };
+}
+
 function findVisibleSceneBreaks(chat) {
   const scene_break_indexes = [];
   for (let i = 0; i < chat.length; i++) {
@@ -83,6 +196,7 @@ function calculateVisibleStartIndex(chat) {
   return 0;
 }
 
+// eslint-disable-next-line max-lines-per-function -- This function registers all slash commands, inherently long
 function initialize_slash_commands() {
   const ctx = getContext();
   const SlashCommandParser = ctx.SlashCommandParser;
@@ -310,6 +424,118 @@ function initialize_slash_commands() {
       return summary;
     },
     helpString: 'Count tokens in all messages, lorebook entries, and running scene recap'
+  }));
+
+  SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+    name: 'countmessagetokenseffective',
+    callback: async () => {
+      const context = getContext();
+      const chat = context.chat;
+
+      if (!chat || chat.length === 0) {
+        const message = 'No messages in current chat';
+        toast(message, 'warning');
+        return message;
+      }
+
+      const sceneBreaks = [];
+      for (let i = 0; i < chat.length; i++) {
+        if (get_data(chat[i], 'scene_break')) {
+          const metadata = get_data(chat[i], SCENE_RECAP_METADATA_KEY);
+          const versionIndex = get_data(chat[i], 'scene_recap_current_index') ?? 0;
+          const versionMeta = metadata?.[versionIndex];
+
+          if (versionMeta && versionMeta.allEntries) {
+            sceneBreaks.push({
+              index: i,
+              versionIndex: versionIndex,
+              metadata: versionMeta,
+              message: chat[i]
+            });
+          }
+        }
+      }
+
+      if (sceneBreaks.length === 0) {
+        const message = 'No scene breaks with complete metadata found in current chat';
+        toast(message, 'warning');
+        return message;
+      }
+
+      const sceneStats = [];
+
+      for (let sceneIdx = 0; sceneIdx < sceneBreaks.length; sceneIdx++) {
+        const currentScene = sceneBreaks[sceneIdx];
+        const previousScene = sceneIdx > 0 ? sceneBreaks[sceneIdx - 1] : null;
+
+        // eslint-disable-next-line no-await-in-loop -- scenes must be analyzed sequentially
+        const analysis = await analyze_scene_effective_tokens(currentScene, previousScene, chat, context);
+
+        sceneStats.push({
+          sceneIndex: sceneIdx,
+          messageIndex: currentScene.index,
+          messageRange: `${analysis.startIdx}-${analysis.endIdx}`,
+          messagesInScene: analysis.endIdx - analysis.startIdx + 1,
+          hiddenTokens: analysis.hiddenTokens,
+          visibleTokens: analysis.totalVisibleTokens,
+          lorebookTokens: analysis.lorebookTokens,
+          lorebookEntryCount: analysis.lorebookEntryCount,
+          runningRecapTokens: analysis.runningRecapTokens,
+          runningRecapVersion: analysis.runningRecapVersion?.version ?? null,
+          totalMemoryTokens: analysis.lorebookTokens + analysis.runningRecapTokens,
+          savingsThisScene: analysis.totalSavings,
+          avgSavingsPerMessage: Math.round(analysis.avgSavingsPerMessage),
+          compressionRatio: analysis.compressionRatio.toFixed(2),
+          perMessageStats: analysis.perMessageStats
+        });
+      }
+
+      const finalScene = sceneStats[sceneStats.length - 1];
+      const totalScenes = sceneBreaks.length;
+      const totalMessages = chat.length;
+      const totalSavings = finalScene.savingsThisScene;
+      const finalCompressionRatio = finalScene.compressionRatio;
+
+      const summary = `Effective Token Savings Analysis:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 Overall Statistics:
+  • Scenes Analyzed: ${totalScenes}
+  • Total Messages: ${totalMessages}
+  • Total Savings: ${totalSavings.toLocaleString()} tokens
+  • Final Compression Ratio: ${finalCompressionRatio}:1
+
+💾 Final Memory State:
+  • Lorebook Tokens: ${finalScene.lorebookTokens.toLocaleString()}
+  • Running Recap Tokens: ${finalScene.runningRecapTokens.toLocaleString()}
+  • Total Memory: ${finalScene.totalMemoryTokens.toLocaleString()} tokens
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 See console for detailed per-scene breakdown`;
+
+      log('[Effective Token Analysis] ===== SUMMARY =====');
+      log(summary);
+      log('[Effective Token Analysis] ===== PER-SCENE BREAKDOWN =====');
+
+      for (const sceneStat of sceneStats) {
+        log(`\n--- Scene ${sceneStat.sceneIndex} [Messages ${sceneStat.messageRange}] ---`);
+        log(`  Messages in scene: ${sceneStat.messagesInScene}`);
+        log(`  Hidden tokens (prior messages): ${sceneStat.hiddenTokens.toLocaleString()}`);
+        log(`  Visible tokens (this scene): ${sceneStat.visibleTokens.toLocaleString()}`);
+        log(`  Lorebook: ${sceneStat.lorebookEntryCount} entries, ${sceneStat.lorebookTokens.toLocaleString()} tokens`);
+        log(`  Running recap: v${sceneStat.runningRecapVersion}, ${sceneStat.runningRecapTokens.toLocaleString()} tokens`);
+        log(`  Total memory tokens: ${sceneStat.totalMemoryTokens.toLocaleString()}`);
+        log(`  Savings this scene: ${sceneStat.savingsThisScene.toLocaleString()} tokens`);
+        log(`  Avg savings per message: ${sceneStat.avgSavingsPerMessage.toLocaleString()} tokens`);
+        log(`  Compression ratio: ${sceneStat.compressionRatio}:1`);
+      }
+
+      log('[Effective Token Analysis] ===== DETAILED DATA =====');
+      log('[Effective Token Analysis] Scene statistics:', sceneStats);
+
+      toast(summary, 'info');
+      return summary;
+    },
+    helpString: 'Calculate historical per-message token usage showing actual token savings across all scenes'
   }));
 
 }
