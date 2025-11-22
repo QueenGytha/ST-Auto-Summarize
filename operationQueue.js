@@ -912,6 +912,25 @@ async function executeOperation(operation ) {
       return null; // Don't mark as completed, don't save results
     }
 
+    // If a compaction just finished, stash the compacted content onto any dependent merges before
+    // the dependency gets removed. Otherwise those merges fall back to stale pre-compaction content.
+    if (operation.type === OperationType.COMPACT_LOREBOOK_ENTRY && result?.compactedContent) {
+      const dependents = currentQueue.queue.filter((op) =>
+        Array.isArray(op.dependencies) &&
+        op.dependencies.includes(operation.id) &&
+        op.type === OperationType.MERGE_LOREBOOK_ENTRY
+      );
+
+      if (dependents.length > 0) {
+        const updatePromises = dependents.map((dep) => updateOperationMetadata(dep.id, {
+          compactedContent: result.compactedContent,
+          compactedContentOpId: operation.id,
+          was_compacted: true
+        }));
+        await Promise.all(updatePromises);
+      }
+    }
+
     await updateOperationStatus(operation.id, OperationStatus.COMPLETED);
     debug(SUBSYSTEM.QUEUE, `Completed ${operation.type}:`, operation.id);
 

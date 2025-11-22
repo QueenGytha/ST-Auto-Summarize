@@ -416,6 +416,33 @@ function buildMergeErrorDiagnostics(resolvedUid, record, existingEntry, registry
   return { diagnostics, registryKeys, lorebookUids };
 }
 
+// Resolve compacted content for merges without inflating handler complexity
+async function resolveCompactedContent(operation, existingContent) {
+  const compactedContentFromMetadata = operation.metadata?.compactedContent;
+  const shouldUseCompaction = operation.params.useCompactedContent || operation.metadata?.was_compacted;
+
+  if (!shouldUseCompaction) {
+    return { content: existingContent };
+  }
+
+  if (compactedContentFromMetadata) {
+    return { content: compactedContentFromMetadata };
+  }
+
+  const dependencies = operation.dependencies || [];
+  if (dependencies.length > 0) {
+    const { getOperation, OperationStatus } = await import('./operationQueue.js');
+    for (const compactOpId of dependencies) {
+      const compactOp = getOperation(compactOpId);
+      if (compactOp?.status === OperationStatus.COMPLETED && compactOp.result?.compactedContent) {
+        return { content: compactOp.result.compactedContent };
+      }
+    }
+  }
+
+  return { content: existingContent ?? null };
+}
+
 // eslint-disable-next-line max-lines-per-function -- Sequential operation handler registration for 10+ operation types (431 lines is acceptable for initialization)
 export function registerAllOperationHandlers() {
   // Validate recap
@@ -1231,27 +1258,13 @@ export function registerAllOperationHandlers() {
     const entryComment = operation.metadata?.entry_comment || entryUid;
     debug(SUBSYSTEM.QUEUE, `Executing MERGE_LOREBOOK_ENTRY for: ${entryComment}`);
 
-    // Check if we should use compacted content
-    let effectiveExistingContent = existingContent;
-    if (operation.params.useCompactedContent) {
-      // Find the completed compaction operation in dependencies
-      const dependencies = operation.dependencies || [];
-      if (dependencies.length > 0) {
-        const compactOpId = dependencies[0];
-        const { getOperation } = await import('./operationQueue.js');
-        const compactOp = getOperation(compactOpId);
-        const { OperationStatus } = await import('./operationQueue.js');
-        if (compactOp?.status === OperationStatus.COMPLETED && compactOp.result?.compactedContent) {
-          effectiveExistingContent = compactOp.result.compactedContent;
-          debug(SUBSYSTEM.QUEUE, `Using compacted content from operation ${compactOpId} for merge`);
-        }
-      }
-    }
+    // Prefer compacted content if it was produced; fall back to latest entry content instead of stale pre-compaction text.
+    const { content: effectiveExistingContent } = await resolveCompactedContent(operation, existingContent);
 
     const result = await mergeLorebookEntryByUid({
       lorebookName,
       entryUid,
-      existingContent: effectiveExistingContent,
+      existingContent: effectiveExistingContent ?? undefined,
       newContent,
       newKeys
     });

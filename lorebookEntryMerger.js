@@ -493,10 +493,13 @@ export async function mergeLorebookEntryByUid(params ) {
       throw new Error(`Entry UID ${entryUid} not found in lorebook`);
     }
 
+    // Prefer explicit override only when provided; otherwise use the latest entry content.
+    const baseContent = existingContent ?? entry.content;
+
     // Execute merge
     return await executeMerge(
       lorebookName,
-      { ...entry, content: existingContent },
+      { ...entry, content: baseContent },
       { content: newContent, keys: newKeys }
     );
 
