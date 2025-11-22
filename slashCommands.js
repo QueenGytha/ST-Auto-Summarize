@@ -108,7 +108,7 @@ async function calculate_tokens_for_messages(messages, context) {
   return totalTokens;
 }
 
-async function analyze_scene_effective_tokens(currentScene, previousScene, chat, context) {
+async function analyze_scene_effective_tokens({ currentScene, previousScene, chat, context, sceneIndex, allSceneBreaks }) {
   const startIdx = currentScene.metadata.startIdx;
   const endIdx = currentScene.metadata.endIdx;
 
@@ -122,7 +122,16 @@ async function analyze_scene_effective_tokens(currentScene, previousScene, chat,
     ? await context.getTokenCountAsync(runningRecapText)
     : 0;
 
-  const hiddenMessages = chat.slice(0, startIdx);
+  const autoHideSceneCount = get_settings('auto_hide_scene_count');
+  let hiddenEndIdx = startIdx;
+  if (autoHideSceneCount >= 0 && sceneIndex > autoHideSceneCount) {
+    const firstVisibleSceneIdx = sceneIndex - autoHideSceneCount;
+    hiddenEndIdx = allSceneBreaks[firstVisibleSceneIdx].metadata.startIdx;
+  } else if (autoHideSceneCount >= 0) {
+    hiddenEndIdx = 0;
+  }
+
+  const hiddenMessages = chat.slice(0, hiddenEndIdx);
   const hiddenTokens = await calculate_tokens_for_messages(hiddenMessages, context);
 
   const perMessageStats = [];
@@ -478,7 +487,14 @@ function initialize_slash_commands() {
         const previousScene = sceneIdx > 0 ? sceneBreaks[sceneIdx - 1] : null;
 
         // eslint-disable-next-line no-await-in-loop -- scenes must be analyzed sequentially
-        const analysis = await analyze_scene_effective_tokens(currentScene, previousScene, chat, context);
+        const analysis = await analyze_scene_effective_tokens({
+          currentScene,
+          previousScene,
+          chat,
+          context,
+          sceneIndex: sceneIdx,
+          allSceneBreaks: sceneBreaks
+        });
 
         sceneStats.push({
           sceneIndex: sceneIdx,
