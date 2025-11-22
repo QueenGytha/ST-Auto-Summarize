@@ -16,19 +16,21 @@ INPUTS:
 {{current_running_recap}}
 </CURRENT_TOTAL_RECAP>
 
-and 
+and
 
 <NEW_SCENE_RECAP>
 {{scene_recaps}}
 <NEW_SCENE_RECAP>
+
 Use ONLY these texts; no outside knowledge. No assumptions, guesses, or inferrence. If it's not in either source, IT DID NOT HAPPEN.
+Assess CURRENT_TOTAL_RECAP against NEW_SCENE_RECAP - determine if anything is new/changed/redundant and update accordingly.
 
 MERGE RULES:
-- Start from current_running_recap; edit in place; avoid rewrite if still correct.
+- Start from CURRENT_TOTAL_RECAP; edit in place; avoid rewrite if still correct.
 - Keep relevant facts; drop resolved/superseded; no duplicates.
 - Integrate scene_recaps line-by-line; combine related facts; keep cause->effect traces.
 - Running recap = durable plot/state; setting_lore holds entity detail; minimize descriptors.
-- Resolved threads/plot points: keep as short historical stubs only when needed for continuity (who/what/why outcome); otherwise trim out.
+- Resolved threads/plot points: keep as short historical stubs only when needed for continuity (who/what/why outcome).
 - Preserve nuance: promises, conditions, timers, obligations, secrets, foreshadowing.
 - Keep canonical names from scene_recaps at least once.
 - Location hierarchy: full chain once; shorten later when unambiguous.
