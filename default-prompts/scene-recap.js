@@ -49,7 +49,7 @@ SECTION 3 - SETTING_LORE ARRAY ONLY
 - UID policy: copy uid only when the emitted entity is the exact same as an entry in ACTIVE_SETTING_LORE (match name+type+identity/content) and that entry has uid; otherwise omit uid. Never invent/alter uid formats.
 - UID enforcement: if name+type matches an ACTIVE_SETTING_LORE entry with uid, include that uid; omitting when it exists is invalid.
 - Never reuse the example UIDs; only copy from ACTIVE_SETTING_LORE for the EXACT ENTITY ONLY IF PRESENT.
-- Add entries only if NEW or CHANGED vs ACTIVE_SETTING_LORE; if everything matches, omit the entry entirely.
+- Add entries only if NEW or CHANGED vs ACTIVE_SETTING_LORE; if everything matches, omit the entry entirely. When an entry exists, emit only the new/changed facets; do not restate unchanged attributes/quotes/mannerisms.
 - Keywords: lowercase scene triggers; consolidate repeats.
 - User handling (hard block): never create or include a character-{{user}} setting_lore entry. If NPC behavior depends on {{user}}, put it only in that NPC's Relationships field (e.g., "NPC -> {{user}} ? obligation/consent boundary/leverage") when demonstrated and consequential.
 - Content guidelines (omit empty fields):

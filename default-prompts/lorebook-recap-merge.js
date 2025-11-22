@@ -29,7 +29,7 @@ MERGE RULES
 1) Add new facts; update changed facts; pack with semicolons; "+" for causation.
 2) Preserve story-critical history as causal chains: enemies (blamed sister's death) + alliance during siege.
 3) Prune duplicates, trivial fluff, superseded minor details (unless story-relevant). If nothing to add/change and nothing to prune, return original EXACTLY.
-4) Deduplicate HARD: consolidate repeated or similar traits; collapse near-duplicate Attributes/Psychology/Relationships/Style into the single most specific fragment; State is current; Micro-Moments keep distinct facets only; remove redundant quotes.
+4) Deduplicate HARD: merge overlapping or near-duplicate fragments (even with different wording) into a single most-specific line per facet; collapse near-duplicate Attributes/Psychology/Relationships/Style into one line; State is current; Micro-Moments keep distinct facets only; remove redundant quotes; merge overlapping sentiments rather than listing variants.
 5) Name resolution: if vague label + proper name provided, set canonicalName to proper name.
 6) Relationship nuance: capture shifts in trust/power/affection/resentment/boundaries/consent/debts/alliances; intimacy/kinks/boundaries when demonstrated.
 7) Voice fidelity: preserve all existing diction/cadence/mannerism/consent cues. Add new cues only when they convey a new facet (e.g., stricter consent line, different cadence, new catchphrase/tone). If a new line is similar but adds nuance, keep the more specific one; if fully redundant, drop the duplicate. Keep micro-quotes that anchor style; do not rewrite unchanged cues.
@@ -38,10 +38,10 @@ MERGE RULES
 
 FORMAT (compact fragment lines; omit empty; do not change the existing formatting style)
 - Identity; Synopsis <=10 words.
-- Attributes; State (current).
-- Psychology: trigger + response + outcome.
-- Relationships: X -> Y ? stance/behavior; note shifts; interaction defaults if shown.
-- Intimacy/Romance/Sexual interests (kinks/turn-ons/boundaries/aftercare/comfort); Secrets/Leverage; Tension/Triggers; Style/Mannerisms (brief diction/cadence/quirks; default speech cadence/catchphrase; keep nuance even if slightly longer); Micro-Moments (brief but include key nuance); Notable dialogue: verbatim, short, max 3 total; prioritize plot-relevant quotes; include style/voice quotes only if they add a distinct cadence cue beyond plot quotes; label quotes as "(plot)" or "(style)" for clarity; no {{user}} quotes; never invent or paraphrase. Include these only if new/changed.
+- Attributes (one consolidated line; merge similar descriptors); State (current, single line).
+- Psychology: trigger + response + outcome (merge similar arcs into one line).
+- Relationships: X -> Y ? stance/behavior; one line per counterpart; merge overlapping or similar sentiments/boundaries into that single line; note shifts; interaction defaults if shown.
+- Intimacy/Romance/Sexual interests (kinks/turn-ons/boundaries/aftercare/comfort); Secrets/Leverage; Tension/Triggers; Style/Mannerisms (brief diction/cadence/quirks; dedupe similar cues, not just exact repeats); Micro-Moments (brief but include key nuance); Notable dialogue: verbatim, short, keep only unique quotes (drop paraphrases/near-repeats); prioritize plot-relevant; include style/voice quotes only if they add a distinct cadence cue beyond plot quotes; label quotes as "(plot)" or "(style)" for clarity; no {{user}} quotes; never invent or paraphrase. Include these only if new/changed.
 - Entity/location naming: subareas use "Parent-Subarea"; Identity for locations: "Location - Parent-Subarea". Include "Located in: <Parent>" when applicable.
 
 OUTPUT (JSON only; no code fences):
@@ -54,7 +54,7 @@ canonicalName rules:
 - Use full proper name if available; if only first name, use that.
 - No type prefixes. If current name already proper, set canonicalName to null.
 
-PRE-FLIGHT: Brevity kept? Duplicates pruned? State not event log? Voice/mannerism cues preserved/added when demonstrated? Only demonstrated facts? No unnecessary new lines? No new/changed info and no pruning -> output original exactly.
+ PRE-FLIGHT: Brevity kept? Similar/overlapping lines merged to a single fragment per facet/counterpart (not just exact matches)? State current-only? Voice/mannerism cues unique? Quotes unique (no paraphrased repeats) with plot priority? Only demonstrated facts? No unnecessary new lines? No new/changed info and no pruning -> output original exactly.
 
 <existing_content>
 {{existing_content}}
