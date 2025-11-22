@@ -33,6 +33,7 @@ STEP 1: Deduplicate EXISTING_CONTENT
   - Merge overlapping or near-duplicate fragments (even with different wording) into the most-specific minimal set of lines.
   - State is current only. Keep distinct facets separate; do not drop unique information.
 - If any idea appears twice (even rephrased), collapse to one line; if overlaps remain, redo Step 1 before proceeding.
+- Within each facet, collapse repeated nouns/adjectives/phrases into a single expression; do not restate the same attribute/stance in multiple places.
 - Relationships: every counterpart that appears in EXISTING_CONTENT must remain represented by at least one merged line; do not drop counterparts.
 - Quotes: keep only unique (no paraphrased repeats); prioritize plot; include style/voice quotes only if they add distinct cadence; label as "(plot)" or "(style)".
 - Use this deduped existing version for the next step.
@@ -68,7 +69,7 @@ FORMAT (compact fragment lines; omit empty; do not change the existing formattin
 - Entity/location naming: subareas use "Parent-Subarea"; Identity for locations: "Location - Parent-Subarea". Include "Located in: <Parent>" when applicable.
 
 PRE-FLIGHT (apply before producing final JSON)
-- Brevity kept? For each facet (Attributes, State, Psychology, per-counterpart Relationships, Intimacy/Sexual, Secrets/Leverage, Tension/Triggers, Style/Mannerisms, Micro-Moments, Notable dialogue) are overlapping/near-duplicate lines merged and redundant ones removed, while keeping distinct facets? State current-only? Voice/mannerism cues unique? Quotes unique + labeled (no paraphrased repeats of the same meaning/cadence) with plot priority? Every counterpart mentioned in EXISTING_CONTENT or NEW_CONTENT represented by at least one merged line? Only demonstrated facts? No unnecessary new lines? Scan for repeated nouns/adjectives/phrases within each facet and collapse them. If the final mergedContent still contains duplicate ideas, merge further before returning.
+- Brevity kept? For each facet (Attributes, State, Psychology, per-counterpart Relationships, Intimacy/Sexual, Secrets/Leverage, Tension/Triggers, Style/Mannerisms, Micro-Moments, Notable dialogue) are overlapping/near-duplicate lines merged and redundant ones removed, while keeping distinct facets? State current-only? Voice/mannerism cues unique? Quotes unique + labeled (no paraphrased repeats of the same meaning/cadence) with plot priority? Every counterpart mentioned in EXISTING_CONTENT or NEW_CONTENT represented by at least one merged line? Only demonstrated facts? No unnecessary new lines? Scan for repeated nouns/adjectives/phrases within each facet and collapse them. If any duplicate or overlapping idea remains, keep merging before you output; do not emit the wall of text.
 
 OUTPUT (JSON only; no code fences):
 {
