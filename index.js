@@ -284,6 +284,16 @@ export function installEnterKeyInterceptor() {
           return;
         }
 
+        // Check if input is a slash command
+        const inputValue = e.target.value?.trimStart() ?? '';
+        const isSlashCommand = inputValue.startsWith('/');
+
+        if (isSlashCommand) {
+          // Slash commands don't send chat messages - allow execution
+          debug(SUBSYSTEM.UI, '[Queue] Allowing Enter - slash command execution');
+          return;
+        }
+
         // Enter will send - check if we should block
         if (isQueueBlocking) {
           e.preventDefault();
