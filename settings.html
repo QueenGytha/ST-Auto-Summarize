@@ -504,15 +504,15 @@
                             <span>Tokenizer Correction Factor</span>
                         </label>
 
-                        <label title="Token threshold for triggering lorebook entry compaction before merge. If an existing entry has more tokens than this threshold, it will be compacted before merging new content.">
-                            <input id="lorebook_compaction_threshold" data-testid="lorebook-compaction-threshold" class="text_pole widthUnset inline_setting" type="number" min="0" max="10000" step="100" />
-                            <span>Lorebook Compaction Threshold</span>
-                        </label>
-
                         <div class="note-block">
                             <i class="fa-solid fa-info-circle"></i>
                             <span>SillyTavern uses tokenizer approximations that may not match the provider's actual tokenizer. This multiplier adjusts token estimates for more accurate budget calculations. <strong>Recommended values:</strong> Claude: <code>1.35</code> (ST undercounts by ~35%), OpenAI: <code>1.0</code> (tiktoken is accurate).</span>
                         </div>
+
+                        <label title="Token threshold for triggering lorebook entry compaction before merge. If an existing entry has more tokens than this threshold, it will be compacted before merging new content.">
+                            <input id="auto_lorebooks_compaction_threshold" data-testid="lorebook-compaction-threshold" class="text_pole widthUnset inline_setting" type="number" min="0" max="10000" step="100" />
+                            <span>Lorebook Compaction Threshold</span>
+                        </label>
                     </div>
                 </div>
 
