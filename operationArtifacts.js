@@ -70,13 +70,13 @@ export function updateArtifact(operationType, artifactName, changes) {
     throw new Error(`Invalid operation type: ${operationType}`);
   }
 
-  const artifacts = get_settings('operation_artifacts') || {};
-  const operationArtifacts = artifacts[operationType] || [];
-
-  const currentArtifact = operationArtifacts.find(a => a.name === artifactName);
+  const currentArtifact = getArtifact(operationType, artifactName);
   if (!currentArtifact) {
     throw new Error(`Artifact not found: ${artifactName}`);
   }
+
+  const artifacts = get_settings('operation_artifacts') || {};
+  const operationArtifacts = artifacts[operationType] || [];
 
   let targetArtifact;
   let targetName;

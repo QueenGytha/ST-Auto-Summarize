@@ -6,14 +6,15 @@ import {
   get_current_character_identifier,
   get_current_chat_identifier,
   saveSettingsDebounced,
-  set_settings
+  set_settings,
+  get_settings,
+  default_settings
 } from './index.js';
 import { getArtifactSelector } from './selectorsExtension.js';
 import { get_connection_profile_objects } from './connectionProfiles.js';
 import { get_presets } from './presetManager.js';
 import { updatePreset, deletePreset, duplicatePreset, renamePreset, setCharacterStickyPreset, setChatStickyPreset, getCharacterStickyPreset, getChatStickyPreset, clearCharacterSticky, clearChatSticky, listPresets, getPreset } from './operationsPresets.js';
 import { updateArtifact, deleteArtifact, listArtifacts, createNewArtifactVersion } from './operationArtifacts.js';
-import { get_settings } from './index.js';
 import { exportPreset } from './operationsPresetsExport.js';
 import { importPreset } from './operationsPresetsImport.js';
 import { resolveOperationsPreset, setUserSelectedPreset } from './operationsPresetsResolution.js';
@@ -529,7 +530,14 @@ async function openArtifactEditor(operationType) {
 
   const artifacts = get_settings('operation_artifacts') || {};
   const operationArtifacts = artifacts[operationType] || [];
-  const config = operationArtifacts.find(a => a.name === artifactName);
+  let config = operationArtifacts.find(a => a.name === artifactName);
+
+  if (!config) {
+    const defaultArtifacts = default_settings.operation_artifacts;
+    if (defaultArtifacts && defaultArtifacts[operationType]) {
+      config = defaultArtifacts[operationType].find(a => a.name === artifactName);
+    }
+  }
 
   if (!config) {
     toast(`Artifact not found: ${artifactName}`, 'error');

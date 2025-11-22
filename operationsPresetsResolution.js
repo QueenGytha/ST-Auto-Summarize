@@ -1,5 +1,5 @@
 
-import { get_settings, set_settings, error, log, debug, SUBSYSTEM, get_current_chat_identifier, get_current_character_identifier, getContext } from './index.js';
+import { get_settings, set_settings, error, log, debug, SUBSYSTEM, get_current_chat_identifier, get_current_character_identifier, getContext, default_settings } from './index.js';
 
 export function presetExists(presetName) {
   if (!presetName || typeof presetName !== 'string') {
@@ -154,7 +154,14 @@ async function resolveDisplayNames(artifactProfileId, artifactPresetName) {
 export async function getDefaultArtifact(operationType) {
   const artifacts = get_settings('operation_artifacts') || {};
   const operationArtifacts = artifacts[operationType] || [];
-  const defaultArtifact = operationArtifacts.find(a => a.isDefault);
+  let defaultArtifact = operationArtifacts.find(a => a.isDefault);
+
+  if (!defaultArtifact) {
+    const defaultArtifacts = default_settings.operation_artifacts;
+    if (defaultArtifacts && defaultArtifacts[operationType]) {
+      defaultArtifact = defaultArtifacts[operationType].find(a => a.isDefault);
+    }
+  }
 
   if (!defaultArtifact) {
     throw new Error(`No default artifact found for ${operationType}`);
@@ -194,7 +201,14 @@ export async function resolveOperationConfig(operationType) {
 
     const artifacts = get_settings('operation_artifacts') || {};
     const operationArtifacts = artifacts[operationType] || [];
-    const artifact = operationArtifacts.find(a => a.name === artifactName);
+    let artifact = operationArtifacts.find(a => a.name === artifactName);
+
+    if (!artifact) {
+      const defaultArtifacts = default_settings.operation_artifacts;
+      if (defaultArtifacts && defaultArtifacts[operationType]) {
+        artifact = defaultArtifacts[operationType].find(a => a.name === artifactName);
+      }
+    }
 
     if (!artifact) {
       error(SUBSYSTEM.CORE, `Artifact not found: ${artifactName} for ${operationType}`);
