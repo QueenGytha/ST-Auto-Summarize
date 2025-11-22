@@ -255,5 +255,44 @@ export function updateDefaultArtifacts() {
     log(SUBSYSTEM.CORE, '=== No Default artifacts found to update ===');
   }
 
+  const profiles = get_settings('profiles');
+  if (profiles && profiles['Default']) {
+    log(SUBSYSTEM.CORE, '=== Updating Default profile artifacts ===');
+    const defaultProfile = profiles['Default'];
+
+    if (!defaultProfile.operation_artifacts) {
+      defaultProfile.operation_artifacts = {};
+    }
+
+    let profileUpdated = false;
+
+    for (const operationType of OPERATION_TYPES) {
+      if (!defaultProfile.operation_artifacts[operationType]) {
+        defaultProfile.operation_artifacts[operationType] = [];
+      }
+
+      const profileOperationArtifacts = defaultProfile.operation_artifacts[operationType];
+      const codeDefault = default_settings.operation_artifacts?.[operationType]?.[0];
+
+      if (!codeDefault) {
+        continue;
+      }
+
+      const index = profileOperationArtifacts.findIndex(a => a.isDefault);
+      if (index !== -1) {
+        log(SUBSYSTEM.CORE, `Updating Default profile artifact for ${operationType}`);
+        profileOperationArtifacts[index] = structuredClone(codeDefault);
+        profileUpdated = true;
+      }
+    }
+
+    if (profileUpdated) {
+      set_settings('profiles', profiles);
+      saveSettingsDebounced();
+      log(SUBSYSTEM.CORE, '=== Default profile artifacts updated ===');
+      updated = true;
+    }
+  }
+
   return updated;
 }

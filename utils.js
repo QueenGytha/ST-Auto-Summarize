@@ -6,11 +6,7 @@ import {
   getContext,
   debounce_timeout,
   getMaxContextSize,
-  default_settings,
-  set_settings,
-  refresh_settings,
-  refresh_memory,
-  save_profile } from
+  refresh_memory } from
 './index.js';
 import {
   UI_UPDATE_DELAY_MS,
@@ -222,40 +218,6 @@ async function display_text_modal(title , text  = "") {
   const popup = new ctx.Popup(html, ctx.POPUP_TYPE.TEXT, undefined, { okButton: 'Close', allowVerticalScrolling: true });
   await popup.show();
 }
-async function get_user_setting_text_input(key , title , description  = "", _defaultValue  = "") {
-  // _defaultValue is unused parameter - any is acceptable
-  const value = get_settings(key) ?? '';
-  const htmlTitle = `
-<h3>${title}</h3>
-<p>${description}</p>
-`;
-  const ctx = getContext();
-  // Use let with any type annotation to avoid Flow recursive definition error
-  // Can't use const because Flow would throw recursive-definition error
-  // popup is any type to avoid Flow recursive definition - legitimate use of any
-  /* eslint-disable prefer-const -- Variable must be let to reference itself in callback before assignment */
-  let popup ;
-  popup = new ctx.Popup(htmlTitle, ctx.POPUP_TYPE.INPUT, value, {
-    rows: 20,
-    customButtons: [{
-      text: 'Restore Default',
-      appendAtEnd: true,
-      action: function () {
-        // Capture popup from outer scope since 'this' is not bound correctly
-        popup.mainInput.value = default_settings[key] ?? '';
-      }
-    }]
-  });
-  popup.mainInput.classList.remove('result-control');
-  const input = await popup.show();
-  /* eslint-enable prefer-const -- Re-enable after self-referencing pattern */
-  if (input !== undefined && input !== null && input !== false) {
-    set_settings(key, input);
-    save_profile(); // auto-save when prompt is edited
-    refresh_settings();
-    refresh_memory();
-  }
-}
 
 export {
   SUBSYSTEM,
@@ -278,8 +240,7 @@ export {
   convertActualNewlinesToLiteral,
   check_st_version,
   display_injection_preview,
-  display_text_modal,
-  get_user_setting_text_input };
+  display_text_modal };
 
 
 // Name helpers for Auto‑Lorebooks
