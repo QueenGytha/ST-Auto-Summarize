@@ -46,7 +46,7 @@ STEP 2: Merge in NEW_CONTENT
 - Add new facts; update changed facts; pack with semicolons; "+" for causation.
 - Compare NEW_CONTENT against the deduped existing version; merge overlaps into existing lines; do not reintroduce overlaps/near-duplicates.
 - Preserve story-critical history as causal chains (e.g., enemies + alliance).
-- Prune duplicates, trivial fluff, superseded minor details (unless story-relevant). If nothing to add/change/prune, return the deduped existing exactly.
+- Prune duplicates, trivial fluff, superseded minor details (unless story-relevant).
 - Name resolution: if vague label + proper name provided, set canonicalName to proper name.
 - Relationship nuance: capture shifts in trust/power/affection/resentment/boundaries/consent/debts/alliances; intimacy/kinks/boundaries when demonstrated.
 - Voice fidelity: preserve diction/cadence/mannerism/consent cues; add new ones only if a new facet; drop redundant cues; keep micro-quotes that anchor style; do not rewrite unchanged cues.
