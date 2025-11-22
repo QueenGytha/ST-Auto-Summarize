@@ -123,15 +123,13 @@ async function analyze_scene_effective_tokens({ currentScene, previousScene, cha
     : 0;
 
   const autoHideSceneCount = get_settings('auto_hide_scene_count');
-  let hiddenEndIdx = startIdx;
+  let firstVisibleSceneStart = 0;
   if (autoHideSceneCount >= 0 && sceneIndex > autoHideSceneCount) {
     const firstVisibleSceneIdx = sceneIndex - autoHideSceneCount;
-    hiddenEndIdx = allSceneBreaks[firstVisibleSceneIdx].metadata.startIdx;
-  } else if (autoHideSceneCount >= 0) {
-    hiddenEndIdx = 0;
+    firstVisibleSceneStart = allSceneBreaks[firstVisibleSceneIdx].metadata.startIdx;
   }
 
-  const hiddenMessages = chat.slice(0, hiddenEndIdx);
+  const hiddenMessages = chat.slice(0, firstVisibleSceneStart);
   const hiddenTokens = await calculate_tokens_for_messages(hiddenMessages, context);
 
   const perMessageStats = [];
@@ -144,7 +142,7 @@ async function analyze_scene_effective_tokens({ currentScene, previousScene, cha
       continue;
     }
 
-    const visibleMessages = chat.slice(startIdx, msgIdx + 1);
+    const visibleMessages = chat.slice(firstVisibleSceneStart, msgIdx + 1);
     // eslint-disable-next-line no-await-in-loop -- message analysis must be sequential
     const visibleTokens = await calculate_tokens_for_messages(visibleMessages, context);
 
