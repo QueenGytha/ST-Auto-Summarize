@@ -61,7 +61,8 @@ import {
   addLorebookEntry,
   deleteLorebookEntry,
   updateRegistryEntryContent,
-  reorderLorebookEntriesAlphabetically } from
+  reorderLorebookEntriesAlphabetically,
+  getLorebookEntryTokenCount } from
 './lorebookManager.js';
 import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
 import {
@@ -81,6 +82,7 @@ import {
 './index.js';
 import { saveMetadata } from '../../../../script.js';
 import { queueCombineSceneWithRunning } from './queueIntegration.js';
+import { DEFAULT_COMPACTION_THRESHOLD } from './constants.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 4;
 
@@ -1694,6 +1696,33 @@ export function registerAllOperationHandlers() {
       await pauseQueue();
 
       throw new Error(`DUPLICATE/STATE ERROR: Cannot merge into uid ${resolvedUid} — registry/entry not found after hydration. ${diagnostics}`);
+    }
+
+    // Check if compaction is needed before merge
+    const existingTokenCount = await getLorebookEntryTokenCount(lorebookName, existingEntry.uid);
+    const compactionThreshold = get_settings?.('auto_lorebooks_compaction_threshold') ?? DEFAULT_COMPACTION_THRESHOLD;
+
+    if (existingTokenCount >= compactionThreshold) {
+      debug(SUBSYSTEM.QUEUE, `Entry ${existingEntry.uid} has ${existingTokenCount} tokens (threshold: ${compactionThreshold}), compacting before merge`);
+
+      // Perform compaction synchronously
+      const { compactLorebookEntryByUid } = await import('./lorebookEntryMerger.js');
+      const compactionResult = await compactLorebookEntryByUid({
+        lorebookName,
+        entryUid: existingEntry.uid,
+        existingContent: existingEntry.content
+      });
+
+      // Check if cancelled after compaction LLM call
+      throwIfAborted(signal, 'CREATE_LOREBOOK_ENTRY (compaction)', 'compaction LLM call');
+
+      if (!compactionResult?.success) {
+        throw new Error(`Compaction failed: ${compactionResult?.message || 'Unknown error'}`);
+      }
+
+      // Update existingEntry with compacted content for subsequent merge
+      existingEntry = { ...existingEntry, content: compactionResult.compactedContent };
+      debug(SUBSYSTEM.QUEUE, `✓ Compacted entry ${existingEntry.uid} (${existingTokenCount} → ${compactionResult.newTokenCount} tokens)`);
     }
 
     // Consolidate duplicates if any exist
