@@ -207,7 +207,7 @@ export async function mergeLorebookEntry(lorebookName , existingEntry , newEntry
             existingContent: existingEntry.content
           },
           {
-            priority: 12.5, // Before merge
+            priority: 14,
             metadata: {
               entry_comment: existingEntry.comment,
               existing_token_count: existingTokenCount

@@ -267,7 +267,7 @@ async function enqueueMergeLorebookEntry(params ) {
         existingContent
       },
       {
-        priority: 12.5,
+        priority: 14,
         metadata: {
           entry_comment: entryName,
           existing_token_count: existingTokenCount

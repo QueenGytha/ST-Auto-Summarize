@@ -405,7 +405,7 @@ function initialize_slash_commands() {
           existingContent: entry.content
         },
         {
-          priority: 12.5,
+          priority: 14,
           metadata: {
             entry_comment: entry.comment
           }
