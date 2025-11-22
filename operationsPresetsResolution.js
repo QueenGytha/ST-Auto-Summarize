@@ -195,7 +195,7 @@ export async function resolveOperationConfig(operationType) {
 
     const artifactName = preset.operations[operationType];
     if (!artifactName) {
-      error(SUBSYSTEM.CORE, `No artifact defined for ${operationType} in preset ${presetName}`);
+      debug(SUBSYSTEM.CORE, `[${operationType}] Not defined in preset "${presetName}", using Default artifact`);
       return await getDefaultArtifact(operationType);
     }
 
@@ -211,7 +211,7 @@ export async function resolveOperationConfig(operationType) {
     }
 
     if (!artifact) {
-      error(SUBSYSTEM.CORE, `Artifact not found: ${artifactName} for ${operationType}`);
+      debug(SUBSYSTEM.CORE, `[${operationType}] Artifact "${artifactName}" not found, using Default artifact`);
       return await getDefaultArtifact(operationType);
     }
 

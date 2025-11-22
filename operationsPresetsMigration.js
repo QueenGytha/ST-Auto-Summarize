@@ -217,6 +217,76 @@ function deepEqualConfigs(config1, config2) {
   return true;
 }
 
+function updateDefaultPresetOperations() {
+  const savedPresets = get_settings('operations_presets');
+  if (!savedPresets || !savedPresets['Default']) {
+    return false;
+  }
+
+  const defaultPreset = savedPresets['Default'];
+  let presetUpdated = false;
+
+  for (const operationType of OPERATION_TYPES) {
+    if (!defaultPreset.operations[operationType]) {
+      log(SUBSYSTEM.CORE, `Adding missing operation to Default preset: ${operationType}`);
+      defaultPreset.operations[operationType] = 'Default';
+      presetUpdated = true;
+    }
+  }
+
+  if (presetUpdated) {
+    set_settings('operations_presets', savedPresets);
+    saveSettingsDebounced();
+    log(SUBSYSTEM.CORE, '=== Default preset updated with missing operations ===');
+  }
+
+  return presetUpdated;
+}
+
+function updateDefaultProfileArtifacts() {
+  const profiles = get_settings('profiles');
+  if (!profiles || !profiles['Default']) {
+    return false;
+  }
+
+  log(SUBSYSTEM.CORE, '=== Updating Default profile artifacts ===');
+  const defaultProfile = profiles['Default'];
+
+  if (!defaultProfile.operation_artifacts) {
+    defaultProfile.operation_artifacts = {};
+  }
+
+  let profileUpdated = false;
+
+  for (const operationType of OPERATION_TYPES) {
+    if (!defaultProfile.operation_artifacts[operationType]) {
+      defaultProfile.operation_artifacts[operationType] = [];
+    }
+
+    const profileOperationArtifacts = defaultProfile.operation_artifacts[operationType];
+    const codeDefault = default_settings.operation_artifacts?.[operationType]?.[0];
+
+    if (!codeDefault) {
+      continue;
+    }
+
+    const index = profileOperationArtifacts.findIndex(a => a.isDefault);
+    if (index !== -1) {
+      log(SUBSYSTEM.CORE, `Updating Default profile artifact for ${operationType}`);
+      profileOperationArtifacts[index] = structuredClone(codeDefault);
+      profileUpdated = true;
+    }
+  }
+
+  if (profileUpdated) {
+    set_settings('profiles', profiles);
+    saveSettingsDebounced();
+    log(SUBSYSTEM.CORE, '=== Default profile artifacts updated ===');
+  }
+
+  return profileUpdated;
+}
+
 export function updateDefaultArtifacts() {
   log(SUBSYSTEM.CORE, '=== Updating Default artifacts from code ===');
 
@@ -256,43 +326,14 @@ export function updateDefaultArtifacts() {
     log(SUBSYSTEM.CORE, '=== No Default artifacts found to update ===');
   }
 
-  const profiles = get_settings('profiles');
-  if (profiles && profiles['Default']) {
-    log(SUBSYSTEM.CORE, '=== Updating Default profile artifacts ===');
-    const defaultProfile = profiles['Default'];
+  // Update Default preset with missing operations
+  if (updateDefaultPresetOperations()) {
+    updated = true;
+  }
 
-    if (!defaultProfile.operation_artifacts) {
-      defaultProfile.operation_artifacts = {};
-    }
-
-    let profileUpdated = false;
-
-    for (const operationType of OPERATION_TYPES) {
-      if (!defaultProfile.operation_artifacts[operationType]) {
-        defaultProfile.operation_artifacts[operationType] = [];
-      }
-
-      const profileOperationArtifacts = defaultProfile.operation_artifacts[operationType];
-      const codeDefault = default_settings.operation_artifacts?.[operationType]?.[0];
-
-      if (!codeDefault) {
-        continue;
-      }
-
-      const index = profileOperationArtifacts.findIndex(a => a.isDefault);
-      if (index !== -1) {
-        log(SUBSYSTEM.CORE, `Updating Default profile artifact for ${operationType}`);
-        profileOperationArtifacts[index] = structuredClone(codeDefault);
-        profileUpdated = true;
-      }
-    }
-
-    if (profileUpdated) {
-      set_settings('profiles', profiles);
-      saveSettingsDebounced();
-      log(SUBSYSTEM.CORE, '=== Default profile artifacts updated ===');
-      updated = true;
-    }
+  // Update Default profile artifacts
+  if (updateDefaultProfileArtifacts()) {
+    updated = true;
   }
 
   return updated;
