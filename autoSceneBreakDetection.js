@@ -715,6 +715,22 @@ async function reduceMessagesUntilTokenFit(config) {
     }
   };
 
+  // Calculate scene recap start index ONCE before the loop (performance optimization)
+  // The scene that would be recapped starts from the previous REAL scene break (or chat start)
+  // Skip empty bookmarks - only count scenes with recap data
+  let sceneRecapStartIndex = 0;
+  for (let i = startIndex - 1; i >= 0; i--) {
+    if (get_data(chat[i], 'scene_break')) {
+      // Check if this is a real scene (has recap data) or just a bookmark
+      const hasRecapData = get_data(chat[i], 'scene_recap_memory');
+      if (hasRecapData) {
+        sceneRecapStartIndex = i + 1;
+        break;
+      }
+      // Empty bookmark - skip it and continue searching backwards
+    }
+  }
+
   while (true) {
     const currentEligibleFilteredIndices = filterEligibleIndices(currentFilteredIndices, currentMaxEligibleIndex);
 
@@ -770,21 +786,7 @@ async function reduceMessagesUntilTokenFit(config) {
     });
 
     // ALSO calculate tokens for scene recap generation (which includes lorebooks)
-    // The scene that would be recapped starts from the previous REAL scene break (or chat start) to currentEndIndex
-    // Skip empty bookmarks - only count scenes with recap data
-    let sceneRecapStartIndex = 0;
-    for (let i = startIndex - 1; i >= 0; i--) {
-      if (get_data(chat[i], 'scene_break')) {
-        // Check if this is a real scene (has recap data) or just a bookmark
-        const hasRecapData = get_data(chat[i], 'scene_recap_memory');
-        if (hasRecapData) {
-          sceneRecapStartIndex = i + 1;
-          break;
-        }
-        // Empty bookmark - skip it and continue searching backwards
-      }
-    }
-
+    // sceneRecapStartIndex was calculated once before the loop (performance optimization)
     // eslint-disable-next-line no-await-in-loop -- Need to calculate scene recap tokens to ensure it will also fit
     const sceneRecapTokens = await calculateSceneRecapTokensForRange(sceneRecapStartIndex, currentEndIndex, chat, ctx);
 

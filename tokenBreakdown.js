@@ -3,6 +3,10 @@
 import { count_tokens, main_api, debug, SUBSYSTEM, get_settings } from './index.js';
 import { injectMetadataIntoChatArray } from './metadataInjector.js';
 
+// Performance optimization: Cache preset and system prompt tokens to avoid recounting
+const presetTokenCache = new Map();
+const systemPromptTokenCache = new Map();
+
 /**
  * Apply tokenizer correction factor to adjust for discrepancies between ST and actual LLM tokenizers
  * ST uses tokenizer approximations that may undercount or overcount vs actual provider tokenizers
@@ -143,25 +147,46 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
 
   // Load preset messages if includePreset is true (same as llmClient.js lines 117-142)
   if (includePreset && preset) {
-    const { loadPresetPrompts } = await import('./presetPromptLoader.js');
-    const presetMessages = await loadPresetPrompts(preset);
+    // Check cache first
+    const cacheKey = preset;
+    if (presetTokenCache.has(cacheKey)) {
+      const cached = presetTokenCache.get(cacheKey);
+      messages = [...cached.presetMessages];
+      presetTokens = cached.presetTokens;
+      debug(SUBSYSTEM.OPERATIONS, `Using cached preset messages for "${preset}" (${presetTokens} tokens)`);
+    } else {
+      const { loadPresetPrompts } = await import('./presetPromptLoader.js');
+      const presetMessages = await loadPresetPrompts(preset);
 
-    // Add preset messages first
-    messages = [...presetMessages];
+      // Add preset messages first
+      messages = [...presetMessages];
 
-    // Count preset tokens
-    for (const msg of presetMessages) {
-      presetTokens += count_tokens(msg.content || '');
+      // Count preset tokens
+      for (const msg of presetMessages) {
+        presetTokens += count_tokens(msg.content || '');
+      }
+
+      // Cache for future use
+      presetTokenCache.set(cacheKey, { presetMessages, presetTokens });
+
+      debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from completion preset "${preset}" (${presetTokens} tokens, cached)`);
     }
-
-    debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from completion preset "${preset}"`);
   }
 
   // Add system prompt for OpenAI (same as llmClient.js lines 130-132, 146-148)
   if (main_api === 'openai') {
     const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
+
+    // Check cache first
+    const cacheKey = 'openai_system_prompt';
+    if (systemPromptTokenCache.has(cacheKey)) {
+      systemTokens = systemPromptTokenCache.get(cacheKey);
+    } else {
+      systemTokens = count_tokens(systemPrompt);
+      systemPromptTokenCache.set(cacheKey, systemTokens);
+    }
+
     messages.push({ role: 'system', content: systemPrompt });
-    systemTokens = count_tokens(systemPrompt);
   }
 
   // Add user prompt
