@@ -39,10 +39,13 @@ STEP 1: Deduplicate EXISTING_CONTENT
 - Quotes: keep only unique (no paraphrased repeats); prioritize plot; include style/voice quotes only if they add distinct cadence; label as "(plot)" or "(style)".
 - Use this deduped existing version for the next step.
 - Do not output the intermediate deduped text; only the final JSON.
+- Discard the raw EXISTING_CONTENT after Step 1; all further merging must operate only on the deduped set.
 
 <EXISTING_CONTENT>
 {{existing_content}}
 </EXISTING_CONTENT>
+
+YOU MUST FULLY DEDUPLICATE THE EXISTING_CONTENT FOLLOWING THE GUIDANCE FOR THAT BEFORE PROCEEDING. THIS IS NON NEGOTIABLE.
 
 STEP 2: Merge in NEW_CONTENT
 - Add new facts; update changed facts; pack with semicolons; "+" for causation.
@@ -56,6 +59,7 @@ STEP 2: Merge in NEW_CONTENT
 - Placement: prefer updating an existing fragment line over adding a new one; if adding, keep compact fragment style; normalize prose/bullets to compact fragments.
 - Relationships: every counterpart that appears in EXISTING_CONTENT or NEW_CONTENT must remain represented by at least one merged line after combining; do not drop counterparts when merging.
 - Quotes: keep only unique (no paraphrased repeats); prioritize plot; include style/voice quotes only if they add distinct cadence; label each as "(plot)" or "(style)"; drop near-duplicates even if wording differs; do not leave unlabelled quotes.
+- Rewrite mergedContent fresh from the deduped set + NEW_CONTENT; do not reuse or copy the raw original lines verbatim.
 
 DEDUPE EXAMPLE (generic)
 - Before (Attributes): "tall; tall and lean; lean frame; towering height"

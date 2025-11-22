@@ -249,6 +249,12 @@ async function initializeExtension() {
   installWorldInfoActivationLogger();
   debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] World info activation logger installed');
 
+  // Update Default artifacts BEFORE initialize_settings() to prevent soft_reset_settings() from overwriting them
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checking Default artifacts for updates...');
+  const { needsOperationsPresetsMigration, migrateToOperationsPresets, updateDefaultArtifacts } = await import('./operationsPresetsMigration.js');
+  updateDefaultArtifacts();
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Default artifacts update check complete');
+
   // Load settings
   initialize_settings();
 
@@ -263,18 +269,12 @@ async function initializeExtension() {
 
   // Migrate settings to operations presets system
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checking for operations presets migration...');
-  const { needsOperationsPresetsMigration, migrateToOperationsPresets, updateDefaultArtifacts } = await import('./operationsPresetsMigration.js');
   if (needsOperationsPresetsMigration()) {
     await migrateToOperationsPresets();
     saveSettingsDebounced();
     log(SUBSYSTEM.CORE, 'Operations presets migration completed');
   }
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Operations presets migration check complete');
-
-  // Update Default artifacts if code version changed
-  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checking Default artifacts for updates...');
-  updateDefaultArtifacts();
-  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Default artifacts update check complete');
 
   // initialize UI stuff
   await initialize_settings_listeners();
