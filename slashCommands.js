@@ -493,8 +493,14 @@ function initialize_slash_commands() {
       const finalScene = sceneStats[sceneStats.length - 1];
       const totalScenes = sceneBreaks.length;
       const totalMessages = chat.length;
-      const totalSavings = finalScene.savingsThisScene;
       const finalCompressionRatio = finalScene.compressionRatio;
+
+      let cumulativeHistoricalSavings = 0;
+      for (const scene of sceneStats) {
+        for (const msgStat of scene.perMessageStats) {
+          cumulativeHistoricalSavings += msgStat.savings;
+        }
+      }
 
       const allMessagesTokens = await calculate_tokens_for_messages(chat, context);
       const { lorebookTokens: currentLorebookTokens, lorebookEntryCount: currentLorebookEntryCount } =
@@ -522,13 +528,13 @@ function initialize_slash_commands() {
 📊 Overall Statistics:
   • Scenes Analyzed: ${totalScenes}
   • Total Messages: ${totalMessages}
-  • Total Savings (Historical): ${totalSavings.toLocaleString()} tokens
-  • Historical Compression Ratio: ${finalCompressionRatio}:1
+  • Cumulative Historical Savings: ${cumulativeHistoricalSavings.toLocaleString()} tokens
+  • Final Scene Compression Ratio: ${finalCompressionRatio}:1
 
 📈 End-to-End Comparison:
   • All Messages (No Memory): ${allMessagesTokens.toLocaleString()} tokens
   • With Memory System: ${totalWithMemory.toLocaleString()} tokens
-  • Total Savings: ${totalSavingsVsFullChain.toLocaleString()} tokens (${savingsPercentage}%)
+  • Total Savings (Current State): ${totalSavingsVsFullChain.toLocaleString()} tokens (${savingsPercentage}%)
   • Full Chain Compression: ${fullChainCompressionRatio.toFixed(2)}:1
 
 💾 Current State (Actual):
@@ -559,13 +565,15 @@ function initialize_slash_commands() {
 
       log('[Effective Token Analysis] ===== DETAILED DATA =====');
       log('[Effective Token Analysis] Scene statistics:', sceneStats);
+      log('\n[Effective Token Analysis] ===== SAVINGS COMPARISON =====');
+      log(`  Cumulative historical savings (all messages as sent): ${cumulativeHistoricalSavings.toLocaleString()} tokens`);
+      log(`  Current state savings (vs sending all messages now): ${totalSavingsVsFullChain.toLocaleString()} tokens (${savingsPercentage}%)`);
       log('\n[Effective Token Analysis] ===== END-TO-END COMPARISON =====');
       log(`  All messages (no memory): ${allMessagesTokens.toLocaleString()} tokens`);
       log(`  Current visible messages: ${currentVisibleMessages.length} messages, ${currentVisibleTokens.toLocaleString()} tokens`);
       log(`  Current lorebook: ${currentLorebookEntryCount} entries, ${currentLorebookTokens.toLocaleString()} tokens`);
       log(`  Current running recap: ${currentRunningRecapTokens.toLocaleString()} tokens`);
       log(`  Total with memory: ${totalWithMemory.toLocaleString()} tokens`);
-      log(`  Total savings: ${totalSavingsVsFullChain.toLocaleString()} tokens (${savingsPercentage}%)`);
       log(`  Full chain compression: ${fullChainCompressionRatio.toFixed(2)}:1`);
 
       toast(summary, 'info');
