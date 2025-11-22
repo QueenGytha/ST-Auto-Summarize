@@ -439,9 +439,10 @@ export async function reconstructPointInTimeLorebook(messageIndex, targetLoreboo
  * to the current lorebook in-place instead of creating a new one.
  *
  * @param {number} messageIndex - Message index with scene break snapshot
+ * @param {boolean} [skipConfirmation=false] - Skip confirmation dialog (e.g., when already confirmed by caller)
  * @returns {Promise<Object>} Restoration result with metadata
  */
-export async function restoreCurrentLorebookFromSnapshot(messageIndex) {
+export async function restoreCurrentLorebookFromSnapshot(messageIndex, skipConfirmation = false) {
   try {
     debug(SUBSYSTEM.LOREBOOK,
       `Starting in-place lorebook restoration from snapshot at message ${messageIndex}`
@@ -475,18 +476,22 @@ export async function restoreCurrentLorebookFromSnapshot(messageIndex) {
       `Snapshot contains ${historicalState.totalEntries} entries from ${historicalState.sourceLorebookName}`
     );
 
-    // Step 4: Show confirmation dialog
-    const confirmMessage =
-      `This will delete ALL entries in the current lorebook and restore from the snapshot.\n\n` +
-      `Current lorebook: ${currentLorebookName}\n` +
-      `Snapshot from: Message ${messageIndex}\n` +
-      `Entries to restore: ${historicalState.totalEntries}\n` +
-      `Operation queue will be reset to empty.\n\n` +
-      `Continue?`;
+    // Step 4: Show confirmation dialog (unless already confirmed by caller)
+    if (!skipConfirmation) {
+      const confirmMessage =
+        `This will delete ALL entries in the current lorebook and restore from the snapshot.\n\n` +
+        `Current lorebook: ${currentLorebookName}\n` +
+        `Snapshot from: Message ${messageIndex}\n` +
+        `Entries to restore: ${historicalState.totalEntries}\n` +
+        `Operation queue will be reset to empty.\n\n` +
+        `Continue?`;
 
-    if (!confirm(confirmMessage)) {
-      debug(SUBSYSTEM.LOREBOOK, 'Restoration cancelled by user');
-      return { cancelled: true };
+      if (!confirm(confirmMessage)) {
+        debug(SUBSYSTEM.LOREBOOK, 'Restoration cancelled by user');
+        return { cancelled: true };
+      }
+    } else {
+      debug(SUBSYSTEM.LOREBOOK, 'Skipping confirmation (already confirmed by caller)');
     }
 
     // Step 5: Delete ALL existing entries (including operation queue)

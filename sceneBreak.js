@@ -343,7 +343,7 @@ export async function handleDeleteSceneClick(
     if (previousSceneIndex !== null) {
       try {
         debug(SUBSYSTEM.SCENE, `Most recent scene deleted - restoring lorebook from previous scene at ${previousSceneIndex}`);
-        const result = await restoreCurrentLorebookFromSnapshot(previousSceneIndex);
+        const result = await restoreCurrentLorebookFromSnapshot(previousSceneIndex, true);
 
         if (!result.cancelled) {
           lorebookRestored = true;
