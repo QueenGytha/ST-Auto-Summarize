@@ -223,10 +223,7 @@ export async function handleDeleteSceneClick(
     return;
   }
 
-  // Find scene boundaries to determine message range
-  const { startIdx, sceneMessages } = findSceneBoundaries(chat, index, get_data);
-
-  // Find next scene break for clearing checked flags
+  // Check if this is the most recent scene (no scene breaks after this one)
   let nextSceneBreakIndex = chat.length;
   for (let i = index + 1; i < chat.length; i++) {
     const isSceneBreak = get_data(chat[i], SCENE_BREAK_KEY);
@@ -239,22 +236,34 @@ export async function handleDeleteSceneClick(
     }
   }
 
+  const isMostRecentScene = nextSceneBreakIndex === chat.length;
+
   // Find all running recap versions that merged this scene
   const runningVersions = get_running_recap_versions();
   const affectedVersions = runningVersions.filter(v => v.new_scene_index === index);
 
-  // Show confirmation dialog
+  // Build confirmation dialog message
+  const deletionItems = [
+    'Scene break marker and recap',
+    'Lorebook snapshot for this scene',
+    `${affectedVersions.length} running recap version${affectedVersions.length !== 1 ? 's' : ''} that merged this scene`
+  ];
+
+  // Only mention checked flags if this is the most recent scene
+  if (isMostRecentScene) {
+    const estimatedFlagsToCleared = chat.length - index;
+    deletionItems.push(`Checked flags from message ${index} to end of chat (~${estimatedFlagsToCleared} messages - will allow re-detection)`);
+  }
+
   const html = `
     <div style="text-align: center !important; width: 100% !important;">
       <div style="max-width: 420px; margin: 0 auto; text-align: center !important;">
         <h3 style="text-align: center !important; color: #d32f2f;">Delete Scene?</h3>
         <p>This will permanently delete:</p>
-        <ul style="text-align: left; margin: 1em auto; max-width: 320px;">
-          <li>Scene break marker and recap</li>
-          <li>Lorebook snapshot for this scene</li>
-          <li>${affectedVersions.length} running recap version${affectedVersions.length !== 1 ? 's' : ''} that merged this scene</li>
-          <li>Checked flags for ${sceneMessages.length} message${sceneMessages.length !== 1 ? 's' : ''} (will allow re-detection)</li>
+        <ul style="text-align: left; margin: 1em auto; max-width: 380px;">
+          ${deletionItems.map(item => `<li>${item}</li>`).join('')}
         </ul>
+        ${!isMostRecentScene ? '<p style="color:#ff9800;"><strong>Note:</strong> This is not the most recent scene. Checked flags will NOT be cleared to preserve later scene integrity.</p>' : ''}
         <p><strong>This action cannot be undone.</strong></p>
       </div>
     </div>
@@ -280,15 +289,19 @@ export async function handleDeleteSceneClick(
     debug(SUBSYSTEM.SCENE, `Deleted running recap version ${version.version} (merged scene at ${index})`);
   }
 
-  // Check if this is the most recent scene (last scene break in chat)
-  const isMostRecentScene = nextSceneBreakIndex === chat.length;
-
   // Clear scene break data (this also removes lorebook snapshots in metadata)
   clearSceneBreak({ index, get_message_div, getContext, saveChatDebounced });
 
-  // Clear checked flags in the message range
-  const clearedCount = clearCheckedFlagsInRange(startIdx, nextSceneBreakIndex);
-  debug(SUBSYSTEM.SCENE, `Cleared ${clearedCount} checked flags in range ${startIdx}-${nextSceneBreakIndex - 1}`);
+  // Only clear checked flags if this is the most recent scene
+  // (Otherwise, later scenes were already processed with knowledge of this scene existing)
+  let clearedCount = 0;
+  if (isMostRecentScene) {
+    // Clear from the deleted scene's position to end of chat to allow re-detection
+    clearedCount = clearCheckedFlagsInRange(index, chat.length);
+    debug(SUBSYSTEM.SCENE, `Most recent scene deleted - cleared ${clearedCount} checked flags from ${index} to end of chat`);
+  } else {
+    debug(SUBSYSTEM.SCENE, `Not the most recent scene - skipping checked flag clearing to preserve later scene integrity`);
+  }
 
   // If this was the most recent scene, restore lorebook to previous scene snapshot
   let lorebookRestored = false;
@@ -349,7 +362,7 @@ export async function handleDeleteSceneClick(
     details.push(`${deletedVersionsCount} running recap version${deletedVersionsCount !== 1 ? 's' : ''}`);
   }
   if (clearedCount > 0) {
-    details.push(`${clearedCount} checked message${clearedCount !== 1 ? 's' : ''}`);
+    details.push(`${clearedCount} checked message${clearedCount !== 1 ? 's' : ''} (${index} to end)`);
   }
 
   let successMessage = 'Scene deleted.';
