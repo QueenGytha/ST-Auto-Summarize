@@ -50,7 +50,7 @@ SECTION 3 - SETTING_LORE ARRAY ONLY
 - UID enforcement: if name+type matches an ACTIVE_SETTING_LORE entry with uid, include that uid; omitting when it exists is invalid.
 - Never reuse the example UIDs; only copy from ACTIVE_SETTING_LORE for the EXACT ENTITY ONLY IF PRESENT.
 - Add entries only if NEW or CHANGED vs ACTIVE_SETTING_LORE; if everything matches, omit the entry entirely. When an entry exists, emit only the new/changed facets; do not restate unchanged attributes/quotes/mannerisms.
-- Keywords: lowercase scene triggers; consolidate repeats.
+- Keywords: 3-6 concise canonical/alias tokens actually used in chat; lowercase; drop generic descriptors or loose associations; consolidate repeats.
 - User handling (hard block): never create or include a character-{{user}} setting_lore entry. If NPC behavior depends on {{user}}, put it only in that NPC's Relationships field (e.g., "NPC -> {{user}} ? obligation/consent boundary/leverage") when demonstrated and consequential.
 - Content guidelines (omit empty fields):
   * Style: compact fragment/semicolon lines; no prose sentences or code fences; stay concise but keep nuance.

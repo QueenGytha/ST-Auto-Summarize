@@ -137,7 +137,7 @@ function buildLorebookEntryObject(nextUID, entryData) {
     uid: nextUID,
     comment: entryData.comment || '',
     key: Array.isArray(entryData.key) ? entryData.key : [],
-    keysecondary: Array.isArray(entryData.keysecondary) ? entryData.keysecondary : [],
+    keysecondary: [],
     content: entryData.content || '',
     constant: entryData.constant || false,
     vectorized: entryData.vectorized || false,

@@ -36,7 +36,6 @@ export function createPendingEntry(entryId , entryData ) {
       comment: entryData.comment || '',
       content: entryData.content || '',
       keys: Array.isArray(entryData.keys) ? entryData.keys : [],
-      secondaryKeys: Array.isArray(entryData.secondaryKeys) ? entryData.secondaryKeys : [],
       type: entryData.type || '',
       constant: Boolean(entryData.constant),
       disable: Boolean(entryData.disable),

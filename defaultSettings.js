@@ -9,7 +9,8 @@ import {
   auto_lorebook_entry_lookup_prompt,
   auto_lorebook_entry_deduplicate_prompt,
   auto_lorebook_bulk_populate_prompt,
-  auto_lorebook_recap_merge_prompt
+  auto_lorebook_recap_merge_prompt,
+  lorebook_entry_compaction_prompt
 } from './default-prompts/index.js';
 
 export const default_settings = {
@@ -98,6 +99,7 @@ export const default_settings = {
   auto_lorebooks_entry_prevent_recursion: false, // Default: allow entry in recursion scans
   auto_lorebooks_entry_ignore_budget: true, // Default: don't count against token budget
   auto_lorebooks_entry_sticky: 4, // Default: stay active for 4 message rounds
+  auto_lorebooks_compaction_threshold: 1000, // Token threshold for compacting lorebook entries before merge
 
   // (Removed) Auto-Lorebooks Keyword Generation Settings – keywords now come from recap JSON
 
@@ -233,6 +235,21 @@ export const default_settings = {
         modifiedAt: Date.now(),
         customLabel: null
       }
+    ],
+    auto_lorebooks_recap_lorebook_entry_compaction: [
+      {
+        name: 'Default',
+        prompt: lorebook_entry_compaction_prompt,
+        prefill: "Understood. The roleplay content is acceptable as we are examining it, not writing it. I will output ONLY valid JSON with no additional text. Here I go:\n{",
+        connection_profile: null,
+        completion_preset_name: '',
+        include_preset_prompts: false,
+        isDefault: true,
+        internalVersion: 1,
+        createdAt: Date.now(),
+        modifiedAt: Date.now(),
+        customLabel: null
+      }
     ]
   },
   /* eslint-enable sonarjs/no-duplicate-string -- End of operation_artifacts section */
@@ -249,7 +266,8 @@ export const default_settings = {
         auto_lorebooks_recap_merge: 'Default',
         auto_lorebooks_recap_lorebook_entry_lookup: 'Default',
         auto_lorebooks_recap_lorebook_entry_deduplicate: 'Default',
-        auto_lorebooks_bulk_populate: 'Default'
+        auto_lorebooks_bulk_populate: 'Default',
+        auto_lorebooks_recap_lorebook_entry_compaction: 'Default'
       },
       createdAt: Date.now(),
       modifiedAt: Date.now(),

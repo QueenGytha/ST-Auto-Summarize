@@ -199,7 +199,7 @@ async function updateSceneLorebookSnapshot(messageIndex) {
         uid: entry.uid,
         world: chatLorebookName,
         key: Array.isArray(entry.key) ? [...entry.key] : [],
-        keysecondary: Array.isArray(entry.keysecondary) ? [...entry.keysecondary] : [],
+        keysecondary: [],
         content: entry.content || '',
         position: entry.position,
         depth: entry.depth,
@@ -1224,18 +1224,34 @@ export function registerAllOperationHandlers() {
 
   // Merge lorebook entry (standalone operation)
   registerOperationHandler(OperationType.MERGE_LOREBOOK_ENTRY, async (operation) => {
-    const { lorebookName, entryUid, existingContent, newContent, newKeys, newSecondaryKeys } = operation.params;
+    const { lorebookName, entryUid, existingContent, newContent, newKeys } = operation.params;
     const signal = getAbortSignal(operation);
     const entryComment = operation.metadata?.entry_comment || entryUid;
     debug(SUBSYSTEM.QUEUE, `Executing MERGE_LOREBOOK_ENTRY for: ${entryComment}`);
 
+    // Check if we should use compacted content
+    let effectiveExistingContent = existingContent;
+    if (operation.params.useCompactedContent) {
+      // Find the completed compaction operation in dependencies
+      const dependencies = operation.dependencies || [];
+      if (dependencies.length > 0) {
+        const compactOpId = dependencies[0];
+        const { getOperation } = await import('./operationQueue.js');
+        const compactOp = getOperation(compactOpId);
+        const { OperationStatus } = await import('./operationQueue.js');
+        if (compactOp?.status === OperationStatus.COMPLETED && compactOp.result?.compactedContent) {
+          effectiveExistingContent = compactOp.result.compactedContent;
+          debug(SUBSYSTEM.QUEUE, `Using compacted content from operation ${compactOpId} for merge`);
+        }
+      }
+    }
+
     const result = await mergeLorebookEntryByUid({
       lorebookName,
       entryUid,
-      existingContent,
+      existingContent: effectiveExistingContent,
       newContent,
-      newKeys,
-      newSecondaryKeys
+      newKeys
     });
 
     // Check if cancelled after LLM call (before return)
@@ -1254,9 +1270,43 @@ export function registerAllOperationHandlers() {
     return result;
   });
 
+  // COMPACT_LOREBOOK_ENTRY - Compact large lorebook entry before merge
+  registerOperationHandler(OperationType.COMPACT_LOREBOOK_ENTRY, async (operation) => {
+    const { lorebookName, entryUid, existingContent } = operation.params;
+    const signal = getAbortSignal(operation);
+    const entryComment = operation.metadata?.entry_comment || entryUid;
+
+    debug(SUBSYSTEM.QUEUE, `Executing COMPACT_LOREBOOK_ENTRY for: ${entryComment}`);
+
+    // Import compaction function
+    const { compactLorebookEntryByUid } = await import('./lorebookEntryMerger.js');
+
+    // Execute compaction
+    const result = await compactLorebookEntryByUid({
+      lorebookName,
+      entryUid,
+      existingContent
+    });
+
+    // Check if cancelled after LLM call
+    throwIfAborted(signal, 'COMPACT_LOREBOOK_ENTRY', 'LLM call');
+
+    // Store token breakdown in operation metadata
+    if (result?.tokenBreakdown) {
+      const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+      const tokenMetadata = formatTokenBreakdownForMetadata(result.tokenBreakdown, {
+        max_context: result.tokenBreakdown.max_context,
+        max_tokens: result.tokenBreakdown.max_tokens
+      });
+      await updateOperationMetadata(operation.id, tokenMetadata);
+    }
+
+    return result;
+  });
+
   // LOREBOOK_ENTRY_LOOKUP - First stage of lorebook processing pipeline
   // Pipeline state machine: determines next stage based on AI results
-   
+
   registerOperationHandler(OperationType.LOREBOOK_ENTRY_LOOKUP, async (operation) => {
     const { entryId, entryData, registryListing, typeList } = operation.params;
     const signal = getAbortSignal(operation);
@@ -1588,7 +1638,7 @@ export function registerAllOperationHandlers() {
         const dupMergeResult = await contextMergeLorebookEntry(
           lorebookName,
           currentResolvedEntry,
-          { content: dupEntry.content, keys: dupEntry.key, secondaryKeys: dupEntry.keysecondary },
+          { content: dupEntry.content, keys: dupEntry.key },
           { useQueue: false }
         );
 

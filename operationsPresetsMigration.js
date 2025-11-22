@@ -9,7 +9,8 @@ const OPERATION_TYPES = [
   'auto_lorebooks_recap_merge',
   'auto_lorebooks_recap_lorebook_entry_lookup',
   'auto_lorebooks_recap_lorebook_entry_deduplicate',
-  'auto_lorebooks_bulk_populate'
+  'auto_lorebooks_bulk_populate',
+  'auto_lorebooks_recap_lorebook_entry_compaction'
 ];
 
 export function needsOperationsPresetsMigration() {

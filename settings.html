@@ -254,6 +254,22 @@
                             </select>
                         </div>
 
+                        <!-- Auto-Lorebooks: Entry Compaction -->
+                        <div class="auto_recap_operation_type_section" data-testid="operation-type-lorebooks-compaction">
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="gap: 5px;">
+                                <span>Auto-Lorebooks: Entry Compaction:</span>
+                                <div style="display: flex; gap: 5px;">
+                                    <button data-operation-type="auto_lorebooks_recap_lorebook_entry_compaction" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-lorebooks-compaction" title="Edit this artifact"></button>
+                                    <button data-operation-type="auto_lorebooks_recap_lorebook_entry_compaction" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-lorebooks-compaction" title="Rename this artifact" disabled></button>
+                                    <button data-operation-type="auto_lorebooks_recap_lorebook_entry_compaction" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-lorebooks-compaction" title="Delete this artifact" disabled></button>
+                                    <button data-operation-type="auto_lorebooks_recap_lorebook_entry_compaction" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-lorebooks-compaction" title="Duplicate this artifact"></button>
+                                </div>
+                            </div>
+                            <select id="auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_compaction" data-testid="artifact-lorebooks-compaction" class="text_pole" style="margin-top: 5px;">
+                                <option value="Default">Default</option>
+                            </select>
+                        </div>
+
                     </div>
                 </div>
 
@@ -486,6 +502,11 @@
                         <label title="Correction factor for tokenizer discrepancies between SillyTavern and actual LLM providers. Values >1.0 increase estimates (for undercounting), values <1.0 decrease estimates (for overcounting). Claude models typically need 1.35 (35% undercount). OpenAI models use 1.0 (accurate).">
                             <input id="tokenizer_correction_factor" data-testid="token-correction-factor" class="text_pole widthUnset inline_setting" type="number" min="0.5" max="2.0" step="0.05" />
                             <span>Tokenizer Correction Factor</span>
+                        </label>
+
+                        <label title="Token threshold for triggering lorebook entry compaction before merge. If an existing entry has more tokens than this threshold, it will be compacted before merging new content.">
+                            <input id="lorebook_compaction_threshold" data-testid="lorebook-compaction-threshold" class="text_pole widthUnset inline_setting" type="number" min="0" max="10000" step="100" />
+                            <span>Lorebook Compaction Threshold</span>
                         </label>
 
                         <div class="note-block">

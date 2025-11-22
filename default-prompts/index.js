@@ -11,3 +11,4 @@ export { auto_lorebook_entry_lookup_prompt } from './lorebook-entry-lookup.js';
 export { auto_lorebook_entry_deduplicate_prompt } from './lorebook-entry-deduplicate.js';
 export { auto_lorebook_bulk_populate_prompt } from './lorebook-bulk-populate.js';
 export { auto_lorebook_recap_merge_prompt } from './lorebook-recap-merge.js';
+export { lorebook_entry_compaction_prompt } from './lorebook-entry-compaction.js';

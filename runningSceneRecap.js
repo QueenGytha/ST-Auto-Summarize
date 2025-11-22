@@ -151,6 +151,7 @@ new_scene_index  = 0)
   storage.current_version = new_version;
 
   saveChatDebounced();
+  saveMetadata();
   debug(SUBSYSTEM.RUNNING, `Created running recap version ${new_version} (${prev_scene_index} > ${new_scene_index})`);
 
   // Update the UI dropdown to reflect the new version
@@ -185,6 +186,7 @@ function delete_running_recap_version(version ) {
   }
 
   saveChatDebounced();
+  saveMetadata();
   debug(SUBSYSTEM.RUNNING, `Deleted running recap version ${version}`);
 }
 
@@ -202,6 +204,7 @@ function clear_running_scene_recaps() {
     versions: []
   };
 
+  saveChatDebounced();
   saveMetadata();
   debug(SUBSYSTEM.RUNNING, `Cleared ${existingVersions} running scene recap version(s)`);
   return existingVersions;

@@ -190,83 +190,100 @@ const dehyphen = (s) => s.replace(/[–—-]+/g, ' ');
 // Helper: remove apostrophes
 const deapos = (s) => s.replace(/['']/g, '');
 
-/* eslint-disable complexity, sonarjs/cognitive-complexity, max-depth -- Complex keyword refinement logic requires deep nesting and branching */
-function refineKeywords(rawKeys = [], rawSecondary = []) {
-  const finalKeysSet = new Set();
-  const finalSecondarySet = new Set(Array.isArray(rawSecondary) ? rawSecondary.map(String).map((s) => s.toLowerCase().trim()).filter(Boolean) : []);
 
+const MAX_KEYWORDS = 10;
+const MAX_TOKEN_LENGTH = 32;
+const MAX_TOKEN_WORDS = 4;
+const STUB_WEIGHT = 5;
+const WEIGHT_REDUCTION_SMALL = 0.25;
+const WEIGHT_REDUCTION_MEDIUM = 0.5;
+const STUB_BONUS = 3;
+const LONG_TOKEN_THRESHOLD = 14;
+const LONG_TOKEN_PENALTY = 0.02;
+
+function deriveEntryStub(comment) {
+  if (!comment) {return '';}
+  // Drop type prefix (character-foo, [Type:] etc.) and normalize
+  const stripped = comment.replace(/^[^-\]]*-\s*/, '').replace(/^\[([^\]]+)\]\s*/, '');
+  return norm(stripped);
+}
+
+const isTooLong = (token) => token.length > MAX_TOKEN_LENGTH || token.split(/\s+/).length > MAX_TOKEN_WORDS;
+
+function refineKeywords(rawKeys = [], entryComment = '') {
   const LOCATION_GENERIC = new Set(['gate', 'bell', 'tavern', 'inn', 'row', 'grounds', 'alley', 'square', 'market']);
   const GENERIC_NOUNS = new Set(['city','neighborhood','district','room','building','street','road','lane','place','hall','house','yard','garden','shop','store','pub','bar','market','square','ground','grounds','eyes','eye','hair','horse','man','woman','boy','girl','male','female']);
   const STOPWORDS = new Set(['the','a','an','of','and','or','to','for','in','on','at','by','from','into','through','over','after','before','between','under','against','during','without','within','along','across','behind','beyond','about','above','below','near','with','is','are','was','were','be','been','being','this','that','these','those','it','its']);
 
-  const maybeAdd = (set, token) => {
+  const stub = deriveEntryStub(entryComment);
+  const seen = new Set();
+  const candidates = [];
+
+  const isGeneric = (token) => STOPWORDS.has(token) || GENERIC_NOUNS.has(token) || LOCATION_GENERIC.has(token);
+
+  const pushCandidate = (token, weight = 0) => {
     const t = norm(token);
-    if (!t) {return;}
-    if (STOPWORDS.has(t)) {return;}
-    set.add(t);
+    if (!t || seen.has(t) || isGeneric(t) || isTooLong(t)) {return;}
+    seen.add(t);
+    candidates.push({ token: t, weight });
   };
 
-  for (const raw of Array.isArray(rawKeys) ? rawKeys : []) {
+  // Anchor keywords around the canonical stub so we always keep the entity name
+  if (stub) {
+    pushCandidate(stub, STUB_WEIGHT);
+    const stubNoHyphen = dehyphen(stub);
+    if (stubNoHyphen !== stub) {pushCandidate(stubNoHyphen, STUB_WEIGHT);}
+  }
+
+  const keyed = Array.isArray(rawKeys) ? rawKeys : [];
+  for (let i = 0; i < keyed.length; i++) {
+    const raw = keyed[i];
     const base = norm(raw);
     if (!base) {continue;}
 
-    // Always include the original token
-    maybeAdd(finalKeysSet, base);
+    const priority = Math.max(0, keyed.length - i); // preserve earlier user-supplied ordering
+    pushCandidate(base, priority);
 
-    // Normalized variants
     const noHyphen = dehyphen(base);
     const noApos = deapos(noHyphen);
-    if (noHyphen !== base) {maybeAdd(finalKeysSet, noHyphen);}
-    if (noApos !== base) {maybeAdd(finalKeysSet, noApos);}
+    if (noHyphen !== base) {pushCandidate(noHyphen, priority - WEIGHT_REDUCTION_SMALL);}
+    if (noApos !== base && noApos !== noHyphen) {pushCandidate(noApos, priority - WEIGHT_REDUCTION_SMALL);}
 
-    // Tokenize and analyze multi-word phrases
     const parts = noHyphen.split(/[^a-z0-9]+/g).filter(Boolean);
     if (parts.length >= 2) {
-      const specificParts = [];
-      for (const p of parts) {
-        const sing = singularize(p);
-        const candidates = [p, sing].map(norm).filter(Boolean);
-        const isGeneric = candidates.some((c) => STOPWORDS.has(c) || GENERIC_NOUNS.has(c));
-        if (isGeneric) {
-          for (const c of candidates) {
-            if (LOCATION_GENERIC.has(c)) {finalSecondarySet.add(c);}
-          }
-        } else {
-          for (const c of candidates) {specificParts.push(c);}
-        }
-      }
+      // Add a specific anchor from the phrase (longest non-generic part)
+      const specificParts = parts
+        .map((p) => singularize(p))
+        .map(norm)
+        .filter((p) => p && !isGeneric(p));
 
-      // If phrase is of the form <specific> + <generic location>, gate generic must co-occur
-      if (specificParts.length >= 1 && [...finalSecondarySet].length > 0) {
-        // Choose the longest specific token as the anchor
+      if (specificParts.length > 0) {
         const anchor = specificParts.sort((a, b) => b.length - a.length)[0];
-        maybeAdd(finalKeysSet, anchor);
+        pushCandidate(anchor, priority - WEIGHT_REDUCTION_MEDIUM);
       }
 
-      // Keep punctuation-free phrase when useful (e.g., "exiles gate", "sapphire blue eyes")
-      if (noApos.includes(' ')) {
-        // Avoid phrases that are purely generic words
-        const allGeneric = noApos.split(/\s+/).every((w) => STOPWORDS.has(w) || GENERIC_NOUNS.has(w));
-        if (!allGeneric) {maybeAdd(finalKeysSet, noApos);}
-      }
-
-      // Special: permit adjective+noun trait like "sapphire eyes"
-      if (parts.includes('sapphire') && (parts.includes('eyes') || parts.includes('eye'))) {
-        maybeAdd(finalKeysSet, 'sapphire eyes');
+      // Keep the phrase if it is not just generics
+      if (!noApos.split(/\s+/).every((w) => isGeneric(w))) {
+        pushCandidate(noApos, priority - WEIGHT_REDUCTION_MEDIUM);
       }
     }
   }
 
-  // Remove standalone broad generics from primary keys if we also required them as secondary
-  for (const g of finalSecondarySet) {
-    if (LOCATION_GENERIC.has(g) || GENERIC_NOUNS.has(g)) {
-      finalKeysSet.delete(g);
-    }
-  }
+  // Score and cap
+  const scored = candidates.map(({ token, weight }) => {
+    let score = weight;
+    if (stub && token.includes(stub)) {score += STUB_BONUS;}
+    if (token.split(/\s+/).length === 1) {score += WEIGHT_REDUCTION_SMALL;} // prefer compact anchors
+    if (token.length > LONG_TOKEN_THRESHOLD) {score -= (token.length - LONG_TOKEN_THRESHOLD) * LONG_TOKEN_PENALTY;} // light penalty for very long tokens
+    return { token, score };
+  });
 
-  return { keys: Array.from(finalKeysSet), secondary: Array.from(finalSecondarySet) };
+  scored.sort((a, b) => b.score - a.score || a.token.localeCompare(b.token));
+  const keys = scored.slice(0, MAX_KEYWORDS).map((c) => c.token);
+
+  return { keys, secondary: [] };
 }
-/* eslint-enable complexity, sonarjs/cognitive-complexity, max-depth -- End complex keyword refinement logic */
+ 
 
 export function normalizeEntryData(entry ) {
   const comment = buildEntryName(entry);
@@ -284,8 +301,7 @@ export function normalizeEntryData(entry ) {
 
   // Accept "keywords" (from prompt JSON), "keys" (internal), or "key" (WI format)
   const rawKeys = entry.keys || entry.keywords || entry.key || [];
-  const rawSecondary = entry.secondaryKeys || entry.keysecondary || [];
-  const refined = refineKeywords(rawKeys, rawSecondary);
+  const refined = refineKeywords(rawKeys, comment);
 
   // Read and coerce lorebook entry settings
   const entrySettings = readAndCoerceLorebookEntrySettings(comment);
@@ -294,7 +310,7 @@ export function normalizeEntryData(entry ) {
     comment,
     content,
     keys: refined.keys,
-    secondaryKeys: refined.secondary,
+    secondaryKeys: [],
     constant: entry.constant,
     disable: entry.disable ?? false,
     order: entry.order ?? FULL_COMPLETION_PERCENTAGE,
@@ -543,7 +559,6 @@ export function buildCandidateEntriesData(candidateIds , registryState , existin
       comment: entry.comment || '',
       content: entry.content || '',
       keys: Array.isArray(entry.key) ? entry.key : [],
-      secondaryKeys: Array.isArray(entry.keysecondary) ? entry.keysecondary : [],
       aliases: ensureStringArray(record.aliases),
       synopsis: record.synopsis || ''
     });
@@ -556,7 +571,6 @@ function buildNewEntryPayload(entry ) {
     comment: entry.comment || '',
     content: entry.content || '',
     keys: ensureStringArray(entry.keys),
-    secondaryKeys: ensureStringArray(entry.secondaryKeys),
     type: entry.type || '',
     constant: Boolean(entry.constant),
     disable: Boolean(entry.disable),

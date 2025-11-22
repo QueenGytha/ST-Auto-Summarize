@@ -44,13 +44,13 @@ Deterministic alignment rules:
 - Prefer exact canonical name matches over fuzzy/semantic similarity.
 
 Alias guidance (characters/items):
-- If the entity has many genuine aliases or nicknames, include them all as meaningful keywords (no numeric cap). Do not pad with redundant variants; prefer tokens actually used in chat.
+- Keep keywords lean: 3-6 concise canonical/alias tokens actually used in chat. Drop descriptive/generic/context words. No padding with loose associations.
   
 Location naming (subareas):
 - If the entity is a sub‑location within a named parent (e.g., Cloudsdale → Rainbow Dash's Cloud House; Ponyville → Twilight's Library), the canonical name MUST be "Parent-Subarea".
 - For multiple levels, chain with hyphens: "Parent-Child-Grandchild" (e.g., "Ponyville-Twilight's Library-Spike's Room").
 - The content should include a bullet linking the immediate parent (e.g., "Located in: Twilight's Library") and optionally a top‑level link (e.g., "Part of: Ponyville").
-- Keywords should include both parent and subarea tokens (and top‑level when present in chat).
+- Keywords should include both parent and subarea tokens (and top‑level when present in chat) within the same 3-6 keyword budget.
 - Prefer the longest fully specified chain as the canonical name when deeper subareas are explicitly named (e.g., choose "Ponyville-Twilight's Library-Spike's Room" over a partial).
 
 Rules:

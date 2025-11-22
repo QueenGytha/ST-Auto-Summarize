@@ -18,7 +18,8 @@ export function getArtifactSelector(operationType) {
     'auto_lorebooks_recap_merge': '[data-testid="artifact-lorebooks-merge"]',
     'auto_lorebooks_recap_lorebook_entry_lookup': '[data-testid="artifact-lorebooks-lookup"]',
     'auto_lorebooks_recap_lorebook_entry_deduplicate': '[data-testid="artifact-lorebooks-deduplicate"]',
-    'auto_lorebooks_bulk_populate': '[data-testid="artifact-lorebooks-bulk-populate"]'
+    'auto_lorebooks_bulk_populate': '[data-testid="artifact-lorebooks-bulk-populate"]',
+    'auto_lorebooks_recap_lorebook_entry_compaction': '[data-testid="artifact-lorebooks-compaction"]'
   };
   return selectorMap[operationType];
 }
@@ -102,6 +103,7 @@ export const selectorsExtension = {
     artifactLorebooksLookup: '[data-testid="artifact-lorebooks-lookup"]',                // #auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_lookup
     artifactLorebooksDeduplicate: '[data-testid="artifact-lorebooks-deduplicate"]',      // #auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_deduplicate
     artifactLorebooksBulkPopulate: '[data-testid="artifact-lorebooks-bulk-populate"]',   // #auto_recap_artifact_auto_lorebooks_bulk_populate
+    artifactLorebooksCompaction: '[data-testid="artifact-lorebooks-compaction"]',        // #auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_compaction
 
     // Artifact action buttons (generic class-based selectors)
     artifactEditClass: '.auto_recap_artifact_edit',
@@ -136,6 +138,7 @@ export const selectorsExtension = {
   misc: {
     defaultEnabled: '[data-testid="misc-default-enabled"]',  // #default_chat_enabled
     globalToggle: '[data-testid="misc-global-toggle"]',      // #use_global_toggle_state
+    compactionThreshold: '[data-testid="lorebook-compaction-threshold"]', // #lorebook_compaction_threshold
   },
 
   // Auto-Hide Settings

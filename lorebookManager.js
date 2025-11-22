@@ -22,7 +22,7 @@ import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
 import { UI_UPDATE_DELAY_MS, FULL_COMPLETION_PERCENTAGE, INITIAL_LOREBOOK_ORDER } from './constants.js';
 
 // Will be imported from index.js via barrel exports
-let log , debug , error , toast , generateLorebookName , getUniqueLorebookName , get_settings ; // Utility functions - any type is legitimate
+let log , debug , error , toast , generateLorebookName , getUniqueLorebookName , get_settings , count_tokens ; // Utility functions - any type is legitimate
 const REGISTRY_PREFIX  = '_registry_';
 const REGISTRY_TAG  = 'auto_lorebooks_registry';
 const DEFAULT_STICKY_ROUNDS = 4;
@@ -36,6 +36,7 @@ export function initLorebookManager(utils ) {
   generateLorebookName = utils.generateLorebookName;
   getUniqueLorebookName = utils.getUniqueLorebookName;
   get_settings = utils.get_settings;
+  count_tokens = utils.count_tokens;
 }
 
 export async function invalidateLorebookCache(lorebookName ) {
@@ -90,7 +91,7 @@ async function ensureRegistryEntriesForLorebook(lorebookName ) {
       entry.comment = registryComment;
       entry.content = `[Registry: ${typeName}]`;
       entry.key = Array.isArray(entry.key) ? entry.key : [];
-      entry.keysecondary = Array.isArray(entry.keysecondary) ? entry.keysecondary : [];
+      entry.keysecondary = [];
       // Set constant and disable based on type definition flags
       const hasConstantFlag = def?.entryFlags && Array.isArray(def.entryFlags) && def.entryFlags.includes('constant');
       entry.constant = hasConstantFlag ? true : false;
@@ -133,7 +134,7 @@ async function ensureRegistryEntryRecord(lorebookName , type ) {
   }
   const ensuredEntry  = entry;
   ensuredEntry.key = Array.isArray(ensuredEntry.key) ? ensuredEntry.key : [];
-  ensuredEntry.keysecondary = Array.isArray(ensuredEntry.keysecondary) ? ensuredEntry.keysecondary : [];
+  ensuredEntry.keysecondary = [];
   // Get type definition to check for constant flag
   const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.auto_recap?.entity_types);
   const typeDef = typeDefinitions.find((def) => def?.name === type);
@@ -369,7 +370,6 @@ function buildDuplicateEntryData(entry , settings ) {
     comment: entry.comment || '',
     content: entry.content || '',
     keys: Array.isArray(entry.key) ? [...entry.key] : [],
-    secondaryKeys: Array.isArray(entry.keysecondary) ? [...entry.keysecondary] : [],
     order: typeof entry.order === 'number' ? entry.order : INITIAL_LOREBOOK_ORDER,
     position: typeof entry.position === 'number' ? entry.position : 0,
     depth: typeof entry.depth === 'number' ? entry.depth : DEFAULT_DEPTH,
@@ -788,11 +788,11 @@ function applyEntryDataToNewEntry(newEntry , entryData ) {
     stickyType: typeof entryData.sticky
   });
 
+  // Secondary keys are deprecated; always clear them on new entries
+  newEntry.keysecondary = [];
+
   if (entryData.keys && Array.isArray(entryData.keys)) {
     newEntry.key = entryData.keys;
-  }
-  if (entryData.secondaryKeys && Array.isArray(entryData.secondaryKeys)) {
-    newEntry.keysecondary = entryData.secondaryKeys;
   }
   if (entryData.content) {
     newEntry.content = String(entryData.content);
@@ -917,9 +917,8 @@ function applyEntryUpdates(entry , updates ) {
   if (updates.keys && Array.isArray(updates.keys)) {
     entry.key = updates.keys;
   }
-  if (updates.secondaryKeys && Array.isArray(updates.secondaryKeys)) {
-    entry.keysecondary = updates.secondaryKeys;
-  }
+  // Secondary keys are deprecated; ensure they remain cleared
+  entry.keysecondary = [];
   if (updates.content !== undefined) {
     entry.content = String(updates.content);
   }
@@ -1058,6 +1057,47 @@ export async function getLorebookEntries(lorebookName ) {
   } catch (err) {
     error("Error getting lorebook entries", err);
     return null;
+  }
+}
+
+export async function getLorebookEntryTokenCount(lorebookName , entryUid ) {
+  try {
+    if (!lorebookName) {
+      error("Cannot get entry token count: lorebook name is empty");
+      return 0;
+    }
+
+    if (!entryUid && entryUid !== 0) {
+      error("Cannot get entry token count: entry UID is missing");
+      return 0;
+    }
+
+    // Invalidate cache to ensure fresh data
+    await invalidateLorebookCache(lorebookName);
+
+    // Fetch fresh entries
+    const entries = await getLorebookEntries(lorebookName);
+    if (!entries || entries.length === 0) {
+      debug(`No entries found in lorebook: ${lorebookName}`);
+      return 0;
+    }
+
+    // Find entry by UID (convert to string for comparison)
+    const entry = entries.find(e => String(e.uid) === String(entryUid));
+    if (!entry) {
+      debug(`Entry with UID ${entryUid} not found in lorebook: ${lorebookName}`);
+      return 0;
+    }
+
+    // Count tokens in entry content
+    const tokenCount = count_tokens(entry.content || '');
+    debug(`Entry ${entryUid} in ${lorebookName} has ${tokenCount} tokens`);
+
+    return tokenCount;
+
+  } catch (err) {
+    error("Error getting lorebook entry token count", err);
+    return 0;
   }
 }
 

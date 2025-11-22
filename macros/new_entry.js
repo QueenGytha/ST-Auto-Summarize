@@ -5,7 +5,7 @@ export function build(payload) {
 }
 
 export const description = {
-  format: 'JSON object {name, type, keywords, secondaryKeys, content, comment}',
+  format: 'JSON object {name, type, keywords, content, comment}',
   source: 'recapToLorebookProcessor.js buildNewEntryPayload()',
   usedBy: ['lorebook-entry-lookup.js', 'lorebook-entry-deduplicate.js']
 };

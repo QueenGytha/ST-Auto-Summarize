@@ -31,7 +31,8 @@ const OPERATION_TYPES = [
   'running_scene_recap',
   'auto_lorebooks_recap_lorebook_entry_lookup',
   'auto_lorebooks_recap_lorebook_entry_deduplicate',
-  'auto_lorebooks_recap_merge'
+  'auto_lorebooks_recap_merge',
+  'auto_lorebooks_recap_lorebook_entry_compaction'
 ];
 
 function ensureNotDefaultPreset() {
@@ -519,7 +520,8 @@ async function openArtifactEditor(operationType) {
     'auto_lorebooks_recap_merge': 'Auto-Lorebooks: Recap Merge',
     'auto_lorebooks_recap_lorebook_entry_lookup': 'Auto-Lorebooks: Entry Lookup',
     'auto_lorebooks_recap_lorebook_entry_deduplicate': 'Auto-Lorebooks: Entry Deduplicate',
-    'auto_lorebooks_bulk_populate': 'Auto-Lorebooks: Bulk Populate'
+    'auto_lorebooks_bulk_populate': 'Auto-Lorebooks: Bulk Populate',
+    'auto_lorebooks_recap_lorebook_entry_compaction': 'Auto-Lorebooks: Entry Compaction'
   };
 
   const operationName = operationNames[operationType] || operationType;

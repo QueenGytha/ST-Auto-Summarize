@@ -246,7 +246,7 @@ options )
 }
 
 function enqueueMergeLorebookEntry(params ) {
-  const { lorebookName, entryUid, existingContent, newContent, newKeys, newSecondaryKeys, entryName, messageIndex, recapHash } = params;
+  const { lorebookName, entryUid, existingContent, newContent, newKeys, entryName, messageIndex, recapHash } = params;
 
   return enqueueOperation(
     OperationType.MERGE_LOREBOOK_ENTRY,
@@ -255,8 +255,7 @@ function enqueueMergeLorebookEntry(params ) {
       entryUid,
       existingContent,
       newContent,
-      newKeys,
-      newSecondaryKeys
+      newKeys
     },
     {
       priority: 13,
@@ -316,7 +315,6 @@ export async function queueProcessLorebookEntry(entryData , messageIndex , recap
           existingContent: existingEntry.content,
           newContent: context.normalizedEntry.content,
           newKeys: context.normalizedEntry.keys,
-          newSecondaryKeys: context.normalizedEntry.secondaryKeys,
           entryName,
           messageIndex,
           recapHash

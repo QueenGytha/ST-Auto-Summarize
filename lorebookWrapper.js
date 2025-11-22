@@ -144,8 +144,6 @@ function escapeXML(str ) {
   replace(/'/g, '&apos;');
 }
 
-// Serialization: 9 independent optional fields - inherent complexity
-// eslint-disable-next-line complexity -- Building XML attributes for 9 independent optional fields
 function buildAttributeList(entry ) {
   const attrs = [];
 
@@ -176,9 +174,6 @@ function buildAttributeList(entry ) {
     attrs.push(`keys="${escapeXML(entry.key.join('|'))}"`);
   }
 
-  if (Array.isArray(entry?.keysecondary) && entry.keysecondary.length) {
-    attrs.push(`keys_secondary="${escapeXML(entry.keysecondary.join('|'))}"`);
-  }
 
   return attrs;
 }

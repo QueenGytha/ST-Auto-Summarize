@@ -59,6 +59,9 @@ export const DEFAULT_CHARACTER_ID = 100000;
 /** Default maximum tokens for LLM requests */
 export const DEFAULT_MAX_TOKENS = 4000;
 
+/** Default token threshold for lorebook entry compaction before merge */
+export const DEFAULT_COMPACTION_THRESHOLD = 1000;
+
 // ============================================================================
 // UI Dimension Constants (in pixels)
 // ============================================================================

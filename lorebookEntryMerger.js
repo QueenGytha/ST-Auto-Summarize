@@ -2,7 +2,7 @@
 // lorebookEntryMerger.js - AI-powered merging of new lorebook content with existing entries
 
 import { SUBSYSTEM } from './index.js';
-import { DEBUG_OUTPUT_LONG_LENGTH, DEBUG_OUTPUT_MEDIUM_LENGTH } from './constants.js';
+import { DEBUG_OUTPUT_LONG_LENGTH, DEBUG_OUTPUT_MEDIUM_LENGTH, DEFAULT_COMPACTION_THRESHOLD } from './constants.js';
 import { build as buildExistingContent } from './macros/existing_content.js';
 import { build as buildNewContent } from './macros/new_content.js';
 import { build as buildEntryName } from './macros/entry_name.js';
@@ -10,7 +10,7 @@ import { substitute_params } from './promptUtils.js';
 
 // Will be imported from index.js via barrel exports
 let log , debug , error ; // Logging functions - any type is legitimate
-let modifyLorebookEntry , getLorebookEntries , reorderLorebookEntriesAlphabetically ; // Lorebook functions - any type is legitimate
+let modifyLorebookEntry , getLorebookEntries , reorderLorebookEntriesAlphabetically , getLorebookEntryTokenCount ; // Lorebook functions - any type is legitimate
 let get_settings ; // Settings function - any type is legitimate
 let enqueueOperation , OperationType ; // Queue functions - any type is legitimate
 
@@ -25,6 +25,7 @@ export function initLorebookEntryMerger(utils , lorebookManagerModule , settings
     modifyLorebookEntry = lorebookManagerModule.modifyLorebookEntry;
     getLorebookEntries = lorebookManagerModule.getLorebookEntries;
     reorderLorebookEntriesAlphabetically = lorebookManagerModule.reorderLorebookEntriesAlphabetically;
+    getLorebookEntryTokenCount = lorebookManagerModule.getLorebookEntryTokenCount;
   }
 
   // Import settings manager
@@ -189,33 +190,88 @@ export async function mergeLorebookEntry(lorebookName , existingEntry , newEntry
     // Check if queue is enabled and should be used
     const queueEnabled = get_settings?.('queue')?.enabled !== false;
     if (useQueue && queueEnabled && enqueueOperation) {
-      // Queue the merge operation
-      debug(`Queueing merge operation for entry: ${existingEntry.comment}`);
+      // Calculate token count for existing entry
+      const existingTokenCount = await getLorebookEntryTokenCount(lorebookName, existingEntry.uid);
+      const compactionThreshold = get_settings?.('auto_lorebooks_compaction_threshold') ?? DEFAULT_COMPACTION_THRESHOLD;
 
-      const operationId = await enqueueOperation(
-        OperationType.MERGE_LOREBOOK_ENTRY,
-        {
-          lorebookName,
-          entryUid: existingEntry.uid,
-          existingContent: existingEntry.content,
-          newContent: newEntryData.content,
-          newKeys: newEntryData.keys,
-          newSecondaryKeys: newEntryData.secondaryKeys
-        },
-        {
-          priority: 13, // Third stage of lorebook pipeline - merge existing entry
-          metadata: {
-            entry_comment: existingEntry.comment
+      // Check if compaction is needed
+      if (existingTokenCount >= compactionThreshold) {
+        // Token count exceeds threshold - queue compaction first
+        debug(`Entry ${existingEntry.uid} has ${existingTokenCount} tokens (threshold: ${compactionThreshold}), queueing compaction before merge`);
+
+        const compactOpId = await enqueueOperation(
+          OperationType.COMPACT_LOREBOOK_ENTRY,
+          {
+            lorebookName,
+            entryUid: existingEntry.uid,
+            existingContent: existingEntry.content
+          },
+          {
+            priority: 12.5, // Before merge
+            metadata: {
+              entry_comment: existingEntry.comment,
+              existing_token_count: existingTokenCount
+            }
           }
-        }
-      );
+        );
 
-      return {
-        success: true,
-        queued: true,
-        operationId,
-        message: 'Merge queued for processing'
-      };
+        // Queue merge to run after compaction - depends on compaction completing first
+        await enqueueOperation(
+          OperationType.MERGE_LOREBOOK_ENTRY,
+          {
+            lorebookName,
+            entryUid: existingEntry.uid,
+            existingContent: existingEntry.content, // Will be replaced by compacted content
+            newContent: newEntryData.content,
+            newKeys: newEntryData.keys,
+            useCompactedContent: true
+          },
+          {
+            priority: 13, // Third stage of lorebook pipeline - merge existing entry
+            dependencies: [compactOpId], // CRITICAL: merge cannot run until compaction completes
+            metadata: {
+              entry_comment: existingEntry.comment,
+              existing_entry_token_count: existingTokenCount,
+              was_compacted: true
+            }
+          }
+        );
+
+        return {
+          success: true,
+          queued: true,
+          operationId: compactOpId,
+          message: 'Compaction and merge queued for processing'
+        };
+      } else {
+        // Direct merge - token count below threshold
+        debug(`Queueing merge operation for entry: ${existingEntry.comment}`);
+
+        const operationId = await enqueueOperation(
+          OperationType.MERGE_LOREBOOK_ENTRY,
+          {
+            lorebookName,
+            entryUid: existingEntry.uid,
+            existingContent: existingEntry.content,
+            newContent: newEntryData.content,
+            newKeys: newEntryData.keys
+          },
+          {
+            priority: 13, // Third stage of lorebook pipeline - merge existing entry
+            metadata: {
+              entry_comment: existingEntry.comment,
+              existing_entry_token_count: existingTokenCount
+            }
+          }
+        );
+
+        return {
+          success: true,
+          queued: true,
+          operationId,
+          message: 'Merge queued for processing'
+        };
+      }
     }
 
     // Execute merge immediately
@@ -295,29 +351,6 @@ function mergeKeyArrays(existingKeys, newKeys) {
   if (mergedKeys.length > existingArray.length) {
     debug(`Merged keys: ${existingArray.length} existing + ${newArray.length} new = ${mergedKeys.length} total`);
     return mergedKeys;
-  }
-
-  return null; // No changes
-}
-
-/**
- * Merges secondary key arrays with deduplication
- * @param {Array} existingSecondary - Current secondary keys
- * @param {Array} newSecondary - New secondary keys to add
- * @returns {Array|null} Merged secondary keys or null if no changes
- */
-function mergeSecondaryKeyArrays(existingSecondary, newSecondary) {
-  const existingArray = existingSecondary || [];
-  const newArray = (newSecondary || []).filter((k) => k && k.trim());
-
-  if (newArray.length === 0) {
-    return null; // No changes
-  }
-
-  const mergedSecondary = [...new Set([...existingArray, ...newArray])];
-
-  if (mergedSecondary.length > existingArray.length) {
-    return mergedSecondary;
   }
 
   return null; // No changes
@@ -413,11 +446,8 @@ export async function executeMerge(lorebookName , existingEntry , newEntryData )
       updates.keys = mergedKeys;
     }
 
-    // Merge secondary keys if new ones provided
-    const mergedSecondary = mergeSecondaryKeyArrays(existingEntry.keysecondary, newEntryData.secondaryKeys);
-    if (mergedSecondary) {
-      updates.secondaryKeys = mergedSecondary;
-    }
+    // Secondary keys are no longer used; clear them on write to avoid stale values
+    updates.secondaryKeys = [];
 
     // Apply the updates
     const success = await modifyLorebookEntry(lorebookName, existingEntry.uid, updates);
@@ -451,7 +481,7 @@ export async function executeMerge(lorebookName , existingEntry , newEntryData )
 export async function mergeLorebookEntryByUid(params ) {
   // params and return type are any - complex objects with various properties - legitimate use of any
   try {
-    const { lorebookName, entryUid, existingContent, newContent, newKeys, newSecondaryKeys } = params;
+    const { lorebookName, entryUid, existingContent, newContent, newKeys } = params;
 
     debug(`Merging entry UID ${entryUid} in lorebook ${lorebookName}`);
 
@@ -467,7 +497,7 @@ export async function mergeLorebookEntryByUid(params ) {
     return await executeMerge(
       lorebookName,
       { ...entry, content: existingContent },
-      { content: newContent, keys: newKeys, secondaryKeys: newSecondaryKeys }
+      { content: newContent, keys: newKeys }
     );
 
   } catch (err) {
@@ -476,9 +506,161 @@ export async function mergeLorebookEntryByUid(params ) {
   }
 }
 
+function getDefaultCompactionPrompt() {
+  return `Compact the following lorebook entry content by removing redundancies and condensing information while preserving all key facts:
+
+{{existing_content}}
+
+Respond with JSON:
+{
+  "compactedContent": "the compacted version here",
+  "canonicalName": "optional updated name"
+}`;
+}
+
+async function createCompactionPrompt(existingContent , entryName  = '') {
+  const { resolveOperationConfig } = await import('./index.js');
+  const config = await resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_compaction');
+
+  const template = config.prompt || getDefaultCompactionPrompt();
+  const prefill = config.prefill || '';
+
+  const params = {
+    existing_content: buildExistingContent(existingContent),
+    entry_name: buildEntryName(entryName)
+  };
+
+  const prompt = await substitute_params(template, params);
+
+  return { prompt, prefill, config };
+}
+
+async function callAIForCompaction(existingContent , entryName  = '', connectionProfile  = '', completionPreset  = '') {
+  const { prompt, prefill, config } = await createCompactionPrompt(existingContent, entryName);
+
+  const include_preset_prompts = config.include_preset_prompts ?? false;
+  const { setOperationSuffix, clearOperationSuffix, get_current_preset } = await import('./index.js');
+  const effectivePresetName = completionPreset || (include_preset_prompts ? get_current_preset() : '');
+
+  // Set operation context for ST_METADATA
+  if (entryName) {
+    setOperationSuffix(`-${entryName}`);
+  }
+
+  let response;
+  try {
+    const { sendLLMRequest } = await import('./llmClient.js');
+    const { OperationType: OpType } = await import('./operationTypes.js');
+    const { resolveProfileId } = await import('./profileResolution.js');
+    const effectiveProfile = resolveProfileId(connectionProfile);
+
+    const options = {
+      includePreset: include_preset_prompts,
+      preset: effectivePresetName,
+      prefill: prefill || '',
+      trimSentences: false
+    };
+
+    response = await sendLLMRequest(effectiveProfile, prompt, OpType.COMPACT_LOREBOOK_ENTRY, options);
+  } finally {
+    clearOperationSuffix();
+  }
+
+  // Extract token breakdown
+  const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
+  const tokenBreakdown = extractTokenBreakdownFromResponse(response);
+
+  // Parse JSON response
+  const { extractJsonFromResponse } = await import('./utils.js');
+  const parsed = extractJsonFromResponse(response, {
+    requiredFields: ['compactedContent'],
+    context: 'lorebook compaction operation'
+  });
+
+  return {
+    compactedContent: parsed.compactedContent,
+    canonicalName: parsed.canonicalName || null,
+    tokenBreakdown
+  };
+}
+
+export async function executeCompaction(lorebookName , existingEntry ) {
+  // existingEntry is any type - complex object with various properties - legitimate use of any
+  debug(`Executing compaction for entry: ${existingEntry.comment}`);
+
+  // Get connection settings from operation config
+  const { resolveOperationConfig } = await import('./index.js');
+  const config = await resolveOperationConfig('auto_lorebooks_recap_lorebook_entry_compaction');
+  const connectionProfile = config.connection_profile || '';
+  const completionPreset = config.completion_preset_name || '';
+
+  // Call AI to compact content
+  const compactionResult = await callAIForCompaction(
+    existingEntry.content || '',
+    existingEntry.comment || '',
+    connectionProfile,
+    completionPreset
+  );
+
+  // Build updates from compaction result
+  const updates = {
+    content: compactionResult.compactedContent
+  };
+
+  // Update canonical name if provided
+  if (compactionResult.canonicalName) {
+    const typePrefix = existingEntry.comment?.match(/^\[([^\]]+)\]\s*/)?.[0] || '';
+    updates.comment = `${typePrefix}${compactionResult.canonicalName}`;
+  }
+
+  // Apply updates to lorebook entry
+  const success = await modifyLorebookEntry(lorebookName, existingEntry.uid, updates);
+
+  if (!success) {
+    throw new Error('Failed to update lorebook entry with compacted content');
+  }
+
+  return {
+    success: true,
+    message: 'Entry compacted successfully',
+    compactedContent: compactionResult.compactedContent,
+    canonicalName: compactionResult.canonicalName,
+    tokenBreakdown: compactionResult.tokenBreakdown
+  };
+}
+
+export async function compactLorebookEntryByUid(params ) {
+  // params and return type are any - complex objects with various properties - legitimate use of any
+  try {
+    const { lorebookName, entryUid, existingContent } = params;
+
+    debug(`Compacting entry UID ${entryUid} in lorebook ${lorebookName}`);
+
+    // Get current entry data
+    const entries = await getLorebookEntries(lorebookName);
+    const entry = entries?.find((e) => String(e.uid) === String(entryUid));
+
+    if (!entry) {
+      throw new Error(`Entry UID ${entryUid} not found in lorebook`);
+    }
+
+    // Execute compaction
+    return await executeCompaction(
+      lorebookName,
+      { ...entry, content: existingContent }
+    );
+
+  } catch (err) {
+    error('Error in compactLorebookEntryByUid', err);
+    throw err;
+  }
+}
+
 export default {
   initLorebookEntryMerger,
   mergeLorebookEntry,
   executeMerge,
-  mergeLorebookEntryByUid
+  mergeLorebookEntryByUid,
+  executeCompaction,
+  compactLorebookEntryByUid
 };

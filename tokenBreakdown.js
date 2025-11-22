@@ -316,7 +316,8 @@ export async function calculateAndInjectTokenBreakdown(messages, operation, maxC
     'recap_merge': 'auto_lorebooks_recap_merge',
     'lorebook_entry_lookup': 'auto_lorebooks_recap_lorebook_entry_lookup',
     'lorebook_entry_deduplicate': 'auto_lorebooks_recap_lorebook_entry_deduplicate',
-    'bulk_populate': 'auto_lorebooks_bulk_populate'
+    'bulk_populate': 'auto_lorebooks_bulk_populate',
+    'lorebook_entry_compaction': 'auto_lorebooks_recap_lorebook_entry_compaction'
   };
 
   let baseOperationType = null;

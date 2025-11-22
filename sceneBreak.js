@@ -1236,7 +1236,7 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
                 uid: entry.uid,
                 world: chatLorebookName,
                 key: Array.isArray(entry.key) ? [...entry.key] : [],
-                keysecondary: Array.isArray(entry.keysecondary) ? [...entry.keysecondary] : [],
+                keysecondary: [],
                 content: entry.content || '',
                 position: entry.position,
                 depth: entry.depth,

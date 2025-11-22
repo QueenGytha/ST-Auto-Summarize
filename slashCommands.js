@@ -18,7 +18,7 @@ import {
   get_data } from
 './index.js';
 import { loadWorldInfo } from '../../../world-info.js';
-import { getAttachedLorebook } from './lorebookManager.js';
+import { getAttachedLorebook, getLorebookEntries } from './lorebookManager.js';
 import { get_running_recap_versions, get_previous_running_recap_version_before_scene } from './runningSceneRecap.js';
 import { SCENE_RECAP_METADATA_KEY } from './sceneBreak.js';
 
@@ -369,6 +369,61 @@ function initialize_slash_commands() {
       return `Cleared all ${count} operations`;
     },
     helpString: 'Clear all operations from queue'
+  }));
+
+  SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+    name: 'compact-entry',
+    callback: async (args, entryUid) => {
+      const lorebookName = getAttachedLorebook();
+      if (!lorebookName) {
+        const msg = 'No lorebook attached to current chat';
+        toast(msg, 'error');
+        return msg;
+      }
+
+      if (!entryUid || entryUid === "") {
+        const msg = 'Entry UID is required. Usage: /compact-entry <uid>';
+        toast(msg, 'error');
+        return msg;
+      }
+
+      const entries = await getLorebookEntries(lorebookName);
+      const entry = entries?.find((e) => String(e.uid) === String(entryUid));
+
+      if (!entry) {
+        const msg = `Entry UID ${entryUid} not found in lorebook "${lorebookName}"`;
+        toast(msg, 'error');
+        return msg;
+      }
+
+      const { enqueueOperation, OperationType } = await import('./operationQueue.js');
+      await enqueueOperation(
+        OperationType.COMPACT_LOREBOOK_ENTRY,
+        {
+          lorebookName,
+          entryUid: entry.uid,
+          existingContent: entry.content
+        },
+        {
+          priority: 12.5,
+          metadata: {
+            entry_comment: entry.comment
+          }
+        }
+      );
+
+      const msg = `Queued compaction for entry: ${entry.comment} (UID: ${entryUid})`;
+      toast(msg, 'success');
+      return msg;
+    },
+    helpString: 'Compact a lorebook entry by UID. Usage: /compact-entry <uid>',
+    unnamedArgumentList: [
+      SlashCommandArgument.fromProps({
+        description: 'UID of the lorebook entry to compact',
+        isRequired: true,
+        typeList: ARGUMENT_TYPE.NUMBER
+      })
+    ]
   }));
 
   SlashCommandParser.addCommandObject(SlashCommand.fromProps({
