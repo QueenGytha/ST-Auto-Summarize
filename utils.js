@@ -343,7 +343,28 @@ function escapeJsonControlChars(str) {
  */
 function isLikelyClosingQuote(jsonString, index) {
   const nextChar = index + 1 < jsonString.length ? jsonString[index + 1] : '';
-  return nextChar === ',' || nextChar === '}' || nextChar === ']' || /\s/.test(nextChar) || nextChar === '';
+
+  // Definitely closing if followed by JSON structural characters or EOF
+  if (nextChar === ',' || nextChar === '}' || nextChar === ']' || nextChar === '') {
+    return true;
+  }
+
+  // If followed by whitespace, check what comes after the whitespace
+  if (/\s/.test(nextChar)) {
+    // Look ahead to find first non-whitespace character
+    let lookAhead = index + 2;
+    while (lookAhead < jsonString.length && /\s/.test(jsonString[lookAhead])) {
+      lookAhead++;
+    }
+
+    const charAfterWhitespace = lookAhead < jsonString.length ? jsonString[lookAhead] : '';
+
+    // Closing quote if whitespace is followed by JSON structural characters
+    // NOT a closing quote if whitespace is followed by regular text (handles dialogue: "Hello," she said)
+    return charAfterWhitespace === ',' || charAfterWhitespace === '}' || charAfterWhitespace === ']' || charAfterWhitespace === '';
+  }
+
+  return false;
 }
 
 /**
