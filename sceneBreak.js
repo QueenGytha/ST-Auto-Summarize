@@ -562,6 +562,7 @@ function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - an
     <div class="${SCENE_BREAK_DIV_CLASS} ${stateClass} ${borderClass} ${collapsedClass}" data-testid="scene-break-div" style="margin:0 0 5px 0;" tabindex="0">
         <div class="sceneBreak-header" style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.5em;">
             <input type="text" class="sceneBreak-name auto_recap_memory_text" data-testid="scene-break-name" placeholder="Scene name..." value="${sceneName.replace(/"/g, '&quot;')}" style="flex:1;" />
+            <button class="scene-delete-scene menu_button" data-testid="scene-delete-scene" title="Delete this entire scene" style="padding:0.3em 0.6em; color:#d32f2f;"><i class="fa-solid fa-trash"></i></button>
             <button class="scene-collapse-toggle menu_button fa-solid ${collapseIcon}" data-testid="scene-collapse-toggle" title="${collapseTitle}" style="padding:0.3em 0.6em;"></button>
         </div>
         <div class="sceneBreak-content">
@@ -574,7 +575,6 @@ function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - an
                 <button class="scene-generate-recap menu_button" data-testid="scene-generate-recap" title="Generate new recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
                 <button class="scene-rollforward-recap menu_button" data-testid="scene-rollforward-recap" title="Go to next recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-rotate-right"></i> Next Recap</button>
                 <button class="scene-regenerate-running menu_button" data-testid="scene-regenerate-running" title="Combine this scene with current running recap" style="margin-left:auto; white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-sync-alt"></i> Combine</button>
-                <button class="scene-delete-scene menu_button" data-testid="scene-delete-scene" title="Delete this entire scene" style="white-space:nowrap; color:#d32f2f;"><i class="fa-solid fa-trash"></i> Delete Scene</button>
                 <span style="align-self:center; font-size:0.9em; color:inherit; margin-left:0.5em;">${versions.length > 1 ? `[${currentIdx + 1}/${versions.length}]` : ''}</span>
             </div>
         </div>
