@@ -32,6 +32,7 @@ STEP 1: Deduplicate EXISTING_CONTENT
 - For each facet (Attributes, State, Psychology, Relationships per counterpart, Intimacy/Sexual, Secrets/Leverage, Tension/Triggers, Style/Mannerisms, Micro-Moments, Notable dialogue):
   - Merge overlapping or near-duplicate fragments (even with different wording) into the most-specific minimal set of lines.
   - State is current only. Keep distinct facets separate; do not drop unique information.
+- If any idea appears twice (even rephrased), collapse to one line; if the deduped result is not materially shorter and overlaps remain, redo Step 1 before proceeding.
 - Relationships: every counterpart that appears in EXISTING_CONTENT must remain represented by at least one merged line; do not drop counterparts.
 - Quotes: keep only unique (no paraphrased repeats); prioritize plot; include style/voice quotes only if they add distinct cadence; label as "(plot)" or "(style)".
 - Use this deduped existing version for the next step.
@@ -52,7 +53,7 @@ STEP 2: Merge in NEW_CONTENT
 - Relationship fidelity: preserve existing relationship/consent/boundary/affection/power/debt notes; add only if new facet; keep the most specific if similar.
 - Placement: prefer updating an existing fragment line over adding a new one; if adding, keep compact fragment style; normalize prose/bullets to compact fragments. If NEW_CONTENT empty -> return deduped existing exactly.
 - Relationships: every counterpart that appears in EXISTING_CONTENT or NEW_CONTENT must remain represented by at least one merged line after combining; do not drop counterparts when merging.
-- Quotes: keep only unique (no paraphrased repeats); prioritize plot; include style/voice quotes only if they add distinct cadence; label as "(plot)" or "(style)".
+- Quotes: keep only unique (no paraphrased repeats); prioritize plot; include style/voice quotes only if they add distinct cadence; label each as "(plot)" or "(style)"; drop near-duplicates even if wording differs.
 
 <NEW_CONTENT>
 {{new_content}}
@@ -60,14 +61,14 @@ STEP 2: Merge in NEW_CONTENT
 
 FORMAT (compact fragment lines; omit empty; do not change the existing formatting style)
 - Identity; Synopsis <=10 words.
-- Attributes (merge similar descriptors into a minimal set; avoid repeating the same idea); State (current, single line only).
+- Attributes (merge similar descriptors into a minimal set; avoid repeating the same idea or adjective); State (current, single line only).
 - Psychology: trigger + response + outcome (merge similar arcs; keep distinct psychological facets separate).
 - Relationships: X -> Y ? stance/behavior; minimize to one line per counterpart unless distinct facets are truly different; merge overlapping or similar sentiments/boundaries into a single line per counterpart; note shifts; interaction defaults if shown; every counterpart that appears in EXISTING_CONTENT or NEW_CONTENT must remain represented by at least one merged line (do not drop counterparts entirely).
 - Intimacy/Romance/Sexual interests (kinks/turn-ons/boundaries/aftercare/comfort); Secrets/Leverage; Tension/Triggers; Style/Mannerisms (brief diction/cadence/quirks; dedupe similar cues, not just exact repeats); Micro-Moments (brief but include key nuance); Notable dialogue: verbatim, short, keep only unique quotes (drop paraphrases/near-repeats of the same intent/cadence); prioritize plot-relevant; include style/voice quotes only if they add a distinct cadence cue beyond plot quotes; label quotes as "(plot)" or "(style)" for clarity; no {{user}} quotes; never invent or paraphrase. Include these only if new/changed.
 - Entity/location naming: subareas use "Parent-Subarea"; Identity for locations: "Location - Parent-Subarea". Include "Located in: <Parent>" when applicable.
 
 PRE-FLIGHT (apply before producing final JSON)
-- Brevity kept? For each facet (Attributes, State, Psychology, per-counterpart Relationships, Intimacy/Sexual, Secrets/Leverage, Tension/Triggers, Style/Mannerisms, Micro-Moments, Notable dialogue) are overlapping/near-duplicate lines merged and redundant ones removed, while keeping distinct facets? State current-only? Voice/mannerism cues unique? Quotes unique (no paraphrased repeats of the same meaning/cadence) with plot priority? Every counterpart mentioned in EXISTING_CONTENT or NEW_CONTENT represented by at least one merged line? Only demonstrated facts? No unnecessary new lines? If NEW_CONTENT is empty and nothing was pruned/added in Step 1, output the deduped existing exactly.
+- Brevity kept? For each facet (Attributes, State, Psychology, per-counterpart Relationships, Intimacy/Sexual, Secrets/Leverage, Tension/Triggers, Style/Mannerisms, Micro-Moments, Notable dialogue) are overlapping/near-duplicate lines merged and redundant ones removed, while keeping distinct facets? State current-only? Voice/mannerism cues unique? Quotes unique + labeled (no paraphrased repeats of the same meaning/cadence) with plot priority? Every counterpart mentioned in EXISTING_CONTENT or NEW_CONTENT represented by at least one merged line? Only demonstrated facts? No unnecessary new lines? If the final mergedContent still contains duplicate ideas or did not materially shrink where overlaps existed, merge further before returning. If NEW_CONTENT is empty and nothing was pruned/added in Step 1, output the deduped existing exactly.
 
 OUTPUT (JSON only; no code fences):
 {
