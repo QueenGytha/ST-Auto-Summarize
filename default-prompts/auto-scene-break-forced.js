@@ -2,15 +2,13 @@
 // - {{messages}} - Messages to analyze
 // - {{earliest_allowed_break}} - Minimum message number for breaks
 
-export const auto_scene_break_forced_prompt = `🚨 MANDATORY SEQUENTIAL PROCESSING 🚨
-You MUST check messages ONE AT A TIME in order. You are FORBIDDEN from reading all messages before deciding.
-
-Your task: Select the FIRST valid scene break from the provided messages. You MUST return a message number (cannot return false).
+export const auto_scene_break_forced_prompt = `🚨 MANDATORY SCENE BREAK SELECTION 🚨
+Your task: Analyze the provided messages and select the SINGLE BEST scene break point. You MUST return a message number (cannot return false).
 
 MANDATORY OUTPUT FORMAT (valid JSON only, no code fences):
 {
   "sceneBreakAt": a message number (e.g., 5),
-  "rationale": "Quote the key cue that triggered your decision"
+  "rationale": "Quote the key cue that makes this the best break point"
 }
 
 JSON RULES:
@@ -33,83 +31,73 @@ FORMATTING RULE:
 ✗ Do NOT mention formatting in rationale - quote ONLY content-based cues
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SEQUENTIAL EVALUATION PROCESS - FOLLOW EXACTLY:
+SCENE BREAK CRITERIA (evaluate ALL eligible messages, select BEST):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-STEP 1: Start at message #{{earliest_allowed_break}}
+Look for natural narrative boundaries where the story shifts:
 
-STEP 2: Read ONLY the current message. Check if it matches ANY STRONG break criteria:
+✓ Time passing:
+  • Explicit time skips: "Dawn arrived", "hours later", "next morning", "that evening"
+  • Clear temporal shifts: night→morning, afternoon→evening, "hours passed"
+  • Do NOT treat vague refs as skips: "moments later", "seconds later", "it was nearly noon"
 
-   STRONG BREAKS (return immediately if found):
-   ✓ Character departs/leaves: "he left", "hurried off", "departed", "eager to be away"
-   ✓ Conversation explicitly ends: "conversation concluded", characters part ways
-   ✓ Major task completes: quest done, goal achieved, big decision made
-   ✓ Next message shows arrival at completely new location
-   ✓ Next message has explicit time skip: "Dawn arrived", "hours later", "next morning", "that evening"
-      → Time skips OVERRIDE location continuity (same place but hours/days later = STRONG break)
-      → Do NOT treat vague time refs as skips: "moments later", "seconds later", "it was nearly noon"
-      → Only count clear temporal shifts: night→morning, afternoon→evening, "hours passed"
-   ✓ Next message introduces new character who starts participating
-   ✓ Major activity change: talking→fighting, planning→executing, storyline changes
-   ✓ OOC scene reset that changes time/location/objective
+✓ Location changes:
+  • Characters arrive at completely new location
+  • Major scene relocation (not just moving between rooms in same building)
+  • Departure/travel: "he left", "hurried off", "departed", "made their way to"
 
-STEP 3: Did you find a STRONG break?
-   → YES: Return {"sceneBreakAt": [message number], "rationale": "[exact quote]"} - STOP NOW
-   → NO: Continue to STEP 4
+✓ Cast changes:
+  • New character enters and participates
+  • Character leaves scene: "eager to be away", characters part ways
+  • Conversation explicitly ends
 
-STEP 4: Move to the NEXT message. Repeat STEP 2-3.
+✓ Activity/objective shifts:
+  • Major activity change: talking→fighting, planning→executing
+  • Task completes: quest done, goal achieved, big decision made
+  • Topic shifts significantly: conversation changes subject completely
+  • Emotional/tone shift: tense→relaxed, serious→playful
 
-STEP 5: Have you checked 20+ messages without finding a STRONG break?
-   → NO: Continue STEP 2-4 (keep looking for STRONG breaks only)
-   → YES: Now START accepting WEAK breaks (continue to STEP 6)
+✓ Natural pauses:
+  • Character expresses intent to leave: "I should go", "I'm going to..."
+  • Natural conversational pause with topic closure
+  • Minor completions: question answered, small task done
 
-STEP 6: From now on, also accept WEAK breaks:
-
-   WEAK BREAKS (accept ONLY after 20+ messages checked):
-   ✓ Topic shifts noticeably: conversation changes subject significantly
-   ✓ Emotional/tone shift: tense→relaxed, serious→playful
-   ✓ Minor completions: question answered, small task done
-   ✓ Character expresses intent to leave: "I should go", "I'm going to..."
-   ✓ Natural conversational pause: "he paused", "after a moment of thought"
-   ✓ Activity changes within scene: sitting→standing, eating→talking
-   ✓ Movement between sublocations: different room in same building
-   ✓ Short time references: "moments later", "after a pause"
-
-STEP 7: Found ANY break (strong or weak)?
-   → YES: Return {"sceneBreakAt": [message number], "rationale": "[exact quote]"} - STOP NOW
-   → NO: Move to next message, repeat
-
-STEP 8: Checked all messages? Return the BEST break you found:
-   → Prioritize STRONG breaks over WEAK breaks
-   → If only WEAK breaks exist, return the earliest WEAK break
-   → You MUST return a message number
+✗ NOT scene breaks:
+  • Direct reply in ongoing dialogue (same characters talking)
+  • Minor actions: "turned around", "picked up", "stepped closer"
+  • Movement between sublocations in same area
+  • Very short time: "moments later", "seconds later"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SELECTION PROCESS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-NOT BREAKS (ignore these):
-✗ Direct reply in ongoing dialogue (same characters talking)
-✗ Minor actions: "turned around", "picked up", "stepped closer"
-✗ Very short time: "moments later", "seconds later"
+1. Read all eligible messages (from #{{earliest_allowed_break}} onward, excluding offset zone)
+2. Identify ALL potential scene break points based on criteria above
+3. Select the BEST break point:
+   → Prioritize clear time skips and location changes (strongest signals)
+   → Then major activity/cast changes
+   → Then topic shifts and natural pauses
+4. Return the selected message number with your rationale for why this is the best break point
 
 IMPORTANT NOTES:
 • Base decisions ONLY on provided messages - do not invent details
-• Do not assume narrative patterns based on genre
-• Even dialogue-heavy scenes need breaks - accept WEAK breaks after 20+ messages
-• Better to break on weak signal than create 50+ message scenes
+• If multiple strong breaks exist, choose the best one
+• You MUST return a valid message number - selection is mandatory
 
 Messages to analyze (with SillyTavern message numbers):
+<MESSAGES>
 {{messages}}
+</MESSAGES>
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚨 BEFORE YOU RESPOND - VERIFY:
+BEFORE YOU RESPOND - VERIFY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. Did I check messages sequentially starting from #{{earliest_allowed_break}}?
-2. Did I STOP at the FIRST break I found?
-3. Did I avoid reading all messages before deciding?
-4. If I found a break in the first 20 messages, was it a STRONG break?
-5. If I found a break after 20+ messages, can it be WEAK or STRONG?
-6. Is my rationale an EXACT quote from the message (no formatting references)?
-7. Did I return a valid message number (required - cannot return false)?
+1. Did I evaluate ALL eligible messages?
+2. Did I identify the BEST scene break point (not just the first acceptable one)?
+3. Is my selected message eligible (not marked "invalid choice")?
+4. Is my rationale an EXACT quote from the message (no formatting references)?
+5. Did I return a valid message number (required - cannot return false)?
 
-Remember: Return THE FIRST break you encounter. Do NOT compare options. You MUST select a message number.`;
+Remember: Select the SINGLE BEST break point. You MUST return a message number.`;

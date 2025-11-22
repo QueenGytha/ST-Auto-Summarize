@@ -23,8 +23,14 @@ import {
   queueProcessLorebookEntry } from
 './queueIntegration.js';
 import { clearCheckedFlagsInRange, setCheckedFlagsInRange } from './autoSceneBreakDetection.js';
+import {
+  get_running_recap_versions,
+  delete_running_recap_version,
+  cleanup_invalid_running_recaps } from
+'./runningSceneRecap.js';
 import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
 import { getAttachedLorebook, getLorebookEntries, invalidateLorebookCache, isInternalEntry } from './lorebookManager.js';
+import { restoreCurrentLorebookFromSnapshot } from './lorebookReconstruction.js';
 import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.js';
 import { build as buildSceneMessages } from './macros/scene_messages.js';
 import { build as buildActiveSettingLore } from './macros/active_setting_lore.js';
@@ -188,6 +194,175 @@ export function clearSceneBreak(config) {
   debug(SUBSYSTEM.SCENE, `Cleared all scene break data from message ${index}`);
 
   if (window.renderSceneNavigatorBar) {window.renderSceneNavigatorBar();}
+}
+
+// Handles delete scene click - fully deletes a scene with confirmation
+// eslint-disable-next-line max-params, complexity, sonarjs/cognitive-complexity -- SillyTavern API dependency injection (6 functions always passed together), complex deletion workflow with lorebook restoration
+export async function handleDeleteSceneClick(
+  index ,
+  get_message_div , // Returns jQuery object - any is appropriate
+  getContext ,
+  get_data , // Returns any type - legitimate
+  set_data , // value can be any type - legitimate
+  saveChatDebounced )
+{
+  const ctx = getContext();
+  const chat = ctx.chat;
+  const message = chat[index];
+
+  if (!message) {
+    error(SUBSYSTEM.SCENE, `Cannot delete scene - message ${index} not found`);
+    return;
+  }
+
+  // Check if this is actually a scene break
+  const hasSceneBreak = get_data(message, SCENE_BREAK_KEY);
+  if (!hasSceneBreak) {
+    error(SUBSYSTEM.SCENE, `Cannot delete scene - message ${index} is not a scene break`);
+    toast('This message is not a scene break', 'warning');
+    return;
+  }
+
+  // Find scene boundaries to determine message range
+  const { startIdx, sceneMessages } = findSceneBoundaries(chat, index, get_data);
+
+  // Find next scene break for clearing checked flags
+  let nextSceneBreakIndex = chat.length;
+  for (let i = index + 1; i < chat.length; i++) {
+    const isSceneBreak = get_data(chat[i], SCENE_BREAK_KEY);
+    const isVisible = get_data(chat[i], SCENE_BREAK_VISIBLE_KEY);
+    const hasRecapData = get_data(chat[i], SCENE_RECAP_MEMORY_KEY);
+
+    if (isSceneBreak && (isVisible === undefined || isVisible) && hasRecapData) {
+      nextSceneBreakIndex = i;
+      break;
+    }
+  }
+
+  // Find all running recap versions that merged this scene
+  const runningVersions = get_running_recap_versions();
+  const affectedVersions = runningVersions.filter(v => v.new_scene_index === index);
+
+  // Show confirmation dialog
+  const html = `
+    <div style="text-align: center !important; width: 100% !important;">
+      <div style="max-width: 420px; margin: 0 auto; text-align: center !important;">
+        <h3 style="text-align: center !important; color: #d32f2f;">Delete Scene?</h3>
+        <p>This will permanently delete:</p>
+        <ul style="text-align: left; margin: 1em auto; max-width: 320px;">
+          <li>Scene break marker and recap</li>
+          <li>Lorebook snapshot for this scene</li>
+          <li>${affectedVersions.length} running recap version${affectedVersions.length !== 1 ? 's' : ''} that merged this scene</li>
+          <li>Checked flags for ${sceneMessages.length} message${sceneMessages.length !== 1 ? 's' : ''} (will allow re-detection)</li>
+        </ul>
+        <p><strong>This action cannot be undone.</strong></p>
+      </div>
+    </div>
+  `;
+
+  const popup = new ctx.Popup(html, ctx.POPUP_TYPE.CONFIRM, '', {
+    okButton: 'Delete Scene',
+    wide: true
+  });
+
+  const confirmed = await popup.show();
+
+  if (!confirmed) {
+    debug(SUBSYSTEM.SCENE, `Delete scene cancelled by user for message ${index}`);
+    return;
+  }
+
+  // Delete all affected running recap versions
+  let deletedVersionsCount = 0;
+  for (const version of affectedVersions) {
+    delete_running_recap_version(version.version);
+    deletedVersionsCount++;
+    debug(SUBSYSTEM.SCENE, `Deleted running recap version ${version.version} (merged scene at ${index})`);
+  }
+
+  // Check if this is the most recent scene (last scene break in chat)
+  const isMostRecentScene = nextSceneBreakIndex === chat.length;
+
+  // Clear scene break data (this also removes lorebook snapshots in metadata)
+  clearSceneBreak({ index, get_message_div, getContext, saveChatDebounced });
+
+  // Clear checked flags in the message range
+  const clearedCount = clearCheckedFlagsInRange(startIdx, nextSceneBreakIndex);
+  debug(SUBSYSTEM.SCENE, `Cleared ${clearedCount} checked flags in range ${startIdx}-${nextSceneBreakIndex - 1}`);
+
+  // If this was the most recent scene, restore lorebook to previous scene snapshot
+  let lorebookRestored = false;
+  if (isMostRecentScene) {
+    // Find the previous scene break with a lorebook snapshot
+    let previousSceneIndex = null;
+    for (let i = index - 1; i >= 0; i--) {
+      const msg = chat[i];
+      const prevSceneHasBreak = get_data(msg, SCENE_BREAK_KEY);
+      if (prevSceneHasBreak) {
+        const metadata = get_data(msg, SCENE_RECAP_METADATA_KEY);
+        const currentVersionIndex = get_data(msg, 'scene_recap_current_index') ?? 0;
+        const versionMetadata = metadata?.[currentVersionIndex];
+        const hasLorebookSnapshot = versionMetadata && (versionMetadata.totalActivatedEntries ?? 0) > 0;
+
+        if (hasLorebookSnapshot) {
+          previousSceneIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (previousSceneIndex !== null) {
+      try {
+        debug(SUBSYSTEM.SCENE, `Most recent scene deleted - restoring lorebook from previous scene at ${previousSceneIndex}`);
+        const result = await restoreCurrentLorebookFromSnapshot(previousSceneIndex);
+
+        if (!result.cancelled) {
+          lorebookRestored = true;
+          log(SUBSYSTEM.SCENE, `Restored ${result.entriesRestored} entries to ${result.lorebookName}`);
+        } else {
+          debug(SUBSYSTEM.SCENE, 'Lorebook restoration cancelled by user');
+        }
+      } catch (err) {
+        error(SUBSYSTEM.SCENE, `Failed to restore lorebook from previous scene:`, err);
+      }
+    } else {
+      debug(SUBSYSTEM.SCENE, 'Most recent scene deleted but no previous scene with lorebook snapshot found');
+    }
+  }
+
+  // Save and refresh everything
+  saveChatDebounced();
+  refresh_memory();
+  cleanup_invalid_running_recaps();
+
+  if (window.renderSceneNavigatorBar) {
+    window.renderSceneNavigatorBar();
+  }
+
+  if (typeof window.updateVersionSelector === 'function') {
+    window.updateVersionSelector();
+  }
+
+  // Show success message
+  const details = [];
+  if (deletedVersionsCount > 0) {
+    details.push(`${deletedVersionsCount} running recap version${deletedVersionsCount !== 1 ? 's' : ''}`);
+  }
+  if (clearedCount > 0) {
+    details.push(`${clearedCount} checked message${clearedCount !== 1 ? 's' : ''}`);
+  }
+
+  let successMessage = 'Scene deleted.';
+  if (details.length > 0) {
+    successMessage += ` Removed ${details.join(', ')}.`;
+  }
+  if (lorebookRestored) {
+    successMessage += ' Lorebook restored to previous scene.';
+  }
+
+  toast(successMessage, 'success');
+
+  log(SUBSYSTEM.SCENE, `Scene at message ${index} deleted successfully`);
 }
 
 // --- Helper functions for versioned scene recaps ---
@@ -354,6 +529,11 @@ function hasLaterCombinedScenes(index, chat, get_data) {
   return false;
 }
 
+// Helper: Create restore lorebook icon for scene breaks
+function createSceneRestoreLorebookIcon(messageIndex) {
+  return `<i class="fa-solid fa-clock-rotate-left scene-lorebook-restore" data-message-index="${messageIndex}" title="Restore lorebook to this point in time" style="cursor:pointer; margin-left:0.5em;"></i>`;
+}
+
 // Helper: Build scene break HTML element
 function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - any is appropriate
   const { startIdx, sceneMessages, sceneName, sceneRecap, isVisible, isCollapsed, versions, currentIdx, isCombined, hasLaterCombinedScene } = sceneData;
@@ -361,6 +541,7 @@ function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - an
   const sceneStartLink = `<a href="javascript:void(0);" class="scene-start-link" data-testid="scene-start-link" data-mesid="${startIdx}">#${startIdx}</a>`;
   const previewIcon = `<i class="fa-solid fa-eye scene-preview-recap" data-testid="scene-preview-recap" title="Preview scene content" style="cursor:pointer; margin-left:0.5em;"></i>`;
   const lorebookIcon = createSceneBreakLorebookIcon(index);
+  const restoreIcon = createSceneRestoreLorebookIcon(index);
 
   const stateClass = isVisible ? "sceneBreak-visible" : "sceneBreak-hidden";
   const borderClass = isVisible ? "auto_recap_scene_break_border" : "";
@@ -385,7 +566,7 @@ function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - an
         </div>
         <div class="sceneBreak-content">
             <div style="font-size:0.95em; color:inherit; margin-bottom:0.5em;">
-                Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}${lorebookIcon}${lockedBadge}
+                Scene: ${sceneStartLink} &rarr; #${index} (${sceneMessages.length} messages)${previewIcon}${lorebookIcon}${restoreIcon}${lockedBadge}
             </div>
             <textarea class="scene-recap-box auto_recap_memory_text" data-testid="scene-recap-box" placeholder="Scene recap..." ${disabledAttr}>${sceneRecap}</textarea>
             <div class="scene-recap-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
@@ -393,6 +574,7 @@ function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - an
                 <button class="scene-generate-recap menu_button" data-testid="scene-generate-recap" title="Generate new recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
                 <button class="scene-rollforward-recap menu_button" data-testid="scene-rollforward-recap" title="Go to next recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-rotate-right"></i> Next Recap</button>
                 <button class="scene-regenerate-running menu_button" data-testid="scene-regenerate-running" title="Combine this scene with current running recap" style="margin-left:auto; white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-sync-alt"></i> Combine</button>
+                <button class="scene-delete-scene menu_button" data-testid="scene-delete-scene" title="Delete this entire scene" style="white-space:nowrap; color:#d32f2f;"><i class="fa-solid fa-trash"></i> Delete Scene</button>
                 <span style="align-self:center; font-size:0.9em; color:inherit; margin-left:0.5em;">${versions.length > 1 ? `[${currentIdx + 1}/${versions.length}]` : ''}</span>
             </div>
         </div>
@@ -607,6 +789,19 @@ saveChatDebounced )
     }
   });
 
+  // --- Restore lorebook to point-in-time snapshot handler ---
+  $sceneBreak.find(selectorsExtension.sceneBreak.restoreLorebook).off('click').on('click', async function (e) {
+    e.stopPropagation();
+    try {
+      const result = await restoreCurrentLorebookFromSnapshot(index);
+      if (result && !result.cancelled) {
+        debug(SUBSYSTEM.LOREBOOK, `Lorebook restored from message ${index}`);
+      }
+    } catch (err) {
+      error(SUBSYSTEM.LOREBOOK, 'Failed to restore lorebook from snapshot:', err);
+    }
+  });
+
   // --- Button handlers (prevent event bubbling to avoid toggling scene break) ---
   $sceneBreak.find(selectorsExtension.sceneBreak.generateRecap).off('click').on('click', async function (e) {
     e.stopPropagation();
@@ -683,6 +878,12 @@ saveChatDebounced )
       error(SUBSYSTEM.SCENE, "Failed to queue scene combine operation");
       alert('Failed to queue operation. Check console for details.');
     }
+  });
+
+  // --- Delete scene handler ---
+  $sceneBreak.find(selectorsExtension.sceneBreak.deleteScene).off('click').on('click', async function (e) {
+    e.stopPropagation();
+    await handleDeleteSceneClick(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
   });
 
   // --- Selection handlers for visual feedback ---

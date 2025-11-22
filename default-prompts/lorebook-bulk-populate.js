@@ -21,7 +21,10 @@ Required format (copy this structure exactly):
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
-Known setting_lore entry types: {{lorebook_entry_types}}
+Known setting_lore entry types:
+<SETTING_LORE_ENTRY_TYPES>
+{{lorebook_entry_types}}
+</SETTING_LORE_ENTRY_TYPES>
 
 You will be given an array of setting_lore entries that have been imported from the user's manually-created setting_lore collections (global, character, or persona). These entries have already been vetted by the user and do not need deduplication.
 
@@ -40,5 +43,7 @@ Rules:
 
 
 Entries to process:
+<SETTING_LORE_ENTRIES>
 {{new_entries}}
+</SETTING_LORE_ENTRIES>
 `;

@@ -36,6 +36,8 @@ INSTRUCTIONS:
 4. If no clear break exists, return false - do NOT force a weak break
 
 Messages to analyze:
+<MESSAGES>
 {{messages}}
+</MESSAGES>
 
 Only return a scene break if it clearly meets the criteria above.`;

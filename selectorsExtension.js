@@ -273,6 +273,8 @@ export const selectorsExtension = {
     rollbackRecap: '[data-testid="scene-rollback-recap"]',       // .scene-rollback-recap
     rollforwardRecap: '[data-testid="scene-rollforward-recap"]', // .scene-rollforward-recap
     regenerateRunning: '[data-testid="scene-regenerate-running"]',   // .scene-regenerate-running
+    restoreLorebook: '.scene-lorebook-restore',                  // .scene-lorebook-restore
+    deleteScene: '.scene-delete-scene',                          // .scene-delete-scene
   },
 
   // Popout (dynamically created)

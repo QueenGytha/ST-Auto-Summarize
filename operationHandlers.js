@@ -465,7 +465,8 @@ export function registerAllOperationHandlers() {
     let result;
     const minimumSceneLength = Number(get_settings('auto_scene_break_minimum_scene_length')) || DEFAULT_MINIMUM_SCENE_LENGTH;
 
-    // Retry loop: When forceSelection=true and AI returns false, retry indefinitely
+    // Retry loop: When forceSelection=true and AI incorrectly returns false, retry indefinitely
+    // Note: Range reduction now automatically upgrades to FORCED prompt before the first LLM call
     let retryCount = 0;
     while (true) {
       if (retryCount > 0) {
@@ -482,6 +483,7 @@ export function registerAllOperationHandlers() {
       ({ sceneBreakAt, rationale, tokenBreakdown, filteredIndices, maxEligibleIndex, rangeWasReduced, currentEndIndex } = result);
 
       // If range was reduced, update operation params AND metadata to reflect the new state
+      // Note: forceSelection was already upgraded to true in reduceMessagesUntilTokenFit before the LLM call
       if (rangeWasReduced) {
         const previousEndIndex = operation.params.endIndex;
         operation.params.endIndex = currentEndIndex;
@@ -497,13 +499,13 @@ export function registerAllOperationHandlers() {
         // Always update current_end_index to show latest reduction
         operation.metadata.current_end_index = currentEndIndex;
 
-        // Set forceSelection if not already set
-        if (!forceSelection) {
+        // Update forceSelection in params to match what was used in the LLM call
+        if (result.forceSelectionWasUpgraded) {
           operation.params.forceSelection = true;
           forceSelection = true; // Update local variable for retry logic
-          debug(SUBSYSTEM.QUEUE, `Range reduced from ${startIndex}-${previousEndIndex} to ${startIndex}-${currentEndIndex}, setting forceSelection=true`);
+          debug(SUBSYSTEM.QUEUE, `Range reduced from ${startIndex}-${previousEndIndex} to ${startIndex}-${currentEndIndex}, FORCED prompt was used`);
         } else {
-          debug(SUBSYSTEM.QUEUE, `Range reduced AGAIN from ${startIndex}-${previousEndIndex} to ${startIndex}-${currentEndIndex} (already forced)`);
+          debug(SUBSYSTEM.QUEUE, `Range reduced from ${startIndex}-${previousEndIndex} to ${startIndex}-${currentEndIndex} (forceSelection already true)`);
         }
       }
 
@@ -553,7 +555,8 @@ export function registerAllOperationHandlers() {
 
       if (sceneBreakAt === false) {
         // Check if this is a forced selection that returned false (retry indefinitely)
-        if (forceSelection || result.rangeWasReduced) {
+        // Note: rangeWasReduced now implies forceSelection=true was already used in the LLM call
+        if (forceSelection) {
           retryCount++;
           debug(SUBSYSTEM.QUEUE, `[FORCED] AI returned false despite MANDATORY instruction - retrying (attempt #${retryCount})`);
           continue; // Retry the detection

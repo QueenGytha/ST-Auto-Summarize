@@ -11,7 +11,17 @@ Shape (keep headers and order):
 Example (fragments; semicolons; terse):
 {"recap": "# Running Narrative\n\n## Key Developments\n- [travel] entered Haven via east gate; Senta shadowing Adam (unresolved)\n\n## Tone & Style\n- Genre: high fantasy; cultural conflict\n- Voice: close third; alternating POV\n- Dialogue: mindspeak italics w/ colons (*:text:*); parallel to speech\n- Motifs: demon-horse fear vs Companion reverence\n\n## Pending Threads\n- Find lodging at Companion's Bell (Tailor's Row)"}
 
-INPUTS: {{current_running_recap}} (optional existing recap) and {{scene_recaps}} (new recap). Use ONLY these texts; no outside knowledge.
+INPUTS:
+<CURRENT_TOTAL_RECAP>
+{{current_running_recap}}
+</CURRENT_TOTAL_RECAP>
+
+and 
+
+<NEW_SCENE_RECAP>
+{{scene_recaps}}
+<NEW_SCENE_RECAP>
+Use ONLY these texts; no outside knowledge. No assumptions, guesses, or inferrence. If it's not in either source, IT DID NOT HAPPEN.
 
 MERGE RULES:
 - Start from current_running_recap; edit in place; avoid rewrite if still correct.

@@ -7,9 +7,17 @@
 
 import { get_data } from './index.js';
 import { debug, error, SUBSYSTEM } from './utils.js';
+import { toast } from './utils.js';
 import { createNewWorldInfo } from '../../../world-info.js';
 import { getSanitizedFilename } from '../../../../scripts/utils.js';
 import { getRequestHeaders } from '../../../../script.js';
+import {
+  getAttachedLorebook,
+  getLorebookEntries,
+  deleteLorebookEntry,
+  invalidateLorebookCache
+} from './lorebookManager.js';
+import { getQueueStats } from './operationQueue.js';
 
 // Constants for lorebook entry defaults
 const DEFAULT_DEPTH = 4;
@@ -420,6 +428,131 @@ export async function reconstructPointInTimeLorebook(messageIndex, targetLoreboo
       `Point-in-time lorebook reconstruction failed for message ${messageIndex}:`,
       err
     );
+    throw err;
+  }
+}
+
+/**
+ * Restore current chat lorebook to point-in-time snapshot from scene break
+ *
+ * Follows the exact same logic as branch/checkpoint restoration, but applies
+ * to the current lorebook in-place instead of creating a new one.
+ *
+ * @param {number} messageIndex - Message index with scene break snapshot
+ * @returns {Promise<Object>} Restoration result with metadata
+ */
+export async function restoreCurrentLorebookFromSnapshot(messageIndex) {
+  try {
+    debug(SUBSYSTEM.LOREBOOK,
+      `Starting in-place lorebook restoration from snapshot at message ${messageIndex}`
+    );
+
+    // Step 1: Check queue is empty (same validation as branch/checkpoint creation)
+    const queueStats = getQueueStats();
+    const queueEmpty = queueStats.pending === 0 && queueStats.in_progress === 0;
+
+    if (!queueEmpty) {
+      const reason = `Queue is not empty (${queueStats.pending} pending, ${queueStats.in_progress} in progress)`;
+      toast(`Cannot restore lorebook: ${reason}`, 'error');
+      throw new Error(`Cannot restore lorebook: ${reason}`);
+    }
+
+    debug(SUBSYSTEM.LOREBOOK, '✓ Queue is empty, proceeding with restoration');
+
+    // Step 2: Get current chat lorebook
+    const currentLorebookName = getAttachedLorebook();
+    if (!currentLorebookName) {
+      toast('No lorebook attached to current chat', 'error');
+      throw new Error('No lorebook attached to current chat');
+    }
+
+    debug(SUBSYSTEM.LOREBOOK, `Current lorebook: ${currentLorebookName}`);
+
+    // Step 3: Extract historical state from scene break snapshot
+    const historicalState = extractHistoricalLorebookState(messageIndex);
+
+    debug(SUBSYSTEM.LOREBOOK,
+      `Snapshot contains ${historicalState.totalEntries} entries from ${historicalState.sourceLorebookName}`
+    );
+
+    // Step 4: Show confirmation dialog
+    const confirmMessage =
+      `This will delete ALL entries in the current lorebook and restore from the snapshot.\n\n` +
+      `Current lorebook: ${currentLorebookName}\n` +
+      `Snapshot from: Message ${messageIndex}\n` +
+      `Entries to restore: ${historicalState.totalEntries}\n` +
+      `Operation queue will be reset to empty.\n\n` +
+      `Continue?`;
+
+    if (!confirm(confirmMessage)) {
+      debug(SUBSYSTEM.LOREBOOK, 'Restoration cancelled by user');
+      return { cancelled: true };
+    }
+
+    // Step 5: Delete ALL existing entries (including operation queue)
+    const currentEntries = await getLorebookEntries(currentLorebookName);
+    if (!currentEntries) {
+      toast('Failed to load current lorebook entries', 'error');
+      throw new Error(`Failed to load entries from lorebook: ${currentLorebookName}`);
+    }
+
+    debug(SUBSYSTEM.LOREBOOK,
+      `Deleting ALL ${currentEntries.length} entries (including operation queue)`
+    );
+
+    // Delete entries in reverse UID order for efficiency
+    const sortedForDeletion = [...currentEntries].sort((a, b) => b.uid - a.uid);
+
+    for (const entry of sortedForDeletion) {
+      // eslint-disable-next-line no-await-in-loop -- Sequential deletion required
+      const deleted = await deleteLorebookEntry(currentLorebookName, entry.uid, true);
+      if (!deleted) {
+        error(SUBSYSTEM.LOREBOOK,
+          `Failed to delete entry UID ${entry.uid} (${entry.comment})`
+        );
+      }
+    }
+
+    debug(SUBSYSTEM.LOREBOOK,
+      `✓ Deleted ${currentEntries.length} entries`
+    );
+
+    // Step 6: Recreate entries from snapshot in UID order (same as branch restoration)
+    await reconstructLorebookEntries(currentLorebookName, historicalState);
+
+    // Step 7: Create fresh empty operation queue (same as branch restoration)
+    await createOperationQueueEntry(currentLorebookName);
+
+    debug(SUBSYSTEM.LOREBOOK,
+      '✓ Created fresh empty operation queue'
+    );
+
+    // Step 8: Invalidate cache (same as branch restoration)
+    await invalidateLorebookCache(currentLorebookName);
+
+    const result = {
+      lorebookName: currentLorebookName,
+      entriesRestored: historicalState.totalEntries,
+      sourceMessageIndex: messageIndex,
+      sourceLorebookName: historicalState.sourceLorebookName,
+      cancelled: false
+    };
+
+    debug(SUBSYSTEM.LOREBOOK,
+      `✓ In-place lorebook restoration complete: ${currentLorebookName} ` +
+      `(${result.entriesRestored} entries restored from message ${messageIndex})`
+    );
+
+    toast(`Lorebook restored: ${result.entriesRestored} entries from snapshot at message ${messageIndex}`, 'success');
+
+    return result;
+
+  } catch (err) {
+    error(SUBSYSTEM.LOREBOOK,
+      `Lorebook restoration failed for message ${messageIndex}:`,
+      err
+    );
+    toast(`Lorebook restoration failed: ${err.message}`, 'error');
     throw err;
   }
 }

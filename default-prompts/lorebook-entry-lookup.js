@@ -19,7 +19,10 @@ Required format (copy this structure exactly):
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
-Known setting_lore entry types: {{lorebook_entry_types}}
+Known setting_lore entry types:
+<SETTING_LORE_ENTRY_TYPES>
+{{lorebook_entry_types}}
+</SETTING_LORE_ENTRY_TYPES>
 
 You will be given:
 - A NEW entry candidate formatted as JSON
@@ -63,7 +66,11 @@ Rules:
 
 
 New entry candidate:
+<NEW_ENTRY>
 {{new_entry}}
+</NEW_ENTRY>
 
 Registry listing:
-{{candidate_registry}}`;
+<REGISTRY_LISTING>
+{{candidate_registry}}
+</REGISTRY_LISTING>`;

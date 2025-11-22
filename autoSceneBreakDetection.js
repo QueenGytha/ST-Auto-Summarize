@@ -26,6 +26,7 @@ import { build as buildPrefill } from './macros/prefill.js';
 import { substitute_params } from './promptUtils.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 3;
+const PREFILL_PREVIEW_LENGTH = 50;
 
 // Disallow rationale that references formatting/separators instead of content
 export function validateRationaleNoFormatting(rationale) {
@@ -689,6 +690,12 @@ async function reduceMessagesUntilTokenFit(config) {
   let currentFormattedForPrompt;
   let prompt;
 
+  // Track current state for FORCED mode upgrade when range is reduced
+  let currentForceSelection = forceSelection;
+  let currentPromptTemplate = promptTemplate;
+  let currentPrefill = prefill;
+  let forceSelectionWasUpgraded = false;
+
   const maxAllowedTokens = await calculateAvailableContext(preset, effectiveProfile);
 
   let reductionPhase = 'coarse';  // 'coarse', 'medium', or 'fine'
@@ -726,7 +733,8 @@ async function reduceMessagesUntilTokenFit(config) {
         filteredIndices: currentFilteredIndices,
         maxEligibleIndex: currentMaxEligibleIndex,
         rangeWasReduced: currentEndIndex !== endIndex,
-        currentEndIndex
+        currentEndIndex,
+        forceSelectionWasUpgraded
       };
     }
 
@@ -738,11 +746,11 @@ async function reduceMessagesUntilTokenFit(config) {
     const messageBreakdown = messagesResult.breakdown;
 
     // eslint-disable-next-line no-await-in-loop -- Need to build prompt in loop to check if token reduction is needed
-    prompt = await buildPromptFromTemplate(ctx, promptTemplate, {
+    prompt = await buildPromptFromTemplate(ctx, currentPromptTemplate, {
       formattedForPrompt: currentFormattedForPrompt,
       minimumSceneLength,
       earliestAllowedBreak: currentEarliestAllowedBreak,
-      prefill
+      prefill: currentPrefill
     });
 
     // Calculate message tokens separately for proper breakdown
@@ -755,7 +763,7 @@ async function reduceMessagesUntilTokenFit(config) {
       prompt,
       includePreset: includePresetPrompts,
       preset,
-      prefill,
+      prefill: currentPrefill,
       profile,
       messagesTokenCount,
       messageBreakdown
@@ -814,7 +822,7 @@ async function reduceMessagesUntilTokenFit(config) {
         debug(SUBSYSTEM.OPERATIONS, `${largerPromptType}: ${tokenCount} tokens (including overhead), fits within limit per calculation`);
 
         // eslint-disable-next-line no-await-in-loop -- Need to try request in loop to handle API rejections
-        const apiResult = await trySendRequest({ effectiveProfile, prompt, prefill, includePresetPrompts, preset, startIndex, endIndex: currentEndIndex, forceSelection, messagesTokenCount });
+        const apiResult = await trySendRequest({ effectiveProfile, prompt, prefill: currentPrefill, includePresetPrompts, preset, startIndex, endIndex: currentEndIndex, forceSelection: currentForceSelection, messagesTokenCount });
 
         if (apiResult.success) {
           return {
@@ -823,7 +831,8 @@ async function reduceMessagesUntilTokenFit(config) {
             currentEndIndex,
             currentFilteredIndices,
             currentMaxEligibleIndex,
-            rangeWasReduced: currentEndIndex !== endIndex
+            rangeWasReduced: currentEndIndex !== endIndex,
+            forceSelectionWasUpgraded
           };
         }
 
@@ -866,8 +875,23 @@ async function reduceMessagesUntilTokenFit(config) {
       }
     }
 
-    // Recalculate maxEligibleIndex - disable offset zone when forceSelection=true
-    currentMaxEligibleIndex = forceSelection ? currentEndIndex : currentEndIndex - offset;
+    // Upgrade to FORCED mode immediately when range is reduced (before next LLM call)
+    if (!forceSelectionWasUpgraded && currentEndIndex !== originalEndIndex) {
+      debug(SUBSYSTEM.OPERATIONS, `Range reduced from ${originalEndIndex} to ${currentEndIndex}, upgrading to FORCED prompt`);
+      currentForceSelection = true;
+      forceSelectionWasUpgraded = true;
+
+      // Reload settings with forceSelection=true to get FORCED prompt/prefill
+      // eslint-disable-next-line no-await-in-loop -- One-time upgrade when range is first reduced
+      const forcedSettings = await loadSceneBreakPromptSettings(true);
+      currentPromptTemplate = forcedSettings.promptTemplate;
+      currentPrefill = forcedSettings.prefill;
+
+      debug(SUBSYSTEM.OPERATIONS, `FORCED prompt loaded (${currentPromptTemplate.length} chars, prefill: "${currentPrefill.slice(0, PREFILL_PREVIEW_LENGTH)}...")`);
+    }
+
+    // Recalculate maxEligibleIndex - disable offset zone when currentForceSelection=true
+    currentMaxEligibleIndex = currentForceSelection ? currentEndIndex : currentEndIndex - offset;
 
     if (currentEndIndex < startIndex) {
       // eslint-disable-next-line no-await-in-loop -- Need to pause queue before throwing error

@@ -19,18 +19,27 @@ Required format (copy this structure exactly):
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
 
-Known setting_lore entry types: {{lorebook_entry_types}}
+Known setting_lore entry types:
+<SETTING_LORE_ENTRY_TYPES>
+{{lorebook_entry_types}}
+</SETTING_LORE_ENTRY_TYPES>
 
 The Stage 1 lookup flagged possible duplicates and requested full context. You must make the final decision.
 
 New entry candidate:
+<NEW_ENTRY>
 {{new_entry}}
+</NEW_ENTRY>
 
 Stage 1 synopsis:
+<SYNOPSIS>
 {{lorebook_entry_lookup_synopsis}}
+</SYNOPSIS>
 
 Candidate setting_lore entries (full content, JSON array):
+<CANDIDATE_ENTRIES>
 {{candidate_entries}}
+</CANDIDATE_ENTRIES>
 
 Rules:
 - Validate the new candidate is a single entity and the content uses bullet points with an identity bullet first.
