@@ -610,10 +610,21 @@ export async function executeCompaction(lorebookName , existingEntry ) {
     content: compactionResult.compactedContent
   };
 
-  // Update canonical name if provided
+  // Update canonical name if provided while preserving any existing type prefix
   if (compactionResult.canonicalName) {
-    const typePrefix = existingEntry.comment?.match(/^\[([^\]]+)\]\s*/)?.[0] || '';
-    updates.comment = `${typePrefix}${compactionResult.canonicalName}`;
+    const canonical = compactionResult.canonicalName.trim();
+    if (canonical) {
+      const currentComment = existingEntry.comment || '';
+      const hyphenPrefixMatch = currentComment.match(/^([^-]+-)/);
+      const bracketPrefixMatch = currentComment.match(/^\[([^\]]+)\]\s*/);
+      if (hyphenPrefixMatch) {
+        updates.comment = `${hyphenPrefixMatch[1]}${canonical}`;
+      } else if (bracketPrefixMatch) {
+        updates.comment = `[${bracketPrefixMatch[1]}] ${canonical}`;
+      } else {
+        updates.comment = canonical;
+      }
+    }
   }
 
   // Apply updates to lorebook entry
