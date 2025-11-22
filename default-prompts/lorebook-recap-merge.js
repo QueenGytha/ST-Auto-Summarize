@@ -17,7 +17,7 @@ CONTEXT RULE
   * If Existing Entry Content already uses compact fragment/semicolon lines, keep that style.
   * If Existing Entry Content is prose, bullets, or inconsistent, normalize the output to compact fragment/semicolon lines (no prose sentences, no code fences) while preserving all demonstrated nuance.
   * For genuinely new entries with no usable format, output compact fragment/semicolon lines.
-  * Voice cues (cadence/mannerisms/sample lines) stay within that character's entry; do not move or duplicate them.
+  * Voice cues (cadence/mannerisms/sample lines) stay within that character's entry; dedupe similar cues.
 
 BREVITY + COMPRESSION
 - Line-oriented fragments; semicolons; abbreviations (bc/w/+). No filler (seems/appears/currently). Do not expand concise inputs.
@@ -29,7 +29,7 @@ MERGE RULES
 1) Add new facts; update changed facts; pack with semicolons; "+" for causation.
 2) Preserve story-critical history as causal chains: enemies (blamed sister's death) + alliance during siege.
 3) Prune duplicates, trivial fluff, superseded minor details (unless story-relevant). If nothing to add/change and nothing to prune, return original EXACTLY.
-4) Deduplicate HARD: for each facet (Attributes, State, Psychology, Relationships per counterpart, Intimacy/Sexual, Secrets/Leverage, Tension/Triggers, Style/Mannerisms, Micro-Moments, Notable dialogue), merge overlapping or near-duplicate fragments (even with different wording) into a single most-specific line; remove any extra lines for that facet; State is current; Micro-Moments keep only distinct facets; remove redundant quotes; merge overlapping sentiments rather than listing variants.
+4) Deduplicate HARD: for each facet (Attributes, State, Psychology, Relationships per counterpart, Intimacy/Sexual, Secrets/Leverage, Tension/Triggers, Style/Mannerisms, Micro-Moments, Notable dialogue), merge overlapping or near-duplicate fragments (even with different wording) into the most-specific minimal set of lines; State is current; Micro-Moments keep only distinct facets; remove redundant quotes; merge overlapping sentiments rather than listing variants. Apply this merging both within existing_content and across new_content vs existing_content. Keep distinct facets separate; do not drop unique information when merging.
 5) Name resolution: if vague label + proper name provided, set canonicalName to proper name.
 6) Relationship nuance: capture shifts in trust/power/affection/resentment/boundaries/consent/debts/alliances; intimacy/kinks/boundaries when demonstrated.
 7) Voice fidelity: preserve all existing diction/cadence/mannerism/consent cues. Add new cues only when they convey a new facet (e.g., stricter consent line, different cadence, new catchphrase/tone). If a new line is similar but adds nuance, keep the more specific one; if fully redundant, drop the duplicate. Keep micro-quotes that anchor style; do not rewrite unchanged cues.
@@ -38,10 +38,10 @@ MERGE RULES
 
 FORMAT (compact fragment lines; omit empty; do not change the existing formatting style)
 - Identity; Synopsis <=10 words.
-- Attributes (one consolidated line; merge similar descriptors; if more than one, merge to one and delete the rest); State (current, single line only).
-- Psychology: trigger + response + outcome (merge similar arcs into one line; do not emit multiple psychology lines).
-- Relationships: X -> Y ? stance/behavior; one line per counterpart; merge overlapping or similar sentiments/boundaries into that single line; note shifts; interaction defaults if shown; do not emit multiple lines for the same counterpart.
-- Intimacy/Romance/Sexual interests (kinks/turn-ons/boundaries/aftercare/comfort); Secrets/Leverage; Tension/Triggers; Style/Mannerisms (brief diction/cadence/quirks; dedupe similar cues, not just exact repeats); Micro-Moments (brief but include key nuance); Notable dialogue: verbatim, short, keep only unique quotes (drop paraphrases/near-repeats of the same intent); prioritize plot-relevant; include style/voice quotes only if they add a distinct cadence cue beyond plot quotes; label quotes as "(plot)" or "(style)" for clarity; no {{user}} quotes; never invent or paraphrase. Include these only if new/changed.
+- Attributes (merge similar descriptors into a minimal set; avoid repeating the same idea); State (current, single line only).
+- Psychology: trigger + response + outcome (merge similar arcs; keep distinct psychological facets separate).
+- Relationships: X -> Y ? stance/behavior; minimize to one line per counterpart unless distinct facets are truly different; merge overlapping or similar sentiments/boundaries into a single line per counterpart; note shifts; interaction defaults if shown.
+- Intimacy/Romance/Sexual interests (kinks/turn-ons/boundaries/aftercare/comfort); Secrets/Leverage; Tension/Triggers; Style/Mannerisms (brief diction/cadence/quirks; dedupe similar cues, not just exact repeats); Micro-Moments (brief but include key nuance); Notable dialogue: verbatim, short, keep only unique quotes (drop paraphrases/near-repeats of the same intent/cadence); prioritize plot-relevant; include style/voice quotes only if they add a distinct cadence cue beyond plot quotes; label quotes as "(plot)" or "(style)" for clarity; no {{user}} quotes; never invent or paraphrase. Include these only if new/changed.
 - Entity/location naming: subareas use "Parent-Subarea"; Identity for locations: "Location - Parent-Subarea". Include "Located in: <Parent>" when applicable.
 
 OUTPUT (JSON only; no code fences):
@@ -54,7 +54,7 @@ canonicalName rules:
 - Use full proper name if available; if only first name, use that.
 - No type prefixes. If current name already proper, set canonicalName to null.
 
- PRE-FLIGHT: Brevity kept? For each facet (Attributes, State, Psychology, per-counterpart Relationships, Intimacy/Sexual, Secrets/Leverage, Tension/Triggers, Style/Mannerisms, Micro-Moments, Notable dialogue) is there only one line (merged if similar/overlapping)? State current-only? Voice/mannerism cues unique? Quotes unique (no paraphrased repeats) with plot priority? Only demonstrated facts? No unnecessary new lines? No new/changed info and no pruning -> output original exactly.
+ PRE-FLIGHT: Brevity kept? For each facet (Attributes, State, Psychology, per-counterpart Relationships, Intimacy/Sexual, Secrets/Leverage, Tension/Triggers, Style/Mannerisms, Micro-Moments, Notable dialogue) are overlapping/near-duplicate lines merged and redundant ones removed, while keeping distinct facets? State current-only? Voice/mannerism cues unique? Quotes unique (no paraphrased repeats of the same meaning/cadence) with plot priority? Only demonstrated facts? No unnecessary new lines? No new/changed info and no pruning -> output original exactly.
 
 <existing_content>
 {{existing_content}}
