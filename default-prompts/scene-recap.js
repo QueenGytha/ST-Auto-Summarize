@@ -56,7 +56,7 @@ SECTION 3 - SETTING_LORE ARRAY ONLY
   * Style: compact fragment/semicolon lines; no prose sentences or code fences; stay concise but keep nuance.
   * Identity/Synopsis: <=10 words.
   * Attributes: descriptors; no verbs/articles. State: location; condition (current only, if relevant).
-  * Psychology: trigger -> response -> outcome (dedupe similar phrasing).
+  * Psychology: trigger -> response -> outcome (dedupe similar phrasing or traits).
   * Relationships: X -> Y ? stance/behavior; include shifts, intimacy, consent/boundaries, jealousy, loyalty. Interaction defaults if shown; note trigger+outcome for boundary changes. Only if new/changed vs ACTIVE_SETTING_LORE. Collapse near-duplicate lines into one specific line.
   * Intimacy/Romance/Sexual interests: include kinks/turn-ons/boundaries/aftercare/comfort when demonstrated; direct terms for what happened, NO EUPHEMISM. It is important to capture the nuance/tone etc for consistency on the relationship once the messages themselves are removed from context; only if new/changed vs ACTIVE_SETTING_LORE.
   * Style/Mannerisms: brief diction/cadence/quirks; default speech cadence or catchphrase; keep nuance even if slightly longer; dedupe similar cues.
