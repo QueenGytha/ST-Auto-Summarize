@@ -24,7 +24,7 @@ BREVITY + COMPRESSION
 - Line-oriented fragments; semicolons; abbreviations (bc/w/+). No filler (seems/appears/currently). Do not expand concise inputs.
 - Attributes/State: no verbs/articles. State = current only (not event log).
 - Direct language for intimacy/sexual content; no euphemisms. Important to keep the nuance here for tone, style and consistency.
-- Minimal output: aggressively deduplicate/compress; you may reorder or rewrite fragments to remove redundancy. If nothing to add/change/prune, return original EXACTLY.
+- Minimal output: aggressively deduplicate/compress; you may reorder or rewrite fragments to remove redundancy.
 
 MERGE WORKFLOW (two steps; output only the final JSON)
 STEP 1: Deduplicate EXISTING_CONTENT
@@ -33,7 +33,6 @@ STEP 1: Deduplicate EXISTING_CONTENT
   - Merge overlapping or near-duplicate fragments (even with different wording) into the most-specific minimal set of lines.
   - State is current only. Keep distinct facets separate; do not drop unique information.
 - If any idea appears twice (even rephrased), collapse to one line; if the deduped result is not materially shorter and overlaps remain, redo Step 1 before proceeding.
-- If NEW_CONTENT is not empty and overlap existed, the final mergedContent must be materially shorter than the raw EXISTING_CONTENT; do not fall back to the original wall of text.
 - Relationships: every counterpart that appears in EXISTING_CONTENT must remain represented by at least one merged line; do not drop counterparts.
 - Quotes: keep only unique (no paraphrased repeats); prioritize plot; include style/voice quotes only if they add distinct cadence; label as "(plot)" or "(style)".
 - Use this deduped existing version for the next step.
@@ -52,7 +51,7 @@ STEP 2: Merge in NEW_CONTENT
 - Relationship nuance: capture shifts in trust/power/affection/resentment/boundaries/consent/debts/alliances; intimacy/kinks/boundaries when demonstrated.
 - Voice fidelity: preserve diction/cadence/mannerism/consent cues; add new ones only if a new facet; drop redundant cues; keep micro-quotes that anchor style; do not rewrite unchanged cues.
 - Relationship fidelity: preserve existing relationship/consent/boundary/affection/power/debt notes; add only if new facet; keep the most specific if similar.
-- Placement: prefer updating an existing fragment line over adding a new one; if adding, keep compact fragment style; normalize prose/bullets to compact fragments. If NEW_CONTENT empty -> return deduped existing exactly.
+- Placement: prefer updating an existing fragment line over adding a new one; if adding, keep compact fragment style; normalize prose/bullets to compact fragments.
 - Relationships: every counterpart that appears in EXISTING_CONTENT or NEW_CONTENT must remain represented by at least one merged line after combining; do not drop counterparts when merging.
 - Quotes: keep only unique (no paraphrased repeats); prioritize plot; include style/voice quotes only if they add distinct cadence; label each as "(plot)" or "(style)"; drop near-duplicates even if wording differs.
 
