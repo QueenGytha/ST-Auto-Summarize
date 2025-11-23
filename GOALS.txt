@@ -1,0 +1,12 @@
+We are working on an extension for SillyTavern for roleplay with AI
+ALL roleplay messages are removed from context after parsing, ONLY our recap and setting_lore (lorebook) entries remain
+recap is always in context, setting_lore is keyword activated
+
+separation of concerns:
+plot etc in recap
+anything relating to character tone/nuance etc in setting_lore
+
+we need to be as conservative as possible with tokens for both recap and setting_lore entries
+but we ALSO need to ensure we capture ALL relevant plot information, and all of the nuance for things like tone/relationship dynamics/mannerism/speech patterns etc, since ONLY our recap/setting_lore is available for the LLM to continue the roleplay, the messages themselves are entirely removed to save on context
+
+it's highly important that our setting_lore entries remove duplication of similar concepts etc, as the LLM loves to be overly verbose and fill this with all kinds of garbage
