@@ -1,55 +1,35 @@
 // REQUIRED MACROS:
-// - {{current_running_recap}} - Current running recap content (optional, may be empty)
+// - {{current_running_recap}} - Current running recap content (optional)
 // - {{scene_recaps}} - Combined scene recaps text
 
-export const running_scene_recap_prompt = `ROLE: Merge scene recaps into a running narrative for memory. You are an editor, not a participant. Output ONLY JSON.
+export const running_scene_recap_prompt = `ROLE: Merge scene recaps into a running recap. You are an editor, not a participant. Output ONLY JSON.
 
-OUTPUT: Response must start with { and end with }. No code fences or commentary.
-Shape (keep headers and order):
-{"recap": "# Running Narrative\n\n## Key Developments\n- Durable outcomes / state changes\n\n## Tone & Style\n- Genre; narrative voice (POV/tense); prose patterns; dialogue format; motifs\n\n## Pending Threads\n- Goals, timers, secrets, obligations"}
-
-Example (fragments; semicolons; terse):
-{"recap": "# Running Narrative\n\n## Key Developments\n- [travel] entered Haven via east gate; Senta shadowing Adam (unresolved)\n\n## Tone & Style\n- Genre: high fantasy; cultural conflict\n- Voice: close third; alternating POV\n- Dialogue: mindspeak italics w/ colons (*:text:*); parallel to speech\n- Motifs: demon-horse fear vs Companion reverence\n\n## Pending Threads\n- Find lodging at Companion's Bell (Tailor's Row)"}
+OUTPUT SHAPE:
+{"recap":"DEV: ...\\nREL: ...\\nTONE: ...\\nPEND: ..."}
+- One line per section; include only if something changed/occurred. If a section would be empty, omit that line entirely (no placeholders). No quotes.
 
 INPUTS:
 <CURRENT_TOTAL_RECAP>
 {{current_running_recap}}
 </CURRENT_TOTAL_RECAP>
 
-and
-
 <NEW_SCENE_RECAP>
 {{scene_recaps}}
-<NEW_SCENE_RECAP>
+</NEW_SCENE_RECAP>
 
-Use ONLY these texts; no outside knowledge. No assumptions, guesses, or inferrence. If it's not in either source, IT DID NOT HAPPEN.
-Assess CURRENT_TOTAL_RECAP against NEW_SCENE_RECAP - determine if anything is new/changed/redundant and update accordingly.
+RULES:
+- Use ONLY these inputs; no outside knowledge/guesses. If it's not in them, it did not happen.
+- Start from CURRENT_TOTAL_RECAP; edit in place. Keep lines that are still correct; update with new/changed info; drop resolved/superseded; no duplicates.
+- DEV: durable plot/state changes; decisions/promises/contracts; documents (verbatim if present); travel/combat; state/condition changes; relationship defaults changed by events; reveals. No character quotes.
+- REL: only shifts in relationship state (trust/power/affection/consent/boundaries/debts/alliances/leverage); trigger -> response -> outcome. Stable defaults belong in setting_lore, not here.
+- TONE: genre; POV/tense; narration texture; dialogue format; motifs/running jokes; pacing/mood/voice shifts with concrete cues. No character emotions/backstory.
+- PEND: goals/timers/secrets/promises/hooks (NPC and {{user}}); who/what + condition; drop when resolved.
+- Keep canonical names at least once; compress with fragments/semicolons; no filler. Do not expand unchanged lines. Do not emit empty section lines.
+- Preserve existing tags ([reveal], [plan], etc); do not invent new tags.
 
-MERGE RULES:
-- Start from CURRENT_TOTAL_RECAP; edit in place; avoid rewrite if still correct.
-- Keep relevant facts; drop resolved/superseded; no duplicates.
-- Integrate scene_recaps line-by-line; combine related facts; keep cause->effect traces.
-- Running recap = durable plot/state; setting_lore holds entity detail; minimize descriptors.
-- Quotes: keep only if essential; make them unique; mark each as "(plot)" or "(style)".
-- Resolved threads/plot points: keep as short historical stubs only when needed for continuity (who/what/why outcome).
-- Preserve nuance: promises, conditions, timers, obligations, secrets, foreshadowing.
-- Keep canonical names from scene_recaps at least once.
-- Location hierarchy: full chain once; shorten later when unambiguous.
-- Preserve existing tags ([reveal], [plan], etc); never invent new ones.
-
-BREVITY (token-critical):
-- Info-dense fragments; omit articles when clear; semicolons to pack related bits.
-- No filler ("currently", "seems", "appears", "is now", "has been"); no prose/fluff.
-- Abbreviate only when unambiguous (bc, w/).
-- If scene adds no durable change, leave sections unchanged.
-- Do NOT make existing bullets longer; tighten when possible.
-
-QUALITY CHECK BEFORE RESPONDING:
-- All active threads/obligations/secrets retained; conflicts resolved w/ newest info.
-- Tone & Style = writing style only (genre, POV/tense, prose patterns, dialogue style, motifs); no character emotions/relationships/backstory.
-- Canonical names present; category tags preserved; location chains unambiguous.
-- JSON safe: escape double quotes inside values. Recap text uses given headers in order.
-- Response must begin with { and end with }.
+QUALITY CHECK:
+- All active threads/hooks kept; conflicts resolved to newest info.
+- No quotes; JSON safe; output starts "{" and ends "}".
 
 {{#if current_running_recap}}
 // CURRENT RUNNING RECAP (edit in place):
@@ -63,4 +43,4 @@ QUALITY CHECK BEFORE RESPONDING:
 {{scene_recaps}}
 </NEW_SCENE_RECAP>
 
-// REMINDER: Output must be valid JSON starting with { and ending with }. Recap field is REQUIRED (markdown string).`;
+// REMINDER: Output must be valid JSON starting with { and ending with }. Recap field is REQUIRED.`;
