@@ -38,7 +38,7 @@ RECAP (single string; labeled lines; include a line only if something occurred/c
 - Use canonical names at least once; short handles after. Omit a line if nothing new.
 
 - SETTING_LORE (array; only entities referenced this scene with new/changed info):
-- Fields: name, type (from {{lorebook_entry_types}}), keywords, content; optional uid per UID rule.
+- Fields: name, type (from {{lorebook_entry_types}}), keywords, content; optional uid per UID rule. Never emit a setting_lore entry for {{user}} (or aliases/possessives); put {{user}}-related stance only in the counterpart's Relationships.
 - Delta-only: treat ACTIVE_SETTING_LORE as baseline. If a fact/idea is already present there (same meaning), DO NOT include it again. Only add lines that are newly demonstrated or changed this scene. If nothing new/changed for an entity, omit that entry entirely. For existing entities, skip identity/appearance/capabilities/relationships unless the facet itself changed.
 - Name/type reuse: if entity exists in ACTIVE_SETTING_LORE, reuse exact name+type; no aliases/possessives. Do NOT mix facets of multiple entities; other-entity info lives only in Relationships. If text refers to another entity, do not create/merge it here - represent it only as a Relationship in that entity's entry when relevant. Keep entries distinct; no cross-merge.
 - Omit the entry if the scene adds no new/changed facet. Mere mention/presence is not enough. Do NOT restate or rephrase facts already in ACTIVE_SETTING_LORE - only add truly new/changed facets; leave unchanged facets out. Generic/world lore entries only if a new fact is introduced; otherwise omit.
@@ -73,6 +73,7 @@ RECAP (single string; labeled lines; include a line only if something occurred/c
 - Name/type reuse exact when matching ACTIVE_SETTING_LORE; no aliases.
 - UID: include only when exact match to ACTIVE_SETTING_LORE entry with uid; never invent/alter; if uncertain, emit entry with no uid (do not drop).
 - For every candidate facet, check ACTIVE_SETTING_LORE: if the idea is already there, drop it; only new/changed info survives. Omit any entity with no surviving new facets.
+- Final user check: if any setting_lore entry name matches {{user}} (or alias/possessive), delete that entry entirely; keep {{user}} stance only as a relationship line inside the relevant NPC's entry.
 
 REMINDER: Respond with JSON only: {"scene_name": "...", "recap": "...", "setting_lore": [...]}
 No character-{{user}} entries in setting_lore. Output must start with "{" and end with "}". UID REMINDER: copy uid only from ACTIVE_SETTING_LORE on exact entity match (name+type+identity); otherwise omit; never invent/alter uid values.

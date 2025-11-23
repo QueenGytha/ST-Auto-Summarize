@@ -732,7 +732,8 @@ export function registerAllOperationHandlers() {
         OperationType.GENERATE_SCENE_RECAP,
         { index: sceneBreakAt },
         {
-          priority: 20, // Highest priority
+          // Run after lorebook pipeline/combine (priorities 10–14)
+          priority: 9,
           queueVersion: operation.queueVersion,
           metadata: {
             scene_index: sceneBreakAt,
@@ -928,7 +929,8 @@ export function registerAllOperationHandlers() {
         OperationType.GENERATE_SCENE_RECAP,
         { index: firstBreak },
         {
-          priority: 20,  // HIGHEST
+          // Run after lorebook pipeline/combine (priorities 10–14)
+          priority: 9,
           queueVersion: operation.queueVersion,
           metadata: {
             triggered_by: 'backwards_detection',
@@ -1212,7 +1214,8 @@ export function registerAllOperationHandlers() {
           OperationType.GENERATE_SCENE_RECAP,
           { index: nextBreak },
           {
-            priority: 20,  // HIGHEST
+            // Run after lorebook pipeline/combine (priorities 10–14)
+            priority: 9,
             queueVersion: operation.queueVersion,
             metadata: {
               triggered_by: 'backwards_chain_continuation',
