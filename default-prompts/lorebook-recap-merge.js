@@ -15,7 +15,11 @@ OUTPUT:
   "canonicalName": "ProperName or null"
 }
 
+Response MUST start with { and end with }; no preamble or code fences.
+
 UID handling is upstream; do NOT invent or alter.
+
+SUBJECT LOCK: The entry subject is fixed to {{entry_name}} (and its existing identity/type). Do NOT change the subject or canonicalName to another entity. If NEW_CONTENT describes another entity (e.g., "X's Companion"), convert that info into a Relationships line for that counterpart when relevant; never merge another entity's attributes/state/identity/capabilities/voice into this one.
 
 TWO-STEP MERGE (do both; output final only)
 
@@ -33,6 +37,7 @@ EXISTING_CONTENT:
 
 STEP 2: Merge in NEW_CONTENT
 - Compare NEW_CONTENT to the deduped set; update changed facts; add only new facets; do not reintroduce overlaps or generic fluff.
+- If NEW_CONTENT references another entity (different name/type), represent it only as a Relationship line to that counterpart if relevant; never rewrite this subject's identity/appearance/state/capabilities/voice to another entity.
 - Normalize NEW_CONTENT to compact fragment lines; merge into existing lines when similar.
 - Keep causal clarity for history (e.g., promise -> consequence) only if relevant to behavior/stance.
 - Only include facets if referenced in NEW_CONTENT or already present and updated.
@@ -55,15 +60,17 @@ FACET GUIDE (include only when shown and consequential; skip if unchanged):
 - Notable dialogue: one-line vows/triggers/voice samples only; verbatim; no paraphrase; no {{user}}.
 - Secrets/Leverage: only if consequential and shown.
 - Do NOT repeat recap events; keep only the resulting state/traits.
+- Keywords: only canonical/alias tokens actually used; emit 1-6 max; lowercase; dedupe; omit if none are meaningful.
 
 PRE-FLIGHT (before output):
 - Overlaps merged? No duplicated ideas within or across facets?
-- Only demonstrated info; no guessed emotions/inner thoughts.
+- Only demonstrated info; no guessed emotions/inner thoughts; no speculative motives.
 - Compact fragments; semicolons; no filler words.
 - Quotes unique and minimal; no {{user}} quotes.
+- Subject unchanged; canonicalName must remain entry_name (if it is a proper name) or null; no attributes/state/identity from other entities merged; any other-entity info either discarded or in Relationships only.
 - Every counterpart present in either source still represented at least once if relevant; none invented.
 
 canonicalName rules:
-- Use full proper name if available (prefer entry_name if it is a proper name); else first name; else null.
+- Always use entry_name if it is a proper name for this subject; else first name; else null. Never set to another entity.
 
 OUTPUT JSON only.`;
