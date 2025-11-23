@@ -48,7 +48,7 @@ FACET GUIDE (include only when shown and consequential; skip if unchanged):
 - Identity/Synopsis: <=10 words; role if needed.
 - Appearance: only distinctive, referenced.
 - State: observed location/condition (as seen), terse.
-- Capabilities/limits: demonstrated and consequential.
+- Capabilities: demonstrated and consequential, including limits.
 - Behavioral triggers/defaults: trigger -> response -> outcome that affects future behavior.
 - Relationships: per counterpart, demonstrated stance/promise/debt/leverage; include trigger/outcome of change; keep one minimal line per counterpart; no generic feelings.
 - Intimacy/Aftercare: only if explicitly shown; kinks/turn-ons; hard/soft limits; aftercare/comfort; explicit, change-only.
