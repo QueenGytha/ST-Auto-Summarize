@@ -25,7 +25,7 @@ TWO-STEP MERGE (do both; output final only)
 
 STEP 1: Deduplicate EXISTING_CONTENT
 - Rewrite into compact fragment lines (no prose, no bullets). Semicolons; no filler.
-- Keep only demonstrated facets; drop generic personality fluff. If any facet repeats the same idea, merge to one minimal line.
+- Keep only demonstrated facets; drop generic personality fluff. If any facet repeats the same idea, merge to one minimal line. Do NOT rephrase or restate unchanged facts—keep the shortest, most specific original phrasing.
 - Keep per-facet uniqueness: Identity, Appearance, State, Capabilities/limits, Behavioral triggers, Relationships (per counterpart), Intimacy/Aftercare (if present), Voice/Mannerisms, Notable dialogue, Secrets/Leverage. Remove Psychology/Micro-Moments/consent boilerplate if present unless explicitly shown.
 - Quotes: keep only unique vows/triggers/voice samples; drop paraphrases; no {{user}} quotes.
 - Use this deduped set for Step 2; do not emit it separately.
@@ -36,12 +36,12 @@ EXISTING_CONTENT:
 </EXISTING_CONTENT>
 
 STEP 2: Merge in NEW_CONTENT
-- Compare NEW_CONTENT to the deduped set; update changed facts; add only new facets; do not reintroduce overlaps or generic fluff.
+- Compare NEW_CONTENT to the deduped set; update changed facts; add only new facets; do not reintroduce overlaps or generic fluff. Do NOT rephrase unchanged facts.
 - If NEW_CONTENT references another entity (different name/type), represent it only as a Relationship line to that counterpart if relevant; never rewrite this subject's identity/appearance/state/capabilities/voice to another entity.
 - Normalize NEW_CONTENT to compact fragment lines; merge into existing lines when similar.
 - Keep causal clarity for history (e.g., promise -> consequence) only if relevant to behavior/stance.
-- Only include facets if referenced in NEW_CONTENT or already present and updated.
-- Quotes: only vows/triggers/voice samples; keep unique; no labels; no {{user}} quotes.
+- Only include facets if referenced in NEW_CONTENT or already present and updated. If NEW_CONTENT repeats something already captured, keep the shortest, most specific phrasing and discard the duplicate; do not add a second line.
+  - Quotes: only vows/triggers/voice samples; keep unique; no labels; no {{user}} quotes. Do not repeat the same quote intent/cadence—keep one shortest verbatim version only.
 
 NEW_CONTENT:
 <NEW_CONTENT>

@@ -26,12 +26,12 @@ GLOBAL RULES:
 - No speculation: omit motives/feelings/assumptions not explicitly stated; if not shown, leave it out.
 - Demonstrated-only: if it did not happen or shift in the transcript, do not add it. No guessed emotions.
 - Change-only: emit setting_lore only when NEW or CHANGED vs ACTIVE_SETTING_LORE. Reuse exact name+type when updating; otherwise treat as new (no uid).
-- Hard block: never create a character-{{user}} setting_lore entry. If an NPC's stance toward {{user}} matters, put it in that NPC's Relationships.
+- Hard block: never create a setting_lore entry whose name matches {{user}} (or aliases/possessives). If an NPC's stance toward {{user}} matters, put it in that NPC's Relationships. If unsure whether an entity is {{user}}, omit it.
 - Describe state exactly as shown this scene; do not assert "current."
 
-RECAP (single string; labeled lines; include a line only if something occurred/changed; NEVER include quotes in recap—put them in setting_lore if needed):
+RECAP (single string; labeled lines; include a line only if something occurred/changed; NEVER include quotes or feelings in recap—put quotes in setting_lore if needed):
 - DEV: cause->effect plot beats; decisions/promises/contracts; documents (verbatim); travel/combat; state/condition changes; relationship defaults changed by events; reveals. No quotes. No paraphrased feelings.
-- REL: only shifts in relationship state (trust/power/affection/consent/boundaries/debts/alliances/leverage) between characters (including {{user}}); trigger -> response -> outcome. No feelings unless explicitly voiced; stable defaults go in setting_lore; no paraphrased warmth/approval/etc.
+- REL: only shifts in relationship state (trust/power/affection/consent/boundaries/debts/alliances/leverage) between characters (including {{user}}); trigger -> response -> outcome. No feelings/emotions; stable defaults go in setting_lore; no paraphrased warmth/approval/etc.
 - TONE: genre; POV/tense; narration texture; dialogue format; motifs/running jokes; pacing/mood/voice shifts with concrete cues (e.g., voice close 3p -> 1p after vow). No backstory or guessed emotions.
 - PEND: goals/timers/secrets/promises/hooks (NPC and {{user}}); who/what + condition; drop when resolved.
 - Use canonical names at least once; short handles after. Omit a line if nothing new.
@@ -39,6 +39,7 @@ RECAP (single string; labeled lines; include a line only if something occurred/c
 SETTING_LORE (array; only entities referenced this scene with new/changed info):
 - Fields: name, type (from {{lorebook_entry_types}}), keywords, content; optional uid per UID rule.
 - Name/type reuse: if entity exists in ACTIVE_SETTING_LORE, you MUST reuse exact name+type; do NOT emit with possessives/aliases. Do NOT mix facets of multiple entities; other-entity info goes in Relationships only. If scene text refers to another entity, do not create/merge it here—represent it only as a Relationship in that entity's entry when relevant. If unsure or cannot match exactly, omit the entry rather than risk a wrong merge/uid.
+- If an entity is already in ACTIVE_SETTING_LORE and the scene adds no new/changed facet, omit the entry. Mere mention/presence is not enough. Do NOT restate or rephrase existing facts from ACTIVE_SETTING_LORE—only add truly new/changed facets.
 - Keywords: only canonical/alias tokens actually used in scene; emit 0-6; lowercase; dedupe; no generic fluff; omit if none are meaningful.
 - Content: compact fragments; semicolons; omit empty fields. Include only facets shown this scene that affect behavior/tone/recognition; skip generic personality; do not repeat recap events. Keep it as short as possible without losing demonstrated nuance. If a facet has no meaningful change, omit that facet entirely; if an entity has no meaningful change or identity is ambiguous, omit the entry.
   * Identity/Synopsis: < 10 words; include role if needed to identify.
