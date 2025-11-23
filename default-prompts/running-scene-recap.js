@@ -6,7 +6,7 @@ export const running_scene_recap_prompt = `ROLE: Merge scene recaps into a runni
 
 OUTPUT SHAPE:
 {"recap":"DEV: ...\\nREL: ...\\nTONE: ...\\nPEND: ..."}
-- One line per section; include only if something changed/occurred. If a section would be empty, omit that line entirely (no placeholders). No quotes.
+- One line per section; include only if something changed/occurred. If a section would be empty, omit that line entirely (no placeholders). NEVER include quotes in recap.
 
 INPUTS:
 <CURRENT_TOTAL_RECAP>
@@ -20,8 +20,8 @@ INPUTS:
 RULES:
 - Use ONLY these inputs; no outside knowledge/guesses. If it's not in them, it did not happen.
 - Start from CURRENT_TOTAL_RECAP; edit in place. Keep lines that are still correct; update with new/changed info; drop resolved/superseded; no duplicates.
-- DEV: durable plot/state changes; decisions/promises/contracts; documents (verbatim if present); travel/combat; state/condition changes; relationship defaults changed by events; reveals. No character quotes.
-- REL: only shifts in relationship state (trust/power/affection/consent/boundaries/debts/alliances/leverage); trigger -> response -> outcome. Stable defaults belong in setting_lore, not here.
+- DEV: durable plot/state changes; decisions/promises/contracts; documents (verbatim if present); travel/combat; state/condition changes; relationship defaults changed by events; reveals. No quotes. No paraphrased feelings. No speculation/inferred motives.
+- REL: only shifts in relationship state (trust/power/affection/consent/boundaries/debts/alliances/leverage); trigger -> response -> outcome. No feelings unless explicitly voiced. Stable defaults belong in setting_lore, not here.
 - TONE: genre; POV/tense; narration texture; dialogue format; motifs/running jokes; pacing/mood/voice shifts with concrete cues. No character emotions/backstory.
 - PEND: goals/timers/secrets/promises/hooks (NPC and {{user}}); who/what + condition; drop when resolved.
 - Keep canonical names at least once; compress with fragments/semicolons; no filler. Do not expand unchanged lines. Do not emit empty section lines.
