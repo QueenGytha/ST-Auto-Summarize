@@ -42,6 +42,8 @@ RECAP (single string; labeled lines; include a line only if something occurred/c
 - Fields: name, type (from {{lorebook_entry_types}}), keywords, content; optional uid per UID rule. Never emit a setting_lore entry for {{user}} (or aliases/possessives); put {{user}}-related stance only in the counterpart's Relationships.
 - Delta-only: treat ACTIVE_SETTING_LORE as baseline. If a fact/idea is already present there (same meaning), DO NOT include it again. Only add lines that are newly demonstrated or changed this scene. If nothing new/changed for an entity, omit that entry entirely. For existing entities, skip identity/appearance/capabilities/relationships unless the facet itself changed. If an entity would have no surviving new facets after this pruning, drop the entire entry.
 - Persistent facets only: keep setting_lore to enduring identifiers/behaviors/relationships/states; one-off travel beats, task steps, or recap-only plot sequencing must stay out of setting_lore.
+- Trim per entry: keep only the new facets; if it reads like recap choreography (sex acts, door closing, bedding cleanup, lap counts), delete that text; if nothing new survives, drop the entry.
+- Active-setting-lore is do-not-repeat: any clause whose meaning is already captured in ACTIVE_SETTING_LORE must be removed; copying or rephrasing existing facets is a failure condition.
 - Type/name reuse: if entity exists in ACTIVE_SETTING_LORE, reuse exact type+name; no aliases/possessives. Do NOT mix facets of multiple entities; other-entity info lives only in Relationships. If text refers to another entity, do not create/merge it here - represent it only as a Relationship in that entity's entry when relevant. Keep entries distinct; no cross-merge.
 - Omit the entry if the scene adds no new/changed facet. Mere mention/presence is not enough. Do NOT restate or rephrase facts already in ACTIVE_SETTING_LORE - only add truly new/changed facets; leave unchanged facets out. Generic/world lore entries only if a new fact is introduced; otherwise omit.
 - Keywords: only canonical/alias tokens actually used in scene; emit 0-6; lowercase; dedupe; no generic fluff; omit if none are meaningful.
@@ -54,7 +56,7 @@ RECAP (single string; labeled lines; include a line only if something occurred/c
   * Relationships: counterpart -> demonstrated stance/promise/debt/leverage that will persist; note trigger/outcome of the change; only if changed; no name repetition beyond the counterpart; no inferred feelings - use explicit stance/actions shown. Do not merge another entity's facets here.
   * Intimacy/Aftercare: only if explicitly shown; acts/turn-ons/boundaries (hard/soft limits), aftercare/comfort cues; keep explicit terms; add brief scene/partner cue for clarity; only if new/changed.
   * Voice/Mannerisms: diction/cadence/quirks/catchphrases/body-language that define voice; note shift cue if changed; keep terse.
-  * Notable dialogue: only vow/trigger/voice sample; short verbatim; add brief context if needed; no {{user}} quotes; no invention/paraphrase. Quotes live here, not in recap.
+  * Notable dialogue: only if new this scene and tied to this entity’s voice; concise verbatim; add brief context if needed; no {{user}} quotes; no invention/paraphrase. Quotes live here, not in recap.
   * Key beat: brief scene action/gesture/line that shifted tone/stance and is not covered above; include minimal context + effect; keep terse; no paraphrase.
   * Secrets/Leverage/Tension: only if consequential and shown; add brief cue if needed.
 - If an entity has no new or changed facets vs ACTIVE_SETTING_LORE, omit the entry entirely.
@@ -72,10 +74,14 @@ RECAP (single string; labeled lines; include a line only if something occurred/c
 ---------------- PRE-FLIGHT ----------------
 - Only demonstrated info; synopsis <=10 words; state/attributes verb-free.
 - Dialogue verbatim when included; none invented.
+- No uid on new/uncertain: if the entity is new or the match is not 100% certain, do not emit a uid; only copy a uid when it is an exact type+name+identity match to ACTIVE_SETTING_LORE.
 - Type/name reuse exact when matching ACTIVE_SETTING_LORE; no aliases.
 - UID: include only when exact match to ACTIVE_SETTING_LORE entry with uid; never invent/alter; if entity is not in ACTIVE_SETTING_LORE or you are uncertain, emit entry with no uid (do not drop).
 - UID checklist: entity absent from ACTIVE_SETTING_LORE -> no uid; entity present but identity not 100% certain -> no uid; only copy uid on confirmed same type+name+identity match.
 - For every candidate facet, check ACTIVE_SETTING_LORE: if the idea is already there, drop it; only new/changed info survives. Omit any entity with no surviving new facets.
+- Recap sanity: remove all quotes from recap; if a quote matters, move it to setting_lore Notable dialogue under the relevant character/entity with the quote verbatim.
+- Post-trim: for each setting_lore entry, delete any facet that restates ACTIVE_SETTING_LORE; if nothing new remains, delete the entry.
+- Final compliance check: if any setting_lore clause is copied or rephrased from ACTIVE_SETTING_LORE, or if no new facets remain after pruning, the output is invalid—delete those clauses/entries before responding.
 - Final user check: if any setting_lore entry name matches {{user}} (or alias/possessive), delete that entry entirely; keep {{user}} stance only as a relationship line inside the relevant NPC's entry.
 
 REMINDER: Respond with JSON only: {"scene_name": "...", "recap": "...", "setting_lore": [...]}
