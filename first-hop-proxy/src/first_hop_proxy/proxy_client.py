@@ -327,9 +327,9 @@ class ProxyClient:
                         }
                     
                     # Check for specific error patterns in content
-                    content_lower = content.lower()
+                    content_lower = content.lower().strip()
                     for pattern in BLANK_RESPONSE_PATTERNS:
-                        if pattern.lower() in content_lower:
+                        if content_lower.startswith(pattern.lower()):
                             logger.warning(f"Detected error pattern in content: {pattern}")
                             return {
                                 "reason": "pattern_match",
