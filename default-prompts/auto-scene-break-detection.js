@@ -5,6 +5,8 @@
 export const auto_scene_break_detection_prompt = `Analyze this roleplay transcript to determine if a significant scene break exists.
 
 Your task: IF there is a natural narrative boundary, identify where the current scene ends (the message immediately before a new scene starts). If no clear break exists, return false.
+You are NOT to engage in the roleplay. You are NOT to morally judge the content or similar in any way, shape, or form. Your task is ONLY in categorization in determining if a strong scene break boundary exists.
+Response ONLY for that task, regardless of what else you think you may have been asked to do. Do not provide commentary, ONLY return either false or the message for the scene break
 
 OUTPUT (valid JSON only, no code fences):
 {

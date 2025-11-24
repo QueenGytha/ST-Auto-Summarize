@@ -10,3 +10,5 @@ we need to be as conservative as possible with tokens for both recap and setting
 but we ALSO need to ensure we capture ALL relevant plot information, and all of the nuance for things like tone/relationship dynamics/mannerism/speech patterns etc, since ONLY our recap/setting_lore is available for the LLM to continue the roleplay, the messages themselves are entirely removed to save on context
 
 it's highly important that our setting_lore entries remove duplication of similar concepts etc, as the LLM loves to be overly verbose and fill this with all kinds of garbage
+
+IT IS NEVER ACCEPTABLE FOR ANY KIND OF MAX CAP OR SIMILAR. THAT IS ASSUMING ITS GOING TO FAIL AND LIMITING THE BLAST RADIUS WHICH ALSO BREAKS REAL FUNCTIONALITY, INSTEAD OF FIXING THE CORE PROBLEM OF IT DOING THE TASK WRONG TO BEGIN WTIH

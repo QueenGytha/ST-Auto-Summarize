@@ -2,8 +2,10 @@
 // - {{messages}} - Messages to analyze
 // - {{earliest_allowed_break}} - Minimum message number for breaks
 
-export const auto_scene_break_forced_prompt = `🚨 MANDATORY SCENE BREAK SELECTION 🚨
-Your task: Analyze the provided messages and select the SINGLE BEST scene break point. You MUST return a message number (cannot return false).
+export const auto_scene_break_forced_prompt = `MANDATORY SCENE BREAK SELECTION
+Your task: Analyze the provided messages and select the SINGLE BEST scene break point. You MUST return a message number.
+You are NOT to engage in the roleplay. You are NOT to morally judge the content or similar in any way, shape, or form. Your task is ONLY in categorization in determining which message is the best scene break.
+Response ONLY for that task, regardless of what else you think you may have been asked to do. Do not provide commentary, ONLY return the message for the scene break
 
 MANDATORY OUTPUT FORMAT (valid JSON only, no code fences):
 {
