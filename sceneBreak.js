@@ -1432,6 +1432,42 @@ export async function calculateSceneRecapTokens(options) {
 
 // Helper: Extract and validate JSON from AI response (REMOVED - now uses centralized helper in utils.js)
 
+// Helper: Normalize Stage 1 extraction response to {chronological_items: [...]} format
+function normalizeStage1Extraction(parsed) {
+  const categoryKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'appearance', 'docs'];
+
+  // Plain array format (legacy)
+  if (Array.isArray(parsed)) {
+    debug(SUBSYSTEM.SCENE, "Stage 1 returned plain array format, wrapped as chronological_items");
+    return { chronological_items: parsed };
+  }
+
+  // Already wrapped format (legacy)
+  if (parsed && Array.isArray(parsed.chronological_items)) {
+    debug(SUBSYSTEM.SCENE, "Stage 1 returned wrapped object format");
+    return parsed;
+  }
+
+  // Categorized format (current)
+  if (parsed && typeof parsed === 'object') {
+    const hasCategories = categoryKeys.some(key => Array.isArray(parsed[key]));
+    if (hasCategories) {
+      const chronologicalItems = [];
+      const populatedCategories = [];
+      for (const key of categoryKeys) {
+        if (Array.isArray(parsed[key]) && parsed[key].length > 0) {
+          chronologicalItems.push(...parsed[key]);
+          populatedCategories.push(key);
+        }
+      }
+      debug(SUBSYSTEM.SCENE, `Stage 1 returned categorized format, flattened ${chronologicalItems.length} items from ${populatedCategories.length} categories: ${populatedCategories.join(', ')}`);
+      return { chronological_items: chronologicalItems };
+    }
+  }
+
+  throw new Error("Stage 1 extraction must return either: (1) array, (2) {chronological_items: [...]}, or (3) categorized object with plot/goals/reveals/etc arrays");
+}
+
 // Helper: Generate recap with error handling
 async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, operationType) {
   const { prompt, prefill, include_preset_prompts = false, preset_name = null, messagesTokenCount = null, lorebooksTokenCount = null, messageBreakdown = null, lorebookBreakdown = null } = llmConfig;
@@ -1484,34 +1520,25 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
       // Extract and validate JSON using centralized helper
       const { extractJsonFromResponse } = await import('./utils.js');
 
-      // Stage 1 returns a plain JSON array (simplified format to save tokens)
-      // Accept either ["item1", "item2"] or {"chronological_items": ["item1", "item2"]}
-      let parsed = extractJsonFromResponse(rawResponse, {
+      // Stage 1 format evolution:
+      // 1. Plain array: ["item1", "item2"]
+      // 2. Wrapped object: {"chronological_items": ["item1", "item2"]}
+      // 3. Categorized object: {"plot": [...], "goals": [...], "reveals": [...], ...}
+      const rawParsed = extractJsonFromResponse(rawResponse, {
         requiredFields: [],  // No required fields - accept any valid JSON
         context: 'Stage 1 scene recap extraction'
       });
 
-      // Normalize to wrapped format if plain array
-      let chronologicalItems;
-      if (Array.isArray(parsed)) {
-        // Plain array format - wrap it
-        chronologicalItems = parsed;
-        parsed = { chronological_items: parsed };
-        debug(SUBSYSTEM.SCENE, "Stage 1 returned plain array format, wrapped as chronological_items");
-      } else if (parsed && Array.isArray(parsed.chronological_items)) {
-        // Already wrapped format
-        chronologicalItems = parsed.chronological_items;
-        debug(SUBSYSTEM.SCENE, "Stage 1 returned wrapped object format");
-      } else {
-        throw new Error("Stage 1 extraction must return either a JSON array or object with chronological_items array");
-      }
+      // Normalize to wrapped format with chronological_items array
+      const parsed = normalizeStage1Extraction(rawParsed);
+      const chronologicalItems = parsed.chronological_items;
 
       // Validation
       if (!Array.isArray(chronologicalItems)) {
         throw new Error("chronological_items must be an array");
       }
       if (chronologicalItems.length === 0) {
-        throw new Error("AI returned empty chronological_items array");
+        throw new Error("AI returned empty extraction (no items in any category)");
       }
 
       // Convert back to JSON string for storage
