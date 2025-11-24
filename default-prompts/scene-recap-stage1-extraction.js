@@ -21,14 +21,14 @@ OUTPUT FORMAT (keys exact):
 </ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
 
 RULES:
-- Verbatim only; no outside canon; names as written. Keep author wording; do not paraphrase or invent. Drop metaphors/emotive padding and bond-poetry.
-- Quotes go in "voice" only if they show decision/goal/reveal/stance/claim OR unique voice/mannerism/style/relationship nuance not already captured. Include speaker if stated. Drop filler/banter/insults only when they add nothing to voice/stance/relationship.
+- Verbatim only; no outside canon; names as written. Keep author wording; do not paraphrase or invent. Drop metaphors/emotive padding/bond-poetry.
+- Quotes in "voice" only if they show decision/goal/reveal/stance/claim OR unique voice/mannerism/style/relationship nuance not already captured. Include speaker if stated. Keep one quote per distinct stance/voice; drop filler/banter/insults if they add nothing.
 - Non-quote fragments: concise but complete; include who/what/why/outcome when needed. Literal wording only; avoid added adjectives/adverbs; no scene-painting.
 - Allowed content = Purpose list only. Drop scenery/ambient color, generic movement/posture/emotion/pacing, "connection strength," capability boilerplate unless new and consequential (and not already in lore), and anything not relevant to plot/tone/relationships/voice.
-- Appearance: one concise identifier per entity (name + key traits) only once; do not emit multiple appearance lines for the same entity.
+- Appearance: one concise identifier per entity (name + key traits) only once.
 - Merge when details are part of the same fact and fit in one fragment with who/what/why/outcome intact. Do NOT drop nuance; keep separate entries when combining would lose context or meaning. Drop repeated stance/banter unless it adds new voice/relationship nuance.
 - Dedup by meaning: merge exact/near-duplicate phrasings to the shortest verbatim phrasing; keep distinct allowed facts; merge only if nothing stated is lost.
-- No micro-choreography unless it changes state/stance/goal/reveal or is a notable mannerism/voice cue.
+- No micro-choreography or travel/handling beats unless they change state/stance/goal/reveal or are a notable mannerism/voice cue.
 - One fact per entry; do not combine unrelated facts. Place each fact in the most fitting category (plot/goals/reveals/state/tone/stance/voice/appearance/docs).
 - If uncertain, omit.
 - Output only the JSON object; no preamble/headings/code fences.`;

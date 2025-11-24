@@ -92,6 +92,17 @@ function get_message_div(index) {
   return $(`div[mesid="${index}"]`);
 }
 
+// Helper: Get scene range from Stage 1 metadata
+function getSceneRangeFromMetadata(index) {
+  const ctx = getContext();
+  const message = ctx.chat[index];
+  const stage1Metadata = get_data(message, 'stage1_lorebook_metadata') || {};
+  return {
+    startIdx: stage1Metadata.startIdx,
+    endIdx: stage1Metadata.endIdx
+  };
+}
+
 // Helper: Check if lorebook lookup can be skipped (empty lorebook optimization)
 function checkCanSkipLorebookLookup(operation, entryData) {
   if (operation.metadata?.lorebook_was_empty_at_scene_start !== true) {
@@ -1024,11 +1035,17 @@ export function registerAllOperationHandlers() {
 
       toast(`✓ Stage 1 extraction complete for message ${index}`, 'success');
 
+      // Get scene range from Stage 1 lorebook metadata for display
+      const { startIdx, endIdx } = getSceneRangeFromMetadata(index);
+
       // Queue Stage 2 (PARSE_SCENE_RECAP) to filter and format the extracted data
-      debug(SUBSYSTEM.QUEUE, `Queueing PARSE_SCENE_RECAP for scene at index ${index}`);
+      debug(SUBSYSTEM.QUEUE, `Queueing PARSE_SCENE_RECAP for scene at index ${index} (range: ${startIdx}-${endIdx})`);
 
       const parseMetadata = {
-        manual: operation.metadata?.manual === true
+        manual: operation.metadata?.manual === true,
+        // Include scene range for UI display
+        start_index: startIdx,
+        end_index: endIdx
       };
 
       // Pass through backwards chain metadata if present
@@ -1036,6 +1053,14 @@ export function registerAllOperationHandlers() {
         parseMetadata.backwards_chain = true;
         parseMetadata.backwards_chain_remaining = operation.metadata.backwards_chain_remaining;
         parseMetadata.backwards_chain_forward_continuation = operation.metadata.backwards_chain_forward_continuation;
+      }
+
+      // Update GENERATE_SCENE_RECAP operation metadata with scene range
+      if (startIdx !== undefined && endIdx !== undefined) {
+        await updateOperationMetadata(operation.id, {
+          start_index: startIdx,
+          end_index: endIdx
+        });
       }
 
       await enqueueOperation(

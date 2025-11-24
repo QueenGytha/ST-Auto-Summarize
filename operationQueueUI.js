@@ -664,6 +664,10 @@ function formatCombineSceneOperationParams(params, metadata = {}) {
 }
 
 function formatMessageOperationParams(params, metadata = {}) {
+  // Check if metadata has scene range (for GENERATE_SCENE_RECAP and PARSE_SCENE_RECAP)
+  if (params.index !== undefined && metadata.start_index !== undefined && metadata.end_index !== undefined) {
+    return `Message #${params.index} (${metadata.start_index}-${metadata.end_index})`;
+  }
   if (params.index !== undefined) {
     return `Message #${params.index}`;
   }

@@ -26,13 +26,13 @@ PRE-FLIGHT:
 - Facts only; if uncertain, omit. Quotes stay verbatim when used.
 - Baseline = CURRENT_SETTING_LORE entry with same type+name. No cross-entity comparisons.
 - {{user}} is USER; never make a setting_lore entry for them.
-- Brevity/Signal: fragments; semicolons; drop filler/adjectives; no metaphoric/emotive padding or bond-poetry. Ignore ambient/appearance/scenery unless it changes plot/state/stance/voice/goals/reveals. Trim capability boilerplate unless new. Keep banter only when it carries voice/style/relationship nuance.
+- Brevity/Signal: fragments; semicolons; drop filler/adjectives; no metaphoric/emotive padding or bond-poetry. Ignore ambient/appearance/scenery unless it changes plot/state/stance/voice/goals/reveals. Trim capability boilerplate unless new and not already in baseline. Keep banter only when it carries voice/style/relationship nuance.
 
 WORKFLOW
 1) Collect fragments: combine all arrays in EXTRACTED_DATA (expected categories and any unexpected keys) into a working pool.
 2) Normalize: collapse exact/near-duplicates; merge only when meaning is identical; keep speaker/target/cause->effect where present.
 3) Consolidate multi-part facts when they describe one fact. Keep distinct beats separate.
-4) Drop metaphoric/emotive padding and appearance bloat; keep one concise appearance identifier per entity; drop capability boilerplate if already in baseline.
+4) Drop metaphoric/emotive padding, bond-poetry, micro-choreography/handling beats, and appearance bloat; keep one concise appearance identifier per entity; drop capability boilerplate if already in baseline.
 5) Baseline delta: per entity, drop facets already present in baseline meaning. If nothing new/changed, drop the entity.
 6) UID: copy uid only when type+name exactly match a baseline with a uid. Never invent/reuse.
 7) Categorize into output:
