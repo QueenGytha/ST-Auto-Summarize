@@ -30,6 +30,7 @@ RULES (HARD WHITELIST):
   * ONE appearance identifier per entity (name + key trait/role) across the entire output;
   * verbatim document contents (titles/clauses).
 - DROP EVERYTHING ELSE: ambient/scenery/tone/mood; travel/movement/approach/handling/“looks”/gaze/pauses/turns/steps; physical micro-actions; meta/stage directions/placeholders/formatting notes; capability boilerplate (distances, speeds, endurance, “can travel…”); generic emotions/posture; mindvoice descriptors; repeated stance/voice; repeated appearance.
+- Travel: keep ONLY once as a goal/plan/contingency if it matters (e.g., “to Haven to report/train”); drop all other travel/route/pace/handling beats from plot/state.
 - If a fact/quote is already captured, skip later restatements; keep the shortest verbatim phrasing once.
 - Non-quote fragments must be concise but complete (who/what/why/outcome when needed). One fact per entry; do not combine unrelated facts.
 - Put each fact in the single best category (plot/goals/reveals/state/stance/voice/appearance/docs).

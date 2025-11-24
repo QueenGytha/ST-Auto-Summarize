@@ -26,6 +26,7 @@ PRE-FLIGHT:
 - Facts only; if uncertain, omit. Quotes stay verbatim when used.
 - Baseline = CURRENT_SETTING_LORE entry with same type+name. No cross-entity comparisons.
 - {{user}} is USER; never make a setting_lore entry for them.
+- UID reuse rule: ONLY reuse a uid when both type AND name exactly match a baseline entry. If names differ in any way, do NOT copy the uid.
 - Brevity/Signal: fragments; semicolons; drop filler/adjectives; no metaphoric/emotive padding or bond-poetry. Ignore ambient/appearance/scenery unless it changes plot/state/stance/voice/goals/reveals. Trim capability boilerplate unless new and not already in baseline. Keep banter only when it carries voice/style/relationship nuance.
 
 WORKFLOW
@@ -34,7 +35,7 @@ WORKFLOW
 3) Consolidate multi-part facts when they describe one fact. Keep distinct beats separate.
 4) Drop metaphoric/emotive padding, bond-poetry, micro-choreography/handling beats, and appearance bloat; keep one concise appearance identifier per entity; drop capability boilerplate if already in baseline.
 5) Baseline delta: per entity, drop facets already present in baseline meaning. If nothing new/changed, drop the entity.
-6) UID: copy uid only when type+name exactly match a baseline with a uid. Never invent/reuse.
+6) UID: copy uid only when type+name exactly match a baseline with a uid. Never invent/reuse when names differ.
 7) Categorize into output:
    - Recap (rc): plot beats, decisions/promises/contracts, state changes, reveals. PEND for active goals/timers/secrets/promises/hooks (who/what + condition). Ignore appearance/scenery unless it changes plot/state.
    - Setting_lore (sl): only persistent NEW/CHANGED facets per entity. No one-off choreography/travel. Stance/affection/boundaries/alliances/debts/leverages go here (not recap). Voice/mannerisms, notable dialogue (verbatim + brief context), behavioral triggers, secrets/tension if shown. Appearance only if distinctive AND matters for identity. Drop banter/insults/redundant quotes unless they carry voice/style/relationship nuance. If nothing survives, omit the entry.
