@@ -1,6 +1,6 @@
 // Stage 2: Filtering/Formatting Prompt
 // REQUIRED MACROS:
-// - {{extracted_data}} - JSON object from Stage 1 with category arrays (plot/goals/reveals/state/tone/stance/voice/appearance/docs)
+// - {{extracted_data}} - JSON object from Stage 1 with category arrays (plot/goals/reveals/state/stance/voice/appearance/docs)
 // - {{active_setting_lore}} - Current lore entries formatted with UIDs
 // - {{lorebook_entry_types}} - List of allowed entity types
 
@@ -19,7 +19,7 @@ Purpose: preserve plot chain and persistent entity nuance with minimal tokens; d
 </EXTRACTED_DATA>
 
 TYPE GUIDANCE:
-- Plot grouping feeds recap (DEV/TONE/PEND). Setting_lore types must use {{lorebook_entry_types}} exactly.
+- Plot grouping feeds recap (DEV/PEND). Setting_lore types must use {{lorebook_entry_types}} exactly.
 
 PRE-FLIGHT:
 - Use EXTRACTED_DATA + CURRENT_SETTING_LORE; no outside canon or speculation. If EXTRACTED_DATA has unexpected keys, treat their string contents as additional fragments to classify—never discard them.
@@ -36,14 +36,14 @@ WORKFLOW
 5) Baseline delta: per entity, drop facets already present in baseline meaning. If nothing new/changed, drop the entity.
 6) UID: copy uid only when type+name exactly match a baseline with a uid. Never invent/reuse.
 7) Categorize into output:
-   - Recap (rc): plot beats, decisions/promises/contracts, state changes, reveals. TONE only if scene-level narration/format/POV/tense/pacing shift. PEND for active goals/timers/secrets/promises/hooks (who/what + condition). Ignore appearance/scenery unless it changes plot/state.
+   - Recap (rc): plot beats, decisions/promises/contracts, state changes, reveals. PEND for active goals/timers/secrets/promises/hooks (who/what + condition). Ignore appearance/scenery unless it changes plot/state.
    - Setting_lore (sl): only persistent NEW/CHANGED facets per entity. No one-off choreography/travel. Stance/affection/boundaries/alliances/debts/leverages go here (not recap). Voice/mannerisms, notable dialogue (verbatim + brief context), behavioral triggers, secrets/tension if shown. Appearance only if distinctive AND matters for identity. Drop banter/insults/redundant quotes unless they carry voice/style/relationship nuance. If nothing survives, omit the entry.
 8) Output using compact schema below.
 
 OUTPUT FORMAT (compact keys):
 {
   "sn": "Brief title; no quotes",
-  "rc": "DEV: ...\\nTONE: ...\\nPEND: ...",
+  "rc": "DEV: ...\\nPEND: ...",
   "sl": [
     { "t": "character", "n": "Entity Name", "c": "Description with headings", "k": ["k1","k2"], "u": "existing-uid-if-confirmed" }
   ]
@@ -52,7 +52,6 @@ OUTPUT FORMAT (compact keys):
 RECAP RULES:
 - Single string; include labeled line only if it has content.
 - DEV: concise clauses; semicolons; plot/decisions/contracts/state changes/reveals; NO quotes; NO feelings/relationship events.
-- TONE: only scene-level narration/POV/tense/format/pacing shift; omit otherwise.
 - PEND: goals/timers/secrets/promises/hooks; who/what + condition; drop when resolved.
 
 SETTING_LORE RULES:

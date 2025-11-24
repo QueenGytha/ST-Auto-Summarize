@@ -1,6 +1,6 @@
-export const scene_recap_stage1_extraction_prompt = `ROLE: Extract only explicit facts from the transcript. No roleplay. No explanations. No inference/guessing. If it's not in the text, it did not happen.
-Output: JSON object with category arrays (starts { ends }) exactly as below. Order inside arrays is irrelevant; merge exact/near-duplicate items. Analyze only; never continue the story. Any other output shape is invalid.
-Purpose: preserve everything needed to continue the roleplay after messages are removed: plot/causality, goals/hooks/timers, reveals, state/location/condition changes, scene-level tone/format cues, relationship dynamics/stance/boundaries, character voice/mannerisms/style (quotes or narration), distinctive appearance identifiers, verbatim document contents (titles/clauses).
+export const scene_recap_stage1_extraction_prompt = `ROLE: Extract ONLY stated facts. No roleplay. No explanations. No inference/guessing. If it's not explicitly in the text, omit it.
+Output: JSON object with category arrays (starts { ends }) exactly as below. Order inside arrays is irrelevant; merge exact/near-duplicate items. Any other output shape is invalid.
+Purpose: keep only what is required to continue after messages are removed: plot/causality, goals/hooks/timers/promises/contingencies, reveals, state/location/condition changes, relationship dynamics/stance/boundaries/obligations, character voice/mannerisms/style (quotes or narration) tied to stance/intent/decision, ONE appearance identifier per entity, verbatim document contents (titles/clauses). Do NOT capture ambient/tone/mood.
 
 OUTPUT FORMAT (keys exact):
 {
@@ -8,7 +8,6 @@ OUTPUT FORMAT (keys exact):
   "goals": [],
   "reveals": [],
   "state": [],
-  "tone": [],
   "stance": [],
   "voice": [],
   "appearance": [],
@@ -20,18 +19,19 @@ OUTPUT FORMAT (keys exact):
 {{scene_messages}}
 </ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
 
-RULES:
-- Verbatim only; no outside canon; names as written. Keep author wording; do not paraphrase or invent. Drop metaphors/emotive padding/bond-poetry.
-- Quotes in "voice" only if they show decision/goal/reveal/stance/claim OR unique voice/mannerism/style/relationship nuance not already captured. Include speaker if stated. Keep one quote per distinct stance/voice; drop filler/banter/insults if they add nothing.
-- Non-quote fragments: concise but complete; include who/what/why/outcome when needed. Literal wording only; avoid added adjectives/adverbs; no scene-painting.
-- Allowed content = Purpose list only. Drop scenery/ambient color, generic movement/posture/emotion/pacing, "connection strength," capability boilerplate unless new and consequential (and not already in lore), and anything not relevant to plot/tone/relationships/voice.
-- Ignore any transcript-side meta/notes/formatting scaffolding (bracketed directives, stage directions, placeholders); do not treat them as content.
-- Drop micro-actions/handling/approach/look/turn/step/travel beats unless they change state/goal/reveal or are a notable voice cue.
-- Appearance: one concise identifier per entity (name + key traits) only once across the whole output; skip repeats.
-- Merge when details are part of the same fact and fit in one fragment with who/what/why/outcome intact. Do NOT drop nuance; keep separate entries when combining would lose context or meaning. Drop repeated stance/banter unless it adds new voice/relationship nuance.
-- Dedup by meaning: merge exact/near-duplicate phrasings to the shortest verbatim phrasing; keep distinct allowed facts; merge only if nothing stated is lost.
-- No micro-choreography or travel/handling beats unless they change state/stance/goal/reveal or are a notable mannerism/voice cue.
-- If a fact (goal/stance/reveal/condition/voice) is already captured anywhere in the output, skip later restatements; keep the shortest verbatim phrasing only once.
-- One fact per entry; do not combine unrelated facts. Place each fact in the most fitting category (plot/goals/reveals/state/tone/stance/voice/appearance/docs).
+RULES (HARD WHITELIST):
+- Verbatim only; names as written; no paraphrase or invention.
+- Allowed content ONLY:
+  * plot/causality/reveals (who/what/why/outcome);
+  * goals/hooks/timers/promises/contracts/contingencies (who/what + condition);
+  * state/location/condition changes;
+  * relationship dynamics/stance/boundaries/obligations/debts/alliances;
+  * character voice/mannerisms/style/quotes that show stance/intent/decision OR distinct diction/cadence; max one quote per unique stance/voice;
+  * ONE appearance identifier per entity (name + key trait/role) across the entire output;
+  * verbatim document contents (titles/clauses).
+- DROP EVERYTHING ELSE: ambient/scenery/tone/mood; travel/movement/approach/handling/“looks”/gaze/pauses/turns/steps; physical micro-actions; meta/stage directions/placeholders/formatting notes; capability boilerplate (distances, speeds, endurance, “can travel…”); generic emotions/posture; mindvoice descriptors; repeated stance/voice; repeated appearance.
+- If a fact/quote is already captured, skip later restatements; keep the shortest verbatim phrasing once.
+- Non-quote fragments must be concise but complete (who/what/why/outcome when needed). One fact per entry; do not combine unrelated facts.
+- Put each fact in the single best category (plot/goals/reveals/state/stance/voice/appearance/docs).
 - If uncertain, omit.
 - Output only the JSON object; no preamble/headings/code fences.`;

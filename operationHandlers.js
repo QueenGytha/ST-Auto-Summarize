@@ -1181,9 +1181,8 @@ export function registerAllOperationHandlers() {
       const lorebookMetadata = get_data(message, 'stage1_lorebook_metadata') || {};
       debug(SUBSYSTEM.QUEUE, `Retrieved Stage 1 lorebook metadata: startIdx=${lorebookMetadata?.startIdx}, endIdx=${lorebookMetadata?.endIdx}`);
 
-      // Prepare Stage 2 prompt
-      const sceneBreakIdx = get_data(message, 'scene_break');
-      const endIdx = sceneBreakIdx !== undefined ? sceneBreakIdx : index;
+      // Prepare Stage 2 prompt (endIdx is the scene break message index)
+      const endIdx = index;
       const { prompt, prefill } = await prepareParseScenePrompt(extractedData, ctx, endIdx, get_data);
 
       // Get config for connection profile
