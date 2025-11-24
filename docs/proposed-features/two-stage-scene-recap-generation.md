@@ -648,14 +648,22 @@ const { prompt, prefill } = await prepareScenePrompt(sceneObjects, ctx, endIdx, 
 
 ### 8. Artifact System Wiring Requirements
 
-**CRITICAL**: Adding a new operation type to the artifact system requires THREE mandatory changes. Skipping any of these will cause validation errors.
+**CRITICAL**: Adding a new operation type to the artifact system requires updating multiple files. Skipping any of these will cause validation errors.
 
-#### Change 1: Update OPERATION_TYPES Array
+#### Change 1: Update OPERATION_TYPES Arrays (6 files)
 
-**File**: `operationArtifacts.js` (lines 5-15)
+**IMPORTANT**: The `OPERATION_TYPES` array exists in **6 different files** and ALL must be updated with `'parse_scene_recap'`:
 
-The `OPERATION_TYPES` array defines which operation types are valid for artifact creation. This is used for validation.
+1. `operationArtifacts.js` (line 5) - Artifact validation
+2. `operationsPresetsMigration.js` (line 4) - Migration/auto-update system
+3. `operationsPresetsExport.js` (line 5) - Export functionality
+4. `operationsPresetsImport.js` (line 5) - Import functionality
+5. `operationsPresetsUIBindings.js` (line 27) - UI rendering
+6. `operationsPresets.js` (line 6) - Preset management
 
+**See Phase 1, Step 1.2 for complete details and impacts of missing each file.**
+
+**Example** (add to all 6 files):
 ```javascript
 const OPERATION_TYPES = [
   'scene_recap',
@@ -667,20 +675,11 @@ const OPERATION_TYPES = [
   'auto_lorebooks_recap_lorebook_entry_deduplicate',
   'auto_lorebooks_bulk_populate',
   'auto_lorebooks_recap_lorebook_entry_compaction',
-  'parse_scene_recap'  // �+? ADD THIS LINE
+  'parse_scene_recap'  // ADD THIS LINE TO ALL 6 FILES
 ];
 ```
 
-**Why Required**: The `createArtifact()` function validates operation types against this array (lines 17-20):
-
-```javascript
-export function createArtifact(operationType, artifactData) {
-  if (!OPERATION_TYPES.includes(operationType)) {
-    throw new Error(`Invalid operation type: ${operationType}`);  // �+? Will throw without update
-  }
-  // ...
-}
-```
+**Why 6 files?** Each module maintains its own copy to avoid circular dependencies.
 
 #### Change 2: Create Default Artifact
 
@@ -706,27 +705,46 @@ operation_artifacts: {
 }
 ```
 
-#### Change 3: Artifact Initialization
+#### Change 3: Automatic Migration for Existing Users
 
-**File**: `operationArtifacts.js`
+**File**: `operationsPresetsMigration.js` (line 290)
 
-When settings are loaded, artifacts are initialized from default settings. The system uses `OPERATION_TYPES` array to validate during initialization.
+The `updateDefaultArtifacts()` function automatically handles existing users:
+
+```javascript
+export function updateDefaultArtifacts() {
+  // 1. Updates Default artifacts with latest code versions
+  // 2. Adds missing operations to Default preset (NEW operations like parse_scene_recap)
+  // 3. Updates Default profile artifacts
+}
+```
+
+**Called automatically** on extension load (eventHandlers.js:255), BEFORE settings initialization.
+
+**What it does for parse_scene_recap**:
+1. Detects that `parse_scene_recap` is in `OPERATION_TYPES` but not in user's Default preset
+2. Adds `parse_scene_recap: 'Default'` to their preset's operations
+3. Creates the default artifact in their settings
+4. User's custom presets/artifacts are preserved
+
+**Added in commit**: `8039016` (when compaction operation was added, same issue)
 
 **What Happens Without These Changes**:
 
-1. Attempt to call `createArtifact('parse_scene_recap', ...)` �+' `Error: Invalid operation type: parse_scene_recap`
-2. Attempt to resolve config for PARSE_SCENE_RECAP �+' fails silently or throws error
-3. Handler tries to get prompt artifact �+' no artifact found, operation fails
+1. Attempt to call `createArtifact('parse_scene_recap', ...)` → `Error: Invalid operation type: parse_scene_recap`
+2. Attempt to resolve config for PARSE_SCENE_RECAP → fails silently or throws error
+3. Handler tries to get prompt artifact → no artifact found, operation fails
+4. Export/Import/UI rendering fails for parse_scene_recap
 
-**Execution Order Matters**:
+**Execution Order Critical**:
 
-- Must update `OPERATION_TYPES` array BEFORE any artifact creation attempts
-- Must have default artifact BEFORE any config resolution attempts
-- These are initialization-time requirements, not runtime
+- Must update ALL 6 `OPERATION_TYPES` arrays BEFORE any artifact operations
+- Must have default artifact in `defaultSettings.js` BEFORE extension loads
+- `updateDefaultArtifacts()` runs automatically on load, no manual intervention needed
 
 ---
 
-### 8. Error Handling & Retries
+### 9. Error Handling & Retries
 
 **Issue**: If Stage 1 succeeds but Stage 2 fails, what happens on retry?
 
@@ -787,7 +805,7 @@ if (!parsed.chronological_items || !Array.isArray(parsed.chronological_items)) {
 
 ---
 
-### 8. Token Usage Tracking
+### 10. Token Usage Tracking
 
 **Issue**: Token breakdown tracking currently captures single LLM call. With two stages, need to track both.
 
@@ -822,7 +840,7 @@ if (!parsed.chronological_items || !Array.isArray(parsed.chronological_items)) {
 
 ---
 
-### 9. Operation Context (Thread-Local Suffixes)
+### 11. Operation Context (Thread-Local Suffixes)
 
 **Issue**: Operation context suffix used for ST_METADATA injection in `generateRawInterceptor.js`. Need distinct suffixes for each stage.
 
@@ -850,7 +868,7 @@ try {
 
 ---
 
-### 10. UI Clarity & User Understanding
+### 12. UI Clarity & User Understanding
 
 **Issue**: Users see two operations per scene instead of one. May cause confusion.
 
@@ -886,7 +904,7 @@ Scene 42: [�-��-��-��-��-��-��-��-��-��-�
 
 ---
 
-### 11. Testing Strategy
+### 13. Testing Strategy
 
 **Issue**: Tests currently mock single GENERATE_SCENE_RECAP operation. Need to update for two stages.
 
@@ -976,52 +994,126 @@ globalThis.__TEST_PARSE_SCENE_RECAP_RESPONSE = JSON.stringify({
 
 **CRITICAL**: These changes must happen in the correct order to avoid validation errors.
 
-1. **Add new operation type** to `operationTypes.js`:
+#### Step 1.1: Add Operation Type Constant
 
-   ```javascript
-   export const OperationType = {
-     // ... existing types
-     PARSE_SCENE_RECAP: 'parse_scene_recap',  // �+? ADD THIS
-   };
-   ```
+**Add new operation type** to `operationTypes.js`:
 
-   - Keep existing `GENERATE_SCENE_RECAP`
-2. **CRITICAL: Wire up artifact system** in `operationArtifacts.js`:
+```javascript
+export const OperationType = {
+  // ... existing types
+  PARSE_SCENE_RECAP: 'parse_scene_recap',  // ADD THIS
+};
+```
 
-   ```javascript
-   const OPERATION_TYPES = [
-     'scene_recap',
-     // ... existing types
-     'parse_scene_recap',  // �+? ADD THIS - REQUIRED FOR VALIDATION
-   ];
-   ```
+- Keep existing `GENERATE_SCENE_RECAP`
 
-   - **Without this, `createArtifact()` will throw validation error**
-   - This MUST be done before any artifact creation/resolution
-3. **Create default artifact** in `defaultSettings.js`:
+#### Step 1.2: Update ALL OPERATION_TYPES Arrays
 
-   ```javascript
-   operation_artifacts: {
-     // ... existing artifacts
-     parse_scene_recap: [{
-       name: 'Default',
-       prompt: '[Formatting prompt - to be designed]',
-       prefill: '',
-       connection_profile: null,
-       completion_preset_name: null,
-       include_preset_prompts: false,
-       isDefault: true,
-       internalVersion: 1,
-       createdAt: Date.now(),
-       modifiedAt: Date.now()
-     }]
-   }
-   ```
+**CRITICAL - MUST UPDATE 6 FILES**: The `OPERATION_TYPES` array exists in 6 different files and ALL must be updated. Missing even one will cause failures.
 
-   - Required for initialization
-4. **Update existing `scene_recap` artifact** in `defaultSettings.js`:
+Add `'parse_scene_recap'` to `OPERATION_TYPES` array in these files:
 
-   - Modify default prompt to focus on extraction only (no formatting)
+1. **`operationArtifacts.js` (line 5)**
+   - Purpose: Validates artifact operations
+   - Impact if missed: `createArtifact()` throws validation error
+
+2. **`operationsPresetsMigration.js` (line 4)**
+   - Purpose: Migration and auto-update system
+   - Impact if missed: `updateDefaultArtifacts()` won't add operation to existing user presets
+
+3. **`operationsPresetsExport.js` (line 5)**
+   - Purpose: Export presets functionality
+   - Impact if missed: Export will fail or skip parse_scene_recap artifacts
+
+4. **`operationsPresetsImport.js` (line 5)**
+   - Purpose: Import presets functionality
+   - Impact if missed: Import validation will fail
+
+5. **`operationsPresetsUIBindings.js` (line 27)**
+   - Purpose: UI rendering for operation presets
+   - Impact if missed: UI won't render parse_scene_recap settings
+
+6. **`operationsPresets.js` (line 6)**
+   - Purpose: Preset management core
+   - Impact if missed: Preset operations will fail validation
+
+**Each file needs this change:**
+```javascript
+const OPERATION_TYPES = [
+  'scene_recap',
+  'scene_recap_error_detection',
+  'auto_scene_break',
+  'running_scene_recap',
+  'auto_lorebooks_recap_merge',
+  'auto_lorebooks_recap_lorebook_entry_lookup',
+  'auto_lorebooks_recap_lorebook_entry_deduplicate',
+  'auto_lorebooks_bulk_populate',
+  'auto_lorebooks_recap_lorebook_entry_compaction',
+  'parse_scene_recap'  // ADD THIS LINE TO ALL 6 FILES
+];
+```
+
+**Why so many files?** Each module maintains its own copy to avoid circular dependencies and ensure module independence.
+
+**Automatic Migration**: Once these arrays are updated, the `updateDefaultArtifacts()` function (operationsPresetsMigration.js:290) will automatically add the new operation to existing users' Default presets on extension load (eventHandlers.js:255). No manual migration script needed.
+
+#### Step 1.3: Create Default Artifact
+
+**Create default artifact** in `defaultSettings.js`:
+
+```javascript
+operation_artifacts: {
+  // ... existing artifacts
+  parse_scene_recap: [{
+    name: 'Default',
+    prompt: '[Formatting prompt - to be designed]',
+    prefill: '',
+    connection_profile: null,
+    completion_preset_name: null,
+    include_preset_prompts: false,
+    isDefault: true,
+    internalVersion: 1,
+    createdAt: Date.now(),
+    modifiedAt: Date.now()
+  }]
+}
+```
+
+- Required for initialization
+- Will be automatically added to existing users' Default preset by `updateDefaultArtifacts()`
+
+#### Step 1.4: Update Existing scene_recap Artifact
+
+**Update existing `scene_recap` artifact** in `defaultSettings.js`:
+
+- Modify default prompt to focus on extraction only (no formatting)
+- This is the prompt that Stage 1 (GENERATE_SCENE_RECAP) will use
+
+---
+
+**Phase 1 Verification Checklist:**
+
+Before proceeding to Phase 2, verify:
+
+- [ ] `operationTypes.js` has `PARSE_SCENE_RECAP` constant
+- [ ] ALL 6 `OPERATION_TYPES` arrays include `'parse_scene_recap'`
+  - [ ] operationArtifacts.js
+  - [ ] operationsPresetsMigration.js
+  - [ ] operationsPresetsExport.js
+  - [ ] operationsPresetsImport.js
+  - [ ] operationsPresetsUIBindings.js
+  - [ ] operationsPresets.js
+- [ ] `defaultSettings.js` has `parse_scene_recap` artifact
+- [ ] `defaultSettings.js` scene_recap artifact updated for extraction
+
+**Existing Users**: The `updateDefaultArtifacts()` function (called automatically on extension load via eventHandlers.js:255) will:
+1. Add `parse_scene_recap` to their Default preset's operations
+2. Create the default artifact in their settings
+3. Update their scene_recap artifact to the new extraction prompt
+
+No manual migration or data loss will occur. This system was added in commit `8039016` to handle new operations gracefully.
+
+---
 
 ### Phase 2: Prompt Preparation
 
