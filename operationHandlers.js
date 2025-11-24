@@ -79,7 +79,8 @@ import {
   SUBSYSTEM,
   selectorsExtension,
   resolveOperationConfig,
-  buildLorebookOperationsSettings } from
+  buildLorebookOperationsSettings,
+  MODULE_NAME } from
 './index.js';
 import { saveMetadata } from '../../../../script.js';
 import { queueCombineSceneWithRunning } from './queueIntegration.js';
@@ -1151,11 +1152,9 @@ export function registerAllOperationHandlers() {
 
       debug(SUBSYSTEM.QUEUE, `Parsed ${extractedData.chronological_items.length} chronological items from Stage 1`);
 
-      // Get lorebook metadata from message (populated by prepareScenePrompt in Stage 1)
-      const existingMetadata = get_data(message, 'scene_recap_metadata') || {};
-      const versionIndices = Object.keys(existingMetadata).map(Number).sort((a, b) => b - a);
-      const latestVersionIndex = versionIndices.length > 0 ? versionIndices[0] : 0;
-      const lorebookMetadata = existingMetadata[latestVersionIndex] || {};
+      // Get lorebook metadata from Stage 1 (stored temporarily in 'stage1_lorebook_metadata')
+      const lorebookMetadata = get_data(message, 'stage1_lorebook_metadata') || {};
+      debug(SUBSYSTEM.QUEUE, `Retrieved Stage 1 lorebook metadata: startIdx=${lorebookMetadata?.startIdx}, endIdx=${lorebookMetadata?.endIdx}`);
 
       // Prepare Stage 2 prompt
       const sceneBreakIdx = get_data(message, 'scene_break');
@@ -1270,6 +1269,10 @@ export function registerAllOperationHandlers() {
         lorebookMetadata,
         manual: isManual
       });
+
+      // Clean up temporary Stage 1 metadata (no longer needed after Stage 2 completes)
+      delete message.extra?.[MODULE_NAME]?.stage1_lorebook_metadata;
+      saveChatDebounced();
 
       // Render scene break UI to show new version
       renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);

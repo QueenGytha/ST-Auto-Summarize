@@ -21,11 +21,13 @@ OUTPUT FORMAT (keys exact):
 </ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
 
 RULES:
-- Verbatim only; no outside canon; names as written. Keep author wording for nuance; do not paraphrase or invent.
-- Quotes go in "voice" when they show decision/goal/reveal/stance/claim OR unique voice/mannerism/style not already captured. Include speaker if stated. Drop filler/banter.
-- Non-quote fragments: concise but complete; include who/what/why/outcome when needed for continuity. Use literal wording; avoid adding adjectives/adverbs not in text; avoid metaphors/scene-painting.
+- Verbatim only; no outside canon; names as written. Keep author wording; do not paraphrase or invent; drop metaphors/emotive padding.
+- Quotes go in "voice" only if they show decision/goal/reveal/stance/claim OR unique voice/mannerism/style/relationship nuance not already captured. Include speaker if stated. Drop filler/banter/insults only when they add nothing to voice/stance/relationship.
+- Non-quote fragments: concise but complete; include who/what/why/outcome when needed. Literal wording only; avoid added adjectives/adverbs; no scene-painting.
 - Allowed content = Purpose list only. Drop scenery/ambient color, generic movement/posture/emotion/pacing, "connection strength," and anything not relevant to plot/tone/relationships/voice.
-- Merge closely related details into one entry when they describe one fact (e.g., attack outcome + awakened gift; disguise + footprints + misdirect; bond + Senta telling power source). Keep separate only if facts differ.
+- Appearance: one concise identifier per entity (name + key traits); do not emit multiple appearance lines for the same entity.
+- Capabilities/boilerplate: include only if new in-scene and consequential; skip generic facts already known or implied.
+- Merge only when details are part of the same fact and can fit in one fragment with who/what/why/outcome intact. Do NOT drop nuance; keep separate entries when combining would lose context or meaning.
 - Dedup by meaning: merge exact/near-duplicate phrasings to the shortest verbatim phrasing; keep distinct allowed facts; merge only if nothing stated is lost.
 - No micro-choreography unless it changes state/stance/goal/reveal or is a notable mannerism/voice cue.
 - One fact per entry; do not combine unrelated facts. Place each fact in the most fitting category (plot/goals/reveals/state/tone/stance/voice/appearance/docs).

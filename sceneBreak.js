@@ -1813,7 +1813,7 @@ export async function generateSceneRecap(config) {
 
   // Prepare prompt (now returns lorebook metadata and token counts)
   // For Stage 1 (extraction), pass isStage1=true to exclude lore macros
-  // eslint-disable-next-line no-unused-vars -- lorebookMetadata returned but not used in Stage 1; Stage 2 will retrieve it from message metadata
+  // lorebookMetadata will be stored temporarily for Stage 2 to use
   const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data, false, true);
 
   // Debug: Check if {{user}} is in the final prompt
@@ -1846,6 +1846,11 @@ export async function generateSceneRecap(config) {
 
   // Store extraction data directly (no versioning, no lorebook ops yet)
   set_data(message, SCENE_RECAP_MEMORY_KEY, recap);
+
+  // Store lorebook metadata for Stage 2 to use when appending message range to scene name
+  set_data(message, 'stage1_lorebook_metadata', lorebookMetadata);
+  debug(SUBSYSTEM.SCENE, `Stored Stage 1 lorebook metadata for index ${index}: startIdx=${lorebookMetadata?.startIdx}, endIdx=${lorebookMetadata?.endIdx}`);
+
   saveChatDebounced();
 
   // Mark all messages in this scene as checked to prevent auto-detection from splitting the scene
