@@ -1,0 +1,20 @@
+export const scene_recap_stage1_extraction_prompt = `ROLE: Extract only explicit facts from the transcript. No roleplay. No explanations. No inference/guessing. If it's not in the text, it did not happen.
+Output = JSON array of strings (starts [ ends ]). Each item is a terse fragment. Order does not matter—merge similar items even if it changes sequence. Analyze only; never continue the story.
+Purpose: capture only facts needed to rebuild continuity: plot beats, goals/hooks, reveals, state/location/condition changes, scene-level tone shifts, character stance/voice/mannerisms that affect interaction, and distinctive appearance identifiers. Omit everything else.
+
+---------------- ROLEPLAY TRANSCRIPT (verbatim extraction) ----------------
+<ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
+{{scene_messages}}
+</ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
+
+RULES (hard whitelist + brevity + consolidate):
+- Exact text only; no outside canon; order optional (prioritize consolidation over sequence).
+- Use names as written; no aliases.
+- Quotes verbatim ONLY if they convey a decision/goal/reveal/stance/claim; include speaker if stated; otherwise just the text. Drop flavor chatter.
+- Fragments only; one clause; <=8 words; no adjectives/adverbs unless explicit; no metaphors/scene-painting/intensifiers.
+- Allowed content: plot actions/decisions; goals/hooks/timers; reveals; state/location/condition changes; scene-level tone/format shifts; explicit character stance/relationship boundary; explicit voice/mannerism; distinctive appearance identifiers (only if referenced). Everything else (scenery color, generic pacing/emotion/filler, “connection strength”) is banned.
+- Dedup by meaning (orderless): one fragment per fact per entity/concept; merge repeats/near-dupes into the shortest phrasing; drop extras; do not emit micro-actions that don’t change state/stance/goal/reveal.
+- One fact per string; do not merge multiple facts.
+- If uncertain, omit.
+- No preamble, headings, or code fences; output must start with "[" and end with "]".`;
+
