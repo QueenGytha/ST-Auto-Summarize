@@ -23,15 +23,15 @@ PRE-FLIGHT:
 - Facts only; if uncertain, omit. Quotes stay verbatim when used.
 - Baseline = CURRENT_SETTING_LORE entry with same type+name. No cross-entity comparisons.
 - {{user}} is USER; never make a setting_lore entry for them.
-- Brevity: fragments; semicolons; drop filler/adjectives; no mood color unless scene-level TONE; ignore ambient fluff that doesn't change plot/state/stance/voice.
+- Brevity/Signal: fragments; semicolons; drop filler/adjectives; no mood color unless scene-level TONE. Ignore ambient/appearance/scenery unless it changes plot/state/stance/voice/goals/reveals.
 
 WORKFLOW
 1) Normalize fragments: collapse obvious duplicates/near-duplicates; keep shortest version that preserves meaning; keep speaker/target/cause->effect where present.
 2) Baseline delta: per entity, drop facets already present in baseline meaning. If nothing new/changed, drop the entity.
 3) UID: copy uid only when type+name exactly match a baseline with a uid. Never invent/reuse.
 4) Categorize (interpret fragments as needed):
-   - Recap: plot beats, decisions/promises/contracts, state changes, reveals. TONE only if scene-level narration/format/POV/tense/pacing shift. PEND for active goals/timers/secrets/promises/hooks (who/what + condition).
-   - Setting_lore: only persistent NEW/CHANGED facets per entity. No one-off choreography/travel. Stance/affection/boundaries/alliances/debts/leverages go here (not recap). Voice/mannerisms, notable dialogue (verbatim + context), behavioral triggers, secrets/tension if shown. If nothing survives, omit the entry.
+   - Recap: plot beats, decisions/promises/contracts, state changes, reveals. TONE only if scene-level narration/format/POV/tense/pacing shift. PEND for active goals/timers/secrets/promises/hooks (who/what + condition). Ignore appearance/scenery unless it changes plot/state.
+   - Setting_lore: only persistent NEW/CHANGED facets per entity. No one-off choreography/travel. Stance/affection/boundaries/alliances/debts/leverages go here (not recap). Voice/mannerisms, notable dialogue (verbatim + context), behavioral triggers, secrets/tension if shown. Appearance only if distinctive AND referenced and matters for identity. If nothing survives, omit the entry.
 5) Output using compact schema below.
 
 OUTPUT FORMAT (compact keys):

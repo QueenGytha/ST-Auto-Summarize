@@ -1483,22 +1483,40 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
 
       // Extract and validate JSON using centralized helper
       const { extractJsonFromResponse } = await import('./utils.js');
-      const parsed = extractJsonFromResponse(rawResponse, {
-        requiredFields: ['chronological_items'],
+
+      // Stage 1 returns a plain JSON array (simplified format to save tokens)
+      // Accept either ["item1", "item2"] or {"chronological_items": ["item1", "item2"]}
+      let parsed = extractJsonFromResponse(rawResponse, {
+        requiredFields: [],  // No required fields - accept any valid JSON
         context: 'Stage 1 scene recap extraction'
       });
 
-      // Additional validation specific to Stage 1 extraction
-      if (!Array.isArray(parsed.chronological_items)) {
+      // Normalize to wrapped format if plain array
+      let chronologicalItems;
+      if (Array.isArray(parsed)) {
+        // Plain array format - wrap it
+        chronologicalItems = parsed;
+        parsed = { chronological_items: parsed };
+        debug(SUBSYSTEM.SCENE, "Stage 1 returned plain array format, wrapped as chronological_items");
+      } else if (parsed && Array.isArray(parsed.chronological_items)) {
+        // Already wrapped format
+        chronologicalItems = parsed.chronological_items;
+        debug(SUBSYSTEM.SCENE, "Stage 1 returned wrapped object format");
+      } else {
+        throw new Error("Stage 1 extraction must return either a JSON array or object with chronological_items array");
+      }
+
+      // Validation
+      if (!Array.isArray(chronologicalItems)) {
         throw new Error("chronological_items must be an array");
       }
-      if (parsed.chronological_items.length === 0) {
+      if (chronologicalItems.length === 0) {
         throw new Error("AI returned empty chronological_items array");
       }
 
       // Convert back to JSON string for storage
       recap = JSON.stringify(parsed);
-      debug(SUBSYSTEM.SCENE, "Validated and cleaned Stage 1 extraction");
+      debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction: ${chronologicalItems.length} items`);
     } finally {
       clearOperationSuffix();
     }
