@@ -41,7 +41,10 @@ class ProxyClient:
                        timeout: Optional[int] = None,
                        retry_count: Optional[int] = None,
                        endpoint: str = "/chat/completions",
-                       method: str = "POST") -> Any:
+                       method: str = "POST",
+                       log_filepath: Optional[str] = None,
+                       request_logger: Optional[Any] = None,
+                       request_id: Optional[str] = None) -> Any:
         """Forward request to target proxy"""
         
         # Construct the full URL with endpoint
@@ -154,10 +157,43 @@ class ProxyClient:
                     logger.info("Response processing config not available or config object missing")
                 
                 # Check for blank content in chat completions
-                if self._is_blank_response(response_json):
-                    logger.warning(f"Detected blank response content, retry_count: {retry_count or 0}")
-                    if retry_count is None or retry_count < 3:  # Max 3 retries for blank content
-                        new_retry_count = (retry_count or 0) + 1
+                blank_response_details = self._is_blank_response(response_json)
+                if blank_response_details:
+                    matched_pattern = blank_response_details.get("matched_pattern")
+                    reason_label_key = blank_response_details.get("reason", "blank_response")
+                    reason_label = {
+                        "empty_content": "empty content",
+                        "pattern_match": "content matched refusal pattern",
+                        "max_tokens_low_output": "early stop with minimal output",
+                    }.get(reason_label_key, reason_label_key)
+                    content_preview = self._build_content_preview(blank_response_details.get("content"))
+                    will_retry = retry_count is None or retry_count < 3
+                    next_retry_attempt = (retry_count or 0) + 1 if will_retry else None
+
+                    reason_parts = [reason_label]
+                    if matched_pattern:
+                        reason_parts.append(f"pattern '{matched_pattern}'")
+                    reason_description = " - ".join(reason_parts)
+
+                    logger.warning(f"Detected blank/blocked response ({reason_description}), retry_count: {retry_count or 0}")
+
+                    note_reason = reason_description if will_retry else f"{reason_description} (blank-response retry limit reached)"
+
+                    if request_logger and log_filepath and hasattr(request_logger, "append_retry_note"):
+                        try:
+                            request_logger.append_retry_note(
+                                filepath=log_filepath,
+                                reason=note_reason,
+                                retry_attempt=next_retry_attempt,
+                                matched_pattern=matched_pattern,
+                                content_preview=content_preview,
+                                request_id=request_id
+                            )
+                        except Exception as log_error:
+                            logger.error(f"Failed to append blank response retry note: {log_error}")
+
+                    if will_retry:  # Max 3 retries for blank content
+                        new_retry_count = next_retry_attempt
                         logger.info(f"Retrying request due to blank content (attempt {new_retry_count})")
                         return self.forward_request(
                             request_data, 
@@ -165,7 +201,10 @@ class ProxyClient:
                             timeout=timeout, 
                             retry_count=new_retry_count,
                             endpoint=endpoint,
-                            method=method
+                            method=method,
+                            log_filepath=log_filepath,
+                            request_logger=request_logger,
+                            request_id=request_id
                         )
                     else:
                         logger.error("Max retries for blank content reached, returning blank response")
@@ -269,8 +308,8 @@ class ProxyClient:
                 }
             }
     
-    def _is_blank_response(self, response_json: Dict[str, Any]) -> bool:
-        """Check if the response has blank content that should trigger a retry"""
+    def _is_blank_response(self, response_json: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Return details when the response has blank/refusal content that should trigger a retry"""
         try:
             # Check if this is a chat completion response
             if response_json.get("object") == "chat.completion":
@@ -282,14 +321,21 @@ class ProxyClient:
                     # Check if content is empty or only whitespace
                     if not content or content.strip() == "":
                         logger.warning("Detected blank content in chat completion response")
-                        return True
+                        return {
+                            "reason": "empty_content",
+                            "content": content or ""
+                        }
                     
                     # Check for specific error patterns in content
                     content_lower = content.lower()
                     for pattern in BLANK_RESPONSE_PATTERNS:
                         if pattern.lower() in content_lower:
                             logger.warning(f"Detected error pattern in content: {pattern}")
-                            return True
+                            return {
+                                "reason": "pattern_match",
+                                "matched_pattern": pattern,
+                                "content": content
+                            }
                 
                 # Check finish_reason for MAX_TOKENS with very low completion_tokens
                 if choices:
@@ -299,15 +345,35 @@ class ProxyClient:
                     
                     if finish_reason == "MAX_TOKENS" and completion_tokens < 10:
                         logger.warning(f"Detected MAX_TOKENS with very low completion_tokens: {completion_tokens}")
-                        return True
+                        return {
+                            "reason": "max_tokens_low_output",
+                            "finish_reason": finish_reason,
+                            "completion_tokens": completion_tokens,
+                            "content": choices[0].get("message", {}).get("content", "")
+                        }
             
-            return False
+            return None
         except Exception as e:
             logger.error(f"Error checking for blank response: {e}")
             # Log to error logger if available
             if hasattr(self, 'error_logger') and self.error_logger:
                 self.error_logger.log_error(e, {"context": "blank_response_check", "response_json": str(response_json)[:500]})
-            return False
+            return None
+
+    def _build_content_preview(self, content: Optional[str], max_length: int = 1000) -> Optional[str]:
+        """Create a bounded preview string for logging refusal/blank responses"""
+        if content is None:
+            return None
+
+        try:
+            preview = str(content)
+        except Exception:
+            preview = ""
+
+        if len(preview) > max_length:
+            return f"{preview[:max_length]}\n...\n[truncated]"
+
+        return preview
     
     def _format_hard_stop_response(self, response, hard_stop_rule: Dict[str, Any]) -> Dict[str, Any]:
         """Format response with hard stop user message in OpenAI-compatible format"""

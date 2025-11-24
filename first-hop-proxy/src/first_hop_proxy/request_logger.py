@@ -305,6 +305,64 @@ class RequestLogger:
                 })
             return ""
 
+    def append_retry_note(self, filepath: str, reason: str, retry_attempt: Optional[int] = None,
+                          matched_pattern: Optional[str] = None, content_preview: Optional[str] = None,
+                          request_id: Optional[str] = None) -> bool:
+        """Append a retry note (e.g., refusal-triggered retry) to an in-progress log file"""
+        if not self.enabled or not filepath or not os.path.exists(filepath):
+            return False
+
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                existing_content = f.read()
+
+            note_lines = []
+            note_lines.append("## Proxy Retry Note")
+            note_lines.append("")
+            note_lines.append(f"**Reason:** {reason}  ")
+            if retry_attempt is not None:
+                note_lines.append(f"**Retry Attempt:** #{retry_attempt}  ")
+            if request_id:
+                note_lines.append(f"**Request ID:** `{request_id}`  ")
+            if matched_pattern:
+                note_lines.append(f"**Matched Pattern:** `{matched_pattern}`  ")
+            if content_preview is not None:
+                note_lines.append("")
+                note_lines.append("**Content Preview:**")
+                note_lines.append("")
+                note_lines.append("```text")
+                note_lines.append(content_preview)
+                note_lines.append("```")
+                note_lines.append("")
+
+            note_lines.append(f"*Logged at {datetime.now().isoformat()}*")
+            note_lines.append("")
+
+            placeholder = "---\n\n*Waiting for response...*"
+            note_block = '\n'.join(note_lines)
+
+            if placeholder in existing_content:
+                updated_content = existing_content.replace(placeholder, f"{note_block}\n{placeholder}", 1)
+            else:
+                updated_content = existing_content + "\n\n" + note_block
+
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(updated_content)
+
+            logger.info(f"Appended retry note to log: {filepath}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to append retry note to {filepath}: {e}")
+            if hasattr(self, 'error_logger') and self.error_logger:
+                self.error_logger.log_error(e, {
+                    "context": "request_logger_retry_note_error",
+                    "filepath": filepath,
+                    "log_type": "retry_note",
+                    "reason": reason
+                })
+            return False
+
     def finalize_log_with_error(self, filepath: str, error: Exception,
                                 end_time: float = None, duration: float = None) -> str:
         """Finalize log file with error information and rename with error suffix

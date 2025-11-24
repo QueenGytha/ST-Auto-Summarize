@@ -211,19 +211,35 @@ function deriveEntryStub(comment) {
 const isTooLong = (token) => token.length > MAX_TOKEN_LENGTH || token.split(/\s+/).length > MAX_TOKEN_WORDS;
 
 function refineKeywords(rawKeys = [], entryComment = '') {
-  const LOCATION_GENERIC = new Set(['gate', 'bell', 'tavern', 'inn', 'row', 'grounds', 'alley', 'square', 'market']);
-  const GENERIC_NOUNS = new Set(['city','neighborhood','district','room','building','street','road','lane','place','hall','house','yard','garden','shop','store','pub','bar','market','square','ground','grounds','eyes','eye','hair','horse','man','woman','boy','girl','male','female']);
-  const STOPWORDS = new Set(['the','a','an','of','and','or','to','for','in','on','at','by','from','into','through','over','after','before','between','under','against','during','without','within','along','across','behind','beyond','about','above','below','near','with','is','are','was','were','be','been','being','this','that','these','those','it','its']);
+const LOCATION_GENERIC = new Set(['gate', 'bell', 'tavern', 'inn', 'row', 'grounds', 'alley', 'square', 'market']);
+const GENERIC_NOUNS = new Set(['city','neighborhood','district','room','building','street','road','lane','place','hall','house','yard','garden','shop','store','pub','bar','market','square','ground','grounds','eyes','eye','hair','horse','man','woman','boy','girl','male','female']);
+const STOPWORDS = new Set(['the','a','an','of','and','or','to','for','in','on','at','by','from','into','through','over','after','before','between','under','against','during','without','within','along','across','behind','beyond','about','above','below','near','with','is','are','was','were','be','been','being','this','that','these','those','it','its']);
+const TEMPORAL_CONTEXT = new Set([
+  'today','tonight','tomorrow','yesterday','tonite',
+  'morning','afternoon','evening','night','midnight','noon','dawn','dusk','sunrise','sunset',
+  'bell','bells','candlemark','candlemarks',
+  'hour','hours','minute','minutes','day','days','week','weeks','month','months','year','years','season','seasons'
+]);
 
   const stub = deriveEntryStub(entryComment);
   const seen = new Set();
   const candidates = [];
 
-  const isGeneric = (token) => STOPWORDS.has(token) || GENERIC_NOUNS.has(token) || LOCATION_GENERIC.has(token);
+  const isTemporal = (token) => {
+    if (TEMPORAL_CONTEXT.has(token)) {return true;}
+    const parts = token.split(/\s+/).filter(Boolean);
+    if (parts.some((p) => TEMPORAL_CONTEXT.has(p))) {return true;}
+    if (/^\d+$/.test(token) || /^\d+[:.]\d+$/.test(token)) {return true;} // pure numbers or timestamp-like tokens
+    if (/^\d+\s*(am|pm)$/.test(token)) {return true;}
+    return false;
+  };
+
+  const isGeneric = (token) => STOPWORDS.has(token) || GENERIC_NOUNS.has(token) || LOCATION_GENERIC.has(token) || isTemporal(token);
 
   const pushCandidate = (token, weight = 0) => {
     const t = norm(token);
-    if (!t || seen.has(t) || isGeneric(t) || isTooLong(t)) {return;}
+    if (!t || seen.has(t) || isTooLong(t)) {return;}
+    if (isGeneric(t) && t !== stub) {return;}
     seen.add(t);
     candidates.push({ token: t, weight });
   };

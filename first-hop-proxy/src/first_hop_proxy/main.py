@@ -192,9 +192,19 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
             logger.warning(f"DEBUG: status_recategorization enabled? {response_parsing_cfg.get('status_recategorization', {}).get('enabled')}")
         proxy_client = ProxyClient(target_url, error_logger=error_logger, config=active_config)
 
+        # Use a mutable container to track the current log filepath across retries
+        log_state = {"filepath": log_filepath, "attempt_start_time": start_time}
+
         # Define the request function that will be retried
         def make_request():
-            return proxy_client.forward_request(request_data, headers=headers, endpoint="")
+            return proxy_client.forward_request(
+                request_data,
+                headers=headers,
+                endpoint="",
+                log_filepath=log_state.get("filepath"),
+                request_logger=request_logger,
+                request_id=request_id
+            )
 
         # Create context for error handling
         context = {
@@ -205,9 +215,6 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
         }
 
         # Create retry callback for log management
-        # Use a mutable container to track the current log filepath across retries
-        log_state = {"filepath": log_filepath, "attempt_start_time": start_time}
-
         def on_retry_callback(attempt_number: int, exception: Exception, delay: float):
             """Handle log finalization and new log creation for retry attempts"""
             nonlocal log_filepath  # Allow modifying outer scope variable
