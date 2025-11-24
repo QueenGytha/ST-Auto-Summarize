@@ -26,7 +26,7 @@ RULES (BARE WHITELIST):
   * goals/hooks/timers/promises/contracts/contingencies (who/what + condition);
   * state/location/condition changes that persist beyond the moment (omit fleeting positions/approach/mount/travel progress);
   * relationship dynamics/stance/boundaries/obligations/debts/alliances;
-  * character voice/mannerisms/style/quotes that show stance/intent/decision OR distinct diction/cadence; max one quote per unique stance/voice;
+  * character voice/mannerisms/style/quotes that show stance/intent/decision OR distinct diction/cadence (for setting_lore use); max one quote per unique stance/voice;
   * ONE appearance identifier per entity (name + key trait/role) across the entire output;
   * verbatim document contents (titles/clauses).
 - DROP EVERYTHING ELSE: ambient/scenery/tone/mood; travel/route/pace/handling/approach/inspection steps; physical micro-actions; meta/stage directions/placeholders/formatting notes; capability boilerplate (distances, speeds, endurance, “can travel…”); generic emotions/posture; mindvoice descriptors; repeated stance/voice; repeated appearance; intimate/sexual/biological detail (explicit acts, body fluids) unless literally plot-critical.

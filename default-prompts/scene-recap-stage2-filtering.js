@@ -27,8 +27,8 @@ PRE-FLIGHT:
 - Baseline = CURRENT_SETTING_LORE entry with same type+name. No cross-entity comparisons.
 - Delta-only: only create/extend setting_lore when the scene adds NEW or CHANGED information versus baseline; otherwise omit the entity.
 - {{user}} is USER; never make a setting_lore entry for them.
-- UID reuse rule: ONLY set u when both type AND name are an exact, case-sensitive match to a baseline entry. If names differ in any way, leave u blank. Never reuse a generic/class/race uid for a specific entity. When in doubt, omit u.
-- Brevity/Signal: fragments; semicolons; drop filler/adjectives; no metaphoric/emotive padding or bond-poetry. Ignore ambient/appearance/scenery unless it changes plot/state/stance/voice/goals/reveals. Trim capability boilerplate unless new and not already in baseline. Keep banter only when it carries voice/style/relationship nuance. Drop travel padding and intimate/sexual/biological detail (explicit acts, body fluids) unless plot-critical. One concise appearance per entity; avoid repeats.
+- UID reuse rule: ONLY set u when BOTH type AND name are an exact, case-sensitive match to a baseline entry AND you are absolutely certain it is the same entity. Any doubt = leave u blank for downstream lookup. Never reuse a generic/class/race uid for a specific entity. A near-match is NOT sufficient; getting this wrong is catastrophic, so omit on uncertainty.
+- Brevity/Signal: fragments; semicolons; drop filler/adjectives; no metaphoric/emotive padding or bond-poetry. Ignore ambient/appearance/scenery unless it changes plot/state/stance/voice/goals/reveals. Trim capability boilerplate unless new and not already in baseline. Keep banter only when it carries voice/style/relationship nuance. Drop travel padding and intimate/sexual/biological detail (explicit acts, body fluids) unless plot-critical. One concise appearance per entity; avoid repeats. Recap must stay high-level events only—push nuance/stance/voice into setting_lore (delta-only).
 
 WORKFLOW
 1) Collect fragments: combine all arrays in EXTRACTED_DATA (expected categories and any unexpected keys) into a working pool.
@@ -38,7 +38,7 @@ WORKFLOW
 5) Baseline delta: per entity, drop facets already present in baseline meaning. If nothing new/changed, drop the entity and do not create new lore.
 6) UID: set u only when type+name exactly match a baseline with a uid. If not an exact match, omit u. Never reuse generic/class/race uid for a specific entity.
 7) Categorize into output:
-   - Recap (rc): plot beats, decisions/promises/contracts, state changes, reveals. PEND for active goals/timers/secrets/promises/hooks (who/what + condition). Ignore appearance/scenery unless it changes plot/state.
+   - Recap (rc): ONLY high-level plot beats, decisions/promises/contracts, durable state changes, and reveals. PEND only for active goals/timers/secrets/promises/hooks (who/what + condition). Strip stance/voice/nuance/relationship shading from recap; ignore appearance/scenery unless it changes plot/state. If nothing material changed, leave the section empty/omit the line.
    - Setting_lore (sl): only persistent NEW/CHANGED facets per entity. No one-off choreography/travel. Stance/affection/boundaries/alliances/debts/leverages go here (not recap). Voice/mannerisms, notable dialogue (verbatim + brief context), behavioral triggers, secrets/tension if shown. Appearance only if distinctive AND matters for identity. Drop banter/insults/redundant quotes unless they carry voice/style/relationship nuance. If nothing survives, omit the entry.
 8) Output using compact schema below.
 

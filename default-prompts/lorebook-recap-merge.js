@@ -66,6 +66,6 @@ PRE-FLIGHT (before output):
 - Subject unchanged; canonicalName must remain entry_name (if it is a proper name) or null; never another entity.
 
 canonicalName rules:
-- Use entry_name if it is a proper name for this subject; else first name; else null. Never set to another entity.
+- Use entry_name if it is a proper name for this subject; else first name; else null. Omit titles/honorifics/ranks (use "Selenay", not "Queen Selenay"; "Talia", not "Herald Talia"). Never set to another entity.
 
 OUTPUT JSON only.`;

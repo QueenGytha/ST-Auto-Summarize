@@ -42,6 +42,7 @@ Deterministic alignment rules:
 - If the candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix) exactly matches a registry entry's name, include that UID in 'sameEntityUids'.
 - If a registry entry's aliases include the candidate's canonical name (same normalization), include that UID in 'sameEntityUids'.
 - Prefer exact canonical name matches over fuzzy/semantic similarity.
+- Canonical names MUST omit titles/honorifics/ranks (use "Selenay", not "Queen Selenay"; "Talia", not "Herald Talia"). Titles can live in content/keywords, not in the canonical name.
 
 Alias guidance (characters/items):
 - Keep keywords lean: 3-6 concise canonical/alias tokens actually used in chat. Drop descriptive/generic/context words. No padding with loose associations.
