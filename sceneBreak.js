@@ -1096,26 +1096,27 @@ function logFilteringResults(options) {
 // Helper: Get active lorebook entries at a specific message position
 // eslint-disable-next-line complexity -- Lorebook scanning with optional settings modification adds conditional logic
 export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSettingsModification = false) {
+  const chat = ctx.chat;
+
+  // Always calculate scene boundaries for metadata (regardless of lorebook settings)
+  let startIdx = 0;
+  for (let i = endIdx - 1; i >= 0; i--) {
+    if (
+      get_data(chat[i], SCENE_BREAK_KEY) && (
+      get_data(chat[i], SCENE_BREAK_VISIBLE_KEY) === undefined || get_data(chat[i], SCENE_BREAK_VISIBLE_KEY))
+    ) {
+      startIdx = i + 1;
+      break;
+    }
+  }
+
   const includeActiveLorebooks = get_settings('scene_recap_include_active_setting_lore');
   if (!includeActiveLorebooks) {
-    return { entries: [], metadata: { startIdx: endIdx, endIdx, sceneMessageCount: 0 } };
+    return { entries: [], metadata: { startIdx, endIdx, sceneMessageCount: endIdx - startIdx + 1 } };
   }
 
   try {
     const { checkWorldInfo, getWorldInfoSettings, setWorldInfoSettings } = await import('../../../world-info.js');
-    const chat = ctx.chat;
-
-    // Find scene boundaries (walk back to previous scene break or chat start)
-    let startIdx = 0;
-    for (let i = endIdx - 1; i >= 0; i--) {
-      if (
-        get_data(chat[i], SCENE_BREAK_KEY) && (
-        get_data(chat[i], SCENE_BREAK_VISIBLE_KEY) === undefined || get_data(chat[i], SCENE_BREAK_VISIBLE_KEY))
-      ) {
-        startIdx = i + 1;
-        break;
-      }
-    }
 
     // Extract only scene messages (from startIdx to endIdx inclusive)
     const sceneMessages = [];
