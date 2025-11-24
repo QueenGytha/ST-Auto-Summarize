@@ -24,7 +24,7 @@ RULES (BARE WHITELIST):
 - Keep ONLY:
   * plot/causality/reveals (who/what/why/outcome);
   * goals/hooks/timers/promises/contracts/contingencies (who/what + condition);
-  * state/location/condition changes;
+  * state/location/condition changes that persist beyond the moment (omit fleeting positions/approach/mount/travel progress);
   * relationship dynamics/stance/boundaries/obligations/debts/alliances;
   * character voice/mannerisms/style/quotes that show stance/intent/decision OR distinct diction/cadence; max one quote per unique stance/voice;
   * ONE appearance identifier per entity (name + key trait/role) across the entire output;
@@ -33,6 +33,7 @@ RULES (BARE WHITELIST):
 - Travel: keep ONLY once as a goal/plan/contingency if it matters (e.g., “to Haven to report/train”); drop all other travel/route/pace/handling beats from plot/state.
 - Evidence/inspection/handling: keep only if it introduces a new fact/reveal; otherwise drop the handling steps.
 - No duplicates across categories: each fact appears once, in the single best category; drop restatements elsewhere.
+- Choose the best category per fact (plot/reveals vs goals vs state vs stance vs voice vs appearance vs docs) and do NOT repeat it in any other section.
 - If a fact/quote is already captured, skip later restatements; keep the shortest verbatim phrasing once.
 - Non-quote fragments must be concise but complete (who/what/why/outcome when needed). One fact per entry; do not combine unrelated facts.
 - If uncertain, omit.
