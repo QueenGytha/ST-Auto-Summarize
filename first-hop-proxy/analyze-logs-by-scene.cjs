@@ -24,6 +24,7 @@ function isSceneEndFile(fileName) {
 function getOperationType(fileName) {
     if (fileName.includes('detect_scene_break')) return 'detect_scene_break';
     if (fileName.includes('generate_scene_recap')) return 'generate_scene_recap';
+    if (fileName.includes('parse_scene_recap')) return 'parse_scene_recap';
     if (fileName.includes('lorebook_entry_lookup')) return 'lorebook_entry_lookup';
     if (fileName.includes('resolve_lorebook')) return 'resolve_lorebook';
     if (fileName.includes('merge_lorebook')) return 'merge_lorebook';
