@@ -1,0 +1,70 @@
+export const scene_recap_stage1_extraction_prompt = `ROLE: Exhaustively extract all explicit content from the roleplay transcript. No roleplay. No explanations. Output JSON only (starts { ends }). Analyze only; never continue the story.
+
+Purpose: Give Stage 2 a complete, ordered record of everything shown or said (including tone, stance, voice, and mannerisms) without judging importance, novelty, or category.
+
+---------------- ROLEPLAY TRANSCRIPT (extract everything exactly as shown) ----------------
+<ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
+{{scene_messages}}
+</ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
+
+GROUND RULES:
+- Extraction-only: zero filtering, zero deduplication, zero summarizing. If it appears, you extract it.
+- Only what is explicitly stated or directly shown; no speculation or inference.
+- Keep transcript order; every item must carry its message number (integer). If none provided, use 1-based order.
+- Use exact names/terms from the transcript; do not rename or alias.
+- Dialogue must be verbatim; include speaker and target if given; never invent wording.
+- Keep fragments concise but complete enough for reuse in Stage 2; no caps or truncation.
+
+OUTPUT FORMAT (keys exact):
+{
+  "chronological_items": [
+    // Ordered by message number; repeats allowed
+  ]
+}
+
+ITEM TYPES (emit all that apply; duplicates allowed):
+1) EVENT
+   - Action/occurrence/transition (who did what, to whom/what, result if stated)
+   - Format: {"type": "event", "description": "Brief what happened", "message": 42}
+
+2) STATE_CHANGE
+   - Condition/status/location change
+   - Format: {"type": "state_change", "entity": "Who/what", "change": "What changed", "message": 45}
+
+3) ENTITY_MENTION
+   - Any character/location/object/concept with observed details (appearance, state, capabilities, identifiers)
+   - Format: {"type": "entity_mention", "name": "Entity Name", "details": "All observed details", "message": 42}
+
+4) RELATIONSHIP_MOMENT
+   - Interactions showing stance/attitude/alliances/conflicts/debts/promises/boundaries
+   - Format: {"type": "relationship_moment", "entities": ["Entity A", "Entity B"], "interaction": "What happened between them", "message": 46}
+
+5) BEHAVIORAL_OBSERVATION
+   - Voice/mannerisms/quirks/cadence/body-language/tells
+   - Format: {"type": "behavioral_observation", "entity": "Who", "behavior": "What was observed", "message": 43}
+
+6) QUOTE
+   - Verbatim dialogue with speaker (and target if stated)
+   - Format: {"type": "quote", "speaker": "Character Name", "text": "Exact words spoken", "message": 44}
+
+7) TONE_SHIFT
+   - Changes in atmosphere/genre/POV/tense/format/pacing/narration texture/dialogue format
+   - Format: {"type": "tone_shift", "description": "What changed in tone/format/style", "message": 47}
+
+8) SETTING_DETAIL
+   - Location/time/mood/ambient cues
+   - Format: {"type": "setting_detail", "aspect": "location|time|mood", "value": "Observed detail", "message": 42}
+
+9) REVEAL
+   - Information/secret/fact disclosed
+   - Format: {"type": "reveal", "content": "What was revealed", "message": 48}
+
+10) GOAL_OR_HOOK
+    - Stated intention/promise/threat/timer/deadline/task/quest
+    - Format: {"type": "goal_or_hook", "description": "Goal/promise/threat/timer", "message": 49}
+
+EXTRACTION RULES:
+- Extract EVERY instance, even if repetitive or similar; multiple mentions produce multiple items.
+- Keep items atomic; do not merge or reinterpret.
+- Descriptions should be brief fragments but include the concrete specifics stated.
+- No preamble, headings, or code fences; output must start with "{" and end with "}".`;

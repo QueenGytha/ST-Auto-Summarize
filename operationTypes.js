@@ -6,6 +6,7 @@ export const OperationType = {
   DETECT_SCENE_BREAK: 'detect_scene_break',
   DETECT_SCENE_BREAK_BACKWARDS: 'detect_scene_break_backwards',
   GENERATE_SCENE_RECAP: 'generate_scene_recap',
+  PARSE_SCENE_RECAP: 'parse_scene_recap',
   GENERATE_RUNNING_RECAP: 'generate_running_recap',
   COMBINE_SCENE_WITH_RUNNING: 'combine_scene_with_running',
   LOREBOOK_ENTRY_LOOKUP: 'lorebook_entry_lookup',

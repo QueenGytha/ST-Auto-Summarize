@@ -25,7 +25,8 @@ import {
   calculateAvailableContext,
   calculateSceneRecapTokensForRange } from
 './autoSceneBreakDetection.js';
-import { generateSceneRecap, toggleSceneBreak, clearSceneBreak, renderSceneBreak } from './sceneBreak.js';
+import { generateSceneRecap, toggleSceneBreak, clearSceneBreak, renderSceneBreak, saveSceneRecap } from './sceneBreak.js';
+import { prepareParseScenePrompt } from './prepareParseScenePrompt.js';
 import {
   generate_running_scene_recap,
   combine_scene_with_running_recap } from
@@ -980,8 +981,7 @@ export function registerAllOperationHandlers() {
     debug(SUBSYSTEM.OPERATIONS, 'Backwards chain terminated successfully');
   }
 
-  // Generate scene recap
-  // eslint-disable-next-line complexity, sonarjs/cognitive-complexity -- Scene recap handler requires conditional logic for manual vs automatic flow, error handling, and backwards chaining
+  // Generate scene recap (Stage 1: extraction only)
   registerOperationHandler(OperationType.GENERATE_SCENE_RECAP, async (operation) => {
     const { index } = operation.params;
     const signal = getAbortSignal(operation);
@@ -1021,48 +1021,32 @@ export function registerAllOperationHandlers() {
         await updateOperationMetadata(operation.id, tokenMetadata);
       }
 
-      toast(`✓ Scene recap generated for message ${index}`, 'success');
+      toast(`✓ Stage 1 extraction complete for message ${index}`, 'success');
 
-      // Scene naming is now embedded in the scene recap output (scene_name field)
+      // Queue Stage 2 (PARSE_SCENE_RECAP) to filter and format the extracted data
+      debug(SUBSYSTEM.QUEUE, `Queueing PARSE_SCENE_RECAP for scene at index ${index}`);
 
-      // Only auto-queue if NOT manual AND auto-generate is enabled
-      const isManual = operation.metadata?.manual === true;
+      const parseMetadata = {
+        manual: operation.metadata?.manual === true
+      };
 
-      if (!isManual && get_settings('running_scene_recap_auto_generate')) {
-        debug(SUBSYSTEM.QUEUE, `Queueing COMBINE_SCENE_WITH_RUNNING for scene at index ${index} (depends on ${result.lorebookOpIds.length} lorebook operations)`);
-
-        // Pass through backwards chain metadata if present
-        const combineMetadata = {};
-        if (operation.metadata.backwards_chain) {
-          combineMetadata.backwards_chain = true;
-          combineMetadata.backwards_chain_remaining = operation.metadata.backwards_chain_remaining;
-          combineMetadata.backwards_chain_forward_continuation = operation.metadata.backwards_chain_forward_continuation;
-        }
-
-        await queueCombineSceneWithRunning(index, {
-          dependencies: result.lorebookOpIds,
-          queueVersion: operation.queueVersion,
-          metadata: combineMetadata
-        });
-        // Snapshot update will happen in COMBINE_SCENE_WITH_RUNNING handler
-      } else {
-        debug(SUBSYSTEM.QUEUE, `Skipping auto-combine for ${isManual ? 'manual' : 'disabled'} scene recap at index ${index}`);
-
-        // If COMBINE won't run, queue snapshot update directly (depends on lorebook ops)
-        if (result.lorebookOpIds && result.lorebookOpIds.length > 0) {
-          debug(SUBSYSTEM.QUEUE, `Queueing snapshot update for scene at index ${index} (depends on ${result.lorebookOpIds.length} lorebook operations)`);
-          await enqueueOperation(
-            OperationType.UPDATE_LOREBOOK_SNAPSHOT,
-            { messageIndex: index },
-            {
-              priority: 15,
-              dependencies: result.lorebookOpIds,
-              queueVersion: operation.queueVersion,
-              metadata: { scene_index: index }
-            }
-          );
-        }
+      // Pass through backwards chain metadata if present
+      if (operation.metadata.backwards_chain) {
+        parseMetadata.backwards_chain = true;
+        parseMetadata.backwards_chain_remaining = operation.metadata.backwards_chain_remaining;
+        parseMetadata.backwards_chain_forward_continuation = operation.metadata.backwards_chain_forward_continuation;
       }
+
+      await enqueueOperation(
+        OperationType.PARSE_SCENE_RECAP,
+        { index },
+        {
+          priority: 14,
+          dependencies: [operation.id],
+          queueVersion: operation.queueVersion,
+          metadata: parseMetadata
+        }
+      );
 
       return { recap: result.recap };
     } catch (err) {
@@ -1125,6 +1109,167 @@ export function registerAllOperationHandlers() {
         return { recap: null };
       }
 
+      throw err;
+    }
+  });
+
+  // Parse scene recap (Stage 2: filtering and formatting)
+  // eslint-disable-next-line complexity -- Stage 2 handler requires validation, LLM call, and conditional queueing logic
+  registerOperationHandler(OperationType.PARSE_SCENE_RECAP, async (operation) => {
+    const { index } = operation.params;
+    const signal = getAbortSignal(operation);
+    debug(SUBSYSTEM.QUEUE, `Executing PARSE_SCENE_RECAP for index ${index}`);
+    toast(`Filtering and formatting scene recap for message ${index}...`, 'info');
+
+    try {
+      const ctx = getContext();
+      const message = ctx.chat[index];
+      if (!message) {
+        throw new Error(`Message at index ${index} not found`);
+      }
+
+      // Read extraction data from Stage 1
+      const extractionDataRaw = get_data(message, 'scene_recap_memory');
+      if (!extractionDataRaw) {
+        throw new Error(`No extraction data found for message ${index}`);
+      }
+
+      // Validate structure (must be Stage 1 extraction, not formatted recap)
+      let extractedData;
+      try {
+        extractedData = JSON.parse(extractionDataRaw);
+      } catch (err) {
+        throw new Error(`Failed to parse extraction data: ${err.message}`);
+      }
+
+      if (!extractedData.chronological_items || !Array.isArray(extractedData.chronological_items)) {
+        if (extractedData.recap) {
+          throw new Error('Expected raw extracted data but found formatted recap');
+        }
+        throw new Error('Extraction data missing chronological_items array');
+      }
+
+      debug(SUBSYSTEM.QUEUE, `Parsed ${extractedData.chronological_items.length} chronological items from Stage 1`);
+
+      // Get lorebook metadata from message (populated by prepareScenePrompt in Stage 1)
+      const existingMetadata = get_data(message, 'scene_recap_metadata') || {};
+      const versionIndices = Object.keys(existingMetadata).map(Number).sort((a, b) => b - a);
+      const latestVersionIndex = versionIndices.length > 0 ? versionIndices[0] : 0;
+      const lorebookMetadata = existingMetadata[latestVersionIndex] || {};
+
+      // Prepare Stage 2 prompt
+      const sceneBreakIdx = get_data(message, 'scene_break');
+      const endIdx = sceneBreakIdx !== undefined ? sceneBreakIdx : index;
+      const { prompt, prefill } = await prepareParseScenePrompt(extractedData, ctx, endIdx, get_data);
+
+      // Get config for connection profile
+      const config = await resolveOperationConfig('parse_scene_recap');
+      const profileId = config.connection_profile || null;
+      const preset_name = config.completion_preset_name || '';
+      const include_preset_prompts = config.include_preset_prompts || false;
+
+      // Make LLM request
+      const { sendLLMRequest } = await import('./llmClient.js');
+      const options = {
+        includePreset: include_preset_prompts,
+        preset: preset_name,
+        prefill,
+        trimSentences: false
+      };
+
+      const rawResponse = await sendLLMRequest(profileId, prompt, OperationType.PARSE_SCENE_RECAP, options);
+      debug(SUBSYSTEM.SCENE, "Stage 2 AI response:", rawResponse);
+
+      // Check if operation was cancelled during execution
+      throwIfAborted(signal, 'PARSE_SCENE_RECAP', 'LLM call');
+
+      // Extract token breakdown from response
+      const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
+      const tokenBreakdown = extractTokenBreakdownFromResponse(rawResponse);
+
+      // Store token breakdown in operation metadata
+      if (tokenBreakdown) {
+        const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+        const tokenMetadata = formatTokenBreakdownForMetadata(tokenBreakdown, {
+          max_context: tokenBreakdown.max_context,
+          max_tokens: tokenBreakdown.max_tokens
+        });
+        await updateOperationMetadata(operation.id, tokenMetadata);
+      }
+
+      // Extract and validate JSON
+      const { extractJsonFromResponse } = await import('./utils.js');
+      const parsed = extractJsonFromResponse(rawResponse, {
+        requiredFields: ['scene_name', 'recap', 'setting_lore'],
+        context: 'Stage 2 scene recap filtering'
+      });
+
+      // Validate setting_lore is an array
+      if (!Array.isArray(parsed.setting_lore)) {
+        throw new Error(`setting_lore must be an array, got ${typeof parsed.setting_lore}`);
+      }
+
+      const recap = JSON.stringify(parsed);
+      debug(SUBSYSTEM.SCENE, `Stage 2 formatting complete for message ${index}`);
+
+      // Save the formatted recap with full versioning and lorebook operations
+      const isManual = operation.metadata?.manual === true;
+      const lorebookOpIds = await saveSceneRecap({
+        message,
+        recap,
+        get_data,
+        set_data,
+        saveChatDebounced,
+        messageIndex: index,
+        lorebookMetadata,
+        manual: isManual
+      });
+
+      // Render scene break UI to show new version
+      renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
+
+      toast(`✓ Scene recap formatted and saved for message ${index}`, 'success');
+
+      // Queue COMBINE operation if not manual and auto-generate is enabled
+      if (!isManual && get_settings('running_scene_recap_auto_generate')) {
+        debug(SUBSYSTEM.QUEUE, `Queueing COMBINE_SCENE_WITH_RUNNING for scene at index ${index} (depends on ${lorebookOpIds.length} lorebook operations)`);
+
+        // Pass through backwards chain metadata if present
+        const combineMetadata = {};
+        if (operation.metadata.backwards_chain) {
+          combineMetadata.backwards_chain = true;
+          combineMetadata.backwards_chain_remaining = operation.metadata.backwards_chain_remaining;
+          combineMetadata.backwards_chain_forward_continuation = operation.metadata.backwards_chain_forward_continuation;
+        }
+
+        await queueCombineSceneWithRunning(index, {
+          dependencies: lorebookOpIds,
+          queueVersion: operation.queueVersion,
+          metadata: combineMetadata
+        });
+      } else {
+        debug(SUBSYSTEM.QUEUE, `Skipping auto-combine for ${isManual ? 'manual' : 'disabled'} scene recap at index ${index}`);
+
+        // If COMBINE won't run, queue snapshot update directly (depends on lorebook ops)
+        if (lorebookOpIds && lorebookOpIds.length > 0) {
+          debug(SUBSYSTEM.QUEUE, `Queueing snapshot update for scene at index ${index} (depends on ${lorebookOpIds.length} lorebook operations)`);
+          await enqueueOperation(
+            OperationType.UPDATE_LOREBOOK_SNAPSHOT,
+            { messageIndex: index },
+            {
+              priority: 15,
+              dependencies: lorebookOpIds,
+              queueVersion: operation.queueVersion,
+              metadata: { scene_index: index }
+            }
+          );
+        }
+      }
+
+      return { recap };
+    } catch (err) {
+      error(SUBSYSTEM.QUEUE, `Stage 2 filtering failed for message ${index}:`, err.message);
+      toast(`⚠ Failed to format scene recap for message ${index}: ${err.message}`, 'error');
       throw err;
     }
   });

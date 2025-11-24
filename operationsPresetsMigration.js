@@ -10,7 +10,8 @@ const OPERATION_TYPES = [
   'auto_lorebooks_recap_lorebook_entry_lookup',
   'auto_lorebooks_recap_lorebook_entry_deduplicate',
   'auto_lorebooks_bulk_populate',
-  'auto_lorebooks_recap_lorebook_entry_compaction'
+  'auto_lorebooks_recap_lorebook_entry_compaction',
+  'parse_scene_recap'
 ];
 
 export function needsOperationsPresetsMigration() {

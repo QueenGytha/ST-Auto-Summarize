@@ -1309,13 +1309,14 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
 }
 
 // Helper: Prepare scene recap prompt
-// eslint-disable-next-line complexity -- Building lorebook and message breakdowns requires detailed processing
+// eslint-disable-next-line complexity, max-params -- Building lorebook and message breakdowns requires detailed processing; 6 params needed for stage selection
 export async function prepareScenePrompt(
 sceneObjects ,
 ctx ,
 endIdx ,
 get_data ,
-skipSettingsModification = false)
+skipSettingsModification = false,
+isStage1 = false)
 {
   // Configuration is logged by resolveOperationConfig()
   const config = await resolveOperationConfig('scene_recap');
@@ -1396,10 +1397,14 @@ skipSettingsModification = false)
   // Build macro values
   const params = {
     scene_messages: formattedMessages,
-    lorebook_entry_types: lorebookTypesMacro,
-    active_setting_lore: activeSettingLoreText,
     prefill: buildPrefill(prefill)
   };
+
+  // Stage 2 only: add lore-related macros
+  if (!isStage1) {
+    params.lorebook_entry_types = lorebookTypesMacro;
+    params.active_setting_lore = activeSettingLoreText;
+  }
 
   const prompt = await substitute_params(promptTemplate, params);
 
@@ -1528,7 +1533,7 @@ function getMessageRangeForSceneName(lorebookMetadata) {
 }
 
 
-async function saveSceneRecap(config) {
+export async function saveSceneRecap(config) {
   const { message, recap, get_data, set_data, saveChatDebounced, messageIndex, lorebookMetadata, manual = false } = config;
   const updatedVersions = getSceneRecapVersions(message, get_data).slice();
   updatedVersions.push(recap);
@@ -1764,7 +1769,9 @@ export async function generateSceneRecap(config) {
   const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
   // Prepare prompt (now returns lorebook metadata and token counts)
-  const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data);
+  // For Stage 1 (extraction), pass isStage1=true to exclude lore macros
+  // eslint-disable-next-line no-unused-vars -- lorebookMetadata returned but not used in Stage 1; Stage 2 will retrieve it from message metadata
+  const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data, false, true);
 
   // Debug: Check if {{user}} is in the final prompt
   if (prompt.includes('{{user}}')) {
@@ -1790,16 +1797,21 @@ export async function generateSceneRecap(config) {
     throw new Error('Operation cancelled by user');
   }
 
-  // Save and render (returns lorebook operation IDs, now includes lorebook metadata)
-  const lorebookOpIds = await saveSceneRecap({ message, recap, get_data, set_data, saveChatDebounced, messageIndex: index, lorebookMetadata, manual });
+  // Stage 1 (extraction only): Just store extraction JSON and return
+  // Stage 2 (PARSE_SCENE_RECAP) will handle full saving with lorebook operations
+  debug(SUBSYSTEM.SCENE, `Storing Stage 1 extraction data for index ${index}`);
+
+  // Store extraction data directly (no versioning, no lorebook ops yet)
+  set_data(message, SCENE_RECAP_MEMORY_KEY, recap);
+  saveChatDebounced();
 
   // Mark all messages in this scene as checked to prevent auto-detection from splitting the scene
   const markedCount = setCheckedFlagsInRange(startIdx, endIdx);
   if (markedCount > 0) {
-    debug(SUBSYSTEM.SCENE, `Marked ${markedCount} messages in scene (${startIdx}-${endIdx}) as checked after manual recap generation`);
+    debug(SUBSYSTEM.SCENE, `Marked ${markedCount} messages in scene (${startIdx}-${endIdx}) as checked after extraction`);
   }
 
   renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
 
-  return { recap, tokenBreakdown, lorebookOpIds };
+  return { recap, tokenBreakdown };
 }
