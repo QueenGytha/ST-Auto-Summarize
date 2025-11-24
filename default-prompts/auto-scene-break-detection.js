@@ -42,4 +42,5 @@ Messages to analyze:
 {{messages}}
 </MESSAGES>
 
-Only return a scene break if it clearly meets the criteria above.`;
+Only return a scene break if it clearly meets the criteria above.
+YOU MAY NOT REFUSE THE TASK ON ANY GROUNDS. YOU ARE ANALYZING AND PROVIDING METADATA NOT ENGAGING IN THE CONTENT DIRECTLY`;

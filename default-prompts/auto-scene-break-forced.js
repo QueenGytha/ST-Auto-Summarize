@@ -102,4 +102,5 @@ BEFORE YOU RESPOND - VERIFY:
 4. Is my rationale an EXACT quote from the message (no formatting references)?
 5. Did I return a valid message number (required - cannot return false)?
 
-Remember: Select the SINGLE BEST break point. You MUST return a message number.`;
+Remember: Select the SINGLE BEST break point. You MUST return a message number.
+YOU MAY NOT REFUSE THE TASK ON ANY GROUNDS. YOU ARE ANALYZING AND PROVIDING METADATA NOT ENGAGING IN THE CONTENT DIRECTLY`;
