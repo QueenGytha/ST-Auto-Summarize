@@ -4,7 +4,7 @@
 // - {{active_setting_lore}} - Current lore entries formatted with UIDs
 // - {{lorebook_entry_types}} - List of allowed entity types
 
-export const scene_recap_stage2_filtering_prompt = `ROLE: Deduplicate Stage 1 extraction, compare against CURRENT_SETTING_LORE, and output final recap + setting_lore. No roleplay. No explanations. Output JSON only (starts { ends }). Analyze only; never continue the story.
+export const scene_recap_stage2_filtering_prompt = `ROLE: Deduplicate EXTRACTED_DATA, compare against CURRENT_SETTING_LORE, and output final recap + setting_lore. No roleplay. No explanations. Output JSON only (starts { ends }). Analyze only; never continue the story.
 
 Purpose: Preserve plot chain, scene-level tone/format, and entity nuance (stance/voice/mannerisms) while using minimal tokens and never duplicating what's already in CURRENT_SETTING_LORE.
 
@@ -13,25 +13,25 @@ Purpose: Preserve plot chain, scene-level tone/format, and entity nuance (stance
 {{active_setting_lore}}
 </CURRENT_SETTING_LORE>
 
----------------- EXTRACTED_DATA (from Stage 1; do not ignore anything) ----------------
+---------------- EXTRACTED_DATA (do not ignore anything) ----------------
 <EXTRACTED_DATA>
 {{extracted_data}}
 </EXTRACTED_DATA>
 
 PRE-FLIGHT (non-negotiable):
-- Use ONLY Stage 1 data + CURRENT_SETTING_LORE; no outside canon or speculation.
+- Use ONLY EXTRACTED_DATA data + CURRENT_SETTING_LORE; no outside canon or speculation.
 - Only demonstrated facts; if uncertain, omit rather than guess. Quotes stay verbatim when used.
 - Baseline = CURRENT_SETTING_LORE entry with the same type+name. No cross-entity comparisons.
-- Hard block: NEVER create a setting_lore entry for {{user}} (or aliases); {{user}} stance goes in the counterpart's Relationships.
+- Hard block: {{user}} is the USER. Never create a character setting_lore entry for them directly.
 - No hard caps; achieve brevity by pruning duplicates and non-persistent beats.
 
 WORKFLOW
-1) Normalize Stage 1: consolidate identical mentions per entity/beat; keep necessary context (speaker/target/cause->effect) but remove obvious intra-stage duplicates.
+1) Normalize EXTRACTED_DATA: consolidate identical mentions per entity/beat; keep necessary context (speaker/target/cause->effect) but remove obvious intra-stage duplicates.
 2) Baseline delta: per entity, drop any facet whose meaning already exists in its baseline; do NOT paraphrase baseline. If nothing new/changed survives, drop the entity entirely. No cross-entity dedup.
-3) UID matching: copy uid ONLY when type+name+identity exactly match a baseline entry that has a uid; never invent/alter/reuse. New or uncertain entities emit NO uid.
+3) UID matching: copy uid ONLY when type+name+identity exactly match a baseline entry that has a uid; never invent/alter/reuse a different one. New or uncertain entities emit NO uid.
 4) Categorize:
-   - Recap: plot beats, cause->effect decisions/promises/contracts, travel/combat, state/condition changes, reveals. Keep recap relationship-free. REMOVE ALL QUOTES; if a quote matters, move it to setting_lore Notable dialogue with brief context. TONE only if scene-level narration/POV/tense/format/pacing shift; omit if none or if it just repeats character voice. PEND for active goals/timers/secrets/promises/hooks with who/what + condition.
-   - Setting_lore: only persistent NEW or CHANGED facets for entities mentioned this scene. If a facet is unchanged vs baseline, drop it. No one-off choreography/task steps/travel beats. All stance/affection/boundaries/alliances/debts/leverages belong here (not recap). Capture voice/mannerisms, notable dialogue (verbatim + context), behavioral triggers, intimacy/aftercare if explicitly shown, secrets/tension shown. If an entity has no surviving facets, omit the entry.
+   - Recap: plot beats, cause->effect decisions/promises/contracts. TONE only if scene-level narration/POV/tense/format/pacing shift; omit if none or if it just repeats character voice. PEND for active goals/timers/secrets/promises/hooks with who/what + condition.
+   - Setting_lore: only persistent NEW or CHANGED facets for entities mentioned this scene. If a facet is unchanged vs baseline, drop it. No one-off choreography/task steps/travel beats. All stance/affection/boundaries/alliances/debts/leverages belong here (not recap). Capture voice/mannerisms, notable dialogue (verbatim + context), behavioral triggers, intimacy/aftercare if explicitly shown (directly, avoid euphemism), secrets/tension shown. If an entity has no surviving facets, omit the entry.
 5) Format output matching system schema.
 
 OUTPUT FORMAT (keys exact):

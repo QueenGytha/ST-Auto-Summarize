@@ -1,6 +1,7 @@
-export const scene_recap_stage1_extraction_prompt = `ROLE: Exhaustively extract all explicit content from the roleplay transcript. No roleplay. No explanations. Output JSON only (starts { ends }). Analyze only; never continue the story.
+export const scene_recap_stage1_extraction_prompt = `ROLE: Exhaustively extract all explicit content from the roleplay transcript. No roleplay. No explanations. No extrapolation, guessing, or inferrence. No outside canon; if it's not explicit in the messages, it did not happen.
+Output JSON only (starts { ends }). Analyze only; never continue the story.
 
-Purpose: Give Stage 2 a complete, ordered record of everything shown or said (including tone, stance, voice, and mannerisms) without judging importance, novelty, or category.
+Purpose: produce a complete, ordered record of everything shown or said that may be useful for reproducing the roleplay continuity/world/setting/tone etc once the messages themselves are removed from LLM context. (including tone, stance, voice, mannerisms, brief context) without judging importance, novelty, or category.
 
 ---------------- ROLEPLAY TRANSCRIPT (extract everything exactly as shown) ----------------
 <ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
@@ -8,12 +9,12 @@ Purpose: Give Stage 2 a complete, ordered record of everything shown or said (in
 </ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
 
 GROUND RULES:
-- Extraction-only: zero filtering, zero deduplication, zero summarizing. If it appears, you extract it.
-- Only what is explicitly stated or directly shown; no speculation or inference.
+- Extraction-only: zero filtering, zero deduplication. If it appears and may be relevant to the plot, character arcs or nuance etc, you extract it.
+- Only what is explicitly stated or directly shown; no speculation or inference. No outside canon.
 - Keep transcript order; items appear in chronological sequence.
 - Use exact names/terms from the transcript; do not rename or alias.
 - Dialogue must be verbatim; include speaker and target if given; never invent wording.
-- Keep fragments concise but complete enough for reuse in Stage 2; no caps or truncation.
+- Keep fragments concise but complete enough for reuse for downstream processing; no caps or truncation.
 
 OUTPUT FORMAT (keys exact):
 {
@@ -44,7 +45,7 @@ ITEM TYPES (emit all that apply; duplicates allowed):
    - Format: {"type": "behavioral_observation", "entity": "Who", "behavior": "What was observed"}
 
 6) QUOTE
-   - Verbatim dialogue with speaker (and target if stated)
+   - Verbatim dialogue with speaker (and target if stated). include brief context for the quote.
    - Format: {"type": "quote", "speaker": "Character Name", "text": "Exact words spoken"}
 
 7) TONE_SHIFT
@@ -64,7 +65,6 @@ ITEM TYPES (emit all that apply; duplicates allowed):
     - Format: {"type": "goal_or_hook", "description": "Goal/promise/threat/timer"}
 
 EXTRACTION RULES:
-- Extract EVERY instance, even if repetitive or similar; multiple mentions produce multiple items.
 - Keep items atomic; do not merge or reinterpret.
 - Descriptions should be brief fragments but include the concrete specifics stated.
 - No preamble, headings, or code fences; output must start with "{" and end with "}".`;
