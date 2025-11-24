@@ -502,7 +502,8 @@ function formatOperationType(type) {
   const names = {
     [OperationType.VALIDATE_RECAP]: 'Validate',
     [OperationType.DETECT_SCENE_BREAK]: 'Detect Scene',
-    [OperationType.GENERATE_SCENE_RECAP]: 'Scene Recap',
+    [OperationType.GENERATE_SCENE_RECAP]: 'Scene Recap (Stage 1)',
+    [OperationType.PARSE_SCENE_RECAP]: 'Scene Recap (Stage 2)',
     [OperationType.GENERATE_RUNNING_RECAP]: 'Running Recap',
     [OperationType.COMBINE_SCENE_WITH_RUNNING]: 'Combine Scene',
     [OperationType.LOREBOOK_ENTRY_LOOKUP]: 'Lorebook - Lookup',
@@ -688,6 +689,7 @@ function formatOperationParams(type, params, metadata) {
     case OperationType.VALIDATE_RECAP:
     case OperationType.DETECT_SCENE_BREAK:
     case OperationType.GENERATE_SCENE_RECAP:
+    case OperationType.PARSE_SCENE_RECAP:
     case OperationType.GENERATE_RUNNING_RECAP:
       return formatMessageOperationParams(params, metadata);
 

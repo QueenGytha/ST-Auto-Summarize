@@ -515,7 +515,8 @@ async function populateCompletionPresetDropdown() {
  */
 async function openArtifactEditor(operationType) {
   const operationNames = {
-    'scene_recap': 'Scene Recap',
+    'scene_recap': 'Scene Recap (Stage 1: Extraction)',
+    'parse_scene_recap': 'Parse Scene Recap (Stage 2: Filtering)',
     'scene_recap_error_detection': 'Scene Recap Error Detection',
     'auto_scene_break': 'Auto Scene Break Detection',
     'running_scene_recap': 'Running Scene Recap',
