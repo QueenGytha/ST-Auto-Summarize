@@ -1203,17 +1203,59 @@ export function registerAllOperationHandlers() {
 
       // Extract and validate JSON
       const { extractJsonFromResponse } = await import('./utils.js');
+
+      // Stage 2 uses compact keys to save tokens: sn/rc/sl
+      // Accept both compact and full formats, normalize to full format
       const parsed = extractJsonFromResponse(rawResponse, {
-        requiredFields: ['scene_name', 'recap', 'setting_lore'],
+        requiredFields: [],  // No required fields - accept any valid JSON
         context: 'Stage 2 scene recap filtering'
       });
 
-      // Validate setting_lore is an array
-      if (!Array.isArray(parsed.setting_lore)) {
-        throw new Error(`setting_lore must be an array, got ${typeof parsed.setting_lore}`);
+      // Normalize compact keys to full keys
+      let normalized;
+      if (parsed.sn !== undefined || parsed.rc !== undefined || parsed.sl !== undefined) {
+        // Compact format - normalize top-level and entity-level keys
+        const settingLore = (parsed.sl || []).map(entity => {
+          // Normalize entity keys: t->type, n->name, c->content, k->keywords, u->uid
+          if (entity.t !== undefined || entity.n !== undefined || entity.c !== undefined) {
+            return {
+              type: entity.t,
+              name: entity.n,
+              content: entity.c,
+              keywords: entity.k || [],
+              uid: entity.u
+            };
+          }
+          // Already in full format
+          return entity;
+        });
+
+        normalized = {
+          scene_name: parsed.sn,
+          recap: parsed.rc,
+          setting_lore: settingLore
+        };
+        debug(SUBSYSTEM.SCENE, "Stage 2 returned compact format, normalized to full format");
+      } else if (parsed.scene_name !== undefined || parsed.recap !== undefined || parsed.setting_lore !== undefined) {
+        // Full format
+        normalized = parsed;
+        debug(SUBSYSTEM.SCENE, "Stage 2 returned full format");
+      } else {
+        throw new Error("Stage 2 must return either compact format (sn/rc/sl) or full format (scene_name/recap/setting_lore)");
       }
 
-      const recap = JSON.stringify(parsed);
+      // Validate required fields after normalization
+      if (!normalized.scene_name || typeof normalized.scene_name !== 'string') {
+        throw new Error("scene_name (or sn) is required and must be a string");
+      }
+      if (!normalized.recap || typeof normalized.recap !== 'string') {
+        throw new Error("recap (or rc) is required and must be a string");
+      }
+      if (!Array.isArray(normalized.setting_lore)) {
+        throw new Error(`setting_lore (or sl) must be an array, got ${typeof normalized.setting_lore}`);
+      }
+
+      const recap = JSON.stringify(normalized);
       debug(SUBSYSTEM.SCENE, `Stage 2 formatting complete for message ${index}`);
 
       // Save the formatted recap with full versioning and lorebook operations
