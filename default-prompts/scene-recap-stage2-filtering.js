@@ -25,17 +25,18 @@ PRE-FLIGHT:
 - Use EXTRACTED_DATA + CURRENT_SETTING_LORE; no outside canon or speculation. If EXTRACTED_DATA has unexpected keys, treat their string contents as additional fragments to classify—never discard them.
 - Facts only; if uncertain, omit. Quotes stay verbatim when used.
 - Baseline = CURRENT_SETTING_LORE entry with same type+name. No cross-entity comparisons.
+- Delta-only: only create/extend setting_lore when the scene adds NEW or CHANGED information versus baseline; otherwise omit the entity.
 - {{user}} is USER; never make a setting_lore entry for them.
 - UID reuse rule: ONLY set u when both type AND name are an exact, case-sensitive match to a baseline entry. If names differ in any way, leave u blank. Never reuse a generic/class/race uid for a specific entity. When in doubt, omit u.
-- Brevity/Signal: fragments; semicolons; drop filler/adjectives; no metaphoric/emotive padding or bond-poetry. Ignore ambient/appearance/scenery unless it changes plot/state/stance/voice/goals/reveals. Trim capability boilerplate unless new and not already in baseline. Keep banter only when it carries voice/style/relationship nuance.
+- Brevity/Signal: fragments; semicolons; drop filler/adjectives; no metaphoric/emotive padding or bond-poetry. Ignore ambient/appearance/scenery unless it changes plot/state/stance/voice/goals/reveals. Trim capability boilerplate unless new and not already in baseline. Keep banter only when it carries voice/style/relationship nuance. Drop travel padding and intimate/sexual/biological detail (explicit acts, body fluids) unless plot-critical. One concise appearance per entity; avoid repeats.
 
 WORKFLOW
 1) Collect fragments: combine all arrays in EXTRACTED_DATA (expected categories and any unexpected keys) into a working pool.
-2) Normalize: collapse exact/near-duplicates; merge only when meaning is identical; keep speaker/target/cause->effect where present.
+2) Normalize: collapse exact/near-duplicates; merge only when meaning is identical; keep speaker/target/cause->effect where present; prefer the shortest quote per stance/voice.
 3) Consolidate multi-part facts when they describe one fact. Keep distinct beats separate.
-4) Drop metaphoric/emotive padding, bond-poetry, micro-choreography/handling beats, and appearance bloat; keep one concise appearance identifier per entity; drop capability boilerplate if already in baseline.
-5) Baseline delta: per entity, drop facets already present in baseline meaning. If nothing new/changed, drop the entity.
-6) UID: set u only when type+name exactly match a baseline with a uid. If not an exact match, omit u. When unsure, omit u. Never reuse generic/class/race uid for a specific entity.
+4) Drop metaphoric/emotive padding, bond-poetry, micro-choreography/handling beats, travel/ambient detail, sexual/biological specifics, and appearance bloat; keep one concise appearance identifier per entity; drop capability boilerplate if already in baseline.
+5) Baseline delta: per entity, drop facets already present in baseline meaning. If nothing new/changed, drop the entity and do not create new lore.
+6) UID: set u only when type+name exactly match a baseline with a uid. If not an exact match, omit u. Never reuse generic/class/race uid for a specific entity.
 7) Categorize into output:
    - Recap (rc): plot beats, decisions/promises/contracts, state changes, reveals. PEND for active goals/timers/secrets/promises/hooks (who/what + condition). Ignore appearance/scenery unless it changes plot/state.
    - Setting_lore (sl): only persistent NEW/CHANGED facets per entity. No one-off choreography/travel. Stance/affection/boundaries/alliances/debts/leverages go here (not recap). Voice/mannerisms, notable dialogue (verbatim + brief context), behavioral triggers, secrets/tension if shown. Appearance only if distinctive AND matters for identity. Drop banter/insults/redundant quotes unless they carry voice/style/relationship nuance. If nothing survives, omit the entry.
@@ -57,7 +58,7 @@ RECAP RULES:
 
 SETTING_LORE RULES:
 - Fields: n, t (from {{lorebook_entry_types}}), c, k; optional u via UID rule. Reuse exact type+name; no aliases.
-- Delta-only vs CURRENT_SETTING_LORE; delete any facet whose meaning already exists there.
+- Delta-only vs CURRENT_SETTING_LORE; delete any facet whose meaning already exists there. Do not invent new lore if nothing new happened.
 - Persistent facets only; skip one-off scene steps/travel.
 - Content headings (only when you have data; fragments; semicolons):
   * Identity/Synopsis: identifier.

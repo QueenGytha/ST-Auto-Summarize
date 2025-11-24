@@ -29,9 +29,10 @@ RULES (BARE WHITELIST):
   * character voice/mannerisms/style/quotes that show stance/intent/decision OR distinct diction/cadence; max one quote per unique stance/voice;
   * ONE appearance identifier per entity (name + key trait/role) across the entire output;
   * verbatim document contents (titles/clauses).
-- DROP EVERYTHING ELSE: ambient/scenery/tone/mood; travel/route/pace/handling/approach/inspection steps; physical micro-actions; meta/stage directions/placeholders/formatting notes; capability boilerplate (distances, speeds, endurance, “can travel…”); generic emotions/posture; mindvoice descriptors; repeated stance/voice; repeated appearance.
+- DROP EVERYTHING ELSE: ambient/scenery/tone/mood; travel/route/pace/handling/approach/inspection steps; physical micro-actions; meta/stage directions/placeholders/formatting notes; capability boilerplate (distances, speeds, endurance, “can travel…”); generic emotions/posture; mindvoice descriptors; repeated stance/voice; repeated appearance; intimate/sexual/biological detail (explicit acts, body fluids) unless literally plot-critical.
 - Travel: keep ONLY once as a goal/plan/contingency if it matters (e.g., “to Haven to report/train”); drop all other travel/route/pace/handling beats from plot/state.
 - Evidence/inspection/handling: keep only if it introduces a new fact/reveal; otherwise drop the handling steps.
+- Appearance: one concise identifier per entity; if already captured earlier in the output, skip repeats.
 - No duplicates across categories: each fact appears once, in the single best category; drop restatements elsewhere.
 - Choose the best category per fact (plot/reveals vs goals vs state vs stance vs voice vs appearance vs docs) and do NOT repeat it in any other section.
 - If a fact/quote is already captured, skip later restatements; keep the shortest verbatim phrasing once.
