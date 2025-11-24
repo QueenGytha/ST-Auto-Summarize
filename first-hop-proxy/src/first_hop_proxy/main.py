@@ -4,11 +4,12 @@ Main application module for First Hop Proxy
 import copy
 import json
 import logging
+import threading
 import uuid
 import time
 import sys
 import os
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 from flask import Flask, request, jsonify, Response, make_response
 from flask_cors import CORS
 from requests.exceptions import HTTPError
@@ -48,6 +49,67 @@ request_logger = None
 # Global error logger - will be initialized after config is loaded
 global error_logger
 error_logger = None
+
+
+# Cache logger instances by resolved folder so per-config log paths are honored
+_logger_cache_lock = threading.Lock()
+_logger_cache: Dict[Tuple[str, str], Tuple[RequestLogger, ErrorLogger]] = {}
+
+
+def _build_logger_config(active_config: Any) -> Dict[str, Any]:
+    """
+    Build a plain dict config for logger construction without mutating the source config.
+    """
+    try:
+        base_config = copy.deepcopy(active_config.get_all_config())
+    except AttributeError:
+        base_config = copy.deepcopy(active_config) if isinstance(active_config, dict) else {}
+    except Exception:
+        base_config = {}
+
+    if "logging" not in base_config:
+        base_config["logging"] = {}
+    if "error_logging" not in base_config:
+        base_config["error_logging"] = {}
+
+    return base_config
+
+
+def get_loggers_for_config(active_config: Any) -> Tuple[RequestLogger, ErrorLogger]:
+    """
+    Return (RequestLogger, ErrorLogger) instances for the given config, creating them if needed.
+
+    Loggers are cached by their resolved absolute log folders so that config-specific log paths
+    are respected for each request without recreating loggers on every call.
+    """
+    base_config = _build_logger_config(active_config)
+    logging_cfg = base_config.get("logging", {}) or {}
+    error_logging_cfg = base_config.get("error_logging", {}) or {}
+
+    log_root = logging_cfg.get("folder", "logs")
+    error_root = error_logging_cfg.get("folder", os.path.join(log_root, "errors"))
+
+    log_root_abs = os.path.abspath(log_root)
+    error_root_abs = os.path.abspath(error_root)
+
+    logging_cfg["folder"] = log_root_abs
+    error_logging_cfg["folder"] = error_root_abs
+    base_config["logging"] = logging_cfg
+    base_config["error_logging"] = error_logging_cfg
+
+    cache_key = (log_root_abs, error_root_abs)
+
+    with _logger_cache_lock:
+        if cache_key not in _logger_cache:
+            os.makedirs(os.path.join(log_root_abs, "characters"), exist_ok=True)
+            os.makedirs(os.path.join(log_root_abs, "unsorted"), exist_ok=True)
+            os.makedirs(error_root_abs, exist_ok=True)
+
+            error_logger_instance = ErrorLogger(base_config)
+            request_logger_instance = RequestLogger(base_config, error_logger=error_logger_instance)
+            _logger_cache[cache_key] = (request_logger_instance, error_logger_instance)
+
+        return _logger_cache[cache_key]
 
 
 def get_config_name_from_path(path: str) -> str:
@@ -112,6 +174,8 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
     error = None
     character_chat_info = None
     log_filepath = None
+    active_config = request_config if request_config is not None else config
+    active_request_logger, active_error_logger = get_loggers_for_config(active_config)
 
     try:
         # Extract character/chat info for organized logging
@@ -120,9 +184,9 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
         character_chat_info = extract_character_chat_info(headers or {}, original_request_data or request_data)
 
         # Start request log immediately
-        if request_logger:
+        if active_request_logger:
             try:
-                log_filepath = request_logger.start_request_log(
+                log_filepath = active_request_logger.start_request_log(
                     request_id=request_id,
                     endpoint="/chat/completions",
                     request_data=request_data,
@@ -150,8 +214,6 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
         print(f"Headers: {json.dumps(sanitize_headers_for_logging(headers or {}), indent=2)}", flush=True)
         print("=" * 80, flush=True)
         # Use request-specific config if provided, otherwise use global config
-        active_config = request_config if request_config is not None else config
-
         # Get target proxy configuration
         proxy_config = active_config.get_target_proxy_config()
         target_url = proxy_config.get("url")
@@ -175,7 +237,7 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
             max_retries=max_retries,
             base_delay=base_delay,
             max_delay=max_delay,
-            error_logger=error_logger,
+            error_logger=active_error_logger,
             hard_stop_config=hard_stop_config,
             retry_codes=retry_codes,
             fail_codes=fail_codes,
@@ -190,7 +252,7 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
             response_parsing_cfg = active_config.get_response_parsing_config()
             logger.warning(f"DEBUG: response_parsing enabled? {response_parsing_cfg.get('enabled')}")
             logger.warning(f"DEBUG: status_recategorization enabled? {response_parsing_cfg.get('status_recategorization', {}).get('enabled')}")
-        proxy_client = ProxyClient(target_url, error_logger=error_logger, config=active_config)
+        proxy_client = ProxyClient(target_url, error_logger=active_error_logger, config=active_config)
 
         # Use a mutable container to track the current log filepath across retries
         log_state = {"filepath": log_filepath, "attempt_start_time": start_time}
@@ -202,7 +264,7 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
                 headers=headers,
                 endpoint="",
                 log_filepath=log_state.get("filepath"),
-                request_logger=request_logger,
+                request_logger=active_request_logger,
                 request_id=request_id
             )
 
@@ -219,11 +281,11 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
             """Handle log finalization and new log creation for retry attempts"""
             nonlocal log_filepath  # Allow modifying outer scope variable
 
-            if request_logger and log_state["filepath"]:
+            if active_request_logger and log_state["filepath"]:
                 try:
                     # Finalize current log with error suffix
                     attempt_duration = time.time() - log_state["attempt_start_time"]
-                    finalized_path = request_logger.finalize_log_with_error(
+                    finalized_path = active_request_logger.finalize_log_with_error(
                         filepath=log_state["filepath"],
                         error=exception,
                         end_time=time.time(),
@@ -235,7 +297,7 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
                     new_start_time = time.time()
                     log_state["attempt_start_time"] = new_start_time
 
-                    new_log_filepath = request_logger.start_request_log(
+                    new_log_filepath = active_request_logger.start_request_log(
                         request_id=f"{request_id}-retry{attempt_number}",
                         endpoint="/chat/completions",
                         request_data=request_data,
@@ -297,8 +359,8 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
         print("=" * 80, flush=True)
 
         # Log to error logger if available
-        if error_logger:
-            error_logger.log_error(e, {
+        if active_error_logger:
+            active_error_logger.log_error(e, {
                 "context": "forward_request",
                 "error_type": "forward_request_error"
             }, character_chat_info=character_chat_info)
@@ -312,9 +374,9 @@ def forward_request(request_data: Dict[str, Any], headers: Optional[Dict[str, st
         # Calculate duration for the current attempt (not total duration across all retries)
         attempt_duration = end_time - log_state.get("attempt_start_time", start_time)
 
-        if request_logger and log_filepath:
+        if active_request_logger and log_filepath:
             try:
-                request_logger.complete_request_log(
+                active_request_logger.complete_request_log(
                     filepath=log_filepath,
                     response_data=response_data,
                     response_headers={},
@@ -377,6 +439,7 @@ def models_endpoint(config_path):
 
         # Use the appropriate config (request-specific or global default)
         active_config = request_config if request_config is not None else config
+        _request_logger_for_models, active_error_logger = get_loggers_for_config(active_config)
 
         # Get target proxy configuration
         proxy_config = active_config.get_target_proxy_config()
@@ -389,7 +452,7 @@ def models_endpoint(config_path):
         models_url = f"{base_url}/models"
 
         # Create proxy client for models endpoint with error logger
-        proxy_client = ProxyClient(models_url, error_logger=error_logger, config=active_config)
+        proxy_client = ProxyClient(models_url, error_logger=active_error_logger, config=active_config)
 
         # Create error handler for models request
         error_config = active_config.get_error_handling_config()
@@ -407,7 +470,7 @@ def models_endpoint(config_path):
             max_retries=max_retries,
             base_delay=base_delay,
             max_delay=max_delay,
-            error_logger=error_logger,
+            error_logger=active_error_logger,
             hard_stop_config=hard_stop_config,
             retry_codes=retry_codes,
             fail_codes=fail_codes,
@@ -552,24 +615,9 @@ def chat_completions(config_path):
 def main():
     """Main entry point for the application"""
     try:
-        # Ensure base log directories exist (honor configured log folders when provided)
-        logging_config = config.get_logging_config() or {}
-        log_root = logging_config.get("folder", "logs")
-        os.makedirs(os.path.join(log_root, "characters"), exist_ok=True)
-        os.makedirs(os.path.join(log_root, "unsorted"), exist_ok=True)
-
-        error_logging_config = config.get_error_logging_config() or {}
-        error_log_root = error_logging_config.get("folder", os.path.join(log_root, "errors"))
-        os.makedirs(error_log_root, exist_ok=True)
-
-        # Initialize loggers
+        # Initialize loggers honoring configured folders (supports overrides)
         global request_logger, error_logger
-
-        # Initialize error logger first (request logger depends on it)
-        error_logger = ErrorLogger(config)
-
-        # Initialize request logger with error logger dependency
-        request_logger = RequestLogger(config, error_logger=error_logger)
+        request_logger, error_logger = get_loggers_for_config(config)
         
         # Get server configuration
         server_config = config.get_server_config()
