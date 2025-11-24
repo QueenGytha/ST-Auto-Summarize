@@ -22,7 +22,7 @@ Purpose: preserve plot chain, scene-level tone/format, and distinctive traits on
 - UID checklist: entity absent from CURRENT_SETTING_LORE -> no uid; entity present but identity not 100% certain -> no uid; only copy uid on confirmed same type+name+identity match.
 - Baseline definition: CURRENT_SETTING_LORE is the only baseline. For an entity, its baseline is its entry in CURRENT_SETTING_LORE with the same type+name. Do not compare across entities.
 - For every candidate facet, compare only against that entity's baseline: if the meaning is already there, drop it. If a facet repeats inside the same entity entry, keep just one. No cross-entity dedup. Omit any entity with no surviving new facets.
-- Recap sanity: remove all quotes from recap; if a quote matters, move it to setting_lore Notable dialogue under the relevant character/entity with the quote verbatim.
+- Recap sanity: remove all quotes from recap; if a quote matters, move it to setting_lore Notable dialogue under the relevant character/entity with the quote verbatim and a brief context cue (speaker/target/situation).
 - Keep recap relationship-free; capture all stance/affection/boundaries/alliances/debts/leverages in setting_lore Relationships/Intimacy instead.
 - Post-trim: for each setting_lore entry, delete any facet that restates that entity's baseline; if nothing new remains, delete the entry.
 - Final compliance check: if any setting_lore clause copies or paraphrases baseline, or if no new facets remain after pruning, delete those clauses/entries before responding.
@@ -82,7 +82,7 @@ SETTING_LORE (array; only entities referenced this scene with new/changed info):
   * Relationships: counterpart -> demonstrated stance/promise/debt/leverage that will persist; note trigger/outcome of the change; only if changed; no name repetition beyond the counterpart; no inferred feelings - use explicit stance/actions shown. Do not merge another entity's facets here.
   * Intimacy/Aftercare: only if explicitly shown; acts/turn-ons/boundaries (hard/soft limits), aftercare/comfort cues; keep explicit terms; add brief scene/partner cue for clarity; only if new/changed.
   * Voice/Mannerisms: diction/cadence/quirks/catchphrases/body-language that define voice; note shift cue if changed; keep terse.
-  * Notable dialogue: only if new this scene and tied to this entity’s voice; concise verbatim; add brief context if needed; no {{user}} quotes; no invention/paraphrase. Quotes live here, not in recap.
+  * Notable dialogue: only if new this scene and tied to this entity's voice; concise verbatim; include brief context (speaker/target/situation) so meaning is clear; no {{user}} quotes; no invention/paraphrase. Quotes live here, not in recap.
   * Key beat: brief scene action/gesture/line that shifted tone/stance and is not covered above; include minimal context + effect; keep terse; no paraphrase.
   * Secrets/Leverage/Tension: only if consequential and shown; add brief cue if needed.
 - If an entity has no new or changed facets vs CURRENT_SETTING_LORE, omit the entry entirely.
