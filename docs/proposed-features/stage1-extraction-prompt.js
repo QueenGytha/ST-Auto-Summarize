@@ -17,13 +17,13 @@ EXTRACTION RULES:
 - Extract duplicates, overlaps, everything
 - Only what is explicitly stated or directly shown; no speculation
 - Dialogue verbatim when present; never invent
-- Mark message number for every extracted item
+- Keep chronological order
 
 
 OUTPUT FORMAT (keys exact):
 {
   "chronological_items": [
-    // Extract in message order
+    // Extract in chronological order
   ]
 }
 
@@ -31,75 +31,65 @@ ITEM TYPES TO EXTRACT:
 
 1. EVENT
    - What happened (action/occurrence/transition)
-   - Message number where it occurred
-   Format: {"type": "event", "description": "Brief what happened", "message": 42}
+   Format: {"type": "event", "description": "Brief what happened"}
 
 2. ENTITY_MENTION
    - Any character, location, object, concept referenced
    - Include all observed details (appearance, state, capabilities, etc.)
-   - Message number where mentioned
-   Format: {"type": "entity_mention", "name": "Entity Name", "details": "All observed details", "message": 42}
+   Format: {"type": "entity_mention", "name": "Entity Name", "details": "All observed details"}
 
 3. QUOTE
    - Verbatim dialogue
    - Who said it
-   - Message number
-   Format: {"type": "quote", "speaker": "Character Name", "text": "Exact words spoken", "message": 44}
+   Format: {"type": "quote", "speaker": "Character Name", "text": "Exact words spoken"}
 
 4. TONE_SHIFT
    - Changes in atmosphere, genre, POV, tense, format, pacing
    - Narrative texture shifts
    - Dialogue format changes
-   - Message number where shift occurred
-   Format: {"type": "tone_shift", "description": "What changed in tone/format/style", "message": 47}
+   Format: {"type": "tone_shift", "description": "What changed in tone/format/style"}
 
 5. SETTING_DETAIL
    - Location information
    - Time information
    - Mood/atmosphere
-   - Message number
-   Format: {"type": "setting_detail", "aspect": "location|time|mood", "value": "Observed detail", "message": 42}
+   Format: {"type": "setting_detail", "aspect": "location|time|mood", "value": "Observed detail"}
 
 6. STATE_CHANGE
    - Character condition changes
    - Location changes
    - Status changes
-   - Message number
-   Format: {"type": "state_change", "entity": "Who/what", "change": "What changed", "message": 45}
+   Format: {"type": "state_change", "entity": "Who/what", "change": "What changed"}
 
 7. RELATIONSHIP_MOMENT
    - Interactions between entities
    - Stance/attitude demonstrations
    - Alliances/conflicts/debts/promises
-   - Message number
-   Format: {"type": "relationship_moment", "entities": ["Entity A", "Entity B"], "interaction": "What happened between them", "message": 46}
+   Format: {"type": "relationship_moment", "entities": ["Entity A", "Entity B"], "interaction": "What happened between them"}
 
 8. BEHAVIORAL_OBSERVATION
    - Mannerisms, quirks, patterns
    - Voice/speech patterns
    - Body language
-   - Message number
-   Format: {"type": "behavioral_observation", "entity": "Who", "behavior": "What was observed", "message": 43}
+   Format: {"type": "behavioral_observation", "entity": "Who", "behavior": "What was observed"}
 
 9. REVEAL
    - Information disclosed
    - Secrets shared
    - Facts stated
-   - Message number
-   Format: {"type": "reveal", "content": "What was revealed", "message": 48}
+   Format: {"type": "reveal", "content": "What was revealed"}
 
 10. GOAL_OR_HOOK
     - Stated intentions
     - Promises made
     - Threats issued
     - Timers/deadlines mentioned
-    - Message number
-    Format: {"type": "goal_or_hook", "description": "Goal/promise/threat/timer", "message": 49}
+    Format: {"type": "goal_or_hook", "description": "Goal/promise/threat/timer"}
 
 
 EXTRACTION GUIDELINES:
 - Extract EVERY instance, even if repetitive
-- Keep chronological order by message number
+- Keep chronological order
 - Use exact names/terms from transcript
 - Dialogue must be verbatim, never paraphrased
 - Description should be brief but complete
