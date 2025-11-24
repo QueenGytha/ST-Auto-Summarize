@@ -174,10 +174,10 @@
                             </select>
                         </div>
 
-                        <!-- Scene Recap -->
+                        <!-- Scene Recap (Stage 1: Extraction) -->
                         <div class="auto_recap_operation_type_section" data-testid="operation-type-scene-recap">
                             <div class="flex-container justifyspacebetween alignitemscenter" style="gap: 5px;">
-                                <span>Scene Recap:</span>
+                                <span>Scene Recap (Stage 1: Extraction):</span>
                                 <div style="display: flex; gap: 5px;">
                                     <button data-operation-type="scene_recap" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-scene-recap" title="Edit this artifact"></button>
                                     <button data-operation-type="scene_recap" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-scene-recap" title="Rename this artifact" disabled></button>
@@ -186,6 +186,22 @@
                                 </div>
                             </div>
                             <select id="auto_recap_artifact_scene_recap" data-testid="artifact-scene-recap" class="text_pole" style="margin-top: 5px;">
+                                <option value="Default">Default</option>
+                            </select>
+                        </div>
+
+                        <!-- Parse Scene Recap (Stage 2: Filtering) -->
+                        <div class="auto_recap_operation_type_section" data-testid="operation-type-parse-scene-recap">
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="gap: 5px;">
+                                <span>Parse Scene Recap (Stage 2: Filtering):</span>
+                                <div style="display: flex; gap: 5px;">
+                                    <button data-operation-type="parse_scene_recap" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-parse-scene-recap" title="Edit this artifact"></button>
+                                    <button data-operation-type="parse_scene_recap" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-parse-scene-recap" title="Rename this artifact" disabled></button>
+                                    <button data-operation-type="parse_scene_recap" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-parse-scene-recap" title="Delete this artifact" disabled></button>
+                                    <button data-operation-type="parse_scene_recap" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-parse-scene-recap" title="Duplicate this artifact"></button>
+                                </div>
+                            </div>
+                            <select id="auto_recap_artifact_parse_scene_recap" data-testid="artifact-parse-scene-recap" class="text_pole" style="margin-top: 5px;">
                                 <option value="Default">Default</option>
                             </select>
                         </div>
