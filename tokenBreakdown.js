@@ -311,6 +311,8 @@ export async function calculateAndInjectTokenBreakdown(messages, operation, maxC
   // Map operation types to their config keys
   const operationTypeMap = {
     'detect_scene_break': 'auto_scene_break',
+    'generate_scene_recap': 'scene_recap',
+    'parse_scene_recap': 'scene_recap',
     'scene_recap': 'scene_recap',
     'running_scene_recap': 'running_scene_recap',
     'recap_merge': 'auto_lorebooks_recap_merge',
@@ -322,11 +324,15 @@ export async function calculateAndInjectTokenBreakdown(messages, operation, maxC
   };
 
   let baseOperationType = null;
-  for (const [key, value] of Object.entries(operationTypeMap)) {
-    if (operation.startsWith(key)) {
-      baseOperationType = value;
-      break;
+  if (operation && typeof operation === 'string') {
+    for (const [key, value] of Object.entries(operationTypeMap)) {
+      if (operation.startsWith(key)) {
+        baseOperationType = value;
+        break;
+      }
     }
+  } else {
+    debug(SUBSYSTEM.CORE, `[TokenBreakdown] WARNING: operation is undefined or not a string: ${operation}`);
   }
 
   debug(SUBSYSTEM.CORE, `[TokenBreakdown] Injecting metadata for operation="${operation}", mapped operationType="${baseOperationType}"`);
