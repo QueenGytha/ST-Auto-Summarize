@@ -24,6 +24,7 @@ PRE-FLIGHT (non-negotiable):
 - Baseline = CURRENT_SETTING_LORE entry with the same type+name. No cross-entity comparisons.
 - Hard block: {{user}} is the USER. Never create a character setting_lore entry for them directly.
 - No hard caps; achieve brevity by pruning duplicates and non-persistent beats.
+- Brevity/Token discipline: fragments; semicolons; drop filler/articles/adjectives; avoid rephrasing the same fact twice.
 
 WORKFLOW
 1) Normalize EXTRACTED_DATA: consolidate identical mentions per entity/beat; keep necessary context (speaker/target/cause->effect) but remove obvious intra-stage duplicates.
@@ -36,7 +37,7 @@ WORKFLOW
 
 OUTPUT FORMAT (keys exact):
 {
-  "scene_name": "Brief title",
+  "scene_name": "Brief title (<=5 words; no quotes)",
   "recap": "DEV: ...\\nTONE: ...\\nPEND: ...",
   "setting_lore": [
     { "type": "character", "name": "Entity Name", "content": "Description with headings", "keywords": ["k1","k2"], "uid": "existing-uid-if-confirmed" }

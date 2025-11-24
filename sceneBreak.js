@@ -45,8 +45,7 @@ import {
   TOAST_SHORT_DURATION_WPM,
   UI_UPDATE_DELAY_MS,
   SCENE_BREAK_CHARS,
-  SCENE_BREAK_MIN_CHARS,
-  DEFAULT_POLLING_INTERVAL
+  SCENE_BREAK_MIN_CHARS
 } from './constants.js';
 
 // SCENE RECAP PROPERTY STRUCTURE:
@@ -1485,22 +1484,21 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
       // Extract and validate JSON using centralized helper
       const { extractJsonFromResponse } = await import('./utils.js');
       const parsed = extractJsonFromResponse(rawResponse, {
-        requiredFields: ['recap'],
-        context: 'scene recap generation'
+        requiredFields: ['chronological_items'],
+        context: 'Stage 1 scene recap extraction'
       });
 
-      // Additional validation specific to scene recaps
-      const recapText = parsed.recap?.trim() || '';
-      if (recapText === '' || recapText === '...' || recapText === 'TODO') {
-        throw new Error("AI returned empty or placeholder recap");
+      // Additional validation specific to Stage 1 extraction
+      if (!Array.isArray(parsed.chronological_items)) {
+        throw new Error("chronological_items must be an array");
       }
-      if (recapText.length < DEFAULT_POLLING_INTERVAL) {
-        throw new Error("AI returned suspiciously short recap (less than 10 chars)");
+      if (parsed.chronological_items.length === 0) {
+        throw new Error("AI returned empty chronological_items array");
       }
 
-      // Convert back to JSON string for storage (maintains compatibility)
+      // Convert back to JSON string for storage
       recap = JSON.stringify(parsed);
-      debug(SUBSYSTEM.SCENE, "Validated and cleaned recap");
+      debug(SUBSYSTEM.SCENE, "Validated and cleaned Stage 1 extraction");
     } finally {
       clearOperationSuffix();
     }

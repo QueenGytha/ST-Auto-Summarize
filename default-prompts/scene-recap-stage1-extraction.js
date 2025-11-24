@@ -14,7 +14,8 @@ GROUND RULES:
 - Keep transcript order; items appear in chronological sequence.
 - Use exact names/terms from the transcript; do not rename or alias.
 - Dialogue must be verbatim; include speaker and target if given; never invent wording.
-- Keep fragments concise but complete enough for reuse for downstream processing; no caps or truncation.
+- Brevity/Token discipline: fragments only (no full sentences); one clause; <=12 words per field; no adjectives/adverbs unless explicitly stated and necessary to the fact; no metaphors or color.
+- Keep fragments concise but complete enough for downstream reuse; no caps or truncation.
 
 OUTPUT FORMAT (keys exact):
 {
@@ -46,6 +47,7 @@ ITEM TYPES (emit all that apply; duplicates allowed):
 
 6) QUOTE
    - Verbatim dialogue with speaker (and target if stated). include brief context for the quote.
+   - Context <= 6 words; no mood adjectives; no paraphrase.
    - Format: {"type": "quote", "speaker": "Character Name", "text": "Exact words spoken"}
 
 7) TONE_SHIFT
@@ -65,6 +67,7 @@ ITEM TYPES (emit all that apply; duplicates allowed):
     - Format: {"type": "goal_or_hook", "description": "Goal/promise/threat/timer"}
 
 EXTRACTION RULES:
-- Keep items atomic; do not merge or reinterpret.
-- Descriptions should be brief fragments but include the concrete specifics stated.
+- Keep items atomic; do not merge or reinterpret; one fact per item.
+- Descriptions are terse fragments; include only concrete specifics; never add embellishing language.
+- If a detail repeats later, you may repeat the item but keep wording identical and minimal.
 - No preamble, headings, or code fences; output must start with "{" and end with "}".`;
