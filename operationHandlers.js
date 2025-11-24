@@ -1196,6 +1196,11 @@ export function registerAllOperationHandlers() {
       const { resolveProfileId } = await import('./profileResolution.js');
       const profileId = resolveProfileId(profile_name);
 
+      // Set operation context suffix for ST_METADATA (message range)
+      const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+      const startIdx = lorebookMetadata?.startIdx ?? endIdx;
+      setOperationSuffix(`-${startIdx}-${endIdx}`);
+
       // Make LLM request
       const { sendLLMRequest } = await import('./llmClient.js');
       const options = {
@@ -1205,7 +1210,12 @@ export function registerAllOperationHandlers() {
         trimSentences: false
       };
 
-      const rawResponse = await sendLLMRequest(profileId, prompt, OperationType.PARSE_SCENE_RECAP, options);
+      let rawResponse;
+      try {
+        rawResponse = await sendLLMRequest(profileId, prompt, OperationType.PARSE_SCENE_RECAP, options);
+      } finally {
+        clearOperationSuffix();
+      }
       debug(SUBSYSTEM.SCENE, "Stage 2 AI response:", rawResponse);
 
       // Check if operation was cancelled during execution
