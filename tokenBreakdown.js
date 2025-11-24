@@ -323,16 +323,17 @@ export async function calculateAndInjectTokenBreakdown(messages, operation, maxC
     'lorebook_entry_compaction': 'auto_lorebooks_recap_lorebook_entry_compaction'
   };
 
+  // Validate operation is defined (required for metadata injection and proxy)
+  if (!operation || typeof operation !== 'string') {
+    throw new Error(`[TokenBreakdown] operation parameter is required and must be a non-empty string, got: ${operation}`);
+  }
+
   let baseOperationType = null;
-  if (operation && typeof operation === 'string') {
-    for (const [key, value] of Object.entries(operationTypeMap)) {
-      if (operation.startsWith(key)) {
-        baseOperationType = value;
-        break;
-      }
+  for (const [key, value] of Object.entries(operationTypeMap)) {
+    if (operation.startsWith(key)) {
+      baseOperationType = value;
+      break;
     }
-  } else {
-    debug(SUBSYSTEM.CORE, `[TokenBreakdown] WARNING: operation is undefined or not a string: ${operation}`);
   }
 
   debug(SUBSYSTEM.CORE, `[TokenBreakdown] Injecting metadata for operation="${operation}", mapped operationType="${baseOperationType}"`);
