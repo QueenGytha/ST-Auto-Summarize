@@ -1,6 +1,6 @@
 // Stage 2: Filtering/Formatting Prompt
 // REQUIRED MACROS:
-// - {{extracted_data}} - JSON object from Stage 1 with category arrays
+// - {{extracted_data}} - JSON object from Stage 1 with category arrays (plot/goals/reveals/state/tone/stance/voice/appearance/docs)
 // - {{active_setting_lore}} - Current lore entries formatted with UIDs
 // - {{lorebook_entry_types}} - List of allowed entity types
 
@@ -22,22 +22,23 @@ TYPE GUIDANCE:
 - Plot grouping feeds recap (DEV/TONE/PEND). Setting_lore types must use {{lorebook_entry_types}} exactly.
 
 PRE-FLIGHT:
-- Use ONLY EXTRACTED_DATA + CURRENT_SETTING_LORE; no outside canon or speculation.
+- Use EXTRACTED_DATA + CURRENT_SETTING_LORE; no outside canon or speculation. If EXTRACTED_DATA has unexpected keys, treat their string contents as additional fragments to classify—never discard them.
 - Facts only; if uncertain, omit. Quotes stay verbatim when used.
 - Baseline = CURRENT_SETTING_LORE entry with same type+name. No cross-entity comparisons.
 - {{user}} is USER; never make a setting_lore entry for them.
-- Brevity/Signal: fragments; semicolons; drop filler/adjectives; no metaphoric/emotive padding. Ignore ambient/appearance/scenery unless it changes plot/state/stance/voice/goals/reveals. Trim capability boilerplate unless new. Keep banter only when it carries voice/style/relationship nuance.
+- Brevity/Signal: fragments; semicolons; drop filler/adjectives; no metaphoric/emotive padding or bond-poetry. Ignore ambient/appearance/scenery unless it changes plot/state/stance/voice/goals/reveals. Trim capability boilerplate unless new. Keep banter only when it carries voice/style/relationship nuance.
 
 WORKFLOW
-1) Normalize each category: collapse exact/near-duplicates; merge only when meaning is identical; keep speaker/target/cause->effect where present.
-2) Consolidate multi-part facts within categories when they describe one fact. Keep distinct beats separate.
-3) Drop metaphoric/emotive padding and appearance bloat; keep appearance to one concise identifier per entity.
-4) Baseline delta: per entity, drop facets already present in baseline meaning. If nothing new/changed, drop the entity.
-5) UID: copy uid only when type+name exactly match a baseline with a uid. Never invent/reuse.
-6) Categorize into output:
+1) Collect fragments: combine all arrays in EXTRACTED_DATA (expected categories and any unexpected keys) into a working pool.
+2) Normalize: collapse exact/near-duplicates; merge only when meaning is identical; keep speaker/target/cause->effect where present.
+3) Consolidate multi-part facts when they describe one fact. Keep distinct beats separate.
+4) Drop metaphoric/emotive padding and appearance bloat; keep one concise appearance identifier per entity; drop capability boilerplate if already in baseline.
+5) Baseline delta: per entity, drop facets already present in baseline meaning. If nothing new/changed, drop the entity.
+6) UID: copy uid only when type+name exactly match a baseline with a uid. Never invent/reuse.
+7) Categorize into output:
    - Recap (rc): plot beats, decisions/promises/contracts, state changes, reveals. TONE only if scene-level narration/format/POV/tense/pacing shift. PEND for active goals/timers/secrets/promises/hooks (who/what + condition). Ignore appearance/scenery unless it changes plot/state.
    - Setting_lore (sl): only persistent NEW/CHANGED facets per entity. No one-off choreography/travel. Stance/affection/boundaries/alliances/debts/leverages go here (not recap). Voice/mannerisms, notable dialogue (verbatim + brief context), behavioral triggers, secrets/tension if shown. Appearance only if distinctive AND matters for identity. Drop banter/insults/redundant quotes unless they carry voice/style/relationship nuance. If nothing survives, omit the entry.
-7) Output using compact schema below.
+8) Output using compact schema below.
 
 OUTPUT FORMAT (compact keys):
 {
