@@ -14,8 +14,9 @@ GROUND RULES:
 - Keep transcript order; items appear in chronological sequence.
 - Use exact names/terms from the transcript; do not rename or alias.
 - Dialogue must be verbatim; include speaker and target if given; never invent wording.
-- Brevity/Token discipline: fragments only (no full sentences); one clause; <=12 words per field; no adjectives/adverbs unless explicitly stated and necessary to the fact; no metaphors or color.
-- Keep fragments concise but complete enough for downstream reuse; no caps or truncation.
+- Brevity/Token discipline: fragments only (no full sentences); one clause; <=10 words per field; no adjectives/adverbs unless explicitly stated and necessary to the fact; no metaphors, no scene-painting, no intensifiers.
+- High-signal facts only: drop narrative glue (e.g., "moment stretched", "everything else fell away"), drop subjective judgments (e.g., "revealing how close to collapse"), drop emotional color unless explicitly stated as dialogue or fact.
+- Keep fragments concise but complete enough for downstream reuse; no caps or truncation; reuse identical wording for repeated beats to avoid variance.
 
 OUTPUT FORMAT (keys exact):
 {
@@ -46,8 +47,8 @@ ITEM TYPES (emit all that apply; duplicates allowed):
    - Format: {"type": "behavioral_observation", "entity": "Who", "behavior": "What was observed"}
 
 6) QUOTE
-   - Verbatim dialogue with speaker (and target if stated). include brief context for the quote.
-   - Context <= 6 words; no mood adjectives; no paraphrase.
+   - Verbatim dialogue with speaker (and target if stated). Context only if required to disambiguate speaker/target/location.
+   - No mood adjectives; no paraphrase; do not add narrative framing.
    - Format: {"type": "quote", "speaker": "Character Name", "text": "Exact words spoken"}
 
 7) TONE_SHIFT
@@ -70,4 +71,6 @@ EXTRACTION RULES:
 - Keep items atomic; do not merge or reinterpret; one fact per item.
 - Descriptions are terse fragments; include only concrete specifics; never add embellishing language.
 - If a detail repeats later, you may repeat the item but keep wording identical and minimal.
-- No preamble, headings, or code fences; output must start with "{" and end with "}".`;
+- No preamble, headings, or code fences; output must start with "{" and end with "}".
+- Never include meta statements about choosing, bonding, or feelings unless verbatim dialogue.
+- Disallow generalized truths not stated in the scene (e.g., “many headmen have military backgrounds”).`;

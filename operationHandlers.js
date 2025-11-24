@@ -1164,9 +1164,13 @@ export function registerAllOperationHandlers() {
 
       // Get config for connection profile
       const config = await resolveOperationConfig('parse_scene_recap');
-      const profileId = config.connection_profile || null;
+      const profile_name = config.connection_profile || '';
       const preset_name = config.completion_preset_name || '';
       const include_preset_prompts = config.include_preset_prompts || false;
+
+      // Resolve profileId using profileResolution
+      const { resolveProfileId } = await import('./profileResolution.js');
+      const profileId = resolveProfileId(profile_name);
 
       // Make LLM request
       const { sendLLMRequest } = await import('./llmClient.js');
