@@ -46,7 +46,7 @@ OUTPUT FORMAT (keys exact):
 
 RECAP RULES:
 - Single string; include a labeled line only if content exists.
-- DEV: cause->effect plot beats; decisions/promises/contracts; documents (verbatim titles/clauses only); travel/combat; state/condition changes; reveals. NO quotes. NO paraphrased feelings. NO relationship events.
+- DEV: cause->effect plot beats; decisions/promises/contracts; documents (verbatim titles/clauses only); travel/combat; state/condition changes; reveals. NO quotes. NO paraphrased feelings. NO relationship events. 2-5 short clauses; semicolons.
 - TONE: scene-level genre/POV/tense/format/pacing/narration texture/dialogue format shifts. NEVER include character-specific voice/mannerisms/diction. Omit if no true scene-level shift.
 - PEND: goals/timers/secrets/promises/hooks (NPC and {{user}}); who/what + condition; drop when resolved.
 
