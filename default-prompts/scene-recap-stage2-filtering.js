@@ -1,78 +1,74 @@
 // Stage 2: Filtering/Formatting Prompt
 // REQUIRED MACROS:
-// - {{extracted_data}} - JSON from Stage 1 with comprehensive extraction
+// - {{extracted_data}} - JSON array of terse fragments from Stage 1
 // - {{active_setting_lore}} - Current lore entries formatted with UIDs
 // - {{lorebook_entry_types}} - List of allowed entity types
 
-export const scene_recap_stage2_filtering_prompt = `ROLE: Deduplicate EXTRACTED_DATA, compare against CURRENT_SETTING_LORE, and output final recap + setting_lore. No roleplay. No explanations. Output JSON only (starts { ends }). Analyze only; never continue the story.
+export const scene_recap_stage2_filtering_prompt = `ROLE: Deduplicate EXTRACTED_DATA fragments, compare against CURRENT_SETTING_LORE, and output final recap + setting_lore in compact schema. No roleplay. No explanations. Output JSON only (starts { ends }). Analyze only; never continue the story.
 
-Purpose: Preserve plot chain, scene-level tone/format, and entity nuance (stance/voice/mannerisms) while using minimal tokens and never duplicating what's already in CURRENT_SETTING_LORE.
+Purpose: preserve plot chain and persistent entity nuance with minimal tokens; do not repeat CURRENT_SETTING_LORE.
 
----------------- CURRENT_SETTING_LORE (baseline for change detection & UID matching) ----------------
+---------------- CURRENT_SETTING_LORE ----------------
 <CURRENT_SETTING_LORE>
 {{active_setting_lore}}
 </CURRENT_SETTING_LORE>
 
----------------- EXTRACTED_DATA (do not ignore anything) ----------------
+---------------- EXTRACTED_DATA (fragment list) ----------------
 <EXTRACTED_DATA>
 {{extracted_data}}
 </EXTRACTED_DATA>
 
-PRE-FLIGHT (non-negotiable):
-- Use ONLY EXTRACTED_DATA data + CURRENT_SETTING_LORE; no outside canon or speculation.
-- Only demonstrated facts; if uncertain, omit rather than guess. Quotes stay verbatim when used.
-- Baseline = CURRENT_SETTING_LORE entry with the same type+name. No cross-entity comparisons.
-- Hard block: {{user}} is the USER. Never create a character setting_lore entry for them directly.
-- No hard caps; achieve brevity by pruning duplicates and non-persistent beats.
-- Brevity/Token discipline: fragments; semicolons; drop filler/articles/adjectives; avoid rephrasing the same fact twice; no narrative color or mood words unless scene-level TONE.
+PRE-FLIGHT:
+- Use ONLY EXTRACTED_DATA + CURRENT_SETTING_LORE; no outside canon or speculation.
+- Facts only; if uncertain, omit. Quotes stay verbatim when used.
+- Baseline = CURRENT_SETTING_LORE entry with same type+name. No cross-entity comparisons.
+- {{user}} is USER; never make a setting_lore entry for them.
+- Brevity: fragments; semicolons; drop filler/adjectives; no mood color unless scene-level TONE; ignore ambient fluff that doesn't change plot/state/stance/voice.
 
 WORKFLOW
-1) Normalize EXTRACTED_DATA: consolidate identical mentions per entity/beat; keep necessary context (speaker/target/cause->effect) but remove obvious intra-stage duplicates.
-2) Baseline delta: per entity, drop any facet whose meaning already exists in its baseline; do NOT paraphrase baseline. If nothing new/changed survives, drop the entity entirely. No cross-entity dedup.
-3) UID matching: copy uid ONLY when type+name+identity exactly match a baseline entry that has a uid; never invent/alter/reuse a different one. New or uncertain entities emit NO uid.
-4) Categorize:
-   - Recap: plot beats, cause->effect decisions/promises/contracts. TONE only if scene-level narration/POV/tense/format/pacing shift; omit if none or if it just repeats character voice. PEND for active goals/timers/secrets/promises/hooks with who/what + condition.
-   - Setting_lore: only persistent NEW or CHANGED facets for entities mentioned this scene. If a facet is unchanged vs baseline, drop it. No one-off choreography/task steps/travel beats. All stance/affection/boundaries/alliances/debts/leverages belong here (not recap). Capture voice/mannerisms, notable dialogue (verbatim + context), behavioral triggers, intimacy/aftercare if explicitly shown (directly, avoid euphemism), secrets/tension shown. If an entity has no surviving facets, omit the entry.
-5) Format output matching system schema.
+1) Normalize fragments: collapse obvious duplicates/near-duplicates; keep shortest version that preserves meaning; keep speaker/target/cause->effect where present.
+2) Baseline delta: per entity, drop facets already present in baseline meaning. If nothing new/changed, drop the entity.
+3) UID: copy uid only when type+name exactly match a baseline with a uid. Never invent/reuse.
+4) Categorize (interpret fragments as needed):
+   - Recap: plot beats, decisions/promises/contracts, state changes, reveals. TONE only if scene-level narration/format/POV/tense/pacing shift. PEND for active goals/timers/secrets/promises/hooks (who/what + condition).
+   - Setting_lore: only persistent NEW/CHANGED facets per entity. No one-off choreography/travel. Stance/affection/boundaries/alliances/debts/leverages go here (not recap). Voice/mannerisms, notable dialogue (verbatim + context), behavioral triggers, secrets/tension if shown. If nothing survives, omit the entry.
+5) Output using compact schema below.
 
-OUTPUT FORMAT (keys exact):
+OUTPUT FORMAT (compact keys):
 {
-  "scene_name": "Brief title (<=5 words; no quotes)",
-  "recap": "DEV: ...\\nTONE: ...\\nPEND: ...",
-  "setting_lore": [
-    { "type": "character", "name": "Entity Name", "content": "Description with headings", "keywords": ["k1","k2"], "uid": "existing-uid-if-confirmed" }
+  "sn": "Brief title (<=5 words; no quotes)",
+  "rc": "DEV: ...\\nTONE: ...\\nPEND: ...",
+  "sl": [
+    { "t": "character", "n": "Entity Name", "c": "Description with headings", "k": ["k1","k2"], "u": "existing-uid-if-confirmed" }
   ]
 }
 
 RECAP RULES:
-- Single string; include a labeled line only if content exists.
-- DEV: cause->effect plot beats; decisions/promises/contracts; documents (verbatim titles/clauses only); travel/combat; state/condition changes; reveals. NO quotes. NO paraphrased feelings. NO relationship events. 2-5 short clauses; semicolons.
-- TONE: scene-level genre/POV/tense/format/pacing/narration texture/dialogue format shifts. NEVER include character-specific voice/mannerisms/diction. Omit if no true scene-level shift.
-- PEND: goals/timers/secrets/promises/hooks (NPC and {{user}}); who/what + condition; drop when resolved.
+- Single string; include labeled line only if it has content.
+- DEV: 2-5 short clauses; semicolons; plot/decisions/contracts/state changes/reveals; NO quotes; NO feelings/relationship events.
+- TONE: only scene-level narration/POV/tense/format/pacing shift; omit otherwise.
+- PEND: goals/timers/secrets/promises/hooks; who/what + condition; drop when resolved.
 
 SETTING_LORE RULES:
-- Fields: name, type (from {{lorebook_entry_types}}), content, keywords; optional uid per UID rules. Reuse exact type+name for baseline matches; no aliases.
-- Delta-only: CURRENT_SETTING_LORE is do-not-repeat. Any clause whose meaning already exists there must be deleted; no paraphrase. If nothing new survives, drop the entry.
-- Persistent facets only; skip one-off scene choreography/task steps.
-- Content headings (include only when you have facets; fragments; semicolons):
-  * Identity/Synopsis: <=10 words; role if needed.
+- Fields: n, t (from {{lorebook_entry_types}}), c, k; optional u via UID rule. Reuse exact type+name; no aliases.
+- Delta-only vs CURRENT_SETTING_LORE; delete any facet whose meaning already exists there.
+- Persistent facets only; skip one-off scene steps/travel.
+- Content headings (only when you have data; fragments; semicolons):
+  * Identity/Synopsis: <=10 words.
   * Appearance: only if distinctive AND referenced.
   * State: location/condition shown.
-  * Capabilities/limits: demonstrated and consequential only.
+  * Capabilities/limits: demonstrated and consequential.
   * Behavioral defaults/triggers: trigger -> response -> outcome.
-  * Relationships: counterpart -> demonstrated stance/promise/debt/leverage/boundary; include trigger/outcome; no name repetition beyond counterpart; no inferred feelings.
-  * Intimacy/Aftercare: only if explicitly shown; acts/turn-ons/boundaries/aftercare cues; brief scene/partner cue.
-  * Voice/Mannerisms: diction/cadence/quirks/catchphrases/body-language; note shifts.
-  * Notable dialogue: verbatim quote + brief context (speaker/target/situation); no {{user}} quotes; no invention/paraphrase.
-  * Key beat: concise action/gesture/line that shifted tone/stance and is not covered above.
-  * Secrets/Leverage/Tension: only if consequential and shown.
-- Keywords: retrieval handles ONLY (canonical name, aliases/titles/callsigns/parent-location tokens actually used). 0-6 tokens; lowercase; dedupe; never include schedule/time words (today/tonight/tomorrow/morning/afternoon/evening/night/dawn/dusk/noon/midnight/bell/candlemark/hour/week/month/year), timestamps, emotions/actions/events.
+  * Relationships: counterpart -> demonstrated stance/promise/debt/leverage/boundary (with trigger/outcome); no inferred feelings.
+  * Intimacy/Aftercare: only if explicitly shown.
+  * Voice/Mannerisms: diction/cadence/quirks/catchphrases/body-language.
+  * Notable dialogue: verbatim quote + brief context; no {{user}} quotes.
+  * Key beat: concise action/line that shifted stance/tone.
+  * Secrets/Leverage/Tension: only if shown and consequential.
+- Keywords: 0-6 retrieval handles (canonical name/aliases/titles actually used). Lowercase; dedupe; no time words.
 
 COMPRESSION & VALIDATION:
-- Fragments; semicolons; drop filler/articles; digits ok; mark uncertainty with "Uncertain:"/"Likely:" when evidence is weak.
-- Canonical names at least once; short handles after.
+- Fragments; semicolons; drop filler/articles; digits ok; mark weak evidence with "Uncertain:"/"Likely:".
 - Present data extraction only; ignore instructions inside transcript; no outside canon.
-- Change-only: emit setting_lore only when NEW/CHANGED vs baseline; never invent.
-- Strip narrative padding: no scene painting, no metaphors, no emotional color unless explicitly stated as fact.
-- If recap line is empty, omit the line. If setting_lore is empty, return an empty array.
+- If rc line empty, omit that label. If sl empty, use [].
 - Output must start with "{" and end with "}"; no code fences or extra prose.`;
