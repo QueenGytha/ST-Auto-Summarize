@@ -20,7 +20,8 @@ class ErrorLogger:
         # Use the new independent error logging configuration
         self.config = config.get("error_logging", {})
         self.enabled = self.config.get("enabled", False)
-        self.base_error_folder = "logs/unsorted"  # Base folder for unsorted error logs (same as regular logs)
+        self.error_logs_folder = self.config.get("folder", "logs/unsorted")
+        self.base_error_folder = self.error_logs_folder  # Base folder for unsorted error logs
 
         # Additional error logging settings
         self.include_stack_traces = self.config.get("include_stack_traces", True)
@@ -34,12 +35,12 @@ class ErrorLogger:
 
         # Create base error logs directory if enabled
         if self.enabled:
-            os.makedirs(self.base_error_folder, exist_ok=True)
+            os.makedirs(self.error_logs_folder, exist_ok=True)
 
     def _get_error_log_folder(self, character_chat_info: Optional[Tuple[str, str, str]] = None) -> str:
         """
         Determine the error log folder path based on character/chat information.
-        Uses the same folder as regular logs (no separate errors subfolder).
+        Uses the configured error logs folder and nests character-specific logs under it.
 
         Args:
             character_chat_info: Optional tuple of (character, timestamp, operation)
@@ -49,7 +50,7 @@ class ErrorLogger:
         """
         if character_chat_info:
             character, timestamp, operation = character_chat_info
-            folder = os.path.join("logs", "characters", character, timestamp)
+            folder = os.path.join(self.error_logs_folder, "characters", character, timestamp)
             # Create directory structure if it doesn't exist
             os.makedirs(folder, exist_ok=True)
             return folder

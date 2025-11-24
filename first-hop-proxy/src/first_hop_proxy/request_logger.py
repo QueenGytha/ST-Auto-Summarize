@@ -18,7 +18,9 @@ class RequestLogger:
         """Initialize request logger with configuration and optional error logger"""
         self.config = config.get("logging", {})
         self.enabled = self.config.get("enabled", False)
-        self.base_folder = "logs/unsorted"  # Base folder for unsorted logs
+        self.folder = self.config.get("folder", "logs")
+        self.base_folder = os.path.join(self.folder, "unsorted")  # Base folder for unsorted logs
+        self.characters_folder = os.path.join(self.folder, "characters")
         self.include_request_data = self.config.get("include_request_data", True)
         self.include_response_data = self.config.get("include_response_data", True)
         self.include_headers = self.config.get("include_headers", True)
@@ -31,6 +33,7 @@ class RequestLogger:
         # Create base logs directory if it doesn't exist
         if self.enabled:
             os.makedirs(self.base_folder, exist_ok=True)
+            os.makedirs(self.characters_folder, exist_ok=True)
 
     def _get_log_folder(self, character_chat_info: Optional[Tuple[str, str, str]] = None) -> str:
         """
@@ -44,7 +47,7 @@ class RequestLogger:
         """
         if character_chat_info:
             character, timestamp, operation = character_chat_info
-            folder = os.path.join("logs", "characters", character, timestamp)
+            folder = os.path.join(self.characters_folder, character, timestamp)
             # Create directory structure if it doesn't exist
             os.makedirs(folder, exist_ok=True)
             return folder

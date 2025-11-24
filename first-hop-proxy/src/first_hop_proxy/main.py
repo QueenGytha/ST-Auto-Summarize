@@ -552,9 +552,15 @@ def chat_completions(config_path):
 def main():
     """Main entry point for the application"""
     try:
-        # Ensure base log directories exist
-        os.makedirs("logs/characters", exist_ok=True)
-        os.makedirs("logs/unsorted", exist_ok=True)
+        # Ensure base log directories exist (honor configured log folders when provided)
+        logging_config = config.get_logging_config() or {}
+        log_root = logging_config.get("folder", "logs")
+        os.makedirs(os.path.join(log_root, "characters"), exist_ok=True)
+        os.makedirs(os.path.join(log_root, "unsorted"), exist_ok=True)
+
+        error_logging_config = config.get_error_logging_config() or {}
+        error_log_root = error_logging_config.get("folder", os.path.join(log_root, "errors"))
+        os.makedirs(error_log_root, exist_ok=True)
 
         # Initialize loggers
         global request_logger, error_logger
