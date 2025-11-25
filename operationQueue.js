@@ -78,13 +78,27 @@ export const OperationType  = {
 // Module state
 let isInitialized  = false;
 let currentQueue  = null;
-let queueProcessor  = null;
+let queueProcessor  = null; // Reference to active processor promise (not per-queue, processor uses currentQueue)
 let uiUpdateCallback  = null;
-let isClearing  = false; // Flag to prevent enqueuing during clear
-let queueVersion  = 0; // Incremented on clear to invalidate in-flight operations
 let isChatBlocked  = false; // Tracks whether chat is currently blocked by queue
-let isProcessorActive  = false; // CRITICAL: Prevents concurrent processor loops (reentrancy protection)
-const activeOperationControllers  = new Map(); // Tracks active operations for abortion: opId -> { reject }
+let isProcessorActive  = false; // GLOBAL reentrancy guard - prevents concurrent processor loops across all chats
+
+// Transient fields stored in currentQueue (not serialized):
+// - isClearing: boolean - Flag to prevent enqueuing during clear
+// - activeOperationControllers: Map - Tracks active operations for abortion: opId -> { reject }
+
+// Initialize transient (non-serialized) fields on a queue object
+function initTransientFields(queue) {
+  queue.isClearing = false;
+  queue.activeOperationControllers = new Map();
+  return queue;
+}
+
+// Serialize queue for storage, excluding transient fields
+function serializeQueue(queue) {
+  const { isClearing, activeOperationControllers, ...persistentFields } = queue;
+  return JSON.stringify(persistentFields, null, 2);
+}
 
 function setQueueChatBlocking(blocked ) {
   if (isChatBlocked === blocked) {
@@ -257,7 +271,8 @@ async function getQueueEntry() {
       queue: [],
       current_operation_id: null,
       paused: false,
-      version: 1
+      version: 1,
+      queueVersion: 0
     };
 
     // Generate a unique UID for the new entry
@@ -320,6 +335,9 @@ async function loadQueue() {
         if (currentQueue.version === undefined) {
           currentQueue.version = 1;
         }
+        if (currentQueue.queueVersion === undefined) {
+          currentQueue.queueVersion = 0;
+        }
         debug(SUBSYSTEM.QUEUE, `Loaded queue from lorebook with ${currentQueue.queue.length} operations`);
       } catch (parseErr) {
         error(SUBSYSTEM.QUEUE, 'Failed to parse queue entry content:', parseErr);
@@ -327,8 +345,9 @@ async function loadQueue() {
           queue: [],
           current_operation_id: null,
           paused: false,
-          version: 1
-        } ;
+          version: 1,
+          queueVersion: 0
+        };
       }
     } else {
       // No lorebook entry yet, use empty queue
@@ -337,9 +356,13 @@ async function loadQueue() {
         queue: [],
         current_operation_id: null,
         paused: false,
-        version: 1
-      } ;
+        version: 1,
+        queueVersion: 0
+      };
     }
+
+    // Initialize transient (non-serialized) fields
+    initTransientFields(currentQueue);
 
     // Clean up any stale in_progress operations (from crashes/restarts)
     // Also recreate AbortControllers for all operations (not serialized to storage)
@@ -378,12 +401,13 @@ async function loadQueue() {
     notifyUIUpdate();
   } catch (err) {
     error(SUBSYSTEM.QUEUE, 'Failed to load queue:', err);
-    currentQueue = {
+    currentQueue = initTransientFields({
       queue: [],
       current_operation_id: null,
       paused: false,
-      version: 1
-    } ;
+      version: 1,
+      queueVersion: 0
+    });
   }
 }
 
@@ -437,8 +461,8 @@ async function saveQueue(force = false) {
       }
     }
 
-    // Update the entry content in the worldInfo structure
-    queueEntry.content = JSON.stringify(currentQueue, null, 2);
+    // Update the entry content in the worldInfo structure (exclude transient fields)
+    queueEntry.content = serializeQueue(currentQueue);
 
     // Also update in the worldInfo.entries object if it's keyed by UID
     if (!Array.isArray(worldInfo.entries) && worldInfo.entries[queueEntry.uid]) {
@@ -467,14 +491,14 @@ export async function enqueueOperation(type , params , options  = {}) {
   }
 
   // Prevent enqueueing operations if queue is being cleared
-  if (isClearing) {
+  if (currentQueue.isClearing) {
     debug(SUBSYSTEM.QUEUE, `Rejecting enqueue of ${type} - queue is being cleared`);
     return null;
   }
 
   // Check if queue version has changed (queue was cleared while this was pending)
-  if (options.queueVersion !== undefined && options.queueVersion !== queueVersion) {
-    debug(SUBSYSTEM.QUEUE, `Rejecting enqueue of ${type} - queue was cleared (version mismatch: ${options.queueVersion} !== ${queueVersion})`);
+  if (options.queueVersion !== undefined && options.queueVersion !== currentQueue.queueVersion) {
+    debug(SUBSYSTEM.QUEUE, `Rejecting enqueue of ${type} - queue was cleared (version mismatch: ${options.queueVersion} !== ${currentQueue.queueVersion})`);
     return null;
   }
 
@@ -491,7 +515,7 @@ export async function enqueueOperation(type , params , options  = {}) {
     priority: options.priority ?? 0,
     dependencies: options.dependencies ?? [],
     metadata: options.metadata ?? {},
-    queueVersion: queueVersion, // Stamp with current version
+    queueVersion: currentQueue.queueVersion, // Stamp with current version
     pauseBeforeExecution: false, // Pause queue before executing this operation
     abortController: new AbortController() // For cancelling operations (not serialized to storage)
   } ;
@@ -640,7 +664,7 @@ export async function removeOperation(operationId ) {
     }
 
     // Also reject the Promise wrapper (for executeOperation's Promise.race)
-    const controller = activeOperationControllers.get(operationId);
+    const controller = currentQueue.activeOperationControllers.get(operationId);
     if (controller?.reject) {
       // Abort the in-flight operation by rejecting its promise
       debug(SUBSYSTEM.QUEUE, `Aborting ${operation.status} operation ${operationId}`);
@@ -737,12 +761,12 @@ export async function clearAllOperations() {
   const count = currentQueue.queue.length;
 
   // Set clearing flag to prevent new operations from being enqueued
-  isClearing = true;
+  currentQueue.isClearing = true;
   debug(SUBSYSTEM.QUEUE, 'Setting isClearing flag to prevent new operations during clear');
 
   // Increment queue version to invalidate any in-flight operations
-  queueVersion++;
-  debug(SUBSYSTEM.QUEUE, `Incremented queue version to ${queueVersion} - invalidating in-flight operations`);
+  currentQueue.queueVersion++;
+  debug(SUBSYSTEM.QUEUE, `Incremented queue version to ${currentQueue.queueVersion} - invalidating in-flight operations`);
 
   // Abort all IN_PROGRESS/RETRYING operations FIRST (before removing from queue)
   // This triggers their abort controllers, stopping execution immediately
@@ -758,7 +782,7 @@ export async function clearAllOperations() {
     }
 
     // Also reject the Promise wrapper (for executeOperation's Promise.race)
-    const controller = activeOperationControllers.get(op.id);
+    const controller = currentQueue.activeOperationControllers.get(op.id);
     if (controller?.reject) {
       debug(SUBSYSTEM.QUEUE, `Aborting ${op.status} operation ${op.id} during queue clear`);
       controller.reject(new Error('Queue cleared by user'));
@@ -795,7 +819,7 @@ export async function clearAllOperations() {
 
   // Clear the flag after a short delay to allow any in-flight enqueue attempts to be rejected
   await new Promise((resolve) => setTimeout(resolve, UI_UPDATE_DELAY_MS));
-  isClearing = false;
+  currentQueue.isClearing = false;
   debug(SUBSYSTEM.QUEUE, 'Cleared isClearing flag - enqueue operations now allowed');
 
   debug(SUBSYSTEM.QUEUE, `Cleared all ${count} operations (including in-progress)`);
@@ -899,7 +923,7 @@ async function executeOperation(operation ) {
   const abortPromise = new Promise((_resolve, reject) => {
     abortReject = reject;
   });
-  activeOperationControllers.set(operation.id, { reject: abortReject });
+  currentQueue.activeOperationControllers.set(operation.id, { reject: abortReject });
 
   try {
     debug(SUBSYSTEM.QUEUE, `[LIFECYCLE] About to call handler for ${operation.type}, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
@@ -914,8 +938,8 @@ async function executeOperation(operation ) {
     // CRITICAL: Check if queue was cleared while we were executing
     // Defense-in-depth: Even if abort failed, this prevents completion/saving
     const currentOp = getOperation(operation.id);
-    if (!currentOp || currentOp.queueVersion !== queueVersion) {
-      debug(SUBSYSTEM.QUEUE, `Operation ${operation.id} invalidated by queue clear (version ${operation.queueVersion} != ${queueVersion}) - discarding result`);
+    if (!currentOp || currentOp.queueVersion !== currentQueue.queueVersion) {
+      debug(SUBSYSTEM.QUEUE, `Operation ${operation.id} invalidated by queue clear (version ${operation.queueVersion} != ${currentQueue.queueVersion}) - discarding result`);
       return null; // Don't mark as completed, don't save results
     }
 
@@ -1019,7 +1043,7 @@ async function executeOperation(operation ) {
   } finally {
     // Cleanup: Remove abort controller for this operation
     // This happens whether operation succeeded, failed, or was aborted
-    activeOperationControllers.delete(operation.id);
+    currentQueue.activeOperationControllers.delete(operation.id);
     debug(SUBSYSTEM.QUEUE, `Cleaned up abort controller for operation ${operation.id}`);
   }
 }
