@@ -201,13 +201,38 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
   // Count tokens BEFORE metadata injection
   const tokensBeforeMetadata = count_tokens(JSON.stringify(messages));
 
-  // Inject metadata (same as llmClient.js line 168)
+  // Calculate JSON structure overhead BEFORE metadata
+  const embeddedTokensTotal = (messagesTokenCount || 0) + (lorebooksTokenCount || 0);
+  const contentOnlyTokens = presetTokens + systemTokens + userPromptTokens + embeddedTokensTotal + prefillTokens;
+  const jsonStructureOverhead = tokensBeforeMetadata - contentOnlyTokens;
+
+  // Build preliminary breakdown (same as calculateAndInjectTokenBreakdown does)
+  // This is needed because the actual request includes tokenBreakdown in metadata
+  const preliminaryBreakdown = {
+    preset: presetTokens,
+    system: systemTokens,
+    user: userPromptTokens,
+    prefill: prefillTokens,
+    lorebooks: lorebooksTokenCount,
+    messages: messagesTokenCount,
+    content_subtotal: contentOnlyTokens,
+    json_structure: jsonStructureOverhead,
+    metadata: 0,
+    overhead_subtotal: jsonStructureOverhead,
+    total: tokensBeforeMetadata
+  };
+
+  // Inject metadata WITH tokenBreakdown (same as llmClient.js uses calculateAndInjectTokenBreakdown)
+  // This ensures pre-calculation matches actual request metadata size
   const { getOperationSuffix } = await import('./index.js');
 
   const effectiveSuffix = suffix || getOperationSuffix();
   const fullOperation = effectiveSuffix ? `${operationType}${effectiveSuffix}` : operationType;
   const messagesWithMetadata = [...messages];
-  await injectMetadataIntoChatArray(messagesWithMetadata, { operation: fullOperation });
+  await injectMetadataIntoChatArray(messagesWithMetadata, {
+    operation: fullOperation,
+    tokenBreakdown: preliminaryBreakdown
+  });
 
   // Count tokens in the ACTUAL structure that will be sent (same as llmClient.js line 191)
   const actualTokensRaw = count_tokens(JSON.stringify(messagesWithMetadata));
@@ -215,10 +240,7 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
   // Apply correction factor for Claude tokenizer discrepancy
   const actualTokens = applyCorrectionFactor(actualTokensRaw);
 
-  // Calculate overhead
-  const embeddedTokensTotal = (messagesTokenCount || 0) + (lorebooksTokenCount || 0);
-  const contentOnlyTokens = presetTokens + systemTokens + userPromptTokens + embeddedTokensTotal + prefillTokens;
-  const jsonStructureOverhead = tokensBeforeMetadata - contentOnlyTokens;
+  // Calculate metadata overhead (content and JSON structure overhead already calculated above)
   const metadataOverhead = actualTokensRaw - tokensBeforeMetadata;
   const totalOverhead = jsonStructureOverhead + metadataOverhead;
 
