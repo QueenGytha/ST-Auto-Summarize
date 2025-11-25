@@ -89,18 +89,18 @@ All 5 express SAME PATTERN (strategic network builder). After (ONE representativ
 
 KEEP triggers that express DIFFERENT behavioral patterns.
 
-QUOTE DEDUPLICATION (NEW_CONTENT vs EXISTING_CONTENT):
-If EXISTING_CONTENT already has a quote showing same behavior about same subject → skip NEW_CONTENT quote.
+QUOTES = VOICE SIGNAL (critical):
+Purpose: Help LLM reconstruct HOW this character speaks (cadence, style, tone).
+NOT for: Recording what they said (content goes in other facets).
 
-EXISTING_CONTENT has: "A Gift awakened by trauma and fear. I am here now, and together we will learn to control it."
-NEW_CONTENT has: "Your Gift broke through decades of subconscious suppression. Raw power exploded outward from you."
-Both = explaining Gift awakening. Same behavior, same subject. SKIP the NEW_CONTENT quote.
+If EXISTING_CONTENT has a quote → only add NEW quote if it shows a DIFFERENT voice pattern.
+Same voice pattern in different words = duplicate.
 
-NOT duplicates:
-- "'I killed your father'" vs "'The treasure is under the church'" - both revealing, but different information
-- Explaining Gift origin vs giving tactical orders - different behaviors
+Voice patterns: commanding, pleading, philosophical, threatening, tender, formal, casual, etc.
+If existing quote shows "commanding" and new quote also shows "commanding" → skip new quote.
 
-Ask: "Does EXISTING_CONTENT already have a quote showing this behavior about this subject?" YES → skip.
+Test: "Does this quote teach the LLM something NEW about how this character speaks?"
+NO → skip. YES → keep.
 
 APPEARANCE DEDUPLICATION (NEW_CONTENT vs EXISTING_CONTENT):
 If EXISTING_CONTENT already describes a physical trait → skip poetic rewordings.
@@ -132,7 +132,7 @@ CHECKLIST:
 □ Relationships = stance + dynamics (not blow-by-blow)?
 □ State = durable only (not transient/operational)?
 □ Triggers = one per behavioral pattern?
-□ Quotes = one per CHARACTER BEHAVIOR?
+□ Quotes = one per VOICE PATTERN (not per topic)?
 □ Keywords = entity references only (names/titles/aliases), NOT states/adjectives?
 □ Cross-facet duplicates removed?
 □ canonicalName = proper name or null (no titles)

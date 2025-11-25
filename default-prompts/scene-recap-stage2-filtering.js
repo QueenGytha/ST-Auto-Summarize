@@ -19,28 +19,27 @@ For each entity in EXTRACTED_DATA:
 1. Find matching entry in CURRENT_SETTING_LORE (same type+name)
 2. Compare each facet - does CURRENT_SETTING_LORE already cover this?
 3. Output ONLY facets NOT already in CURRENT_SETTING_LORE
-4. If CURRENT_SETTING_LORE already has a quote showing same behavior about same subject → SKIP the new quote
-5. If CURRENT_SETTING_LORE already describes a physical trait → SKIP poetic rewordings
-6. Nothing new for an entity = omit that entity entirely
-7. UID: only if 100% certain match to existing entry
+4. Nothing new for an entity = omit that entity entirely
 
-QUOTE DEDUPLICATION EXAMPLE:
-CURRENT_SETTING_LORE has: "A Gift awakened by trauma and fear. I am here now, and together we will learn to control it."
-EXTRACTED_DATA has: "Your Gift broke through decades of subconscious suppression. Raw power exploded outward from you."
-Both = explaining Gift awakening. Same behavior, same subject. SKIP the new quote.
+QUOTES = VOICE SIGNAL:
+Purpose: Help LLM reconstruct HOW this character speaks (cadence, style, tone).
+If CURRENT_SETTING_LORE already has a quote for this entity → only output a new quote if it shows a DIFFERENT voice pattern.
+Voice patterns: commanding, pleading, philosophical, threatening, tender, formal, etc.
+Same voice pattern in different words = skip the new quote.
 
-APPEARANCE DEDUPLICATION EXAMPLE:
-CURRENT_SETTING_LORE has: "brilliant white; silver hooves; sapphire eyes"
-EXTRACTED_DATA has: "coat gleams like polished silver in moonlight"
-"brilliant white" already covers coat color. SKIP the new description.
+APPEARANCE:
+If CURRENT_SETTING_LORE already describes a physical trait → skip poetic rewordings of that trait.
+Only add appearance if it's a genuinely NEW physical feature.
 
 ---------------- OUTPUT FORMAT ----------------
 
 {
   "sn": "Title (max 5 words)",
   "rc": "DEV: ...\\nPEND: ...",
-  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"], "u": "uid-if-known" }]
+  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"] }]
 }
+
+UID FIELD: Only include "u" field if entity EXACTLY matches an entry in CURRENT_SETTING_LORE. Copy the uid from that entry (e.g., "u": "8"). For NEW entities not in CURRENT_SETTING_LORE, OMIT the "u" field entirely.
 
 CATEGORIZATION:
 - rc: plot outcomes; decisions; state changes; reveals. Fragments. No quotes/feelings/nuance.
@@ -48,7 +47,7 @@ CATEGORIZATION:
   - PEND: active goals (who/what/condition)
 - sl: entity nuance for tone. Stance; voice; relationships; triggers.
   - Types: {{lorebook_entry_types}}
-  - NEVER CREATE ENTRY FOR {{user}}. Skip entirely. No exceptions.
+  - {{user}} = the player character. NEVER create sl entry for {{user}}. {{user}} actions/decisions go in rc. {{user}} relationship info goes in OTHER entities' Relationships (e.g., "Senta->{{user}}: protective").
 
 "k" FIELD = what the entity IS CALLED (names, titles, aliases). These activate the lorebook entry.
 WRONG: adjectives, emotional states, traits (protective, exhausted, sleeping)
