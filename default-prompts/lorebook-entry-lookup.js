@@ -28,18 +28,15 @@ You will be given:
 - A NEW entry candidate formatted as JSON
 - A concise REGISTRY listing for all existing entries of the same type (uid, name, aliases, synopsis)
 
-{{user}} = the player character. NEVER create entries for {{user}}. If the candidate is about {{user}}, output {"rejected": true, "reason": "player character"}.
-
 Tasks:
-1. If the candidate is for {{user}} (the player character), reject it immediately.
-2. Decide which entry type best fits the new entry. The type MUST be one of the allowed list above.
-3. Confirm the candidate represents ONE concrete entity. Its 'name' is its canonical name.
-4. Validate the content uses BULLET POINTS and begins with an identity bullet like "- Identity: <Type> — <Canonical Name>".
-5. Validate content uses specific names/references (not pronouns like "him", "her", "it", or vague terms like "the protagonist").
-6. For character entities with a Notable Dialogue bullet, ensure it does not contain dialogue spoken by {{user}}.
-7. Compare the candidate against the registry listing and identify any entries that already cover this entity.
-8. Place confident matches in 'sameEntityUids'. If you need more detail before deciding, list those UIDs in 'needsFullContextUids'.
-9. Craft a concise one-line synopsis that reflects the candidate's newest or most important information.
+1. Decide which entry type best fits the new entry. The type MUST be one of the allowed list above.
+2. Confirm the candidate represents ONE concrete entity. Its 'name' is its canonical name.
+3. Validate the content uses BULLET POINTS and begins with an identity bullet like "- Identity: <Type> — <Canonical Name>".
+4. Validate content uses specific names/references (not pronouns like "him", "her", "it", or vague terms like "the protagonist").
+5. For character entities with a Notable Dialogue bullet, ensure it does not contain dialogue spoken by {{user}}.
+6. Compare the candidate against the registry listing and identify any entries that already cover this entity.
+7. Place confident matches in 'sameEntityUids'. If you need more detail before deciding, list those UIDs in 'needsFullContextUids'.
+8. Craft a concise one-line synopsis that reflects the candidate's newest or most important information.
 
 Deterministic alignment rules:
 - If the candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix) exactly matches a registry entry's name, include that UID in 'sameEntityUids'.

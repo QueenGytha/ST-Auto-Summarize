@@ -47,7 +47,13 @@ CATEGORIZATION:
   - PEND: active goals (who/what/condition)
 - sl: entity nuance for tone. Stance; voice; relationships; triggers.
   - Types: {{lorebook_entry_types}}
-  - {{user}} = the player character. NEVER create sl entry for {{user}}. {{user}} actions/decisions go in rc. {{user}} relationship info goes in OTHER entities' Relationships (e.g., "Senta->{{user}}: protective").
+
+{{user}} HANDLING (critical - do not lose information):
+- {{user}} = the player character. NEVER create sl entry for {{user}}.
+- {{user}} actions/plot decisions → go in rc (e.g., "{{user}} agreed to help")
+- {{user}}'s stance toward others → store in THAT OTHER entity's Relationships as "{{user}}->Entity: stance"
+  Example: If {{user}} is dismissive toward Senta, put "{{user}}->Senta: dismissive" in SENTA's entry, not a {{user}} entry.
+- {{user}} voice/appearance/triggers → DO NOT CAPTURE (user controls their own character)
 
 "k" FIELD = what the entity IS CALLED (names, titles, aliases). These activate the lorebook entry.
 WRONG: adjectives, emotional states, traits (protective, exhausted, sleeping)
@@ -72,7 +78,7 @@ CHECKLIST:
 □ Fragments? (except quotes)
 □ rc = plot only (no feelings/nuance)?
 □ sl = delta-only (nothing already in CURRENT_SETTING_LORE)?
-□ NO ENTRY FOR {{user}}?
+□ NO sl entry for {{user}}? ({{user}} actions→rc, {{user}} stance→other entities' Relationships)
 □ Keywords = entity references only (names/titles), NOT states/adjectives?
 
 Output JSON only.`;
