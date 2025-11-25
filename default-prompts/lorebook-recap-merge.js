@@ -8,6 +8,11 @@ Fragments; semicolons; no articles/filler.
 Sentence: "A has become protective of B and prioritizes B's safety"
 Fragment: "A->B: protective; prioritizes safety"
 
+DEDUPLICATION PHILOSOPHY (critical):
+ONE REPRESENTATIVE EXAMPLE per behavior/trait/outcome. NOT multiple examples.
+Different wording expressing SAME THING = duplicate. Drop all but one.
+Ask: "What CHARACTER INFORMATION does this convey?" Same info = duplicate.
+
 OUTPUT:
 {
   "mergedContent": "fragment content",
@@ -43,19 +48,19 @@ After: "A->B: protective; promised safety"
 KEEP: debts; boundaries; leverage; trust pivots; promises; tension.
 
 QUOTE DEDUPLICATION (aggressive):
-Same INTENT = duplicate. Keep ONE per INTENT.
-Intent = what the quote reveals about the character (NOT surface topic).
+ONE quote per CHARACTER BEHAVIOR. NOT one per wording variation.
+Different words expressing SAME BEHAVIOR = duplicate. Keep ONE.
 
-TEST each quote: "Does this reveal something UNIQUE not already conveyed?"
-NO → DROP. YES → KEEP.
+Ask for EACH quote: "What CHARACTER BEHAVIOR does this demonstrate?"
+If another quote already demonstrates that behavior → DROP this one.
 
-Before: "'I'll protect you'; 'Won't let anyone hurt you'; 'I've got you'"
-All 3 = same intent (protective). After: "'I'll protect you'"
+Before: "'Please don't go'; 'I'll do anything'; 'Don't leave me'"
+All 3 demonstrate SAME BEHAVIOR (begging). After: "'Please don't go'"
 
-Before: "'It's incredible'; 'Nothing compares'; 'I need more'"
-All 3 = same intent (pleasure). After: "'It's incredible'"
+Before: "'You're worthless'; 'Pathetic creature'; 'Know your place'"
+All 3 demonstrate SAME BEHAVIOR (degrading). After: "'You're worthless'"
 
-KEEP only quotes revealing: distinctive mannerism, unique speech pattern, or genuinely different info.
+KEEP a quote ONLY if it reveals a DIFFERENT behavior not shown by other quotes.
 
 STATE SUPERSESSION:
 Before: "injured; recovering; healed"
@@ -65,7 +70,7 @@ CHECKLIST:
 □ Fragments? (except quotes)
 □ Relationships = net stance?
 □ State = current only?
-□ One quote per intent?
+□ One quote per CHARACTER BEHAVIOR?
 □ canonicalName = proper name or null (no titles)
 
 Output JSON only.`;

@@ -18,13 +18,18 @@ Fragments; semicolons; no articles/filler.
 Sentence: "A betrayed B by revealing the secret to C, causing alliance collapse"
 Fragment: "A betrayed B; revealed secret to C; alliance collapsed"
 
+DEDUPLICATION PHILOSOPHY (critical):
+ONE REPRESENTATIVE EXAMPLE per behavior/trait/outcome. NOT multiple examples.
+Different wording expressing SAME THING = duplicate. Drop all but one.
+Ask: "What CHARACTER INFORMATION does this convey?" Same info = duplicate.
+
 WHAT TO CAPTURE (fragments):
-- plot: outcomes (who/what/result)
+- plot: outcomes (who/what/result) - NOT blow-by-blow sequence
 - goals: intentions (who wants what + condition)
 - reveals: new facts
 - state: durable changes only
 - stance: relationship dynamics per counterpart (stance + debts/boundaries/pivots/promises/tension)
-- voice: distinctive quotes verbatim (full)
+- voice: distinctive quotes verbatim (full) - ONE per character behavior
 - appearance: one per entity (name + trait)
 - docs: verbatim (full)
 
@@ -37,6 +42,18 @@ DROP: ambient; travel; micro-actions; boilerplate; generic emotions; process whe
 
 ---------------- DEDUPLICATE BEFORE OUTPUT ----------------
 
+PLOT DEDUPLICATION (aggressive):
+Capture OUTCOMES, not blow-by-blow sequences.
+Multiple steps toward same outcome = ONE plot item summarizing result.
+
+Before (blow-by-blow): "A kissed B; A removed B's clothes; A touched B intimately; A penetrated B; A climaxed inside B"
+After (outcome): "A had sex with B; climaxed inside"
+
+Before (blow-by-blow): "A threatened B; A demanded answers; A grabbed B; A interrogated B"
+After (outcome): "A interrogated B through intimidation"
+
+Ask: "What is the RESULT that matters for story continuity?" Capture that, not the steps.
+
 STANCE COLLAPSING:
 Collapse repetitive EXAMPLES of same stance; preserve DYNAMICS that define the relationship.
 
@@ -47,22 +64,24 @@ KEEP relationship texture: debts/obligations; boundaries; leverage; trust pivots
 DROP repetitive demonstrations of same stance.
 
 QUOTE DEDUPLICATION (aggressive):
-Same INTENT = duplicate. Keep ONE per INTENT per entity.
-Intent = what the quote reveals about the character (NOT surface topic).
+ONE quote per CHARACTER BEHAVIOR per entity. NOT one per wording variation.
+Different words expressing SAME BEHAVIOR = duplicate. Keep ONE.
 
-TEST each quote: "Does this quote reveal something UNIQUE about tone/mannerism/character not already conveyed by another quote?"
-NO → DROP. YES → KEEP.
+Ask for EACH quote: "What CHARACTER BEHAVIOR does this demonstrate?"
+If another quote already demonstrates that behavior → DROP this one.
 
-Before: "A: 'I'll protect you'; 'Won't let anyone hurt you'; 'I've got you'"
-All 3 reveal same intent (A is protective). After: "A: 'I'll protect you'"
+Before: "A: 'Please don't go'; 'I'll do anything'; 'Don't leave me'; 'I'm begging you'"
+All 4 demonstrate SAME BEHAVIOR (A begs desperately). After: "A: 'Please don't go'"
 
-Before: "B: 'The sensation is incredible'; 'Nothing compares to this feeling'; 'I need more'"
-All 3 reveal same intent (B experiences pleasure). After: "B: 'The sensation is incredible'"
+Before: "B: 'You're worthless'; 'Pathetic creature'; 'Know your place'; 'Bow before me'"
+All 4 demonstrate SAME BEHAVIOR (B is degrading/dominant). After: "B: 'You're worthless'"
 
-Before: "C: 'It worked!'; 'The Gift awakened'; 'I can perceive the currents now'"
-All 3 reveal same intent (C's ability activated). After: "C: 'It worked!'"
+Before: "C: 'It feels amazing'; 'Nothing compares'; 'Don't stop'; 'More, I need more'"
+All 4 demonstrate SAME BEHAVIOR (C experiences pleasure). After: "C: 'It feels amazing'"
 
-KEEP quotes that reveal: distinctive mannerism, unique speech pattern, or genuinely different character information.
+KEEP a quote ONLY if it reveals a DIFFERENT behavior not shown by other quotes from same character.
+Example of DIFFERENT behaviors worth keeping separately:
+- "A: 'I'll kill you'" (threat) vs "A: 'I'm sorry'" (remorse) = different behaviors, keep both
 
 STATE SUPERSESSION:
 Current only; drop progression.
@@ -74,8 +93,9 @@ Each fact ONCE in best category.
 
 CHECKLIST:
 □ Fragments? (except quotes/docs)
+□ Plot = outcomes not blow-by-blow?
 □ Stance = net stance per counterpart?
-□ One quote per INTENT per entity?
+□ One quote per CHARACTER BEHAVIOR per entity?
 □ State = current only?
 □ No cross-category repeats?
 
