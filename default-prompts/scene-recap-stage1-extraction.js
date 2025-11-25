@@ -43,7 +43,7 @@ DROP: ambient; travel; micro-actions; boilerplate; generic emotions; process whe
 ---------------- DEDUPLICATE BEFORE OUTPUT ----------------
 
 PLOT DEDUPLICATION (aggressive):
-Capture OUTCOMES, not blow-by-blow sequences. Plot should be 3-6 items for most scenes.
+Capture OUTCOMES, not blow-by-blow sequences.
 
 Ask for EACH plot item: "Is this a RESULT or a STEP toward a result?"
 STEP → merge into the result it leads to. RESULT → keep.
@@ -75,24 +75,16 @@ KEEP relationship texture: debts/obligations; boundaries; leverage; trust pivots
 DROP repetitive demonstrations of same stance.
 
 QUOTE DEDUPLICATION (aggressive):
-ONE quote per CHARACTER BEHAVIOR per entity. NOT one per wording variation.
-Different words expressing SAME BEHAVIOR = duplicate. Keep ONE.
+Duplicates = same behavior ABOUT the same thing. Different wording doesn't make it unique.
 
-Ask for EACH quote: "What CHARACTER BEHAVIOR does this demonstrate?"
-If another quote already demonstrates that behavior → DROP this one.
+Before: "A: 'Help me or leave me to die'; 'Refuse and I'll kick down the doors'; 'The healer, no one else'"
+All 3 = demanding medical help. Same behavior, same subject. Duplicates - keep most distinctive.
 
-Before: "A: 'Please don't go'; 'I'll do anything'; 'Don't leave me'; 'I'm begging you'"
-All 4 demonstrate SAME BEHAVIOR (A begs desperately). After: "A: 'Please don't go'"
+NOT duplicates:
+- "'I killed your father'" vs "'The treasure is under the church'" - both revealing, but different information
+- "'I'll destroy you'" (to enemy) vs "'Touch her and die'" (protecting someone) - different subjects
 
-Before: "B: 'You're worthless'; 'Pathetic creature'; 'Know your place'; 'Bow before me'"
-All 4 demonstrate SAME BEHAVIOR (B is degrading/dominant). After: "B: 'You're worthless'"
-
-Before: "C: 'It feels amazing'; 'Nothing compares'; 'Don't stop'; 'More, I need more'"
-All 4 demonstrate SAME BEHAVIOR (C experiences pleasure). After: "C: 'It feels amazing'"
-
-KEEP a quote ONLY if it reveals a DIFFERENT behavior not shown by other quotes from same character.
-Example of DIFFERENT behaviors worth keeping separately:
-- "A: 'I'll kill you'" (threat) vs "A: 'I'm sorry'" (remorse) = different behaviors, keep both
+Ask: "Same action about the same thing?" YES → duplicate.
 
 STATE SUPERSESSION:
 Current only; drop progression.

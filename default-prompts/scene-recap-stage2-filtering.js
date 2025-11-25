@@ -18,8 +18,12 @@ OUTPUT:
 {
   "sn": "Title (max 5 words)",
   "rc": "DEV: ...\\nPEND: ...",
-  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"], "u": "uid-if-known" }]
+  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["names/titles entity is called - NOT adjectives/states"], "u": "uid-if-known" }]
 }
+
+"k" FIELD = what the entity IS CALLED (names, titles, aliases, nicknames, species). These activate the lorebook entry when mentioned in chat.
+WRONG: adjectives, emotional states, actions, traits (protective, exhausted, sleeping, fierce)
+RIGHT: proper names, titles, what someone would call them (Senta, white mare, Companion, Captain Varis)
 
 CATEGORIZATION:
 - rc: plot outcomes; decisions; state changes; reveals. Fragments. No quotes/feelings/nuance.
@@ -27,7 +31,7 @@ CATEGORIZATION:
   - PEND: active goals (who/what/condition)
 - sl: entity nuance for tone. Stance; voice; relationships; triggers.
   - Types: {{lorebook_entry_types}}
-  - Never for {{user}}
+  - NEVER CREATE ENTRY FOR {{user}}. Skip entirely. No exceptions. {{user}} info goes in rc or other entities' Relationships only.
 
 DELTA CHECK:
 - Compare against BASELINE (same type+name)
@@ -36,7 +40,7 @@ DELTA CHECK:
 - UID: only if 100% certain match
 
 FACETS (fragments; only when new):
-Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential | Keywords: 0-6 tokens
+Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential
 
 ---------------- BASELINE ----------------
 <CURRENT_SETTING_LORE>
@@ -57,22 +61,15 @@ After: "A->B: protective; promised safety"
 KEEP: debts; boundaries; leverage; trust pivots; promises; tension.
 
 QUOTE DEDUPLICATION (aggressive):
-ONE quote per CHARACTER BEHAVIOR per entity. NOT one per wording variation.
-Different words expressing SAME BEHAVIOR = duplicate. Keep ONE.
+Duplicates = same behavior ABOUT the same thing. Different wording doesn't make it unique.
 
-Ask for EACH quote: "What CHARACTER BEHAVIOR does this demonstrate?"
-If another quote already demonstrates that behavior → DROP this one.
+Before: "'Help me or leave me to die'; 'Refuse and I'll kick down the doors'; 'The healer, no one else'"
+All 3 = demanding medical help. Same behavior, same subject. Duplicates.
 
-Before: "'Please don't go'; 'I'll do anything'; 'Don't leave me'; 'I'm begging you'"
-All 4 demonstrate SAME BEHAVIOR (begging). After: "'Please don't go'"
+NOT duplicates:
+- "'I killed your father'" vs "'The treasure is under the church'" - both revealing, but different information
 
-Before: "'You're worthless'; 'Pathetic creature'; 'Know your place'"
-All 3 demonstrate SAME BEHAVIOR (degrading). After: "'You're worthless'"
-
-Before: "'It feels amazing'; 'Nothing compares'; 'Don't stop'; 'More'"
-All 4 demonstrate SAME BEHAVIOR (pleasure). After: "'It feels amazing'"
-
-KEEP a quote ONLY if it reveals a DIFFERENT behavior not shown by other quotes from same character.
+Ask: "Same action about the same thing?" YES → duplicate.
 
 STATE SUPERSESSION:
 Before: "injured; recovering; healed"
@@ -81,9 +78,10 @@ After: "healed"
 CHECKLIST:
 □ Fragments? (except quotes)
 □ rc = plot only?
-□ sl = delta-only?
+□ sl = delta-only? NO ENTRY FOR {{user}}?
 □ Relationships = stance + dynamics?
-□ One quote per CHARACTER BEHAVIOR per entity?
+□ Quotes = one per CHARACTER BEHAVIOR?
+□ Keywords = entity references only (names/titles), NOT states/adjectives?
 □ State = current only?
 
 Output JSON only.`;

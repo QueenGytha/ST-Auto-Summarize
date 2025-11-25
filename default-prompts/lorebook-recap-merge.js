@@ -22,12 +22,15 @@ OUTPUT:
 SUBJECT LOCK: Entry = {{entry_name}}. Other entities → Relationships only.
 
 MERGE:
-- Dedupe EXISTING; merge NEW
-- Same idea = keep shortest
-- Quotes: verbatim; one per intent
+- EXISTING is the baseline
+- For each item in NEW, ask: "Does EXISTING already show this?"
+  - YES, and EXISTING version is as good or better → skip NEW item
+  - YES, but NEW version is more distinctive → REPLACE the EXISTING item with NEW
+  - NO → add NEW item
+- This applies to quotes, triggers, relationship details - everything
 
 FACETS (fragments; only when shown):
-Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential | Keywords: 0-6 tokens
+Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential | Keywords: ENTITY REFERENCES ONLY (names/titles/aliases that refer TO this entity for lorebook activation; NOT emotional states, NOT adjectives, NOT experiences)
 
 ---------------- EXISTING ----------------
 <EXISTING_CONTENT>
@@ -88,16 +91,32 @@ All 5 express SAME PATTERN (strategic network builder). After (ONE representativ
 KEEP triggers that express DIFFERENT behavioral patterns.
 
 QUOTE DEDUPLICATION (aggressive):
-ONE quote per CHARACTER BEHAVIOR per entity. NOT one per wording variation.
-Different words expressing SAME BEHAVIOR toward same entity = duplicate. Keep ONE.
+Duplicates = same behavior ABOUT the same thing. Different wording doesn't make it unique.
 
-Ask for EACH quote: "What CHARACTER BEHAVIOR does this demonstrate? Toward whom?"
-If another quote already demonstrates that behavior toward same entity → DROP this one.
+Before: "'Help me or leave me to die'; 'Refuse and I'll kick down the doors'; 'The healer, no one else'"
+All 3 = demanding medical help. Same behavior, same subject. Duplicates.
 
-Before: "'Please don't go'; 'I'll do anything'; 'Don't leave me'" (all to B)
-All 3 demonstrate SAME BEHAVIOR (begging) toward same entity. After: "'Please don't go'"
+Before: "'You've cost me everything'; 'I trusted you'; 'This is how you repay me'"
+All 3 = accusing someone of betrayal. Same behavior, same subject. Duplicates.
 
-KEEP quotes that reveal DIFFERENT behaviors OR same behavior toward DIFFERENT entities.
+NOT duplicates:
+- "'I killed your father'" vs "'The treasure is under the church'" - both revealing, but different information
+- "'I'll destroy you'" (to enemy) vs "'Touch her and die'" (protecting someone) - different subjects
+
+Ask: "Same action about the same thing?" YES → duplicate.
+
+KEYWORD RULES (critical):
+Keywords = ACTIVATION TRIGGERS for lorebook. Terms that REFER TO this entity.
+CORRECT: character names, nicknames, titles, aliases, species, role names
+WRONG: emotional states, adjectives, actions, experiences, feelings
+
+Before (BAD - states/experiences): "protective, exhausted, fierce-protection, flustered, resigned, sleeping"
+After (GOOD - entity references): "Senta, white mare, Companion, silver hooves"
+
+Before (BAD - adjectives): "loyal, brave, cunning, protective-guard, inevitable"
+After (GOOD - what they're called): "Captain Varis, the Captain, Varis, scarred veteran"
+
+NEVER include: emotional states, personality traits, actions taken, things experienced, hyphen variants of same word.
 
 CROSS-FACET:
 Each idea once in best facet.
@@ -107,7 +126,8 @@ CHECKLIST:
 □ Relationships = stance + dynamics (not blow-by-blow)?
 □ State = durable only (not transient/operational)?
 □ Triggers = one per behavioral pattern?
-□ One quote per CHARACTER BEHAVIOR per entity?
+□ Quotes = one per CHARACTER BEHAVIOR?
+□ Keywords = entity references only (names/titles/aliases), NOT states/adjectives?
 □ Cross-facet duplicates removed?
 □ canonicalName = proper name or null (no titles)
 

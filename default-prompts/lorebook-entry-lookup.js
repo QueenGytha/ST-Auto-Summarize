@@ -45,13 +45,13 @@ Deterministic alignment rules:
 - Canonical names MUST omit titles/honorifics/ranks (use "Elizabeth" not "Queen Elizabeth"; "Marcus" not "Captain Marcus"). Titles can live in content/keywords, not in the canonical name.
 
 Alias guidance (characters/items):
-- Keep keywords lean: 3-6 concise canonical/alias tokens actually used in chat. Drop descriptive/generic/context words. No padding with loose associations.
+- Keep keywords lean: 1-6 concise canonical/alias tokens actually used in chat. Drop descriptive/generic/context words. No padding with loose associations.
   
 Location naming (subareas):
 - If the entity is a sub‑location within a named parent (e.g., Castle → Throne Room; City → Market District), the canonical name MUST be "Parent-Subarea".
 - For multiple levels, chain with hyphens: "Parent-Child-Grandchild" (e.g., "Castle-West Wing-Library").
 - The content should include a bullet linking the immediate parent (e.g., "Located in: West Wing") and optionally a top‑level link (e.g., "Part of: Castle").
-- Keywords should include both parent and subarea tokens (and top‑level when present in chat) within the same 3-6 keyword budget.
+- Keywords should include both parent and subarea tokens (and top‑level when present in chat) within the same 1-6 keyword budget.
 - Prefer the longest fully specified chain as the canonical name when deeper subareas are explicitly named (e.g., choose "Castle-West Wing-Library" over a partial).
 
 Rules:

@@ -8,11 +8,6 @@ Fragments; semicolons; no articles/filler.
 Sentence: "A agreed to help B investigate the threat after arriving"
 Fragment: "A+B arrived; agreed investigate threat"
 
-DEDUPLICATION PHILOSOPHY (critical):
-ONE REPRESENTATIVE EXAMPLE per outcome/goal. NOT multiple examples.
-Different wording expressing SAME THING = duplicate. Drop all but one.
-Compress EXISTING content, not just append new.
-
 OUTPUT:
 {"recap":"DEV: ...\\nPEND: ..."}
 - DEV: outcomes; state changes; reveals
@@ -20,16 +15,25 @@ OUTPUT:
 - Omit empty sections. No quotes.
 
 MERGE:
-- Start from CURRENT; add new from NEW
-- Restates existing = keep existing
-- Drop resolved goals
-- COMPRESS existing when merging - collapse sequences, remove superseded
+- CURRENT is the baseline
+- For each item in NEW, ask: "Does CURRENT already show this?"
+  - YES → skip (or replace if NEW supersedes)
+  - NO → add
+- Drop resolved goals from PEND
+- Collapse sequences into outcomes
 
 WHAT BELONGS:
-DEV: outcomes; decisions; reveals
-NOT DEV: stance; feelings; nuance (→ setting_lore)
-PEND: active goals; unresolved hooks
-NOT PEND: completed; routine tasks; minor logistics
+DEV: outcomes; decisions; reveals; permanent state changes
+NOT DEV: stance; feelings; nuance (→ setting_lore); operational details; logistics; who went where; who spoke to whom (unless outcome); physical intimacy steps
+PEND: active goals; unresolved hooks; pending decisions
+NOT PEND: completed; routine tasks; minor logistics; "maintain X" unless endangered
+
+OPERATIONAL DETAILS TO DROP:
+- "both quartered separately" → operational, not outcome
+- "closed with kiss" → step, not outcome (consummated = outcome)
+- "briefed X on Y" → unless Y is new reveal
+- "demonstrated skill" → unless establishes new capability
+- "visited" → unless visit had consequential outcome
 
 ---------------- CURRENT ----------------
 <CURRENT_RUNNING_RECAP>
@@ -70,8 +74,9 @@ CHECKLIST:
 □ Fragments?
 □ DEV = outcomes not process?
 □ Sequences collapsed?
+□ NEW items only added if not already in CURRENT?
 □ PEND = active goals only (no routine tasks)?
 □ No stance/feelings?
-□ No duplicates?
+□ No operational details?
 
 Output JSON only.`;

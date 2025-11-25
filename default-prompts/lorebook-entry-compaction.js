@@ -8,10 +8,11 @@ Fragments; semicolons; no articles/filler.
 Sentence: "A has become protective of B and prioritizes B's safety"
 Fragment: "A->B: protective; prioritizes safety"
 
-DEDUPLICATION PHILOSOPHY (critical):
-ONE REPRESENTATIVE EXAMPLE per behavior/trait/outcome. NOT multiple examples.
-Different wording expressing SAME THING = duplicate. Drop all but one.
-Ask: "What CHARACTER INFORMATION does this convey?" Same info = duplicate.
+DEDUPLICATION (critical):
+For each item, ask: "Is this already shown by another item?"
+- If YES → remove it (keep the more distinctive one)
+- If NO → keep it
+Same information in different words = duplicate. Remove duplicates.
 
 CONTEXT: Model sees content only (no title/type). Use explicit names.
 
@@ -22,7 +23,7 @@ OUTPUT:
 }
 
 FACETS (fragments; only when shown):
-Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential | Keywords: 0-6 tokens | Locations: Parent-Subarea
+Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential | Keywords: ENTITY REFERENCES ONLY (names/titles/aliases for lorebook activation; NOT states/adjectives) | Locations: Parent-Subarea
 
 ---------------- ENTRY ----------------
 <EXISTING_CONTENT>
@@ -78,16 +79,25 @@ All 5 express SAME PATTERN (strategic network builder). After (ONE representativ
 KEEP triggers that express DIFFERENT behavioral patterns.
 
 QUOTE DEDUPLICATION (aggressive):
-ONE quote per CHARACTER BEHAVIOR per entity. NOT one per wording variation.
-Different words expressing SAME BEHAVIOR toward same entity = duplicate. Keep ONE.
+Duplicates = same behavior ABOUT the same thing. Different wording doesn't make it unique.
 
-Ask for EACH quote: "What CHARACTER BEHAVIOR does this demonstrate? Toward whom?"
-If another quote already demonstrates that behavior toward same entity → DROP this one.
+Before: "'Help me or leave me to die'; 'Refuse and I'll kick down the doors'; 'The healer, no one else'"
+All 3 = demanding medical help. Same behavior, same subject. Duplicates.
 
-Before: "'Please don't go'; 'I'll do anything'; 'Don't leave me'" (all to B)
-All 3 demonstrate SAME BEHAVIOR (begging) toward same entity. After: "'Please don't go'"
+NOT duplicates:
+- "'I killed your father'" vs "'The treasure is under the church'" - both revealing, but different information
 
-KEEP quotes that reveal DIFFERENT behaviors OR same behavior toward DIFFERENT entities.
+Ask: "Same action about the same thing?" YES → duplicate.
+
+KEYWORD RULES (critical):
+Keywords = ACTIVATION TRIGGERS for lorebook. Terms that REFER TO this entity.
+CORRECT: character names, nicknames, titles, aliases, species, role names
+WRONG: emotional states, adjectives, actions, experiences, feelings
+
+Before (BAD): "protective, exhausted, fierce-protection, flustered, resigned, sleeping, inevitable"
+After (GOOD): "Senta, white mare, Companion, silver hooves"
+
+STRIP ALL non-reference keywords. Keep ONLY names/titles/aliases that someone would use to refer to this entity.
 
 CROSS-FACET:
 Each idea once in best facet.
@@ -97,7 +107,8 @@ CHECKLIST:
 □ Relationships = stance + dynamics (not blow-by-blow)?
 □ State = durable only (not transient/operational)?
 □ Triggers = one per behavioral pattern?
-□ One quote per CHARACTER BEHAVIOR per entity?
+□ Quotes = one per CHARACTER BEHAVIOR?
+□ Keywords = entity references only (names/titles), NOT states/adjectives?
 □ Cross-facet duplicates removed?
 □ canonicalName = proper name or null (no titles)
 
