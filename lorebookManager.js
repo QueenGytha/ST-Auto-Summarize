@@ -662,7 +662,14 @@ export async function ensureChatLorebook() {
       }
 
       // Import/update entries from active global/character lorebooks
-      await duplicateActiveLorebookEntries(existingLorebook);
+      // Skip if chat already has scene recaps (bulk duplication was already done)
+      const { chat, get_data } = await import('./index.js');
+      const hasExistingSceneRecaps = chat.some(msg => get_data(msg, 'scene_recap_memory'));
+      if (!hasExistingSceneRecaps) {
+        await duplicateActiveLorebookEntries(existingLorebook);
+      } else {
+        debug?.('Skipping bulk duplication - chat already has scene recaps');
+      }
       return true;
     }
 
