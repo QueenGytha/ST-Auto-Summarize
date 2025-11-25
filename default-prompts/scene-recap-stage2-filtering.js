@@ -32,7 +32,7 @@ WORKFLOW
 
 OUTPUT FORMAT (compact keys):
 {
-  "sn": "Brief title; no quotes",
+  "sn": "Brief title (max 5 words)",
   "rc": "DEV: ...\\nPEND: ...",
   "sl": [
     { "t": "character", "n": "Entity Name", "c": "Description with headings", "k": ["k1","k2"], "u": "existing-uid-if-confirmed" }
