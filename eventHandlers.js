@@ -47,7 +47,11 @@ import {
   installWorldInfoActivationLogger,
   addLorebookViewerButton,
   bindLorebookViewerButton,
-  bindSceneBreakLorebookIcons } from
+  bindSceneBreakLorebookIcons,
+  detectImportedChatWithMissingLorebook,
+  findMostRecentLorebookSnapshot,
+  reconstructLorebookFromSnapshot,
+  toast } from
 './index.js';
 
 // Import lorebooks utilities (will be dynamically imported if enabled)
@@ -78,6 +82,60 @@ async function handleChatChanged() {
     } else {
       await operationQueueModule.reloadQueue();
     }
+  }
+
+  // Check for imported chat with missing lorebook
+  await checkForImportedChat();
+}
+
+async function checkForImportedChat() {
+  try {
+    const importDetection = detectImportedChatWithMissingLorebook();
+
+    if (!importDetection.isLikelyImport) {
+      return;
+    }
+
+    log(SUBSYSTEM.CORE,
+      `Detected imported chat with missing lorebook: '${importDetection.missingLorebookName}'`
+    );
+
+    // Check if there's a snapshot available to reconstruct from
+    const snapshot = findMostRecentLorebookSnapshot();
+    if (!snapshot) {
+      log(SUBSYSTEM.CORE,
+        'Imported chat has no lorebook snapshots available for reconstruction'
+      );
+      toast(
+        `Imported chat detected but no lorebook snapshots found. Lorebook cannot be reconstructed.`,
+        'warning'
+      );
+      return;
+    }
+
+    log(SUBSYSTEM.CORE,
+      `Found snapshot at message ${snapshot.messageIndex} with ${snapshot.entryCount} entries`
+    );
+
+    // Show confirmation dialog to user
+    const confirmMessage =
+      `This chat appears to be imported from another device.\n\n` +
+      `The lorebook '${importDetection.missingLorebookName}' is referenced but doesn't exist.\n\n` +
+      `A snapshot with ${snapshot.entryCount} entries was found at message ${snapshot.messageIndex}.\n\n` +
+      `Would you like to reconstruct the lorebook from this snapshot?`;
+
+    if (confirm(confirmMessage)) {
+      log(SUBSYSTEM.CORE, 'User confirmed lorebook reconstruction for imported chat');
+      await reconstructLorebookFromSnapshot(importDetection.missingLorebookName);
+    } else {
+      log(SUBSYSTEM.CORE, 'User declined lorebook reconstruction for imported chat');
+      toast(
+        'Lorebook reconstruction skipped. You can manually restore from a scene break snapshot later.',
+        'info'
+      );
+    }
+  } catch (err) {
+    debug(SUBSYSTEM.CORE, 'Error checking for imported chat:', err);
   }
 }
 

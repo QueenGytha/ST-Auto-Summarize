@@ -248,6 +248,58 @@ export function lorebookExists(lorebookName ) {
   }
 }
 
+/**
+ * Detect if current chat appears to be an imported chat with missing lorebook.
+ * Used to preserve running recap data and trigger lorebook reconstruction on import.
+ *
+ * Detection heuristics:
+ * 1. chat_metadata.world_info references a lorebook that doesn't exist in world_names
+ * 2. No main_chat metadata (which would indicate a branch/checkpoint)
+ * 3. Has running recap data with versions (indicates prior use)
+ *
+ * @returns {Object} Detection result with flags
+ */
+export function detectImportedChatWithMissingLorebook() {
+  try {
+    const attachedLorebookName = chat_metadata?.[METADATA_KEY];
+
+    // Check 1: Has lorebook reference but lorebook doesn't exist
+    const hasMissingLorebook = attachedLorebookName && !lorebookExists(attachedLorebookName);
+
+    // Check 2: Not a branch/checkpoint (those have main_chat metadata)
+    const isNotBranch = !chat_metadata?.main_chat;
+
+    // Check 3: Has running recap data with versions (indicates prior recap activity)
+    const runningRecapData = chat_metadata?.auto_recap_running_scene_recaps;
+    const hasRunningRecapVersions = runningRecapData?.versions?.length > 0;
+
+    // Combined: Likely an import if lorebook is missing but we have recap data
+    const isLikelyImport = hasMissingLorebook && isNotBranch && hasRunningRecapVersions;
+
+    debug(`[Import Detection] attachedLorebook: "${attachedLorebookName}", ` +
+      `hasMissingLorebook: ${hasMissingLorebook}, isNotBranch: ${isNotBranch}, ` +
+      `hasRunningRecapVersions: ${hasRunningRecapVersions} (versions: ${runningRecapData?.versions?.length ?? 0}), ` +
+      `isLikelyImport: ${isLikelyImport}`);
+
+    return {
+      isLikelyImport,
+      hasMissingLorebook,
+      isNotBranch,
+      hasRunningRecapVersions,
+      missingLorebookName: hasMissingLorebook ? attachedLorebookName : null
+    };
+  } catch (err) {
+    error("Error detecting imported chat", err);
+    return {
+      isLikelyImport: false,
+      hasMissingLorebook: false,
+      isNotBranch: true,
+      hasRunningRecapVersions: false,
+      missingLorebookName: null
+    };
+  }
+}
+
 export async function handleMissingLorebook(missingLorebookName ) {
   try {
     log(`Detected missing lorebook: "${missingLorebookName}"`);

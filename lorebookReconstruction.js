@@ -15,7 +15,9 @@ import {
   getAttachedLorebook,
   getLorebookEntries,
   deleteLorebookEntry,
-  invalidateLorebookCache
+  invalidateLorebookCache,
+  lorebookExists,
+  attachLorebook
 } from './lorebookManager.js';
 import { getQueueStats } from './operationQueue.js';
 
@@ -100,6 +102,69 @@ export function extractHistoricalLorebookState(messageIndex) {
     sourceMessageIndex: messageIndex,
     hasUIDGaps: hasGaps || firstUID !== 0
   };
+}
+
+/**
+ * Find the most recent lorebook snapshot in the chat by scanning backwards
+ *
+ * Used during import reconstruction to find the best snapshot to restore from.
+ * Scans from the end of chat backwards until finding a scene break with valid allEntries.
+ *
+ * @returns {Object|null} Snapshot info or null if none found
+ */
+export function findMostRecentLorebookSnapshot() {
+  const ctx = window.SillyTavern.getContext();
+  const chat = ctx.chat;
+
+  if (!chat || chat.length === 0) {
+    debug(SUBSYSTEM.LOREBOOK, 'findMostRecentLorebookSnapshot: No chat messages');
+    return null;
+  }
+
+  debug(SUBSYSTEM.LOREBOOK, `Scanning ${chat.length} messages backwards for lorebook snapshot`);
+
+  for (let i = chat.length - 1; i >= 0; i--) {
+    const message = chat[i];
+
+    const isSceneBreak = get_data(message, 'scene_break');
+    if (!isSceneBreak) {
+      continue;
+    }
+
+    const metadata = get_data(message, 'scene_recap_metadata');
+    if (!metadata || Object.keys(metadata).length === 0) {
+      continue;
+    }
+
+    const currentVersionIndex = get_data(message, 'scene_recap_current_index') ?? 0;
+    const versionMetadata = metadata[currentVersionIndex];
+
+    if (!versionMetadata) {
+      continue;
+    }
+
+    const allEntries = versionMetadata.allEntries;
+    if (!allEntries || !Array.isArray(allEntries) || allEntries.length === 0) {
+      debug(SUBSYSTEM.LOREBOOK,
+        `Scene break at message ${i} has no allEntries, continuing search`
+      );
+      continue;
+    }
+
+    debug(SUBSYSTEM.LOREBOOK,
+      `Found lorebook snapshot at message ${i} with ${allEntries.length} entries`
+    );
+
+    return {
+      messageIndex: i,
+      entries: allEntries,
+      entryCount: allEntries.length,
+      chatLorebookName: versionMetadata.chatLorebookName || 'Unknown'
+    };
+  }
+
+  debug(SUBSYSTEM.LOREBOOK, 'No lorebook snapshot found in chat');
+  return null;
 }
 
 /**
@@ -433,6 +498,87 @@ export async function reconstructPointInTimeLorebook(messageIndex, targetLoreboo
 }
 
 /**
+ * Reconstruct a lorebook from snapshot for imported chats
+ *
+ * Used when a chat is imported and the referenced lorebook doesn't exist.
+ * Finds the most recent snapshot in the chat and creates a new lorebook from it.
+ *
+ * @param {string} newLorebookName - Name for the new lorebook to create
+ * @returns {Promise<Object>} Reconstruction result with metadata
+ */
+export async function reconstructLorebookFromSnapshot(newLorebookName) {
+  try {
+    debug(SUBSYSTEM.LOREBOOK,
+      `Starting lorebook reconstruction from snapshot for imported chat`
+    );
+
+    // Step 1: Find most recent snapshot in chat
+    const snapshot = findMostRecentLorebookSnapshot();
+    if (!snapshot) {
+      throw new Error('No lorebook snapshot found in chat history');
+    }
+
+    debug(SUBSYSTEM.LOREBOOK,
+      `Found snapshot at message ${snapshot.messageIndex} with ${snapshot.entryCount} entries ` +
+      `(from lorebook: ${snapshot.chatLorebookName})`
+    );
+
+    // Step 2: Build historical state object for reconstruction
+    const sortedEntries = [...snapshot.entries].sort((a, b) => a.uid - b.uid);
+    const firstUID = sortedEntries.length > 0 ? sortedEntries[0].uid : 0;
+    const hasGaps = sortedEntries.some((entry, index) => entry.uid !== (firstUID + index));
+
+    const historicalState = {
+      entries: sortedEntries,
+      sourceLorebookName: snapshot.chatLorebookName,
+      totalEntries: snapshot.entryCount,
+      sourceMessageIndex: snapshot.messageIndex,
+      hasUIDGaps: hasGaps || firstUID !== 0
+    };
+
+    // Step 3: Create new lorebook
+    const sanitizedLorebookName = await createLorebookForSnapshot(newLorebookName);
+
+    // Step 4: Reconstruct all entries
+    await reconstructLorebookEntries(sanitizedLorebookName, historicalState);
+
+    // Step 5: Create operation queue entry
+    await createOperationQueueEntry(sanitizedLorebookName);
+
+    // Step 6: Attach the new lorebook to the chat
+    attachLorebook(sanitizedLorebookName);
+
+    const result = {
+      lorebookName: sanitizedLorebookName,
+      entriesReconstructed: historicalState.totalEntries,
+      sourceMessageIndex: snapshot.messageIndex,
+      sourceLorebookName: historicalState.sourceLorebookName,
+      hadUIDGaps: historicalState.hasUIDGaps
+    };
+
+    debug(SUBSYSTEM.LOREBOOK,
+      `✓ Lorebook reconstruction from snapshot complete: ${sanitizedLorebookName} ` +
+      `(${result.entriesReconstructed} entries from message ${snapshot.messageIndex})`
+    );
+
+    toast(
+      `Lorebook reconstructed: ${result.entriesReconstructed} entries from snapshot at message ${snapshot.messageIndex}`,
+      'success'
+    );
+
+    return result;
+
+  } catch (err) {
+    error(SUBSYSTEM.LOREBOOK,
+      `Lorebook reconstruction from snapshot failed:`,
+      err
+    );
+    toast(`Lorebook reconstruction failed: ${err.message}`, 'error');
+    throw err;
+  }
+}
+
+/**
  * Restore current chat lorebook to point-in-time snapshot from scene break
  *
  * Follows the exact same logic as branch/checkpoint restoration, but applies
@@ -468,6 +614,22 @@ export async function restoreCurrentLorebookFromSnapshot(messageIndex, skipConfi
     }
 
     debug(SUBSYSTEM.LOREBOOK, `Current lorebook: ${currentLorebookName}`);
+
+    // Step 2b: Check if lorebook exists (may be missing for imported chats)
+    if (!lorebookExists(currentLorebookName)) {
+      debug(SUBSYSTEM.LOREBOOK,
+        `Lorebook '${currentLorebookName}' does not exist (imported chat). ` +
+        `Using reconstructLorebookFromSnapshot() to create new lorebook.`
+      );
+
+      // For imports, create a new lorebook from the most recent snapshot
+      // This will find the best snapshot automatically and attach the new lorebook
+      const result = await reconstructLorebookFromSnapshot(currentLorebookName);
+      return {
+        ...result,
+        wasImportReconstruction: true
+      };
+    }
 
     // Step 3: Extract historical state from scene break snapshot
     const historicalState = extractHistoricalLorebookState(messageIndex);

@@ -12,7 +12,8 @@ import {
   saveChatDebounced,
   saveMetadata,
   getCurrentChatId,
-  resolveOperationConfig } from
+  resolveOperationConfig,
+  detectImportedChatWithMissingLorebook } from
 './index.js';
 import { running_scene_recap_prompt } from './default-prompts/index.js';
 import { build as buildSceneRecaps } from './macros/scene_recaps.js';
@@ -40,17 +41,29 @@ function get_running_recap_storage() {
       );
       chat_metadata.auto_recap_running_scene_recaps.chat_id = currentChatId;
     } else {
-      // Data belongs to different chat - reset to prevent contamination
-      error(
-        SUBSYSTEM.RUNNING,
-        `Running recap storage belongs to chat '${chat_metadata.auto_recap_running_scene_recaps.chat_id}', ` +
-        `but current chat is '${currentChatId}'. Resetting to prevent cross-chat contamination.`
-      );
-      chat_metadata.auto_recap_running_scene_recaps = {
-        chat_id: currentChatId,
-        current_version: 0,
-        versions: []
-      };
+      // Check if this is an imported chat (has extension data but lorebook is missing)
+      const importDetection = detectImportedChatWithMissingLorebook();
+      if (importDetection.isLikelyImport) {
+        // Imported chat - preserve data and update chat_id
+        log(
+          SUBSYSTEM.RUNNING,
+          `Import detected: updating running recap chat_id from '${chat_metadata.auto_recap_running_scene_recaps.chat_id}' to '${currentChatId}'. ` +
+          `Missing lorebook: '${importDetection.missingLorebookName}'`
+        );
+        chat_metadata.auto_recap_running_scene_recaps.chat_id = currentChatId;
+      } else {
+        // Data belongs to different chat - reset to prevent contamination
+        error(
+          SUBSYSTEM.RUNNING,
+          `Running recap storage belongs to chat '${chat_metadata.auto_recap_running_scene_recaps.chat_id}', ` +
+          `but current chat is '${currentChatId}'. Resetting to prevent cross-chat contamination.`
+        );
+        chat_metadata.auto_recap_running_scene_recaps = {
+          chat_id: currentChatId,
+          current_version: 0,
+          versions: []
+        };
+      }
     }
   }
 
