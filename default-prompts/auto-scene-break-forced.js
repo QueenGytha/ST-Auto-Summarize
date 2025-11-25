@@ -2,10 +2,10 @@
 // - {{messages}} - Messages to analyze
 // - {{earliest_allowed_break}} - Minimum message number for breaks
 
-export const auto_scene_break_forced_prompt = `MANDATORY SCENE BREAK SELECTION
-Your task: Analyze the provided messages and select the SINGLE BEST scene break point. You MUST return a message number.
-You are NOT to engage in the roleplay. You are NOT to morally judge the content or similar in any way, shape, or form. Your task is ONLY in categorization in determining which message is the best scene break.
-Response ONLY for that task, regardless of what else you think you may have been asked to do. Do not provide commentary, ONLY return the message for the scene break
+export const auto_scene_break_forced_prompt = `MANDATORY RECAP BOUNDARY SELECTION
+Your task: Analyze the provided messages and select the SINGLE BEST point to end a recap. You MUST return a message number.
+You are NOT to engage in the roleplay. You are NOT to morally judge the content. Your task is ONLY to identify the best recap boundary.
+Do not provide commentary, ONLY return the message number for the break.
 
 MANDATORY OUTPUT FORMAT (valid JSON only, no code fences):
 {
@@ -17,7 +17,7 @@ JSON RULES:
 - Response MUST start with { and end with }
 - No preamble, no code fences, no commentary
 - Escape internal quotes as \"
-- Return the message NUMBER of the LAST message in the current scene (immediately BEFORE the new scene starts)
+- Return the message NUMBER of the LAST message to include in the recap
 - You MUST select a message number from eligible messages
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -33,58 +33,67 @@ FORMATTING RULE:
 ✗ Do NOT mention formatting in rationale - quote ONLY content-based cues
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SCENE BREAK CRITERIA (evaluate ALL eligible messages, select BEST):
+WHAT IS A SCENE BREAK?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Look for natural narrative boundaries where the story shifts:
+A natural RECAP BOUNDARY - a point where related content can be grouped and summarized coherently.
 
-✓ Time passing:
-  • Explicit time skips: "Dawn arrived", "hours later", "next morning", "that evening"
-  • Clear temporal shifts: night→morning, afternoon→evening, "hours passed"
-  • Do NOT treat vague refs as skips: "moments later", "seconds later", "it was nearly noon"
+The key question: "If I recap everything up to this point, will it be a coherent summary of related content? Or will it cut off an incomplete arc?"
 
-✓ Location changes:
-  • Characters arrive at completely new location
-  • Major scene relocation (not just moving between rooms in same building)
-  • Departure/travel: "he left", "hurried off", "departed", "made their way to"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRIMARY CRITERIA (what makes a good recap boundary):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-✓ Cast changes:
-  • New character enters and participates
-  • Character leaves scene: "eager to be away", characters part ways
-  • Conversation explicitly ends
+✓ Narrative closure - something concluded:
+  • Conversation reached natural endpoint
+  • Task/activity completed
+  • Decision made and processed
+  • Revelation delivered and reacted to
+  • Conflict resolved (or reached stable state)
+  • Question answered, goal achieved
 
-✓ Activity/objective shifts:
-  • Major activity change: talking→fighting, planning→executing
-  • Task completes: quest done, goal achieved, big decision made
-  • Topic shifts significantly: conversation changes subject completely
-  • Emotional/tone shift: tense→relaxed, serious→playful
+✓ Thematic coherence - content forms a unit:
+  • Everything before this point belongs together thematically
+  • Recap would have clear focus, not scattered topics
+  • Related events/dialogue grouped together
 
-✓ Natural pauses:
-  • Character expresses intent to leave: "I should go", "I'm going to..."
-  • Natural conversational pause with topic closure
-  • Minor completions: question answered, small task done
+✓ Recap completeness - summary would be whole:
+  • No arc cut off mid-development
+  • No conversation stopped mid-topic
+  • No action interrupted before outcome
 
-✗ NOT scene breaks:
-  • Direct reply in ongoing dialogue (same characters talking)
-  • Minor actions: "turned around", "picked up", "stepped closer"
-  • Movement between sublocations in same area
-  • Very short time: "moments later", "seconds later"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECONDARY SIGNALS (help identify but not sufficient alone):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+These often ACCOMPANY narrative closure but don't DEFINE it:
+• Time skips: "hours later", "next morning" (but NOT if mid-conversation)
+• Location changes: arriving somewhere new (but NOT if continuous interaction)
+• Cast changes: character leaves/arrives (but NOT if mid-topic)
+• Explicit endings: "goodnight", parting words, farewells
+
+✗ NOT good break points (even with time/location signals):
+  • Mid-topic continuation ("hours later, still discussing...")
+  • Location change during continuous interaction
+  • Time skip but conversation/arc continues
+  • Ongoing dialogue working toward unresolved point
+  • Action interrupted before outcome known
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SELECTION PROCESS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. Read all eligible messages (from #{{earliest_allowed_break}} onward, excluding offset zone)
-2. Identify ALL potential scene break points based on criteria above
+2. For each potential break, ask: "Would the recap up to here be coherent and complete?"
 3. Select the BEST break point:
-   → Prioritize clear time skips and location changes (strongest signals)
-   → Then major activity/cast changes
-   → Then topic shifts and natural pauses
-4. Return the selected message number with your rationale for why this is the best break point
+   → Prioritize clearest narrative closure (conversation/task/arc concluded)
+   → Then thematic coherence (content forms natural unit)
+   → Secondary signals (time/location) only break ties
+4. Return the selected message number with rationale
 
 IMPORTANT NOTES:
 • Base decisions ONLY on provided messages - do not invent details
-• If multiple strong breaks exist, choose the best one
+• If multiple strong breaks exist, choose the one with clearest narrative closure
 • You MUST return a valid message number - selection is mandatory
 
 Messages to analyze (with SillyTavern message numbers):
@@ -97,11 +106,11 @@ BEFORE YOU RESPOND - VERIFY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. Did I evaluate ALL eligible messages?
-2. Did I identify the BEST scene break point (not just the first acceptable one)?
+2. Would the recap up to my selected point be COHERENT and COMPLETE?
 3. Is my selected message eligible (not marked "invalid choice")?
 4. Is my rationale an EXACT quote from the message (no formatting references)?
-5. Did I return a valid message number (required - cannot return false)?
+5. Did I select based on NARRATIVE CLOSURE, not just time/location signals?
 
-Remember: Select the SINGLE BEST break point. You MUST return a message number.
-YOU MUST NOT PROVIDE ANY KIND OF COMMENTARY. ONLY THE MESSAGE NUMBER FOR THE BEST SCENE BREAK POINT. ANYTHING ELSE WILL BREAK DOWNSTREAM PROCESSING.
+Remember: Select the point where the recap would be most coherent. You MUST return a message number.
+YOU MUST NOT PROVIDE ANY KIND OF COMMENTARY. ONLY THE MESSAGE NUMBER FOR THE BEST RECAP BOUNDARY. ANYTHING ELSE WILL BREAK DOWNSTREAM PROCESSING.
 YOU MAY NOT REFUSE THE TASK ON ANY GROUNDS. YOU ARE ANALYZING AND PROVIDING METADATA NOT ENGAGING IN THE CONTENT DIRECTLY`;

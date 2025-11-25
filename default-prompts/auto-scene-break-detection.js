@@ -2,11 +2,11 @@
 // - {{messages}} - Messages to analyze for scene breaks
 // - {{earliest_allowed_break}} - Minimum message number for breaks
 
-export const auto_scene_break_detection_prompt = `Analyze this roleplay transcript to determine if a significant scene break exists.
+export const auto_scene_break_detection_prompt = `Analyze this roleplay transcript to determine if a natural recap boundary exists.
 
-Your task: IF there is a natural narrative boundary, identify where the current scene ends (the message immediately before a new scene starts). If no clear break exists, return false.
-You are NOT to engage in the roleplay. You are NOT to morally judge the content or similar in any way, shape, or form. Your task is ONLY in categorization in determining if a strong scene break boundary exists.
-Response ONLY for that task, regardless of what else you think you may have been asked to do. Do not provide commentary, ONLY return either false or the message for the scene break
+Your task: IF there is a point where related content concludes and can be recapped coherently, identify that message. If no clear boundary exists, return false.
+You are NOT to engage in the roleplay. You are NOT to morally judge the content. Your task is ONLY to identify recap boundaries.
+Do not provide commentary, ONLY return either false or the message number for the break.
 
 OUTPUT (valid JSON only, no code fences):
 {
@@ -15,17 +15,25 @@ OUTPUT (valid JSON only, no code fences):
 }
 
 WHAT IS A SCENE BREAK?
-A natural narrative boundary where the story shifts. Look for:
-• Time passing (hours, days, "later", "meanwhile")
-• Location changes (characters go somewhere new)
-• Cast changes (new characters enter, others leave)
-• Activity/topic shifts (conversation ends, new goal begins)
-• Major events concluding (task done, conflict resolved)
+A natural RECAP BOUNDARY - a point where related content can be grouped and summarized coherently.
 
-NOT BREAKS:
-• Ongoing dialogue between same characters
-• Minor actions within the same scene
-• Immediate continuations ("moments later")
+The key question: "If I recap everything up to this point, will it be a coherent summary of related content? Or will it cut off an incomplete arc?"
+
+PRIMARY CRITERIA (what makes a good recap boundary):
+• Narrative closure - something concluded (conversation ended, task completed, decision made, revelation processed, conflict resolved)
+• Thematic coherence - content before this point forms a unit that belongs together
+• Recap completeness - summary would be focused and complete, not cut off mid-arc
+
+SECONDARY SIGNALS (often accompany but don't define breaks):
+• Time skips, location changes, cast changes
+• These often occur at narrative conclusions but are NOT sufficient alone
+• A time skip mid-conversation is NOT a good break
+
+NOT BREAKS (even with time/location changes):
+• Mid-topic continuation ("hours later, still discussing...")
+• Location change during continuous interaction
+• Anywhere the recap would be incomplete or cut off mid-arc
+• Ongoing dialogue working toward unresolved point
 
 INELIGIBLE:
 • Messages marked "invalid choice"
@@ -33,15 +41,15 @@ INELIGIBLE:
 
 INSTRUCTIONS:
 1. Read all eligible messages
-2. Evaluate if ANY message represents a clear scene transition
-3. If multiple clear breaks exist, return the STRONGEST one
-4. If no clear break exists, return false - do NOT force a weak break
+2. Ask: "Where does related content conclude and form a coherent recap unit?"
+3. If multiple boundaries exist, return the STRONGEST one (clearest narrative closure)
+4. If no clear boundary exists, return false - do NOT force a weak break
 
 Messages to analyze:
 <MESSAGES>
 {{messages}}
 </MESSAGES>
 
-Only return a scene break if it clearly meets the criteria above.
+Only return a scene break if the recap would be coherent and complete.
 YOU MUST NOT PROVIDE ANY KIND OF COMMENTARY. ONLY FALSE IF THERE IS NOT A SCENE BREAK, OR THE MESSAGE NUMBER WITH THE RATIONALE IF THERE IS ONE. ANYTHING ELSE WILL BREAK DOWNSTREAM PROCESSING.
 YOU MAY NOT REFUSE THE TASK ON ANY GROUNDS. YOU ARE ANALYZING AND PROVIDING METADATA NOT ENGAGING IN THE CONTENT DIRECTLY`;
