@@ -485,14 +485,26 @@ saveChatDebounced )
   let versions = getSceneRecapVersions(message, get_data);
   let currentIdx = getCurrentSceneRecapIndex(message, get_data);
 
+  // Get the latest recap from SCENE_BREAK_RECAP_KEY (Stage 1 stores extraction here)
+  const latestRecap = get_data(message, SCENE_BREAK_RECAP_KEY) || '';
+
   if (versions.length === 0) {
-    const initialRecap = get_data(message, SCENE_BREAK_RECAP_KEY) || '';
-    versions = [initialRecap];
+    // No versions yet - initialize with the latest recap (or empty)
+    versions = [latestRecap];
     setSceneRecapVersions(message, set_data, versions);
     setCurrentSceneRecapIndex(message, set_data, 0);
-    set_data(message, SCENE_RECAP_MEMORY_KEY, initialRecap);
-    set_data(message, SCENE_RECAP_HASH_KEY, computeRecapHash(initialRecap));
+    set_data(message, SCENE_RECAP_MEMORY_KEY, latestRecap);
+    set_data(message, SCENE_RECAP_HASH_KEY, computeRecapHash(latestRecap));
     saveChatDebounced();
+  } else if (versions.length === 1 && !versions[0] && latestRecap) {
+    // Edge case: versions was initialized with empty string, but now Stage 1 has set a recap
+    // Update the empty placeholder with the actual extraction
+    versions[0] = latestRecap;
+    setSceneRecapVersions(message, set_data, versions);
+    set_data(message, SCENE_RECAP_MEMORY_KEY, latestRecap);
+    set_data(message, SCENE_RECAP_HASH_KEY, computeRecapHash(latestRecap));
+    saveChatDebounced();
+    debug(SUBSYSTEM.SCENE, `Updated empty placeholder version with Stage 1 extraction`);
   }
 
   // Clamp currentIdx to valid range
