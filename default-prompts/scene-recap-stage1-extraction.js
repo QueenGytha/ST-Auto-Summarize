@@ -43,16 +43,27 @@ DROP: ambient; travel; micro-actions; boilerplate; generic emotions; process whe
 ---------------- DEDUPLICATE BEFORE OUTPUT ----------------
 
 PLOT DEDUPLICATION (aggressive):
-Capture OUTCOMES, not blow-by-blow sequences.
-Multiple steps toward same outcome = ONE plot item summarizing result.
+Capture OUTCOMES, not blow-by-blow sequences. Plot should be 3-6 items for most scenes.
 
-Before (blow-by-blow): "A kissed B; A removed B's clothes; A touched B intimately; A penetrated B; A climaxed inside B"
-After (outcome): "A had sex with B; climaxed inside"
+Ask for EACH plot item: "Is this a RESULT or a STEP toward a result?"
+STEP → merge into the result it leads to. RESULT → keep.
 
-Before (blow-by-blow): "A threatened B; A demanded answers; A grabbed B; A interrogated B"
-After (outcome): "A interrogated B through intimidation"
+COLLAPSE ENTIRE SEQUENCES into single outcomes:
+Before (12 items - BAD):
+"A entered room; A confronted B; A demanded answers; B refused; A threatened B; B revealed secret; A reacted angrily; A attacked B; B defended; A overpowered B; A interrogated B; B confessed everything"
 
-Ask: "What is the RESULT that matters for story continuity?" Capture that, not the steps.
+After (2 items - GOOD):
+"A confronted B; B initially refused"
+"A overpowered B; extracted full confession"
+
+Before (8 items - BAD):
+"A approached B; A expressed feelings; B was surprised; B considered; B accepted; they embraced; they kissed; they agreed to relationship"
+
+After (1 item - GOOD):
+"A confessed to B; B accepted; began relationship"
+
+KEEP plot items that represent DISTINCT outcomes (decisions, revelations, major state changes).
+MERGE plot items that are steps in the same sequence.
 
 STANCE COLLAPSING:
 Collapse repetitive EXAMPLES of same stance; preserve DYNAMICS that define the relationship.

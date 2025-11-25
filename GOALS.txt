@@ -30,8 +30,12 @@ for quotes:
 
 for events/plot:
 - capture OUTCOMES not blow-by-blow sequences
-- multiple steps toward same outcome = ONE item summarizing result
-- example: "A kissed B; A undressed B; A penetrated B; A climaxed" → "A had sex with B; climaxed inside"
-- ask: "what is the RESULT that matters for story continuity?" capture that, not the steps
+- plot should be 3-6 items for most scenes
+- ask for each item: "is this a RESULT or a STEP toward a result?" STEP → merge into result
+- COLLAPSE ENTIRE SEQUENCES: 12 blow-by-blow items should become 2-3 outcome items
+- example BAD (12 items): "A entered room; A confronted B; A demanded answers; B refused; A threatened B; B revealed secret; A attacked B; B defended; A overpowered B; A interrogated B; B confessed"
+- example GOOD (2 items): "A confronted B; B initially refused" / "A overpowered B; extracted full confession"
+- KEEP items that are DISTINCT outcomes (decisions, revelations, state changes)
+- MERGE items that are steps in the same sequence
 
 IT IS NEVER ACCEPTABLE FOR ANY KIND OF MAX CAP OR SIMILAR. THAT IS ASSUMING ITS GOING TO FAIL AND LIMITING THE BLAST RADIUS WHICH ALSO BREAKS REAL FUNCTIONALITY, INSTEAD OF FIXING THE CORE PROBLEM OF IT DOING THE TASK WRONG TO BEGIN WTIH
