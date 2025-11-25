@@ -47,12 +47,22 @@ KEEP relationship texture: debts/obligations; boundaries; leverage; trust pivots
 DROP repetitive demonstrations of same stance.
 
 QUOTE DEDUPLICATION (aggressive):
-Same THEME = duplicate. Keep ONE per theme per entity.
-Themes: protectiveness, desire, dominance, fear, revelation, etc.
+Same INTENT = duplicate. Keep ONE per INTENT per entity.
+Intent = what the quote reveals about the character (NOT surface topic).
+
+TEST each quote: "Does this quote reveal something UNIQUE about tone/mannerism/character not already conveyed by another quote?"
+NO → DROP. YES → KEEP.
+
 Before: "A: 'I'll protect you'; 'Won't let anyone hurt you'; 'I've got you'"
-After: "A: 'I'll protect you'"
-Before: "B: 'The sensation is incredible'; 'Nothing compares to this feeling'"
-After: "B: 'The sensation is incredible'"
+All 3 reveal same intent (A is protective). After: "A: 'I'll protect you'"
+
+Before: "B: 'The sensation is incredible'; 'Nothing compares to this feeling'; 'I need more'"
+All 3 reveal same intent (B experiences pleasure). After: "B: 'The sensation is incredible'"
+
+Before: "C: 'It worked!'; 'The Gift awakened'; 'I can perceive the currents now'"
+All 3 reveal same intent (C's ability activated). After: "C: 'It worked!'"
+
+KEEP quotes that reveal: distinctive mannerism, unique speech pattern, or genuinely different character information.
 
 STATE SUPERSESSION:
 Current only; drop progression.
@@ -65,7 +75,7 @@ Each fact ONCE in best category.
 CHECKLIST:
 □ Fragments? (except quotes/docs)
 □ Stance = net stance per counterpart?
-□ One quote per THEME per entity?
+□ One quote per INTENT per entity?
 □ State = current only?
 □ No cross-category repeats?
 

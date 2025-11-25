@@ -9,6 +9,17 @@ anything relating to character tone/nuance etc in setting_lore
 we need to be as conservative as possible with tokens for both recap and setting_lore entries
 but we ALSO need to ensure we capture ALL relevant plot information, and all of the nuance for things like tone/relationship dynamics/mannerism/speech patterns etc, since ONLY our recap/setting_lore is available for the LLM to continue the roleplay, the messages themselves are entirely removed to save on context
 
+RECONSTRUCTION SIGNALS, NOT EXHAUSTIVE RECORDS:
+the goal is minimum anchors for LLM continuity - the LLM fills gaps naturally
+capture SIGNAL (correct cues for tone/nuance/dynamics), not complete transcription
+enough information for the LLM to reconstruct the correct characterization, not every detail
+
+DEDUPLICATION PRINCIPLE:
 it's highly important that our setting_lore entries remove duplication of similar concepts etc, as the LLM loves to be overly verbose and fill this with all kinds of garbage
+
+for quotes specifically: same INTENT = duplicate
+intent = what the quote reveals about the character (not surface topic)
+if 3 quotes all reveal "character is protective", keep ONE - they convey the same information
+keep quotes only when they reveal something UNIQUE about tone/mannerism/character not already conveyed elsewhere
 
 IT IS NEVER ACCEPTABLE FOR ANY KIND OF MAX CAP OR SIMILAR. THAT IS ASSUMING ITS GOING TO FAIL AND LIMITING THE BLAST RADIUS WHICH ALSO BREAKS REAL FUNCTIONALITY, INSTEAD OF FIXING THE CORE PROBLEM OF IT DOING THE TASK WRONG TO BEGIN WTIH

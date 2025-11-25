@@ -52,9 +52,19 @@ After: "A->B: protective; promised safety"
 KEEP: debts; boundaries; leverage; trust pivots; promises; tension.
 
 QUOTE DEDUPLICATION (aggressive):
-Same THEME = duplicate. Keep ONE per theme per entity.
+Same INTENT = duplicate. Keep ONE per INTENT per entity.
+Intent = what the quote reveals about the character (NOT surface topic).
+
+TEST each quote: "Does this reveal something UNIQUE not already conveyed?"
+NO → DROP. YES → KEEP.
+
 Before: "'I'll protect you'; 'Won't let anyone hurt you'; 'I've got you'"
-After: "'I'll protect you'"
+All 3 = same intent (protective). After: "'I'll protect you'"
+
+Before: "'It's incredible'; 'Nothing compares'; 'I need more'"
+All 3 = same intent (pleasure). After: "'It's incredible'"
+
+KEEP only quotes revealing: distinctive mannerism, unique speech pattern, or genuinely different info.
 
 STATE SUPERSESSION:
 Before: "injured; recovering; healed"
@@ -65,7 +75,7 @@ CHECKLIST:
 □ rc = plot only?
 □ sl = delta-only?
 □ Relationships = stance + dynamics?
-□ One quote per THEME per entity?
+□ One quote per INTENT per entity?
 □ State = current only?
 
 Output JSON only.`;
