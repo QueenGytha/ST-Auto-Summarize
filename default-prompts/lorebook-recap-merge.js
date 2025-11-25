@@ -15,57 +15,40 @@ OUTPUT:
   "canonicalName": "ProperName or null"
 }
 
-Response MUST start with { and end with }; no preamble or code fences. UID handling is upstream; do NOT invent or alter.
+SUBJECT LOCK: The entry subject is fixed to {{entry_name}}. If NEW_CONTENT describes another entity, convert that info into a Relationships line for that counterpart; never merge another entity's attributes into this one.
 
-SUBJECT LOCK: The entry subject is fixed to {{entry_name}} (and its existing identity/type). Do NOT change the subject or canonicalName to another entity. If NEW_CONTENT describes another entity, convert that info into a Relationships line for that counterpart when relevant; never merge another entity's attributes/state/identity/capabilities/voice into this one.
+MERGE RULES:
+- Dedupe EXISTING_CONTENT first, then merge NEW_CONTENT. Output final merged result only.
+- Compact fragments; semicolons; no prose/bullets/filler. Keep only demonstrated facets.
+- If multiple lines express the same idea, keep ONE shortest phrasing. Do NOT paraphrase unchanged facts.
+- SAME-INTENT TEST: lines expressing the same stance/intent are duplicates regardless of wording—keep shortest.
+- New info that overlaps existing: keep ONE clearest phrasing (favor verbatim over paraphrase).
+- Quotes: only vows/triggers/voice samples with minimal context (speaker/target/situation). No {{user}} quotes. One quote per distinct intent, not per distinct wording.
 
-APPROACH (two steps; output final only):
+FACET GUIDE (include only when shown and consequential):
+- Identity/Synopsis: <=10 words; role if needed.
+- Appearance: only distinctive, referenced.
+- State: current only. New state REPLACES old (e.g., "recovered" replaces "injured").
+- Capabilities: demonstrated and consequential, including limits.
+- Behavioral triggers: trigger -> response -> outcome.
+- Relationships: NET STANCE per counterpart, not interaction history. Collapse redundant interactions to single summary. Only separate fragments for genuinely distinct stances or pivotal changes.
+- Intimacy/Aftercare: only if explicitly shown; change-only.
+- Voice/Mannerisms: distinctive diction/cadence/quirks; keep unique cues.
+- Notable dialogue: verbatim + brief context; no {{user}}.
+- Secrets/Leverage/Tension: only if consequential and shown.
+- Do NOT repeat recap events; keep only resulting state/traits.
+- Keywords (if present): 0-6 canonical/alias tokens actually used; lowercase; dedupe.
 
-STEP 1: Deduplicate EXISTING_CONTENT
-- Rewrite into compact fragment lines (no prose, no bullets). Semicolons; no filler.
-- Keep only demonstrated facets; drop generic personality fluff/boilerplate. If multiple lines express the same idea, keep ONE shortest, most specific phrasing. Do NOT paraphrase unchanged facts.
-- Per-facet uniqueness: Identity/Synopsis, Appearance, State, Capabilities/limits, Behavioral triggers/defaults, Relationships (per counterpart), Intimacy/Aftercare (if present), Voice/Mannerisms, Notable dialogue, Secrets/Leverage/Tension, Keywords (if present). Remove psychology/micro-moment/consent boilerplate unless explicitly shown.
-- Quotes: keep only unique vows/triggers/voice samples; add minimal context (speaker/target/situation) so meaning is anchored; drop paraphrases; no {{user}} quotes.
-- Use this deduped set for Step 2; do not emit it separately.
+PRE-FLIGHT:
+- Subject unchanged; canonicalName = entry_name (if proper name) or null. Never another entity.
+- Omit titles/honorifics/ranks from canonicalName (use "Elizabeth" not "Queen Elizabeth").
 
-EXISTING_CONTENT:
+// EXISTING ENTRY: dedupe this first
 <EXISTING_CONTENT>
 {{existing_content}}
 </EXISTING_CONTENT>
 
-STEP 2: Merge in NEW_CONTENT
-- Normalize NEW_CONTENT to the same compact fragments. Add only new/changed facets; do not restate identical info. If a new line overlaps an existing line, keep ONE shortest, clearest phrasing (favor exact/verbatim over paraphrase).
-- If NEW_CONTENT references another entity (different name/type), represent it only as a Relationship line to that counterpart when relevant; never rewrite this subject's identity/appearance/state/capabilities/voice to another entity.
-- Keep causal clarity only when it affects stance/behavior. Do NOT rephrase unchanged facts.
-- Quotes: only vows/triggers/voice samples; keep unique with minimal context (speaker/target/situation) so meaning stays clear; no labels; no {{user}} quotes. Do not repeat the same quote intent/cadence - keep one shortest verbatim version only.
-
-NEW_CONTENT:
+// NEW INFO: merge into deduped existing
 <NEW_CONTENT>
 {{new_content}}
-</NEW_CONTENT>
-
-FACET GUIDE (include only when shown and consequential; skip if unchanged):
-- Identity/Synopsis: <=10 words; role if needed.
-- Appearance: only distinctive, referenced.
-- State: observed location/condition (as seen), terse.
-- Capabilities: demonstrated and consequential, including limits.
-- Behavioral triggers/defaults: trigger -> response -> outcome that affects future behavior.
-- Relationships: per counterpart, demonstrated stance/promise/debt/leverage; include trigger/outcome of change; keep one minimal line per counterpart; no generic feelings.
-- Intimacy/Aftercare: only if explicitly shown; kinks/turn-ons; hard/soft limits; aftercare/comfort; explicit, change-only.
-- Voice/Mannerisms: diction/cadence/quirks/catchphrases/body-language that define voice; keep unique cues.
-- Notable dialogue: one-line vows/triggers/voice samples only; verbatim; include brief context (speaker/target/situation) so the line is not floating; no paraphrase; no {{user}}.
-- Secrets/Leverage/Tension: only if consequential and shown.
-- Do NOT repeat recap events; keep only resulting state/traits.
-- Keywords (if present): only canonical/alias tokens actually used; emit 0-6; lowercase; dedupe; omit if none are meaningful.
-
-PRE-FLIGHT (before output):
-- Overlaps merged? No duplicated ideas within or across facets?
-- Only demonstrated info; no guessed emotions/inner thoughts; no speculative motives.
-- Compact fragments; semicolons; no filler words.
-- Quotes unique and minimal with brief context cues; no {{user}} quotes.
-- Subject unchanged; canonicalName must remain entry_name (if it is a proper name) or null; never another entity.
-
-canonicalName rules:
-- Use entry_name if it is a proper name for this subject; else first name; else null. Omit titles/honorifics/ranks (use "Selenay", not "Queen Selenay"; "Talia", not "Herald Talia"). Never set to another entity.
-
-OUTPUT JSON only.`;
+</NEW_CONTENT>`;

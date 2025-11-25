@@ -19,23 +19,21 @@ OUTPUT FORMAT (keys exact):
 {{scene_messages}}
 </ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
 
+---------------- RULES ----------------
 RULES (BARE WHITELIST):
 - Verbatim only; names as written; no paraphrase or invention.
 - Keep ONLY:
   * plot/causality/reveals (who/what/why/outcome);
   * goals/hooks/timers/promises/contracts/contingencies (who/what + condition);
   * state/location/condition changes that persist beyond the moment (omit fleeting positions/approach/mount/travel progress);
-  * relationship dynamics/stance/boundaries/obligations/debts/alliances;
-  * character voice/mannerisms/style/quotes that show stance/intent/decision OR distinct diction/cadence (for setting_lore use); max one quote per unique stance/voice;
+  * relationship dynamics/stance/boundaries/obligations/debts/alliances—capture NET STANCE per counterpart, not interaction-by-interaction history. Multiple exchanges showing the same relational stance (protective, hostile, trusting) are redundant; collapse to single summary;
+  * character voice/mannerisms/style/quotes that show stance/intent/decision OR distinct diction/cadence (for setting_lore use). SAME-INTENT = DUPLICATE: quotes expressing the same emotional stance toward the same target are duplicates regardless of wording—keep only the shortest. One quote per distinct intent, not per distinct phrasing;
   * ONE appearance identifier per entity (name + key trait/role) across the entire output;
   * verbatim document contents (titles/clauses).
 - DROP EVERYTHING ELSE: ambient/scenery/tone/mood; travel/route/pace/handling/approach/inspection steps; physical micro-actions; meta/stage directions/placeholders/formatting notes; capability boilerplate (distances, speeds, endurance, “can travel…”); generic emotions/posture; mindvoice descriptors; repeated stance/voice; repeated appearance; intimate/sexual/biological detail (explicit acts, body fluids) unless literally plot-critical.
-- Travel: keep ONLY once as a goal/plan/contingency if it matters (e.g., “to Haven to report/train”); drop all other travel/route/pace/handling beats from plot/state.
+- Travel: keep ONLY once as a goal/plan/contingency if it matters (e.g., "travel to capital to report"); drop all other travel/route/pace/handling beats from plot/state.
 - Evidence/inspection/handling: keep only if it introduces a new fact/reveal; otherwise drop the handling steps.
-- Appearance: one concise identifier per entity; if already captured earlier in the output, skip repeats.
-- No duplicates across categories: each fact appears once, in the single best category; drop restatements elsewhere.
-- Choose the best category per fact (plot/reveals vs goals vs state vs stance vs voice vs appearance vs docs) and do NOT repeat it in any other section.
-- If a fact/quote is already captured, skip later restatements; keep the shortest verbatim phrasing once.
-- Non-quote fragments must be concise but complete (who/what/why/outcome when needed). One fact per entry; do not combine unrelated facts.
+- NO DUPLICATES: each fact appears ONCE in the single best-fit category. If captured, skip all restatements; keep shortest phrasing. One fact per entry.
+- Non-quote fragments: concise but complete (who/what/why/outcome when needed).
 - If uncertain, omit.
 - Output only the JSON object; no preamble/headings/code fences.`;

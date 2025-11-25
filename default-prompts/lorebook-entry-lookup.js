@@ -42,17 +42,17 @@ Deterministic alignment rules:
 - If the candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix) exactly matches a registry entry's name, include that UID in 'sameEntityUids'.
 - If a registry entry's aliases include the candidate's canonical name (same normalization), include that UID in 'sameEntityUids'.
 - Prefer exact canonical name matches over fuzzy/semantic similarity.
-- Canonical names MUST omit titles/honorifics/ranks (use "Selenay", not "Queen Selenay"; "Talia", not "Herald Talia"). Titles can live in content/keywords, not in the canonical name.
+- Canonical names MUST omit titles/honorifics/ranks (use "Elizabeth" not "Queen Elizabeth"; "Marcus" not "Captain Marcus"). Titles can live in content/keywords, not in the canonical name.
 
 Alias guidance (characters/items):
 - Keep keywords lean: 3-6 concise canonical/alias tokens actually used in chat. Drop descriptive/generic/context words. No padding with loose associations.
   
 Location naming (subareas):
-- If the entity is a sub‑location within a named parent (e.g., Cloudsdale → Rainbow Dash's Cloud House; Ponyville → Twilight's Library), the canonical name MUST be "Parent-Subarea".
-- For multiple levels, chain with hyphens: "Parent-Child-Grandchild" (e.g., "Ponyville-Twilight's Library-Spike's Room").
-- The content should include a bullet linking the immediate parent (e.g., "Located in: Twilight's Library") and optionally a top‑level link (e.g., "Part of: Ponyville").
+- If the entity is a sub‑location within a named parent (e.g., Castle → Throne Room; City → Market District), the canonical name MUST be "Parent-Subarea".
+- For multiple levels, chain with hyphens: "Parent-Child-Grandchild" (e.g., "Castle-West Wing-Library").
+- The content should include a bullet linking the immediate parent (e.g., "Located in: West Wing") and optionally a top‑level link (e.g., "Part of: Castle").
 - Keywords should include both parent and subarea tokens (and top‑level when present in chat) within the same 3-6 keyword budget.
-- Prefer the longest fully specified chain as the canonical name when deeper subareas are explicitly named (e.g., choose "Ponyville-Twilight's Library-Spike's Room" over a partial).
+- Prefer the longest fully specified chain as the canonical name when deeper subareas are explicitly named (e.g., choose "Castle-West Wing-Library" over a partial).
 
 Rules:
 - 'sameEntityUids' and 'needsFullContextUids' must be arrays. Use [] when empty.
