@@ -1,6 +1,6 @@
-export const scene_recap_stage1_extraction_prompt = `ROLE: Extract stated facts from transcript, then deduplicate before output. No roleplay. No inference.
+export const scene_recap_stage1_extraction_prompt = `ROLE: Extract reconstruction signals. Messages will be REMOVED; output = minimum anchors for LLM continuity. LLMs fill gaps; capture signal, not exhaustive detail.
 
-OUTPUT FORMAT:
+OUTPUT:
 {
   "plot": [],
   "goals": [],
@@ -12,59 +12,58 @@ OUTPUT FORMAT:
   "docs": []
 }
 
-PHASE 1 - EXTRACTION (what to capture):
-- plot: events/causality/outcomes (who did what, why, result)
-- goals: active intentions/timers/promises/contracts (who wants what + condition)
-- reveals: new information learned this scene
-- state: durable location/condition changes (not fleeting positions)
-- stance: relationship dynamics/boundaries/obligations per counterpart
-- voice: quotes showing distinct diction/cadence (for voice preservation)
-- appearance: ONE identifier per entity (name + key trait)
-- docs: verbatim document contents (titles/clauses)
+TOKEN CONSERVATION (critical):
+Fragments; semicolons; no articles/filler.
 
-DROP: ambient/scenery/tone; travel steps; micro-actions; capability boilerplate; generic emotions; intimate detail unless plot-critical.
+Sentence: "A betrayed B by revealing the secret to C, causing alliance collapse"
+Fragment: "A betrayed B; revealed secret to C; alliance collapsed"
+
+WHAT TO CAPTURE (fragments):
+- plot: outcomes (who/what/result)
+- goals: intentions (who wants what + condition)
+- reveals: new facts
+- state: durable changes only
+- stance: relationship dynamics per counterpart (stance + debts/boundaries/pivots/promises/tension)
+- voice: distinctive quotes verbatim (full)
+- appearance: one per entity (name + trait)
+- docs: verbatim (full)
+
+DROP: ambient; travel; micro-actions; boilerplate; generic emotions; process where outcome suffices.
 
 ---------------- TRANSCRIPT ----------------
 <TRANSCRIPT>
 {{scene_messages}}
 </TRANSCRIPT>
 
----------------- PHASE 2 - DEDUPLICATE BEFORE OUTPUT ----------------
+---------------- DEDUPLICATE BEFORE OUTPUT ----------------
 
-STANCE COLLAPSING (critical):
-Multiple interactions showing the SAME relational stance are redundant.
+STANCE COLLAPSING:
+Collapse repetitive EXAMPLES of same stance; preserve DYNAMICS that define the relationship.
 
-Before: [
-  "A toward B: insisted on rest",
-  "A toward B: refused to let B push forward",
-  "A toward B: carried B to safety",
-  "A toward B: promised to protect B"
-]
-After: [
-  "A toward B: protective; prioritizes B's safety"
-]
-All four expressed "protective stance" → collapse to ONE summary.
+Before (interaction list): "A->B: insisted rest; refused push; carried to safety; promised protection; insisted rest again"
+After (stance + dynamics): "A->B: protective; promised safety"
 
-QUOTE DEDUPLICATION (critical):
-Quotes expressing the SAME emotional intent are duplicates regardless of wording.
+KEEP relationship texture: debts/obligations; boundaries; leverage; trust pivots; promises; unresolved tension.
+DROP repetitive demonstrations of same stance.
 
-Before: [
-  "A: 'I'll protect you'",
-  "A: 'I won't let anyone hurt you'",
-  "A: 'Your safety is my priority'"
-]
-After: [
-  "A: 'I'll protect you'"
-]
-All three express "protective commitment" → keep only SHORTEST.
+QUOTE DEDUPLICATION:
+Same intent = duplicate. Keep shortest.
+Before: "A: 'I'll protect you'; 'Won't let anyone hurt you'"
+After: "A: 'I'll protect you'"
+
+STATE SUPERSESSION:
+Current only; drop progression.
+Before: "injured; recovering; healed"
+After: "healed"
 
 CROSS-CATEGORY:
-Each fact appears ONCE in the single best category. If "A and B are now together" is in plot, do not repeat in reveals or state.
+Each fact ONCE in best category.
 
-FINAL CHECKLIST (apply before output):
-□ Stance: collapsed to NET STANCE per counterpart? (not interaction history)
-□ Voice: one quote per DISTINCT INTENT? (not per distinct wording)
-□ No fact appears in multiple categories?
-□ Appearance: max one entry per entity?
+CHECKLIST:
+□ Fragments? (except quotes/docs)
+□ Stance = net stance per counterpart?
+□ One quote per intent?
+□ State = current only?
+□ No cross-category repeats?
 
 Output JSON only.`;

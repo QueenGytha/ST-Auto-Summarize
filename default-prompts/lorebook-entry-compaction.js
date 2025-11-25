@@ -1,47 +1,54 @@
-// Standalone compaction prompt for deduping a lorebook entry (no merge). Returns the rewritten entry.
-export const lorebook_entry_compaction_prompt = `ROLE: Compact a single setting_lore entry by removing duplicates and redundancy. No roleplay. No explanations. Output JSON only (starts { ends }).
+// MACROS: {{existing_content}}
 
-Goal: shortest non-overlapping version preserving all distinct traits/relationships/voice.
+export const lorebook_entry_compaction_prompt = `ROLE: Compact setting_lore entry. RECONSTRUCTION SIGNAL; minimum anchors for LLM continuity. Output JSON only.
 
-CONTEXT RULE:
-- Model only sees content text during roleplay (no title/type/keywords). Keep output self-contained with explicit names, not pronouns.
+TOKEN CONSERVATION (critical):
+Fragments; semicolons; no articles/filler.
 
-COMPACTION RULES:
-- Compact fragments; semicolons; no prose/bullets/filler.
-- SAME-INTENT TEST: lines expressing the same idea/stance are duplicates regardless of wording—keep shortest.
-- Cross-facet dedupe: each idea appears once in single most relevant facet.
-- Quotes: only unique vows/triggers/voice samples with brief context; no {{user}} quotes; one quote per distinct intent.
+Sentence: "A has become protective of B and prioritizes B's safety"
+Fragment: "A->B: protective; prioritizes safety"
 
-FACET GUIDE (include only when shown; omit empty):
-- Identity/Synopsis: <=10 words; role if needed.
-- Appearance: only distinctive, referenced.
-- State: current only. New state REPLACES old—don't accumulate.
-- Capabilities: demonstrated and consequential, including limits.
-- Behavioral triggers: trigger -> response -> outcome.
-- Relationships: NET STANCE per counterpart, not interaction history. Collapse redundant interactions to single summary. Keep every counterpart represented.
-- Intimacy/Aftercare: only if explicitly shown; direct language, no euphemisms.
-- Voice/Mannerisms: distinctive diction/cadence/quirks.
-- Notable dialogue: verbatim + brief context; no {{user}}.
-- Secrets/Leverage/Tension: only if consequential and shown.
-- Entity/location naming: subareas use "Parent-Subarea"; include "Located in: Parent" when applicable.
+CONTEXT: Model sees content only (no title/type). Use explicit names.
 
-PRE-FLIGHT:
-- All duplicates/near-duplicates merged?
-- Cross-facet redundancy removed?
-- One line per counterpart with all sentiments merged?
-- Quotes unique with context?
-
-OUTPUT (JSON only; no code fences):
+OUTPUT:
 {
-  "compactedContent": "deduped entry in compact fragment/semicolon lines",
+  "compactedContent": "fragment content",
   "canonicalName": "ProperName or null"
 }
 
-canonicalName rules:
-- Use proper name if available; else first name; else null.
-- Omit titles/honorifics/ranks (use "Elizabeth" not "Queen Elizabeth").
+FACETS (fragments; only when shown):
+Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential | Keywords: 0-6 tokens | Locations: Parent-Subarea
 
-// ENTRY TO COMPACT:
+---------------- ENTRY ----------------
 <EXISTING_CONTENT>
 {{existing_content}}
-</EXISTING_CONTENT>`;
+</EXISTING_CONTENT>
+
+---------------- COMPRESS BEFORE OUTPUT ----------------
+
+RELATIONSHIP COLLAPSING:
+Collapse repetitive examples; preserve dynamics.
+Before: "A->B: insisted rest; refused push; carried to safety; promised protection"
+After: "A->B: protective; promised safety"
+KEEP: debts; boundaries; leverage; trust pivots; promises; tension.
+
+QUOTE DEDUPLICATION:
+Before: "'I'll protect you'; 'Won't let anyone hurt you'"
+After: "'I'll protect you'"
+
+STATE SUPERSESSION:
+Before: "injured; recovering; healed"
+After: "healed"
+
+CROSS-FACET:
+Each idea once in best facet.
+
+CHECKLIST:
+□ Fragments? (except quotes)
+□ Relationships = stance + dynamics?
+□ State = current only?
+□ One quote per intent?
+□ Cross-facet duplicates removed?
+□ canonicalName = proper name or null (no titles)
+
+Output JSON only.`;

@@ -1,79 +1,70 @@
-// Stage 2: Filtering/Formatting Prompt
-// REQUIRED MACROS:
-// - {{extracted_data}} - JSON object from Stage 1 with category arrays (plot/goals/reveals/state/stance/voice/appearance/docs)
-// - {{active_setting_lore}} - Current lore entries formatted with UIDs
-// - {{lorebook_entry_types}} - List of allowed entity types
+// Stage 2: Filtering/Formatting
+// MACROS: {{extracted_data}}, {{active_setting_lore}}, {{lorebook_entry_types}}
 
-export const scene_recap_stage2_filtering_prompt = `ROLE: Filter extracted data into recap + setting_lore. Output JSON only. No roleplay.
+export const scene_recap_stage2_filtering_prompt = `ROLE: Filter into recap + setting_lore. RECONSTRUCTION SIGNALS; minimum anchors, not exhaustive records. Output JSON only.
 
-OUTPUT FORMAT:
+TOKEN CONSERVATION (critical):
+Fragments; semicolons; no articles/filler.
+
+Sentence: "A has developed protective attitude toward B and prioritizes B's safety"
+Fragment: "A->B: protective; prioritizes safety"
+
+OUTPUT:
 {
-  "sn": "Brief title (max 5 words)",
+  "sn": "Title (max 5 words)",
   "rc": "DEV: ...\\nPEND: ...",
-  "sl": [
-    { "t": "type", "n": "Name", "c": "content", "k": ["keywords"], "u": "uid-if-known" }
-  ]
+  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"], "u": "uid-if-known" }]
 }
 
-PHASE 1 - CATEGORIZATION:
-- Recap (rc): HIGH-LEVEL plot beats, decisions, contracts, state changes, reveals only. No quotes. No feelings. No relationship nuance.
-  - DEV: what happened (events/outcomes)
-  - PEND: active goals/timers/hooks (who wants what + condition)
-- Setting_lore (sl): entity-specific nuance that recap excludes. Stance, voice, relationships, behavioral triggers, secrets.
-  - Types must match: {{lorebook_entry_types}}
-  - Never create entry for {{user}}
+CATEGORIZATION:
+- rc: plot outcomes; decisions; state changes; reveals. Fragments. No quotes/feelings/nuance.
+  - DEV: what happened
+  - PEND: active goals (who/what/condition)
+- sl: entity nuance for tone. Stance; voice; relationships; triggers.
+  - Types: {{lorebook_entry_types}}
+  - Never for {{user}}
 
-PHASE 2 - DELTA CHECK:
-- Compare each entity against BASELINE (CURRENT_SETTING_LORE with same type+name)
-- Only output NEW or CHANGED facets vs baseline
-- If nothing new, omit that entity entirely
-- UID: set "u" ONLY if type+name exactly match baseline entry. Any doubt = omit.
+DELTA CHECK:
+- Compare against BASELINE (same type+name)
+- Output ONLY new/changed facets
+- Nothing new = omit entity
+- UID: only if 100% certain match
 
-Setting_lore facets (include only when shown):
-- Identity/Synopsis: <=10 words
-- Appearance: distinctive only
-- State: current location/condition
-- Capabilities: demonstrated, consequential
-- Behavioral triggers: trigger -> response -> outcome
-- Relationships: NET STANCE per counterpart (not interaction list)
-- Voice/Mannerisms: distinctive diction/cadence
-- Notable dialogue: verbatim + brief context; no {{user}}
-- Secrets/Tension: if consequential
-- Keywords: 0-6 retrieval tokens; lowercase
+FACETS (fragments; only when new):
+Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential | Keywords: 0-6 tokens
 
----------------- BASELINE (for delta comparison) ----------------
+---------------- BASELINE ----------------
 <CURRENT_SETTING_LORE>
 {{active_setting_lore}}
 </CURRENT_SETTING_LORE>
 
----------------- INPUT (extracted facts to filter) ----------------
+---------------- INPUT ----------------
 <EXTRACTED_DATA>
 {{extracted_data}}
 </EXTRACTED_DATA>
 
----------------- PHASE 3 - COMPRESS BEFORE OUTPUT ----------------
+---------------- COMPRESS BEFORE OUTPUT ----------------
 
 RELATIONSHIP COLLAPSING:
-Before (multiple interactions, same stance):
-  "Relationships: A -> protective of B; A -> insisted B rest; A -> carried B; A -> promised safety"
-After (net stance):
-  "Relationships: A -> protective; prioritizes B's safety"
+Collapse repetitive examples; preserve dynamics.
+Before: "A->B: insisted rest; refused push; carried to safety; promised protection; insisted rest again"
+After: "A->B: protective; promised safety"
+KEEP: debts; boundaries; leverage; trust pivots; promises; tension.
 
 QUOTE DEDUPLICATION:
-Before (same intent, different words):
-  "Notable dialogue: 'I'll protect you'; 'I won't let anyone hurt you'; 'Your safety matters most'"
-After (one per intent):
-  "Notable dialogue: 'I'll protect you' (protective commitment)"
+Before: "'I'll protect you'; 'Won't let anyone hurt you'"
+After: "'I'll protect you'"
 
 STATE SUPERSESSION:
-Before: "State: injured; recovering; healed"
-After: "State: healed" (current only)
+Before: "injured; recovering; healed"
+After: "healed"
 
-FINAL CHECKLIST:
-□ rc contains ONLY plot/events? (no stance/voice/feelings)
-□ sl entries are delta-only vs baseline? (no restating existing facts)
-□ Relationships collapsed to net stance per counterpart?
-□ Quotes: one per distinct intent?
-□ UIDs only set when 100% certain match?
+CHECKLIST:
+□ Fragments? (except quotes)
+□ rc = plot only?
+□ sl = delta-only?
+□ Relationships = net stance?
+□ One quote per intent?
+□ State = current only?
 
 Output JSON only.`;
