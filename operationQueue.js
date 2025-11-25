@@ -844,10 +844,16 @@ function getNextOperation() {
       return true;
     }
 
-    // Check if all dependencies are completed
+    // Check if all dependencies are completed (or removed - removal implies completion)
     return op.dependencies.every((depId) => {
       const dep = getOperation(depId);
-      return dep && dep.status === OperationStatus.COMPLETED;
+      if (!dep) {
+        // Operation was removed after completion - treat as satisfied
+        // This handles race condition where dependency completes before dependent op is queued
+        debug(SUBSYSTEM.QUEUE, `Dependency ${depId} for ${op.id} not found (already removed) - treating as satisfied`);
+        return true;
+      }
+      return dep.status === OperationStatus.COMPLETED;
     });
   });
 
