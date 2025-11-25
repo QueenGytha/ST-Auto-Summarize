@@ -46,10 +46,13 @@ After (stance + dynamics): "A->B: protective; promised safety"
 KEEP relationship texture: debts/obligations; boundaries; leverage; trust pivots; promises; unresolved tension.
 DROP repetitive demonstrations of same stance.
 
-QUOTE DEDUPLICATION:
-Same intent = duplicate. Keep shortest.
-Before: "A: 'I'll protect you'; 'Won't let anyone hurt you'"
+QUOTE DEDUPLICATION (aggressive):
+Same THEME = duplicate. Keep ONE per theme per entity.
+Themes: protectiveness, desire, dominance, fear, revelation, etc.
+Before: "A: 'I'll protect you'; 'Won't let anyone hurt you'; 'I've got you'"
 After: "A: 'I'll protect you'"
+Before: "B: 'The sensation is incredible'; 'Nothing compares to this feeling'"
+After: "B: 'The sensation is incredible'"
 
 STATE SUPERSESSION:
 Current only; drop progression.
@@ -62,7 +65,7 @@ Each fact ONCE in best category.
 CHECKLIST:
 □ Fragments? (except quotes/docs)
 □ Stance = net stance per counterpart?
-□ One quote per intent?
+□ One quote per THEME per entity?
 □ State = current only?
 □ No cross-category repeats?
 

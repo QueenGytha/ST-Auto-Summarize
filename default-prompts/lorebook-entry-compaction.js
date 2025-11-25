@@ -32,8 +32,9 @@ Before: "A->B: insisted rest; refused push; carried to safety; promised protecti
 After: "A->B: protective; promised safety"
 KEEP: debts; boundaries; leverage; trust pivots; promises; tension.
 
-QUOTE DEDUPLICATION:
-Before: "'I'll protect you'; 'Won't let anyone hurt you'"
+QUOTE DEDUPLICATION (aggressive):
+Same THEME = duplicate. Keep ONE per theme.
+Before: "'I'll protect you'; 'Won't let anyone hurt you'; 'I've got you'"
 After: "'I'll protect you'"
 
 STATE SUPERSESSION:
