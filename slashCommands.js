@@ -212,6 +212,56 @@ function calculateVisibleStartIndex(chat) {
   return 0;
 }
 
+function isSystemEntry(comment) {
+  if (!comment || typeof comment !== 'string') {return false;}
+  return comment.startsWith('_registry_') ||
+         comment === '__operation_queue' ||
+         comment.startsWith('__index_');
+}
+
+async function runCompactLorebook() {
+  const lorebookName = getAttachedLorebook();
+  if (!lorebookName) {
+    return { success: false, error: 'No lorebook attached to this chat.' };
+  }
+
+  const allEntries = await getLorebookEntries(lorebookName);
+  if (!allEntries || allEntries.length === 0) {
+    return { success: false, error: 'No entries found in lorebook.' };
+  }
+
+  const entriesToCompact = allEntries.filter(entry =>
+    entry && entry.comment && !isSystemEntry(entry.comment)
+  );
+
+  if (entriesToCompact.length === 0) {
+    return { success: false, error: 'No non-system entries to compact.' };
+  }
+
+  const { enqueueOperation, OperationType } = await import('./operationQueue.js');
+
+  for (const entry of entriesToCompact) {
+    // eslint-disable-next-line no-await-in-loop -- must enqueue sequentially
+    await enqueueOperation(
+      OperationType.COMPACT_LOREBOOK_ENTRY,
+      {
+        lorebookName,
+        entryUid: entry.uid,
+        existingContent: entry.content
+      },
+      {
+        priority: 14,
+        metadata: {
+          entry_comment: entry.comment,
+          source: 'compactlorebook_command'
+        }
+      }
+    );
+  }
+
+  return { success: true, count: entriesToCompact.length };
+}
+
 // eslint-disable-next-line max-lines-per-function -- This function registers all slash commands, inherently long
 function initialize_slash_commands() {
   const ctx = getContext();
@@ -661,6 +711,63 @@ function initialize_slash_commands() {
       return summary;
     },
     helpString: 'Calculate historical per-message token usage showing actual token savings across all scenes'
+  }));
+
+  SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+    name: 'compactlorebook',
+    callback: async () => {
+      const { getQueueStats } = await import('./operationQueue.js');
+      const stats = getQueueStats();
+
+      if (stats.pending > 0 || stats.in_progress > 0) {
+        const msg = `Queue must be empty. Current: ${stats.pending} pending, ${stats.in_progress} in progress.`;
+        toast(msg, 'error');
+        return msg;
+      }
+
+      const result = await runCompactLorebook();
+      if (!result.success) {
+        toast(result.error, 'warning');
+        return result.error;
+      }
+
+      return '';
+    },
+    helpString: 'Compact all lorebook entries (excluding system entries). Queue must be empty.',
+    aliases: ['compactlb']
+  }));
+
+  SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+    name: 'compactall',
+    callback: async () => {
+      const { getQueueStats } = await import('./operationQueue.js');
+      const stats = getQueueStats();
+
+      if (stats.pending > 0 || stats.in_progress > 0) {
+        const msg = `Queue must be empty. Current: ${stats.pending} pending, ${stats.in_progress} in progress.`;
+        toast(msg, 'error');
+        return msg;
+      }
+
+      // Run all compaction operations
+      // Add additional compaction functions here as they are created
+      const compactionFunctions = [
+        { name: 'lorebook', fn: runCompactLorebook }
+        // Future: { name: 'recaps', fn: runCompactRecaps },
+        // Future: { name: 'other', fn: runCompactOther },
+      ];
+
+      for (const { name, fn } of compactionFunctions) {
+        // eslint-disable-next-line no-await-in-loop -- must run sequentially
+        const result = await fn();
+        if (!result.success) {
+          log(`[compactall] ${name}: ${result.error}`);
+        }
+      }
+
+      return '';
+    },
+    helpString: 'Run all compaction operations (lorebook entries, etc.). Queue must be empty.'
   }));
 
 }
