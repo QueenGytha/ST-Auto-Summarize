@@ -1846,7 +1846,9 @@ export async function generateSceneRecap(config) {
   debug(SUBSYSTEM.SCENE, `Storing Stage 1 extraction data for index ${index}`);
 
   // Store extraction data directly (no versioning, no lorebook ops yet)
+  // Set both keys so renderSceneBreak() can display the extraction while Stage 2 is pending
   set_data(message, SCENE_RECAP_MEMORY_KEY, recap);
+  set_data(message, SCENE_BREAK_RECAP_KEY, recap);
 
   // Store lorebook metadata for Stage 2 to use when appending message range to scene name
   set_data(message, 'stage1_lorebook_metadata', lorebookMetadata);

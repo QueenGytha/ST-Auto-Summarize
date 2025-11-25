@@ -1,8 +1,6 @@
-export const scene_recap_stage1_extraction_prompt = `ROLE: Extract ONLY stated facts. No roleplay. No explanations. No inference/guessing. If it's not explicit, omit it.
-Output: JSON object with the exact keys below. Order inside arrays is irrelevant. Any other shape is invalid.
-Purpose: preserve only what is needed to continue after messages are removed: plot/causality, goals/hooks/timers/promises/contingencies, reveals, state/location/condition changes, relationship dynamics/stance/boundaries/obligations, character voice/mannerisms/style (quotes or narration) that show stance/intent/decision OR distinct diction/cadence, ONE appearance identifier per entity, verbatim document contents (titles/clauses). Tone/ambience is NOT captured.
+export const scene_recap_stage1_extraction_prompt = `ROLE: Extract stated facts from transcript, then deduplicate before output. No roleplay. No inference.
 
-OUTPUT FORMAT (keys exact):
+OUTPUT FORMAT:
 {
   "plot": [],
   "goals": [],
@@ -14,26 +12,59 @@ OUTPUT FORMAT (keys exact):
   "docs": []
 }
 
----------------- ROLEPLAY TRANSCRIPT ----------------
-<ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
-{{scene_messages}}
-</ROLEPLAY_TRANSCRIPT_FOR_EXTRACTION>
+PHASE 1 - EXTRACTION (what to capture):
+- plot: events/causality/outcomes (who did what, why, result)
+- goals: active intentions/timers/promises/contracts (who wants what + condition)
+- reveals: new information learned this scene
+- state: durable location/condition changes (not fleeting positions)
+- stance: relationship dynamics/boundaries/obligations per counterpart
+- voice: quotes showing distinct diction/cadence (for voice preservation)
+- appearance: ONE identifier per entity (name + key trait)
+- docs: verbatim document contents (titles/clauses)
 
----------------- RULES ----------------
-RULES (BARE WHITELIST):
-- Verbatim only; names as written; no paraphrase or invention.
-- Keep ONLY:
-  * plot/causality/reveals (who/what/why/outcome);
-  * goals/hooks/timers/promises/contracts/contingencies (who/what + condition);
-  * state/location/condition changes that persist beyond the moment (omit fleeting positions/approach/mount/travel progress);
-  * relationship dynamics/stance/boundaries/obligations/debts/alliances—capture NET STANCE per counterpart, not interaction-by-interaction history. Multiple exchanges showing the same relational stance (protective, hostile, trusting) are redundant; collapse to single summary;
-  * character voice/mannerisms/style/quotes that show stance/intent/decision OR distinct diction/cadence (for setting_lore use). SAME-INTENT = DUPLICATE: quotes expressing the same emotional stance toward the same target are duplicates regardless of wording—keep only the shortest. One quote per distinct intent, not per distinct phrasing;
-  * ONE appearance identifier per entity (name + key trait/role) across the entire output;
-  * verbatim document contents (titles/clauses).
-- DROP EVERYTHING ELSE: ambient/scenery/tone/mood; travel/route/pace/handling/approach/inspection steps; physical micro-actions; meta/stage directions/placeholders/formatting notes; capability boilerplate (distances, speeds, endurance, “can travel…”); generic emotions/posture; mindvoice descriptors; repeated stance/voice; repeated appearance; intimate/sexual/biological detail (explicit acts, body fluids) unless literally plot-critical.
-- Travel: keep ONLY once as a goal/plan/contingency if it matters (e.g., "travel to capital to report"); drop all other travel/route/pace/handling beats from plot/state.
-- Evidence/inspection/handling: keep only if it introduces a new fact/reveal; otherwise drop the handling steps.
-- NO DUPLICATES: each fact appears ONCE in the single best-fit category. If captured, skip all restatements; keep shortest phrasing. One fact per entry.
-- Non-quote fragments: concise but complete (who/what/why/outcome when needed).
-- If uncertain, omit.
-- Output only the JSON object; no preamble/headings/code fences.`;
+DROP: ambient/scenery/tone; travel steps; micro-actions; capability boilerplate; generic emotions; intimate detail unless plot-critical.
+
+---------------- TRANSCRIPT ----------------
+<TRANSCRIPT>
+{{scene_messages}}
+</TRANSCRIPT>
+
+---------------- PHASE 2 - DEDUPLICATE BEFORE OUTPUT ----------------
+
+STANCE COLLAPSING (critical):
+Multiple interactions showing the SAME relational stance are redundant.
+
+Before: [
+  "A toward B: insisted on rest",
+  "A toward B: refused to let B push forward",
+  "A toward B: carried B to safety",
+  "A toward B: promised to protect B"
+]
+After: [
+  "A toward B: protective; prioritizes B's safety"
+]
+All four expressed "protective stance" → collapse to ONE summary.
+
+QUOTE DEDUPLICATION (critical):
+Quotes expressing the SAME emotional intent are duplicates regardless of wording.
+
+Before: [
+  "A: 'I'll protect you'",
+  "A: 'I won't let anyone hurt you'",
+  "A: 'Your safety is my priority'"
+]
+After: [
+  "A: 'I'll protect you'"
+]
+All three express "protective commitment" → keep only SHORTEST.
+
+CROSS-CATEGORY:
+Each fact appears ONCE in the single best category. If "A and B are now together" is in plot, do not repeat in reveals or state.
+
+FINAL CHECKLIST (apply before output):
+□ Stance: collapsed to NET STANCE per counterpart? (not interaction history)
+□ Voice: one quote per DISTINCT INTENT? (not per distinct wording)
+□ No fact appears in multiple categories?
+□ Appearance: max one entry per entity?
+
+Output JSON only.`;

@@ -2,32 +2,64 @@
 // - {{current_running_recap}} - Current running recap content (optional)
 // - {{scene_recaps}} - Combined scene recaps text
 
-export const running_scene_recap_prompt = `ROLE: Merge scene recaps into a running recap. You are an editor, not a participant. Output ONLY JSON.
+export const running_scene_recap_prompt = `ROLE: Merge new scene recap into running recap. You are an editor. Output JSON only.
 
-OUTPUT SHAPE:
+OUTPUT FORMAT:
 {"recap":"DEV: ...\\nPEND: ..."}
-- One line per section; include only if something changed/occurred. If a section would be empty, omit that line entirely (no placeholders). NEVER include quotes in recap.
-- Brevity is critical: collapse clusters into the shortest fragment that preserves plot/state/goals. Drop explicit sexual/biological detail, travel/handling/chores/shopping, clothing fitting, cleaning/grooming, rumor mechanics unless plot-critical, and all character nuance/stance/voice (belongs in setting_lore only).
+- DEV: durable plot/state changes, decisions, reveals
+- PEND: active goals/hooks (who wants what + condition)
+- Omit empty sections. No quotes ever.
 
-RULES:
-- Use ONLY these inputs; no outside knowledge/guesses. If it's not in them, it did not happen.
-- Start from CURRENT_TOTAL_RECAP; edit in place. Keep lines that are still correct; update with new/changed info; drop resolved/superseded; prune low-signal detail and duplicates.
-- SUPERSESSION PRINCIPLE: once an outcome is established, the process that led to it becomes low-signal. Collapse backstory to outcome (e.g., "village destroyed in bandit raid that awakened Character's latent power" not "bandits attacked; Character led defense; overwhelmed; trauma triggered awakening; power surged; destroyed village"). Keep process only when steps remain plot-relevant (active consequences, unresolved threads).
-- DEV: ONLY high-level durable plot/state changes; decisions/promises/contracts; documents (verbatim titles/clauses only); reveals. No quotes. No paraphrased feelings. No speculation/inferred motives. Collapse multi-beat sequences into one concise clause; drop nuance/stance/voice (that belongs in setting_lore).
-- PEND: only active goals/timers/secrets/hooks with who/what + condition. Drop errands, shopping/fitting, routine training details, rumor-seeding mechanics unless they change stakes. Remove anything resolved/fulfilled.
-- Keep canonical names at least once; compress with fragments/semicolons; no filler. Do not expand unchanged lines. Do not emit empty section lines.
-- Preserve existing tags ([reveal], [plan], etc); do not invent new tags.
+PHASE 1 - MERGE:
+- Start from CURRENT_RUNNING_RECAP
+- Add genuinely new information from NEW_SCENE_RECAP
+- If new info restates existing, keep existing wording (don't duplicate)
+- Drop resolved goals from PEND
 
-QUALITY CHECK:
-- All active threads/hooks kept; conflicts resolved to newest info. Redundant/low-signal, resolved items, and explicit/sexual/handling detail removed. Recap remains high-level events only; nuance lives in setting_lore.
-- No quotes; JSON safe; output starts "{" and ends "}".
+PHASE 2 - WHAT BELONGS HERE:
+DEV (keep): plot events, state changes, decisions, contracts, reveals
+DEV (exclude): stance, voice, feelings, relationship nuance (belongs in setting_lore)
+PEND (keep): active goals, timers, unresolved hooks
+PEND (exclude): resolved items, routine tasks, shopping/errands
 
-// CURRENT RUNNING RECAP (edit in place):
+---------------- CURRENT (edit in place) ----------------
 <CURRENT_RUNNING_RECAP>
 {{current_running_recap}}
 </CURRENT_RUNNING_RECAP>
 
-// NEW SCENE RECAP TO MERGE:
+---------------- NEW (merge in) ----------------
 <NEW_SCENE_RECAP>
 {{scene_recaps}}
-</NEW_SCENE_RECAP>`;
+</NEW_SCENE_RECAP>
+
+---------------- PHASE 3 - COMPRESS BEFORE OUTPUT ----------------
+
+SUPERSESSION PRINCIPLE:
+Once outcome is established, process detail becomes low-signal.
+
+Before (process detail):
+  "DEV: X attacked; A defended; A overwhelmed; crisis triggered A's ability; destruction resulted"
+After (outcome only):
+  "DEV: X destroyed when attack triggered A's ability"
+
+Keep process ONLY when steps have active consequences or unresolved threads.
+
+BACKSTORY COLLAPSING:
+Events that set up current situation → single clause.
+
+Before: "A traveled; stopped to rest; argued; arrived destination; met contact; received task"
+After: "A arrived destination; received task from contact"
+
+RESOLVED ITEM REMOVAL:
+Before PEND: "reach destination; meet contact; get task; complete objective"
+After PEND (at destination): "complete objective"
+Goals achieved = remove from PEND entirely.
+
+FINAL CHECKLIST:
+□ Backstory collapsed to outcomes?
+□ Process detail removed where outcome known?
+□ Resolved goals removed from PEND?
+□ No stance/voice/feelings in recap? (belongs in setting_lore)
+□ No quotes?
+
+Output JSON only.`;
