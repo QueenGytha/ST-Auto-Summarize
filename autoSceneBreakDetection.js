@@ -655,8 +655,9 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
 
   const sceneObjects = collectSceneObjects(startIndex, endIndex, chat);
 
-  // Use working lorebook lookup (don't skip settings modification - direct mutation causes read-only property errors)
-  const { prompt, prefill, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIndex, get_data, false);
+  // PERF: Use skipSettingsModification=true to avoid calling setWorldInfoSettings (which re-registers all slash commands)
+  // This directly mutates world-info.js module exports instead, avoiding expensive DOM/event operations
+  const { prompt, prefill, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIndex, get_data, true);
 
   const config = await resolveOperationConfig('scene_recap');
   const preset = config.completion_preset_name || '';
@@ -702,11 +703,11 @@ async function reduceMessagesUntilTokenFit(config) {
   let lastCoarseReduction = 0;    // Track coarse step reductions
   let lastMediumReduction = 0;    // Track medium step reductions
 
-  // Helper to update operation metadata when range changes
+  // Helper to update operation metadata when range changes (import hoisted below)
+  let updateOperationMetadataFn = null; // Will be initialized after import
   const updateOperationRange = async (newEndIndex, phase) => {
-    if (operationId && newEndIndex !== originalEndIndex) {
-      const { updateOperationMetadata } = await import('./operationQueue.js');
-      await updateOperationMetadata(operationId, {
+    if (operationId && newEndIndex !== originalEndIndex && updateOperationMetadataFn) {
+      await updateOperationMetadataFn(operationId, {
         range_reduced: true,
         original_end_index: originalEndIndex,
         current_end_index: newEndIndex,
@@ -730,6 +731,14 @@ async function reduceMessagesUntilTokenFit(config) {
       // Empty bookmark - skip it and continue searching backwards
     }
   }
+
+  // PERF: Cache scene recap token calculations by endIndex to avoid expensive recalculations
+  // during backtrack operations (coarse → medium → fine phases may revisit same end indices)
+  const sceneRecapTokenCache = new Map();
+
+  // PERF: Hoist import to avoid repeated dynamic imports in loop
+  const { updateOperationMetadata } = await import('./operationQueue.js');
+  updateOperationMetadataFn = updateOperationMetadata;
 
   while (true) {
     const currentEligibleFilteredIndices = filterEligibleIndices(currentFilteredIndices, currentMaxEligibleIndex);
@@ -787,8 +796,18 @@ async function reduceMessagesUntilTokenFit(config) {
 
     // ALSO calculate tokens for scene recap generation (which includes lorebooks)
     // sceneRecapStartIndex was calculated once before the loop (performance optimization)
-    // eslint-disable-next-line no-await-in-loop -- Need to calculate scene recap tokens to ensure it will also fit
-    const sceneRecapTokens = await calculateSceneRecapTokensForRange(sceneRecapStartIndex, currentEndIndex, chat, ctx);
+    // PERF: Use cache to avoid recalculating for same endIndex during backtrack operations
+    let sceneRecapTokens;
+    const cacheKey = `${sceneRecapStartIndex}-${currentEndIndex}`;
+    if (sceneRecapTokenCache.has(cacheKey)) {
+      sceneRecapTokens = sceneRecapTokenCache.get(cacheKey);
+      debug(SUBSYSTEM.OPERATIONS, `[PERF] Scene recap tokens cache HIT for ${cacheKey}: ${sceneRecapTokens}`);
+    } else {
+      // eslint-disable-next-line no-await-in-loop -- Need to calculate scene recap tokens to ensure it will also fit
+      sceneRecapTokens = await calculateSceneRecapTokensForRange(sceneRecapStartIndex, currentEndIndex, chat, ctx);
+      sceneRecapTokenCache.set(cacheKey, sceneRecapTokens);
+      debug(SUBSYSTEM.OPERATIONS, `[PERF] Scene recap tokens cache MISS for ${cacheKey}: ${sceneRecapTokens}`);
+    }
 
     // Reserve tokens for whichever prompt is LARGER (scene break detection or scene recap generation)
     const tokenCount = Math.max(sceneBreakTokens, sceneRecapTokens);
