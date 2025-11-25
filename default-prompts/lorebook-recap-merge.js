@@ -29,7 +29,7 @@ MERGE (EXISTING_CONTENT is the baseline):
 - This applies to quotes, triggers, relationship details, appearance - everything
 
 FACETS (fragments; only when shown):
-Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential | Keywords: ENTITY REFERENCES ONLY (names/titles/aliases that refer TO this entity for lorebook activation; NOT emotional states, NOT adjectives, NOT experiences)
+Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential
 
 ---------------- EXISTING_CONTENT ----------------
 <EXISTING_CONTENT>
@@ -111,19 +111,6 @@ NEW_CONTENT has: "coat gleams like polished silver in moonlight"
 
 Only add appearance if it's a NEW physical feature not already described.
 
-KEYWORD RULES (critical):
-Keywords = ACTIVATION TRIGGERS for lorebook. Terms that REFER TO this entity.
-CORRECT: character names, nicknames, titles, aliases, species, role names
-WRONG: emotional states, adjectives, actions, experiences, feelings
-
-Before (BAD - states/experiences): "protective, exhausted, fierce-protection, flustered, resigned, sleeping"
-After (GOOD - entity references): "Senta, white mare, Companion, silver hooves"
-
-Before (BAD - adjectives): "loyal, brave, cunning, protective-guard, inevitable"
-After (GOOD - what they're called): "Captain Varis, the Captain, Varis, scarred veteran"
-
-NEVER include: emotional states, personality traits, actions taken, things experienced, hyphen variants of same word.
-
 CROSS-FACET:
 Each idea once in best facet.
 
@@ -133,7 +120,6 @@ CHECKLIST:
 □ State = durable only (not transient/operational)?
 □ Triggers = one per behavioral pattern?
 □ Quotes = one per VOICE PATTERN (not per topic)?
-□ Keywords = entity references only (names/titles/aliases), NOT states/adjectives?
 □ Cross-facet duplicates removed?
 □ canonicalName = proper name or null (no titles)
 
