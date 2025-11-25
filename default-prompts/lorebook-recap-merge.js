@@ -21,23 +21,22 @@ OUTPUT:
 
 SUBJECT LOCK: Entry = {{entry_name}}. Other entities → Relationships only.
 
-MERGE:
-- EXISTING is the baseline
-- For each item in NEW, ask: "Does EXISTING already show this?"
-  - YES, and EXISTING version is as good or better → skip NEW item
-  - YES, but NEW version is more distinctive → REPLACE the EXISTING item with NEW
-  - NO → add NEW item
-- This applies to quotes, triggers, relationship details - everything
+MERGE (EXISTING_CONTENT is the baseline):
+- For each item in NEW_CONTENT, ask: "Does EXISTING_CONTENT already show this?"
+  - YES, and EXISTING_CONTENT version is as good or better → skip NEW_CONTENT item
+  - YES, but NEW_CONTENT version is more distinctive → REPLACE the EXISTING_CONTENT item
+  - NO → add NEW_CONTENT item
+- This applies to quotes, triggers, relationship details, appearance - everything
 
 FACETS (fragments; only when shown):
 Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential | Keywords: ENTITY REFERENCES ONLY (names/titles/aliases that refer TO this entity for lorebook activation; NOT emotional states, NOT adjectives, NOT experiences)
 
----------------- EXISTING ----------------
+---------------- EXISTING_CONTENT ----------------
 <EXISTING_CONTENT>
 {{existing_content}}
 </EXISTING_CONTENT>
 
----------------- NEW ----------------
+---------------- NEW_CONTENT ----------------
 <NEW_CONTENT>
 {{new_content}}
 </NEW_CONTENT>
@@ -90,20 +89,27 @@ All 5 express SAME PATTERN (strategic network builder). After (ONE representativ
 
 KEEP triggers that express DIFFERENT behavioral patterns.
 
-QUOTE DEDUPLICATION (aggressive):
-Duplicates = same behavior ABOUT the same thing. Different wording doesn't make it unique.
+QUOTE DEDUPLICATION (NEW_CONTENT vs EXISTING_CONTENT):
+If EXISTING_CONTENT already has a quote showing same behavior about same subject → skip NEW_CONTENT quote.
 
-Before: "'Help me or leave me to die'; 'Refuse and I'll kick down the doors'; 'The healer, no one else'"
-All 3 = demanding medical help. Same behavior, same subject. Duplicates.
-
-Before: "'You've cost me everything'; 'I trusted you'; 'This is how you repay me'"
-All 3 = accusing someone of betrayal. Same behavior, same subject. Duplicates.
+EXISTING_CONTENT has: "A Gift awakened by trauma and fear. I am here now, and together we will learn to control it."
+NEW_CONTENT has: "Your Gift broke through decades of subconscious suppression. Raw power exploded outward from you."
+Both = explaining Gift awakening. Same behavior, same subject. SKIP the NEW_CONTENT quote.
 
 NOT duplicates:
 - "'I killed your father'" vs "'The treasure is under the church'" - both revealing, but different information
-- "'I'll destroy you'" (to enemy) vs "'Touch her and die'" (protecting someone) - different subjects
+- Explaining Gift origin vs giving tactical orders - different behaviors
 
-Ask: "Same action about the same thing?" YES → duplicate.
+Ask: "Does EXISTING_CONTENT already have a quote showing this behavior about this subject?" YES → skip.
+
+APPEARANCE DEDUPLICATION (NEW_CONTENT vs EXISTING_CONTENT):
+If EXISTING_CONTENT already describes a physical trait → skip poetic rewordings.
+
+EXISTING_CONTENT has: "brilliant white; silver hooves; sapphire eyes"
+NEW_CONTENT has: "coat gleams like polished silver in moonlight"
+"brilliant white" already covers coat color. SKIP the NEW_CONTENT description.
+
+Only add appearance if it's a NEW physical feature not already described.
 
 KEYWORD RULES (critical):
 Keywords = ACTIVATION TRIGGERS for lorebook. Terms that REFER TO this entity.

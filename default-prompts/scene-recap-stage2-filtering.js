@@ -1,29 +1,46 @@
 // Stage 2: Filtering/Formatting
 // MACROS: {{extracted_data}}, {{active_setting_lore}}, {{lorebook_entry_types}}
 
-export const scene_recap_stage2_filtering_prompt = `ROLE: Filter into recap + setting_lore. RECONSTRUCTION SIGNALS; minimum anchors, not exhaustive records. Output JSON only.
+export const scene_recap_stage2_filtering_prompt = `ROLE: Filter extracted data into recap + setting_lore. Output ONLY what's new compared to CURRENT_SETTING_LORE. Output JSON only.
 
-TOKEN CONSERVATION (critical):
-Fragments; semicolons; no articles/filler.
+---------------- EXTRACTED_DATA (input to process) ----------------
+<EXTRACTED_DATA>
+{{extracted_data}}
+</EXTRACTED_DATA>
 
-Sentence: "A has developed protective attitude toward B and prioritizes B's safety"
-Fragment: "A->B: protective; prioritizes safety"
+---------------- CURRENT_SETTING_LORE (what already exists) ----------------
+<CURRENT_SETTING_LORE>
+{{active_setting_lore}}
+</CURRENT_SETTING_LORE>
 
-DEDUPLICATION PHILOSOPHY (critical):
-ONE REPRESENTATIVE EXAMPLE per behavior/trait/outcome. NOT multiple examples.
-Different wording expressing SAME THING = duplicate. Drop all but one.
-Ask: "What CHARACTER INFORMATION does this convey?" Same info = duplicate.
+---------------- TASK: OUTPUT DELTA ONLY ----------------
 
-OUTPUT:
+For each entity in EXTRACTED_DATA:
+1. Find matching entry in CURRENT_SETTING_LORE (same type+name)
+2. Compare each facet - does CURRENT_SETTING_LORE already cover this?
+3. Output ONLY facets NOT already in CURRENT_SETTING_LORE
+4. If CURRENT_SETTING_LORE already has a quote showing same behavior about same subject → SKIP the new quote
+5. If CURRENT_SETTING_LORE already describes a physical trait → SKIP poetic rewordings
+6. Nothing new for an entity = omit that entity entirely
+7. UID: only if 100% certain match to existing entry
+
+QUOTE DEDUPLICATION EXAMPLE:
+CURRENT_SETTING_LORE has: "A Gift awakened by trauma and fear. I am here now, and together we will learn to control it."
+EXTRACTED_DATA has: "Your Gift broke through decades of subconscious suppression. Raw power exploded outward from you."
+Both = explaining Gift awakening. Same behavior, same subject. SKIP the new quote.
+
+APPEARANCE DEDUPLICATION EXAMPLE:
+CURRENT_SETTING_LORE has: "brilliant white; silver hooves; sapphire eyes"
+EXTRACTED_DATA has: "coat gleams like polished silver in moonlight"
+"brilliant white" already covers coat color. SKIP the new description.
+
+---------------- OUTPUT FORMAT ----------------
+
 {
   "sn": "Title (max 5 words)",
   "rc": "DEV: ...\\nPEND: ...",
-  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["names/titles entity is called - NOT adjectives/states"], "u": "uid-if-known" }]
+  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"], "u": "uid-if-known" }]
 }
-
-"k" FIELD = what the entity IS CALLED (names, titles, aliases, nicknames, species). These activate the lorebook entry when mentioned in chat.
-WRONG: adjectives, emotional states, actions, traits (protective, exhausted, sleeping, fierce)
-RIGHT: proper names, titles, what someone would call them (Senta, white mare, Companion, Captain Varis)
 
 CATEGORIZATION:
 - rc: plot outcomes; decisions; state changes; reveals. Fragments. No quotes/feelings/nuance.
@@ -31,45 +48,22 @@ CATEGORIZATION:
   - PEND: active goals (who/what/condition)
 - sl: entity nuance for tone. Stance; voice; relationships; triggers.
   - Types: {{lorebook_entry_types}}
-  - NEVER CREATE ENTRY FOR {{user}}. Skip entirely. No exceptions. {{user}} info goes in rc or other entities' Relationships only.
+  - NEVER CREATE ENTRY FOR {{user}}. Skip entirely. No exceptions.
 
-DELTA CHECK:
-- Compare against BASELINE (same type+name)
-- Output ONLY new/changed facets
-- Nothing new = omit entity
-- UID: only if 100% certain match
+"k" FIELD = what the entity IS CALLED (names, titles, aliases). These activate the lorebook entry.
+WRONG: adjectives, emotional states, traits (protective, exhausted, sleeping)
+RIGHT: proper names, titles (Senta, white mare, Companion, Captain Varis)
 
 FACETS (fragments; only when new):
-Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential
-
----------------- BASELINE ----------------
-<CURRENT_SETTING_LORE>
-{{active_setting_lore}}
-</CURRENT_SETTING_LORE>
-
----------------- INPUT ----------------
-<EXTRACTED_DATA>
-{{extracted_data}}
-</EXTRACTED_DATA>
+Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics | Voice: cadence cues | Notable dialogue: verbatim | Secrets/Tension: if consequential
 
 ---------------- COMPRESS BEFORE OUTPUT ----------------
 
+TOKEN CONSERVATION: Fragments; semicolons; no articles/filler.
+
 RELATIONSHIP COLLAPSING:
-Collapse repetitive examples; preserve dynamics.
-Before: "A->B: insisted rest; refused push; carried to safety; promised protection; insisted rest again"
+Before: "A->B: insisted rest; refused push; carried to safety; promised protection"
 After: "A->B: protective; promised safety"
-KEEP: debts; boundaries; leverage; trust pivots; promises; tension.
-
-QUOTE DEDUPLICATION (aggressive):
-Duplicates = same behavior ABOUT the same thing. Different wording doesn't make it unique.
-
-Before: "'Help me or leave me to die'; 'Refuse and I'll kick down the doors'; 'The healer, no one else'"
-All 3 = demanding medical help. Same behavior, same subject. Duplicates.
-
-NOT duplicates:
-- "'I killed your father'" vs "'The treasure is under the church'" - both revealing, but different information
-
-Ask: "Same action about the same thing?" YES → duplicate.
 
 STATE SUPERSESSION:
 Before: "injured; recovering; healed"
@@ -77,11 +71,9 @@ After: "healed"
 
 CHECKLIST:
 □ Fragments? (except quotes)
-□ rc = plot only?
-□ sl = delta-only? NO ENTRY FOR {{user}}?
-□ Relationships = stance + dynamics?
-□ Quotes = one per CHARACTER BEHAVIOR?
+□ rc = plot only (no feelings/nuance)?
+□ sl = delta-only (nothing already in CURRENT_SETTING_LORE)?
+□ NO ENTRY FOR {{user}}?
 □ Keywords = entity references only (names/titles), NOT states/adjectives?
-□ State = current only?
 
 Output JSON only.`;

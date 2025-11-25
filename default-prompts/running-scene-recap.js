@@ -14,10 +14,9 @@ OUTPUT:
 - PEND: active goals (who/what/condition)
 - Omit empty sections. No quotes.
 
-MERGE:
-- CURRENT is the baseline
-- For each item in NEW, ask: "Does CURRENT already show this?"
-  - YES → skip (or replace if NEW supersedes)
+MERGE (CURRENT_RUNNING_RECAP is the baseline):
+- For each item in NEW_SCENE_RECAP, ask: "Does CURRENT_RUNNING_RECAP already show this?"
+  - YES → skip (or replace if NEW_SCENE_RECAP supersedes)
   - NO → add
 - Drop resolved goals from PEND
 - Collapse sequences into outcomes
@@ -34,13 +33,16 @@ OPERATIONAL DETAILS TO DROP:
 - "briefed X on Y" → unless Y is new reveal
 - "demonstrated skill" → unless establishes new capability
 - "visited" → unless visit had consequential outcome
+- "X greeted Y" → social formality, not outcome
+- "X took Y to Z" → logistics, not outcome (unless Z itself is significant)
+- "arrived at X" → only keep if arrival itself is the outcome; otherwise merge into what happened there
 
----------------- CURRENT ----------------
+---------------- CURRENT_RUNNING_RECAP ----------------
 <CURRENT_RUNNING_RECAP>
 {{current_running_recap}}
 </CURRENT_RUNNING_RECAP>
 
----------------- NEW ----------------
+---------------- NEW_SCENE_RECAP ----------------
 <NEW_SCENE_RECAP>
 {{scene_recaps}}
 </NEW_SCENE_RECAP>
@@ -74,9 +76,9 @@ CHECKLIST:
 □ Fragments?
 □ DEV = outcomes not process?
 □ Sequences collapsed?
-□ NEW items only added if not already in CURRENT?
+□ NEW_SCENE_RECAP items only added if not already in CURRENT_RUNNING_RECAP?
 □ PEND = active goals only (no routine tasks)?
 □ No stance/feelings?
-□ No operational details?
+□ No operational details (greeted, took to, arrived)?
 
 Output JSON only.`;
