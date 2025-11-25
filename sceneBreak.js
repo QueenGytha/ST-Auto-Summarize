@@ -626,11 +626,11 @@ function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - an
             </div>
             <textarea class="scene-recap-box auto_recap_memory_text" data-testid="scene-recap-box" placeholder="Scene recap..." ${disabledAttr}>${sceneRecap}</textarea>
             <div class="scene-recap-actions" style="margin-top:0.5em; display:flex; gap:0.5em;">
-                <button class="scene-rollback-recap menu_button" data-testid="scene-rollback-recap" title="Go to previous recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-rotate-left"></i> Previous Recap</button>
-                <button class="scene-generate-recap menu_button" data-testid="scene-generate-recap" title="Generate new recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button>
-                <button class="scene-rollforward-recap menu_button" data-testid="scene-rollforward-recap" title="Go to next recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-rotate-right"></i> Next Recap</button>
-                <button class="scene-regenerate-running menu_button" data-testid="scene-regenerate-running" title="Combine this scene with current running recap" style="margin-left:auto; white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-sync-alt"></i> Combine</button>
-                <span style="align-self:center; font-size:0.9em; color:inherit; margin-left:0.5em;">${versions.length > 1 ? `[${currentIdx + 1}/${versions.length}]` : ''}</span>
+                <button class="scene-rollback-recap menu_button" data-testid="scene-rollback-recap" title="Go to previous recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-rotate-left"></i><span> Previous Recap</span></button>
+                <button class="scene-generate-recap menu_button" data-testid="scene-generate-recap" title="Generate new recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-wand-magic-sparkles"></i><span> Generate</span></button>
+                <button class="scene-rollforward-recap menu_button" data-testid="scene-rollforward-recap" title="Go to next recap" style="white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-rotate-right"></i><span> Next Recap</span></button>
+                <button class="scene-regenerate-running menu_button" data-testid="scene-regenerate-running" title="Combine this scene with current running recap" style="margin-left:auto; white-space:nowrap; ${disabledStyle}" ${disabledAttr}><i class="fa-solid fa-sync-alt"></i><span> Combine</span></button>
+                <span class="version-counter" style="align-self:center; font-size:0.9em; color:inherit; margin-left:0.5em;">${versions.length > 1 ? `[${currentIdx + 1}/${versions.length}]` : ''}</span>
             </div>
         </div>
     </div>

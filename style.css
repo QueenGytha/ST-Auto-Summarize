@@ -340,11 +340,15 @@ dialog:has(#auto_recap_memory_state_interface) {
 }
 
 /* Compact mode - icon only when buttons overflow */
-.scene-recap-actions.compact-mode button span {
+.scene-recap-actions.compact-mode button > span {
     display: none;
 }
 .scene-recap-actions.compact-mode button {
     padding: 0.4em 0.6em;
+}
+/* Ensure overflow is visible for detection */
+.scene-recap-actions {
+    overflow: visible;
 }
 
 /* Scene break link styling */
