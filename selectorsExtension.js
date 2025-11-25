@@ -279,6 +279,7 @@ export const selectorsExtension = {
     regenerateRunning: '[data-testid="scene-regenerate-running"]',   // .scene-regenerate-running
     restoreLorebook: '.scene-lorebook-restore',                  // .scene-lorebook-restore
     deleteScene: '.scene-delete-scene',                          // .scene-delete-scene
+    actionsRow: '.scene-recap-actions',                          // .scene-recap-actions (button row)
   },
 
   // Popout (dynamically created)

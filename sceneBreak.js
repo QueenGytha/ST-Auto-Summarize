@@ -1,4 +1,4 @@
-
+/* global ResizeObserver -- Browser API for responsive layout detection */
 
 import {
   get_settings,
@@ -574,6 +574,21 @@ function createSceneRestoreLorebookIcon(messageIndex) {
   return `<i class="fa-solid fa-clock-rotate-left scene-lorebook-restore" data-message-index="${messageIndex}" title="Restore lorebook to this point in time" style="cursor:pointer; margin-left:0.5em;"></i>`;
 }
 
+// Helper: Setup compact mode detection for button row
+function setupCompactModeDetection($actionsRow) {
+  const el = $actionsRow[0];
+  if (!el) {return;}
+
+  const observer = new ResizeObserver(() => {
+    // Temporarily remove compact mode to measure natural width
+    el.classList.remove('compact-mode');
+    const overflows = el.scrollWidth > el.clientWidth;
+    el.classList.toggle('compact-mode', overflows);
+  });
+
+  observer.observe(el);
+}
+
 // Helper: Build scene break HTML element
 function buildSceneBreakElement(index, sceneData) {// Returns jQuery object - any is appropriate
   const { startIdx, sceneMessages, sceneName, sceneRecap, isVisible, isCollapsed, versions, currentIdx, isCombined, hasLaterCombinedScene } = sceneData;
@@ -710,6 +725,9 @@ saveChatDebounced )
       $msgDiv.append($sceneBreak);
     }
   }
+
+  // Setup compact mode detection for button overflow
+  setupCompactModeDetection($sceneBreak.find(selectorsExtension.sceneBreak.actionsRow));
 
   // --- Editable handlers ---
   $sceneBreak.find(selectorsExtension.sceneBreak.name).on('change blur', function () {

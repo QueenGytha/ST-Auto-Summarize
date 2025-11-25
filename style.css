@@ -339,6 +339,14 @@ dialog:has(#auto_recap_memory_state_interface) {
     transition: color 0.2s;
 }
 
+/* Compact mode - icon only when buttons overflow */
+.scene-recap-actions.compact-mode button span {
+    display: none;
+}
+.scene-recap-actions.compact-mode button {
+    padding: 0.4em 0.6em;
+}
+
 /* Scene break link styling */
 .auto_recap_scene_break_div .scene-start-link {
     color: var(--auto_recap_long);
