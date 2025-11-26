@@ -32,6 +32,7 @@ import { getEntityTypeDefinitionsFromSettings } from './entityTypes.js';
 import { getAttachedLorebook, getLorebookEntries, invalidateLorebookCache, isInternalEntry } from './lorebookManager.js';
 import { restoreCurrentLorebookFromSnapshot } from './lorebookReconstruction.js';
 import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.js';
+import { build as buildLorebookEntryTypesWithGuidance } from './macros/lorebook_entry_types_with_guidance.js';
 import { build as buildSceneMessages } from './macros/scene_messages.js';
 import { build as buildActiveSettingLore } from './macros/active_setting_lore.js';
 import { build as buildPrefill } from './macros/prefill.js';
@@ -1355,6 +1356,7 @@ isStage1 = false)
   const prefill = config.prefill || "";
   const typeDefinitions = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
   const lorebookTypesMacro = buildLorebookEntryTypes(typeDefinitions);
+  const lorebookTypesWithGuidanceMacro = buildLorebookEntryTypesWithGuidance(typeDefinitions);
 
   // Get active lorebooks if enabled (now returns { entries, metadata })
   const { entries: activeEntries, metadata: lorebookMetadata } = await getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSettingsModification);
@@ -1430,6 +1432,7 @@ isStage1 = false)
   // Stage 2 only: add lore-related macros
   if (!isStage1) {
     params.lorebook_entry_types = lorebookTypesMacro;
+    params.lorebook_entry_types_with_guidance = lorebookTypesWithGuidanceMacro;
     params.active_setting_lore = activeSettingLoreText;
   }
 
