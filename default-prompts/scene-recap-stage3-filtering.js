@@ -5,7 +5,6 @@ export const scene_recap_stage3_filtering_prompt = `ROLE: Filter recap against e
 
 OUTPUT FORMAT:
 {
-  "sn": "Scene title",
   "rc": "DEV: ...\\nPEND: ...",
   "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"] }]
 }

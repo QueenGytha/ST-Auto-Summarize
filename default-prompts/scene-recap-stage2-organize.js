@@ -33,8 +33,6 @@ Do NOT artificially limit - keep all distinct items.
 
 ---------------- STEP 2: FORMAT OUTPUT ----------------
 
-SN: Copy from extracted. Do not rewrite.
-
 RC (recap content - narrative developments):
 - DEV: condensed plot + reveals, semicolon-separated
 - PEND: condensed goals

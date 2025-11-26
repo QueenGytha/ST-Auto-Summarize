@@ -38,7 +38,9 @@ const SUBSYSTEM = {
   PROFILE: '[Profile]',
   EVENT: '[Event]',
   QUEUE: '[Queue]',
-  LOREBOOK: '[Lorebook]'
+  LOREBOOK: '[Lorebook]',
+  OPERATIONS: '[Operations]',
+  SETTINGS: '[Settings]'
 };
 
 function log(subsystem , ...args ) {
