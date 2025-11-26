@@ -1397,8 +1397,12 @@ export function registerAllOperationHandlers() {
 
       debug(SUBSYSTEM.SCENE, "Stage 3 returned JSON, storing as-is");
 
-      // Store in multi-stage format with all three stages
+      // Extract scene_name from Stage 1 (has most context for naming)
+      const stage1SceneName = existingStages.stage1?.sn || existingStages.stage1?.scene_name;
+
+      // Store in multi-stage format with scene_name at top level from Stage 1
       const finalMultiStageData = {
+        ...(stage1SceneName ? { scene_name: stage1SceneName } : {}),
         ...existingStages,
         stage3: normalized
       };
