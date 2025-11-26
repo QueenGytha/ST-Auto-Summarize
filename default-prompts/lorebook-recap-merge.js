@@ -1,17 +1,13 @@
 // MACROS: {{existing_content}}, {{new_content}}, {{entry_name}}
 
-export const auto_lorebook_recap_merge_prompt = `ROLE: Merge setting_lore entry. RECONSTRUCTION SIGNAL; minimum anchors for character/relationship continuity. Output JSON only.
+export const auto_lorebook_recap_merge_prompt = `ROLE: Merge setting_lore entry. EXISTING_CONTENT is baseline. Add from NEW_CONTENT only what's genuinely new.
 
-TOKEN CONSERVATION (critical):
-Fragments; semicolons; no articles/filler.
-
-Sentence: "A has become protective of B and prioritizes B's safety"
-Fragment: "A->B: protective; prioritizes safety"
-
-DEDUPLICATION PHILOSOPHY (critical):
-ONE REPRESENTATIVE EXAMPLE per behavior/trait/outcome. NOT multiple examples.
-Different wording expressing SAME THING = duplicate. Drop all but one.
-Ask: "What CHARACTER INFORMATION does this convey?" Same info = duplicate.
+DEDUPLICATION (enforce before output):
+- QUOTES: If EXISTING has a quote showing this voice pattern → DROP the new quote. Same pattern, different words = duplicate.
+- RELATIONSHIPS: Collapse to stance + dynamics. Blow-by-blow steps → DROP. Keep: debts, boundaries, pivots, promises, tension.
+- STATE: Durable only. "Will this still be true next scene?" NO → DROP.
+- TRIGGERS: One per behavioral pattern. Multiple phrasings of same pattern → DROP all but one.
+- APPEARANCE: If EXISTING describes trait → DROP poetic rewordings.
 
 OUTPUT:
 {
@@ -19,17 +15,12 @@ OUTPUT:
   "canonicalName": "ProperName or null"
 }
 
+STYLE: Fragments; semicolons; no articles/filler. Quotes verbatim.
+
 SUBJECT LOCK: Entry = {{entry_name}}. Other entities → Relationships only.
 
-MERGE (EXISTING_CONTENT is the baseline):
-- For each item in NEW_CONTENT, ask: "Does EXISTING_CONTENT already show this?"
-  - YES, and EXISTING_CONTENT version is as good or better → skip NEW_CONTENT item
-  - YES, but NEW_CONTENT version is more distinctive → REPLACE the EXISTING_CONTENT item
-  - NO → add NEW_CONTENT item
-- This applies to quotes, triggers, relationship details, appearance - everything
-
 FACETS (fragments; only when shown):
-Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics (debts/boundaries/pivots/promises/tension) | Voice: cadence cues | Notable dialogue: verbatim (full) | Secrets/Tension: if consequential
+Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics | Voice: cadence cues | Notable dialogue: verbatim | Secrets/Tension: if consequential
 
 ---------------- EXISTING_CONTENT ----------------
 <EXISTING_CONTENT>
@@ -41,86 +32,26 @@ Identity <=10 words | Appearance: distinctive | State: current only | Capabiliti
 {{new_content}}
 </NEW_CONTENT>
 
----------------- COMPRESS BEFORE OUTPUT ----------------
+---------------- MERGE LOGIC ----------------
 
-RELATIONSHIP COLLAPSING (aggressive):
-Collapse interaction sequences into STANCE + DYNAMICS. NOT blow-by-blow.
+For each item in NEW_CONTENT:
+1. Ask: "Does EXISTING_CONTENT already show this?"
+   - YES, EXISTING version is adequate → DROP new item
+   - YES, but NEW is more distinctive → REPLACE existing
+   - NO → ADD new item
 
-Ask for EACH relationship item: "Is this a DYNAMIC or a STEP in an interaction?"
-STEP → collapse into the dynamic it demonstrates. DYNAMIC → keep.
+RELATIONSHIP COLLAPSING:
+Before: "A->B: held hand; hugged; kissed; stayed overnight"
+After: "A->B: intimate"
 
-Before (blow-by-blow - BAD):
-"A->B: kissed; undressed; penetrated; carried while thrusting; forced climax; withdrew"
+QUOTE TEST:
+Ask: "What VOICE PATTERN does this quote demonstrate?"
+If EXISTING already has a quote showing that pattern → DROP the new quote.
+Patterns: commanding, pleading, philosophical, threatening, tender, vulnerable, defiant, sarcastic, etc.
 
-After (stance + dynamics - GOOD):
-"A->B: dominant/intimate dynamic"
-
-Before (blow-by-blow - BAD):
-"A->B: defended against C; agreed to arrangement; staged cover; established connection; participated in examination; tested transmission; first kiss taken; offered experiment"
-
-After (stance + dynamics - GOOD):
-"A->B: allied; established connection; offered intimacy as experiment"
-
-KEEP: stance; debts/obligations; boundaries; leverage; trust pivots; promises; unresolved tension.
-DROP: interaction sequences; blow-by-blow physical details; redundant demonstrations of same stance.
-
-STATE COLLAPSING (aggressive):
-DURABLE states only. Drop operational/transient details.
-
-Before (includes transient - BAD):
-"door locked/barred; curtains closed; crop nearby; four-way arrangement established; Gift awakened"
-
-After (durable only - GOOD):
-"four-way arrangement established; Gift awakened"
-
-Ask: "Will this still be true next scene?" NO → drop it.
-
-TRIGGERS DEDUPLICATION (aggressive):
-ONE representative per BEHAVIORAL PATTERN. NOT multiple phrasings.
-
-Ask for EACH trigger: "What BEHAVIORAL PATTERN does this express?"
-If another trigger already expresses that pattern → DROP this one.
-
-Before (multiple phrasings of same pattern - BAD):
-"size up everyone for potential; cultivate multiple relationships; teenage spy network; strike alliance with staff; create layers of gossip"
-
-All 5 express SAME PATTERN (strategic network builder). After (ONE representative - GOOD):
-"strategic network builder; cultivates relationships for tactical purposes"
-
-KEEP triggers that express DIFFERENT behavioral patterns.
-
-QUOTES = VOICE SIGNAL (critical):
-Purpose: Help LLM reconstruct HOW this character speaks (cadence, style, tone).
-NOT for: Recording what they said (content goes in other facets).
-
-If EXISTING_CONTENT has a quote → only add NEW quote if it shows a DIFFERENT voice pattern.
-Same voice pattern in different words = duplicate.
-
-Voice patterns: commanding, pleading, philosophical, threatening, tender, formal, casual, etc.
-If existing quote shows "commanding" and new quote also shows "commanding" → skip new quote.
-
-Test: "Does this quote teach the LLM something NEW about how this character speaks?"
-NO → skip. YES → keep.
-
-APPEARANCE DEDUPLICATION (NEW_CONTENT vs EXISTING_CONTENT):
-If EXISTING_CONTENT already describes a physical trait → skip poetic rewordings.
-
-EXISTING_CONTENT has: "brilliant white; silver hooves; sapphire eyes"
-NEW_CONTENT has: "coat gleams like polished silver in moonlight"
-"brilliant white" already covers coat color. SKIP the NEW_CONTENT description.
-
-Only add appearance if it's a NEW physical feature not already described.
-
-CROSS-FACET:
-Each idea once in best facet.
-
-CHECKLIST:
-□ Fragments? (except quotes)
-□ Relationships = stance + dynamics (not blow-by-blow)?
-□ State = durable only (not transient/operational)?
-□ Triggers = one per behavioral pattern?
-□ Quotes = one per VOICE PATTERN (not per topic)?
-□ Cross-facet duplicates removed?
-□ canonicalName = proper name or null (no titles)
+STATE TEST:
+Ask: "Will this still be true next scene?"
+NO → DROP. (scheduled meetings, temporary pain, current location)
+YES → KEEP. (relationship changes, major status changes, learned secrets)
 
 Output JSON only.`;

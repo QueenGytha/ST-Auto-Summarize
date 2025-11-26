@@ -5,7 +5,7 @@
  * point-in-time snapshot of the lorebook state at a specific message.
  */
 
-import { get_data } from './index.js';
+import { get_data, chat_metadata, getCurrentChatId, log } from './index.js';
 import { debug, error, SUBSYSTEM } from './utils.js';
 import { toast } from './utils.js';
 import { createNewWorldInfo } from '../../../world-info.js';
@@ -523,6 +523,22 @@ export async function reconstructLorebookFromSnapshot(newLorebookName) {
       `(from lorebook: ${snapshot.chatLorebookName})`
     );
 
+    // Step 1b: Update running recap storage chat_id BEFORE any operations
+    // This MUST happen before creating lorebook entries, because those operations
+    // trigger ST events which call refresh_memory() -> get_running_recap_storage().
+    // After reconstruction starts, isLikelyImport becomes false (lorebook being created),
+    // which would cause the running recap data to be reset due to chat_id mismatch.
+    const currentChatId = getCurrentChatId();
+    if (chat_metadata.auto_recap_running_scene_recaps && currentChatId) {
+      const oldChatId = chat_metadata.auto_recap_running_scene_recaps.chat_id;
+      if (oldChatId !== currentChatId) {
+        log(SUBSYSTEM.LOREBOOK,
+          `Updating running recap chat_id from '${oldChatId}' to '${currentChatId}' before import reconstruction`
+        );
+        chat_metadata.auto_recap_running_scene_recaps.chat_id = currentChatId;
+      }
+    }
+
     // Step 2: Build historical state object for reconstruction
     const sortedEntries = [...snapshot.entries].sort((a, b) => a.uid - b.uid);
     const firstUID = sortedEntries.length > 0 ? sortedEntries[0].uid : 0;
@@ -547,6 +563,9 @@ export async function reconstructLorebookFromSnapshot(newLorebookName) {
 
     // Step 6: Attach the new lorebook to the chat
     attachLorebook(sanitizedLorebookName);
+
+    // Step 7: Invalidate lorebook cache so ST picks up new entries
+    await invalidateLorebookCache(sanitizedLorebookName);
 
     const result = {
       lorebookName: sanitizedLorebookName,

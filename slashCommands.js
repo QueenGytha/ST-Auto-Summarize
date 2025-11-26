@@ -15,14 +15,15 @@ import {
   get_running_recap_injection,
   display_injection_preview,
   toast,
-  get_data } from
+  get_data,
+  count_tokens } from
 './index.js';
 import { loadWorldInfo } from '../../../world-info.js';
 import { getAttachedLorebook, getLorebookEntries } from './lorebookManager.js';
 import { get_running_recap_versions, get_previous_running_recap_version_before_scene } from './runningSceneRecap.js';
 import { SCENE_RECAP_METADATA_KEY } from './sceneBreak.js';
 
-async function count_lorebook_tokens(context) {
+async function count_lorebook_tokens() {
   const lorebookName = getAttachedLorebook();
 
   if (!lorebookName) {
@@ -40,8 +41,7 @@ async function count_lorebook_tokens(context) {
 
   for (const entry of entries) {
     const entryContent = entry.content || '';
-    // eslint-disable-next-line no-await-in-loop -- must count tokens sequentially
-    const tokenCount = await context.getTokenCountAsync(entryContent);
+    const tokenCount = count_tokens(entryContent);
     lorebookTokens += tokenCount;
     lorebookEntryCount++;
   }
@@ -49,15 +49,15 @@ async function count_lorebook_tokens(context) {
   return { lorebookTokens, lorebookEntryCount };
 }
 
-async function count_running_recap_tokens(context) {
+function count_running_recap_tokens() {
   const runningRecapText = get_running_recap_injection();
   if (!runningRecapText) {
     return 0;
   }
-  return await context.getTokenCountAsync(runningRecapText);
+  return count_tokens(runningRecapText);
 }
 
-async function count_enabled_lorebook_tokens_from_snapshot(allEntries, context) {
+function count_enabled_lorebook_tokens_from_snapshot(allEntries) {
   if (!allEntries || allEntries.length === 0) {
     return { tokenCount: 0, enabledCount: 0 };
   }
@@ -67,8 +67,7 @@ async function count_enabled_lorebook_tokens_from_snapshot(allEntries, context) 
 
   for (const entry of allEntries) {
     if (entry.disable === false && entry.content) {
-      // eslint-disable-next-line no-await-in-loop -- must count tokens sequentially
-      const entryTokens = await context.getTokenCountAsync(entry.content);
+      const entryTokens = count_tokens(entry.content);
       tokenCount += entryTokens;
       enabledCount++;
     }
@@ -92,7 +91,7 @@ function find_running_recap_version_for_scene(sceneMessageIndex) {
   return get_previous_running_recap_version_before_scene(sceneMessageIndex);
 }
 
-async function calculate_tokens_for_messages(messages, context) {
+function calculate_tokens_for_messages(messages) {
   if (!messages || messages.length === 0) {
     return 0;
   }
@@ -100,8 +99,7 @@ async function calculate_tokens_for_messages(messages, context) {
   let totalTokens = 0;
   for (const message of messages) {
     const messageText = message.mes || '';
-    // eslint-disable-next-line no-await-in-loop -- must count tokens sequentially
-    const tokenCount = await context.getTokenCountAsync(messageText);
+    const tokenCount = count_tokens(messageText);
     totalTokens += tokenCount;
   }
 
@@ -114,7 +112,7 @@ async function analyze_scene_effective_tokens({ currentScene, previousScene, cha
 
   const previousLorebookSnapshot = previousScene ? previousScene.metadata.allEntries : [];
   const { tokenCount: lorebookTokens, enabledCount: lorebookEntryCount } =
-    await count_enabled_lorebook_tokens_from_snapshot(previousLorebookSnapshot, context);
+    count_enabled_lorebook_tokens_from_snapshot(previousLorebookSnapshot);
 
   const runningRecapVersion = find_running_recap_version_for_scene(currentScene.index);
   const runningRecapText = runningRecapVersion?.content || '';
@@ -130,7 +128,7 @@ async function analyze_scene_effective_tokens({ currentScene, previousScene, cha
   }
 
   const hiddenMessages = chat.slice(0, firstVisibleSceneStart);
-  const hiddenTokens = await calculate_tokens_for_messages(hiddenMessages, context);
+  const hiddenTokens = calculate_tokens_for_messages(hiddenMessages);
 
   const perMessageStats = [];
   for (let msgIdx = startIdx; msgIdx <= endIdx; msgIdx++) {
@@ -143,8 +141,7 @@ async function analyze_scene_effective_tokens({ currentScene, previousScene, cha
     }
 
     const visibleMessages = chat.slice(firstVisibleSceneStart, msgIdx + 1);
-    // eslint-disable-next-line no-await-in-loop -- message analysis must be sequential
-    const visibleTokens = await calculate_tokens_for_messages(visibleMessages, context);
+    const visibleTokens = calculate_tokens_for_messages(visibleMessages);
 
     const withMemoryTokens = visibleTokens + lorebookTokens + runningRecapTokens;
     const withoutMemoryTokens = hiddenTokens + visibleTokens;
@@ -519,8 +516,8 @@ function initialize_slash_commands() {
       const hiddenCount = visible_start;
       const visibleCount = chat.length - visible_start;
 
-      const { lorebookTokens, lorebookEntryCount } = await count_lorebook_tokens(context);
-      const runningRecapTokens = await count_running_recap_tokens(context);
+      const { lorebookTokens, lorebookEntryCount } = await count_lorebook_tokens();
+      const runningRecapTokens = count_running_recap_tokens();
 
       const tokensSaved = hiddenTokens - lorebookTokens - runningRecapTokens;
       const totalRemainingTokens = visibleTokens + lorebookTokens + runningRecapTokens;
@@ -632,17 +629,17 @@ function initialize_slash_commands() {
         }
       }
 
-      const allMessagesTokens = await calculate_tokens_for_messages(chat, context);
+      const allMessagesTokens = calculate_tokens_for_messages(chat);
       const { lorebookTokens: currentLorebookTokens, lorebookEntryCount: currentLorebookEntryCount } =
-        await count_lorebook_tokens(context);
-      const currentRunningRecapTokens = await count_running_recap_tokens(context);
+        await count_lorebook_tokens();
+      const currentRunningRecapTokens = count_running_recap_tokens();
       const currentTotalMemory = currentLorebookTokens + currentRunningRecapTokens;
 
       const visibleStartIdx = sceneBreaks.length > 0
         ? sceneBreaks[sceneBreaks.length - 1].metadata.endIdx + 1
         : 0;
       const currentVisibleMessages = chat.slice(visibleStartIdx);
-      const currentVisibleTokens = await calculate_tokens_for_messages(currentVisibleMessages, context);
+      const currentVisibleTokens = calculate_tokens_for_messages(currentVisibleMessages);
 
       const totalWithMemory = currentVisibleTokens + currentTotalMemory;
       const totalSavingsVsFullChain = allMessagesTokens - totalWithMemory;

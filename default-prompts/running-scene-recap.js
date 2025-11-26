@@ -1,15 +1,20 @@
 // MACROS: {{current_running_recap}}, {{scene_recaps}}
 
-export const running_scene_recap_prompt = `ROLE: Merge into running recap. RECONSTRUCTION SIGNAL; minimum anchors for plot/goal continuity. Output JSON only.
+export const running_scene_recap_prompt = `ROLE: Merge scene recap into running recap. CURRENT is baseline. Output plot/goals only.
 
-TOKEN CONSERVATION (critical):
-Fragments; semicolons; no articles/filler.
+DEDUPLICATION (enforce before output):
+- DEV: OUTCOMES only. Steps/process toward outcome → DROP, keep only result.
+- PEND: SUPERSEDE old goals. If NEW has goals for an actor → REPLACE that actor's old goals, don't accumulate.
+- DUPLICATES: If CURRENT already states this → DROP from NEW.
 
 OUTPUT:
 {"recap":"DEV: ...\\nPEND: ..."}
-- DEV: outcomes; state changes; reveals
-- PEND: active goals (who/what/condition)
-- Omit empty sections. No quotes.
+
+- DEV: outcomes; state changes; reveals. No quotes.
+- PEND: active goals (who/what/condition). No completed goals.
+- Omit empty sections.
+
+STYLE: Fragments; semicolons; no articles/filler.
 
 ---------------- CURRENT_RUNNING_RECAP ----------------
 <CURRENT_RUNNING_RECAP>
@@ -21,48 +26,24 @@ OUTPUT:
 {{scene_recaps}}
 </NEW_SCENE_RECAP>
 
----------------- PRINCIPLES ----------------
+---------------- MERGE LOGIC ----------------
 
-OUTCOME vs STEP (critical distinction):
-- OUTCOME = a state that persists and matters for future scenes (what CHANGED)
-- STEP = action taken to reach an outcome (HOW it happened)
+OUTCOME vs STEP:
+Ask: "If I delete this and keep only what follows, do I lose important information?"
+YES → outcome (keep). NO → step (DROP or merge into outcome).
 
-Test: "If I delete this and keep only what follows, do I lose important information?"
-YES → outcome. NO → step (merge into outcome or drop).
+Before: "traveled to city; found contact; negotiated; got information"
+After: "obtained information from contact"
 
-"traveled four days; reached Haven; guards alerted; Healers took patient to Collegium; patient now under care"
-All steps except the last. Outcome: "patient delivered to Collegium for treatment"
+Before: "argued; fought; separated; reconciled"
+After: "reconciled after conflict"
 
-"confronted B; demanded answers; B refused; threatened B; B confessed"
-All steps. Outcome: "extracted confession from B"
+PEND SUPERSESSION:
+Old goals for an actor are either achieved (move to DEV) or abandoned.
+When NEW has goals for actor X → REPLACE X's old goals, don't add to them.
 
-WHAT BELONGS IN DEV:
-- State changes that persist (bonded, allied, wounded, dead, revealed, decided)
-- NOT: how someone got somewhere, who handed off to whom, arrivals, departures, greetings
-
-PEND SUPERSESSION (critical):
-- If NEW_SCENE_RECAP has goals for an actor → they REPLACE that actor's old goals
-- Old goals are either achieved (in DEV) or abandoned (circumstances changed)
-- Don't accumulate goals across scenes for the same actor
-
-CURRENT has: "A: reach Haven; B: protect A"
-NEW has: "A: inform council; B: guard A during recovery"
-Result: "A: inform council; B: guard A during recovery" (old goals superseded, not added)
-
-MERGE:
-- CURRENT_RUNNING_RECAP is baseline
-- NEW_SCENE_RECAP items: add if not covered, replace if supersedes
-- Collapse sequences into final outcomes
-
----------------- COMPRESS ----------------
-
-DEV: Keep only outcomes. Merge steps into the result they lead to.
-PEND: Current goals only. Drop achieved/obsolete. Replace per actor, don't accumulate.
-
-CHECKLIST:
-□ DEV = outcomes (what changed), not process (how it happened)?
-□ PEND = current goals only (superseded old goals for same actors)?
-□ No arrivals/departures/handoffs kept as separate items?
-□ Fragments; no quotes?
+Before CURRENT: "A: find B; C: protect A"
+NEW: "A: interrogate B; C: gather supplies"
+After: "A: interrogate B; C: gather supplies" (superseded, not accumulated)
 
 Output JSON only.`;
