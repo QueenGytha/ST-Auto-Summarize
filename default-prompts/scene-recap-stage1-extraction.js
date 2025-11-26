@@ -25,28 +25,31 @@ OUTPUT FORMAT:
 
 SN: 3-5 word title.
 
-PLOT: Outcomes, realizations, and pivotal moments.
+PLOT: Outcomes, realizations, pivotal moments.
 - What happened AND what was learned/decided
 - Skip minor actions that don't advance the story
 
-GOALS: Active intentions only. Drop achieved/abandoned.
+GOALS: Active intentions. Drop achieved/abandoned.
 - "Character: intention"
+- Multiple goals per character allowed if distinct
 
-REVEALS: Facts established or demonstrated in this scene.
-- Include world mechanics, magic rules, character backstory if shown/stated here
+REVEALS: Facts established or demonstrated.
+- World mechanics, magic rules, character backstory shown/stated here
 
-STATE: Durable conditions only. Skip transient.
+STATE: Durable conditions. Skip transient.
 - Will this still be true next scene? No → skip
 - "Entity: condition"
 
-STANCE: One entry per relationship pair.
+STANCE: Relationship dynamics.
 - "A toward B: dynamic"
+- Include shifts if the dynamic changed during scene
 
 VOICE: Pivotal dialogue - declarations, revelations, defining moments.
 - "Speaker: 'quote' (brief context)"
+- Multiple quotes per speaker allowed if distinct moments
 
 APPEARANCE: Physical descriptions worth remembering.
 
-VERBATIM: Exact text of in-world written items (letters, signs, contracts). Copy word-for-word, do not summarize.
+VERBATIM: Exact text of in-world written items (letters, signs, contracts). Copy word-for-word.
 
 Output JSON only.`;

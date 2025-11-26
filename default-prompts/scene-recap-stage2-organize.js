@@ -20,11 +20,16 @@ OUTPUT FORMAT:
 
 ---------------- STEP 1: CONDENSE ----------------
 
-Dedupe within each facet:
-- PLOT: Same event different words = keep one
-- GOALS: One per character
-- REVEALS: Same fact different words = keep one
-- STATE/STANCE/VOICE/APPEARANCE: One entry per entity, merge if multiple
+Merge duplicates only (same meaning, different words):
+- PLOT: Merge if describing same event
+- GOALS: Merge if same intention for same character
+- REVEALS: Merge if same fact
+- STATE: Merge if same entity, same condition type
+- STANCE: Merge if same pair, same dynamic
+- VOICE: Keep distinct quotes even from same speaker
+- APPEARANCE: Merge if same entity
+
+Do NOT artificially limit - keep all distinct items.
 
 ---------------- STEP 2: FORMAT OUTPUT ----------------
 
@@ -37,10 +42,10 @@ RC (recap content - narrative developments):
 - ALL world facts, reveals, lore go in DEV (not in sl)
 
 SL (setting_lore entries - entity-specific data):
-- One entry per entity from state/stance/voice/appearance/verbatim facets
-- t = entity type from list above (e.g., "state", "stance", "voice", "appearance")
+- From state/stance/voice/appearance/verbatim facets
+- t = entity type from list above
 - n = entity name
-- c = condensed content
+- c = content
 - k = keyword array for matching (include entity name)
 - NEVER put reveals/world facts in sl - those belong in rc.DEV
 
