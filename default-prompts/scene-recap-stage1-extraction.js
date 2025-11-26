@@ -1,4 +1,7 @@
-export const scene_recap_stage1_extraction_prompt = `ROLE: Extract significant content from scene into facets.
+export const scene_recap_stage1_extraction_prompt = `ROLE: Extract significant content from scene into facets. Focus on MAJOR events, skip minor choreography.
+
+ENTITY TYPES (for classifying state/stance/voice/appearance):
+{{lorebook_entry_types_with_guidance}}
 
 OUTPUT FORMAT:
 {
@@ -24,6 +27,7 @@ SN: 3-5 word title.
 
 PLOT: Outcomes, realizations, and pivotal moments.
 - What happened AND what was learned/decided
+- Skip minor actions that don't advance the story
 
 GOALS: Active intentions only. Drop achieved/abandoned.
 - "Character: intention"

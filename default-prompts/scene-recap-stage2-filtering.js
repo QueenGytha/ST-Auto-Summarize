@@ -1,44 +1,46 @@
-// Stage 2: Condense extraction
-// MACROS: {{extracted_data}}
+// Stage 3: Filter against existing content (semantic deduplication)
+// MACROS: {{extracted_data}}, {{current_running_recap}}, {{active_setting_lore}}
 
-export const scene_recap_stage2_filtering_prompt = `ROLE: Condense extracted content. Remove duplicates. Merge per entity.
+export const scene_recap_stage2_filtering_prompt = `ROLE: Filter recap against existing content. Drop semantically similar items.
 
-OUTPUT FORMAT: Same structure as input, but condensed.
+OUTPUT FORMAT:
 {
-  "sn": "...",
-  "plot": [],
-  "goals": [],
-  "reveals": [],
-  "state": [],
-  "stance": [],
-  "voice": [],
-  "appearance": [],
-  "docs": []
+  "sn": "Scene title",
+  "rc": "DEV: ...\\nPEND: ...",
+  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"] }]
 }
 
----------------- EXTRACTED DATA ----------------
-<EXTRACTED>
+---------------- INPUT (Stage 2 output) ----------------
+<INPUT>
 {{extracted_data}}
-</EXTRACTED>
+</INPUT>
 
----------------- CONDENSE RULES ----------------
+---------------- EXISTING RUNNING RECAP ----------------
+<RUNNING_RECAP>
+{{current_running_recap}}
+</RUNNING_RECAP>
 
-SN: Copy from extracted. Do not rewrite.
+---------------- EXISTING SETTING LORE ----------------
+<SETTING_LORE>
+{{active_setting_lore}}
+</SETTING_LORE>
 
-PLOT: Dedupe. Same event different words = keep one.
+---------------- FILTERING RULES ----------------
 
-GOALS: One per character. Merge if multiple.
+SN: Keep as-is.
 
-REVEALS: Dedupe. Same fact different words = keep one.
+RC filtering:
+- DEV: Drop developments semantically similar to running recap (same meaning, different words = drop)
+- PEND: Drop goals already tracked in running recap
+- Keep only NEW information not covered elsewhere
 
-STATE: One entry per entity. Merge conditions.
+SL filtering:
+- Drop entry if entity+type combo exists in setting_lore with semantically similar content
+- Remove entry entirely if nothing new remains after filtering
+- Keep entries with genuinely new information
 
-STANCE: One entry per pair. Merge dynamics.
-
-VOICE: One quote per speaker showing each distinct trait.
-
-APPEARANCE: One entry per entity. Merge descriptions.
-
-DOCS: Keep verbatim.
+Empty is valid:
+- If all content filtered out, return {"sn": "...", "rc": "", "sl": []}
+- Empty rc string and empty sl array are acceptable
 
 Output JSON only.`;

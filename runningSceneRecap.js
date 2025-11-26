@@ -294,6 +294,14 @@ async function generate_running_scene_recap(skipQueue  = false) {
     return { name, recap: scene_recap };
   });
 
+  // Filter out scenes with empty recaps (e.g., from Stage 3 semantic dedup)
+  const validScenes = sceneDataArray.filter(s => s.recap && s.recap.trim().length > 0);
+  if (validScenes.length === 0) {
+    debug(SUBSYSTEM.RUNNING, 'All scene recaps are empty after filtering, skipping running recap generation');
+    return null;
+  }
+  debug(SUBSYSTEM.RUNNING, `${validScenes.length} of ${sceneDataArray.length} scenes have content`);
+
   // Get current running recap if exists
   const current_recap = get_current_running_recap_content();
 
@@ -306,7 +314,7 @@ async function generate_running_scene_recap(skipQueue  = false) {
 
   // Build all macro values from context - all macros available on all prompts
   const params = buildAllMacroParams({
-    sceneRecaps: sceneDataArray,
+    sceneRecaps: validScenes,
     currentRunningRecap: current_recap,
     prefillText: prefillSetting
   });

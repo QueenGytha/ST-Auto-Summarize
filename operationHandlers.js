@@ -1437,8 +1437,11 @@ export function registerAllOperationHandlers() {
 
       toast(`✓ Scene recap formatted and saved for message ${index}`, 'success');
 
-      // Queue COMBINE operation if not manual and auto-generate is enabled
-      if (!isManual && get_settings('running_scene_recap_auto_generate')) {
+      // Check if Stage 3 output has content worth combining
+      const hasContent = normalized.rc?.trim() || (normalized.sl?.length > 0);
+
+      // Queue COMBINE operation if not manual, auto-generate is enabled, and has content
+      if (!isManual && get_settings('running_scene_recap_auto_generate') && hasContent) {
         debug(SUBSYSTEM.QUEUE, `Queueing COMBINE_SCENE_WITH_RUNNING for scene at index ${index} (depends on ${lorebookOpIds.length} lorebook operations)`);
 
         // Pass through backwards chain metadata if present
@@ -1455,7 +1458,8 @@ export function registerAllOperationHandlers() {
           metadata: combineMetadata
         });
       } else {
-        debug(SUBSYSTEM.QUEUE, `Skipping auto-combine for ${isManual ? 'manual' : 'disabled'} scene recap at index ${index}`);
+        const skipReason = isManual ? 'manual' : !hasContent ? 'empty content' : 'disabled';
+        debug(SUBSYSTEM.QUEUE, `Skipping auto-combine for ${skipReason} scene recap at index ${index}`);
 
         // If COMBINE won't run, queue snapshot update directly (depends on lorebook ops)
         if (lorebookOpIds && lorebookOpIds.length > 0) {

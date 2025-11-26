@@ -29,11 +29,16 @@ export async function prepareParseScenePrompt(extractedData, ctx, endIdx, get_da
   // Get entity type definitions from artifact system
   const typeDefinitions = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
 
+  // Get current running recap for semantic deduplication comparison
+  const runningRecapData = ctx.chat_metadata?.auto_recap?.running_scene_recap;
+  const currentRunningRecap = runningRecapData?.recap || '';
+
   // Build all macro values from context - all macros available on all prompts
   const params = buildAllMacroParams({
     extractedData,
     activeEntries,
     typeDefinitions,
+    currentRunningRecap,
     prefillText: prefill
   });
 
