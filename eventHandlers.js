@@ -6,7 +6,6 @@ import {
   getContext,
   chat_enabled,
   get_settings,
-  set_settings,
   refresh_memory,
   auto_load_profile,
   scrollChatToBottom,
@@ -319,20 +318,15 @@ async function initializeExtension() {
   // load settings html
   await load_settings_html();
 
-  // Migrate connection profile settings from names to UUIDs
-  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Migrating connection profile settings...');
-  const { migrateConnectionProfileSettings, needsEntityTypesMigration, migrateEntityTypesToArtifact } = await import('./settingsMigration.js');
-  await migrateConnectionProfileSettings();
-  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Connection profile migration complete');
-
-  // Migrate entity types from legacy format to artifact system
-  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checking for entity types migration...');
-  if (needsEntityTypesMigration()) {
-    await migrateEntityTypesToArtifact();
+  // Run all migrations (connection profiles, entity types, entry defaults)
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Running migrations...');
+  const { runAllMigrations } = await import('./settingsMigration.js');
+  const migrated = await runAllMigrations();
+  if (migrated) {
     saveSettingsDebounced();
-    log(SUBSYSTEM.CORE, 'Entity types migration completed');
+    log(SUBSYSTEM.CORE, 'Settings migrations completed');
   }
-  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Entity types migration check complete');
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Migrations complete');
 
   // Migrate settings to operations presets system
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checking for operations presets migration...');
@@ -542,7 +536,7 @@ async function initializeExtension() {
     }
 
     debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Initializing recapToLorebookProcessor...');
-    recapToLorebookProcessor.initRecapToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger, { get_settings, set_settings });
+    recapToLorebookProcessor.initRecapToLorebookProcessor(lorebookUtils, lorebookManager, lorebookEntryMerger);
     debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] ✓ recapToLorebookProcessor initialized');
 
     log('[Lorebooks] ✓ Auto-Lorebooks functionality initialized');

@@ -26,6 +26,7 @@ import {
   selectorsExtension } from
 './index.js';
 import { initializeEntityTypesUI } from './entityTypeSettingsUI.js';
+import { initializeEntryDefaultsUI } from './entryDefaultsSettingsUI.js';
 import { initializeOperationsPresetsUI, loadActivePreset } from './operationsPresetsUIBindings.js';
 import {
   MAX_LINE_LENGTH,
@@ -292,37 +293,7 @@ function initialize_lorebooks_settings_listeners() {
   });
 
   // Removed legacy Auto-Lorebooks queue toggles (queue is mandatory)
-
-  // Recap processing settings
-  $(document).on('change', '#autolorebooks-recap-skip-duplicates', function () {
-    const value = $(this).prop('checked');
-    set_settings('auto_lorebooks_recap_skip_duplicates', value);
-    save_profile();
-  });
-
-  $(document).on('change', '#autolorebooks-entry-exclude-recursion', function () {
-    const value = $(this).prop('checked');
-    set_settings('auto_lorebooks_entry_exclude_recursion', value);
-    save_profile();
-  });
-
-  $(document).on('change', '#autolorebooks-entry-prevent-recursion', function () {
-    const value = $(this).prop('checked');
-    set_settings('auto_lorebooks_entry_prevent_recursion', value);
-    save_profile();
-  });
-
-  $(document).on('change', '#autolorebooks-entry-ignore-budget', function () {
-    const value = $(this).prop('checked');
-    set_settings('auto_lorebooks_entry_ignore_budget', value);
-    save_profile();
-  });
-
-  $(document).on('input', '#autolorebooks-entry-sticky', function () {
-    const value = Number($(this).val());
-    set_settings('auto_lorebooks_entry_sticky', value);
-    save_profile();
-  });
+  // Entry defaults bindings moved to entryDefaultsSettingsUI.js
 
   debug("Auto-Lorebooks settings event listeners initialized");
 
@@ -331,6 +302,9 @@ function initialize_lorebooks_settings_listeners() {
 
   initializeEntityTypesUI();
   debug("Entity Types UI initialized");
+
+  initializeEntryDefaultsUI();
+  debug("Entry Defaults UI initialized");
 }
 
 export { initialize_settings_listeners, loadActivePreset };

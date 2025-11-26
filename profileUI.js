@@ -22,8 +22,11 @@ import {
   extension_settings } from
 './index.js';
 import { ensureEntityTypesSetting, renderEntityTypesList } from './entityTypeSettingsUI.js';
+import { DEFAULT_COMPACTION_THRESHOLD } from './constants.js';
 
 const DEFAULT_STICKY_ROUNDS = 4;
+const DEFAULT_AUTO_HIDE_SCENES = 1;
+const DEFAULT_TOKENIZER_CORRECTION = 1.35;
 
 function update_profile_section() {
   const context = getContext();
@@ -288,20 +291,17 @@ function refreshGlobalSettingsUI(settings ) {
 
 function refreshRecapProcessingUI() {
   // DEPRECATED: These UI elements no longer exist - moved to operations presets system
-  // $(selectorsExtension.lorebook.skipDuplicates).prop('checked', get_settings('auto_lorebooks_recap_skip_duplicates') ?? true);
-  // $(selectorsExtension.lorebook.mergePrefill).val(get_settings('auto_lorebooks_recap_merge_prefill') || '');
-  // $(selectorsExtension.lorebook.mergePrompt).val(get_settings('auto_lorebooks_recap_merge_prompt') || '');
-  // $(selectorsExtension.lorebook.mergeIncludePresetPrompts).prop('checked', get_settings('auto_lorebooks_recap_merge_include_preset_prompts') ?? false);
-  // $(selectorsExtension.lorebook.lookupPrefill).val(get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prefill') || '');
-  // $(selectorsExtension.lorebook.lookupPrompt).val(get_settings('auto_lorebooks_recap_lorebook_entry_lookup_prompt') || '');
-  // $(selectorsExtension.lorebook.lookupIncludePresetPrompts).prop('checked', get_settings('auto_lorebooks_recap_lorebook_entry_lookup_include_preset_prompts') ?? false);
-  // $(selectorsExtension.lorebook.dedupePrefill).val(get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prefill') || '');
-  // $(selectorsExtension.lorebook.dedupePrompt).val(get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_prompt') || '');
-  // $(selectorsExtension.lorebook.dedupeIncludePresetPrompts).prop('checked', get_settings('auto_lorebooks_recap_lorebook_entry_deduplicate_include_preset_prompts') ?? false);
   $(selectorsExtension.lorebook.entryExcludeRecursion).prop('checked', get_settings('auto_lorebooks_entry_exclude_recursion') ?? false);
   $(selectorsExtension.lorebook.entryPreventRecursion).prop('checked', get_settings('auto_lorebooks_entry_prevent_recursion') ?? false);
   $(selectorsExtension.lorebook.entryIgnoreBudget).prop('checked', get_settings('auto_lorebooks_entry_ignore_budget') ?? true);
   $(selectorsExtension.lorebook.entrySticky).val(get_settings('auto_lorebooks_entry_sticky') ?? DEFAULT_STICKY_ROUNDS);
+}
+
+function refreshMiscSettingsUI() {
+  // Misc section settings - ensure values are always populated
+  $(selectorsExtension.autoHide.sceneCount).val(get_settings('auto_hide_scene_count') ?? DEFAULT_AUTO_HIDE_SCENES);
+  $(selectorsExtension.tokenCounting.correctionFactor).val(get_settings('tokenizer_correction_factor') ?? DEFAULT_TOKENIZER_CORRECTION);
+  $(selectorsExtension.misc.compactionThreshold).val(get_settings('auto_lorebooks_compaction_threshold') ?? DEFAULT_COMPACTION_THRESHOLD);
 }
 
 function refreshEntityTypesUI() {
@@ -330,6 +330,9 @@ function refresh_lorebooks_settings_ui() {
     // Refresh per-profile settings UI (recap processing)
     // These functions now read directly from profile via get_settings()
     refreshRecapProcessingUI();
+
+    // Refresh misc settings UI (auto-hide, tokenizer, compaction)
+    refreshMiscSettingsUI();
 
     refreshEntityTypesUI();
     void refreshConnectionDropdowns();

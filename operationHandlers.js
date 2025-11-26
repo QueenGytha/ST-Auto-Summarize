@@ -1563,8 +1563,6 @@ export function registerAllOperationHandlers() {
     // Build settings from resolved configs
     const settings = await buildLorebookOperationsSettings();
 
-    debug(SUBSYSTEM.QUEUE, `[HANDLER LOREBOOK_ENTRY_LOOKUP] Settings - skip_duplicates: ${settings.skip_duplicates}`);
-
     // Check for skip path optimization (empty lorebook at scene start)
     const skipCheck = checkCanSkipLorebookLookup(operation, entryData);
     if (skipCheck.canSkip) {

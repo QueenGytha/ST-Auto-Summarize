@@ -257,8 +257,6 @@ export async function buildLorebookOperationsSettings() {
     lorebook_entry_deduplicate_completion_preset: deduplicateConfig.completion_preset_name || '',
     lorebook_entry_deduplicate_prefill: deduplicateConfig.prefill || '',
     lorebook_entry_deduplicate_prompt: deduplicateConfig.prompt || '',
-    lorebook_entry_deduplicate_include_preset_prompts: deduplicateConfig.include_preset_prompts ?? false,
-
-    skip_duplicates: get_settings('auto_lorebooks_recap_skip_duplicates') ?? true
+    lorebook_entry_deduplicate_include_preset_prompts: deduplicateConfig.include_preset_prompts ?? false
   };
 }

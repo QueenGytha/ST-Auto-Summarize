@@ -13,7 +13,8 @@ const OPERATION_TYPES = [
   'auto_lorebooks_bulk_populate',
   'auto_lorebooks_recap_lorebook_entry_compaction',
   'parse_scene_recap',
-  'entity_types'
+  'entity_types',
+  'entry_defaults'
 ];
 
 export function exportPreset(presetName) {
@@ -42,16 +43,30 @@ export function exportPreset(presetName) {
       if (!defaultArtifact) {
         throw new Error(`No default artifact found for ${operationType}`);
       }
-      exportData.operations[operationType] = createOperationExportData(defaultArtifact);
+      exportData.operations[operationType] = createOperationExportData(defaultArtifact, operationType);
     } else {
-      exportData.operations[operationType] = createOperationExportData(artifact);
+      exportData.operations[operationType] = createOperationExportData(artifact, operationType);
     }
   }
 
   return JSON.stringify(exportData, null, 2);
 }
 
-function createOperationExportData(artifact) {
+function createOperationExportData(artifact, operationType) {
+  if (operationType === 'entity_types') {
+    return {
+      artifact_name: artifact.name,
+      types: artifact.types
+    };
+  }
+
+  if (operationType === 'entry_defaults') {
+    return {
+      artifact_name: artifact.name,
+      defaults: artifact.defaults
+    };
+  }
+
   let connectionProfileName = null;
   if (artifact.connection_profile) {
     connectionProfileName = getConnectionProfileName(artifact.connection_profile);

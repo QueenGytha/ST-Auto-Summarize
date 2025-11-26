@@ -35,7 +35,8 @@ const OPERATION_TYPES = [
   'auto_lorebooks_recap_merge',
   'auto_lorebooks_recap_lorebook_entry_compaction',
   'parse_scene_recap',
-  'entity_types'
+  'entity_types',
+  'entry_defaults'
 ];
 
 function ensureNotDefaultPreset() {

@@ -13,7 +13,8 @@ const OPERATION_TYPES = [
   'auto_lorebooks_bulk_populate',
   'auto_lorebooks_recap_lorebook_entry_compaction',
   'parse_scene_recap',
-  'entity_types'
+  'entity_types',
+  'entry_defaults'
 ];
 
 export async function importPreset(jsonString) {
@@ -44,16 +45,24 @@ export async function importPreset(jsonString) {
 
   const artifactMapping = {};
   for (const [operationType, operationData] of Object.entries(data.operations)) {
-    // Sequential import required: each artifact creation may reference previous artifacts
-    // eslint-disable-next-line no-await-in-loop -- Artifacts must be created sequentially
-    const connectionProfileUuid = await lookupConnectionProfileUuid(operationData.connection_profile_name);
-    const existingArtifact = findArtifactByContent(operationType, {
-      prompt: operationData.prompt,
-      prefill: operationData.prefill,
-      connection_profile: connectionProfileUuid,
-      completion_preset_name: operationData.completion_preset_name,
-      include_preset_prompts: operationData.include_preset_prompts
-    });
+    let existingArtifact;
+
+    if (operationType === 'entity_types') {
+      existingArtifact = findArtifactByContent(operationType, { types: operationData.types });
+    } else if (operationType === 'entry_defaults') {
+      existingArtifact = findArtifactByContent(operationType, { defaults: operationData.defaults });
+    } else {
+      // Sequential import required: each artifact creation may reference previous artifacts
+      // eslint-disable-next-line no-await-in-loop -- Artifacts must be created sequentially
+      const connectionProfileUuid = await lookupConnectionProfileUuid(operationData.connection_profile_name);
+      existingArtifact = findArtifactByContent(operationType, {
+        prompt: operationData.prompt,
+        prefill: operationData.prefill,
+        connection_profile: connectionProfileUuid,
+        completion_preset_name: operationData.completion_preset_name,
+        include_preset_prompts: operationData.include_preset_prompts
+      });
+    }
 
     if (existingArtifact) {
       artifactMapping[operationType] = existingArtifact.name;
@@ -92,6 +101,21 @@ function validateImportedOperations(operations) {
     if (!op.artifact_name || typeof op.artifact_name !== 'string') {
       throw new Error(`Invalid artifact_name for ${operationType}`);
     }
+
+    if (operationType === 'entity_types') {
+      if (!op.types || !Array.isArray(op.types)) {
+        throw new Error(`Invalid types for ${operationType}`);
+      }
+      continue;
+    }
+
+    if (operationType === 'entry_defaults') {
+      if (!op.defaults || typeof op.defaults !== 'object') {
+        throw new Error(`Invalid defaults for ${operationType}`);
+      }
+      continue;
+    }
+
     if (!op.prompt || typeof op.prompt !== 'string') {
       throw new Error(`Invalid prompt for ${operationType}`);
     }
@@ -111,6 +135,22 @@ function validateImportedOperations(operations) {
 }
 
 async function createArtifactFromImport(operationType, operationData) {
+  if (operationType === 'entity_types') {
+    return createArtifact(operationType, {
+      name: `${operationData.artifact_name} (imported)`,
+      types: operationData.types,
+      customLabel: `Imported from ${operationData.artifact_name}`
+    });
+  }
+
+  if (operationType === 'entry_defaults') {
+    return createArtifact(operationType, {
+      name: `${operationData.artifact_name} (imported)`,
+      defaults: operationData.defaults,
+      customLabel: `Imported from ${operationData.artifact_name}`
+    });
+  }
+
   const connectionProfileUuid = await lookupConnectionProfileUuid(operationData.connection_profile_name);
 
   const artifactData = {

@@ -6,6 +6,7 @@
 import { get_settings, set_settings, log, SUBSYSTEM, extension_settings, saveSettingsDebounced } from './index.js';
 import { getConnectionManagerProfileId } from './llmClient.js';
 import { convertLegacyEntityType, DEFAULT_ENTITY_TYPES } from './entityTypes.js';
+import { DEFAULT_ENTRY_DEFAULTS } from './entryDefaults.js';
 
 const PROFILE_SETTING_KEYS = [
   'scene_recap_connection_profile',
@@ -62,6 +63,9 @@ export async function migrateConnectionProfileSettings() {
 
 export function needsMigration() {
   const settings = get_settings();
+  if (!settings) {
+    return false;
+  }
 
   for (const key of PROFILE_SETTING_KEYS) {
     const currentValue = settings[key];
@@ -184,6 +188,88 @@ export function migrateEntityTypesToArtifact() {
 }
 
 /**
+ * Check if entry defaults need migration from legacy format
+ * Legacy format: auto_lorebooks_entry_exclude_recursion, etc. at root settings level
+ * New format: operation_artifacts.entry_defaults = [{ name, defaults: {...}, ... }]
+ */
+export function needsEntryDefaultsMigration() {
+  const settings = get_settings();
+
+  // Check if artifact already exists
+  const artifactExists = settings?.operation_artifacts?.entry_defaults?.length > 0;
+  if (artifactExists) {
+    return false;
+  }
+
+  // Check if legacy settings exist (any of them being defined triggers migration)
+  return settings?.auto_lorebooks_entry_exclude_recursion !== undefined ||
+    settings?.auto_lorebooks_entry_prevent_recursion !== undefined ||
+    settings?.auto_lorebooks_entry_ignore_budget !== undefined ||
+    settings?.auto_lorebooks_entry_sticky !== undefined;
+}
+
+/**
+ * Migrate entry defaults from legacy individual settings to new artifact format
+ * The migrated data becomes the DEFAULT artifact (user's existing config is preserved as default)
+ */
+export function migrateEntryDefaultsToArtifact() {
+  const settings = get_settings();
+
+  // Check if artifact already exists
+  const artifactExists = settings?.operation_artifacts?.entry_defaults?.length > 0;
+  if (artifactExists) {
+    log(SUBSYSTEM.SETTINGS, 'Entry defaults artifact already exists, skipping migration');
+    return false;
+  }
+
+  // Read legacy settings with fallbacks
+  const legacyDefaults = {
+    exclude_recursion: settings?.auto_lorebooks_entry_exclude_recursion ?? DEFAULT_ENTRY_DEFAULTS.exclude_recursion,
+    prevent_recursion: settings?.auto_lorebooks_entry_prevent_recursion ?? DEFAULT_ENTRY_DEFAULTS.prevent_recursion,
+    ignore_budget: settings?.auto_lorebooks_entry_ignore_budget ?? DEFAULT_ENTRY_DEFAULTS.ignore_budget,
+    sticky: settings?.auto_lorebooks_entry_sticky ?? DEFAULT_ENTRY_DEFAULTS.sticky
+  };
+
+  log(SUBSYSTEM.SETTINGS, 'Migrating legacy entry defaults to new artifact format...', legacyDefaults);
+
+  // Create the new artifact structure
+  const newArtifact = {
+    name: 'Default',
+    defaults: legacyDefaults,
+    isDefault: true,
+    internalVersion: 1,
+    createdAt: Date.now(),
+    modifiedAt: Date.now(),
+    customLabel: null
+  };
+
+  // Ensure operation_artifacts exists
+  if (!extension_settings.auto_recap) {
+    extension_settings.auto_recap = {};
+  }
+  if (!extension_settings.auto_recap.operation_artifacts) {
+    extension_settings.auto_recap.operation_artifacts = {};
+  }
+
+  // Set the new artifact (this becomes the default)
+  extension_settings.auto_recap.operation_artifacts.entry_defaults = [newArtifact];
+
+  // Update operations_presets to include entry_defaults if not present
+  if (extension_settings.auto_recap.operations_presets) {
+    for (const preset of Object.values(extension_settings.auto_recap.operations_presets)) {
+      if (preset.operations && !preset.operations.entry_defaults) {
+        preset.operations.entry_defaults = 'Default';
+      }
+    }
+  }
+
+  saveSettingsDebounced();
+
+  log(SUBSYSTEM.SETTINGS, '✓ Migrated entry defaults to artifact format');
+  return true;
+}
+
+/**
  * Run all migrations
  */
 export async function runAllMigrations() {
@@ -199,6 +285,12 @@ export async function runAllMigrations() {
   if (needsEntityTypesMigration()) {
     const entityTypesMigrated = migrateEntityTypesToArtifact();
     migrated = migrated || entityTypesMigrated;
+  }
+
+  // Run entry defaults migration
+  if (needsEntryDefaultsMigration()) {
+    const entryDefaultsMigrated = migrateEntryDefaultsToArtifact();
+    migrated = migrated || entryDefaultsMigrated;
   }
 
   return migrated;

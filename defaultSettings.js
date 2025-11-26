@@ -92,9 +92,6 @@ export const default_settings = {
   auto_lorebooks_delete_on_chat_delete: true, // Delete lorebook when chat is deleted
   autoReorderAlphabetically: true, // Automatically reorder lorebook entries alphabetically when created or renamed
 
-  // --- Auto-Lorebooks Recap Processing Settings ---
-  auto_lorebooks_recap_skip_duplicates: true, // Skip entities that already exist in lorebook
-
   // --- Auto-Lorebooks Entry Creation Defaults ---
   auto_lorebooks_entry_exclude_recursion: false, // Default: allow entry to trigger other entries
   auto_lorebooks_entry_prevent_recursion: false, // Default: allow entry in recursion scans
@@ -288,6 +285,22 @@ export const default_settings = {
         modifiedAt: Date.now(),
         customLabel: null
       }
+    ],
+    entry_defaults: [
+      {
+        name: 'Default',
+        defaults: {
+          exclude_recursion: false,
+          prevent_recursion: false,
+          ignore_budget: true,
+          sticky: 4
+        },
+        isDefault: true,
+        internalVersion: 1,
+        createdAt: Date.now(),
+        modifiedAt: Date.now(),
+        customLabel: null
+      }
     ]
   },
   /* eslint-enable sonarjs/no-duplicate-string -- End of operation_artifacts section */
@@ -307,7 +320,8 @@ export const default_settings = {
         auto_lorebooks_recap_lorebook_entry_deduplicate: 'Default',
         auto_lorebooks_bulk_populate: 'Default',
         auto_lorebooks_recap_lorebook_entry_compaction: 'Default',
-        entity_types: 'Default'
+        entity_types: 'Default',
+        entry_defaults: 'Default'
       },
       createdAt: Date.now(),
       modifiedAt: Date.now(),

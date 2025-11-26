@@ -19,13 +19,13 @@ import { extension_settings } from '../../../extensions.js';
 import { selected_group, groups } from '../../../group-chats.js';
 import { power_user } from '../../../power-user.js';
 import { getEntityTypeDefinitionsFromSettings } from './entityTypes.js';
+import { getEntryDefaultsFromSettings } from './entryDefaults.js';
 import { UI_UPDATE_DELAY_MS, FULL_COMPLETION_PERCENTAGE, INITIAL_LOREBOOK_ORDER } from './constants.js';
 
 // Will be imported from index.js via barrel exports
-let log , debug , error , toast , generateLorebookName , getUniqueLorebookName , get_settings , count_tokens ; // Utility functions - any type is legitimate
+let log , debug , error , toast , generateLorebookName , getUniqueLorebookName , count_tokens ; // Utility functions - any type is legitimate
 const REGISTRY_PREFIX  = '_registry_';
 const REGISTRY_TAG  = 'auto_lorebooks_registry';
-const DEFAULT_STICKY_ROUNDS = 4;
 
 export function initLorebookManager(utils ) {
   // utils is any type - object with various utility functions - legitimate use of any
@@ -35,7 +35,6 @@ export function initLorebookManager(utils ) {
   toast = utils.toast;
   generateLorebookName = utils.generateLorebookName;
   getUniqueLorebookName = utils.getUniqueLorebookName;
-  get_settings = utils.get_settings;
   count_tokens = utils.count_tokens;
 }
 
@@ -530,11 +529,12 @@ async function prepareDuplicationContext(chatLorebookName ) {
 
   debug?.(`Chat lorebook has ${Object.keys(chatData.entries).length} total entries, ${existingComments.size} unique comments`);
 
+  const entryDefaults = getEntryDefaultsFromSettings(extension_settings?.auto_recap);
   const settings = {
-    stickyRounds: get_settings?.('auto_lorebooks_entry_sticky') ?? DEFAULT_STICKY_ROUNDS,
-    excludeRecursion: get_settings?.('auto_lorebooks_entry_exclude_recursion') ?? false,
-    preventRecursion: get_settings?.('auto_lorebooks_entry_prevent_recursion') ?? false,
-    ignoreBudget: get_settings?.('auto_lorebooks_entry_ignore_budget') ?? true
+    stickyRounds: entryDefaults.sticky,
+    excludeRecursion: entryDefaults.exclude_recursion,
+    preventRecursion: entryDefaults.prevent_recursion,
+    ignoreBudget: entryDefaults.ignore_budget
   };
 
   return { existingComments, settings };

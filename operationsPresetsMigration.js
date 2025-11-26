@@ -11,7 +11,9 @@ const OPERATION_TYPES = [
   'auto_lorebooks_recap_lorebook_entry_deduplicate',
   'auto_lorebooks_bulk_populate',
   'auto_lorebooks_recap_lorebook_entry_compaction',
-  'parse_scene_recap'
+  'parse_scene_recap',
+  'entity_types',
+  'entry_defaults'
 ];
 
 export function needsOperationsPresetsMigration() {

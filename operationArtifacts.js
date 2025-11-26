@@ -13,7 +13,8 @@ const OPERATION_TYPES = [
   'auto_lorebooks_bulk_populate',
   'auto_lorebooks_recap_lorebook_entry_compaction',
   'parse_scene_recap',
-  'entity_types'
+  'entity_types',
+  'entry_defaults'
 ];
 
 function validateOperationType(operationType) {
@@ -27,6 +28,10 @@ function validateArtifactInput(operationType, artifactData) {
     if (!artifactData.types || !Array.isArray(artifactData.types)) {
       throw new Error('Entity types artifact must have a types array');
     }
+  } else if (operationType === 'entry_defaults') {
+    if (!artifactData.defaults || typeof artifactData.defaults !== 'object') {
+      throw new Error('Entry defaults artifact must have a defaults object');
+    }
   } else if (!artifactData.prompt) {
     throw new Error('Artifact must have a prompt');
   }
@@ -36,6 +41,18 @@ function buildEntityTypesArtifact(artifactData, newVersion) {
   return {
     name: artifactData.name || `v${newVersion}`,
     types: artifactData.types,
+    isDefault: artifactData.isDefault || false,
+    internalVersion: newVersion,
+    createdAt: Date.now(),
+    modifiedAt: Date.now(),
+    customLabel: artifactData.customLabel || null
+  };
+}
+
+function buildEntryDefaultsArtifact(artifactData, newVersion) {
+  return {
+    name: artifactData.name || `v${newVersion}`,
+    defaults: artifactData.defaults,
     isDefault: artifactData.isDefault || false,
     internalVersion: newVersion,
     createdAt: Date.now(),
@@ -90,6 +107,8 @@ export function createArtifact(operationType, artifactData) {
   let newArtifact;
   if (operationType === 'entity_types') {
     newArtifact = buildEntityTypesArtifact(artifactData, newVersion);
+  } else if (operationType === 'entry_defaults') {
+    newArtifact = buildEntryDefaultsArtifact(artifactData, newVersion);
   } else {
     newArtifact = buildBasePromptArtifact(artifactData, newVersion);
     if (operationType === 'auto_scene_break') {
@@ -109,6 +128,15 @@ export function createArtifact(operationType, artifactData) {
 function applyEntityTypesChanges(artifact, changes) {
   if (changes.types !== undefined) {
     artifact.types = changes.types;
+  }
+  if (changes.customLabel !== undefined) {
+    artifact.customLabel = changes.customLabel;
+  }
+}
+
+function applyEntryDefaultsChanges(artifact, changes) {
+  if (changes.defaults !== undefined) {
+    artifact.defaults = changes.defaults;
   }
   if (changes.customLabel !== undefined) {
     artifact.customLabel = changes.customLabel;
@@ -157,6 +185,8 @@ function applyAutoSceneBreakChanges(artifact, changes) {
 function applyChangesToArtifact(operationType, artifact, changes) {
   if (operationType === 'entity_types') {
     applyEntityTypesChanges(artifact, changes);
+  } else if (operationType === 'entry_defaults') {
+    applyEntryDefaultsChanges(artifact, changes);
   } else {
     applyPromptChanges(artifact, changes);
     if (operationType === 'auto_scene_break') {
@@ -283,6 +313,11 @@ export function findArtifactByContent(operationType, content) {
     // entity_types uses types array instead of prompt
     if (operationType === 'entity_types') {
       return JSON.stringify(a.types) === JSON.stringify(content.types);
+    }
+
+    // entry_defaults uses defaults object instead of prompt
+    if (operationType === 'entry_defaults') {
+      return JSON.stringify(a.defaults) === JSON.stringify(content.defaults);
     }
 
     const basicMatch = a.prompt === content.prompt &&

@@ -230,6 +230,7 @@ export * from './recapToLorebookProcessor.js';
 export * from './lorebookReconstruction.js';
 export * from './checkpointLorebookIntegration.js';
 export * from './entityTypes.js';
+export * from './entryDefaults.js';
 
 // Metadata injection for LLM requests
 export * from './metadataInjector.js';

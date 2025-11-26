@@ -312,6 +312,61 @@
                             </div>
                         </div>
 
+                        <hr style="margin: 15px 0;">
+
+                        <!-- Entry Defaults -->
+                        <div class="auto_recap_operation_type_section" data-testid="operation-type-entry-defaults">
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="gap: 5px;">
+                                <span>Default Entry Properties:</span>
+                                <div style="display: flex; gap: 5px;">
+                                    <button data-operation-type="entry_defaults" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-entry-defaults" title="Rename this artifact" disabled></button>
+                                    <button data-operation-type="entry_defaults" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-entry-defaults" title="Delete this artifact" disabled></button>
+                                    <button data-operation-type="entry_defaults" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-entry-defaults" title="Duplicate this artifact"></button>
+                                </div>
+                            </div>
+                            <select id="auto_recap_artifact_entry_defaults" data-testid="artifact-entry-defaults" class="text_pole" style="margin-top: 5px;">
+                                <option value="Default">Default</option>
+                            </select>
+                            <small class="displayBlock opacity50p margin-top-5px">
+                                Configure default properties applied to new lorebook entries created from recaps.
+                            </small>
+
+                            <!-- Inline Entry Defaults Form -->
+                            <div id="entry-defaults-form-container" data-testid="entry-defaults-form-container" class="margin-top-10px">
+                                <div class="margin-bot-10px">
+                                    <label class="checkbox_label" for="autolorebooks-entry-exclude-recursion">
+                                        <input type="checkbox" id="autolorebooks-entry-exclude-recursion" data-testid="lorebook-entry-exclude-recursion" />
+                                        <span>Exclude Recursion (Non-recursable)</span>
+                                    </label>
+                                    <small class="displayBlock opacity50p">When checked, this entry will not trigger other entries recursively</small>
+                                </div>
+
+                                <div class="margin-bot-10px">
+                                    <label class="checkbox_label" for="autolorebooks-entry-prevent-recursion">
+                                        <input type="checkbox" id="autolorebooks-entry-prevent-recursion" data-testid="lorebook-entry-prevent-recursion" />
+                                        <span>Prevent Further Recursion</span>
+                                    </label>
+                                    <small class="displayBlock opacity50p">When checked, this entry will not activate other entries recursively</small>
+                                </div>
+
+                                <div class="margin-bot-10px">
+                                    <label class="checkbox_label" for="autolorebooks-entry-ignore-budget">
+                                        <input type="checkbox" id="autolorebooks-entry-ignore-budget" data-testid="lorebook-entry-ignore-budget" />
+                                        <span>Ignore Budget</span>
+                                    </label>
+                                    <small class="displayBlock opacity50p">When checked, this entry will be included ignoring budget constraints</small>
+                                </div>
+
+                                <div class="margin-bot-10px">
+                                    <label for="autolorebooks-entry-sticky">
+                                        <span>Sticky (rounds):</span>
+                                        <small class="displayBlock opacity50p">Number of message rounds to keep entry active</small>
+                                    </label>
+                                    <input type="number" id="autolorebooks-entry-sticky" data-testid="lorebook-entry-sticky" class="text_pole" min="0" max="10000" />
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -501,24 +556,6 @@
                     </div>
                 </div>
 
-                <!-- Auto-Hide -->
-                <hr>
-                <div class="inline-drawer">
-                    <div class="inline-drawer-toggle inline-drawer-header">
-                        <div class="flex-container alignitemscenter margin0">
-                            <h4 class="margin0">Auto-Hide</h4>
-                        </div>
-                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                    </div>
-                    <div class="inline-drawer-content">
-                        <label title="Automatically hide all messages in scenes older than this many scenes (set -1 to disable)" class="checkbox_label">
-                            <span>Auto Hide Messages Older Than The Last</span>
-                            <input id="auto_hide_scene_count" data-testid="auto-hide-scene-count" class="text_pole widthUnset inline_setting" type="number" min="-1" max="999" />
-                            <span>Scene(s) (-1 to disable)</span>
-                        </label>
-                    </div>
-                </div>
-
                 <!-- Misc. -->
                 <hr>
                 <div class="inline-drawer">
@@ -537,6 +574,12 @@
                         <label title="Uses a global on/off state shared between all chats with this enabled. When unchecked, turning the extension on/off only applies to active chat." class="checkbox_label">
                             <input id="use_global_toggle_state" data-testid="misc-global-toggle" type="checkbox" />
                             <span>Use Global Toggle State</span>
+                        </label>
+
+                        <label title="Automatically hide all messages in scenes older than this many scenes (set -1 to disable)" class="checkbox_label">
+                            <span>Auto Hide Messages Older Than The Last</span>
+                            <input id="auto_hide_scene_count" data-testid="auto-hide-scene-count" class="text_pole widthUnset inline_setting" type="number" min="-1" max="999" />
+                            <span>Scene(s) (-1 to disable)</span>
                         </label>
 
                         <hr>
@@ -591,57 +634,6 @@
                         </div>
 
                         <hr>
-
-                        <h4>Recap-to-Lorebook Processing</h4>
-
-                        <div class="margin-bot-10px">
-                            <label class="checkbox_label" for="autolorebooks-recap-skip-duplicates">
-                                <input type="checkbox" id="autolorebooks-recap-skip-duplicates" data-testid="lorebook-skip-duplicates" />
-                                <span>Skip already processed recaps</span>
-                            </label>
-                        </div>
-
-                        <div class="inline-drawer margin-top-10px">
-                            <div class="inline-drawer-toggle inline-drawer-header">
-                                <div class="flex-container alignitemscenter margin0">
-                                    <span>Default Entry Properties (for new entries from recaps)</span>
-                                </div>
-                                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                            </div>
-                            <div class="inline-drawer-content">
-                                <div class="margin-bot-10px">
-                                    <label class="checkbox_label" for="autolorebooks-entry-exclude-recursion">
-                                        <input type="checkbox" id="autolorebooks-entry-exclude-recursion" data-testid="lorebook-entry-exclude-recursion" />
-                                        <span>Exclude Recursion (Non-recursable)</span>
-                                    </label>
-                                    <small class="displayBlock opacity50p">When checked, this entry will not trigger other entries recursively</small>
-                                </div>
-
-                                <div class="margin-bot-10px">
-                                    <label class="checkbox_label" for="autolorebooks-entry-prevent-recursion">
-                                        <input type="checkbox" id="autolorebooks-entry-prevent-recursion" data-testid="lorebook-entry-prevent-recursion" />
-                                        <span>Prevent Further Recursion</span>
-                                    </label>
-                                    <small class="displayBlock opacity50p">When checked, this entry will not activate other entries recursively</small>
-                                </div>
-
-                                <div class="margin-bot-10px">
-                                    <label class="checkbox_label" for="autolorebooks-entry-ignore-budget">
-                                        <input type="checkbox" id="autolorebooks-entry-ignore-budget" data-testid="lorebook-entry-ignore-budget" />
-                                        <span>Ignore Budget</span>
-                                    </label>
-                                    <small class="displayBlock opacity50p">When checked, this entry will be included ignoring budget constraints</small>
-                                </div>
-
-                                <div class="margin-bot-10px">
-                                    <label for="autolorebooks-entry-sticky">
-                                        <span>Sticky (rounds):</span>
-                                        <small class="displayBlock opacity50p">Number of message rounds to keep entry active</small>
-                                    </label>
-                                    <input type="number" id="autolorebooks-entry-sticky" data-testid="lorebook-entry-sticky" class="text_pole" min="0" max="10000" />
-                                </div>
-                            </div>
-                        </div>
 
                     </div>
                 </div>

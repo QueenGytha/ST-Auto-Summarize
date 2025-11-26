@@ -12,6 +12,7 @@ import {
   normalizeEntityTypeDefinition,
   parseEntityTypeDefinition } from
 './entityTypes.js';
+import { getEntryDefaultsFromSettings } from './entryDefaults.js';
 
 import { SUBSYSTEM } from './index.js';
 import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.js';
@@ -23,19 +24,14 @@ import { build as buildLorebookEntryLookupSynopsis } from './macros/lorebook_ent
 import { substitute_params } from './promptUtils.js';
 
 import {
-  MAX_RECAP_ATTEMPTS,
-  ID_GENERATION_BASE,
   FULL_COMPLETION_PERCENTAGE,
   MIN_ENTITY_SECTIONS } from './constants.js';
-
-const DEFAULT_STICKY_ROUNDS = 4;
 
 // Will be imported from index.js via barrel exports
 let log , debug , error , toast ; // Utility functions - any type is legitimate
 let getAttachedLorebook , getLorebookEntries , addLorebookEntry , modifyLorebookEntry ; // Lorebook functions - any type is legitimate
 let mergeLorebookEntry ; // Entry merger function - any type is legitimate
 let updateRegistryEntryContent ;
-let get_settings ; // Profile settings functions - any type is legitimate
 
 const REGISTRY_PREFIX  = '_registry_';
 
@@ -50,13 +46,12 @@ function isMeaningfulUid(uid) {
 
 // Removed getSetting helper; no settings access needed here
 
-export function initRecapToLorebookProcessor(utils , lorebookManagerModule , entryMergerModule , settingsManager ) {
+export function initRecapToLorebookProcessor(utils , lorebookManagerModule , entryMergerModule ) {
   // All parameters are any type - objects with various properties - legitimate use of any
   log = utils.log;
   debug = utils.debug;
   error = utils.error;
   toast = utils.toast;
-  get_settings = settingsManager.get_settings;
 
   // Import lorebook manager functions
   if (lorebookManagerModule) {
@@ -71,43 +66,6 @@ export function initRecapToLorebookProcessor(utils , lorebookManagerModule , ent
   if (entryMergerModule) {
     mergeLorebookEntry = entryMergerModule.mergeLorebookEntry;
   }
-}
-
-function getProcessedRecaps() {
-  if (!chat_metadata.auto_lorebooks_processed_recaps) {
-    chat_metadata.auto_lorebooks_processed_recaps = [];
-  }
-  return new Set(chat_metadata.auto_lorebooks_processed_recaps);
-}
-
-function markRecapProcessed(recapId ) {
-  const processed = getProcessedRecaps();
-  processed.add(recapId);
-  chat_metadata.auto_lorebooks_processed_recaps = Array.from(processed);
-  saveMetadata();
-  debug(`Marked recap as processed: ${recapId}`);
-}
-
-function isRecapProcessed(recapId ) {
-  return getProcessedRecaps().has(recapId);
-}
-
-function generateRecapId(recap ) {
-  // Use timestamp + content hash as ID
-  const timestamp = recap.timestamp || Date.now();
-  const content = JSON.stringify(recap.lorebook || recap);
-  const hash = simpleHash(content);
-  return `recap_${timestamp}_${hash}`;
-}
-
-function simpleHash(str ) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << MAX_RECAP_ATTEMPTS) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash).toString(ID_GENERATION_BASE);
 }
 
 function extractLorebookData(recap ) {
@@ -339,28 +297,20 @@ export function normalizeEntryData(entry ) {
 }
 
 function readAndCoerceLorebookEntrySettings(entryComment ) {
-  // Read raw settings from profile
-  const rawExcludeRecursion = get_settings('auto_lorebooks_entry_exclude_recursion');
-  const rawPreventRecursion = get_settings('auto_lorebooks_entry_prevent_recursion');
-  const rawIgnoreBudget = get_settings('auto_lorebooks_entry_ignore_budget');
-  const rawSticky = get_settings('auto_lorebooks_entry_sticky');
+  // Get entry defaults from artifact system
+  const defaults = getEntryDefaultsFromSettings(extension_settings?.auto_recap);
 
-  debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] Raw settings from get_settings():`, {
-    excludeRecursion: rawExcludeRecursion,
-    excludeRecursionType: typeof rawExcludeRecursion,
-    preventRecursion: rawPreventRecursion,
-    preventRecursionType: typeof rawPreventRecursion,
-    ignoreBudget: rawIgnoreBudget,
-    ignoreBudgetType: typeof rawIgnoreBudget,
-    sticky: rawSticky,
-    stickyType: typeof rawSticky
+  debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] Entry defaults from artifact:`, {
+    excludeRecursion: defaults.exclude_recursion,
+    preventRecursion: defaults.prevent_recursion,
+    ignoreBudget: defaults.ignore_budget,
+    sticky: defaults.sticky
   });
 
-  // Apply explicit type coercion to ensure correct types
-  const excludeRecursion = rawExcludeRecursion === undefined ? false : Boolean(rawExcludeRecursion);
-  let preventRecursion = rawPreventRecursion === undefined ? false : Boolean(rawPreventRecursion);
-  const ignoreBudget = rawIgnoreBudget === undefined ? true : Boolean(rawIgnoreBudget);
-  const sticky = rawSticky === undefined ? DEFAULT_STICKY_ROUNDS : Number(rawSticky);
+  const excludeRecursion = defaults.exclude_recursion;
+  let preventRecursion = defaults.prevent_recursion;
+  const ignoreBudget = defaults.ignore_budget;
+  const sticky = defaults.sticky;
 
   // Check if this is a {{user}} character entry and auto-set preventRecursion if not already set
   if (typeof entryComment === 'string' && typeof name1 === 'string') {
@@ -372,7 +322,7 @@ function readAndCoerceLorebookEntrySettings(entryComment ) {
     const isUserEntry = commentLower === userNameLower ||
                        commentLower === `character-${userNameLower}`;
 
-    debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] {{user}} check: entryComment="${entryComment}", name1="${userName}", isUserEntry=${isUserEntry}, rawPreventRecursion=${rawPreventRecursion}`);
+    debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] {{user}} check: entryComment="${entryComment}", name1="${userName}", isUserEntry=${isUserEntry}`);
 
     if (isUserEntry) {
       preventRecursion = true;
@@ -380,15 +330,11 @@ function readAndCoerceLorebookEntrySettings(entryComment ) {
     }
   }
 
-  debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] Final coerced settings for entry "${entryComment}":`, {
+  debug?.(SUBSYSTEM.LOREBOOK, `[readAndCoerceLorebookEntrySettings] Final settings for entry "${entryComment}":`, {
     excludeRecursion,
-    excludeRecursionType: typeof excludeRecursion,
     preventRecursion,
-    preventRecursionType: typeof preventRecursion,
     ignoreBudget,
-    ignoreBudgetType: typeof ignoreBudget,
-    sticky,
-    stickyType: typeof sticky
+    sticky
   });
 
   return { excludeRecursion, preventRecursion, ignoreBudget, sticky };
@@ -583,6 +529,7 @@ export function buildCandidateEntriesData(candidateIds , registryState , existin
 }
 
 function buildNewEntryPayload(entry ) {
+  const defaults = getEntryDefaultsFromSettings(extension_settings?.auto_recap);
   return {
     comment: entry.comment || '',
     content: entry.content || '',
@@ -590,10 +537,10 @@ function buildNewEntryPayload(entry ) {
     type: entry.type || '',
     constant: Boolean(entry.constant),
     disable: Boolean(entry.disable),
-    excludeRecursion: entry.excludeRecursion ?? false,
-    preventRecursion: entry.preventRecursion ?? false,
-    ignoreBudget: entry.ignoreBudget ?? true,
-    sticky: entry.sticky ?? DEFAULT_STICKY_ROUNDS
+    excludeRecursion: entry.excludeRecursion ?? defaults.exclude_recursion,
+    preventRecursion: entry.preventRecursion ?? defaults.prevent_recursion,
+    ignoreBudget: entry.ignoreBudget ?? defaults.ignore_budget,
+    sticky: entry.sticky ?? defaults.sticky
   };
 }
 
@@ -1285,20 +1232,11 @@ async function handleLorebookEntry(normalizedEntry , ctx ) {
 }
 
 function initializeRecapProcessing(recap , options ) {
-  const { useQueue = true, skipDuplicates = true } = options;
+  const { useQueue = true } = options;
   const entityTypeDefs = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
   const entityTypeMap = createEntityTypeMap(entityTypeDefs);
-  const recapId = generateRecapId(recap);
 
-  return { useQueue, skipDuplicates, recapId, entityTypeDefs, entityTypeMap };
-}
-
-function shouldSkipDuplicate(recapId , skipDuplicates ) {
-  if (skipDuplicates && isRecapProcessed(recapId)) {
-    debug(`Recap already processed: ${recapId}`);
-    return true;
-  }
-  return false;
+  return { useQueue, entityTypeDefs, entityTypeMap };
 }
 
 function extractAndValidateEntities(recap ) {
@@ -1384,9 +1322,8 @@ async function processBatchEntries(entries , context , config ) {
   }
 }
 
-async function finalizeRecapProcessing(context , recapId ) {
+async function finalizeRecapProcessing(context ) {
   await finalizeRegistryUpdates(context);
-  markRecapProcessed(recapId);
 }
 
 function buildRecapResult(results , totalEntries ) {
@@ -1406,11 +1343,6 @@ export async function processRecapToLorebook(recap , options  = {}) {
   try {
     // Initialize configuration
     const config = initializeRecapProcessing(recap, options);
-
-    // Check for duplicate
-    if (shouldSkipDuplicate(config.recapId, config.skipDuplicates)) {
-      return { success: true, skipped: true, message: 'Already processed' };
-    }
 
     // Extract and validate entities
     const extraction = extractAndValidateEntities(recap);
@@ -1446,7 +1378,7 @@ export async function processRecapToLorebook(recap , options  = {}) {
     await processBatchEntries(extraction.entries, context, config);
 
     // Finalize
-    await finalizeRecapProcessing(context, config.recapId);
+    await finalizeRecapProcessing(context);
 
     // Build result
     return buildRecapResult(results, extraction.entries.length);
@@ -1490,7 +1422,6 @@ export async function processRecapsToLorebook(recaps , options  = {}) {
 
     const allResults = {
       processed: 0,
-      skipped: 0,
       created: [],
       merged: [],
       failed: []
@@ -1501,9 +1432,7 @@ export async function processRecapsToLorebook(recaps , options  = {}) {
       // eslint-disable-next-line no-await-in-loop -- Recaps must be processed sequentially to maintain message order
       const result = await processRecapToLorebook(recap, options);
 
-      if (result.skipped) {
-        allResults.skipped++;
-      } else if (result.success) {
+      if (result.success) {
         allResults.processed++;
         if (result.results) {
           allResults.created.push(...result.results.created);
@@ -1513,7 +1442,7 @@ export async function processRecapsToLorebook(recaps , options  = {}) {
       }
     }
 
-    const message = `Processed ${allResults.processed} recaps (${allResults.skipped} skipped): ${allResults.created.length} created, ${allResults.merged.length} merged, ${allResults.failed.length} failed`;
+    const message = `Processed ${allResults.processed} recaps: ${allResults.created.length} created, ${allResults.merged.length} merged, ${allResults.failed.length} failed`;
     log(message);
     toast(message, 'info');
 
@@ -1532,17 +1461,8 @@ export async function processRecapsToLorebook(recaps , options  = {}) {
   }
 }
 
-export function clearProcessedRecaps() {
-  chat_metadata.auto_lorebooks_processed_recaps = [];
-  saveMetadata();
-  log('Cleared processed recaps tracker');
-  toast('Cleared processed recaps tracker', 'info');
-}
-
 export default {
   initRecapToLorebookProcessor,
   processRecapToLorebook,
-  processRecapsToLorebook,
-  clearProcessedRecaps,
-  isRecapProcessed
+  processRecapsToLorebook
 };
