@@ -1,17 +1,15 @@
 // Stage 2: Condense and format
 // MACROS: {{extracted_data}}, {{lorebook_entry_types_with_guidance}}
 
-export const scene_recap_stage2_organize_prompt = `ROLE: Condense extracted content, then format to output structure.
+export const scene_recap_stage2_organize_prompt = `ROLE: Transform extracted facets into structured output.
 
-ENTITY TYPE REFERENCE:
+ENTITY TYPES FOR SL ENTRIES:
 {{lorebook_entry_types_with_guidance}}
-
-NOTE: "recap" is NOT a valid sl type - anything marked recap goes in rc field instead.
 
 OUTPUT FORMAT:
 {
   "rc": "DEV: ...\\nPEND: ...",
-  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"] }]
+  "sl": [{ "t": "type", "n": "EntityName", "c": "combined content", "k": ["keywords"] }]
 }
 
 ---------------- EXTRACTED DATA ----------------
@@ -19,33 +17,21 @@ OUTPUT FORMAT:
 {{extracted_data}}
 </EXTRACTED>
 
----------------- STEP 1: CONDENSE ----------------
+---------------- TRANSFORMATION RULES ----------------
 
-Merge duplicates only (same meaning, different words):
-- PLOT: Merge if describing same event
-- GOALS: Merge if same intention for same character
-- REVEALS: Merge if same fact
-- STATE: Merge if same entity, same condition type
-- STANCE: Merge if same pair, same dynamic
-- VOICE: Keep distinct quotes even from same speaker
-- APPEARANCE: Merge if same entity
+RC (narrative recap):
+- DEV: Combine plot + reveals into flowing narrative
+- PEND: List active goals as "Character: goal"
+- Include dialogue context, relationship dynamics, emotional beats
+- This is narrative summary, not structured data
 
-Do NOT artificially limit - keep all distinct items.
+SL (entity entries - ONE per entity, combining all facets):
+- Group ALL information about each entity into ONE entry
+- t = entity type from list above (character, location, item, etc. - NEVER "recap")
+- n = entity name exactly as it appears
+- c = COMBINE all facets for that entity: state + appearance + stance + voice quotes
+- k = [entity name, plus any aliases or key identifiers]
 
----------------- STEP 2: FORMAT OUTPUT ----------------
-
-RC (recap content - narrative developments):
-- DEV: condensed plot + reveals + dialogue + relationships, semicolon-separated
-- PEND: condensed goals
-- Format: "DEV: ...\\nPEND: ..."
-- ALL world facts, reveals, lore, dialogue, relationships go in DEV (not in sl)
-
-SL (setting_lore entries - ONLY for durable entity data):
-- ONLY from: state, appearance, verbatim facets
-- NEVER from: plot, goals, reveals, stance, voice (those go in rc)
-- t = entity type (character, location, item, faction, lore - NEVER "recap")
-- n = specific entity name (e.g., "Rance", "Lisle village")
-- c = durable factual content about that entity
-- k = keywords for matching: entity name + specific proper nouns only (NOT generic words like "dialogue", "relationship", "bond")
+KEY: One sl entry per entity. Combine state, appearance, stance, voice for same entity into single entry.
 
 Output JSON only.`;
