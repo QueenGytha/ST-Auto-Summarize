@@ -1124,8 +1124,8 @@ function logFilteringResults(options) {
 }
 
 // Helper: Get active lorebook entries at a specific message position
-// eslint-disable-next-line complexity -- Lorebook scanning with optional settings modification adds conditional logic
-export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSettingsModification = false) {
+// eslint-disable-next-line complexity -- Lorebook scanning requires detailed processing
+export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data) {
   const chat = ctx.chat;
 
   // Always calculate scene boundaries for metadata (regardless of lorebook settings)
@@ -1184,31 +1184,17 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
     const originalSettings = getWorldInfoSettings();
     const MAX_SCAN_DEPTH = 1000;
 
-    // When skipSettingsModification=true: modify globals directly without calling setWorldInfoSettings (no SETTINGS_UPDATED events)
-    // When false: use setWorldInfoSettings (triggers events, but that's OK during actual generation)
-    if (skipSettingsModification) {
-      // Import world-info.js module to access mutable exports
-      const worldInfoModule = await import('../../../world-info.js');
+    // Use setWorldInfoSettings API to temporarily override WI settings
+    // Note: Direct module export mutation doesn't work (ES modules have read-only bindings)
+    const { world_names } = await import('../../../world-info.js');
 
-      // Directly mutate the exported global variables (JavaScript allows this for 'let' exports)
-      // This modifies the settings WITHOUT calling setWorldInfoSettings, so no events fire
-      worldInfoModule.world_info_depth = MAX_SCAN_DEPTH;
-      worldInfoModule.world_info_min_activations = 0;
-      worldInfoModule.world_info_max_recursion_steps = 1;
-
-      debug(SUBSYSTEM.SCENE, `Directly modified WI globals (no events) - scan_depth: ${MAX_SCAN_DEPTH}, min_activations: 0, max_recursion: 1 (original: ${originalSettings.world_info_depth}, ${originalSettings.world_info_min_activations}, ${originalSettings.world_info_max_recursion_steps})`);
-    } else {
-      // Import world_names to pass to setWorldInfoSettings (required by function)
-      const { world_names } = await import('../../../world-info.js');
-
-      setWorldInfoSettings({
-        world_info: originalSettings.world_info,  // Preserve world_info object to avoid reset
-        world_info_depth: MAX_SCAN_DEPTH,
-        world_info_min_activations: 0,
-        world_info_max_recursion_steps: 1
-      }, { world_names });
-      debug(SUBSYSTEM.SCENE, `Temporarily overriding WI settings - scan_depth: ${MAX_SCAN_DEPTH}, min_activations: 0, max_recursion: 1 (original: ${originalSettings.world_info_depth}, ${originalSettings.world_info_min_activations}, ${originalSettings.world_info_max_recursion_steps})`);
-    }
+    setWorldInfoSettings({
+      world_info: originalSettings.world_info,
+      world_info_depth: MAX_SCAN_DEPTH,
+      world_info_min_activations: 0,
+      world_info_max_recursion_steps: 1
+    }, { world_names });
+    debug(SUBSYSTEM.SCENE, `Temporarily overriding WI settings - scan_depth: ${MAX_SCAN_DEPTH}, min_activations: 0, max_recursion: 1 (original: ${originalSettings.world_info_depth}, ${originalSettings.world_info_min_activations}, ${originalSettings.world_info_max_recursion_steps})`);
 
     try {
       const reversedSceneMessages = sceneMessages.slice().reverse();
@@ -1313,24 +1299,13 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
       };
     } finally {
       // Restore original world info settings
-      if (skipSettingsModification) {
-        // We modified globals directly, restore them directly
-        const worldInfoModule = await import('../../../world-info.js');
-        worldInfoModule.world_info_depth = originalSettings.world_info_depth;
-        worldInfoModule.world_info_min_activations = originalSettings.world_info_min_activations;
-        worldInfoModule.world_info_max_recursion_steps = originalSettings.world_info_max_recursion_steps;
-        debug(SUBSYSTEM.SCENE, `Restored WI globals directly (no events) - scan_depth: ${originalSettings.world_info_depth}, min_activations: ${originalSettings.world_info_min_activations}, max_recursion: ${originalSettings.world_info_max_recursion_steps}`);
-      } else {
-        // We used setWorldInfoSettings, restore via setWorldInfoSettings
-        const { world_names } = await import('../../../world-info.js');
-        setWorldInfoSettings({
-          world_info: originalSettings.world_info,  // Preserve world_info object
-          world_info_depth: originalSettings.world_info_depth,
-          world_info_min_activations: originalSettings.world_info_min_activations,
-          world_info_max_recursion_steps: originalSettings.world_info_max_recursion_steps
-        }, { world_names });
-        debug(SUBSYSTEM.SCENE, `Restored WI settings - scan_depth: ${originalSettings.world_info_depth}, min_activations: ${originalSettings.world_info_min_activations}, max_recursion: ${originalSettings.world_info_max_recursion_steps}`);
-      }
+      setWorldInfoSettings({
+        world_info: originalSettings.world_info,
+        world_info_depth: originalSettings.world_info_depth,
+        world_info_min_activations: originalSettings.world_info_min_activations,
+        world_info_max_recursion_steps: originalSettings.world_info_max_recursion_steps
+      }, { world_names });
+      debug(SUBSYSTEM.SCENE, `Restored WI settings - scan_depth: ${originalSettings.world_info_depth}, min_activations: ${originalSettings.world_info_min_activations}, max_recursion: ${originalSettings.world_info_max_recursion_steps}`);
     }
   } catch (err) {
     debug(SUBSYSTEM.SCENE, `Failed to get active lorebooks: ${err.message}`);
@@ -1339,13 +1314,11 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
 }
 
 // Helper: Prepare scene recap prompt
-// eslint-disable-next-line complexity -- Building lorebook and message breakdowns requires detailed processing
 export async function prepareScenePrompt(
 sceneObjects ,
 ctx ,
 endIdx ,
-get_data ,
-skipSettingsModification = false)
+get_data)
 {
   // Configuration is logged by resolveOperationConfig()
   const config = await resolveOperationConfig('scene_recap');
@@ -1355,7 +1328,7 @@ skipSettingsModification = false)
   const typeDefinitions = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
 
   // Get active lorebooks if enabled (now returns { entries, metadata })
-  const { entries: activeEntries, metadata: lorebookMetadata } = await getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSettingsModification);
+  const { entries: activeEntries, metadata: lorebookMetadata } = await getActiveLorebooksAtPosition(endIdx, ctx, get_data);
   const activeSettingLoreText = buildActiveSettingLore(activeEntries);
 
   // Build individual lorebook entry token breakdown
@@ -1855,7 +1828,7 @@ export async function generateSceneRecap(config) {
   const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
   // Prepare prompt (now returns lorebook metadata and token counts)
-  const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data, false);
+  const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data);
 
   // Debug: Check if {{user}} is in the final prompt
   if (prompt.includes('{{user}}')) {

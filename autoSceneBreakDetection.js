@@ -653,9 +653,7 @@ async function calculateSceneRecapTokensForRange(startIndex, endIndex, chat, ctx
 
   const sceneObjects = collectSceneObjects(startIndex, endIndex, chat);
 
-  // PERF: Use skipSettingsModification=true to avoid calling setWorldInfoSettings (which re-registers all slash commands)
-  // This directly mutates world-info.js module exports instead, avoiding expensive DOM/event operations
-  const { prompt, prefill, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIndex, get_data, true);
+  const { prompt, prefill, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIndex, get_data);
 
   const config = await resolveOperationConfig('scene_recap');
   const preset = config.completion_preset_name || '';

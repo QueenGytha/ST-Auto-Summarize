@@ -773,10 +773,28 @@ export async function deleteChatLorebook(lorebookName ) {
       return false;
     }
 
-    // Check if lorebook exists
+    // Always clear metadata references, even if file doesn't exist
+    // This handles stale references from previously deleted lorebooks
+    let metadataCleared = false;
+    if (chat_metadata[METADATA_KEY] === lorebookName) {
+      delete chat_metadata[METADATA_KEY];
+      debug("Cleared lorebook reference from chat metadata");
+      metadataCleared = true;
+    }
+    if (chat_metadata.auto_lorebooks?.lorebookName === lorebookName) {
+      delete chat_metadata.auto_lorebooks.lorebookName;
+      delete chat_metadata.auto_lorebooks.attachedAt;
+      debug("Cleared lorebook reference from extension metadata");
+      metadataCleared = true;
+    }
+    if (metadataCleared) {
+      saveMetadata();
+    }
+
+    // Check if lorebook exists - if not, we're done (metadata already cleared)
     if (!world_names || !world_names.includes(lorebookName)) {
-      debug(`Lorebook "${lorebookName}" does not exist, skipping deletion`);
-      return false;
+      debug(`Lorebook "${lorebookName}" does not exist in world_names, skipping file deletion`);
+      return metadataCleared; // Return true if we at least cleared metadata
     }
 
     log(`Deleting lorebook: ${lorebookName}`);
@@ -786,19 +804,6 @@ export async function deleteChatLorebook(lorebookName ) {
 
     if (result) {
       log(`Successfully deleted lorebook: ${lorebookName}`);
-
-      // Clear metadata references to the deleted lorebook
-      if (chat_metadata[METADATA_KEY] === lorebookName) {
-        delete chat_metadata[METADATA_KEY];
-        debug("Cleared lorebook reference from chat metadata");
-      }
-      if (chat_metadata.auto_lorebooks?.lorebookName === lorebookName) {
-        delete chat_metadata.auto_lorebooks.lorebookName;
-        delete chat_metadata.auto_lorebooks.attachedAt;
-        debug("Cleared lorebook reference from extension metadata");
-      }
-      saveMetadata();
-
       return true;
     } else {
       error(`Failed to delete lorebook: ${lorebookName}`);
