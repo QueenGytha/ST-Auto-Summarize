@@ -1175,9 +1175,12 @@ export function registerAllOperationHandlers() {
       // Get lorebook metadata from Stage 1
       const lorebookMetadata = get_data(message, 'stage1_lorebook_metadata') || {};
 
+      // Strip scene name fields - Stage 2 doesn't need them (already extracted in Stage 1)
+      const { sn: _sn, scene_name: _scene_name, ...stage1DataWithoutName } = stage1Data;
+
       // Prepare Stage 2 (organize) prompt
       const { prepareOrganizeScenePrompt } = await import('./prepareOrganizeScenePrompt.js');
-      const { prompt, prefill } = await prepareOrganizeScenePrompt(stage1Data, ctx);
+      const { prompt, prefill } = await prepareOrganizeScenePrompt(stage1DataWithoutName, ctx);
 
       // Get config for connection profile
       const config = await resolveOperationConfig('organize_scene_recap');
@@ -1326,9 +1329,12 @@ export function registerAllOperationHandlers() {
       const lorebookMetadata = get_data(message, 'stage1_lorebook_metadata') || {};
       debug(SUBSYSTEM.QUEUE, `Retrieved Stage 1 lorebook metadata: startIdx=${lorebookMetadata?.startIdx}, endIdx=${lorebookMetadata?.endIdx}`);
 
+      // Strip scene name fields - Stage 3 doesn't need them (already extracted in Stage 1)
+      const { sn: _sn, scene_name: _scene_name, ...stage2DataWithoutName } = stage2Data;
+
       // Prepare Stage 3 prompt (endIdx is the scene break message index)
       const endIdx = index;
-      const { prompt, prefill } = await prepareParseScenePrompt(stage2Data, ctx, endIdx, get_data);
+      const { prompt, prefill } = await prepareParseScenePrompt(stage2DataWithoutName, ctx, endIdx, get_data);
 
       // Get config for connection profile
       const config = await resolveOperationConfig('parse_scene_recap');
