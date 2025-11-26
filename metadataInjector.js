@@ -96,6 +96,8 @@ function parseOperationType(operation) {
     'detect_scene_break': 'auto_scene_break',
     'generate_scene_recap': 'scene_recap',
     'scene_recap': 'scene_recap',
+    'organize_scene_recap': 'organize_scene_recap',
+    'parse_scene_recap': 'parse_scene_recap',
     'generate_running_recap': 'running_scene_recap',
     'running_scene_recap': 'running_scene_recap',
     'combine_scene_with_running': 'running_scene_recap',
