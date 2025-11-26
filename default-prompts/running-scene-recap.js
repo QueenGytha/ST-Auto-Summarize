@@ -10,7 +10,7 @@ DEDUPLICATION (enforce before output):
 OUTPUT:
 {"recap":"DEV: ...\\nPEND: ..."}
 
-- DEV: outcomes; state changes; reveals. No quotes.
+- DEV: outcomes; state changes. No quotes. No world lore (belongs in lorebook entries).
 - PEND: active goals (who/what/condition). No completed goals.
 - Omit empty sections.
 

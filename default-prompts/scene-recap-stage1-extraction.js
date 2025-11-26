@@ -43,12 +43,16 @@ STANCE: Relationship dynamics and shifts.
 - toward = target of stance
 - c = the dynamic
 
-VOICE: ONE quote per distinct BEHAVIOR per entity.
+VOICE: ONE quote per CHARACTER TRAIT per entity.
 - t = speaker's entity type
 - n = speaker name
 - q = the quote
 - ctx = what prompted this / what it reveals (REQUIRED)
-- DEDUP BY BEHAVIOR: despair shown 4x? ONE despair quote.
+- TRAIT = personality pattern (defiant, vulnerable, sarcastic, protective, begging, commanding, etc.), NOT context/topic.
+- Different words showing SAME TRAIT = duplicate → keep ONE.
+- Examples of SAME TRAIT: "Please don't" / "I'll do anything" / "Don't leave me" = all BEGGING → ONE quote.
+- Examples of SAME TRAIT: "I don't care what you think" / "Try and stop me" = both DEFIANT → ONE quote.
+- Map each quote to a trait. If another quote already shows that trait → DROP.
 
 APPEARANCE: Physical descriptions worth remembering.
 - t = entity type

@@ -3,7 +3,7 @@
 export const auto_lorebook_recap_merge_prompt = `ROLE: Merge setting_lore entry. EXISTING_CONTENT is baseline. Add from NEW_CONTENT only what's genuinely new.
 
 DEDUPLICATION (enforce before output):
-- QUOTES: If EXISTING has a quote showing this voice pattern → DROP the new quote. Same pattern, different words = duplicate.
+- QUOTES: If EXISTING has a quote showing same CHARACTER TRAIT → DROP. Trait = defiant, vulnerable, commanding, tender, sarcastic, desperate, etc. NOT context/topic. See QUOTE TEST below.
 - RELATIONSHIPS: Collapse to stance + dynamics. Blow-by-blow steps → DROP. Keep: debts, boundaries, pivots, promises, tension.
 - STATE: Durable only. "Will this still be true next scene?" NO → DROP.
 - TRIGGERS: One per behavioral pattern. Multiple phrasings of same pattern → DROP all but one.
@@ -45,9 +45,15 @@ Before: "A->B: held hand; hugged; kissed; stayed overnight"
 After: "A->B: intimate"
 
 QUOTE TEST:
-Ask: "What VOICE PATTERN does this quote demonstrate?"
-If EXISTING already has a quote showing that pattern → DROP the new quote.
-Patterns: commanding, pleading, philosophical, threatening, tender, vulnerable, defiant, sarcastic, etc.
+Map new quote to a CHARACTER TRAIT (defiant, vulnerable, sarcastic, protective, begging, commanding, etc.)
+TRAIT = personality pattern, NOT context/topic.
+If EXISTING already has a quote showing that trait → DROP.
+
+Examples of SAME TRAIT (= duplicate, keep only one):
+- "Please don't" / "I'll do anything" / "Don't leave me" = all BEGGING
+- "I don't care what you think" / "Try and stop me" = both DEFIANT
+- "Oh, how delightful" / "What a pleasant surprise" = both SARCASTIC
+- "You'll be safe now" / "I won't let anyone hurt you" = both PROTECTIVE
 
 STATE TEST:
 Ask: "Will this still be true next scene?"

@@ -13,7 +13,7 @@ import {
   saveChatDebounced,
   resolveOperationConfig } from
 './index.js';
-import { pauseQueue } from './operationQueue.js';
+import { pauseQueue, getQueueStats } from './operationQueue.js';
 import {
   collectSceneObjects,
   prepareScenePrompt,
@@ -1363,6 +1363,14 @@ export async function manualSceneBreakDetection() {
   if (!chat || chat.length === 0) {
     debug(SUBSYSTEM.SCENE, 'No messages to process - chat is empty');
     toast('No messages to scan for scene breaks', 'info');
+    return;
+  }
+
+  const queueStats = getQueueStats();
+  const queueEmpty = queueStats.pending === 0 && queueStats.in_progress === 0;
+  if (!queueEmpty) {
+    debug(SUBSYSTEM.SCENE, `Queue not empty - ${queueStats.pending} pending, ${queueStats.in_progress} in progress`);
+    toast(`Cannot scan while queue is processing (${queueStats.pending + queueStats.in_progress} operations remaining)`, 'warning');
     return;
   }
 
