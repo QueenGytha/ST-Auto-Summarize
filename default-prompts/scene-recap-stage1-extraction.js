@@ -1,19 +1,19 @@
 export const scene_recap_stage1_extraction_prompt = `ROLE: Extract significant content from scene into facets. Focus on MAJOR events, skip minor choreography.
 
-ENTITY TYPES (for classifying state/stance/voice/appearance):
+ENTITY TYPES (use these for t field in state/stance/voice/appearance):
 {{lorebook_entry_types_with_guidance}}
 
 OUTPUT FORMAT:
 {
   "sn": "Short scene title",
-  "plot": [],
-  "goals": [],
-  "reveals": [],
-  "state": [],
-  "stance": [],
-  "voice": [],
-  "appearance": [],
-  "verbatim": []
+  "plot": ["outcome or realization"],
+  "goals": ["Character: intention"],
+  "reveals": ["fact established"],
+  "state": [{"t": "type", "n": "Entity", "c": "condition"}],
+  "stance": [{"t": "type", "n": "Entity", "toward": "Other", "c": "dynamic"}],
+  "voice": [{"t": "type", "n": "Speaker", "q": "quote", "ctx": "context"}],
+  "appearance": [{"t": "type", "n": "Entity", "c": "description"}],
+  "verbatim": ["exact text"]
 }
 
 ---------------- SCENE ----------------
@@ -25,32 +25,35 @@ OUTPUT FORMAT:
 
 SN: 3-5 word title.
 
-PLOT: Outcomes, realizations, pivotal moments.
-- What happened AND what was learned/decided
-- Skip minor actions that don't advance the story
+PLOT: Outcomes, realizations, pivotal moments. Skip minor actions.
 
-GOALS: Active intentions. Drop achieved/abandoned.
-- "Character: intention"
-- Multiple goals per character allowed if distinct
+GOALS: Active intentions. Drop achieved/abandoned. Multiple per character if distinct.
 
-REVEALS: Facts established or demonstrated.
-- World mechanics, magic rules, character backstory shown/stated here
+REVEALS: Facts established - world mechanics, magic rules, backstory shown here.
 
-STATE: Durable conditions. Skip transient.
-- Will this still be true next scene? No → skip
-- "Entity: condition"
+STATE: Durable conditions only (still true next scene?).
+- t = entity type from list above
+- n = entity name
+- c = condition
 
-STANCE: Relationship dynamics.
-- "A toward B: dynamic"
-- Include shifts if the dynamic changed during scene
+STANCE: Relationship dynamics and shifts.
+- t = type of the entity whose stance is described
+- n = entity holding the stance
+- toward = target of stance
+- c = the dynamic
 
 VOICE: ONE quote per distinct BEHAVIOR demonstrated.
-- "Speaker: 'quote' (context: what prompted this / what it reveals)"
-- DEDUP BY BEHAVIOR: despair shown 4x? ONE despair quote. Defiance AND despair? One of each.
-- Context is REQUIRED - quote alone is meaningless without situation
+- t = speaker's entity type
+- n = speaker name
+- q = the quote
+- ctx = what prompted this / what it reveals (REQUIRED)
+- DEDUP BY BEHAVIOR: despair shown 4x? ONE despair quote.
 
 APPEARANCE: Physical descriptions worth remembering.
+- t = entity type
+- n = entity name
+- c = description
 
-VERBATIM: Exact text of in-world written items (letters, signs, contracts). Copy word-for-word.
+VERBATIM: Exact text of in-world written items (letters, signs, contracts).
 
 Output JSON only.`;

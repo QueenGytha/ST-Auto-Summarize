@@ -1,9 +1,10 @@
 // Stage 2: Condense and format
 // MACROS: {{extracted_data}}, {{lorebook_entry_types_with_guidance}}
+// INPUT: Stage 1 structured facets with entity types pre-assigned
 
-export const scene_recap_stage2_organize_prompt = `ROLE: Transform extracted facets into compact structured output.
+export const scene_recap_stage2_organize_prompt = `ROLE: Merge extracted facets by entity into compact output.
 
-ENTITY TYPES FOR SL ENTRIES:
+VALID ENTITY TYPES:
 {{lorebook_entry_types_with_guidance}}
 
 OUTPUT FORMAT:
@@ -12,7 +13,7 @@ OUTPUT FORMAT:
   "sl": [{ "t": "type", "n": "EntityName", "c": "combined content", "k": ["keywords"] }]
 }
 
----------------- EXTRACTED DATA ----------------
+---------------- EXTRACTED DATA (with entity types pre-assigned) ----------------
 <EXTRACTED>
 {{extracted_data}}
 </EXTRACTED>
@@ -20,18 +21,17 @@ OUTPUT FORMAT:
 ---------------- TRANSFORMATION RULES ----------------
 
 RC (compact recap - FRAGMENTS, NOT PROSE):
-- STYLE: Fragments; semicolons; no articles/filler words
-- DEV: Outcomes and state changes only. No steps/process toward outcomes.
-- PEND: Active goals as "Actor: goal"
-- NO PROSE. NO "The". NO flowing narrative. TELEGRAPHIC.
-Example: "DEV: Village destroyed; villagers kidnapped; Rance (40, headman) caused destruction via awakened Mage-Gift; Senta Chose Rance\\nPEND: Rance: reach Haven with evidence; Senta: stabilize Rance's Gift"
+- DEV: plot[] + reveals[] condensed. Outcomes only, no process.
+- PEND: goals[] as "Actor: goal"
+- STYLE: Fragments; semicolons; no articles. TELEGRAPHIC.
+Example: "DEV: Village destroyed; Rance caused it via awakened Mage-Gift; Senta Chose Rance\\nPEND: Rance: reach Haven; Senta: stabilize Gift"
 
-SL (entity entries - ONE per entity):
-- Group ALL facets for same entity into ONE entry
-- t = entity type from list above (NEVER "recap")
+SL (merge by entity name):
+- Group state[]/stance[]/voice[]/appearance[] entries sharing same n value
+- t = use the t value from input (already classified)
 - n = entity name exactly as appears
-- c = COMPACT combined content: state + appearance + stance + voice (with context)
-- k = [entity name, aliases, key identifiers]
-- VOICE IN C: Include quote WITH its context. Format: 'quote' (context). Max 1-2 quotes per entity.
+- c = merged: state + appearance + stance + voice quote with ctx
+- k = [entity name, aliases]
+- Max 1-2 voice quotes per entity, always with context
 
 Output JSON only.`;
