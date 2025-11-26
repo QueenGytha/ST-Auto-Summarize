@@ -16,6 +16,7 @@ import { getEntryDefaultsFromSettings } from './entryDefaults.js';
 
 import { SUBSYSTEM } from './index.js';
 import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.js';
+import { build as buildLorebookEntryTypesWithGuidance } from './macros/lorebook_entry_types_with_guidance.js';
 import { build as buildNewEntry } from './macros/new_entry.js';
 import { build as buildNewEntries } from './macros/new_entries.js';
 import { build as buildCandidateRegistry } from './macros/candidate_registry.js';
@@ -637,6 +638,7 @@ settings )
   const payload = buildNewEntryPayload(normalizedEntry);
   const params = {
     lorebook_entry_types: buildLorebookEntryTypes(typeList),
+    lorebook_entry_types_with_guidance: buildLorebookEntryTypesWithGuidance(typeList),
     new_entry: buildNewEntry(payload),
     candidate_registry: buildCandidateRegistry(registryListing)
   };
@@ -712,8 +714,10 @@ settings )
 {
   const payload = buildNewEntryPayload(normalizedEntry);
   const promptTemplate = settings?.lorebook_entry_deduplicate_prompt || '';
+  const typeList = singleType ? [{ name: singleType }] : [];
   const params = {
-    lorebook_entry_types: buildLorebookEntryTypes(singleType ? [{ name: singleType }] : []),
+    lorebook_entry_types: buildLorebookEntryTypes(typeList),
+    lorebook_entry_types_with_guidance: buildLorebookEntryTypesWithGuidance(typeList),
     new_entry: buildNewEntry(payload),
     lorebook_entry_lookup_synopsis: buildLorebookEntryLookupSynopsis(lorebookEntryLookupSynopsis),
     candidate_entries: buildCandidateEntries(candidateEntries)
@@ -840,6 +844,7 @@ export async function runBulkRegistryPopulation(entriesArray , typeList , settin
 
   const params = {
     lorebook_entry_types: buildLorebookEntryTypes(typeList),
+    lorebook_entry_types_with_guidance: buildLorebookEntryTypesWithGuidance(typeList),
     new_entries: buildNewEntries(entriesArray)
   };
   const prompt = await substitute_params(promptTemplate, params);
