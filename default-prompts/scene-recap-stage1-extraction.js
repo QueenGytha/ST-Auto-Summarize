@@ -43,7 +43,7 @@ STANCE: Relationship dynamics and shifts.
 - toward = target of stance
 - c = the dynamic
 
-VOICE: ONE quote per distinct BEHAVIOR demonstrated.
+VOICE: ONE quote per distinct BEHAVIOR per entity.
 - t = speaker's entity type
 - n = speaker name
 - q = the quote

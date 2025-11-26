@@ -32,6 +32,6 @@ SL (merge by entity name):
 - n = entity name exactly as appears
 - c = merged: state + appearance + stance + voice (quote with context)
 - k = [entity name, aliases]
-- Voice: ONE quote per distinct BEHAVIOR (same behavior = duplicate, drop)
+- Voice: ONE quote per distinct BEHAVIOR per entity (same behavior = duplicate, drop)
 
 Output JSON only.`;
