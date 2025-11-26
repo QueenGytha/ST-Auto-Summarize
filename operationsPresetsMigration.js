@@ -3,6 +3,7 @@ import { get_settings, set_settings, log, SUBSYSTEM, saveSettingsDebounced, defa
 
 const OPERATION_TYPES = [
   'scene_recap',
+  'organize_scene_recap',
   'scene_recap_error_detection',
   'auto_scene_break',
   'running_scene_recap',

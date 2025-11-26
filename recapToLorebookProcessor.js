@@ -15,14 +15,7 @@ import {
 import { getEntryDefaultsFromSettings } from './entryDefaults.js';
 
 import { SUBSYSTEM } from './index.js';
-import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.js';
-import { build as buildLorebookEntryTypesWithGuidance } from './macros/lorebook_entry_types_with_guidance.js';
-import { build as buildNewEntry } from './macros/new_entry.js';
-import { build as buildNewEntries } from './macros/new_entries.js';
-import { build as buildCandidateRegistry } from './macros/candidate_registry.js';
-import { build as buildCandidateEntries } from './macros/candidate_entries.js';
-import { build as buildLorebookEntryLookupSynopsis } from './macros/lorebook_entry_lookup_synopsis.js';
-import { substitute_params } from './promptUtils.js';
+import { buildAllMacroParams, substitute_params } from './macros/index.js';
 
 import {
   FULL_COMPLETION_PERCENTAGE,
@@ -636,12 +629,12 @@ settings )
     return { type: '', synopsis: '', sameEntityUids: [], needsFullContextUids: [] };
   }
   const payload = buildNewEntryPayload(normalizedEntry);
-  const params = {
-    lorebook_entry_types: buildLorebookEntryTypes(typeList),
-    lorebook_entry_types_with_guidance: buildLorebookEntryTypesWithGuidance(typeList),
-    new_entry: buildNewEntry(payload),
-    candidate_registry: buildCandidateRegistry(registryListing)
-  };
+  // Build all macro values from context - all macros available on all prompts
+  const params = buildAllMacroParams({
+    typeDefinitions: typeList,
+    newEntry: payload,
+    registryListing
+  });
   const prompt = await substitute_params(promptTemplate, params);
 
   const config = {
@@ -715,13 +708,13 @@ settings )
   const payload = buildNewEntryPayload(normalizedEntry);
   const promptTemplate = settings?.lorebook_entry_deduplicate_prompt || '';
   const typeList = singleType ? [{ name: singleType }] : [];
-  const params = {
-    lorebook_entry_types: buildLorebookEntryTypes(typeList),
-    lorebook_entry_types_with_guidance: buildLorebookEntryTypesWithGuidance(typeList),
-    new_entry: buildNewEntry(payload),
-    lorebook_entry_lookup_synopsis: buildLorebookEntryLookupSynopsis(lorebookEntryLookupSynopsis),
-    candidate_entries: buildCandidateEntries(candidateEntries)
-  };
+  // Build all macro values from context - all macros available on all prompts
+  const params = buildAllMacroParams({
+    typeDefinitions: typeList,
+    newEntry: payload,
+    synopsis: lorebookEntryLookupSynopsis,
+    candidateEntries
+  });
   return await substitute_params(promptTemplate, params);
 }
 
@@ -842,11 +835,11 @@ export async function runBulkRegistryPopulation(entriesArray , typeList , settin
     return [];
   }
 
-  const params = {
-    lorebook_entry_types: buildLorebookEntryTypes(typeList),
-    lorebook_entry_types_with_guidance: buildLorebookEntryTypesWithGuidance(typeList),
-    new_entries: buildNewEntries(entriesArray)
-  };
+  // Build all macro values from context - all macros available on all prompts
+  const params = buildAllMacroParams({
+    typeDefinitions: typeList,
+    newEntries: entriesArray
+  });
   const prompt = await substitute_params(promptTemplate, params);
 
   const config = {

@@ -29,6 +29,7 @@ const OPERATION_TYPES = [
   'auto_scene_break',
   'scene_recap_error_detection',
   'scene_recap',
+  'organize_scene_recap',
   'running_scene_recap',
   'auto_lorebooks_recap_lorebook_entry_lookup',
   'auto_lorebooks_recap_lorebook_entry_deduplicate',
@@ -518,7 +519,8 @@ async function populateCompletionPresetDropdown() {
 async function openArtifactEditor(operationType) {
   const operationNames = {
     'scene_recap': 'Scene Recap (Stage 1: Extraction)',
-    'parse_scene_recap': 'Parse Scene Recap (Stage 2: Filtering)',
+    'organize_scene_recap': 'Organize Scene Recap (Stage 2: Organization)',
+    'parse_scene_recap': 'Parse Scene Recap (Stage 3: Deduplication)',
     'scene_recap_error_detection': 'Scene Recap Error Detection',
     'auto_scene_break': 'Auto Scene Break Detection',
     'running_scene_recap': 'Running Scene Recap',

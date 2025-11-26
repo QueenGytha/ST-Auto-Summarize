@@ -190,10 +190,26 @@
                             </select>
                         </div>
 
-                        <!-- Parse Scene Recap (Stage 2: Filtering) -->
+                        <!-- Organize Scene Recap (Stage 2: Organization) -->
+                        <div class="auto_recap_operation_type_section" data-testid="operation-type-organize-scene-recap">
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="gap: 5px;">
+                                <span>Organize Scene Recap (Stage 2: Organization):</span>
+                                <div style="display: flex; gap: 5px;">
+                                    <button data-operation-type="organize_scene_recap" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-organize-scene-recap" title="Edit this artifact"></button>
+                                    <button data-operation-type="organize_scene_recap" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-organize-scene-recap" title="Rename this artifact" disabled></button>
+                                    <button data-operation-type="organize_scene_recap" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-organize-scene-recap" title="Delete this artifact" disabled></button>
+                                    <button data-operation-type="organize_scene_recap" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-organize-scene-recap" title="Duplicate this artifact"></button>
+                                </div>
+                            </div>
+                            <select id="auto_recap_artifact_organize_scene_recap" data-testid="artifact-organize-scene-recap" class="text_pole" style="margin-top: 5px;">
+                                <option value="Default">Default</option>
+                            </select>
+                        </div>
+
+                        <!-- Parse Scene Recap (Stage 3: Deduplication) -->
                         <div class="auto_recap_operation_type_section" data-testid="operation-type-parse-scene-recap">
                             <div class="flex-container justifyspacebetween alignitemscenter" style="gap: 5px;">
-                                <span>Parse Scene Recap (Stage 2: Filtering):</span>
+                                <span>Parse Scene Recap (Stage 3: Deduplication):</span>
                                 <div style="display: flex; gap: 5px;">
                                     <button data-operation-type="parse_scene_recap" class="auto_recap_artifact_edit menu_button fa-solid fa-pencil" data-testid="artifact-edit-parse-scene-recap" title="Edit this artifact"></button>
                                     <button data-operation-type="parse_scene_recap" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-parse-scene-recap" title="Rename this artifact" disabled></button>

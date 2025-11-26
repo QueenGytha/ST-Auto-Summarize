@@ -82,6 +82,67 @@ export function buildMacroValue(macroName, ...args) {
   return builder(...args);
 }
 
+// Mapping from context field names to macro names
+// This allows buildAllMacroParams to know which context field feeds which macro
+const CONTEXT_TO_MACRO_MAP = {
+  typeDefinitions: ['lorebook_entry_types', 'lorebook_entry_types_with_guidance'],
+  activeEntries: ['active_setting_lore'],
+  candidateEntries: ['candidate_entries'],
+  registryListing: ['candidate_registry'],
+  currentRunningRecap: ['current_running_recap'],
+  sceneObjects: ['message', 'scene_messages'],
+  formattedMessages: ['messages'],
+  prefillText: ['prefill'],
+  minimumSceneLength: ['minimum_scene_length'],
+  earliestAllowedBreak: ['earliest_allowed_break'],
+  existingContent: ['existing_content'],
+  newContent: ['new_content'],
+  entryName: ['entry_name'],
+  newEntry: ['new_entry'],
+  newEntries: ['new_entries'],
+  sceneRecaps: ['scene_recaps'],
+  synopsis: ['lorebook_entry_lookup_synopsis'],
+  extractedData: ['extracted_data']
+};
+
+/**
+ * Build all macro params from a context object
+ * This allows operations to pass all available data and get all possible macro values
+ * Macros without required data will return empty string (safe - just not substituted)
+ *
+ * @param {Object} context - Object containing any of: typeDefinitions, activeEntries, candidateEntries,
+ *   registryListing, currentRunningRecap, sceneObjects, formattedMessages, prefillText,
+ *   minimumSceneLength, earliestAllowedBreak, existingContent, newContent, entryName,
+ *   newEntry, newEntries, sceneRecaps, synopsis, extractedData
+ * @returns {Object} Params object with all macro values that can be built from the context
+ */
+export function buildAllMacroParams(context) {
+  const params = {};
+
+  for (const [contextField, macroNames] of Object.entries(CONTEXT_TO_MACRO_MAP)) {
+    const value = context[contextField];
+    // Skip if context doesn't have this field
+    if (value === undefined) continue;
+
+    for (const macroName of macroNames) {
+      const builder = macroBuilders[macroName];
+      if (builder) {
+        // Build the macro value (validation happens inside builder)
+        params[macroName] = builder(value);
+      }
+    }
+  }
+
+  // Handle extracted_data specially - it needs JSON.stringify
+  if (context.extractedData !== undefined) {
+    params.extracted_data = typeof context.extractedData === 'string'
+      ? context.extractedData
+      : JSON.stringify(context.extractedData, null, 2);
+  }
+
+  return params;
+}
+
 // Re-export substitute functions from promptUtils
 export { substitute_params, substitute_conditionals } from '../promptUtils.js';
 `;

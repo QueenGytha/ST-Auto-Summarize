@@ -3,10 +3,7 @@
 
 import { SUBSYSTEM } from './index.js';
 import { DEBUG_OUTPUT_LONG_LENGTH, DEBUG_OUTPUT_MEDIUM_LENGTH, DEFAULT_COMPACTION_THRESHOLD } from './constants.js';
-import { build as buildExistingContent } from './macros/existing_content.js';
-import { build as buildNewContent } from './macros/new_content.js';
-import { build as buildEntryName } from './macros/entry_name.js';
-import { substitute_params } from './promptUtils.js';
+import { buildAllMacroParams, substitute_params } from './macros/index.js';
 
 // Will be imported from index.js via barrel exports
 let log , debug , error ; // Logging functions - any type is legitimate
@@ -94,13 +91,15 @@ async function createMergePrompt(existingContent , newContent , entryName  = '')
   debug('Merge prompt template first 300 chars:', template.slice(0, DEBUG_OUTPUT_LONG_LENGTH));
   debug('Entry name being passed:', entryName);
 
-  const params = {
-    existing_content: buildExistingContent(existingContent),
-    current_content: buildExistingContent(existingContent),
-    new_content: buildNewContent(newContent),
-    new_update: buildNewContent(newContent),
-    entry_name: buildEntryName(entryName)
-  };
+  // Build all macro values from context - all macros available on all prompts
+  const params = buildAllMacroParams({
+    existingContent,
+    newContent,
+    entryName
+  });
+  // Add aliases for backwards compatibility
+  params.current_content = params.existing_content;
+  params.new_update = params.new_content;
   const prompt = await substitute_params(template, params);
 
   return { prompt, prefill, config };
@@ -528,10 +527,11 @@ async function createCompactionPrompt(existingContent , entryName  = '') {
   const template = config.prompt || getDefaultCompactionPrompt();
   const prefill = config.prefill || '';
 
-  const params = {
-    existing_content: buildExistingContent(existingContent),
-    entry_name: buildEntryName(entryName)
-  };
+  // Build all macro values from context - all macros available on all prompts
+  const params = buildAllMacroParams({
+    existingContent,
+    entryName
+  });
 
   const prompt = await substitute_params(template, params);
 

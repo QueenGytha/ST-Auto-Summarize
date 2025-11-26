@@ -16,10 +16,7 @@ import {
   detectImportedChatWithMissingLorebook } from
 './index.js';
 import { running_scene_recap_prompt } from './default-prompts/index.js';
-import { build as buildSceneRecaps } from './macros/scene_recaps.js';
-import { build as buildCurrentRunningRecap } from './macros/current_running_recap.js';
-import { build as buildPrefill } from './macros/prefill.js';
-import { substitute_params, substitute_conditionals } from './promptUtils.js';
+import { buildAllMacroParams, substitute_params, substitute_conditionals } from './macros/index.js';
 // Lorebook processing for running recap has been disabled; no queue integration needed here.
 
 function get_running_recap_storage() {
@@ -297,9 +294,6 @@ async function generate_running_scene_recap(skipQueue  = false) {
     return { name, recap: scene_recap };
   });
 
-  // Build scene recaps text using macro
-  const scene_recaps_text = buildSceneRecaps(sceneDataArray);
-
   // Get current running recap if exists
   const current_recap = get_current_running_recap_content();
 
@@ -310,12 +304,12 @@ async function generate_running_scene_recap(skipQueue  = false) {
   const template = config.prompt || running_scene_recap_prompt;
   const prefillSetting = config.prefill;
 
-  // Build macro values
-  const params = {
-    current_running_recap: buildCurrentRunningRecap(current_recap),
-    scene_recaps: scene_recaps_text,
-    prefill: buildPrefill(prefillSetting)
-  };
+  // Build all macro values from context - all macros available on all prompts
+  const params = buildAllMacroParams({
+    sceneRecaps: sceneDataArray,
+    currentRunningRecap: current_recap,
+    prefillText: prefillSetting
+  });
 
   let prompt = substitute_conditionals(template, params);
   prompt = await substitute_params(prompt, params);

@@ -4,18 +4,9 @@
 
 import { resolveOperationConfig } from './operationsPresetsResolution.js';
 import { getActiveLorebooksAtPosition } from './sceneBreak.js';
-import { build as buildActiveSettingLore } from './macros/active_setting_lore.js';
 import { getEntityTypeDefinitionsFromSettings } from './entityTypes.js';
 import { extension_settings } from './index.js';
-import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.js';
-import { substitute_params } from './promptUtils.js';
-
-function buildPrefill(prefill) {
-  if (!prefill || prefill.trim() === '') {
-    return '';
-  }
-  return prefill.trim();
-}
+import { buildAllMacroParams, substitute_params } from './macros/index.js';
 
 /**
  * Prepare the prompt for Stage 2 (PARSE_SCENE_RECAP) operation
@@ -34,19 +25,17 @@ export async function prepareParseScenePrompt(extractedData, ctx, endIdx, get_da
 
   // Get active lore for comparison
   const { entries: activeEntries } = await getActiveLorebooksAtPosition(endIdx, ctx, get_data);
-  const activeSettingLoreText = buildActiveSettingLore(activeEntries);
 
   // Get entity type definitions from artifact system
   const typeDefinitions = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
-  const lorebookTypesMacro = buildLorebookEntryTypes(typeDefinitions);
 
-  // Build macro values for Stage 2
-  const params = {
-    extracted_data: JSON.stringify(extractedData, null, 2),  // Pretty-print for LLM readability
-    active_setting_lore: activeSettingLoreText,
-    lorebook_entry_types: lorebookTypesMacro,
-    prefill: buildPrefill(prefill)
-  };
+  // Build all macro values from context - all macros available on all prompts
+  const params = buildAllMacroParams({
+    extractedData,
+    activeEntries,
+    typeDefinitions,
+    prefillText: prefill
+  });
 
   const prompt = await substitute_params(promptTemplate, params);
 

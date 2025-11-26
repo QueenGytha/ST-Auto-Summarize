@@ -31,12 +31,9 @@ import {
 import { getEntityTypeDefinitionsFromSettings } from './entityTypes.js';
 import { getAttachedLorebook, getLorebookEntries, invalidateLorebookCache, isInternalEntry } from './lorebookManager.js';
 import { restoreCurrentLorebookFromSnapshot } from './lorebookReconstruction.js';
-import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.js';
-import { build as buildLorebookEntryTypesWithGuidance } from './macros/lorebook_entry_types_with_guidance.js';
 import { build as buildSceneMessages } from './macros/scene_messages.js';
 import { build as buildActiveSettingLore } from './macros/active_setting_lore.js';
-import { build as buildPrefill } from './macros/prefill.js';
-import { substitute_params } from './promptUtils.js';
+import { buildAllMacroParams, substitute_params } from './macros/index.js';
 
 import {
   MAX_RECAP_ATTEMPTS,
@@ -671,6 +668,8 @@ saveChatDebounced )
   try {
     const parsed = JSON.parse(sceneRecap);
     if (parsed && typeof parsed === 'object') {
+      // For multi-stage format, display the entire multi-stage object
+      // This preserves stage1, stage2, stage3 outputs for visibility
       // Prettify for display ONLY (original stored value is compact JSON)
       sceneRecap = JSON.stringify(parsed, null, 2);
       isJSON = true;
@@ -1340,14 +1339,13 @@ export async function getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSe
 }
 
 // Helper: Prepare scene recap prompt
-// eslint-disable-next-line complexity, max-params -- Building lorebook and message breakdowns requires detailed processing; 6 params needed for stage selection
+// eslint-disable-next-line complexity -- Building lorebook and message breakdowns requires detailed processing
 export async function prepareScenePrompt(
 sceneObjects ,
 ctx ,
 endIdx ,
 get_data ,
-skipSettingsModification = false,
-isStage1 = false)
+skipSettingsModification = false)
 {
   // Configuration is logged by resolveOperationConfig()
   const config = await resolveOperationConfig('scene_recap');
@@ -1355,8 +1353,6 @@ isStage1 = false)
   const promptTemplate = config.prompt;
   const prefill = config.prefill || "";
   const typeDefinitions = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
-  const lorebookTypesMacro = buildLorebookEntryTypes(typeDefinitions);
-  const lorebookTypesWithGuidanceMacro = buildLorebookEntryTypesWithGuidance(typeDefinitions);
 
   // Get active lorebooks if enabled (now returns { entries, metadata })
   const { entries: activeEntries, metadata: lorebookMetadata } = await getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSettingsModification);
@@ -1423,18 +1419,13 @@ isStage1 = false)
   const messagesTokenCount = count_tokens(formattedMessages);
   const lorebooksTokenCount = count_tokens(activeSettingLoreText);
 
-  // Build macro values
-  const params = {
-    scene_messages: formattedMessages,
-    prefill: buildPrefill(prefill)
-  };
-
-  // Stage 2 only: add lore-related macros
-  if (!isStage1) {
-    params.lorebook_entry_types = lorebookTypesMacro;
-    params.lorebook_entry_types_with_guidance = lorebookTypesWithGuidanceMacro;
-    params.active_setting_lore = activeSettingLoreText;
-  }
+  // Build all macro values from context - all macros available on all prompts
+  const params = buildAllMacroParams({
+    sceneObjects,
+    typeDefinitions,
+    activeEntries,
+    prefillText: prefill
+  });
 
   const prompt = await substitute_params(promptTemplate, params);
 
@@ -1843,7 +1834,7 @@ export async function generateSceneRecap(config) {
   const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
   // Prepare prompt (now returns lorebook metadata and token counts)
-  const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data, false, false);
+  const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data, false);
 
   // Debug: Check if {{user}} is in the final prompt
   if (prompt.includes('{{user}}')) {
@@ -1869,14 +1860,24 @@ export async function generateSceneRecap(config) {
     throw new Error('Operation cancelled by user');
   }
 
-  // Stage 1 (extraction only): Just store extraction JSON and return
-  // Stage 2 (PARSE_SCENE_RECAP) will handle full saving with lorebook operations
+  // Stage 1 (extraction only): Store in multi-stage format
+  // Stage 2 (ORGANIZE_SCENE_RECAP) and Stage 3 (PARSE_SCENE_RECAP) will add their outputs
   debug(SUBSYSTEM.SCENE, `Storing Stage 1 extraction data for index ${index}`);
 
-  // Store extraction data directly (no versioning, no lorebook ops yet)
-  // Set both keys so renderSceneBreak() can display the extraction while Stage 2 is pending
-  set_data(message, SCENE_RECAP_MEMORY_KEY, recap);
-  set_data(message, SCENE_BREAK_RECAP_KEY, recap);
+  // Parse the recap JSON and wrap in multi-stage format
+  let stage1Data;
+  try {
+    stage1Data = JSON.parse(recap);
+  } catch {
+    stage1Data = recap;
+  }
+  const multiStageData = { stage1: stage1Data };
+  const multiStageJson = JSON.stringify(multiStageData);
+
+  // Store extraction data in multi-stage format (no versioning, no lorebook ops yet)
+  // Set both keys so renderSceneBreak() can display the extraction while later stages are pending
+  set_data(message, SCENE_RECAP_MEMORY_KEY, multiStageJson);
+  set_data(message, SCENE_BREAK_RECAP_KEY, multiStageJson);
 
   // Store lorebook metadata for Stage 2 to use when appending message range to scene name
   set_data(message, 'stage1_lorebook_metadata', lorebookMetadata);

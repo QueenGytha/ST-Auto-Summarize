@@ -19,11 +19,7 @@ import {
   prepareScenePrompt,
   calculateSceneRecapTokens } from
 './sceneBreak.js';
-import { build as buildMessages } from './macros/messages.js';
-import { build as buildMinimumSceneLength } from './macros/minimum_scene_length.js';
-import { build as buildEarliestAllowedBreak } from './macros/earliest_allowed_break.js';
-import { build as buildPrefill } from './macros/prefill.js';
-import { substitute_params } from './promptUtils.js';
+import { buildAllMacroParams, substitute_params } from './macros/index.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 3;
 const PREFILL_PREVIEW_LENGTH = 50;
@@ -608,12 +604,14 @@ function calculateLatestAllowedBreak(eligibleFilteredIndices, endIndex, minimumS
 
 async function buildPromptFromTemplate(ctx, promptTemplate, options) {
   const { formattedForPrompt, minimumSceneLength, earliestAllowedBreak, prefill } = options;
-  const params = {
-    messages: buildMessages(formattedForPrompt),
-    minimum_scene_length: buildMinimumSceneLength(minimumSceneLength),
-    earliest_allowed_break: buildEarliestAllowedBreak(earliestAllowedBreak),
-    prefill: buildPrefill(prefill)
-  };
+
+  // Build all macro values from context - all macros available on all prompts
+  const params = buildAllMacroParams({
+    formattedMessages: formattedForPrompt,
+    minimumSceneLength,
+    earliestAllowedBreak,
+    prefillText: prefill
+  });
 
   return await substitute_params(promptTemplate, params);
 }

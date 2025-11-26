@@ -1039,10 +1039,10 @@ export function registerAllOperationHandlers() {
       // Get scene range from Stage 1 lorebook metadata for display
       const { startIdx, endIdx } = getSceneRangeFromMetadata(index);
 
-      // Queue Stage 2 (PARSE_SCENE_RECAP) to filter and format the extracted data
-      debug(SUBSYSTEM.QUEUE, `Queueing PARSE_SCENE_RECAP for scene at index ${index} (range: ${startIdx}-${endIdx})`);
+      // Queue Stage 2 (ORGANIZE_SCENE_RECAP) to filter and organize the extracted data
+      debug(SUBSYSTEM.QUEUE, `Queueing ORGANIZE_SCENE_RECAP for scene at index ${index} (range: ${startIdx}-${endIdx})`);
 
-      const parseMetadata = {
+      const organizeMetadata = {
         manual: operation.metadata?.manual === true,
         // Include scene range for UI display
         start_index: startIdx,
@@ -1051,9 +1051,9 @@ export function registerAllOperationHandlers() {
 
       // Pass through backwards chain metadata if present
       if (operation.metadata.backwards_chain) {
-        parseMetadata.backwards_chain = true;
-        parseMetadata.backwards_chain_remaining = operation.metadata.backwards_chain_remaining;
-        parseMetadata.backwards_chain_forward_continuation = operation.metadata.backwards_chain_forward_continuation;
+        organizeMetadata.backwards_chain = true;
+        organizeMetadata.backwards_chain_remaining = operation.metadata.backwards_chain_remaining;
+        organizeMetadata.backwards_chain_forward_continuation = operation.metadata.backwards_chain_forward_continuation;
       }
 
       // Update GENERATE_SCENE_RECAP operation metadata with scene range
@@ -1065,13 +1065,13 @@ export function registerAllOperationHandlers() {
       }
 
       await enqueueOperation(
-        OperationType.PARSE_SCENE_RECAP,
+        OperationType.ORGANIZE_SCENE_RECAP,
         { index },
         {
           priority: 14,
           dependencies: [operation.id],
           queueVersion: operation.queueVersion,
-          metadata: parseMetadata
+          metadata: organizeMetadata
         }
       );
 
@@ -1140,8 +1140,149 @@ export function registerAllOperationHandlers() {
     }
   });
 
-  // Parse scene recap (Stage 2: filtering and formatting)
-  // eslint-disable-next-line complexity -- Stage 2 handler requires validation, LLM call, and conditional queueing logic
+  // Organize scene recap (Stage 2: filter and organize extracted data)
+  registerOperationHandler(OperationType.ORGANIZE_SCENE_RECAP, async (operation) => {
+    const { index } = operation.params;
+    const signal = getAbortSignal(operation);
+    debug(SUBSYSTEM.QUEUE, `Executing ORGANIZE_SCENE_RECAP for index ${index}`);
+    toast(`Organizing scene recap for message ${index}...`, 'info');
+
+    try {
+      const ctx = getContext();
+      const message = ctx.chat[index];
+      if (!message) {
+        throw new Error(`Message at index ${index} not found`);
+      }
+
+      // Read Stage 1 extraction data
+      const stage1DataRaw = get_data(message, 'scene_recap_memory');
+      if (!stage1DataRaw) {
+        throw new Error(`No Stage 1 data found for message ${index}`);
+      }
+
+      // Parse Stage 1 output - handle both multi-stage and legacy formats
+      let stage1Data;
+      try {
+        const parsed = JSON.parse(stage1DataRaw);
+        // Multi-stage format has stage1 key, legacy format is the data directly
+        stage1Data = parsed.stage1 || parsed;
+      } catch (err) {
+        throw new Error(`Failed to parse Stage 1 data: ${err.message}`);
+      }
+
+      debug(SUBSYSTEM.QUEUE, `Parsed Stage 1 data for message ${index}`);
+
+      // Get lorebook metadata from Stage 1
+      const lorebookMetadata = get_data(message, 'stage1_lorebook_metadata') || {};
+
+      // Prepare Stage 2 (organize) prompt
+      const { prepareOrganizeScenePrompt } = await import('./prepareOrganizeScenePrompt.js');
+      const { prompt, prefill } = await prepareOrganizeScenePrompt(stage1Data, ctx);
+
+      // Get config for connection profile
+      const config = await resolveOperationConfig('organize_scene_recap');
+      const profile_name = config.connection_profile || '';
+      const preset_name = config.completion_preset_name || '';
+      const include_preset_prompts = config.include_preset_prompts || false;
+
+      // Resolve profileId using profileResolution
+      const { resolveProfileId } = await import('./profileResolution.js');
+      const profileId = resolveProfileId(profile_name);
+
+      // Set operation context suffix for ST_METADATA (message range)
+      const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+      const endIdx = index;
+      const startIdx = lorebookMetadata?.startIdx ?? endIdx;
+      setOperationSuffix(`-${startIdx}-${endIdx}`);
+
+      // Make LLM request
+      const { sendLLMRequest } = await import('./llmClient.js');
+      const options = {
+        includePreset: include_preset_prompts,
+        preset: preset_name,
+        prefill,
+        trimSentences: false
+      };
+
+      let rawResponse;
+      try {
+        rawResponse = await sendLLMRequest(profileId, prompt, OperationType.ORGANIZE_SCENE_RECAP, options);
+      } finally {
+        clearOperationSuffix();
+      }
+      debug(SUBSYSTEM.SCENE, "Stage 2 (organize) AI response:", rawResponse);
+
+      // Check if operation was cancelled during execution
+      throwIfAborted(signal, 'ORGANIZE_SCENE_RECAP', 'LLM call');
+
+      // Extract token breakdown from response
+      const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
+      const tokenBreakdown = extractTokenBreakdownFromResponse(rawResponse);
+
+      // Store token breakdown in operation metadata
+      if (tokenBreakdown) {
+        const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+        const tokenMetadata = formatTokenBreakdownForMetadata(tokenBreakdown, {
+          max_context: tokenBreakdown.max_context,
+          max_tokens: tokenBreakdown.max_tokens
+        });
+        await updateOperationMetadata(operation.id, tokenMetadata);
+      }
+
+      // Extract and validate JSON
+      const { extractJsonFromResponse } = await import('./utils.js');
+      const stage2Data = extractJsonFromResponse(rawResponse, {
+        requiredFields: [],
+        context: 'Stage 2 scene recap organization'
+      });
+
+      // Store multi-stage format with stage1 and stage2
+      const multiStageData = {
+        stage1: stage1Data,
+        stage2: stage2Data
+      };
+      set_data(message, 'scene_recap_memory', JSON.stringify(multiStageData));
+      saveChatDebounced();
+
+      toast(`✓ Stage 2 organization complete for message ${index}`, 'success');
+
+      // Queue Stage 3 (PARSE_SCENE_RECAP) to deduplicate and format
+      debug(SUBSYSTEM.QUEUE, `Queueing PARSE_SCENE_RECAP for scene at index ${index}`);
+
+      const parseMetadata = {
+        manual: operation.metadata?.manual === true,
+        start_index: startIdx,
+        end_index: endIdx
+      };
+
+      // Pass through backwards chain metadata if present
+      if (operation.metadata.backwards_chain) {
+        parseMetadata.backwards_chain = true;
+        parseMetadata.backwards_chain_remaining = operation.metadata.backwards_chain_remaining;
+        parseMetadata.backwards_chain_forward_continuation = operation.metadata.backwards_chain_forward_continuation;
+      }
+
+      await enqueueOperation(
+        OperationType.PARSE_SCENE_RECAP,
+        { index },
+        {
+          priority: 14,
+          dependencies: [operation.id],
+          queueVersion: operation.queueVersion,
+          metadata: parseMetadata
+        }
+      );
+
+      return { organized: stage2Data };
+    } catch (err) {
+      error(SUBSYSTEM.QUEUE, `Stage 2 organization failed for message ${index}:`, err.message);
+      toast(`⚠ Failed to organize scene recap for message ${index}: ${err.message}`, 'error');
+      throw err;
+    }
+  });
+
+  // Parse scene recap (Stage 3: deduplication and final formatting)
+  // eslint-disable-next-line complexity -- Stage 3 handler requires validation, LLM call, and conditional queueing logic
   registerOperationHandler(OperationType.PARSE_SCENE_RECAP, async (operation) => {
     const { index } = operation.params;
     const signal = getAbortSignal(operation);
@@ -1155,36 +1296,39 @@ export function registerAllOperationHandlers() {
         throw new Error(`Message at index ${index} not found`);
       }
 
-      // Read extraction data from Stage 1
-      const extractionDataRaw = get_data(message, 'scene_recap_memory');
-      if (!extractionDataRaw) {
-        throw new Error(`No extraction data found for message ${index}`);
+      // Read stage data from previous stages
+      const stageDataRaw = get_data(message, 'scene_recap_memory');
+      if (!stageDataRaw) {
+        throw new Error(`No stage data found for message ${index}`);
       }
 
-      // Validate structure (must be Stage 1 extraction, not formatted recap)
-      let extractedData;
+      // Parse and extract stage2 data from multi-stage format
+      let stage2Data;
+      let existingStages;
       try {
-        extractedData = JSON.parse(extractionDataRaw);
-      } catch (err) {
-        throw new Error(`Failed to parse extraction data: ${err.message}`);
-      }
-
-      if (!extractedData.chronological_items || !Array.isArray(extractedData.chronological_items)) {
-        if (extractedData.recap) {
-          throw new Error('Expected raw extracted data but found formatted recap');
+        const parsed = JSON.parse(stageDataRaw);
+        if (parsed.stage2) {
+          // Multi-stage format - use stage2 output for Stage 3 input
+          existingStages = parsed;
+          stage2Data = parsed.stage2;
+        } else {
+          // Legacy format (with or without chronological_items) - wrap as stage1/stage2 and use directly
+          existingStages = { stage1: parsed, stage2: parsed };
+          stage2Data = parsed;
         }
-        throw new Error('Extraction data missing chronological_items array');
+      } catch (err) {
+        throw new Error(`Failed to parse stage data: ${err.message}`);
       }
 
-      debug(SUBSYSTEM.QUEUE, `Parsed ${extractedData.chronological_items.length} chronological items from Stage 1`);
+      debug(SUBSYSTEM.QUEUE, `Parsed Stage 2 data for message ${index}`);
 
       // Get lorebook metadata from Stage 1 (stored temporarily in 'stage1_lorebook_metadata')
       const lorebookMetadata = get_data(message, 'stage1_lorebook_metadata') || {};
       debug(SUBSYSTEM.QUEUE, `Retrieved Stage 1 lorebook metadata: startIdx=${lorebookMetadata?.startIdx}, endIdx=${lorebookMetadata?.endIdx}`);
 
-      // Prepare Stage 2 prompt (endIdx is the scene break message index)
+      // Prepare Stage 3 prompt (endIdx is the scene break message index)
       const endIdx = index;
-      const { prompt, prefill } = await prepareParseScenePrompt(extractedData, ctx, endIdx, get_data);
+      const { prompt, prefill } = await prepareParseScenePrompt(stage2Data, ctx, endIdx, get_data);
 
       // Get config for connection profile
       const config = await resolveOperationConfig('parse_scene_recap');
@@ -1216,7 +1360,7 @@ export function registerAllOperationHandlers() {
       } finally {
         clearOperationSuffix();
       }
-      debug(SUBSYSTEM.SCENE, "Stage 2 AI response:", rawResponse);
+      debug(SUBSYSTEM.SCENE, "Stage 3 AI response:", rawResponse);
 
       // Check if operation was cancelled during execution
       throwIfAborted(signal, 'PARSE_SCENE_RECAP', 'LLM call');
@@ -1238,11 +1382,11 @@ export function registerAllOperationHandlers() {
       // Extract and validate JSON
       const { extractJsonFromResponse } = await import('./utils.js');
 
-      // Stage 2 uses compact keys to save tokens: sn/rc/sl
+      // Stage 3 uses compact keys to save tokens: sn/rc/sl
       // Accept both compact and full formats, normalize to full format
       const parsed = extractJsonFromResponse(rawResponse, {
         requiredFields: [],  // No required fields - accept any valid JSON
-        context: 'Stage 2 scene recap filtering'
+        context: 'Stage 3 scene recap deduplication'
       });
 
       // Normalize compact keys to full keys
@@ -1269,13 +1413,13 @@ export function registerAllOperationHandlers() {
           recap: parsed.rc,
           setting_lore: settingLore
         };
-        debug(SUBSYSTEM.SCENE, "Stage 2 returned compact format, normalized to full format");
+        debug(SUBSYSTEM.SCENE, "Stage 3 returned compact format, normalized to full format");
       } else if (parsed.scene_name !== undefined || parsed.recap !== undefined || parsed.setting_lore !== undefined) {
         // Full format
         normalized = parsed;
-        debug(SUBSYSTEM.SCENE, "Stage 2 returned full format");
+        debug(SUBSYSTEM.SCENE, "Stage 3 returned full format");
       } else {
-        throw new Error("Stage 2 must return either compact format (sn/rc/sl) or full format (scene_name/recap/setting_lore)");
+        throw new Error("Stage 3 must return either compact format (sn/rc/sl) or full format (scene_name/recap/setting_lore)");
       }
 
       // Validate required fields after normalization
@@ -1289,8 +1433,13 @@ export function registerAllOperationHandlers() {
         throw new Error(`setting_lore (or sl) must be an array, got ${typeof normalized.setting_lore}`);
       }
 
-      const recap = JSON.stringify(normalized);
-      debug(SUBSYSTEM.SCENE, `Stage 2 formatting complete for message ${index}`);
+      // Store in multi-stage format with all three stages
+      const finalMultiStageData = {
+        ...existingStages,
+        stage3: normalized
+      };
+      const recap = JSON.stringify(finalMultiStageData);
+      debug(SUBSYSTEM.SCENE, `Stage 3 formatting complete for message ${index}`);
 
       // Save the formatted recap with full versioning and lorebook operations
       const isManual = operation.metadata?.manual === true;
@@ -1305,7 +1454,7 @@ export function registerAllOperationHandlers() {
         manual: isManual
       });
 
-      // Clean up temporary Stage 1 metadata (no longer needed after Stage 2 completes)
+      // Clean up temporary Stage 1 metadata (no longer needed after Stage 3 completes)
       delete message.extra?.[MODULE_NAME]?.stage1_lorebook_metadata;
       saveChatDebounced();
 

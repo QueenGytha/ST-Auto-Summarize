@@ -2,6 +2,7 @@
 // Each prompt is now in its own file for better organization and maintainability
 
 export { scene_recap_stage1_extraction_prompt } from './scene-recap-stage1-extraction.js';
+export { scene_recap_stage2_organize_prompt } from './scene-recap-stage2-organize.js';
 export { scene_recap_stage2_filtering_prompt } from './scene-recap-stage2-filtering.js';
 export { scene_recap_error_detection_prompt } from './scene-recap-validation.js';
 export { auto_scene_break_detection_prompt } from './auto-scene-break-detection.js';

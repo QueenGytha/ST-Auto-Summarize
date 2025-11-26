@@ -12,6 +12,7 @@ export function scopeToSettings(selector, settingsClass) {
 export function getArtifactSelector(operationType) {
   const selectorMap = {
     'scene_recap': '[data-testid="artifact-scene-recap"]',
+    'organize_scene_recap': '[data-testid="artifact-organize-scene-recap"]',
     'parse_scene_recap': '[data-testid="artifact-parse-scene-recap"]',
     'scene_recap_error_detection': '[data-testid="artifact-scene-recap-error"]',
     'auto_scene_break': '[data-testid="artifact-auto-scene-break"]',
