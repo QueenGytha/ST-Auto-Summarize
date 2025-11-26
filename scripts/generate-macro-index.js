@@ -122,7 +122,9 @@ export function buildAllMacroParams(context) {
   for (const [contextField, macroNames] of Object.entries(CONTEXT_TO_MACRO_MAP)) {
     const value = context[contextField];
     // Skip if context doesn't have this field
-    if (value === undefined) continue;
+    if (value === undefined) {
+      continue;
+    }
 
     for (const macroName of macroNames) {
       const builder = macroBuilders[macroName];

@@ -1379,59 +1379,23 @@ export function registerAllOperationHandlers() {
         await updateOperationMetadata(operation.id, tokenMetadata);
       }
 
-      // Extract and validate JSON
+      // Extract JSON - accept any valid JSON object, no required fields
       const { extractJsonFromResponse } = await import('./utils.js');
-
-      // Stage 3 uses compact keys to save tokens: sn/rc/sl
-      // Accept both compact and full formats, normalize to full format
       const parsed = extractJsonFromResponse(rawResponse, {
-        requiredFields: [],  // No required fields - accept any valid JSON
-        context: 'Stage 3 scene recap deduplication'
+        requiredFields: [],
+        context: 'Stage 3 scene recap'
       });
 
-      // Normalize compact keys to full keys
-      let normalized;
-      if (parsed.sn !== undefined || parsed.rc !== undefined || parsed.sl !== undefined) {
-        // Compact format - normalize top-level and entity-level keys
-        const settingLore = (parsed.sl || []).map(entity => {
-          // Normalize entity keys: t->type, n->name, c->content, k->keywords, u->uid
-          if (entity.t !== undefined || entity.n !== undefined || entity.c !== undefined) {
-            return {
-              type: entity.t,
-              name: entity.n,
-              content: entity.c,
-              keywords: entity.k || [],
-              uid: entity.u
-            };
-          }
-          // Already in full format
-          return entity;
-        });
+      // Store parsed JSON as-is - prompts can output any format
+      // Normalize common fields for display if present, but don't require them
+      const normalized = { ...parsed };
 
-        normalized = {
-          scene_name: parsed.sn,
-          recap: parsed.rc,
-          setting_lore: settingLore
-        };
-        debug(SUBSYSTEM.SCENE, "Stage 3 returned compact format, normalized to full format");
-      } else if (parsed.scene_name !== undefined || parsed.recap !== undefined || parsed.setting_lore !== undefined) {
-        // Full format
-        normalized = parsed;
-        debug(SUBSYSTEM.SCENE, "Stage 3 returned full format");
-      } else {
-        throw new Error("Stage 3 must return either compact format (sn/rc/sl) or full format (scene_name/recap/setting_lore)");
+      // Try to extract scene_name from common field names for display purposes
+      if (normalized.scene_name === undefined && parsed.sn !== undefined) {
+        normalized.scene_name = parsed.sn;
       }
 
-      // Validate required fields after normalization
-      if (!normalized.scene_name || typeof normalized.scene_name !== 'string') {
-        throw new Error("scene_name (or sn) is required and must be a string");
-      }
-      if (!normalized.recap || typeof normalized.recap !== 'string') {
-        throw new Error("recap (or rc) is required and must be a string");
-      }
-      if (!Array.isArray(normalized.setting_lore)) {
-        throw new Error(`setting_lore (or sl) must be an array, got ${typeof normalized.setting_lore}`);
-      }
+      debug(SUBSYSTEM.SCENE, "Stage 3 returned JSON, storing as-is");
 
       // Store in multi-stage format with all three stages
       const finalMultiStageData = {
