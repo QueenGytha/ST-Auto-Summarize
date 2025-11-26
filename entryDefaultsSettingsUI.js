@@ -88,17 +88,17 @@ function refreshArtifactSelector(selectedName = null) {
 function loadCurrentDefaultsToUI() {
   const defaults = getCurrentDefaults();
 
-  $(selectorsExtension.autoLorebooks.entryExcludeRecursion).prop('checked', defaults.exclude_recursion);
-  $(selectorsExtension.autoLorebooks.entryPreventRecursion).prop('checked', defaults.prevent_recursion);
-  $(selectorsExtension.autoLorebooks.entryIgnoreBudget).prop('checked', defaults.ignore_budget);
-  $(selectorsExtension.autoLorebooks.entrySticky).val(defaults.sticky);
+  $(selectorsExtension.lorebook.entryExcludeRecursion).prop('checked', defaults.exclude_recursion);
+  $(selectorsExtension.lorebook.entryPreventRecursion).prop('checked', defaults.prevent_recursion);
+  $(selectorsExtension.lorebook.entryIgnoreBudget).prop('checked', defaults.ignore_budget);
+  $(selectorsExtension.lorebook.entrySticky).val(defaults.sticky);
 }
 
 /**
  * Handle change to exclude_recursion setting
  */
 function onExcludeRecursionChange() {
-  const value = $(selectorsExtension.autoLorebooks.entryExcludeRecursion).prop('checked');
+  const value = $(selectorsExtension.lorebook.entryExcludeRecursion).prop('checked');
   const current = getCurrentDefaults();
   debouncedSave({ ...current, exclude_recursion: value });
 }
@@ -107,7 +107,7 @@ function onExcludeRecursionChange() {
  * Handle change to prevent_recursion setting
  */
 function onPreventRecursionChange() {
-  const value = $(selectorsExtension.autoLorebooks.entryPreventRecursion).prop('checked');
+  const value = $(selectorsExtension.lorebook.entryPreventRecursion).prop('checked');
   const current = getCurrentDefaults();
   debouncedSave({ ...current, prevent_recursion: value });
 }
@@ -116,7 +116,7 @@ function onPreventRecursionChange() {
  * Handle change to ignore_budget setting
  */
 function onIgnoreBudgetChange() {
-  const value = $(selectorsExtension.autoLorebooks.entryIgnoreBudget).prop('checked');
+  const value = $(selectorsExtension.lorebook.entryIgnoreBudget).prop('checked');
   const current = getCurrentDefaults();
   debouncedSave({ ...current, ignore_budget: value });
 }
@@ -125,7 +125,7 @@ function onIgnoreBudgetChange() {
  * Handle change to sticky setting
  */
 function onStickyChange() {
-  const value = Number($(selectorsExtension.autoLorebooks.entrySticky).val()) || 0;
+  const value = Number($(selectorsExtension.lorebook.entrySticky).val()) || 0;
   const current = getCurrentDefaults();
   debouncedSave({ ...current, sticky: value });
 }
@@ -142,10 +142,10 @@ function onArtifactChange() {
  */
 export function initializeEntryDefaultsUI() {
   // Bind change handlers
-  $(document).on('change', selectorsExtension.autoLorebooks.entryExcludeRecursion, onExcludeRecursionChange);
-  $(document).on('change', selectorsExtension.autoLorebooks.entryPreventRecursion, onPreventRecursionChange);
-  $(document).on('change', selectorsExtension.autoLorebooks.entryIgnoreBudget, onIgnoreBudgetChange);
-  $(document).on('input', selectorsExtension.autoLorebooks.entrySticky, onStickyChange);
+  $(document).on('change', selectorsExtension.lorebook.entryExcludeRecursion, onExcludeRecursionChange);
+  $(document).on('change', selectorsExtension.lorebook.entryPreventRecursion, onPreventRecursionChange);
+  $(document).on('change', selectorsExtension.lorebook.entryIgnoreBudget, onIgnoreBudgetChange);
+  $(document).on('input', selectorsExtension.lorebook.entrySticky, onStickyChange);
 
   // Bind artifact selector change
   $(document).on('change', selectorsExtension.operationsPresets.artifactEntryDefaults, onArtifactChange);
