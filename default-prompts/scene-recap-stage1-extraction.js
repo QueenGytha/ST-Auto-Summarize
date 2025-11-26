@@ -1,4 +1,5 @@
 export const scene_recap_stage1_extraction_prompt = `ROLE: Extract significant content from scene into facets. Focus on MAJOR events, skip minor choreography.
+The intent is so a LLM can continue the roleplay accurately using the extracted information when the scene is dropped from context for token efficiency.
 
 ENTITY TYPES (use these for t field in state/stance/voice/appearance):
 {{lorebook_entry_types_with_guidance}}
@@ -11,7 +12,7 @@ OUTPUT FORMAT:
   "reveals": ["fact established"],
   "state": [{"t": "type", "n": "Entity", "c": "condition"}],
   "stance": [{"t": "type", "n": "Entity", "toward": "Other", "c": "dynamic"}],
-  "voice": [{"t": "type", "n": "Speaker", "q": "quote", "ctx": "context"}],
+  "voice": [{"t": "type", "n": "Speaker", "q": "quote", "ctx": "brief context"}],
   "appearance": [{"t": "type", "n": "Entity", "c": "description"}],
   "verbatim": ["exact text"]
 }
