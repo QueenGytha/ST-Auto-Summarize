@@ -1,7 +1,7 @@
 // Stage 2: Condense and format
 // MACROS: {{extracted_data}}, {{lorebook_entry_types_with_guidance}}
 
-export const scene_recap_stage2_organize_prompt = `ROLE: Transform extracted facets into structured output.
+export const scene_recap_stage2_organize_prompt = `ROLE: Transform extracted facets into compact structured output.
 
 ENTITY TYPES FOR SL ENTRIES:
 {{lorebook_entry_types_with_guidance}}
@@ -19,19 +19,18 @@ OUTPUT FORMAT:
 
 ---------------- TRANSFORMATION RULES ----------------
 
-RC (narrative recap):
-- DEV: Combine plot + reveals into flowing narrative
-- PEND: List active goals as "Character: goal"
-- Include dialogue context, relationship dynamics, emotional beats
-- This is narrative summary, not structured data
+RC (compact recap - FRAGMENTS, NOT PROSE):
+- STYLE: Fragments; semicolons; no articles/filler words
+- DEV: Outcomes and state changes only. No steps/process toward outcomes.
+- PEND: Active goals as "Actor: goal"
+- NO PROSE. NO "The". NO flowing narrative. TELEGRAPHIC.
+Example: "DEV: Village destroyed; villagers kidnapped; Rance (40, headman) caused destruction via awakened Mage-Gift; Senta Chose Rance\\nPEND: Rance: reach Haven with evidence; Senta: stabilize Rance's Gift"
 
-SL (entity entries - ONE per entity, combining all facets):
-- Group ALL information about each entity into ONE entry
-- t = entity type from list above (character, location, item, etc. - NEVER "recap")
-- n = entity name exactly as it appears
-- c = COMBINE all facets for that entity: state + appearance + stance + voice quotes
-- k = [entity name, plus any aliases or key identifiers]
-
-KEY: One sl entry per entity. Combine state, appearance, stance, voice for same entity into single entry.
+SL (entity entries - ONE per entity):
+- Group ALL facets for same entity into ONE entry
+- t = entity type from list above (NEVER "recap")
+- n = entity name exactly as appears
+- c = COMPACT combined content: state + appearance + stance + key voice quotes
+- k = [entity name, aliases, key identifiers]
 
 Output JSON only.`;

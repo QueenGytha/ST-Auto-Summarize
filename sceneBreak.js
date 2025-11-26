@@ -1742,14 +1742,39 @@ async function checkLorebookEmptyState(messageIndex, versionIndex) {
   }
 }
 
+// Helper: Normalize and deduplicate sl entries for lorebook processing
+// sl format: { t: type, n: name, c: content, k: keywords }
+// expected format: { name, comment, type, keys, content }
+function normalizeAndDeduplicateEntries(entriesArray) {
+  const seenNames = new Set();
+  const uniqueEntries = [];
+
+  for (const entry of entriesArray) {
+    const rawName = entry.n || entry.name || entry.comment;
+    if (!entry || !rawName) { continue; }
+
+    const entryName = rawName.toLowerCase().trim();
+    if (seenNames.has(entryName)) {
+      debug(SUBSYSTEM.SCENE, `Skipping duplicate lorebook entry: ${rawName}`);
+      continue;
+    }
+    seenNames.add(entryName);
+
+    uniqueEntries.push({
+      name: rawName,
+      comment: rawName,
+      content: entry.c || entry.content || '',
+      type: entry.t || entry.type || 'character',
+      keys: entry.k || entry.keys || [rawName]
+    });
+  }
+
+  return uniqueEntries;
+}
+
 // Helper: Extract lorebooks from recap JSON and queue each as individual operation
 // Note: Recap should already be clean JSON from executeSceneRecapGeneration()
-async function extractAndQueueLorebookEntries(
-recap ,
-messageIndex ,
-versionIndex
-)
-{
+async function extractAndQueueLorebookEntries(recap, messageIndex, versionIndex) {
   debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Starting for message ${messageIndex}, version ${versionIndex}`);
   try {
     const recapHash = computeRecapHash(recap);
@@ -1760,32 +1785,19 @@ versionIndex
     // Parse JSON (should already be clean from generation)
     const parsed = JSON.parse(recap);
 
-    // Expect canonical 'setting_lore' field only (no legacy compatibility)
-    const entriesArray = Array.isArray(parsed.setting_lore) ? parsed.setting_lore : null;
+    // Check for 'sl' (3-stage pipeline) or 'setting_lore' (legacy) or stage3.sl (multi-stage storage)
+    const entriesArray = Array.isArray(parsed.sl) ? parsed.sl
+      : Array.isArray(parsed.stage3?.sl) ? parsed.stage3.sl
+      : Array.isArray(parsed.setting_lore) ? parsed.setting_lore
+      : null;
     if (entriesArray) {
-      debug(SUBSYSTEM.SCENE, `Found ${entriesArray.length} setting_lore entries in scene recap at index ${messageIndex}`);
+      debug(SUBSYSTEM.SCENE, `Found ${entriesArray.length} sl/setting_lore entries in scene recap at index ${messageIndex}`);
 
       // Check if lorebook is empty at scene start (optimization for first scene)
       const lorebookWasEmptyAtSceneStart = await checkLorebookEmptyState(messageIndex, versionIndex);
 
-      // Deduplicate entries by name/comment before queueing
-      const seenNames  = new Set();
-      const uniqueEntries = [];
-
-      for (const entry of entriesArray) {
-        if (entry && (entry.name || entry.comment)) {
-          const entryName = (entry.name || entry.comment).toLowerCase().trim();
-
-          if (seenNames.has(entryName)) {
-            debug(SUBSYSTEM.SCENE, `Skipping duplicate lorebook entry: ${entry.name || entry.comment}`);
-            continue;
-          }
-
-          seenNames.add(entryName);
-          uniqueEntries.push(entry);
-        }
-      }
-
+      // Normalize and deduplicate entries
+      const uniqueEntries = normalizeAndDeduplicateEntries(entriesArray);
       debug(SUBSYSTEM.SCENE, `After deduplication: ${uniqueEntries.length} unique entries (removed ${entriesArray.length - uniqueEntries.length} duplicates)`);
 
       // Queue each unique entry individually and collect operation IDs
@@ -1806,7 +1818,7 @@ versionIndex
       debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] Finished queueing all entries`);
       return lorebookOpIds;
     } else {
-      debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] No setting_lore array found in scene recap at index ${messageIndex}`);
+      debug(SUBSYSTEM.SCENE, `[LOREBOOK EXTRACTION] No sl/setting_lore array found in scene recap at index ${messageIndex}`);
     }
   } catch (err) {
     // Not JSON or parsing failed - skip lorebook processing
