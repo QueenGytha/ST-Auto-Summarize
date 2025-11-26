@@ -420,12 +420,20 @@ function extractRecapFromJSON(scene_recap ) {
   try {
     const parsed = JSON.parse(json_to_parse);
     if (parsed && typeof parsed === 'object') {
-      if (parsed.recap) {
+      // Check for multi-stage format (stage3.rc) first, then legacy recap field
+      const stage3Recap = parsed.stage3?.rc;
+      if (stage3Recap) {
+        extracted_text = stage3Recap;
+        debug(SUBSYSTEM.RUNNING, `Extracted stage3.rc from multi-stage JSON (${extracted_text.length} chars)`);
+      } else if (parsed.recap) {
         extracted_text = parsed.recap;
-        debug(SUBSYSTEM.RUNNING, `Extracted recap field from JSON (${extracted_text.length} chars, excluding lorebooks)`);
+        debug(SUBSYSTEM.RUNNING, `Extracted recap field from JSON (${extracted_text.length} chars)`);
+      } else if (parsed.rc) {
+        extracted_text = parsed.rc;
+        debug(SUBSYSTEM.RUNNING, `Extracted rc field from JSON (${extracted_text.length} chars)`);
       } else {
         extracted_text = "";
-        debug(SUBSYSTEM.RUNNING, `Scene recap is JSON but missing 'recap' property, using empty string`);
+        debug(SUBSYSTEM.RUNNING, `Scene recap is JSON but missing 'recap'/'rc' property, using empty string`);
       }
     }
   } catch (err) {

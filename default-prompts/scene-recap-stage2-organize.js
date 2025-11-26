@@ -8,7 +8,6 @@ ENTITY TYPES (use these as "t" values for sl entries):
 
 OUTPUT FORMAT:
 {
-  "sn": "Scene title",
   "rc": "DEV: ...\\nPEND: ...",
   "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"] }]
 }

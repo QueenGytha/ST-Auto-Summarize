@@ -26,8 +26,6 @@ OUTPUT FORMAT:
 
 ---------------- FILTERING RULES ----------------
 
-SN: Keep as-is.
-
 RC filtering:
 - DEV: Drop developments semantically similar to running recap (same meaning, different words = drop)
 - PEND: Drop goals already tracked in running recap
@@ -39,7 +37,7 @@ SL filtering:
 - Keep entries with genuinely new information
 
 Empty is valid:
-- If all content filtered out, return {"sn": "...", "rc": "", "sl": []}
+- If all content filtered out, return {"rc": "", "sl": []}
 - Empty rc string and empty sl array are acceptable
 
 Output JSON only.`;
