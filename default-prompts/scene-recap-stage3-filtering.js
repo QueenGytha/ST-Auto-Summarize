@@ -37,10 +37,11 @@ SL filtering:
 - Keep entries with genuinely new information
 
 UID field (u) - CRITICAL for correct merging:
-- Include "u" ONLY if entity name EXACTLY matches a setting_lore entry (case-insensitive)
-- Copy the uid attribute from the matching <setting_lore uid="..."> tag
-- OMIT "u" field entirely for new entities not in setting_lore
-- When in doubt, OMIT - wrong UID causes incorrect merge (data corruption)
+- LITERAL STRING MATCH ONLY on the name attribute
+- Individual entity must match individual entry, NOT race/faction/category entries
+- Copy uid from matching <setting_lore name="X" uid="Y"> where X is IDENTICAL string to your n value
+- OMIT "u" entirely if no IDENTICAL name match exists
+- Wrong UID = data corruption. When uncertain, OMIT.
 
 Empty is valid:
 - If all content filtered out, return {"rc": "", "sl": []}
