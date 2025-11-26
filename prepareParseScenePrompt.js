@@ -1,16 +1,17 @@
 // prepareParseScenePrompt.js
-// Prepares the prompt for Stage 2 (PARSE_SCENE_RECAP) operation
-// This stage receives extracted data from Stage 1 and filters/formats it
+// Prepares the prompt for Stage 3 (PARSE_SCENE_RECAP) operation
+// This stage receives organized data from Stage 2 and filters against existing content
 
 import { resolveOperationConfig } from './operationsPresetsResolution.js';
 import { getActiveLorebooksAtPosition } from './sceneBreak.js';
 import { getEntityTypeDefinitionsFromSettings } from './entityTypes.js';
 import { extension_settings } from './index.js';
 import { buildAllMacroParams, substitute_params } from './macros/index.js';
+import { get_current_running_recap_content } from './runningSceneRecap.js';
 
 /**
- * Prepare the prompt for Stage 2 (PARSE_SCENE_RECAP) operation
- * @param {Object} extractedData - The extracted data from Stage 1 (chronological_items array)
+ * Prepare the prompt for Stage 3 (PARSE_SCENE_RECAP) operation
+ * @param {Object} extractedData - The organized data from Stage 2
  * @param {Object} ctx - SillyTavern context
  * @param {number} endIdx - End message index for this scene
  * @param {Function} get_data - Function to get data from messages
@@ -30,8 +31,7 @@ export async function prepareParseScenePrompt(extractedData, ctx, endIdx, get_da
   const typeDefinitions = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
 
   // Get current running recap for semantic deduplication comparison
-  const runningRecapData = ctx.chat_metadata?.auto_recap?.running_scene_recap;
-  const currentRunningRecap = runningRecapData?.recap || '';
+  const currentRunningRecap = get_current_running_recap_content();
 
   // Build all macro values from context - all macros available on all prompts
   const params = buildAllMacroParams({

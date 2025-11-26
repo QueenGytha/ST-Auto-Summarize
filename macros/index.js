@@ -43,11 +43,18 @@ for (const mod of macroModules) {
   macroDescriptions[mod.name] = mod.description;
 }
 
+// Macros where empty string is a valid result (not an error)
+const MACROS_ALLOW_EMPTY = new Set([
+  'current_running_recap',  // First scene has no running recap yet
+  'active_setting_lore',    // No active lore entries yet
+  'prefill'                 // Prefill is optional
+]);
+
 // Validation wrapper for macro builders
 function validateMacroResult(macroName, args, result) {
   const isEmpty = result === null || result === undefined || result === '';
 
-  if (isEmpty) {
+  if (isEmpty && !MACROS_ALLOW_EMPTY.has(macroName)) {
     console.error(`[MACRO ERROR] Macro '${macroName}' returned empty result!`);
     console.error(`  Input args:`, args);
     console.error(`  Result:`, result);
