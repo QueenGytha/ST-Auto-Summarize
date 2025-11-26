@@ -30,7 +30,8 @@ SL (entity entries - ONE per entity):
 - Group ALL facets for same entity into ONE entry
 - t = entity type from list above (NEVER "recap")
 - n = entity name exactly as appears
-- c = COMPACT combined content: state + appearance + stance + key voice quotes
+- c = COMPACT combined content: state + appearance + stance + voice (with context)
 - k = [entity name, aliases, key identifiers]
+- VOICE IN C: Include quote WITH its context. Format: 'quote' (context). Max 1-2 quotes per entity.
 
 Output JSON only.`;

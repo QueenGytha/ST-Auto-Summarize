@@ -44,9 +44,10 @@ STANCE: Relationship dynamics.
 - "A toward B: dynamic"
 - Include shifts if the dynamic changed during scene
 
-VOICE: Pivotal dialogue - declarations, revelations, defining moments.
-- "Speaker: 'quote' (brief context)"
-- Multiple quotes per speaker allowed if distinct moments
+VOICE: ONE quote per distinct BEHAVIOR demonstrated.
+- "Speaker: 'quote' (context: what prompted this / what it reveals)"
+- DEDUP BY BEHAVIOR: despair shown 4x? ONE despair quote. Defiance AND despair? One of each.
+- Context is REQUIRED - quote alone is meaningless without situation
 
 APPEARANCE: Physical descriptions worth remembering.
 

@@ -786,6 +786,19 @@ export async function deleteChatLorebook(lorebookName ) {
 
     if (result) {
       log(`Successfully deleted lorebook: ${lorebookName}`);
+
+      // Clear metadata references to the deleted lorebook
+      if (chat_metadata[METADATA_KEY] === lorebookName) {
+        delete chat_metadata[METADATA_KEY];
+        debug("Cleared lorebook reference from chat metadata");
+      }
+      if (chat_metadata.auto_lorebooks?.lorebookName === lorebookName) {
+        delete chat_metadata.auto_lorebooks.lorebookName;
+        delete chat_metadata.auto_lorebooks.attachedAt;
+        debug("Cleared lorebook reference from extension metadata");
+      }
+      saveMetadata();
+
       return true;
     } else {
       error(`Failed to delete lorebook: ${lorebookName}`);
