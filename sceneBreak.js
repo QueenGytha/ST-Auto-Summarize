@@ -28,7 +28,7 @@ import {
   delete_running_recap_version,
   cleanup_invalid_running_recaps } from
 './runningSceneRecap.js';
-import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
+import { getEntityTypeDefinitionsFromSettings } from './entityTypes.js';
 import { getAttachedLorebook, getLorebookEntries, invalidateLorebookCache, isInternalEntry } from './lorebookManager.js';
 import { restoreCurrentLorebookFromSnapshot } from './lorebookReconstruction.js';
 import { build as buildLorebookEntryTypes } from './macros/lorebook_entry_types.js';
@@ -1353,11 +1353,8 @@ isStage1 = false)
 
   const promptTemplate = config.prompt;
   const prefill = config.prefill || "";
-  const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
-  let lorebookTypesMacro = buildLorebookEntryTypes(typeDefinitions);
-  if (!lorebookTypesMacro) {
-    lorebookTypesMacro = buildLorebookEntryTypes(getConfiguredEntityTypeDefinitions());
-  }
+  const typeDefinitions = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
+  const lorebookTypesMacro = buildLorebookEntryTypes(typeDefinitions);
 
   // Get active lorebooks if enabled (now returns { entries, metadata })
   const { entries: activeEntries, metadata: lorebookMetadata } = await getActiveLorebooksAtPosition(endIdx, ctx, get_data, skipSettingsModification);

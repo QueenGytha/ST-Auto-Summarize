@@ -65,7 +65,8 @@ import {
   reorderLorebookEntriesAlphabetically,
   getLorebookEntryTokenCount } from
 './lorebookManager.js';
-import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
+import { getEntityTypeDefinitionsFromSettings } from './entityTypes.js';
+import { extension_settings } from '../../../extensions.js';
 import {
   getContext,
   get_data,
@@ -2195,7 +2196,7 @@ export function registerAllOperationHandlers() {
       bulk_populate_include_preset_prompts: bulkPopulateConfig.include_preset_prompts
     };
 
-    const typeList = getConfiguredEntityTypeDefinitions();
+    const typeList = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
 
     const result = await runBulkRegistryPopulation(entries, typeList, settings);
     const results = result?.results || result;

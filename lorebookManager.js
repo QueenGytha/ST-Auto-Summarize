@@ -18,7 +18,7 @@ import { chat_metadata, saveMetadata, getCurrentChatId, characters, this_chid, n
 import { extension_settings } from '../../../extensions.js';
 import { selected_group, groups } from '../../../group-chats.js';
 import { power_user } from '../../../power-user.js';
-import { getConfiguredEntityTypeDefinitions } from './entityTypes.js';
+import { getEntityTypeDefinitionsFromSettings } from './entityTypes.js';
 import { UI_UPDATE_DELAY_MS, FULL_COMPLETION_PERCENTAGE, INITIAL_LOREBOOK_ORDER } from './constants.js';
 
 // Will be imported from index.js via barrel exports
@@ -57,7 +57,7 @@ export async function invalidateLorebookCache(lorebookName ) {
 // eslint-disable-next-line complexity -- Initialization requires validation of multiple entity types and defensive property checks
 async function ensureRegistryEntriesForLorebook(lorebookName ) {
   try {
-    const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
+    const typeDefinitions = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
     if (!Array.isArray(typeDefinitions) || typeDefinitions.length === 0) {
       return;
     }
@@ -136,7 +136,7 @@ async function ensureRegistryEntryRecord(lorebookName , type ) {
   ensuredEntry.key = Array.isArray(ensuredEntry.key) ? ensuredEntry.key : [];
   ensuredEntry.keysecondary = [];
   // Get type definition to check for constant flag
-  const typeDefinitions = getConfiguredEntityTypeDefinitions(extension_settings?.auto_recap?.entity_types);
+  const typeDefinitions = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
   const typeDef = typeDefinitions.find((def) => def?.name === type);
   const hasConstantFlag = typeDef?.entryFlags && Array.isArray(typeDef.entryFlags) && typeDef.entryFlags.includes('constant');
   ensuredEntry.constant = hasConstantFlag ? true : false;

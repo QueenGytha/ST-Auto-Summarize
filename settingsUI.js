@@ -25,13 +25,7 @@ import {
   saveSettingsDebounced,
   selectorsExtension } from
 './index.js';
-import {
-  ensureEntityTypesSetting,
-  renderEntityTypesList,
-  handleAddEntityTypeFromInput,
-  removeEntityType,
-  restoreEntityTypesToDefault } from
-'./entityTypeSettingsUI.js';
+import { initializeEntityTypesUI } from './entityTypeSettingsUI.js';
 import { initializeOperationsPresetsUI, loadActivePreset } from './operationsPresetsUIBindings.js';
 import {
   MAX_LINE_LENGTH,
@@ -268,29 +262,8 @@ async function initialize_settings_listeners() {
 }
 
 function initialize_lorebooks_settings_listeners() {
-  ensureEntityTypesSetting();
-  renderEntityTypesList();
-
-  // Entity type management
-  $(document).on('click', '#autolorebooks-add-entity-type', (event) => {
-    event.preventDefault();
-    handleAddEntityTypeFromInput();
-  });
-  $(document).on('keypress', '#autolorebooks-entity-type-input', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      handleAddEntityTypeFromInput();
-    }
-  });
-  $(document).on('click', '.autolorebooks-entity-type-remove', (event) => {
-    event.preventDefault();
-    const type = $(event.currentTarget).attr('data-type') || '';
-    removeEntityType(type);
-  });
-  $(document).on('click', '#autolorebooks-restore-entity-types', (event) => {
-    event.preventDefault();
-    restoreEntityTypesToDefault();
-  });
+  // Entity types UI is now in Operations Configuration - initialized via initializeEntityTypesUI()
+  // which is called after the settings HTML is loaded
 
   // Name template input
   $(document).on('input', '#autolorebooks-name-template', function () {
@@ -355,6 +328,9 @@ function initialize_lorebooks_settings_listeners() {
 
   initializeOperationsPresetsUI();
   debug("Operations Presets UI initialized");
+
+  initializeEntityTypesUI();
+  debug("Entity Types UI initialized");
 }
 
 export { initialize_settings_listeners, loadActivePreset };

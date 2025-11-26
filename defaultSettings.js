@@ -266,6 +266,28 @@ export const default_settings = {
         modifiedAt: Date.now(),
         customLabel: null
       }
+    ],
+    entity_types: [
+      {
+        name: 'Default',
+        types: [
+          // Special guidance-only entry (always first, cannot be deleted)
+          { name: 'recap', constant: null, usage: 'General plot progression, emotional beats, temporary character states, scene atmosphere - information that belongs in the narrative recap rather than as a discrete lorebook entry', isGuidanceOnly: true },
+          // Regular lorebook entry types
+          { name: 'character', constant: false, usage: 'Named characters appearing in the story' },
+          { name: 'location', constant: false, usage: 'Places, settings, and notable locations' },
+          { name: 'item', constant: false, usage: 'Important objects and possessions' },
+          { name: 'faction', constant: false, usage: 'Groups, organizations, and affiliations' },
+          { name: 'lore', constant: false, usage: 'World history, mythology, and background lore' },
+          { name: 'quest', constant: true, usage: 'Active story goals, objectives, and missions' },
+          { name: 'rule', constant: true, usage: 'Roleplay rules, constraints, and boundaries' }
+        ],
+        isDefault: true,
+        internalVersion: 1,
+        createdAt: Date.now(),
+        modifiedAt: Date.now(),
+        customLabel: null
+      }
     ]
   },
   /* eslint-enable sonarjs/no-duplicate-string -- End of operation_artifacts section */
@@ -284,7 +306,8 @@ export const default_settings = {
         auto_lorebooks_recap_lorebook_entry_lookup: 'Default',
         auto_lorebooks_recap_lorebook_entry_deduplicate: 'Default',
         auto_lorebooks_bulk_populate: 'Default',
-        auto_lorebooks_recap_lorebook_entry_compaction: 'Default'
+        auto_lorebooks_recap_lorebook_entry_compaction: 'Default',
+        entity_types: 'Default'
       },
       createdAt: Date.now(),
       modifiedAt: Date.now(),

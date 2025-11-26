@@ -20,7 +20,8 @@ export function getArtifactSelector(operationType) {
     'auto_lorebooks_recap_lorebook_entry_lookup': '[data-testid="artifact-lorebooks-lookup"]',
     'auto_lorebooks_recap_lorebook_entry_deduplicate': '[data-testid="artifact-lorebooks-deduplicate"]',
     'auto_lorebooks_bulk_populate': '[data-testid="artifact-lorebooks-bulk-populate"]',
-    'auto_lorebooks_recap_lorebook_entry_compaction': '[data-testid="artifact-lorebooks-compaction"]'
+    'auto_lorebooks_recap_lorebook_entry_compaction': '[data-testid="artifact-lorebooks-compaction"]',
+    'entity_types': '[data-testid="artifact-entity-types"]'
   };
   return selectorMap[operationType];
 }
@@ -105,6 +106,20 @@ export const selectorsExtension = {
     artifactLorebooksDeduplicate: '[data-testid="artifact-lorebooks-deduplicate"]',      // #auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_deduplicate
     artifactLorebooksBulkPopulate: '[data-testid="artifact-lorebooks-bulk-populate"]',   // #auto_recap_artifact_auto_lorebooks_bulk_populate
     artifactLorebooksCompaction: '[data-testid="artifact-lorebooks-compaction"]',        // #auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_compaction
+    artifactEntityTypes: '[data-testid="artifact-entity-types"]',                        // #auto_recap_artifact_entity_types
+    opEntityTypes: '[data-testid="operation-type-entity-types"]',                        // Entity types section
+
+    // Entity Types inline table
+    entityTypesTableContainer: '[data-testid="entity-types-table-container"]',           // #entity-types-table-container
+    entityTypesTable: '[data-testid="entity-types-table"]',                              // Table element
+    entityTypesAddRow: '[data-testid="entity-types-add-row"]',                           // Add row button
+    entityTypeRowClass: '.entity-type-row',                                              // Row class
+    entityTypeNameInput: '.entity-type-name-input',                                      // Name input class
+    entityTypeConstantCheckbox: '.entity-type-constant-checkbox',                        // Constant checkbox class
+    entityTypeUsageInput: '.entity-type-usage-input',                                    // Usage input class
+    entityTypeDeleteBtn: '.entity-type-delete-btn',                                      // Delete button class
+    entityTypesArtifactRename: '[data-operation-type="entity_types"].auto_recap_artifact_rename',  // Rename button for entity types artifact
+    entityTypesArtifactDelete: '[data-operation-type="entity_types"].auto_recap_artifact_delete',  // Delete button for entity types artifact
 
     // Artifact action buttons (generic class-based selectors)
     artifactEditClass: '.auto_recap_artifact_edit',
@@ -208,10 +223,11 @@ export const selectorsExtension = {
     deleteOnChat: '[data-testid="lorebook-delete-on-chat"]',              // #autolorebooks-delete-on-chat-delete
     autoReorder: '[data-testid="lorebook-auto-reorder"]',                 // #autolorebooks-auto-reorder-alphabetically
     nameTemplate: '[data-testid="lorebook-name-template"]',               // #autolorebooks-name-template
-    entityTypesList: '[data-testid="lorebook-entity-types-list"]',        // #autolorebooks-entity-types-list
-    entityTypeInput: '[data-testid="lorebook-entity-type-input"]',        // #autolorebooks-entity-type-input
-    addEntityType: '[data-testid="lorebook-add-entity-type"]',            // #autolorebooks-add-entity-type
-    restoreEntityTypes: '[data-testid="lorebook-restore-entity-types"]',  // #autolorebooks-restore-entity-types
+    // Legacy entity type selectors - REMOVED from UI, now in Operations Configuration as versioned artifact
+    // entityTypesList: '[data-testid="lorebook-entity-types-list"]',     // Removed - see operationsPresets.entityTypesTableContainer
+    // entityTypeInput: '[data-testid="lorebook-entity-type-input"]',     // Removed
+    // addEntityType: '[data-testid="lorebook-add-entity-type"]',         // Removed
+    // restoreEntityTypes: '[data-testid="lorebook-restore-entity-types"]', // Removed
     skipDuplicates: '[data-testid="lorebook-skip-duplicates"]',           // #autolorebooks-recap-skip-duplicates
     entryExcludeRecursion: '[data-testid="lorebook-entry-exclude-recursion"]',  // #autolorebooks-entry-exclude-recursion
     entryPreventRecursion: '[data-testid="lorebook-entry-prevent-recursion"]',  // #autolorebooks-entry-prevent-recursion

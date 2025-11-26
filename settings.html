@@ -286,6 +286,32 @@
                             </select>
                         </div>
 
+                        <hr style="margin: 15px 0;">
+
+                        <!-- Entity Types -->
+                        <div class="auto_recap_operation_type_section" data-testid="operation-type-entity-types">
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="gap: 5px;">
+                                <span>Entity Types:</span>
+                                <div style="display: flex; gap: 5px;">
+                                    <button data-operation-type="entity_types" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-entity-types" title="Rename this artifact" disabled></button>
+                                    <button data-operation-type="entity_types" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-entity-types" title="Delete this artifact" disabled></button>
+                                    <button data-operation-type="entity_types" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-entity-types" title="Duplicate this artifact"></button>
+                                </div>
+                            </div>
+                            <select id="auto_recap_artifact_entity_types" data-testid="artifact-entity-types" class="text_pole" style="margin-top: 5px;">
+                                <option value="Default">Default</option>
+                            </select>
+                            <small class="displayBlock opacity50p margin-top-5px">
+                                Configure entity types for the {{lorebook_entry_types}} and {{lorebook_entry_types_with_guidance}} macros.
+                                The "recap" entry provides guidance for what should go into the general recap vs lorebook entries.
+                            </small>
+
+                            <!-- Inline Entity Types Table -->
+                            <div id="entity-types-table-container" data-testid="entity-types-table-container" class="margin-top-10px">
+                                <!-- Table rendered by entityTypeSettingsUI.js -->
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -562,18 +588,6 @@
                                 <small class="displayBlock opacity50p">Available variables: {{char}}, {{chat}}</small>
                             </label>
                             <input type="text" id="autolorebooks-name-template" data-testid="lorebook-name-template" class="text_pole" placeholder="z-AutoLB-{{chat}}" />
-                        </div>
-                        <div class="margin-bot-10px">
-                            <label>
-                                <span>Supported lorebook entry types:</span>
-                                <small class="displayBlock opacity50p">Applies to the {{lorebook_entry_types}} macro and registry generation. Values should be lowercase slugs.</small>
-                            </label>
-                            <div id="autolorebooks-entity-types-list" data-testid="lorebook-entity-types-list" class="margin-top-5px"></div>
-                            <div class="flex-container alignitemscenter margin-top-5px" style="gap: 5px;">
-                                <input type="text" id="autolorebooks-entity-type-input" data-testid="lorebook-entity-type-input" class="text_pole" placeholder="e.g. quest(entry:constant)" />
-                                <button id="autolorebooks-add-entity-type" data-testid="lorebook-add-entity-type" class="menu_button">Add</button>
-                                <button id="autolorebooks-restore-entity-types" data-testid="lorebook-restore-entity-types" class="menu_button fa-solid fa-recycle" title="Restore default types"></button>
-                            </div>
                         </div>
 
                         <hr>

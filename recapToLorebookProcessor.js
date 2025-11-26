@@ -5,7 +5,7 @@ import { chat_metadata, saveMetadata, name1 } from '../../../../script.js';
 import { extension_settings } from '../../../extensions.js';
 
 import {
-  getConfiguredEntityTypeDefinitions,
+  getEntityTypeDefinitionsFromSettings,
   createEntityTypeMap,
   applyEntityTypeFlagsToEntry,
   sanitizeEntityTypeName,
@@ -1286,7 +1286,7 @@ async function handleLorebookEntry(normalizedEntry , ctx ) {
 
 function initializeRecapProcessing(recap , options ) {
   const { useQueue = true, skipDuplicates = true } = options;
-  const entityTypeDefs = getConfiguredEntityTypeDefinitions(extension_settings?.autoLorebooks?.entity_types);
+  const entityTypeDefs = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
   const entityTypeMap = createEntityTypeMap(entityTypeDefs);
   const recapId = generateRecapId(recap);
 

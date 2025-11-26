@@ -202,7 +202,8 @@ function hasActiveDuplicate(lowerName , messageIndex , recapHash ) {
 async function prepareLorebookEntryLookupContext(entryData ) {
   const { generateEntryId, createPendingEntry } = await import('./lorebookPendingOps.js');
   const { ensureRegistryState, buildRegistryListing, normalizeEntryData } = await import('./recapToLorebookProcessor.js');
-  const { getConfiguredEntityTypeDefinitions } = await import('./entityTypes.js');
+  const { getEntityTypeDefinitionsFromSettings } = await import('./entityTypes.js');
+  const { extension_settings } = await import('./index.js');
 
   const entryId = generateEntryId();
   const normalizedEntry = normalizeEntryData(entryData);
@@ -210,8 +211,7 @@ async function prepareLorebookEntryLookupContext(entryData ) {
 
   const registryState = ensureRegistryState();
   const registryListing = buildRegistryListing(registryState);
-  const entityTypeDefs = getConfiguredEntityTypeDefinitions(get_settings('autoLorebooks')?.entity_types);
-  const typeList = entityTypeDefs;
+  const typeList = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
 
   return { entryId, normalizedEntry, registryListing, typeList };
 }

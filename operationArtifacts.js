@@ -12,30 +12,40 @@ const OPERATION_TYPES = [
   'auto_lorebooks_recap_lorebook_entry_deduplicate',
   'auto_lorebooks_bulk_populate',
   'auto_lorebooks_recap_lorebook_entry_compaction',
-  'parse_scene_recap'
+  'parse_scene_recap',
+  'entity_types'
 ];
 
-export function createArtifact(operationType, artifactData) {
+function validateOperationType(operationType) {
   if (!OPERATION_TYPES.includes(operationType)) {
     throw new Error(`Invalid operation type: ${operationType}`);
   }
+}
 
-  if (!artifactData.prompt) {
+function validateArtifactInput(operationType, artifactData) {
+  if (operationType === 'entity_types') {
+    if (!artifactData.types || !Array.isArray(artifactData.types)) {
+      throw new Error('Entity types artifact must have a types array');
+    }
+  } else if (!artifactData.prompt) {
     throw new Error('Artifact must have a prompt');
   }
+}
 
-  const artifacts = get_settings('operation_artifacts') || {};
-  if (!artifacts[operationType]) {
-    artifacts[operationType] = [];
-  }
+function buildEntityTypesArtifact(artifactData, newVersion) {
+  return {
+    name: artifactData.name || `v${newVersion}`,
+    types: artifactData.types,
+    isDefault: artifactData.isDefault || false,
+    internalVersion: newVersion,
+    createdAt: Date.now(),
+    modifiedAt: Date.now(),
+    customLabel: artifactData.customLabel || null
+  };
+}
 
-  const operationArtifacts = artifacts[operationType];
-  const maxVersion = operationArtifacts.length > 0
-    ? Math.max(...operationArtifacts.map(a => a.internalVersion))
-    : 0;
-  const newVersion = maxVersion + 1;
-
-  const newArtifact = {
+function buildBasePromptArtifact(artifactData, newVersion) {
+  return {
     name: artifactData.name || `v${newVersion}`,
     prompt: artifactData.prompt,
     prefill: artifactData.prefill || '',
@@ -48,13 +58,43 @@ export function createArtifact(operationType, artifactData) {
     modifiedAt: Date.now(),
     customLabel: artifactData.customLabel || null
   };
+}
 
-  if (operationType === 'auto_scene_break') {
-    newArtifact.forced_prompt = artifactData.forced_prompt || '';
-    newArtifact.forced_prefill = artifactData.forced_prefill || '';
-    newArtifact.forced_connection_profile = artifactData.forced_connection_profile || null;
-    newArtifact.forced_completion_preset_name = artifactData.forced_completion_preset_name || '';
-    newArtifact.forced_include_preset_prompts = artifactData.forced_include_preset_prompts || false;
+function addAutoSceneBreakFields(artifact, artifactData) {
+  artifact.forced_prompt = artifactData.forced_prompt || '';
+  artifact.forced_prefill = artifactData.forced_prefill || '';
+  artifact.forced_connection_profile = artifactData.forced_connection_profile || null;
+  artifact.forced_completion_preset_name = artifactData.forced_completion_preset_name || '';
+  artifact.forced_include_preset_prompts = artifactData.forced_include_preset_prompts || false;
+}
+
+function getNextVersion(operationArtifacts) {
+  const maxVersion = operationArtifacts.length > 0
+    ? Math.max(...operationArtifacts.map(a => a.internalVersion))
+    : 0;
+  return maxVersion + 1;
+}
+
+export function createArtifact(operationType, artifactData) {
+  validateOperationType(operationType);
+  validateArtifactInput(operationType, artifactData);
+
+  const artifacts = get_settings('operation_artifacts') || {};
+  if (!artifacts[operationType]) {
+    artifacts[operationType] = [];
+  }
+
+  const operationArtifacts = artifacts[operationType];
+  const newVersion = getNextVersion(operationArtifacts);
+
+  let newArtifact;
+  if (operationType === 'entity_types') {
+    newArtifact = buildEntityTypesArtifact(artifactData, newVersion);
+  } else {
+    newArtifact = buildBasePromptArtifact(artifactData, newVersion);
+    if (operationType === 'auto_scene_break') {
+      addAutoSceneBreakFields(newArtifact, artifactData);
+    }
   }
 
   operationArtifacts.push(newArtifact);
@@ -66,10 +106,68 @@ export function createArtifact(operationType, artifactData) {
   return newArtifact.name;
 }
 
-export function updateArtifact(operationType, artifactName, changes) {
-  if (!OPERATION_TYPES.includes(operationType)) {
-    throw new Error(`Invalid operation type: ${operationType}`);
+function applyEntityTypesChanges(artifact, changes) {
+  if (changes.types !== undefined) {
+    artifact.types = changes.types;
   }
+  if (changes.customLabel !== undefined) {
+    artifact.customLabel = changes.customLabel;
+  }
+}
+
+function applyPromptChanges(artifact, changes) {
+  if (changes.prompt !== undefined) {
+    artifact.prompt = changes.prompt;
+  }
+  if (changes.prefill !== undefined) {
+    artifact.prefill = changes.prefill;
+  }
+  if (changes.connection_profile !== undefined) {
+    artifact.connection_profile = changes.connection_profile;
+  }
+  if (changes.completion_preset_name !== undefined) {
+    artifact.completion_preset_name = changes.completion_preset_name;
+  }
+  if (changes.include_preset_prompts !== undefined) {
+    artifact.include_preset_prompts = changes.include_preset_prompts;
+  }
+  if (changes.customLabel !== undefined) {
+    artifact.customLabel = changes.customLabel;
+  }
+}
+
+function applyAutoSceneBreakChanges(artifact, changes) {
+  if (changes.forced_prompt !== undefined) {
+    artifact.forced_prompt = changes.forced_prompt;
+  }
+  if (changes.forced_prefill !== undefined) {
+    artifact.forced_prefill = changes.forced_prefill;
+  }
+  if (changes.forced_connection_profile !== undefined) {
+    artifact.forced_connection_profile = changes.forced_connection_profile;
+  }
+  if (changes.forced_completion_preset_name !== undefined) {
+    artifact.forced_completion_preset_name = changes.forced_completion_preset_name;
+  }
+  if (changes.forced_include_preset_prompts !== undefined) {
+    artifact.forced_include_preset_prompts = changes.forced_include_preset_prompts;
+  }
+}
+
+function applyChangesToArtifact(operationType, artifact, changes) {
+  if (operationType === 'entity_types') {
+    applyEntityTypesChanges(artifact, changes);
+  } else {
+    applyPromptChanges(artifact, changes);
+    if (operationType === 'auto_scene_break') {
+      applyAutoSceneBreakChanges(artifact, changes);
+    }
+  }
+  artifact.modifiedAt = Date.now();
+}
+
+export function updateArtifact(operationType, artifactName, changes) {
+  validateOperationType(operationType);
 
   const currentArtifact = getArtifact(operationType, artifactName);
   if (!currentArtifact) {
@@ -90,44 +188,7 @@ export function updateArtifact(operationType, artifactName, changes) {
     targetName = artifactName;
   }
 
-  if (changes.prompt !== undefined) {
-    targetArtifact.prompt = changes.prompt;
-  }
-  if (changes.prefill !== undefined) {
-    targetArtifact.prefill = changes.prefill;
-  }
-  if (changes.connection_profile !== undefined) {
-    targetArtifact.connection_profile = changes.connection_profile;
-  }
-  if (changes.completion_preset_name !== undefined) {
-    targetArtifact.completion_preset_name = changes.completion_preset_name;
-  }
-  if (changes.include_preset_prompts !== undefined) {
-    targetArtifact.include_preset_prompts = changes.include_preset_prompts;
-  }
-  if (changes.customLabel !== undefined) {
-    targetArtifact.customLabel = changes.customLabel;
-  }
-
-  if (operationType === 'auto_scene_break') {
-    if (changes.forced_prompt !== undefined) {
-      targetArtifact.forced_prompt = changes.forced_prompt;
-    }
-    if (changes.forced_prefill !== undefined) {
-      targetArtifact.forced_prefill = changes.forced_prefill;
-    }
-    if (changes.forced_connection_profile !== undefined) {
-      targetArtifact.forced_connection_profile = changes.forced_connection_profile;
-    }
-    if (changes.forced_completion_preset_name !== undefined) {
-      targetArtifact.forced_completion_preset_name = changes.forced_completion_preset_name;
-    }
-    if (changes.forced_include_preset_prompts !== undefined) {
-      targetArtifact.forced_include_preset_prompts = changes.forced_include_preset_prompts;
-    }
-  }
-
-  targetArtifact.modifiedAt = Date.now();
+  applyChangesToArtifact(operationType, targetArtifact, changes);
 
   artifacts[operationType] = operationArtifacts;
   set_settings('operation_artifacts', artifacts);
@@ -219,6 +280,11 @@ export function findArtifactByContent(operationType, content) {
   const operationArtifacts = artifacts[operationType] || [];
 
   return operationArtifacts.find(a => {
+    // entity_types uses types array instead of prompt
+    if (operationType === 'entity_types') {
+      return JSON.stringify(a.types) === JSON.stringify(content.types);
+    }
+
     const basicMatch = a.prompt === content.prompt &&
       a.prefill === content.prefill &&
       a.connection_profile === content.connection_profile &&
