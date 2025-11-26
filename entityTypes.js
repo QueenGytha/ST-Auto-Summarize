@@ -4,7 +4,7 @@
 // Each entry has: name, constant (boolean), usage (string), and optionally isGuidanceOnly (boolean)
 export const DEFAULT_ENTITY_TYPES = [
   // Special guidance-only entry (always first, cannot be deleted)
-  { name: 'recap', constant: null, usage: 'General plot progression, emotional beats, temporary character states, scene atmosphere - information that belongs in the narrative recap rather than as a discrete lorebook entry', isGuidanceOnly: true },
+  { name: 'recap', constant: null, usage: '(NOT FOR SL ENTRIES) Put in rc field: plot progression, emotional beats, temporary states, dialogue, relationships - anything that belongs in narrative recap NOT as a lorebook entry', isGuidanceOnly: true },
   // Regular lorebook entry types
   { name: 'character', constant: false, usage: 'Named characters appearing in the story' },
   { name: 'location', constant: false, usage: 'Places, settings, and notable locations' },

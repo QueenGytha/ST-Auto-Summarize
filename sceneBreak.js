@@ -1454,40 +1454,35 @@ export async function calculateSceneRecapTokens(options) {
 
 // Helper: Extract and validate JSON from AI response (REMOVED - now uses centralized helper in utils.js)
 
-// Helper: Normalize Stage 1 extraction response to {chronological_items: [...]} format
+// Helper: Normalize Stage 1 extraction response - preserves faceted format for 3-stage pipeline
 function normalizeStage1Extraction(parsed) {
-  const categoryKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'appearance', 'docs'];
+  const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'appearance', 'verbatim', 'docs'];
 
-  // Plain array format (legacy)
+  // Plain array format (legacy) - wrap as chronological_items
   if (Array.isArray(parsed)) {
-    debug(SUBSYSTEM.SCENE, "Stage 1 returned plain array format, wrapped as chronological_items");
+    debug(SUBSYSTEM.SCENE, "Stage 1 returned plain array format (legacy), wrapped as chronological_items");
     return { chronological_items: parsed };
   }
 
   // Already wrapped format (legacy)
   if (parsed && Array.isArray(parsed.chronological_items)) {
-    debug(SUBSYSTEM.SCENE, "Stage 1 returned wrapped object format");
+    debug(SUBSYSTEM.SCENE, "Stage 1 returned wrapped object format (legacy)");
     return parsed;
   }
 
-  // Categorized format (current)
+  // Faceted format (3-stage pipeline) - preserve as-is including sn
   if (parsed && typeof parsed === 'object') {
-    const hasCategories = categoryKeys.some(key => Array.isArray(parsed[key]));
-    if (hasCategories) {
-      const chronologicalItems = [];
-      const populatedCategories = [];
-      for (const key of categoryKeys) {
-        if (Array.isArray(parsed[key]) && parsed[key].length > 0) {
-          chronologicalItems.push(...parsed[key]);
-          populatedCategories.push(key);
-        }
-      }
-      debug(SUBSYSTEM.SCENE, `Stage 1 returned categorized format, flattened ${chronologicalItems.length} items from ${populatedCategories.length} categories: ${populatedCategories.join(', ')}`);
-      return { chronological_items: chronologicalItems };
+    const hasFacets = facetKeys.some(key => Array.isArray(parsed[key]));
+    if (hasFacets) {
+      const populatedFacets = facetKeys.filter(key => Array.isArray(parsed[key]) && parsed[key].length > 0);
+      const totalItems = populatedFacets.reduce((sum, key) => sum + parsed[key].length, 0);
+      debug(SUBSYSTEM.SCENE, `Stage 1 returned faceted format: ${totalItems} items in ${populatedFacets.length} facets (${populatedFacets.join(', ')}), sn="${parsed.sn || ''}"`);
+      // Return as-is to preserve faceted structure for Stage 2
+      return parsed;
     }
   }
 
-  throw new Error("Stage 1 extraction must return either: (1) array, (2) {chronological_items: [...]}, or (3) categorized object with plot/goals/reveals/etc arrays");
+  throw new Error("Stage 1 extraction must return either: (1) array, (2) {chronological_items: [...]}, or (3) faceted object with plot/goals/reveals/etc arrays");
 }
 
 // Helper: Generate recap with error handling
@@ -1551,21 +1546,31 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
         context: 'Stage 1 scene recap extraction'
       });
 
-      // Normalize to wrapped format with chronological_items array
+      // Normalize Stage 1 response (preserves faceted format for 3-stage pipeline)
       const parsed = normalizeStage1Extraction(rawParsed);
-      const chronologicalItems = parsed.chronological_items;
 
-      // Validation
-      if (!Array.isArray(chronologicalItems)) {
-        throw new Error("chronological_items must be an array");
-      }
-      if (chronologicalItems.length === 0) {
-        throw new Error("AI returned empty extraction (no items in any category)");
+      // Validation - check for either legacy chronological_items or faceted format
+      const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'appearance', 'verbatim', 'docs'];
+      const isLegacyFormat = Array.isArray(parsed.chronological_items);
+      const isFacetedFormat = facetKeys.some(key => Array.isArray(parsed[key]));
+
+      if (isLegacyFormat) {
+        if (parsed.chronological_items.length === 0) {
+          throw new Error("AI returned empty extraction (no items)");
+        }
+        debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (legacy): ${parsed.chronological_items.length} items`);
+      } else if (isFacetedFormat) {
+        const totalItems = facetKeys.reduce((sum, key) => sum + (Array.isArray(parsed[key]) ? parsed[key].length : 0), 0);
+        if (totalItems === 0) {
+          throw new Error("AI returned empty extraction (no items in any facet)");
+        }
+        debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (faceted): ${totalItems} items, sn="${parsed.sn || ''}"`);
+      } else {
+        throw new Error("Stage 1 extraction must contain either chronological_items array or faceted arrays");
       }
 
       // Convert back to JSON string for storage
       recap = JSON.stringify(parsed);
-      debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction: ${chronologicalItems.length} items`);
     } finally {
       clearOperationSuffix();
     }
@@ -1638,16 +1643,20 @@ export async function saveSceneRecap(config) {
   saveChatDebounced();
   refresh_memory();
 
-  // If the recap is JSON and contains a scene_name, use it (standardized format)
+  // If the recap is JSON and contains a scene name (sn or scene_name), use it
   debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] Starting auto scene name check for message ${messageIndex}`);
   try {
     const parsed = JSON.parse(recap);
     debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] JSON parse succeeded for message ${messageIndex}`);
 
-    const maybeName = typeof parsed.scene_name === 'string' ? parsed.scene_name : '';
+    // Check for sn (3-stage pipeline) or scene_name (legacy) or stage1.sn (multi-stage storage)
+    const maybeName = typeof parsed.sn === 'string' ? parsed.sn
+      : typeof parsed.scene_name === 'string' ? parsed.scene_name
+      : typeof parsed.stage1?.sn === 'string' ? parsed.stage1.sn
+      : '';
     const existing = get_data(message, SCENE_BREAK_NAME_KEY);
 
-    debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] scene_name from JSON: "${maybeName}" (type: ${typeof parsed.scene_name})`);
+    debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] scene name from JSON: "${maybeName}" (sn: ${typeof parsed.sn}, scene_name: ${typeof parsed.scene_name}, stage1.sn: ${typeof parsed.stage1?.sn})`);
     debug(SUBSYSTEM.SCENE, `[AUTO SCENE NAME] existing name from data: "${existing}" (type: ${typeof existing}, truthy: ${!!existing})`);
 
     if (maybeName && !existing) {
