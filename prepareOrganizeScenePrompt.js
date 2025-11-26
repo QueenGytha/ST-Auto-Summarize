@@ -3,6 +3,8 @@
 // This stage receives extracted data from Stage 1 and filters/organizes it
 
 import { resolveOperationConfig } from './operationsPresetsResolution.js';
+import { getEntityTypeDefinitionsFromSettings } from './entityTypes.js';
+import { extension_settings } from './index.js';
 import { buildAllMacroParams, substitute_params } from './macros/index.js';
 
 /**
@@ -18,9 +20,13 @@ export async function prepareOrganizeScenePrompt(extractedData, _ctx) {
   const promptTemplate = config.prompt;
   const prefill = config.prefill || "";
 
+  // Get entity type definitions for proper sl entry type mapping
+  const typeDefinitions = getEntityTypeDefinitionsFromSettings(extension_settings?.auto_recap);
+
   // Build all macro values from context - extractedData becomes {{extracted_data}}
   const params = buildAllMacroParams({
     extractedData,
+    typeDefinitions,
     prefillText: prefill
   });
 

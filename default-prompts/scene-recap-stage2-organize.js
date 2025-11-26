@@ -1,7 +1,10 @@
 // Stage 2: Condense and format
-// MACROS: {{extracted_data}}
+// MACROS: {{extracted_data}}, {{lorebook_entry_types_with_guidance}}
 
 export const scene_recap_stage2_organize_prompt = `ROLE: Condense extracted content, then format to output structure.
+
+ENTITY TYPES (use these as "t" values for sl entries):
+{{lorebook_entry_types_with_guidance}}
 
 OUTPUT FORMAT:
 {
@@ -17,30 +20,28 @@ OUTPUT FORMAT:
 
 ---------------- STEP 1: CONDENSE ----------------
 
-First, dedupe within each facet:
+Dedupe within each facet:
 - PLOT: Same event different words = keep one
 - GOALS: One per character
 - REVEALS: Same fact different words = keep one
-- STATE: One entry per entity, merge conditions
-- STANCE: One entry per pair
-- VOICE: Merge similar quotes, keep distinct character moments
-- APPEARANCE: One entry per entity
+- STATE/STANCE/VOICE/APPEARANCE: One entry per entity, merge if multiple
 
 ---------------- STEP 2: FORMAT OUTPUT ----------------
 
 SN: Copy from extracted. Do not rewrite.
 
-RC:
+RC (recap content - narrative developments):
 - DEV: condensed plot + reveals, semicolon-separated
 - PEND: condensed goals
 - Format: "DEV: ...\\nPEND: ..."
-- REVEALS GO HERE, not in sl
+- ALL world facts, reveals, lore go in DEV (not in sl)
 
-SL entries (one per entity, NEVER from reveals):
-- STATE: t="state", n=entity, c=merged conditions, k=[entity]
-- STANCE: t="stance", n="A-B", c=dynamic, k=[both names]
-- VOICE: t="voice", n=speaker, c=quotes, k=[speaker]
-- APPEARANCE: t="appearance", n=entity, c=description, k=[entity]
-- VERBATIM: t="verbatim", n=title, c=exact copied text, k=[entities]
+SL (setting_lore entries - entity-specific data):
+- One entry per entity from state/stance/voice/appearance/verbatim facets
+- t = entity type from list above (e.g., "state", "stance", "voice", "appearance")
+- n = entity name
+- c = condensed content
+- k = keyword array for matching (include entity name)
+- NEVER put reveals/world facts in sl - those belong in rc.DEV
 
 Output JSON only.`;
