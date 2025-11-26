@@ -118,8 +118,8 @@ export const selectorsExtension = {
     entityTypeConstantCheckbox: '.entity-type-constant-checkbox',                        // Constant checkbox class
     entityTypeUsageInput: '.entity-type-usage-input',                                    // Usage input class
     entityTypeDeleteBtn: '.entity-type-delete-btn',                                      // Delete button class
-    entityTypesArtifactRename: '[data-operation-type="entity_types"].auto_recap_artifact_rename',  // Rename button for entity types artifact
-    entityTypesArtifactDelete: '[data-operation-type="entity_types"].auto_recap_artifact_delete',  // Delete button for entity types artifact
+    entityTypesArtifactRename: '[data-testid="artifact-rename-entity-types"]',  // Rename button for entity types artifact
+    entityTypesArtifactDelete: '[data-testid="artifact-delete-entity-types"]',  // Delete button for entity types artifact
 
     // Artifact action buttons (generic class-based selectors)
     artifactEditClass: '.auto_recap_artifact_edit',

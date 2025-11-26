@@ -321,9 +321,18 @@ async function initializeExtension() {
 
   // Migrate connection profile settings from names to UUIDs
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Migrating connection profile settings...');
-  const { migrateConnectionProfileSettings } = await import('./settingsMigration.js');
+  const { migrateConnectionProfileSettings, needsEntityTypesMigration, migrateEntityTypesToArtifact } = await import('./settingsMigration.js');
   await migrateConnectionProfileSettings();
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Connection profile migration complete');
+
+  // Migrate entity types from legacy format to artifact system
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checking for entity types migration...');
+  if (needsEntityTypesMigration()) {
+    await migrateEntityTypesToArtifact();
+    saveSettingsDebounced();
+    log(SUBSYSTEM.CORE, 'Entity types migration completed');
+  }
+  debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Entity types migration check complete');
 
   // Migrate settings to operations presets system
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checking for operations presets migration...');
