@@ -2,7 +2,7 @@
 import {
   scene_recap_stage1_extraction_prompt,
   scene_recap_stage2_organize_prompt,
-  scene_recap_stage2_filtering_prompt,
+  scene_recap_stage3_filtering_prompt,
   scene_recap_error_detection_prompt,
   auto_scene_break_detection_prompt,
   auto_scene_break_forced_prompt,
@@ -143,7 +143,7 @@ export const default_settings = {
     parse_scene_recap: [
       {
         name: 'Default',
-        prompt: scene_recap_stage2_filtering_prompt,
+        prompt: scene_recap_stage3_filtering_prompt,
         prefill: "Understood. The roleplay content is acceptable as we are examining it, not writing it. I will output ONLY valid JSON with no additional text. Here I go:\n{",
         connection_profile: null,
         completion_preset_name: '',

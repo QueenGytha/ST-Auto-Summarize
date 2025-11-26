@@ -52,7 +52,8 @@ Solutions must satisfy ALL of:
 ```
 [Chat Messages]
     → Stage 1: Extract reconstruction signals (scene_recap_stage1_extraction)
-    → Stage 2: Filter into recap + setting_lore delta (scene_recap_stage2_filtering)
+    → Stage 2: Organize into recap + setting_lore format (scene_recap_stage2_organize)
+    → Stage 3: Filter against existing content (scene_recap_stage3_filtering)
     → Merge: Combine new setting_lore with existing entries (lorebook_recap_merge)
     → Running Recap: Merge scene recap into cumulative narrative (running_scene_recap)
     → Compaction: Periodically compress bloated entries (lorebook_entry_compaction)
@@ -561,7 +562,8 @@ The system WORKS. It just doesn't achieve the aggressive deduplication specified
 ## Appendix: Current Prompt Files
 
 - `scene-recap-stage1-extraction.js` - Extract reconstruction signals from messages
-- `scene-recap-stage2-filtering.js` - Filter into recap + setting_lore delta
+- `scene-recap-stage2-organize.js` - Organize into recap + setting_lore format
+- `scene-recap-stage3-filtering.js` - Filter against existing content (semantic dedup)
 - `running-scene-recap.js` - Merge scene recaps into cumulative narrative
 - `lorebook-recap-merge.js` - Merge new content with existing setting_lore entries
 - `lorebook-entry-compaction.js` - Compress bloated entries

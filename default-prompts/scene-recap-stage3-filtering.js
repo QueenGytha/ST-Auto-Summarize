@@ -1,7 +1,7 @@
 // Stage 3: Filter against existing content (semantic deduplication)
 // MACROS: {{extracted_data}}, {{current_running_recap}}, {{active_setting_lore}}
 
-export const scene_recap_stage2_filtering_prompt = `ROLE: Filter recap against existing content. Drop semantically similar items.
+export const scene_recap_stage3_filtering_prompt = `ROLE: Filter recap against existing content. Drop semantically similar items.
 
 OUTPUT FORMAT:
 {
