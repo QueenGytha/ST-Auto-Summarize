@@ -1843,9 +1843,7 @@ export async function generateSceneRecap(config) {
   const sceneObjects = collectSceneObjects(startIdx, endIdx, chat);
 
   // Prepare prompt (now returns lorebook metadata and token counts)
-  // For Stage 1 (extraction), pass isStage1=true to exclude lore macros
-  // lorebookMetadata will be stored temporarily for Stage 2 to use
-  const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data, false, true);
+  const { prompt, prefill, lorebookMetadata, messagesTokenCount, lorebooksTokenCount, messageBreakdown, lorebookBreakdown } = await prepareScenePrompt(sceneObjects, ctx, endIdx, get_data, false, false);
 
   // Debug: Check if {{user}} is in the final prompt
   if (prompt.includes('{{user}}')) {
