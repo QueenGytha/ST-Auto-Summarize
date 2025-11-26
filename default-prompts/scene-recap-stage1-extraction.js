@@ -10,7 +10,7 @@ OUTPUT FORMAT:
   "stance": [],
   "voice": [],
   "appearance": [],
-  "docs": []
+  "verbatim": []
 }
 
 ---------------- SCENE ----------------
@@ -28,8 +28,8 @@ PLOT: Outcomes, realizations, and pivotal moments.
 GOALS: Active intentions only. Drop achieved/abandoned.
 - "Character: intention"
 
-REVEALS: Scene-specific facts only. Not generic world lore.
-- Skip anything that would be in a character card or world primer
+REVEALS: Facts established or demonstrated in this scene.
+- Include world mechanics, magic rules, character backstory if shown/stated here
 
 STATE: Durable conditions only. Skip transient.
 - Will this still be true next scene? No → skip
@@ -43,6 +43,6 @@ VOICE: Pivotal dialogue - declarations, revelations, defining moments.
 
 APPEARANCE: Physical descriptions worth remembering.
 
-DOCS: Verbatim document text.
+VERBATIM: Exact text of in-world written items (letters, signs, contracts). Copy word-for-word, do not summarize.
 
 Output JSON only.`;
