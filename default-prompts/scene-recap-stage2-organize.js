@@ -30,8 +30,8 @@ SL (merge by entity name):
 - Group state[]/stance[]/voice[]/appearance[] entries sharing same n value
 - t = use the t value from input (already classified)
 - n = entity name exactly as appears
-- c = merged: state + appearance + stance + voice quote with ctx
+- c = merged: state + appearance + stance + voice (quote with context)
 - k = [entity name, aliases]
-- Max 1-2 voice quotes per entity, always with context
+- Voice: ONE quote per distinct BEHAVIOR (same behavior = duplicate, drop)
 
 Output JSON only.`;
