@@ -1716,8 +1716,8 @@ async function checkLorebookEmptyState(messageIndex, versionIndex) {
 }
 
 // Helper: Normalize and deduplicate sl entries for lorebook processing
-// sl format: { t: type, n: name, c: content, k: keywords }
-// expected format: { name, comment, type, keys, content }
+// sl format: { t: type, n: name, c: content, k: keywords, u: uid (optional) }
+// expected format: { name, comment, type, keys, content, uid (optional) }
 function normalizeAndDeduplicateEntries(entriesArray) {
   const seenNames = new Set();
   const uniqueEntries = [];
@@ -1733,13 +1733,20 @@ function normalizeAndDeduplicateEntries(entriesArray) {
     }
     seenNames.add(entryName);
 
-    uniqueEntries.push({
+    const normalized = {
       name: rawName,
       comment: rawName,
       content: entry.c || entry.content || '',
       type: entry.t || entry.type || 'character',
       keys: entry.k || entry.keys || [rawName]
-    });
+    };
+
+    // Pass through uid if Stage 3 identified an exact match
+    if (entry.u) {
+      normalized.uid = entry.u;
+    }
+
+    uniqueEntries.push(normalized);
   }
 
   return uniqueEntries;

@@ -6,7 +6,7 @@ export const scene_recap_stage3_filtering_prompt = `ROLE: Filter recap against e
 OUTPUT FORMAT:
 {
   "rc": "DEV: ...\\nPEND: ...",
-  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"] }]
+  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"], "u": "uid if exact match" }]
 }
 
 ---------------- INPUT (Stage 2 output) ----------------
@@ -35,6 +35,12 @@ SL filtering:
 - Drop entry if entity+type combo exists in setting_lore with semantically similar content
 - Remove entry entirely if nothing new remains after filtering
 - Keep entries with genuinely new information
+
+UID field (u) - CRITICAL for correct merging:
+- Include "u" ONLY if entity name EXACTLY matches a setting_lore entry (case-insensitive)
+- Copy the uid attribute from the matching <setting_lore uid="..."> tag
+- OMIT "u" field entirely for new entities not in setting_lore
+- When in doubt, OMIT - wrong UID causes incorrect merge (data corruption)
 
 Empty is valid:
 - If all content filtered out, return {"rc": "", "sl": []}
