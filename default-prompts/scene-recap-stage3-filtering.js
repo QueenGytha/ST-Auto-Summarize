@@ -39,6 +39,7 @@ SL filtering:
 UID field (u) - CRITICAL for correct merging:
 - LITERAL STRING MATCH ONLY on the name attribute
 - Individual entity must match individual entry, NOT race/faction/category entries
+- Sublocation must match sublocation entry, NOT parent location
 - Copy uid from matching <setting_lore name="X" uid="Y"> where X is IDENTICAL string to your n value
 - OMIT "u" entirely if no IDENTICAL name match exists
 - Wrong UID = data corruption. When uncertain, OMIT.
