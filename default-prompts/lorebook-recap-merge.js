@@ -14,7 +14,7 @@ Different bullet types have different merge rules:
 
 - Arc: ACCUMULATE - add to journey (landmark moments only) — PROTECT
 - Stance: UPDATE per target - one line per relationship — HIGH VALUE
-- Voice: DEDUP - same speech pattern = keep better one only — MEDIUM
+- Quotes: DEDUP - same relationship moment = keep better one only — MEDIUM
 - State: SUPERSEDE - newer replaces older — LOWER
 - Identity: PRESERVE unless fundamentally changed (rare) — CUT FIRST
 
@@ -22,11 +22,11 @@ Different bullet types have different merge rules:
 
 For EACH item in NEW_CONTENT, ask: "Does this earn its tokens given what EXISTING_CONTENT has?"
 
-Voice dedup:
-- Does NEW_CONTENT quote show same speech pattern as any EXISTING_CONTENT quote?
-- TEST: "Given the existing quote, could the LLM already write dialogue like the new one?"
-- YES same pattern → keep better one only
-- NO different pattern (formal vs casual, calm vs angry) → add new quote
+Quotes dedup:
+- Does NEW_CONTENT quote capture same relationship moment as any EXISTING_CONTENT quote?
+- TEST: "Is this the same commitment/oath/defining moment, just worded differently?"
+- YES same moment → keep better one only
+- NO different moment (new commitment, different relationship pivot) → add new quote
 
 Arc threshold:
 - Is this a landmark moment (pattern break, worldview shift)?
@@ -60,7 +60,7 @@ State check:
 MUST use labeled bullets (priority order). Each helps the LLM differently:
 - Arc: journey (from → through → to) — helps LLM write character consistent with growth
 - Stance: [target] — shared history, dynamic, commitments — helps LLM write interactions with appropriate subtext
-- Voice: 'representative quote' — helps LLM write dialogue that sounds like this character
+- Quotes: 'defining quote' — relationship-defining moments for callbacks
 - State: current conditions, belongings, status — prevents contradictions (injured arm can't be used)
 - Identity: background, role, position — provides baseline context for who they are
 

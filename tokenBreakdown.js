@@ -1,11 +1,10 @@
 // tokenBreakdown.js - Token counting and breakdown utilities
 
-import { count_tokens, main_api, debug, SUBSYSTEM, get_settings } from './index.js';
+import { count_tokens, debug, SUBSYSTEM, get_settings } from './index.js';
 import { injectMetadataIntoChatArray } from './metadataInjector.js';
 
-// Performance optimization: Cache preset and system prompt tokens to avoid recounting
+// Performance optimization: Cache preset tokens to avoid recounting
 const presetTokenCache = new Map();
-const systemPromptTokenCache = new Map();
 
 /**
  * Apply tokenizer correction factor to adjust for discrepancies between ST and actual LLM tokenizers
@@ -134,7 +133,7 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
   let messages = [];
   const effectivePrefill = prefill || '';
   let presetTokens = 0;
-  let systemTokens = 0;
+  const systemTokens = 0;
   const userPromptTotalTokens = count_tokens(prompt);
 
   // Separate user prompt into components:
@@ -171,22 +170,6 @@ export async function calculateTokenBreakdown({ prompt, includePreset, preset, p
 
       debug(SUBSYSTEM.OPERATIONS, `Loaded ${presetMessages.length} preset messages from completion preset "${preset}" (${presetTokens} tokens, cached)`);
     }
-  }
-
-  // Add system prompt for OpenAI (same as llmClient.js lines 130-132, 146-148)
-  if (main_api === 'openai') {
-    const systemPrompt = "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.";
-
-    // Check cache first
-    const cacheKey = 'openai_system_prompt';
-    if (systemPromptTokenCache.has(cacheKey)) {
-      systemTokens = systemPromptTokenCache.get(cacheKey);
-    } else {
-      systemTokens = count_tokens(systemPrompt);
-      systemPromptTokenCache.set(cacheKey, systemTokens);
-    }
-
-    messages.push({ role: 'system', content: systemPrompt });
   }
 
   // Add user prompt

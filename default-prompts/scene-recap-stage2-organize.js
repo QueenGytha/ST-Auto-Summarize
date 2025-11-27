@@ -19,7 +19,7 @@ Most extracted content should NOT survive. For EACH item ask: "Does this REALLY 
 INTERNAL DEDUPLICATION (by priority):
 - Arc: Only landmark moments survive. Temporary moods → DROP
 - Stance: Multiple entries for same entity→target → consolidate into one
-- Voice: Multiple quotes showing same speech pattern → keep best one only
+- Quotes: Multiple quotes for same relationship moment → keep best one only
 - State: Redundant conditions → keep most current/relevant only
 
 EMBEDDED QUOTES IN ARC/STANCE:
@@ -35,13 +35,14 @@ QUALITY GATE:
 - Anything that fails SIGNIFICANT/PERSISTENT/SPECIFIC → DROP
 - Lore that's generic world-building (not story-specific) → DROP
 
-VOICE QUALITY GATE (apply before dedup):
-- PATTERN TEST: Does this show HOW they speak, or just WHAT they said?
-- Generic expressions anyone might say → DROP ("Yes!", "I love you", "I'll kill you")
+QUOTES QUALITY GATE (apply before dedup):
+- RELATIONSHIP TEST: Does this define or pivot a relationship? Is it a commitment/oath?
+- REDUNDANCY TEST: Is the meaning already captured in Arc or Stance? If yes → DROP
+- Generic expressions → DROP ("Yes!", "I love you", "I'll kill you")
 - Plot-functional dialogue → DROP ("Let's go to the market")
-- Exposition-heavy explanations → DROP
-- Quotes are for DELIVERY PATTERN, not memorable CONTENT. Dramatic ≠ representative.
-- When uncertain: DROP. No voice quote is better than a bad one.
+- Exposition → DROP
+- Quotes are for CALLBACKS — exact wording that matters for future reference.
+- When uncertain: DROP. No quote is better than a redundant one.
 
 ==========================================================================
 
@@ -71,7 +72,7 @@ ALL entity types use this format (characters, locations, items, lore, etc.)
 PRIORITY ORDER (cut lower priority first when filtering):
 - Arc: development journey (from → to) — PROTECT
 - Stance: [target] — shared history, dynamic, commitments — HIGH VALUE
-- Voice: 'representative quote' — MEDIUM
+- Quotes: 'defining quote' — MEDIUM (only if not redundant with Arc/Stance)
 - State: current conditions, belongings, status — LOWER
 - Identity: background, role, position, appearance — CUT FIRST
 
@@ -88,7 +89,7 @@ Rules:
 - OMIT empty bullets
 
 ROUTING:
-- arc[], stance[], voice[], state[], identity[] → entity's sl entry
+- arc[], stance[], quotes[], state[], identity[] → entity's sl entry
 - verbatim[] → relevant entity or lore entry
 
 ---------------- EXTRACTED DATA ----------------

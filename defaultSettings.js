@@ -308,7 +308,6 @@ export const default_settings = {
           { name: 'item', constant: false, usage: 'Important objects and possessions' },
           { name: 'faction', constant: false, usage: 'Groups, organizations, and affiliations' },
           { name: 'lore', constant: false, usage: 'World history, mythology, and background lore' },
-          { name: 'quest', constant: true, usage: 'Active story goals, objectives, and missions' },
           { name: 'rule', constant: true, usage: 'Roleplay rules, constraints, and boundaries' }
         ],
         isDefault: true,

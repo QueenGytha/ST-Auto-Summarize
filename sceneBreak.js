@@ -1429,7 +1429,7 @@ export async function calculateSceneRecapTokens(options) {
 
 // Helper: Normalize Stage 1 extraction response - preserves faceted format for 3-stage pipeline
 function normalizeStage1Extraction(parsed) {
-  const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'appearance', 'verbatim', 'docs'];
+  const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
 
   // Plain array format (legacy) - wrap as chronological_items
   if (Array.isArray(parsed)) {
@@ -1523,7 +1523,7 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
       const parsed = normalizeStage1Extraction(rawParsed);
 
       // Validation - check for either legacy chronological_items or faceted format
-      const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'appearance', 'verbatim', 'docs'];
+      const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
       const isLegacyFormat = Array.isArray(parsed.chronological_items);
       const isFacetedFormat = facetKeys.some(key => Array.isArray(parsed[key]));
 

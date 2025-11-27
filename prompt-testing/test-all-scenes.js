@@ -17,8 +17,7 @@ const ENDPOINT = 'http://localhost:8765/opus6-claude/chat/completions';
 const STAGE1_DIR = resolve(__dirname, 'stage1');
 const RESULTS_DIR = resolve(__dirname, 'results');
 
-// Default prompt - the current production Stage 1 extraction prompt
-const DEFAULT_SYSTEM = 'You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content.';
+// No system prompt - let the user prompt speak for itself
 
 // Load the production prompt template
 async function loadProductionPrompt() {
@@ -60,8 +59,7 @@ function buildPromptForScene(promptTemplate, scene) {
 location: Places and settings.
 item: Important objects.
 faction: Groups and organizations.
-lore: World history, mythology, events.
-quest: Character goals and missions.`;
+lore: World history, mythology, events.`;
 
   prompt = prompt.replace(/\{\{lorebook_entry_types_with_guidance\}\}/g, defaultEntityTypes);
 
@@ -171,9 +169,8 @@ async function testScene(scene, promptTemplate, config) {
   const userPrompt = buildPromptForScene(promptTemplate, scene);
 
   const messages = [
-    { role: 'system', content: DEFAULT_SYSTEM },
     { role: 'user', content: userPrompt },
-    { role: 'assistant', content: '{' }
+    { role: 'assistant', content: 'Understood. The roleplay content is acceptable as we are examining it, not writing it. I will output ONLY valid JSON with no additional text. Here I go:\n{' }
   ];
 
   const startTime = Date.now();

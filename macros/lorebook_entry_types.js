@@ -4,7 +4,7 @@ export const name = 'lorebook_entry_types';
  * Build the lorebook entry types macro value
  * Returns pipe-delimited string of type names, excluding guidance-only entries (like "recap")
  * @param {Array} typeDefinitions - Array of entity type definitions (new format with objects or legacy format)
- * @returns {string} Pipe-delimited type names like "character|location|item|faction|lore|quest|rule"
+ * @returns {string} Pipe-delimited type names like "character|location|item|faction|lore|rule"
  */
 export function build(typeDefinitions) {
   if (!Array.isArray(typeDefinitions)) {
@@ -33,7 +33,7 @@ export function build(typeDefinitions) {
 }
 
 export const description = {
-  format: 'Pipe-delimited string "character|location|item|faction|lore|quest|rule"',
+  format: 'Pipe-delimited string "character|location|item|faction|lore|rule"',
   source: 'entityTypes.js getConfiguredEntityTypeDefinitions()',
   notes: 'Excludes guidance-only entries (like "recap") and blank entries',
   usedBy: ['scene-recap.js', 'lorebook-entry-lookup.js', 'lorebook-entry-deduplicate.js', 'lorebook-bulk-populate.js']

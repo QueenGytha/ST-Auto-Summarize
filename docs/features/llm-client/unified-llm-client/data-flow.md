@@ -235,7 +235,7 @@ Result:                  3456 <= 7680 ✓ PASS
 
 ### Phase 4: Message Construction
 
-**llmClient.js - Lines 110-156**
+**llmClient.js - Lines 105-127**
 
 ```javascript
 let messages;
@@ -252,31 +252,13 @@ if (options.includePreset) {
   effectivePrefill = options.prefill || presetPrefill;
 
   // 3. BUILD MESSAGES WITH PRESET
-  if (typeof prompt === 'string') {
-    // Add system prompt for OpenAI if needed
-    const systemPrompt = main_api === 'openai'
-      ? "You are a data extraction system. Output ONLY valid JSON."
-      : null;
-
-    messages = [
-      ...presetMessages,
-      ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-      { role: 'user', content: prompt }
-    ];
-  } else {
-    // Prompt is already an array - prepend preset messages
-    messages = [...presetMessages, ...prompt];
-  }
+  messages = typeof prompt === 'string'
+    ? [...presetMessages, { role: 'user', content: prompt }]
+    : [...presetMessages, ...prompt];
 } else {
   // NO PRESET - SIMPLE CONSTRUCTION
   if (typeof prompt === 'string') {
-    const systemPrompt = main_api === 'openai'
-      ? "You are a data extraction system. Output ONLY valid JSON."
-      : null;
-
-    messages = systemPrompt
-      ? [{ role: 'system', content: systemPrompt }, { role: 'user', content: prompt }]
-      : [{ role: 'user', content: prompt }];
+    messages = [{ role: 'user', content: prompt }];
   } else {
     messages = Array.isArray(prompt) ? prompt : [prompt];
   }
@@ -294,13 +276,9 @@ if (effectivePrefill) {
 [
   {
     role: 'system',
-    content: 'You are a helpful assistant...',  // From preset
+    content: 'You are a helpful assistant...',  // From preset (if any)
     identifier: 'main',
     injection_order: 10
-  },
-  {
-    role: 'system',
-    content: 'Output ONLY valid JSON.'  // Added for OpenAI
   },
   {
     role: 'user',
@@ -315,7 +293,7 @@ if (effectivePrefill) {
 
 ### Phase 5: Metadata Injection
 
-**llmClient.js - Lines 164-167**
+**llmClient.js - Lines 125-140**
 
 ```javascript
 // 1. GET OPERATION SUFFIX FROM CONTEXT
@@ -389,13 +367,9 @@ export function injectMetadataIntoChatArray(chatArray, options = {}) {
 }
 </ST_METADATA>
 
-You are a helpful assistant...`,  // Original preset content
+You are a helpful assistant...`,  // Original preset content (if any)
     identifier: 'main',
     injection_order: 10
-  },
-  {
-    role: 'system',
-    content: 'Output ONLY valid JSON.'
   },
   {
     role: 'user',
@@ -410,7 +384,7 @@ You are a helpful assistant...`,  // Original preset content
 
 ### Phase 6: ConnectionManager Call
 
-**llmClient.js - Lines 170-184**
+**llmClient.js - Lines 175-195**
 
 ```javascript
 const result = await ctx.ConnectionManagerRequestService.sendRequest(
@@ -439,7 +413,6 @@ const result = await ctx.ConnectionManagerRequestService.sendRequest(
   profileId: "cm_profile_abc123",
   messages: [
     { role: 'system', content: '<ST_METADATA>...</ST_METADATA>\n\nYou are a helpful assistant...' },
-    { role: 'system', content: 'Output ONLY valid JSON.' },
     { role: 'user', content: 'You are segmenting a roleplay transcript...' },
     { role: 'assistant', content: '{"sceneBreakAt":' }
   ],
@@ -460,7 +433,7 @@ const result = await ctx.ConnectionManagerRequestService.sendRequest(
 
 ### Phase 7: Response Processing
 
-**llmClient.js - Lines 186-226**
+**llmClient.js - Lines 198-235**
 
 ```javascript
 // 1. LOG RAW RESPONSE STRUCTURE (DEBUG)
@@ -613,7 +586,6 @@ return { sceneBreakAt, rationale };
 │ ┌──────────────────────────────────────────────────────────────┐    │
 │ │ Phase 3: Message Construction                                 │    │
 │ │ • Load preset prompts (if includePreset)                      │    │
-│ │ • Add system prompt (OpenAI)                                  │    │
 │ │ • Add user prompt                                             │    │
 │ │ • Add assistant prefill                                       │    │
 │ └──────────────────────────────────────────────────────────────┘    │

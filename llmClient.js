@@ -41,7 +41,6 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
   const { getPresetManager } = await import('../../../preset-manager.js');
   const { getPresetManagerType } = await import('./profileResolution.js');
   const presetManagerType = getPresetManagerType(profileId);
-  const apiType = presetManagerType; // For system prompt checks
   const presetManager = getPresetManager(presetManagerType);
 
   let effectivePresetName;
@@ -104,31 +103,13 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
     effectivePrefill = options.prefill || presetPrefill;
 
     // Build messages array with preset prompts
-    if (typeof prompt === 'string') {
-      // Add system prompt for OpenAI if needed
-      const systemPrompt = apiType === 'openai'
-        ? "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content."
-        : null;
-
-      messages = [
-        ...presetMessages,
-        ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-        { role: 'user', content: prompt }
-      ];
-    } else {
-      // Prompt is already an array - prepend preset messages
-      messages = [...presetMessages, ...prompt];
-    }
+    messages = typeof prompt === 'string'
+      ? [...presetMessages, { role: 'user', content: prompt }]
+      : [...presetMessages, ...prompt];
   } else {
     // No preset - simple message construction
     if (typeof prompt === 'string') {
-      const systemPrompt = apiType === 'openai'
-        ? "You are a data extraction system. Output ONLY valid JSON. Never generate roleplay content."
-        : null;
-
-      messages = systemPrompt
-        ? [{ role: 'system', content: systemPrompt }, { role: 'user', content: prompt }]
-        : [{ role: 'user', content: prompt }];
+      messages = [{ role: 'user', content: prompt }];
     } else {
       // Prompt is already messages array
       messages = Array.isArray(prompt) ? prompt : [prompt];

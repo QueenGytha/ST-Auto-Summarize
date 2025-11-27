@@ -29,8 +29,7 @@ SUPERSESSION RULE:
 - When NEW_SCENE_RECAP adds new thread → add to PEND
 - Abandoned threads → drop entirely
 
-These are PLOT THREADS (narrative hooks), not character goals.
-Character goals belong in quest entries, not PEND.
+These are PLOT THREADS (narrative hooks), not logistics.
 
 HOOK TEST: "Can the LLM use this to create drama/conflict/tension?"
 - YES = threat, secret, promise, mystery, vulnerability, ticking clock

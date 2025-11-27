@@ -9,7 +9,7 @@ Every token competes with the current scene for context space. Compaction remove
 TASK: Compact the entry. Same information value, fewer tokens.
 
 DEDUPLICATION (enforce before output):
-- QUOTES: One per VOICE PATTERN. Same pattern, different words → DROP all but most distinctive.
+- QUOTES: One per RELATIONSHIP MOMENT. Same commitment/pivot, different words → DROP all but most defining.
 - RELATIONSHIPS: Collapse to stance + dynamics. Blow-by-blow steps → DROP.
 - STATE: Durable only. "Will this still be true next scene?" NO → DROP.
 - CROSS-FACET: Each idea once in best facet. Duplicates across facets → DROP.
@@ -27,7 +27,7 @@ NOTE: During roleplay, the LLM sees only the entry content (no title/type). Use 
 FACETS - each serves a purpose for the LLM:
 - Arc: development journey — helps LLM write character consistent with growth
 - Stance: [target] relationship — helps LLM write interactions with appropriate subtext
-- Voice: representative quotes — helps LLM write dialogue that sounds like this character
+- Quotes: defining quotes — relationship-defining moments for callbacks
 - State: current conditions — prevents contradictions
 - Identity: background, role — provides baseline context
 
@@ -45,9 +45,9 @@ Before: "A->B: sat together; talked for hours; shared secrets; made plans"
 After: "A->B: close; confided in each other"
 
 QUOTE TEST:
-Ask: "What VOICE PATTERN does this quote demonstrate?"
-If another quote already shows that pattern → DROP one of them.
-Patterns: commanding, pleading, philosophical, threatening, tender, vulnerable, defiant, sarcastic, etc.
+Ask: "What RELATIONSHIP MOMENT does this quote capture?"
+If another quote already captures that moment/commitment → DROP one of them.
+Moments: commitments, oaths, relationship pivots, defining statements that would be called back.
 
 STATE TEST:
 Ask: "Will this still be true next scene?"

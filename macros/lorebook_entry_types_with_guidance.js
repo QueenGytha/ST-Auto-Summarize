@@ -45,7 +45,6 @@ location: Places, settings, and notable locations
 item: Important objects and possessions
 faction: Groups, organizations, and affiliations
 lore: World history, mythology, and background lore
-quest: Active story goals, objectives, and missions
 rule: Roleplay rules, constraints, and boundaries`,
   usedBy: ['scene-recap prompts that need categorization guidance']
 };

@@ -29,10 +29,11 @@ Stance (HIGH VALUE):
   "committed to protecting her" are the SAME point if same commitment.
   Keep whichever version captures it better.
 
-Voice (MEDIUM):
-- DROP if quote shows same speech pattern as existing quote
-- DROP if generic expression anyone might say (no distinctive DELIVERY pattern)
-- KEEP if demonstrates DIFFERENT pattern (formal vs casual, etc.) with distinctive delivery
+Quotes (MEDIUM):
+- DROP if same relationship-defining moment already captured (same commitment/oath)
+- DROP if meaning already exists in Arc or Stance (redundant)
+- DROP if generic expression anyone might say
+- KEEP only if defines NEW relationship moment or commitment not yet recorded
 
 State (SUPERSEDES):
 - DROP if same condition already captured
