@@ -44,9 +44,13 @@ SUBSTANCE vs LABELS vs TRANSCRIPT
 OUTPUT
 ================================================================================
 
-PLOT (always in context—be concise)
-- DEV: Outcomes that change story state. Results only.
-- PEND: Unresolved hooks with dramatic tension (threats/secrets/promises pending).
+PLOT (always in context—VERY concise, details go in entities)
+- DEV: Outcomes only. Fragment-level, semicolon-separated.
+- PEND: Unresolved dramatic hooks. Fragment-level.
+
+Plot is HIGH-LEVEL. Nuance/details belong in entity entries, not plot.
+"escaped prison; killed the warden; stole horse"
+NOT: "She escaped from the underground prison by picking the lock, then fought the warden who tried to stop her, killing him with his own blade, before stealing a horse from the stables..."
 
 ENTITIES (keyword-triggered—put info where it would activate)
 One entry per entity that CHANGED. Combine naturally:
