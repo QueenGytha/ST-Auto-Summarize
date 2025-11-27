@@ -13,8 +13,8 @@ Required format (copy this structure exactly):
 {
   "type": "<one of the allowed types>",
   "synopsis": "<short one-line recap>",
-  "sameEntityUids": ["entity_uid_1"],
-  "needsFullContextUids": ["entity_uid_2"]
+  "sameEntityUids": [],
+  "needsFullContextUids": []
 }
 
 CRITICAL: Ensure your response begins with the opening curly brace { character
@@ -26,44 +26,62 @@ Known setting_lore entry types:
 
 You will be given:
 - A NEW entry candidate formatted as JSON
-- A concise REGISTRY listing for all existing entries of the same type (uid, name, aliases, synopsis)
+- A REGISTRY listing for existing entries (each line starts with "- UID=<number>")
 
 Tasks:
 1. Decide which entry type best fits the new entry. The type MUST be one of the allowed list above.
-2. Confirm the candidate represents ONE concrete entity. Its 'name' is its canonical name.
-3. Validate the content uses BULLET POINTS and begins with an identity bullet like "- Identity: <Type> — <Canonical Name>".
-4. Validate content uses specific names/references (not pronouns like "him", "her", "it", or vague terms like "the protagonist").
-5. For character entities with a Notable Dialogue bullet, ensure it does not contain dialogue spoken by {{user}}.
-6. Compare the candidate against the registry listing and identify any entries that already cover this entity.
-7. Place confident matches in 'sameEntityUids'. If you need more detail before deciding, list those UIDs in 'needsFullContextUids'.
-8. Craft a concise one-line synopsis that reflects the candidate's newest or most important information.
+2. Extract the canonical name from the candidate's "comment" field (format: "type-Name", e.g., "character-Marcus").
+3. Search the registry for an EXACT canonical name match (explained below).
+4. Craft a concise one-line synopsis that reflects the candidate's newest or most important information.
 
-Deterministic alignment rules:
-- If the candidate's canonical name (case-insensitive, punctuation-insensitive, ignoring type prefix) exactly matches a registry entry's name, include that UID in 'sameEntityUids'.
-- If a registry entry's aliases include the candidate's canonical name (same normalization), include that UID in 'sameEntityUids'.
-- Prefer exact canonical name matches over fuzzy/semantic similarity.
-- Canonical names MUST omit titles/honorifics/ranks (use "Elizabeth" not "Queen Elizabeth"; "Marcus" not "Captain Marcus"). Titles can live in content/keywords, not in the canonical name.
+## EXACT MATCH REQUIREMENT - READ CAREFULLY
 
-Alias guidance (characters/items):
-- Keep keywords lean: 1-6 concise canonical/alias tokens actually used in chat. Drop descriptive/generic/context words. No padding with loose associations.
-  
+You MUST ONLY include a UID in 'sameEntityUids' when the canonical name is EXACTLY IDENTICAL.
+
+MATCHING RULES:
+1. Extract the canonical name from the candidate's "comment" field after the type prefix (e.g., "character-Marcus" → canonical name is "Marcus")
+2. For each registry entry, extract its canonical name the same way (e.g., "character-Elena" → "Elena")
+3. Compare the two canonical names using EXACT string matching (case-insensitive)
+4. "Marcus" does NOT match "Elena" - they are different names
+5. "Marcus" does NOT match "Captain" - an alias is NOT the canonical name
+6. "Marcus" ONLY matches another entry whose canonical name is also "Marcus"
+
+WHAT IS NOT A MATCH:
+- Sharing a keyword/alias (e.g., both have "queen" as keyword) - NOT A MATCH
+- Being related (e.g., both are royalty) - NOT A MATCH
+- Having similar roles (e.g., both are rulers) - NOT A MATCH
+- Having overlapping content - NOT A MATCH
+- Having the same type - NOT A MATCH (type alone doesn't make entities identical)
+
+WHAT IS A MATCH:
+- ONLY when the canonical names are the EXACT SAME STRING (case-insensitive)
+- Example: "character-Marcus" matches registry entry "character-Marcus" → UID goes in sameEntityUids
+- Example: "location-Ironforge" matches registry entry "location-Ironforge" → UID goes in sameEntityUids
+
+## UID FORMAT
+
+Registry entries are formatted as: "- UID=<number> | name: <type-name> | aliases: ... | synopsis: ..."
+The UID is the number immediately after "UID=" - extract ONLY that number.
+Example: "- UID=16 | name: character-Elena | ..." → the UID is 16
+
+DO NOT confuse any other numbers in the line with the UID.
+
+## OUTPUT RULES
+
+- 'sameEntityUids': Array of UIDs where canonical name EXACTLY matches. Usually empty or contains ONE uid.
+- 'needsFullContextUids': Array of UIDs where you need to see full content before deciding. Use sparingly.
+- Both arrays must be arrays. Use [] when empty.
+- NEVER invent UIDs. Only use UIDs that appear after "UID=" in the registry listing.
+- When in doubt, leave both arrays EMPTY. Creating a new entry is safer than merging incorrectly.
+- If no exact canonical name match exists, both arrays should be [].
+
+Canonical names MUST omit titles/honorifics/ranks (use "Elizabeth" not "Queen Elizabeth"; "Marcus" not "Captain Marcus"). Titles can live in content/keywords, not in the canonical name.
+
 Location naming (subareas):
-- If the entity is a sub‑location within a named parent (e.g., Castle → Throne Room; City → Market District), the canonical name MUST be "Parent-Subarea".
-- For multiple levels, chain with hyphens: "Parent-Child-Grandchild" (e.g., "Castle-West Wing-Library").
-- The content should include a bullet linking the immediate parent (e.g., "Located in: West Wing") and optionally a top‑level link (e.g., "Part of: Castle").
-- Keywords should include both parent and subarea tokens (and top‑level when present in chat) within the same 1-6 keyword budget.
-- Prefer the longest fully specified chain as the canonical name when deeper subareas are explicitly named (e.g., choose "Castle-West Wing-Library" over a partial).
+- If the entity is a sub‑location within a named parent (e.g., Castle → Throne Room), the canonical name MUST be "Parent-Subarea".
+- For multiple levels, chain with hyphens: "Parent-Child-Grandchild".
 
-Rules:
-- 'sameEntityUids' and 'needsFullContextUids' must be arrays. Use [] when empty.
-- Never invent UIDs; only use UIDs from the registry listing.
-- Always align the candidate with an existing entity when the canonical name already appears in the registry.
-- Only leave both arrays empty when you are confident the entity is brand new.
-- Even if the candidate repeats known facts, still align it with the correct entity; the merge stage will handle deduplication.
-- Prefer matches whose existing Relationships and State most closely align with the candidate's dynamic snapshot and current status; do not propose a duplicate when a plausible single identity exists.
-- For locations: if the candidate is a sub‑area, ensure the canonical name uses "Parent-Subarea" hyphenation and content links the parent (e.g., "Located in: <Parent>"). For multiple levels, canonical name should chain with hyphens ("Parent-Child-Grandchild").
-- Do NOT stretch content to fit an unrelated template (e.g., inventing faction details for a character). Use only bullets relevant to the entity; omit the rest.
-- Output STRICT JSON with double quotes and no commentary.
+Output STRICT JSON with double quotes and no commentary.
 
 
 New entry candidate:

@@ -39,10 +39,10 @@ HOOK TEST: "Can the LLM use this to create drama/conflict/tension?"
 - NO = scheduling, logistics, implementation details, upcoming meetings
 A meeting being scheduled is not a hook. A deadline with consequences is.
 
-KNOWS: Information asymmetry - who learned what.
+KNOWS: Information asymmetry - who learned what (END-OF-SCENE state).
 - Format: {"secret": "description", "who": ["names who know"]}
-- Track who LEARNED during THIS scene (include knowledge transfers)
-- If A tells B a secret → BOTH know (add B to knowers)
+- Capture who knows AT END OF SCENE, not mid-scene
+- If A tells B a secret during scene → BOTH know at end (add B to list)
 - "Witnessed event" ≠ "knows content" (present at event ≠ knows details)
 - Only list names who know the SPECIFIC secret
 - Skip: common knowledge, things everyone witnessed equally
@@ -58,7 +58,7 @@ ARC: Character development - MOST VALUABLE, rarely cut.
 - Arc = WHO THEY ARE changed, not WHAT THEY DID
 - TENSE: Past — this is history ("shifted from X → Y", "came to accept")
 - PERSPECTIVE: Write from THE ENTITY's viewpoint, about their internal change
-  ✗ "Senta chose him despite flaws" (someone else's action)
+  ✗ "Alex chose him despite flaws" (someone else's action toward entity)
   ✓ "Accepted bond after initially rejecting it; found purpose beyond guilt"
 - Skip: temporary moods, single instances, generic labels ("grew stronger")
 - Skip: actions/events ("traveled far", "fought bravely") — not development
@@ -72,6 +72,7 @@ STANCE: Relationship dynamics (per target) - HIGH VALUE.
 
 VOICE: Representative quotes showing speech patterns.
 - t = entity type, n = name, q = quote
+- ONLY extract quotes that appear VERBATIM in the <SCENE> section above
 - Ask: "Would this help write future dialogue for this character?"
 - Valuable: shows HOW they speak (cadence, register, verbal tics)
 - ATTRIBUTION: Verify who is SPEAKING, not who is addressed.
@@ -79,8 +80,8 @@ VOICE: Representative quotes showing speech patterns.
 - Skip: generic ("I understand"), plot-functional ("It's in the tower"),
   one-off outbursts, exposition-heavy explanations of plot/lore
 - Voice = speech STYLE, not speech CONTENT
-  ✗ "You did this. The power came from within you. A Gift awakened..." (exposition)
-  ✓ "You insufferable horse. Help me, or leave me to die." (voice pattern)
+  ✗ "The curse originated in the eastern temple and spread through..." (exposition)
+  ✓ "Stars above, you're denser than a brick privy." (voice pattern)
 - Dedup: same speech pattern = keep better one only
 - KEEP BOTH if quotes show DIFFERENT patterns (formal vs casual, angry vs calm)
 
