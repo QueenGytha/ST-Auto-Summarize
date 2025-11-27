@@ -1,55 +1,69 @@
-// Stage 2: Condense and format
+// Stage 2: Hard filter + organize into rc/sl structure
 // MACROS: {{extracted_data}}, {{lorebook_entry_types_with_guidance}}
-// INPUT: Stage 1 structured facets with entity types pre-assigned
 
-export const scene_recap_stage2_organize_prompt = `ROLE: Merge extracted facets by entity into compact output for token-efficient context.
+export const scene_recap_stage2_organize_prompt = `ROLE: Filter Stage 1 output and organize into rc (recap) + sl (entity entries).
 
-============ FILTERING (DO THIS FIRST) ============
+============ HARD FILTERING (DO THIS FIRST) ============
 
-For EACH item being merged into an entity, ask: "Does this earn its tokens?"
+Stage 1 over-extracts. Your job is aggressive filtering.
 
-QUOTES (biggest bloat source):
-- Earns inclusion: distinctive mannerism that helps recreate how they talk, OR plot-critical line that will be referenced
-- Drop: generic dialogue, same energy as another kept quote (keep the better one), uncertain = drop
+For EACH item, ask: "Does this REALLY earn its tokens?"
+- If uncertain, DROP. Default is exclude, not include.
 
-STATE/STANCE/APPEARANCE:
-- Earns inclusion: information needed to continue roleplay accurately
-- Drop: redundant with other content for same entity, or superseded by more current info
+INTERNAL DEDUPLICATION (by priority):
+- Arc: Only landmark moments survive. Temporary moods → DROP
+- Stance: Multiple entries for same entity→target → consolidate into one
+- Voice: Multiple quotes showing same speech pattern → keep best one only
+- State: Redundant conditions → keep most current/relevant only
 
-When merging multiple items of same type for one entity, consolidate. Don't just concatenate.
+QUALITY GATE:
+- Generic labels ("grew closer", "became stronger") → DROP, need specifics
+- Plot-functional dialogue ("Let's go to the market") → DROP
+- Temporary states that won't persist → DROP
+- Anything that fails SIGNIFICANT/PERSISTENT/SPECIFIC → DROP
 
 ==========================================================================
 
 OUTPUT FORMAT:
 {
-  "rc": "DEV: ...\\nPEND: ...",
-  "sl": [{ "t": "type", "n": "EntityName", "c": "combined content", "k": ["keywords"] }]
+  "rc": "DEV: ...\\nPEND: ...\\nKNOWS: ...",
+  "sl": [{ "t": "type", "n": "Name", "c": "bulleted content", "k": ["keywords"] }]
 }
 
-VALID ENTITY TYPES:
+ENTITY TYPES:
 {{lorebook_entry_types_with_guidance}}
 
----------------- TRANSFORMATION RULES ----------------
+---------------- RC (RECAP) ----------------
 
-RC (compact recap - FRAGMENTS, NOT PROSE):
-- DEV: plot[] only. Outcomes only, no process.
-- PEND: goals[] as "Actor: goal"
-- STYLE: Fragments; semicolons; no articles. TELEGRAPHIC.
-- DO NOT put reveals[] in rc. reveals[] = world lore → goes to sl as "lore" type entries.
+Format: TELEGRAPHIC. Fragments; semicolons; no articles.
 
-SL (merge by entity name):
-- Group state[]/stance[]/voice[]/appearance[] entries sharing same n value
-- t = use the t value from input (already classified)
+- DEV: outcomes[] only. High-level results.
+- PEND: threads[] as unresolved plot hooks.
+- KNOWS: knows[] as "secret (who knows)" - drop if everyone knows
+
+Omit empty sections.
+
+---------------- SL (ENTITY ENTRIES) ----------------
+
+Group all facets for same entity into ONE entry with LABELED BULLETS.
+
+PRIORITY ORDER (cut lower priority first when filtering):
+- Arc: development journey (from → to) — PROTECT
+- Stance: [target] — shared history, dynamic, commitments — HIGH VALUE
+- Voice: 'representative quote' — MEDIUM
+- State: current conditions, belongings, status — LOWER
+- Identity: background, role, position, appearance — CUT FIRST
+
+Rules:
+- t = entity type from input
 - n = entity name exactly as appears
-- c = merged: state + appearance + stance + voice (quote with context)
-- k = [entity name, aliases]
+- k = [name, aliases]
+- c = bulleted content (OMIT empty bullets)
+- Each bullet on new line
 
-REVEALS → SL (route to appropriate type):
-- Character backstory/secrets → merge into that character's sl entry
-- Location facts → merge into that location's sl entry
-- World mechanics/magic rules → t="lore", n=concept name
-- Faction info → merge into that faction's sl entry
-- Merge reveals into existing entries where possible
+ROUTING:
+- arc[], stance[], voice[], state[], identity[] → entity's sl entry
+- verbatim[] → relevant entity or lore entry
 
 ---------------- EXTRACTED DATA ----------------
 <EXTRACTED>

@@ -2,17 +2,19 @@
 
 // Default entity types with the new table-based structure
 // Each entry has: name, constant (boolean), usage (string), and optionally isGuidanceOnly (boolean)
+// These descriptions are included in prompts via {{lorebook_entry_types_with_guidance}} macro.
+// Use them to guide LLM on what goes where - reduces repetition in prompts.
 export const DEFAULT_ENTITY_TYPES = [
   // Special guidance-only entry (always first, cannot be deleted)
-  { name: 'recap', constant: null, usage: '(NOT FOR SL ENTRIES) Put in rc field: plot progression, emotional beats, temporary states, dialogue, relationships - anything that belongs in narrative recap NOT as a lorebook entry', isGuidanceOnly: true },
+  { name: 'recap', constant: null, usage: '(NOT FOR SL ENTRIES) Goes in rc field: DEV (plot outcomes, key events), PEND (unresolved plot threads - narrative hooks, NOT character goals), KNOWS (who knows what secrets). High-level only.', isGuidanceOnly: true },
   // Regular lorebook entry types
-  { name: 'character', constant: false, usage: 'Named characters appearing in the story' },
-  { name: 'location', constant: false, usage: 'Places, settings, and notable locations' },
-  { name: 'item', constant: false, usage: 'Important objects and possessions' },
-  { name: 'faction', constant: false, usage: 'Groups, organizations, and affiliations' },
-  { name: 'lore', constant: false, usage: 'World history, mythology, and background lore' },
-  { name: 'quest', constant: true, usage: 'Active story goals, objectives, and missions' },
-  { name: 'rule', constant: true, usage: 'Roleplay rules, constraints, and boundaries' }
+  { name: 'character', constant: false, usage: 'Named characters. Bullets: Identity (background, role, position), State (conditions, belongings, status), Voice (distinctive quotes), Arc (growth journey), Stance (relationship per target).' },
+  { name: 'location', constant: false, usage: 'Places and settings. Include history, significance, current conditions if persistent.' },
+  { name: 'item', constant: false, usage: 'Important objects. Full details here; characters just list in Belongings. Track ownership, significance, abilities.' },
+  { name: 'faction', constant: false, usage: 'Groups and organizations. Include their goals, stances toward other factions/characters, internal dynamics.' },
+  { name: 'lore', constant: false, usage: 'World history, mythology, events, magic systems, world rules. Facts that persist and inform the setting.' },
+  { name: 'quest', constant: true, usage: 'Character goals and missions. What they are actively trying to achieve (distinct from PEND plot threads).' },
+  { name: 'rule', constant: true, usage: 'OOC constraints, TTRPG systems, roleplay boundaries. Meta-rules that govern the story.' }
 ];
 
 // Legacy format for backwards compatibility during migration

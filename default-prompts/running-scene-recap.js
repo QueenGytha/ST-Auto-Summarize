@@ -1,36 +1,48 @@
 // MACROS: {{current_running_recap}}, {{scene_recaps}}
 
-export const running_scene_recap_prompt = `ROLE: Merge NEW_SCENE_RECAP into CURRENT_RUNNING_RECAP. CURRENT is baseline.
+export const running_scene_recap_prompt = `ROLE: Merge NEW into CURRENT running recap. CURRENT is baseline.
 
-============ FILTERING (DO THIS FIRST) ============
+============ DEV (outcomes) ============
 
-For EACH item in NEW_SCENE_RECAP, ask: "Does this earn its tokens given what CURRENT_RUNNING_RECAP already has?"
-
-DEV (outcomes):
-- Earns inclusion: outcome that changes story state, not already in CURRENT_RUNNING_RECAP
-- Drop: steps/process toward outcome (keep only result), already stated in CURRENT_RUNNING_RECAP
-
-PEND (goals):
-- SUPERSEDE, don't accumulate. When NEW_SCENE_RECAP has goals for actor X → REPLACE X's old goals entirely.
-- Achieved goals → move to DEV. Abandoned goals → drop.
+- ADD: outcomes that change story state, not already in CURRENT
+- DROP: steps/process (keep only results), duplicates
 
 OUTCOME vs STEP test:
-"If I delete this and keep only what follows, do I lose important information?"
-YES → outcome (keep). NO → step (drop or merge into outcome).
+"If I delete this and keep only what follows, do I lose information?"
+YES → outcome. NO → step (drop).
 
 Before: "traveled to city; found contact; negotiated; got information"
 After: "obtained information from contact"
 
+============ PEND (plot threads) ============
+
+SUPERSESSION RULE:
+- When NEW resolves a thread → move outcome to DEV, remove from PEND
+- When NEW adds new thread → add to PEND
+- Abandoned threads → drop entirely
+
+These are PLOT THREADS (narrative hooks), not character goals.
+Character goals belong in quest entries, not PEND.
+
+============ KNOWS (information asymmetry) ============
+
+Format: "secret description (who knows)"
+
+- ADD names when characters learn something
+- REMOVE entry entirely when secret becomes common knowledge
+- UPDATE who knows as information spreads
+
+Be strict: not every piece of information is a secret worth tracking.
+Only track when characters having DIFFERENT knowledge matters for the story.
+
 ==========================================================================
 
 OUTPUT:
-{"recap":"DEV: ...\\nPEND: ..."}
+{"recap":"DEV: ...\\nPEND: ...\\nKNOWS: ..."}
 
-- DEV: outcomes; state changes. No quotes. No world lore (belongs in lorebook entries).
-- PEND: active goals (who/what/condition). No completed goals.
-- Omit empty sections.
+STYLE: Fragments; semicolons; no articles/filler. TELEGRAPHIC.
 
-STYLE: Fragments; semicolons; no articles/filler.
+Omit empty sections.
 
 ---------------- CURRENT_RUNNING_RECAP ----------------
 <CURRENT_RUNNING_RECAP>

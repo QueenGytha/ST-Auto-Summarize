@@ -1,48 +1,51 @@
 // MACROS: {{existing_content}}, {{new_content}}, {{entry_name}}
 
-export const auto_lorebook_recap_merge_prompt = `ROLE: Merge setting_lore entry. EXISTING_CONTENT is baseline. Default action is DROP from NEW_CONTENT unless it clearly earns inclusion.
+export const auto_lorebook_recap_merge_prompt = `ROLE: Merge NEW into EXISTING entry. EXISTING is baseline. Default is DROP unless NEW clearly earns inclusion.
 
-============ FILTERING (MOST IMPORTANT - APPLY FIRST) ============
+============ SUPERSESSION RULES (by priority) ============
 
-Entries bloat over time. Your job is aggressive filtering, not comprehensive merging.
+Different bullet types have different merge rules:
 
-For EACH item in NEW_CONTENT, ask: "Does this earn its tokens given what EXISTING already has?"
+- Arc: ACCUMULATE - add to journey (landmark moments only, 3-5 total max) — PROTECT
+- Stance: UPDATE per target - one line per relationship — HIGH VALUE
+- Voice: DEDUP - same speech pattern = keep better one only — MEDIUM
+- State: SUPERSEDE - newer replaces older — LOWER
+- Identity: PRESERVE unless fundamentally changed (rare) — CUT FIRST
 
-QUOTES - hardest filter:
-- Does EXISTING already show how this character talks? If yes, NEW quote must be significantly more distinctive to replace it, otherwise DROP.
-- Two quotes with similar energy (both stubborn, both sarcastic, both tender) = keep the better one, DROP the other.
-- Quote earns inclusion ONLY if: distinctive mannerism not already shown, OR plot-critical line that will be referenced.
-- Generic dialogue that anyone could say → DROP.
-- When uncertain → DROP.
+============ FILTERING ============
 
-STATE/FACTS:
-- "Will this still be true next scene?" NO → DROP.
-- EXISTING already covers this concept? → DROP unless NEW is more precise.
+For EACH item in NEW, ask: "Does this earn its tokens given what EXISTING has?"
 
-RELATIONSHIPS:
-- Collapse to stance + dynamics. Blow-by-blow progression → DROP.
-- Keep: debts, boundaries, pivots, promises, tension.
+Voice dedup:
+- Does NEW quote show same speech pattern as any EXISTING quote?
+- YES same pattern → keep better one only
+- NO different pattern → add new quote
 
-APPEARANCE:
-- EXISTING describes this? → DROP unless NEW is more accurate/distinctive.
+Arc threshold:
+- Is this a landmark moment (pattern break, worldview shift)?
+- NO, just a mood or minor moment → DROP
 
-TRIGGERS:
-- Multiple phrasings of same behavioral pattern → keep clearest one, DROP rest.
+State check:
+- Will this still be true going forward?
+- NO → DROP. YES → supersedes existing.
 
-==========================================================================
+============ OUTPUT ============
 
-OUTPUT:
 {
-  "mergedContent": "fragment content",
+  "mergedContent": "bullet-formatted content",
   "canonicalName": "ProperName or null"
 }
 
-STYLE: Fragments; semicolons; no articles/filler. Quotes verbatim.
+MUST use labeled bullets (priority order):
+- Arc: journey (from → through → to)
+- Stance: [target] — shared history, dynamic, commitments
+- Voice: 'representative quote'
+- State: current conditions, belongings, status
+- Identity: background, role, position, appearance
 
-SUBJECT LOCK: Entry = {{entry_name}}. Other entities → Relationships only.
+OMIT empty bullets. Each bullet on new line.
 
-FACETS (fragments; only when shown):
-Identity: concise | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics | Voice: cadence cues | Notable dialogue: verbatim | Secrets/Tension: if consequential
+SUBJECT LOCK: Entry = {{entry_name}}. Other entities → Stance bullets only.
 
 ---------------- EXISTING_CONTENT ----------------
 <EXISTING_CONTENT>
