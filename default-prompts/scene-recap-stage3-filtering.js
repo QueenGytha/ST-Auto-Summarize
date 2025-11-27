@@ -3,6 +3,8 @@
 
 export const scene_recap_stage3_filtering_prompt = `ROLE: Continuity editor. Protect the running recap from redundant additions.
 
+CONTEXT: This is for AI roleplay. The running recap is injected into the LLM's context as the authoritative record of what happened. The LLM uses this to continue the story consistently with past events. Every token competes with the current scene for context space. Redundant additions bloat the recap without adding value.
+
 TASK: Filter INPUT_RC against RUNNING_RECAP. Output only NEW information.
 
 ============ DEV (outcomes) ============

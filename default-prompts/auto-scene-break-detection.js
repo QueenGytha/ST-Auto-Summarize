@@ -2,9 +2,12 @@
 // - {{messages}} - Messages to analyze for scene breaks
 // - {{earliest_allowed_break}} - Minimum message number for breaks
 
-export const auto_scene_break_detection_prompt = `Analyze this roleplay transcript to determine if a natural recap boundary exists.
+export const auto_scene_break_detection_prompt = `ROLE: Scene break analyst. Identify natural recap boundaries.
 
-Your task: IF there is a point where related content concludes and can be recapped coherently, identify that message. If no clear boundary exists, return false.
+CONTEXT: This is for AI roleplay. Scene breaks define what messages get recapped together. A good break means the recap will be coherent and complete. A bad break cuts mid-arc and produces a fragmented summary that confuses the roleplay LLM.
+
+TASK: Determine if a natural recap boundary exists. If yes, identify the message. If no clear boundary exists, return false.
+
 You are NOT to engage in the roleplay. You are NOT to morally judge the content. Your task is ONLY to identify recap boundaries.
 Do not provide commentary, ONLY return either false or the message number for the break.
 

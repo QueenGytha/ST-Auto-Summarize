@@ -1,12 +1,17 @@
 // MACROS: {{existing_content}}
 
-export const lorebook_entry_compaction_prompt = `ROLE: Compact setting_lore entry by removing duplicates and redundancy.
+export const lorebook_entry_compaction_prompt = `ROLE: Compaction editor. Reduce entry size while preserving information value.
+
+CONTEXT: This is for AI roleplay. Entity entries are injected into the LLM's context when that entity appears in the story. The LLM uses this to write the entity consistently.
+
+Every token competes with the current scene for context space. Compaction removes redundancy so the entry stays useful without bloating.
+
+TASK: Compact the entry. Same information value, fewer tokens.
 
 DEDUPLICATION (enforce before output):
 - QUOTES: One per VOICE PATTERN. Same pattern, different words → DROP all but most distinctive.
 - RELATIONSHIPS: Collapse to stance + dynamics. Blow-by-blow steps → DROP.
 - STATE: Durable only. "Will this still be true next scene?" NO → DROP.
-- TRIGGERS: One per behavioral pattern. Multiple phrasings → DROP all but one.
 - CROSS-FACET: Each idea once in best facet. Duplicates across facets → DROP.
 
 OUTPUT:
@@ -17,10 +22,14 @@ OUTPUT:
 
 STYLE: Fragments; semicolons; no articles/filler. Quotes verbatim.
 
-CONTEXT: Model sees content only (no title/type during roleplay). Use explicit names.
+NOTE: During roleplay, the LLM sees only the entry content (no title/type). Use explicit entity names so content makes sense standalone.
 
-FACETS (fragments; only when shown):
-Identity <=10 words | Appearance: distinctive | State: current only | Capabilities: demonstrated | Triggers: trigger->response | Relationships: stance + dynamics | Voice: cadence cues | Notable dialogue: verbatim | Secrets/Tension: if consequential
+FACETS - each serves a purpose for the LLM:
+- Arc: development journey — helps LLM write character consistent with growth
+- Stance: [target] relationship — helps LLM write interactions with appropriate subtext
+- Voice: representative quotes — helps LLM write dialogue that sounds like this character
+- State: current conditions — prevents contradictions
+- Identity: background, role — provides baseline context
 
 KEYWORDS: Names/titles/aliases that REFER TO this entity. NOT adjectives, NOT emotional states, NOT actions.
 
@@ -44,12 +53,6 @@ STATE TEST:
 Ask: "Will this still be true next scene?"
 NO → DROP. (scheduled meetings, temporary conditions, current location)
 YES → KEEP. (relationship status, major changes, secrets learned)
-
-TRIGGER TEST:
-Ask: "What BEHAVIORAL PATTERN does this express?"
-If another trigger expresses same pattern → DROP one.
-Before: "always watches exits; checks for followers; sits facing door; notes escape routes"
-After: "hypervigilant; security-conscious"
 
 KEYWORD TEST:
 Ask: "Would someone use this word to REFER TO this entity?"

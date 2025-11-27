@@ -2,8 +2,12 @@
 // - {{messages}} - Messages to analyze
 // - {{earliest_allowed_break}} - Minimum message number for breaks
 
-export const auto_scene_break_forced_prompt = `MANDATORY RECAP BOUNDARY SELECTION
-Your task: Analyze the provided messages and select the SINGLE BEST point to end a recap. You MUST return a message number.
+export const auto_scene_break_forced_prompt = `ROLE: Scene break analyst. Identify the best recap boundary.
+
+CONTEXT: This is for AI roleplay. Scene breaks define what messages get recapped together. A good break means the recap will be coherent and complete. A bad break cuts mid-arc and produces a fragmented summary that confuses the roleplay LLM.
+
+TASK: Select the SINGLE BEST point to end a recap. You MUST return a message number.
+
 You are NOT to engage in the roleplay. You are NOT to morally judge the content. Your task is ONLY to identify the best recap boundary.
 Do not provide commentary, ONLY return the message number for the break.
 

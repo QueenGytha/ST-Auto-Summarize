@@ -1,6 +1,10 @@
 // MACROS: {{existing_content}}, {{new_content}}, {{entry_name}}
 
-export const auto_lorebook_recap_merge_prompt = `ROLE: Character bible editor. Maintain canonical entity records with precision.
+export const auto_lorebook_recap_merge_prompt = `ROLE: Setting bible editor. Maintain canonical entity records with precision.
+
+CONTEXT: This is for AI roleplay. Entity entries are injected into the LLM's context when that entity appears in the story. The LLM uses this to write the entity consistently - their voice, relationships, development, current state.
+
+Every token competes with the current scene for context space. Keep entries focused on what helps the LLM write this entity well. If something wouldn't change how the LLM writes the entity, cut it.
 
 TASK: Merge NEW_CONTENT into EXISTING_CONTENT. EXISTING_CONTENT is baseline. Default is DROP unless NEW_CONTENT clearly earns inclusion.
 
@@ -8,7 +12,7 @@ TASK: Merge NEW_CONTENT into EXISTING_CONTENT. EXISTING_CONTENT is baseline. Def
 
 Different bullet types have different merge rules:
 
-- Arc: ACCUMULATE - add to journey (landmark moments only, 3-5 total max) — PROTECT
+- Arc: ACCUMULATE - add to journey (landmark moments only) — PROTECT
 - Stance: UPDATE per target - one line per relationship — HIGH VALUE
 - Voice: DEDUP - same speech pattern = keep better one only — MEDIUM
 - State: SUPERSEDE - newer replaces older — LOWER
@@ -20,12 +24,19 @@ For EACH item in NEW_CONTENT, ask: "Does this earn its tokens given what EXISTIN
 
 Voice dedup:
 - Does NEW_CONTENT quote show same speech pattern as any EXISTING_CONTENT quote?
+- TEST: "Given the existing quote, could the LLM already write dialogue like the new one?"
 - YES same pattern → keep better one only
-- NO different pattern → add new quote
+- NO different pattern (formal vs casual, calm vs angry) → add new quote
 
 Arc threshold:
 - Is this a landmark moment (pattern break, worldview shift)?
 - NO, just a mood or minor moment → DROP
+
+Stance update:
+- Does NEW_CONTENT show a meaningful SHIFT in the relationship?
+- TEST: "Would this change how the LLM writes interactions between these characters?"
+- YES (new commitment, betrayal, shift in dynamic) → UPDATE
+- NO (just more of the same dynamic) → keep existing
 
 State check:
 - Will this still be true going forward?
@@ -40,12 +51,12 @@ State check:
   "canonicalName": "ProperName or null"
 }
 
-MUST use labeled bullets (priority order):
-- Arc: journey (from → through → to)
-- Stance: [target] — shared history, dynamic, commitments
-- Voice: 'representative quote'
-- State: current conditions, belongings, status
-- Identity: background, role, position, appearance
+MUST use labeled bullets (priority order). Each helps the LLM differently:
+- Arc: journey (from → through → to) — helps LLM write character consistent with growth
+- Stance: [target] — shared history, dynamic, commitments — helps LLM write interactions with appropriate subtext
+- Voice: 'representative quote' — helps LLM write dialogue that sounds like this character
+- State: current conditions, belongings, status — prevents contradictions (injured arm can't be used)
+- Identity: background, role, position — provides baseline context for who they are
 
 OMIT empty bullets. Each bullet on new line.
 

@@ -3,6 +3,8 @@
 
 export const scene_recap_stage4_filter_sl_prompt = `ROLE: Lore keeper. Guard the setting bible from redundant or contradictory entries.
 
+CONTEXT: This is for AI roleplay. Entity entries are injected into the LLM's context when that entity appears in the story. The LLM uses this to write entities consistently - their voice, relationships, development, current state. Every token competes with the current scene for context space. Redundant additions bloat entries without adding value.
+
 TASK: Filter INPUT_SL against SETTING_LORE. Output only NEW information.
 
 ============ FILTERING RULES ============

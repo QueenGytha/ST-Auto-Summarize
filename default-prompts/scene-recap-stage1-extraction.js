@@ -2,19 +2,27 @@ export const scene_recap_stage1_extraction_prompt = `ROLE: Narrative archivist. 
 
 TASK: Identify content worth preserving for historical context.
 
-CONTEXT: This is a HISTORY of older messages. Recent messages are still directly visible
-to the LLM. You're writing what the LLM needs to know about the PAST, not current state.
+CONTEXT: This is for AI roleplay. An LLM writes the story, but can only see recent messages directly. Older messages get summarized and injected back as historical context so the LLM knows what happened before.
+
+You're extracting from OLDER messages that the LLM can no longer see directly. Your output becomes the LLM's only memory of these events. The LLM will use this to:
+- Continue the story consistently with past events
+- Write characters true to how they've developed
+- Avoid contradicting established facts
+- Pick up unresolved plot threads
+
+Every token you output competes with the current scene for context space. Extract only what the LLM actually needs to continue the story well.
 
 QUALITY CRITERIA - apply to EVERY item:
 - SIGNIFICANT: Would roleplay go wrong without this? If no, skip.
 - PERSISTENT: Still relevant in 10 scenes? If no, skip.
+- SYNTHESIZED: Capture meaning, not verbatim text. Exceptions: voice quotes, in-world documents, exact commitments.
 - SPECIFIC: Generic labels are useless. Be specific or skip.
 - EMPTY IS VALID: Don't extract just to fill categories.
 
 ENTITY TYPES:
 {{lorebook_entry_types_with_guidance}}
 
----------------- RECAP FACETS (for running recap) ----------------
+---------------- PLOT SUMMARY ----------------
 
 OUTCOMES: Key plot events and results. High-level only.
 - What happened that changes the story state
@@ -26,6 +34,11 @@ THREADS: Unresolved plot hooks the LLM can pick up later.
 - Promises pending, mysteries hinted
 - Skip: resolved threads, character goals (those go to quest entries)
 
+HOOK TEST: "Can the LLM use this to create drama/conflict/tension?"
+- YES = threat, secret, promise, mystery, vulnerability, ticking clock
+- NO = scheduling, logistics, implementation details, upcoming meetings
+A meeting being scheduled is not a hook. A deadline with consequences is.
+
 KNOWS: Information asymmetry - who learned what.
 - Format: {"secret": "description", "who": ["names who know"]}
 - Track who LEARNED during THIS scene (include knowledge transfers)
@@ -34,13 +47,14 @@ KNOWS: Information asymmetry - who learned what.
 - Only list names who know the SPECIFIC secret
 - Skip: common knowledge, things everyone witnessed equally
 
----------------- ENTITY FACETS (for lorebook entries) ----------------
+---------------- ENTITY DATA ----------------
 
 PRIORITY ORDER (highest first - protect these, cut lower priority first):
 
 ARC: Character development - MOST VALUABLE, rarely cut.
 - t = entity type, n = name, c = content
 - Landmark moments only: pattern breaks, worldview shifts, emotional baseline changes
+- Emotional stakes: what they now fear, desire, or stand to lose
 - Arc = WHO THEY ARE changed, not WHAT THEY DID
 - TENSE: Past — this is history ("shifted from X → Y", "came to accept")
 - PERSPECTIVE: Write from THE ENTITY's viewpoint, about their internal change
@@ -83,6 +97,11 @@ IDENTITY: Baseline character facts - CUT FIRST if needed.
 - Skip: already established, not plot-relevant
 
 VERBATIM: Exact text of in-world documents (letters, contracts, prophecies).
+
+LORE: Only extract what's STORY-SPECIFIC, not generic world-building.
+- Generic world-building (how magic works, what factions exist, species traits) belongs in character cards, not extracted per-scene
+- Story-specific = facts that affect THIS story's stakes or make it unique
+- Test: "Is this a fact that makes THIS story special, or just how the world works?"
 
 ---------------- OUTPUT FORMAT ----------------
 {
