@@ -1,98 +1,71 @@
-// Stage 2: Hard filter + organize into rc/sl structure
-// MACROS: {{extracted_data}}, {{lorebook_entry_types_with_guidance}}
+// Stage 2: Quality filter + keyword generation
+// MACROS: {{extracted_data}}
 
-export const scene_recap_stage2_organize_prompt = `ROLE: Editorial curator. Filter and organize scene data.
+export const scene_recap_stage2_organize_prompt = `TASK: Quality filter and add keywords to scene extraction.
 
-CONTEXT: This is for AI roleplay. The extracted data will be injected into an LLM's context as historical memory. The LLM uses this to continue the story consistently.
+================================================================================
+INPUT
+================================================================================
 
-Every token competes with the current scene for context space. Your job is aggressive filtering - keep only what the LLM genuinely needs to write well. If the LLM could continue the story fine without something, cut it.
+Stage 1 extracted:
+- sn: scene name
+- plot: DEV (outcomes) + PEND (unresolved hooks)
+- entities: [{t: type, n: name, c: content}]
 
-TASK: Filter the extracted data and organize into two outputs:
-- rc: running recap (high-level plot summary - what happened, unresolved threads)
-- sl: entity entries (character/location/item/lore details that persist across scenes)
+================================================================================
+QUALITY FILTER
+================================================================================
 
-============ FILTERING ============
+Strip anything that slipped through that shouldn't have:
 
-Most extracted content should NOT survive. For EACH item ask: "Does this REALLY earn its tokens?"
-- If uncertain, DROP. Default is exclude, not include.
+PLOT:
+- DEV should be outcomes only, not play-by-play
+- PEND should be dramatic hooks, not logistics/scheduling
+- Generic labels without specifics → cut
 
-INTERNAL DEDUPLICATION (by priority):
-- Arc: Only landmark moments survive. Temporary moods → DROP
-- Stance: Multiple entries for same entity→target → consolidate into one
-- Quotes: Multiple quotes for same relationship moment → keep best one only
-- State: Redundant conditions → keep most current/relevant only
+ENTITIES:
+- Entity that didn't actually CHANGE → cut entirely
+- Generic labels ("grew closer") without specifics → cut
+- Temporary states that won't persist → cut
+- Content that's transcript not substance → cut
 
-EMBEDDED QUOTES IN ARC/STANCE:
-- Compare MEANING, not format. Embedded quote doesn't make it different content.
-- "told her 'you're the only one' after the battle" and "revealed she's uniquely important to him"
-  are the SAME stance point — keep whichever captures it better.
-- Multiple quotes for same Arc transformation or same Stance target → keep best one only.
-- Quote earns its place only if exact wording matters for callbacks.
+If uncertain, keep. Stage 1 already filtered heavily.
 
-QUALITY GATE:
-- Generic labels ("grew closer", "became stronger") → DROP, need specifics
-- Temporary states that won't persist → DROP
-- Anything that fails SIGNIFICANT/PERSISTENT/SPECIFIC → DROP
-- Lore that's generic world-building (not story-specific) → DROP
+================================================================================
+KEYWORDS
+================================================================================
 
-QUOTES QUALITY GATE (apply before dedup):
-- RELATIONSHIP TEST: Does this define or pivot a relationship? Is it a commitment/oath?
-- REDUNDANCY TEST: Is the meaning already captured in Arc or Stance? If yes → DROP
-- Generic expressions → DROP ("Yes!", "I love you", "I'll kill you")
-- Plot-functional dialogue → DROP ("Let's go to the market")
-- Exposition → DROP
-- Quotes are for CALLBACKS — exact wording that matters for future reference.
-- When uncertain: DROP. No quote is better than a redundant one.
+Add keywords (k) to each surviving entity.
 
-==========================================================================
+INCLUDE:
+- The name itself (always)
+- Titles/epithets used for this entity ("Queen's Own", "Weaponsmaster")
+- Aliases/nicknames actually used in story
+- For lore: topic terms that should trigger this entry
 
-OUTPUT FORMAT:
+EXCLUDE:
+- Incidental scene elements (a fireplace in the room ≠ keyword for character)
+- Other characters' names (Talia's entry doesn't get "Rance" as keyword)
+- Generic words (magic, sword, horse) unless that's the entity's identity
+- Plot events (battle, escape, kiss)
+
+Conservative. 1-4 keywords typical. Name alone is often enough.
+
+================================================================================
+OUTPUT
+================================================================================
+
 {
-  "rc": "DEV: ...\\nPEND: ...",
-  "sl": [{ "t": "type", "n": "Name", "c": "bulleted content", "k": ["keywords"] }]
+  "sn": "scene name (pass through)",
+  "plot": "filtered plot (pass through or trimmed)",
+  "entities": [{"t": "type", "n": "Name", "c": "content", "k": ["keywords"]}]
 }
 
-ENTITY TYPES:
-{{lorebook_entry_types_with_guidance}}
+Omit entities that were cut entirely. Pass through sn unchanged.
 
----------------- RC (RECAP) ----------------
-
-Format: TELEGRAPHIC. Fragments; semicolons; no articles.
-
-- DEV: outcomes[] only. High-level results.
-- PEND: threads[] as unresolved plot hooks. Test: "Can LLM use this for drama/tension?" NO = scheduling/logistics, drop it.
-
-Omit empty sections.
-
----------------- SL (ENTITY ENTRIES) ----------------
-
-Group all facets for same entity into ONE entry with LABELED BULLETS.
-ALL entity types use this format (characters, locations, items, lore, etc.)
-
-PRIORITY ORDER (cut lower priority first when filtering):
-- Arc: development journey (from → to) — PROTECT
-- Stance: [target] — shared history, dynamic, commitments — HIGH VALUE
-- Quotes: 'defining quote' — MEDIUM (only if not redundant with Arc/Stance)
-- State: current conditions, belongings, status — LOWER
-- Identity: background, role, position, appearance — CUT FIRST
-
-For non-character entities (locations, items, lore):
-- Use State for current conditions
-- Use Identity for baseline facts/description
-
-Rules:
-- t = entity type from input
-- n = entity name exactly as appears
-- k = [name, aliases]
-- c = bulleted content with labels (• State: ... • Identity: ...)
-- Each bullet on new line
-- OMIT empty bullets
-
-ROUTING:
-- arc[], stance[], quotes[], state[], identity[] → entity's sl entry
-- verbatim[] → relevant entity or lore entry
-
----------------- EXTRACTED DATA ----------------
+================================================================================
+EXTRACTED DATA
+================================================================================
 <EXTRACTED>
 {{extracted_data}}
 </EXTRACTED>
