@@ -12,7 +12,8 @@ export const DEFAULT_ENTITY_TYPES = [
   { name: 'location', constant: false, usage: 'Places and settings. Include history, significance, current conditions if persistent.' },
   { name: 'item', constant: false, usage: 'Important objects. Full details here; characters just list in Belongings. Track ownership, significance, abilities.' },
   { name: 'faction', constant: false, usage: 'Groups and organizations. Include their goals, stances toward other factions/characters, internal dynamics.' },
-  { name: 'lore', constant: false, usage: 'World history, mythology, events, magic systems, world rules. Facts that persist and inform the setting.' },
+  { name: 'lore', constant: false, usage: 'World history, mythology, magic systems, world rules. Facts that persist and inform the setting.' },
+  { name: 'event', constant: false, usage: 'Resolved plot events that might be referenced. Keyword-triggered for callbacks. Minimal detail—just enough to recognize if mentioned.' },
   { name: 'rule', constant: true, usage: 'OOC constraints, TTRPG systems, roleplay boundaries. Meta-rules that govern the story.' }
 ];
 
@@ -23,6 +24,7 @@ export const LEGACY_ENTITY_TYPES = [
   'item',
   'faction',
   'lore',
+  'event',
   'rule(entry:constant)'
 ];
 
