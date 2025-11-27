@@ -31,12 +31,18 @@ Voice dedup:
 Arc threshold:
 - Is this a landmark moment (pattern break, worldview shift)?
 - NO, just a mood or minor moment → DROP
+- EMBEDDED QUOTES: Compare MEANING not format. If NEW has quote and EXISTING has
+  synthesis of same transformation, keep whichever captures it better.
+  Quote earns its place only if exact wording matters for callbacks.
 
 Stance update:
 - Does NEW_CONTENT show a meaningful SHIFT in the relationship?
 - TEST: "Would this change how the LLM writes interactions between these characters?"
 - YES (new commitment, betrayal, shift in dynamic) → UPDATE
 - NO (just more of the same dynamic) → keep existing
+- EMBEDDED QUOTES: Compare MEANING not format. If NEW has quote and EXISTING has
+  synthesis of same dynamic/commitment, keep whichever captures it better.
+  Quote earns its place only if exact wording matters for callbacks.
 
 State check:
 - Will this still be true going forward?

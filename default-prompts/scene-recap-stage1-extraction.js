@@ -17,7 +17,9 @@ QUALITY CRITERIA - apply to EVERY item:
 - PERSISTENT: Still relevant in 10 scenes? If no, skip.
 - SYNTHESIZED: Capture meaning, not verbatim text. Exceptions: voice quotes, in-world documents, exact commitments.
 - SPECIFIC: Generic labels are useless. Be specific or skip.
-- EMPTY IS VALID: Don't extract just to fill categories.
+- EMPTY IS VALID: Not every scene has arc moments, voice-worthy quotes, or stance shifts.
+  Resist the urge to find SOMETHING for each category. If nothing qualifies, output nothing.
+  Forced extraction = noise that drowns out real signal.
 
 ENTITY TYPES:
 {{lorebook_entry_types_with_guidance}}
@@ -62,29 +64,48 @@ ARC: Character development - MOST VALUABLE, rarely cut.
 - Skip: temporary moods, single instances, generic labels ("grew stronger")
 - Skip: actions/events ("traveled far", "fought bravely") — not development
 - A character's arc might only have 3-5 points across entire roleplay
+- EMBEDDED QUOTES: When character's exact words capture the transformation and would be
+  referenced later, embed with context. Only if exact wording matters for callbacks.
+  ✓ "understood 'running was easier than staying' after confronting his father"
+  ✓ "realized 'I was only punishing myself' when she finally forgave him"
+  If meaning works without the specific words, synthesize instead.
 
 STANCE: Relationship dynamics (per target) - HIGH VALUE.
 - t = entity type, n = name, toward = target, c = content
-- Shared history (high-level), how relationship DEVELOPED (was → became)
+- NUANCE REQUIRED: "They're close" is useless. HOW are they close? What pivots shaped this?
+- Capture: shared history (high-level), dynamic journey (was → became), commitments, power dynamics
 - TENSE: Past for history, present only for established commitments
 - Skip: unchanged from before scene, current dynamic visible in recent messages
+- Skip: generic labels without substance
+  ✗ "They grew closer" (how? what changed?)
+  ✗ "Trust deepened" (through what? why does it matter?)
+  ✓ "Survived the siege together; she trusted him with her secret"
+  ✓ "Initial hostility shifted to grudging respect after he saved her life"
+- EMBEDDED QUOTES: For commitments or defining statements where exact wording matters for
+  callbacks, embed with context. Only if the specific words would be referenced.
+  ✓ "swore 'I'd follow you into hell itself' during the escape"
+  ✓ "told her 'you're the only one who ever stayed' after revealing his past"
+  If meaning works without the specific words, synthesize instead.
 
 VOICE: Representative quotes showing speech patterns.
 - t = entity type, n = name, q = quote
 - ONLY extract quotes that appear VERBATIM in the <SCENE> section above
-- COVERAGE: Ensure voice quotes for characters who speak significantly in scene.
-  Don't let one character dominate; capture distinctive patterns from each speaker.
-- Ask: "Would this help write future dialogue for this character?"
-- Valuable: shows HOW they speak (cadence, register, verbal tics)
+- PATTERN TEST: "Does this show HOW they speak, or just WHAT they said?"
+  Strip away the content (topic being discussed). Does the DELIVERY still show a pattern?
+- Valuable: cadence, register, verbal tics, characteristic constructions
 - ATTRIBUTION: Verify who is SPEAKING, not who is addressed.
   For telepathy/mindspeech, check context for the actual speaker.
-- Skip: generic ("I understand"), plot-functional ("It's in the tower"),
-  one-off outbursts, exposition-heavy explanations of plot/lore
-- Voice = speech STYLE, not speech CONTENT
-  ✗ "The curse originated in the eastern temple and spread through..." (exposition)
-  ✓ "Stars above, you're denser than a brick privy." (voice pattern)
+- Skip: generic phrases anyone might say ("I understand", "Yes!", "I love you")
+- Skip: plot-functional ("The artifact is in the tower")
+- Skip: exposition-heavy explanations of plot/lore
+- Voice = speech DELIVERY, not speech CONTENT
+  ✗ "The curse originated in the eastern temple..." (exposition, no pattern)
+  ✗ "Yes! Right there! Don't stop!" (generic expression, anyone could say this)
+  ✗ "I'll kill you!" (generic threat, no distinctive delivery)
+  ✓ "Stars above, you're denser than a brick privy." (oath + colorful metaphor)
+  ✓ "Listen here, you insufferable fool..." (direct address, characteristic vocabulary)
 - Dedup: same speech pattern = keep better one only
-- KEEP BOTH if quotes show DIFFERENT patterns (formal vs casual, angry vs calm)
+- EMPTY IS VALID: No good voice quotes = no voice quotes. Don't force extraction.
 
 STATE: Persistent conditions that change baseline (supersedes previous).
 - t = entity type, n = name, c = content

@@ -18,14 +18,21 @@ For each entry in INPUT_SL:
 Arc (PROTECT - rarely filter):
 - DROP if exact same journey point already captured
 - KEEP if new landmark moment (even if entry exists)
+- EMBEDDED QUOTES: Compare MEANING not format. "realized 'I was afraid'" and
+  "understood her fear was controlling her" are the SAME point if same transformation.
+  Keep whichever version captures it better.
 
 Stance (HIGH VALUE):
 - DROP if same target with same dynamic already captured
 - KEEP if relationship evolved or new target
+- EMBEDDED QUOTES: Compare MEANING not format. "swore 'I'll protect you'" and
+  "committed to protecting her" are the SAME point if same commitment.
+  Keep whichever version captures it better.
 
 Voice (MEDIUM):
 - DROP if quote shows same speech pattern as existing quote
-- KEEP if demonstrates DIFFERENT pattern (formal vs casual, etc.)
+- DROP if generic expression anyone might say (no distinctive DELIVERY pattern)
+- KEEP if demonstrates DIFFERENT pattern (formal vs casual, etc.) with distinctive delivery
 
 State (SUPERSEDES):
 - DROP if same condition already captured

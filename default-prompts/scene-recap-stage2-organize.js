@@ -22,12 +22,26 @@ INTERNAL DEDUPLICATION (by priority):
 - Voice: Multiple quotes showing same speech pattern → keep best one only
 - State: Redundant conditions → keep most current/relevant only
 
+EMBEDDED QUOTES IN ARC/STANCE:
+- Compare MEANING, not format. Embedded quote doesn't make it different content.
+- "told her 'you're the only one' after the battle" and "revealed she's uniquely important to him"
+  are the SAME stance point — keep whichever captures it better.
+- Multiple quotes for same Arc transformation or same Stance target → keep best one only.
+- Quote earns its place only if exact wording matters for callbacks.
+
 QUALITY GATE:
 - Generic labels ("grew closer", "became stronger") → DROP, need specifics
-- Plot-functional dialogue ("Let's go to the market") → DROP
 - Temporary states that won't persist → DROP
 - Anything that fails SIGNIFICANT/PERSISTENT/SPECIFIC → DROP
 - Lore that's generic world-building (not story-specific) → DROP
+
+VOICE QUALITY GATE (apply before dedup):
+- PATTERN TEST: Does this show HOW they speak, or just WHAT they said?
+- Generic expressions anyone might say → DROP ("Yes!", "I love you", "I'll kill you")
+- Plot-functional dialogue → DROP ("Let's go to the market")
+- Exposition-heavy explanations → DROP
+- Quotes are for DELIVERY PATTERN, not memorable CONTENT. Dramatic ≠ representative.
+- When uncertain: DROP. No voice quote is better than a bad one.
 
 ==========================================================================
 
