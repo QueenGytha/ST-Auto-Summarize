@@ -5,7 +5,7 @@ export function build(registryListing) {
 }
 
 export const description = {
-  format: 'Plain text listing "- [uid] Name (type) - Synopsis\\n  Aliases: alias1, alias2"',
+  format: 'Plain text listing "- UID=<number> | name: <type-name> | aliases: <aliases> | synopsis: <synopsis>"',
   source: 'recapToLorebookProcessor.js (builds from registry state)',
   usedBy: ['lorebook-entry-lookup.js']
 };

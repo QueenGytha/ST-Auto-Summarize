@@ -10,7 +10,7 @@ Stage 3 has been split into two stages:
 
 ```json
 {
-  "rc": "DEV: outcomes...\nPEND: threads...\nKNOWS: secrets...",
+  "rc": "DEV: outcomes...\nPEND: threads...",
   "sl": [
     { "t": "character", "n": "Name", "c": "bullet content", "k": ["keywords"] },
     ...
@@ -24,7 +24,7 @@ Stage 3 has been split into two stages:
 - **Source**: Stage 2 output `.rc` field
 - **Type**: String
 - **Used by**: Stage 3 prompt
-- **Example value**: `"DEV: Rance arrived at Haven...\nPEND: Karsite threat...\nKNOWS: secret (who knows)"`
+- **Example value**: `"DEV: Rance arrived at Haven...\nPEND: Karsite threat..."`
 
 ### `{{extracted_sl}}`
 - **Source**: Stage 2 output `.sl` field
@@ -57,7 +57,7 @@ Stage 2 output
 
 **Output format**:
 ```json
-{"rc": "DEV: ...\\nPEND: ...\\nKNOWS: ..."}
+{"rc": "DEV: ...\\nPEND: ..."}
 ```
 Or if nothing new: `{"rc": ""}`
 

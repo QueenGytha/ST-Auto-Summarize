@@ -8,7 +8,7 @@ CONTEXT: This is for AI roleplay. The extracted data will be injected into an LL
 Every token competes with the current scene for context space. Your job is aggressive filtering - keep only what the LLM genuinely needs to write well. If the LLM could continue the story fine without something, cut it.
 
 TASK: Filter the extracted data and organize into two outputs:
-- rc: running recap (high-level plot summary - what happened, unresolved threads, who knows what)
+- rc: running recap (high-level plot summary - what happened, unresolved threads)
 - sl: entity entries (character/location/item/lore details that persist across scenes)
 
 ============ FILTERING ============
@@ -33,7 +33,7 @@ QUALITY GATE:
 
 OUTPUT FORMAT:
 {
-  "rc": "DEV: ...\\nPEND: ...\\nKNOWS: ...",
+  "rc": "DEV: ...\\nPEND: ...",
   "sl": [{ "t": "type", "n": "Name", "c": "bulleted content", "k": ["keywords"] }]
 }
 
@@ -46,7 +46,6 @@ Format: TELEGRAPHIC. Fragments; semicolons; no articles.
 
 - DEV: outcomes[] only. High-level results.
 - PEND: threads[] as unresolved plot hooks. Test: "Can LLM use this for drama/tension?" NO = scheduling/logistics, drop it.
-- KNOWS: knows[] as "secret (who knows)" - drop if everyone knows
 
 Omit empty sections.
 

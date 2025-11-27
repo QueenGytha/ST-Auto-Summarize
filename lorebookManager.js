@@ -164,7 +164,7 @@ items )
       const name = item.name || item.comment || 'Unknown';
       const aliases = Array.isArray(item.aliases) && item.aliases.length > 0 ? item.aliases.join('; ') : '—';
       const synopsis = item.synopsis || '—';
-      return `- uid: ${item.id} | name: ${name} | aliases: ${aliases} | synopsis: ${synopsis}`;
+      return `- UID=${item.id} | name: ${name} | aliases: ${aliases} | synopsis: ${synopsis}`;
     });
     const header = `[Registry: ${type}]`;
     const ensuredEntry  = entry;

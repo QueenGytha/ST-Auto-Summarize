@@ -6,7 +6,7 @@
 // Use them to guide LLM on what goes where - reduces repetition in prompts.
 export const DEFAULT_ENTITY_TYPES = [
   // Special guidance-only entry (always first, cannot be deleted)
-  { name: 'recap', constant: null, usage: '(NOT FOR SL ENTRIES) Goes in rc field: DEV (plot outcomes, key events), PEND (unresolved plot threads - narrative hooks, NOT character goals), KNOWS (who knows what secrets). High-level only.', isGuidanceOnly: true },
+  { name: 'recap', constant: null, usage: '(NOT FOR SL ENTRIES) Goes in rc field: DEV (plot outcomes, key events), PEND (unresolved plot threads - narrative hooks, NOT character goals). High-level only.', isGuidanceOnly: true },
   // Regular lorebook entry types
   { name: 'character', constant: false, usage: 'Named characters. Bullets: Identity (background, role, position), State (conditions, belongings, status), Voice (distinctive quotes), Arc (growth journey), Stance (relationship per target).' },
   { name: 'location', constant: false, usage: 'Places and settings. Include history, significance, current conditions if persistent.' },

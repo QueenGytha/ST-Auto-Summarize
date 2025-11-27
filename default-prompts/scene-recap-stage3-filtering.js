@@ -18,21 +18,9 @@ TASK: Filter INPUT_RC against RUNNING_RECAP. Output only NEW information.
 - DROP if thread was RESOLVED (now appears as outcome in DEV)
 - KEEP genuinely new plot hooks
 
-============ KNOWS (information asymmetry) ============
-
-Compare each secret carefully:
-
-1. Same secret, SAME knowers → DROP (no new information)
-2. Same secret, NEW knowers → KEEP with updated list (merge will update)
-3. Entirely new secret → KEEP
-
-IMPORTANT distinctions:
-- "Witnessed event" ≠ "knows content" (being present ≠ knowing details shared)
-- Only list names who know the SPECIFIC secret, not everyone present
-
 ============ OUTPUT ============
 
-{"rc": "DEV: ...\\nPEND: ...\\nKNOWS: ..."}
+{"rc": "DEV: ...\\nPEND: ..."}
 
 Omit empty sections. If nothing new: {"rc": ""}
 

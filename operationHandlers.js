@@ -105,6 +105,23 @@ function getSceneRangeFromMetadata(index) {
   };
 }
 
+// Helper: Validate that LLM-returned UIDs exist in registry - throws if any are invalid
+async function validateLookupUidsExist(lorebookEntryLookupResult, entryComment) {
+  const registryState = ensureRegistryState();
+  const validRegistryUids = new Set(Object.keys(registryState.index || {}).map(String));
+
+  const allReturnedUids = [
+    ...(lorebookEntryLookupResult.sameEntityUids || []),
+    ...(lorebookEntryLookupResult.needsFullContextUids || [])
+  ];
+
+  const invalidUid = allReturnedUids.find((uid) => !validRegistryUids.has(String(uid)));
+  if (invalidUid !== undefined) {
+    await pauseQueue();
+    throw new Error(`LLM HALLUCINATED UID: Returned UID ${invalidUid} does NOT exist in registry. Valid registry UIDs: [${[...validRegistryUids].join(', ')}]. Entry: ${entryComment}. This is a prompt/model failure - the LLM invented a UID that doesn't exist.`);
+  }
+}
+
 // Helper: Check if lorebook lookup can be skipped (empty lorebook optimization)
 function checkCanSkipLorebookLookup(operation, entryData) {
   if (operation.metadata?.lorebook_was_empty_at_scene_start !== true) {
@@ -1886,6 +1903,10 @@ export function registerAllOperationHandlers() {
 
     // Check if cancelled after LLM call (before side effects)
     throwIfAborted(signal, 'LOREBOOK_ENTRY_LOOKUP', 'LLM call');
+
+    // CRITICAL: Validate that returned UIDs actually exist in the registry
+    // LLMs can hallucinate UIDs - fail immediately if any are invalid
+    await validateLookupUidsExist(lorebookEntryLookupResult, entryData.comment);
 
     // Store token breakdown in operation metadata
     if (lorebookEntryLookupResult?.tokenBreakdown) {

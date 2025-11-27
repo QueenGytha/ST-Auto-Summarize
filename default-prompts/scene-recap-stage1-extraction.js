@@ -38,14 +38,10 @@ HOOK TEST: "Can the LLM use this to create drama/conflict/tension?"
 - YES = threat, secret, promise, mystery, vulnerability, ticking clock
 - NO = scheduling, logistics, implementation details, upcoming meetings
 A meeting being scheduled is not a hook. A deadline with consequences is.
-
-KNOWS: Information asymmetry - who learned what (END-OF-SCENE state).
-- Format: {"secret": "description", "who": ["names who know"]}
-- Capture who knows AT END OF SCENE, not mid-scene
-- If A tells B a secret during scene → BOTH know at end (add B to list)
-- "Witnessed event" ≠ "knows content" (present at event ≠ knows details)
-- Only list names who know the SPECIFIC secret
-- Skip: common knowledge, things everyone witnessed equally
+  ✗ "Raiders came from the northern pass" (background detail — explains how, not hook)
+  ✗ "Guild reviewing the matter" (logistics — no tension)
+  ✓ "Assassin still hunting the witness" (threat with stakes)
+  ✓ "Cure requires ingredient that kills the harvester" (problem with consequences)
 
 ---------------- ENTITY DATA ----------------
 
@@ -59,7 +55,10 @@ ARC: Character development - MOST VALUABLE, rarely cut.
 - TENSE: Past — this is history ("shifted from X → Y", "came to accept")
 - PERSPECTIVE: Write from THE ENTITY's viewpoint, about their internal change
   ✗ "Alex chose him despite flaws" (someone else's action toward entity)
-  ✓ "Accepted bond after initially rejecting it; found purpose beyond guilt"
+  ✗ "Became a knight" (status change — event, not internal)
+  ✗ "Was rescued from the dungeon" (event that happened TO them)
+  ✓ "Overcame fear of commitment; allowed herself to trust again"
+  ✓ "Shifted from seeking death to accepting responsibility"
 - Skip: temporary moods, single instances, generic labels ("grew stronger")
 - Skip: actions/events ("traveled far", "fought bravely") — not development
 - A character's arc might only have 3-5 points across entire roleplay
@@ -73,6 +72,8 @@ STANCE: Relationship dynamics (per target) - HIGH VALUE.
 VOICE: Representative quotes showing speech patterns.
 - t = entity type, n = name, q = quote
 - ONLY extract quotes that appear VERBATIM in the <SCENE> section above
+- COVERAGE: Ensure voice quotes for characters who speak significantly in scene.
+  Don't let one character dominate; capture distinctive patterns from each speaker.
 - Ask: "Would this help write future dialogue for this character?"
 - Valuable: shows HOW they speak (cadence, register, verbal tics)
 - ATTRIBUTION: Verify who is SPEAKING, not who is addressed.
@@ -91,6 +92,10 @@ STATE: Persistent conditions that change baseline (supersedes previous).
 - Skip: temporary conditions (injuries healing, emotions passing)
 - Skip: current state visible in recent messages — only record CHANGES from baseline
 - Ask: "Will this still be true 10 scenes from now?"
+  ✗ "exhausted from journey" (will recover)
+  ✗ "bruised from the fight" (will heal)
+  ✓ "lost right arm" (permanent)
+  ✓ "bound by blood oath to the crown" (permanent change)
 
 IDENTITY: Baseline character facts - CUT FIRST if needed.
 - t = entity type, n = name, c = content
@@ -109,7 +114,6 @@ LORE: Only extract what's STORY-SPECIFIC, not generic world-building.
   "sn": "3-5 word scene title",
   "outcomes": ["plot result"],
   "threads": ["unresolved hook"],
-  "knows": [{"secret": "description", "who": ["names"]}],
   "arc": [{"t": "type", "n": "Name", "c": "content"}],
   "stance": [{"t": "type", "n": "Name", "toward": "Target", "c": "content"}],
   "voice": [{"t": "type", "n": "Name", "q": "quote"}],

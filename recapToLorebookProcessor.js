@@ -397,16 +397,16 @@ export function buildRegistryListing(state ) {
   for (const type of types.sort()) {
     sections.push(`[Type: ${type}]`);
     const records = grouped[type] || [];
-    for (const [index, record] of records.sort((a, b) => {
+    for (const record of records.sort((a, b) => {
       const nameA = (a.name || a.comment || '').toLowerCase();
       const nameB = (b.name || b.comment || '').toLowerCase();
       return nameA.localeCompare(nameB);
-    }).entries()) {
+    })) {
       const name = record.name || record.comment || 'Unknown';
       const aliases = ensureStringArray(record.aliases);
       const aliasText = aliases.length > 0 ? aliases.join('; ') : '—';
       const synopsis = record.synopsis || '—';
-      sections.push(`${index + 1}. uid: ${record.uid} | name: ${name} | aliases: ${aliasText} | synopsis: ${synopsis}`);
+      sections.push(`- UID=${record.uid} | name: ${name} | aliases: ${aliasText} | synopsis: ${synopsis}`);
     }
     sections.push('');
   }
@@ -442,12 +442,22 @@ function parseRegistryHeader(line) {
 function parseRegistryItemLine(line) {
   const text = String(line || '').trim();
   if (!/^\-\s*/.test(text)) {return null;}
-  const parts = text.replace(/^\-\s*/, '').split('|').map((p) => p.trim());
+  const stripped = text.replace(/^\-\s*/, '');
+  const parts = stripped.split('|').map((p) => p.trim());
   const getVal = (label) => {
     const p = parts.find((s) => s.toLowerCase().startsWith(label + ':'));
     return p ? p.slice(p.indexOf(':') + 1).trim() : '';
   };
-  const uid = getVal('uid');
+  // Support both old format "uid: X" and new format "UID=X"
+  let uid = getVal('uid');
+  if (!uid) {
+    // Try new format: first part should be "UID=X"
+    const firstPart = parts[0] || '';
+    const uidMatch = /^UID=(\d+)$/i.exec(firstPart);
+    if (uidMatch) {
+      uid = uidMatch[1];
+    }
+  }
   if (!uid) {return null;}
   const name = getVal('name');
   const aliasesRaw = getVal('aliases');
