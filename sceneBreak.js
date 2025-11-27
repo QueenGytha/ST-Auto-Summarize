@@ -1765,8 +1765,9 @@ async function extractAndQueueLorebookEntries(recap, messageIndex, versionIndex)
     // Parse JSON (should already be clean from generation)
     const parsed = JSON.parse(recap);
 
-    // Check for 'sl' (3-stage pipeline) or 'setting_lore' (legacy) or stage3.sl (multi-stage storage)
+    // Check for 'sl' (3-stage pipeline) or 'setting_lore' (legacy) or stage3.sl/stage4.sl (multi-stage storage)
     const entriesArray = Array.isArray(parsed.sl) ? parsed.sl
+      : Array.isArray(parsed.stage4?.sl) ? parsed.stage4.sl
       : Array.isArray(parsed.stage3?.sl) ? parsed.stage3.sl
       : Array.isArray(parsed.setting_lore) ? parsed.setting_lore
       : null;

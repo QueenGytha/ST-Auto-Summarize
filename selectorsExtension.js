@@ -14,6 +14,7 @@ export function getArtifactSelector(operationType) {
     'scene_recap': '[data-testid="artifact-scene-recap"]',
     'organize_scene_recap': '[data-testid="artifact-organize-scene-recap"]',
     'parse_scene_recap': '[data-testid="artifact-parse-scene-recap"]',
+    'filter_scene_recap_sl': '[data-testid="artifact-filter-scene-recap-sl"]',
     'scene_recap_error_detection': '[data-testid="artifact-scene-recap-error"]',
     'auto_scene_break': '[data-testid="artifact-auto-scene-break"]',
     'running_scene_recap': '[data-testid="artifact-running-scene-recap"]',

@@ -36,6 +36,7 @@ const OPERATION_TYPES = [
   'auto_lorebooks_recap_merge',
   'auto_lorebooks_recap_lorebook_entry_compaction',
   'parse_scene_recap',
+  'filter_scene_recap_sl',
   'entity_types',
   'entry_defaults'
 ];
@@ -520,7 +521,8 @@ async function openArtifactEditor(operationType) {
   const operationNames = {
     'scene_recap': 'Scene Recap (Stage 1: Extraction)',
     'organize_scene_recap': 'Organize Scene Recap (Stage 2: Organization)',
-    'parse_scene_recap': 'Parse Scene Recap (Stage 3: Deduplication)',
+    'parse_scene_recap': 'Parse Scene Recap (Stage 3: RC Filtering)',
+    'filter_scene_recap_sl': 'Filter Scene Recap SL (Stage 4: SL Filtering)',
     'scene_recap_error_detection': 'Scene Recap Error Detection',
     'auto_scene_break': 'Auto Scene Break Detection',
     'running_scene_recap': 'Running Scene Recap',

@@ -1,4 +1,9 @@
-export const scene_recap_stage1_extraction_prompt = `ROLE: Extract content from scene into facets for historical context.
+export const scene_recap_stage1_extraction_prompt = `ROLE: Narrative archivist. Extract what future storytelling needs from this scene.
+
+TASK: Identify content worth preserving for historical context.
+
+CONTEXT: This is a HISTORY of older messages. Recent messages are still directly visible
+to the LLM. You're writing what the LLM needs to know about the PAST, not current state.
 
 QUALITY CRITERIA - apply to EVERY item:
 - SIGNIFICANT: Would roleplay go wrong without this? If no, skip.
@@ -23,8 +28,11 @@ THREADS: Unresolved plot hooks the LLM can pick up later.
 
 KNOWS: Information asymmetry - who learned what.
 - Format: {"secret": "description", "who": ["names who know"]}
-- Only track when characters have DIFFERENT knowledge
-- Skip: common knowledge, things everyone witnessed
+- Track who LEARNED during THIS scene (include knowledge transfers)
+- If A tells B a secret → BOTH know (add B to knowers)
+- "Witnessed event" ≠ "knows content" (present at event ≠ knows details)
+- Only list names who know the SPECIFIC secret
+- Skip: common knowledge, things everyone witnessed equally
 
 ---------------- ENTITY FACETS (for lorebook entries) ----------------
 
@@ -33,26 +41,41 @@ PRIORITY ORDER (highest first - protect these, cut lower priority first):
 ARC: Character development - MOST VALUABLE, rarely cut.
 - t = entity type, n = name, c = content
 - Landmark moments only: pattern breaks, worldview shifts, emotional baseline changes
+- Arc = WHO THEY ARE changed, not WHAT THEY DID
+- TENSE: Past — this is history ("shifted from X → Y", "came to accept")
+- PERSPECTIVE: Write from THE ENTITY's viewpoint, about their internal change
+  ✗ "Senta chose him despite flaws" (someone else's action)
+  ✓ "Accepted bond after initially rejecting it; found purpose beyond guilt"
 - Skip: temporary moods, single instances, generic labels ("grew stronger")
+- Skip: actions/events ("traveled far", "fought bravely") — not development
 - A character's arc might only have 3-5 points across entire roleplay
 
 STANCE: Relationship dynamics (per target) - HIGH VALUE.
 - t = entity type, n = name, toward = target, c = content
-- Shared history (high-level), dynamic journey (was → is), commitments
-- Skip: unchanged from before scene
+- Shared history (high-level), how relationship DEVELOPED (was → became)
+- TENSE: Past for history, present only for established commitments
+- Skip: unchanged from before scene, current dynamic visible in recent messages
 
 VOICE: Representative quotes showing speech patterns.
 - t = entity type, n = name, q = quote
 - Ask: "Would this help write future dialogue for this character?"
 - Valuable: shows HOW they speak (cadence, register, verbal tics)
+- ATTRIBUTION: Verify who is SPEAKING, not who is addressed.
+  For telepathy/mindspeech, check context for the actual speaker.
 - Skip: generic ("I understand"), plot-functional ("It's in the tower"),
-  one-off outbursts, content-distinctive but not voice-distinctive
-- Dedup: if two quotes show same speech pattern, keep better one only
+  one-off outbursts, exposition-heavy explanations of plot/lore
+- Voice = speech STYLE, not speech CONTENT
+  ✗ "You did this. The power came from within you. A Gift awakened..." (exposition)
+  ✓ "You insufferable horse. Help me, or leave me to die." (voice pattern)
+- Dedup: same speech pattern = keep better one only
+- KEEP BOTH if quotes show DIFFERENT patterns (formal vs casual, angry vs calm)
 
-STATE: Current conditions (supersedes previous).
+STATE: Persistent conditions that change baseline (supersedes previous).
 - t = entity type, n = name, c = content
-- Physical conditions, belongings changes, status changes
-- Skip: temporary states, won't persist beyond scene
+- Belongings acquired/lost, bonds formed, permanent status changes
+- Skip: temporary conditions (injuries healing, emotions passing)
+- Skip: current state visible in recent messages — only record CHANGES from baseline
+- Ask: "Will this still be true 10 scenes from now?"
 
 IDENTITY: Baseline character facts - CUT FIRST if needed.
 - t = entity type, n = name, c = content

@@ -98,6 +98,7 @@ function parseOperationType(operation) {
     'scene_recap': 'scene_recap',
     'organize_scene_recap': 'organize_scene_recap',
     'parse_scene_recap': 'parse_scene_recap',
+    'filter_scene_recap_sl': 'filter_scene_recap_sl',
     'generate_running_recap': 'running_scene_recap',
     'running_scene_recap': 'running_scene_recap',
     'combine_scene_with_running': 'running_scene_recap',

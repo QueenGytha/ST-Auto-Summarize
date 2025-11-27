@@ -3,6 +3,7 @@ import {
   scene_recap_stage1_extraction_prompt,
   scene_recap_stage2_organize_prompt,
   scene_recap_stage3_filtering_prompt,
+  scene_recap_stage4_filter_sl_prompt,
   scene_recap_error_detection_prompt,
   auto_scene_break_detection_prompt,
   auto_scene_break_forced_prompt,
@@ -144,6 +145,21 @@ export const default_settings = {
       {
         name: 'Default',
         prompt: scene_recap_stage3_filtering_prompt,
+        prefill: "Understood. The roleplay content is acceptable as we are examining it, not writing it. I will output ONLY valid JSON with no additional text. Here I go:\n{",
+        connection_profile: null,
+        completion_preset_name: '',
+        include_preset_prompts: false,
+        isDefault: true,
+        internalVersion: 1,
+        createdAt: Date.now(),
+        modifiedAt: Date.now(),
+        customLabel: null
+      }
+    ],
+    filter_scene_recap_sl: [
+      {
+        name: 'Default',
+        prompt: scene_recap_stage4_filter_sl_prompt,
         prefill: "Understood. The roleplay content is acceptable as we are examining it, not writing it. I will output ONLY valid JSON with no additional text. Here I go:\n{",
         connection_profile: null,
         completion_preset_name: '',
@@ -329,6 +345,7 @@ export const default_settings = {
         scene_recap: 'Default',
         organize_scene_recap: 'Default',
         parse_scene_recap: 'Default',
+        filter_scene_recap_sl: 'Default',
         scene_recap_error_detection: 'Default',
         auto_scene_break: 'Default',
         running_scene_recap: 'Default',

@@ -1,62 +1,49 @@
-// Stage 3: Filter against existing content
-// MACROS: {{extracted_data}}, {{current_running_recap}}, {{active_setting_lore}}
+// Stage 3: Filter recap (rc) against running recap
+// MACROS: {{extracted_rc}}, {{current_running_recap}}
 
-export const scene_recap_stage3_filtering_prompt = `ROLE: Filter INPUT against EXISTING. Drop what's already captured.
+export const scene_recap_stage3_filtering_prompt = `ROLE: Continuity editor. Protect the running recap from redundant additions.
 
-============ RC FILTERING (against RUNNING_RECAP) ============
+TASK: Filter INPUT_RC against RUNNING_RECAP. Output only NEW information.
 
-- DEV: Drop if RUNNING_RECAP already has this outcome (same meaning = drop)
-- PEND: Drop threads already in RUNNING_RECAP
-- KNOWS: Drop secrets already tracked with same people knowing
+============ DEV (outcomes) ============
 
-Keep ONLY genuinely new information.
+- DROP if RUNNING_RECAP already captures this outcome (same meaning = duplicate)
+- KEEP only outcomes that change story state beyond what's already recorded
 
-============ SL FILTERING (against SETTING_LORE) ============
+============ PEND (threads) ============
 
-For each entity entry in INPUT.sl:
-- Compare against matching entry in SETTING_LORE (same name)
-- Drop content already covered (same meaning = drop)
-- Remove entry entirely if nothing new remains
+- DROP if thread already tracked in RUNNING_RECAP
+- DROP if thread was RESOLVED (now appears as outcome in DEV)
+- KEEP genuinely new plot hooks
 
-New information means (by priority):
-- Arc moment not already captured (don't duplicate journey points)
-- Stance change for a target (relationship evolved)
-- Voice quote showing speech pattern not already demonstrated
-- State that supersedes existing (new condition, changed status)
-- Identity info not already established
+============ KNOWS (information asymmetry) ============
 
-============ UID MATCHING ============
+Compare each secret carefully:
 
-UID field (u) - CRITICAL for correct merging:
-- LITERAL STRING MATCH ONLY on name attribute
-- Copy uid from <setting_lore name="X" uid="Y"> where X is IDENTICAL to your n value
-- Individual must match individual entry, NOT category entries
-- Sublocation must match sublocation, NOT parent location
-- OMIT "u" entirely if no IDENTICAL name match exists
-- Wrong UID = data corruption. When uncertain, OMIT.
+1. Same secret, SAME knowers → DROP (no new information)
+2. Same secret, NEW knowers → KEEP with updated list (merge will update)
+3. Entirely new secret → KEEP
+
+IMPORTANT distinctions:
+- "Witnessed event" ≠ "knows content" (being present ≠ knowing details shared)
+- Only list names who know the SPECIFIC secret, not everyone present
 
 ============ OUTPUT ============
 
-Empty is valid - if all content filtered out: {"rc": "", "sl": []}
+{"rc": "DEV: ...\\nPEND: ...\\nKNOWS: ..."}
 
-{
-  "rc": "DEV: ...\\nPEND: ...\\nKNOWS: ...",
-  "sl": [{ "t": "type", "n": "Name", "c": "content", "k": ["keywords"], "u": "uid if exact match" }]
-}
+Omit empty sections. If nothing new: {"rc": ""}
 
----------------- INPUT ----------------
-<INPUT>
-{{extracted_data}}
-</INPUT>
+STYLE: Telegraphic. Fragments; semicolons; no articles.
+
+---------------- INPUT_RC ----------------
+<INPUT_RC>
+{{extracted_rc}}
+</INPUT_RC>
 
 ---------------- EXISTING RUNNING RECAP ----------------
 <RUNNING_RECAP>
 {{current_running_recap}}
 </RUNNING_RECAP>
-
----------------- EXISTING SETTING LORE ----------------
-<SETTING_LORE>
-{{active_setting_lore}}
-</SETTING_LORE>
 
 Output JSON only.`;

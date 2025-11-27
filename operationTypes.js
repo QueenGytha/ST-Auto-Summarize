@@ -8,6 +8,7 @@ export const OperationType = {
   GENERATE_SCENE_RECAP: 'generate_scene_recap',
   ORGANIZE_SCENE_RECAP: 'organize_scene_recap',
   PARSE_SCENE_RECAP: 'parse_scene_recap',
+  FILTER_SCENE_RECAP_SL: 'filter_scene_recap_sl',
   GENERATE_RUNNING_RECAP: 'generate_running_recap',
   COMBINE_SCENE_WITH_RUNNING: 'combine_scene_with_running',
   LOREBOOK_ENTRY_LOOKUP: 'lorebook_entry_lookup',

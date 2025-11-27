@@ -48,7 +48,9 @@ for (const mod of macroModules) {
 const MACROS_ALLOW_EMPTY = new Set([
   'current_running_recap',  // First scene has no running recap yet
   'active_setting_lore',    // No active lore entries yet
-  'prefill'                 // Prefill is optional
+  'prefill',                // Prefill is optional
+  'extracted_rc',           // Stage 2 may produce no rc content
+  'extracted_sl'            // Stage 2 may produce no sl entries
 ]);
 
 // Validation wrapper for macro builders
@@ -109,7 +111,9 @@ const CONTEXT_TO_MACRO_MAP = {
   newEntries: ['new_entries'],
   sceneRecaps: ['scene_recaps'],
   synopsis: ['lorebook_entry_lookup_synopsis'],
-  extractedData: ['extracted_data']
+  extractedData: ['extracted_data'],
+  extractedRc: ['extracted_rc'],
+  extractedSl: ['extracted_sl']
 };
 
 /**

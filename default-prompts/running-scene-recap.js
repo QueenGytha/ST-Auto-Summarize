@@ -1,10 +1,12 @@
 // MACROS: {{current_running_recap}}, {{scene_recaps}}
 
-export const running_scene_recap_prompt = `ROLE: Merge NEW into CURRENT running recap. CURRENT is baseline.
+export const running_scene_recap_prompt = `ROLE: Story chronicler. Maintain the authoritative record of what happened.
+
+TASK: Merge NEW_SCENE_RECAP into CURRENT_RUNNING_RECAP. CURRENT_RUNNING_RECAP is baseline.
 
 ============ DEV (outcomes) ============
 
-- ADD: outcomes that change story state, not already in CURRENT
+- ADD: outcomes that change story state, not already in CURRENT_RUNNING_RECAP
 - DROP: steps/process (keep only results), duplicates
 
 OUTCOME vs STEP test:
@@ -17,8 +19,8 @@ After: "obtained information from contact"
 ============ PEND (plot threads) ============
 
 SUPERSESSION RULE:
-- When NEW resolves a thread → move outcome to DEV, remove from PEND
-- When NEW adds new thread → add to PEND
+- When NEW_SCENE_RECAP resolves a thread → move outcome to DEV, remove from PEND
+- When NEW_SCENE_RECAP adds new thread → add to PEND
 - Abandoned threads → drop entirely
 
 These are PLOT THREADS (narrative hooks), not character goals.

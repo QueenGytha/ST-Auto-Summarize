@@ -335,6 +335,7 @@ export async function calculateAndInjectTokenBreakdown(messages, operation, maxC
     'detect_scene_break': 'auto_scene_break',
     'generate_scene_recap': 'scene_recap',
     'parse_scene_recap': 'scene_recap',
+    'filter_scene_recap_sl': 'filter_scene_recap_sl',
     'scene_recap': 'scene_recap',
     'running_scene_recap': 'running_scene_recap',
     'recap_merge': 'auto_lorebooks_recap_merge',

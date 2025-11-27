@@ -1,6 +1,8 @@
 // MACROS: {{existing_content}}, {{new_content}}, {{entry_name}}
 
-export const auto_lorebook_recap_merge_prompt = `ROLE: Merge NEW into EXISTING entry. EXISTING is baseline. Default is DROP unless NEW clearly earns inclusion.
+export const auto_lorebook_recap_merge_prompt = `ROLE: Character bible editor. Maintain canonical entity records with precision.
+
+TASK: Merge NEW_CONTENT into EXISTING_CONTENT. EXISTING_CONTENT is baseline. Default is DROP unless NEW_CONTENT clearly earns inclusion.
 
 ============ SUPERSESSION RULES (by priority) ============
 
@@ -14,10 +16,10 @@ Different bullet types have different merge rules:
 
 ============ FILTERING ============
 
-For EACH item in NEW, ask: "Does this earn its tokens given what EXISTING has?"
+For EACH item in NEW_CONTENT, ask: "Does this earn its tokens given what EXISTING_CONTENT has?"
 
 Voice dedup:
-- Does NEW quote show same speech pattern as any EXISTING quote?
+- Does NEW_CONTENT quote show same speech pattern as any EXISTING_CONTENT quote?
 - YES same pattern → keep better one only
 - NO different pattern → add new quote
 
@@ -27,7 +29,9 @@ Arc threshold:
 
 State check:
 - Will this still be true going forward?
-- NO → DROP. YES → supersedes existing.
+- NO → DROP. YES → REPLACE existing entirely.
+- Don't mix old+new state. Drop stale details (old locations, resolved conditions).
+- State should reflect CURRENT reality only.
 
 ============ OUTPUT ============
 

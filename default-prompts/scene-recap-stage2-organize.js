@@ -1,11 +1,13 @@
 // Stage 2: Hard filter + organize into rc/sl structure
 // MACROS: {{extracted_data}}, {{lorebook_entry_types_with_guidance}}
 
-export const scene_recap_stage2_organize_prompt = `ROLE: Filter Stage 1 output and organize into rc (recap) + sl (entity entries).
+export const scene_recap_stage2_organize_prompt = `ROLE: Editorial curator. Ruthlessly filter extracted content—most won't survive.
+
+TASK: Filter Stage 1 output and organize into rc (recap) + sl (entity entries).
 
 ============ HARD FILTERING (DO THIS FIRST) ============
 
-Stage 1 over-extracts. Your job is aggressive filtering.
+EXTRACTED over-extracts. Your job is aggressive filtering.
 
 For EACH item, ask: "Does this REALLY earn its tokens?"
 - If uncertain, DROP. Default is exclude, not include.
@@ -46,6 +48,7 @@ Omit empty sections.
 ---------------- SL (ENTITY ENTRIES) ----------------
 
 Group all facets for same entity into ONE entry with LABELED BULLETS.
+ALL entity types use this format (characters, locations, items, lore, etc.)
 
 PRIORITY ORDER (cut lower priority first when filtering):
 - Arc: development journey (from → to) — PROTECT
@@ -54,12 +57,17 @@ PRIORITY ORDER (cut lower priority first when filtering):
 - State: current conditions, belongings, status — LOWER
 - Identity: background, role, position, appearance — CUT FIRST
 
+For non-character entities (locations, items, lore):
+- Use State for current conditions
+- Use Identity for baseline facts/description
+
 Rules:
 - t = entity type from input
 - n = entity name exactly as appears
 - k = [name, aliases]
-- c = bulleted content (OMIT empty bullets)
+- c = bulleted content with labels (• State: ... • Identity: ...)
 - Each bullet on new line
+- OMIT empty bullets
 
 ROUTING:
 - arc[], stance[], voice[], state[], identity[] → entity's sl entry

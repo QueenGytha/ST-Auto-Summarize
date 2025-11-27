@@ -505,6 +505,7 @@ function formatOperationType(type) {
     [OperationType.GENERATE_SCENE_RECAP]: 'Scene Recap (Stage 1)',
     [OperationType.ORGANIZE_SCENE_RECAP]: 'Scene Recap (Stage 2)',
     [OperationType.PARSE_SCENE_RECAP]: 'Scene Recap (Stage 3)',
+    [OperationType.FILTER_SCENE_RECAP_SL]: 'Scene Recap (Stage 4)',
     [OperationType.GENERATE_RUNNING_RECAP]: 'Running Recap',
     [OperationType.COMBINE_SCENE_WITH_RUNNING]: 'Combine Scene',
     [OperationType.LOREBOOK_ENTRY_LOOKUP]: 'Lorebook - Lookup',
@@ -695,6 +696,7 @@ function formatOperationParams(type, params, metadata) {
     case OperationType.DETECT_SCENE_BREAK:
     case OperationType.GENERATE_SCENE_RECAP:
     case OperationType.PARSE_SCENE_RECAP:
+    case OperationType.FILTER_SCENE_RECAP_SL:
     case OperationType.GENERATE_RUNNING_RECAP:
       return formatMessageOperationParams(params, metadata);
 

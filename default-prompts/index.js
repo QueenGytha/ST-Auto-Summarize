@@ -4,6 +4,7 @@
 export { scene_recap_stage1_extraction_prompt } from './scene-recap-stage1-extraction.js';
 export { scene_recap_stage2_organize_prompt } from './scene-recap-stage2-organize.js';
 export { scene_recap_stage3_filtering_prompt } from './scene-recap-stage3-filtering.js';
+export { scene_recap_stage4_filter_sl_prompt } from './scene-recap-stage4-filter-sl.js';
 export { scene_recap_error_detection_prompt } from './scene-recap-validation.js';
 export { auto_scene_break_detection_prompt } from './auto-scene-break-detection.js';
 export { auto_scene_break_forced_prompt } from './auto-scene-break-forced.js';

@@ -27,6 +27,7 @@ import {
 './autoSceneBreakDetection.js';
 import { generateSceneRecap, toggleSceneBreak, clearSceneBreak, renderSceneBreak, saveSceneRecap } from './sceneBreak.js';
 import { prepareParseScenePrompt } from './prepareParseScenePrompt.js';
+import { prepareFilterSlPrompt } from './prepareFilterSlPrompt.js';
 import {
   generate_running_scene_recap,
   combine_scene_with_running_recap } from
@@ -1222,14 +1223,24 @@ export function registerAllOperationHandlers() {
       const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
       const tokenBreakdown = extractTokenBreakdownFromResponse(rawResponse);
 
-      // Store token breakdown in operation metadata
+      // Store token breakdown and scene range in operation metadata
       if (tokenBreakdown) {
         const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
         const tokenMetadata = formatTokenBreakdownForMetadata(tokenBreakdown, {
           max_context: tokenBreakdown.max_context,
           max_tokens: tokenBreakdown.max_tokens
         });
-        await updateOperationMetadata(operation.id, tokenMetadata);
+        await updateOperationMetadata(operation.id, {
+          ...tokenMetadata,
+          start_index: startIdx,
+          end_index: endIdx
+        });
+      } else {
+        // Update metadata with scene range even if no token breakdown
+        await updateOperationMetadata(operation.id, {
+          start_index: startIdx,
+          end_index: endIdx
+        });
       }
 
       // Extract and validate JSON
@@ -1375,14 +1386,24 @@ export function registerAllOperationHandlers() {
       const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
       const tokenBreakdown = extractTokenBreakdownFromResponse(rawResponse);
 
-      // Store token breakdown in operation metadata
+      // Store token breakdown and scene range in operation metadata
       if (tokenBreakdown) {
         const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
         const tokenMetadata = formatTokenBreakdownForMetadata(tokenBreakdown, {
           max_context: tokenBreakdown.max_context,
           max_tokens: tokenBreakdown.max_tokens
         });
-        await updateOperationMetadata(operation.id, tokenMetadata);
+        await updateOperationMetadata(operation.id, {
+          ...tokenMetadata,
+          start_index: startIdx,
+          end_index: endIdx
+        });
+      } else {
+        // Update metadata with scene range even if no token breakdown
+        await updateOperationMetadata(operation.id, {
+          start_index: startIdx,
+          end_index: endIdx
+        });
       }
 
       // Extract JSON - accept any valid JSON object, no required fields
@@ -1406,14 +1427,177 @@ export function registerAllOperationHandlers() {
       // Extract scene_name from Stage 1 (has most context for naming)
       const stage1SceneName = existingStages.stage1?.sn || existingStages.stage1?.scene_name;
 
-      // Store in multi-stage format with scene_name at top level from Stage 1
-      const finalMultiStageData = {
+      // Store stage3 in multi-stage format (without calling saveSceneRecap yet - Stage 4 will do that)
+      const updatedStageData = {
         ...(stage1SceneName ? { scene_name: stage1SceneName } : {}),
         ...existingStages,
         stage3: normalized
       };
+      set_data(message, 'scene_recap_memory', JSON.stringify(updatedStageData));
+      saveChatDebounced();
+      debug(SUBSYSTEM.SCENE, `Stage 3 formatting complete for message ${index}, queuing Stage 4`);
+
+      toast(`✓ Stage 3 complete for message ${index}, queuing SL filtering...`, 'info');
+
+      // Queue Stage 4 (FILTER_SCENE_RECAP_SL) to filter sl entries
+      debug(SUBSYSTEM.QUEUE, `Queueing FILTER_SCENE_RECAP_SL for scene at index ${index}`);
+
+      const filterSlMetadata = {
+        manual: operation.metadata?.manual === true,
+        start_index: lorebookMetadata?.startIdx ?? index,
+        end_index: index
+      };
+
+      // Pass through backwards chain metadata if present
+      if (operation.metadata.backwards_chain) {
+        filterSlMetadata.backwards_chain = true;
+        filterSlMetadata.backwards_chain_remaining = operation.metadata.backwards_chain_remaining;
+        filterSlMetadata.backwards_chain_forward_continuation = operation.metadata.backwards_chain_forward_continuation;
+      }
+
+      await enqueueOperation(
+        OperationType.FILTER_SCENE_RECAP_SL,
+        { index },
+        {
+          priority: 14,
+          dependencies: [operation.id],
+          queueVersion: operation.queueVersion,
+          metadata: filterSlMetadata
+        }
+      );
+
+      return { stage3: normalized };
+    } catch (err) {
+      error(SUBSYSTEM.QUEUE, `Stage 3 RC filtering failed for message ${index}:`, err.message);
+      toast(`⚠ Failed to filter RC for message ${index}: ${err.message}`, 'error');
+      throw err;
+    }
+  });
+
+  // Filter scene recap SL entries (Stage 4: entity deduplication against lorebook)
+  // eslint-disable-next-line complexity -- Stage 4 handler requires validation, LLM call, and conditional queueing logic
+  registerOperationHandler(OperationType.FILTER_SCENE_RECAP_SL, async (operation) => {
+    const { index } = operation.params;
+    const signal = getAbortSignal(operation);
+    debug(SUBSYSTEM.QUEUE, `Executing FILTER_SCENE_RECAP_SL for index ${index}`);
+    toast(`Filtering SL entries for message ${index}...`, 'info');
+
+    try {
+      const ctx = getContext();
+      const message = ctx.chat[index];
+      if (!message) {
+        throw new Error(`Message at index ${index} not found`);
+      }
+
+      // Read multi-stage data (now includes stage3)
+      const stageDataRaw = get_data(message, 'scene_recap_memory');
+      if (!stageDataRaw) {
+        throw new Error(`No stage data found for message ${index}`);
+      }
+
+      let existingStages;
+      try {
+        existingStages = JSON.parse(stageDataRaw);
+      } catch (err) {
+        throw new Error(`Failed to parse stage data: ${err.message}`);
+      }
+
+      // Get stage2 data for sl extraction
+      const stage2Data = existingStages.stage2;
+      if (!stage2Data) {
+        throw new Error(`No stage2 data found for message ${index}`);
+      }
+
+      debug(SUBSYSTEM.QUEUE, `Parsed Stage 2 data for Stage 4 processing at message ${index}`);
+
+      // Get lorebook metadata from Stage 1 (stored temporarily in 'stage1_lorebook_metadata')
+      const lorebookMetadata = get_data(message, 'stage1_lorebook_metadata') || {};
+
+      // Use operation metadata for start/end indices (set when queued from Stage 3)
+      // Fall back to lorebookMetadata if not available
+      const startIdx = operation.metadata?.start_index ?? lorebookMetadata?.startIdx ?? index;
+      const endIdx = operation.metadata?.end_index ?? index;
+      debug(SUBSYSTEM.QUEUE, `Stage 4 using indices: startIdx=${startIdx}, endIdx=${endIdx} (from operation.metadata: ${operation.metadata?.start_index !== undefined})`);
+
+      // Prepare Stage 4 prompt (endIdx is the scene break message index)
+      const { prompt, prefill } = await prepareFilterSlPrompt(stage2Data, ctx, endIdx, get_data);
+
+      // Get config for connection profile
+      const config = await resolveOperationConfig('filter_scene_recap_sl');
+      const profile_name = config.connection_profile || '';
+      const preset_name = config.completion_preset_name || '';
+      const include_preset_prompts = config.include_preset_prompts || false;
+
+      // Resolve profileId using profileResolution
+      const { resolveProfileId } = await import('./profileResolution.js');
+      const profileId = resolveProfileId(profile_name);
+
+      // Set operation context suffix for ST_METADATA (message range)
+      const { setOperationSuffix, clearOperationSuffix } = await import('./index.js');
+      setOperationSuffix(`-${startIdx}-${endIdx}`);
+
+      // Make LLM request
+      const { sendLLMRequest } = await import('./llmClient.js');
+      const options = {
+        includePreset: include_preset_prompts,
+        preset: preset_name,
+        prefill,
+        trimSentences: false
+      };
+
+      let rawResponse;
+      try {
+        rawResponse = await sendLLMRequest(profileId, prompt, OperationType.FILTER_SCENE_RECAP_SL, options);
+      } finally {
+        clearOperationSuffix();
+      }
+      debug(SUBSYSTEM.SCENE, "Stage 4 AI response:", rawResponse);
+
+      // Check if operation was cancelled during execution
+      throwIfAborted(signal, 'FILTER_SCENE_RECAP_SL', 'LLM call');
+
+      // Extract token breakdown from response
+      const { extractTokenBreakdownFromResponse } = await import('./tokenBreakdown.js');
+      const tokenBreakdown = extractTokenBreakdownFromResponse(rawResponse);
+
+      // Store token breakdown and scene range in operation metadata
+      if (tokenBreakdown) {
+        const { formatTokenBreakdownForMetadata } = await import('./tokenBreakdown.js');
+        const tokenMetadata = formatTokenBreakdownForMetadata(tokenBreakdown, {
+          max_context: tokenBreakdown.max_context,
+          max_tokens: tokenBreakdown.max_tokens
+        });
+        await updateOperationMetadata(operation.id, {
+          ...tokenMetadata,
+          start_index: startIdx,
+          end_index: endIdx
+        });
+      } else {
+        // Update metadata with scene range even if no token breakdown
+        await updateOperationMetadata(operation.id, {
+          start_index: startIdx,
+          end_index: endIdx
+        });
+      }
+
+      // Extract JSON - accept any valid JSON object, no required fields
+      const { extractJsonFromResponse } = await import('./utils.js');
+      const stage4Result = extractJsonFromResponse(rawResponse, {
+        requiredFields: [],
+        context: 'Stage 4 filter sl'
+      });
+
+      debug(SUBSYSTEM.SCENE, "Stage 4 returned JSON, building final multi-stage data");
+
+      // Build final multi-stage data with stage4
+      const stage1SceneName = existingStages.stage1?.sn || existingStages.stage1?.scene_name || existingStages.scene_name;
+      const finalMultiStageData = {
+        ...(stage1SceneName ? { scene_name: stage1SceneName } : {}),
+        ...existingStages,
+        stage4: stage4Result
+      };
       const recap = JSON.stringify(finalMultiStageData);
-      debug(SUBSYSTEM.SCENE, `Stage 3 formatting complete for message ${index}`);
+      debug(SUBSYSTEM.SCENE, `Stage 4 formatting complete for message ${index}`);
 
       // Save the formatted recap with full versioning and lorebook operations
       const isManual = operation.metadata?.manual === true;
@@ -1428,18 +1612,17 @@ export function registerAllOperationHandlers() {
         manual: isManual
       });
 
-      // Clean up temporary Stage 1 metadata (no longer needed after Stage 3 completes)
+      // Clean up temporary Stage 1 metadata (no longer needed after Stage 4 completes)
       delete message.extra?.[MODULE_NAME]?.stage1_lorebook_metadata;
       saveChatDebounced();
 
       // Render scene break UI to show new version
       renderSceneBreak(index, get_message_div, getContext, get_data, set_data, saveChatDebounced);
 
-      toast(`✓ Scene recap formatted and saved for message ${index}`, 'success');
+      toast(`✓ Scene recap filtered and saved for message ${index}`, 'success');
 
       // Check if Stage 3 output has rc content for running recap
-      // Note: sl entries are already processed by saveSceneRecap() above
-      const hasRecapContent = normalized.rc?.trim();
+      const hasRecapContent = existingStages.stage3?.rc?.trim();
 
       // Queue COMBINE operation if not manual, auto-generate is enabled, and has rc content
       if (!isManual && get_settings('running_scene_recap_auto_generate') && hasRecapContent) {
@@ -1478,10 +1661,10 @@ export function registerAllOperationHandlers() {
         }
       }
 
-      return { recap };
+      return { stage4: stage4Result };
     } catch (err) {
-      error(SUBSYSTEM.QUEUE, `Stage 2 filtering failed for message ${index}:`, err.message);
-      toast(`⚠ Failed to format scene recap for message ${index}: ${err.message}`, 'error');
+      error(SUBSYSTEM.QUEUE, `Stage 4 SL filtering failed for message ${index}:`, err.message);
+      toast(`⚠ Failed to filter SL entries for message ${index}: ${err.message}`, 'error');
       throw err;
     }
   });
