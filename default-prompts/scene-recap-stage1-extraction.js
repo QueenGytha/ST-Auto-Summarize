@@ -15,9 +15,9 @@ Every token you output competes with the current scene for context space. Extrac
 QUALITY CRITERIA - apply to EVERY item:
 - SIGNIFICANT: Would roleplay go wrong without this? If no, skip.
 - PERSISTENT: Still relevant in 10 scenes? If no, skip.
-- SYNTHESIZED: Capture meaning, not verbatim text. Exceptions: voice quotes, in-world documents, exact commitments.
+- SYNTHESIZED: Capture meaning, not verbatim text. Exceptions: defining quotes, in-world documents, exact commitments.
 - SPECIFIC: Generic labels are useless. Be specific or skip.
-- EMPTY IS VALID: Not every scene has arc moments, voice-worthy quotes, or stance shifts.
+- EMPTY IS VALID: Not every scene has arc moments, defining quotes, or stance shifts.
   Resist the urge to find SOMETHING for each category. If nothing qualifies, output nothing.
   Forced extraction = noise that drowns out real signal.
 
@@ -51,18 +51,18 @@ PRIORITY ORDER (highest first - protect these, cut lower priority first):
 
 ARC: Character development - MOST VALUABLE, rarely cut.
 - t = entity type, n = name, c = content
+- TEST: Can this be written as "[Name] shifted from [old mindset] to [new mindset]"?
+  If NO, it belongs in OUTCOMES (events) not ARC (development)
+- Arc = internal change, not external events that happened to them
 - Landmark moments only: pattern breaks, worldview shifts, emotional baseline changes
-- Emotional stakes: what they now fear, desire, or stand to lose
-- Arc = WHO THEY ARE changed, not WHAT THEY DID
 - TENSE: Past — this is history ("shifted from X → Y", "came to accept")
 - PERSPECTIVE: Write from THE ENTITY's viewpoint, about their internal change
   ✗ "Alex chose him despite flaws" (someone else's action toward entity)
   ✗ "Became a knight" (status change — event, not internal)
   ✗ "Was rescued from the dungeon" (event that happened TO them)
   ✓ "Overcame fear of commitment; allowed herself to trust again"
-  ✓ "Shifted from seeking death to accepting responsibility"
-- Skip: temporary moods, single instances, generic labels ("grew stronger")
-- Skip: actions/events ("traveled far", "fought bravely") — not development
+  ✓ "Learned to delegate after years of controlling everything alone"
+- Skip: what happened TO them, what they DID, temporary moods, generic labels
 - A character's arc might only have 3-5 points across entire roleplay
 - EMBEDDED QUOTES: When character's exact words capture the transformation and would be
   referenced later, embed with context. Only if exact wording matters for callbacks.
@@ -87,36 +87,32 @@ STANCE: Relationship dynamics (per target) - HIGH VALUE.
   ✓ "told her 'you're the only one who ever stayed' after revealing his past"
   If meaning works without the specific words, synthesize instead.
 
-VOICE: Representative quotes showing speech patterns.
-- t = entity type, n = name, q = quote
-- ONLY extract quotes that appear VERBATIM in the <SCENE> section above
-- PATTERN TEST: "Does this show HOW they speak, or just WHAT they said?"
-  Strip away the content (topic being discussed). Does the DELIVERY still show a pattern?
-- Valuable: cadence, register, verbal tics, characteristic constructions
-- ATTRIBUTION: Verify who is SPEAKING, not who is addressed.
-  For telepathy/mindspeech, check context for the actual speaker.
-- Skip: generic phrases anyone might say ("I understand", "Yes!", "I love you")
-- Skip: plot-functional ("The artifact is in the tower")
-- Skip: exposition-heavy explanations of plot/lore
-- Voice = speech DELIVERY, not speech CONTENT
-  ✗ "The curse originated in the eastern temple..." (exposition, no pattern)
-  ✗ "Yes! Right there! Don't stop!" (generic expression, anyone could say this)
-  ✗ "I'll kill you!" (generic threat, no distinctive delivery)
-  ✓ "Stars above, you're denser than a brick privy." (oath + colorful metaphor)
-  ✓ "Listen here, you insufferable fool..." (direct address, characteristic vocabulary)
-- Dedup: same speech pattern = keep better one only
-- EMPTY IS VALID: No good voice quotes = no voice quotes. Don't force extraction.
+QUOTES: Relationship-defining moments preserved verbatim.
+- t = entity type, n = name, q = quote string with context inside
+- FORMAT: q field is a single string containing both quote AND context in parentheses
+  ✓ q: "I'll find you, no matter how far you run (to Marcus, when he fled)"
+  ✓ q: "This changes nothing between us (to Sara, after her betrayal)"
+  ✗ q: "I forgive you" — missing context, useless for callbacks
+- TRIM TO CORE: Extract only the defining snippet, not the whole speech.
+  If someone says 20 words but only 5 are the commitment, extract those 5.
+- ONE PER MOMENT: Multiple quotes from same defining moment = pick the best one.
+  Don't extract both "I forgive you" AND "We start fresh today" if same moment.
+- ONLY CAPTURE IF:
+  - Commitment, oath, or promise that would be called back
+  - Relationship pivot worth referencing ("Remember when you said...")
+- NOT QUOTES:
+  ✗ Exposition/revelations ("The king was your father all along")
+  ✗ Generic expressions ("I love you", "I'll kill you", "Yes!")
+  ✗ Plot-functional ("The artifact is in the tower")
+  ✗ Anything whose meaning is already in Arc or Stance
+- ATTRIBUTION: Verify who is SPEAKING. If unclear, check which section the text appears under - [USER: name] or [CHARACTER: name] indicates the speaker.
+- EMPTY IS VALID: Most scenes have 0-1 quote-worthy moments. Don't force extraction.
 
-STATE: Persistent conditions that change baseline (supersedes previous).
+STATE: Permanent facts that affect how the entity can be written.
 - t = entity type, n = name, c = content
-- Belongings acquired/lost, bonds formed, permanent status changes
-- Skip: temporary conditions (injuries healing, emotions passing)
-- Skip: current state visible in recent messages — only record CHANGES from baseline
-- Ask: "Will this still be true 10 scenes from now?"
-  ✗ "exhausted from journey" (will recover)
-  ✗ "bruised from the fight" (will heal)
-  ✓ "lost right arm" (permanent)
-  ✓ "bound by blood oath to the crown" (permanent change)
+- Physical changes, acquired abilities, status, belongings
+- Temporary conditions are EVENTS (go in outcomes), not state
+- Test: "Will this still be true 10 scenes from now?"
 
 IDENTITY: Baseline character facts - CUT FIRST if needed.
 - t = entity type, n = name, c = content
@@ -137,7 +133,7 @@ LORE: Only extract what's STORY-SPECIFIC, not generic world-building.
   "threads": ["unresolved hook"],
   "arc": [{"t": "type", "n": "Name", "c": "content"}],
   "stance": [{"t": "type", "n": "Name", "toward": "Target", "c": "content"}],
-  "voice": [{"t": "type", "n": "Name", "q": "quote"}],
+  "quotes": [{"t": "type", "n": "Name", "q": "quote (to whom, situation)"}],
   "state": [{"t": "type", "n": "Name", "c": "content"}],
   "identity": [{"t": "type", "n": "Name", "c": "content"}],
   "verbatim": ["exact text"]

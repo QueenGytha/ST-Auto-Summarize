@@ -17,7 +17,7 @@ import {
 export default [
 {
   // Ignore test files from strict linting
-  ignores: ['tests/**']
+  ignores: ['tests/**', 'prompt-testing/**']
 },
 {
   // Apply to all JS files

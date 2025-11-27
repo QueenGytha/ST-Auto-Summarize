@@ -1,0 +1,4 @@
+{
+  "user": "ROLE: Narrative archivist. Extract what future storytelling needs from this scene.\n\nTASK: Identify content worth preserving for historical context.\n\n---------------- SCENE ----------------\n<SCENE>\n[USER: Alex]\nHello! I'm new to this town. Can you show me around?\n\n[CHARACTER: Sara]\nSara smiled warmly at the newcomer, her green eyes sparkling with curiosity.\n\n\"Welcome to Millbrook! I'm Sara, I run the bakery on Main Street. You picked a good day to arrive - we're having our annual harvest festival this weekend.\"\n\nShe gestured toward the town square, where colorful banners were already being hung between the old oak trees.\n\n\"I'd be happy to show you around. First stop should probably be the inn - Mrs. Henderson always has rooms available, and her breakfast is legendary.\"\n</SCENE>\n\nOutput JSON only.",
+  "prefill": "{"
+}
