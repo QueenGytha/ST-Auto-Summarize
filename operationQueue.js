@@ -74,6 +74,12 @@ export const OperationType  = {
   CHAT: 'chat'
 } ;
 
+// Operations that don't make LLM calls - no rate limit delay needed
+const NON_LLM_OPERATIONS = new Set([
+  OperationType.UPDATE_LOREBOOK_REGISTRY,
+  OperationType.UPDATE_LOREBOOK_SNAPSHOT
+]);
+
 // Flow type definitions
 
 
@@ -1031,6 +1037,18 @@ async function executeOperation(operation ) {
   }
 }
 
+// Apply rate limit delay only for LLM operations
+async function applyRateLimitDelay(operationType) {
+  if (NON_LLM_OPERATIONS.has(operationType)) {
+    debug(SUBSYSTEM.QUEUE, `[LOOP] Skipping delay for non-LLM operation: ${operationType}`);
+    return;
+  }
+  const operationDelayMs = get_settings('operation_delay_ms') ?? OPERATION_FETCH_TIMEOUT_MS;
+  debug(SUBSYSTEM.QUEUE, `[LOOP] Starting ${operationDelayMs}ms delay, queue state: blocked=${String(isChatBlocked)}`);
+  await new Promise((resolve) => setTimeout(resolve, operationDelayMs));
+  debug(SUBSYSTEM.QUEUE, `[LOOP] After ${operationDelayMs}ms delay, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
+}
+
 function startQueueProcessor() {
   // CRITICAL: Reentrancy guard - prevent multiple processor loops from running concurrently
   if (isProcessorActive) {
@@ -1116,12 +1134,8 @@ function startQueueProcessor() {
         // Error already handled in executeOperation
         // Continue processing other operations
       }debug(SUBSYSTEM.QUEUE, `[LOOP] After executeOperation, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
-      // Sequential execution required: rate limiting delay between operations
-      const operationDelayMs = get_settings('operation_delay_ms') ?? OPERATION_FETCH_TIMEOUT_MS;
-      debug(SUBSYSTEM.QUEUE, `[LOOP] Starting ${operationDelayMs}ms delay, queue state: blocked=${String(isChatBlocked)}`);
-      // eslint-disable-next-line no-await-in-loop -- Rate limiting delay required between operations
-      await new Promise((resolve) => setTimeout(resolve, operationDelayMs));
-      debug(SUBSYSTEM.QUEUE, `[LOOP] After ${operationDelayMs}ms delay, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
+      // eslint-disable-next-line no-await-in-loop -- Rate limiting delay required between LLM operations
+      await applyRateLimitDelay(operation.type);
     }
     } finally {
       // CRITICAL: Always clear the active flag when processor exits (safety net)

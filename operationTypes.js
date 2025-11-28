@@ -21,3 +21,9 @@ export const OperationType = {
   UPDATE_LOREBOOK_SNAPSHOT: 'update_lorebook_snapshot',
   CHAT: 'chat'
 };
+
+// Operations that don't make LLM calls - no rate limit delay needed
+export const NON_LLM_OPERATIONS = new Set([
+  OperationType.UPDATE_LOREBOOK_REGISTRY,
+  OperationType.UPDATE_LOREBOOK_SNAPSHOT
+]);
