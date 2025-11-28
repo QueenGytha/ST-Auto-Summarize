@@ -633,16 +633,16 @@ class RequestLogger:
                 lines.append(f"**Scene Name:** {scene_name}")
                 lines.append("")
 
-            # Recap/Summary - support both old format and new compact format
-            recap = parsed_content.get('recap') or parsed_content.get('rc')
+            # Recap/Summary - support old format ('recap'), compact ('rc'), and current ('plot')
+            recap = parsed_content.get('recap') or parsed_content.get('rc') or parsed_content.get('plot')
             if recap:
                 lines.append("### Summary")
                 lines.append("")
                 lines.append(recap)
                 lines.append("")
 
-            # setting_lore entries - support both old format ('setting_lore') and new compact format ('sl')
-            setting_lore = parsed_content.get('setting_lore') or parsed_content.get('sl')
+            # Entity entries - support old format ('setting_lore'), compact ('sl'), and current ('entities')
+            setting_lore = parsed_content.get('setting_lore') or parsed_content.get('sl') or parsed_content.get('entities')
             if setting_lore and isinstance(setting_lore, list) and len(setting_lore) > 0:
                 entry_count = len(setting_lore)
                 plural = "entries" if entry_count != 1 else "entry"
@@ -674,7 +674,7 @@ class RequestLogger:
                         lines.append(f"**Keywords:** {', '.join(keywords)}")
                         lines.append("")
 
-                    # UID - support both old format ('uid') and new compact format ('u')
+                    # UID - support old compact format ('u') and current format ('uid')
                     uid = entry.get('uid') or entry.get('u')
                     if uid:
                         lines.append(f"**UID:** {uid}")
@@ -700,24 +700,31 @@ class RequestLogger:
                     if not isinstance(entry, dict):
                         continue
 
-                    entry_name = entry.get('name', f'Entry {i+1}')
-                    entry_type = entry.get('type', 'unknown')
+                    # Support both old and compact formats
+                    entry_name = entry.get('name') or entry.get('n') or f'Entry {i+1}'
+                    entry_type = entry.get('type') or entry.get('t') or 'unknown'
 
                     lines.append(f"### {entry_name} ({entry_type})")
                     lines.append("")
 
-                    # Entry content
-                    content = entry.get('content', '')
+                    # Entry content - support both formats
+                    content = entry.get('content') or entry.get('c') or ''
                     if content:
                         lines.append("```text")
                         lines.append(content)
                         lines.append("```")
                         lines.append("")
 
-                    # Keywords
-                    keywords = entry.get('keywords')
+                    # Keywords - support both formats
+                    keywords = entry.get('keywords') or entry.get('k')
                     if keywords and isinstance(keywords, list):
                         lines.append(f"**Keywords:** {', '.join(keywords)}")
+                        lines.append("")
+
+                    # UID - support both formats
+                    uid = entry.get('uid') or entry.get('u')
+                    if uid:
+                        lines.append(f"**UID:** {uid}")
                         lines.append("")
 
                     # Secondary keys

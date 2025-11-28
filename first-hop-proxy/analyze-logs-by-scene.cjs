@@ -10,11 +10,17 @@ function parseLogFile(filePath) {
     const promptTokensMatch = content.match(/\*\*Prompt Tokens:\*\*\s+([\d,]+)/);
     const completionTokensMatch = content.match(/\*\*Completion Tokens:\*\*\s+([\d,]+)/);
 
+    // Extract timestamps for total time calculation
+    const startTimestampMatch = content.match(/\*\*Timestamp:\*\*\s+(\d{4}-\d{2}-\d{2}T[\d:.]+)/);
+    const endTimestampMatch = content.match(/\*Log completed at\s+(\d{4}-\d{2}-\d{2}T[\d:.]+)\*/);
+
     const duration = durationMatch ? parseFloat(durationMatch[1]) : 0;
     const promptTokens = promptTokensMatch ? parseInt(promptTokensMatch[1].replace(/,/g, ''), 10) : 0;
     const completionTokens = completionTokensMatch ? parseInt(completionTokensMatch[1].replace(/,/g, ''), 10) : 0;
+    const startTimestamp = startTimestampMatch ? new Date(startTimestampMatch[1]) : null;
+    const endTimestamp = endTimestampMatch ? new Date(endTimestampMatch[1]) : null;
 
-    return { duration, promptTokens, completionTokens };
+    return { duration, promptTokens, completionTokens, startTimestamp, endTimestamp };
 }
 
 function isSceneEndFile(fileName) {
@@ -75,16 +81,18 @@ function groupFilesByScene(files) {
 }
 
 function analyzeScene(scene) {
-    let totalDuration = 0;
+    let llmTime = 0;
     let totalPromptTokens = 0;
     let totalCompletionTokens = 0;
     let filesProcessed = 0;
+    let earliestTimestamp = null;
+    let latestTimestamp = null;
 
     const operationStats = {};
 
     for (const file of scene.files) {
         try {
-            const { duration, promptTokens, completionTokens } = parseLogFile(file);
+            const { duration, promptTokens, completionTokens, startTimestamp, endTimestamp } = parseLogFile(file);
             const fileName = path.basename(file);
             const opType = getOperationType(fileName);
 
@@ -102,22 +110,42 @@ function analyzeScene(scene) {
             operationStats[opType].promptTokens += promptTokens;
             operationStats[opType].completionTokens += completionTokens;
 
-            totalDuration += duration;
+            llmTime += duration;
             totalPromptTokens += promptTokens;
             totalCompletionTokens += completionTokens;
             filesProcessed++;
+
+            // Track earliest and latest timestamps
+            if (startTimestamp && (!earliestTimestamp || startTimestamp < earliestTimestamp)) {
+                earliestTimestamp = startTimestamp;
+            }
+            if (endTimestamp && (!latestTimestamp || endTimestamp > latestTimestamp)) {
+                latestTimestamp = endTimestamp;
+            }
         } catch (error) {
             console.error(`  Warning: Failed to process ${path.basename(file)}: ${error.message}`);
         }
     }
 
+    // Calculate total time from timestamps and ST time
+    let totalTime = null;
+    let stTime = null;
+    if (earliestTimestamp && latestTimestamp) {
+        totalTime = (latestTimestamp - earliestTimestamp) / 1000; // Convert ms to seconds
+        stTime = totalTime - llmTime;
+    }
+
     return {
         filesProcessed,
-        totalDuration,
+        llmTime,
+        totalTime,
+        stTime,
         totalPromptTokens,
         totalCompletionTokens,
         totalTokens: totalPromptTokens + totalCompletionTokens,
-        operationStats
+        operationStats,
+        earliestTimestamp,
+        latestTimestamp
     };
 }
 
@@ -147,7 +175,9 @@ function analyzeLogs(logsFolder) {
 
     console.log(`Processing ${files.length} log files across ${scenes.length} scene(s)...\n`);
 
-    let grandTotalDuration = 0;
+    let grandLlmTime = 0;
+    let grandTotalTime = 0;
+    let grandStTime = 0;
     let grandTotalPromptTokens = 0;
     let grandTotalCompletionTokens = 0;
     let grandTotalFiles = 0;
@@ -164,7 +194,14 @@ function analyzeLogs(logsFolder) {
         }
         console.log(`${'-'.repeat(60)}`);
         console.log(`Files in Scene: ${stats.filesProcessed}`);
-        console.log(`Duration: ${stats.totalDuration.toFixed(3)} seconds (${(stats.totalDuration / 60).toFixed(2)} minutes)`);
+        if (stats.totalTime !== null) {
+            console.log(`Total Time: ${stats.totalTime.toFixed(3)} seconds (${(stats.totalTime / 60).toFixed(2)} minutes)`);
+            console.log(`LLM Time: ${stats.llmTime.toFixed(3)} seconds (${(stats.llmTime / 60).toFixed(2)} minutes)`);
+            console.log(`ST Time: ${stats.stTime.toFixed(3)} seconds (${(stats.stTime / 60).toFixed(2)} minutes)`);
+        } else {
+            console.log(`LLM Time: ${stats.llmTime.toFixed(3)} seconds (${(stats.llmTime / 60).toFixed(2)} minutes)`);
+            console.log(`Total Time: N/A (missing timestamps)`);
+        }
         console.log(`Prompt Tokens: ${stats.totalPromptTokens.toLocaleString()}`);
         console.log(`Completion Tokens: ${stats.totalCompletionTokens.toLocaleString()}`);
         console.log(`Total Tokens: ${stats.totalTokens.toLocaleString()}`);
@@ -177,7 +214,7 @@ function analyzeLogs(logsFolder) {
                 const op = stats.operationStats[opType];
                 const totalTokens = op.promptTokens + op.completionTokens;
                 console.log(`  ${opType} (${op.count} file${op.count !== 1 ? 's' : ''}):`);
-                console.log(`    Duration: ${op.duration.toFixed(3)}s`);
+                console.log(`    LLM Time: ${op.duration.toFixed(3)}s`);
                 console.log(`    Prompt: ${op.promptTokens.toLocaleString()}, Completion: ${op.completionTokens.toLocaleString()}, Total: ${totalTokens.toLocaleString()}`);
 
                 if (!grandOperationStats[opType]) {
@@ -196,7 +233,11 @@ function analyzeLogs(logsFolder) {
             console.log();
         }
 
-        grandTotalDuration += stats.totalDuration;
+        grandLlmTime += stats.llmTime;
+        if (stats.totalTime !== null) {
+            grandTotalTime += stats.totalTime;
+            grandStTime += stats.stTime;
+        }
         grandTotalPromptTokens += stats.totalPromptTokens;
         grandTotalCompletionTokens += stats.totalCompletionTokens;
         grandTotalFiles += stats.filesProcessed;
@@ -215,7 +256,7 @@ function analyzeLogs(logsFolder) {
             const op = grandOperationStats[opType];
             const totalTokens = op.promptTokens + op.completionTokens;
             console.log(`  ${opType} (${op.count} file${op.count !== 1 ? 's' : ''}):`);
-            console.log(`    Duration: ${op.duration.toFixed(3)}s (${(op.duration / 60).toFixed(2)} minutes)`);
+            console.log(`    LLM Time: ${op.duration.toFixed(3)}s (${(op.duration / 60).toFixed(2)} minutes)`);
             console.log(`    Prompt: ${op.promptTokens.toLocaleString()}, Completion: ${op.completionTokens.toLocaleString()}, Total: ${totalTokens.toLocaleString()}`);
         }
         console.log();
@@ -223,7 +264,9 @@ function analyzeLogs(logsFolder) {
 
     console.log(`Total Files Processed: ${grandTotalFiles}`);
     console.log(`Total Scenes: ${scenes.length}`);
-    console.log(`Total Duration: ${grandTotalDuration.toFixed(3)} seconds (${(grandTotalDuration / 60).toFixed(2)} minutes)`);
+    console.log(`Total Time: ${grandTotalTime.toFixed(3)} seconds (${(grandTotalTime / 60).toFixed(2)} minutes)`);
+    console.log(`LLM Time: ${grandLlmTime.toFixed(3)} seconds (${(grandLlmTime / 60).toFixed(2)} minutes)`);
+    console.log(`ST Time: ${grandStTime.toFixed(3)} seconds (${(grandStTime / 60).toFixed(2)} minutes)`);
     console.log(`Total Prompt Tokens: ${grandTotalPromptTokens.toLocaleString()}`);
     console.log(`Total Completion Tokens: ${grandTotalCompletionTokens.toLocaleString()}`);
     console.log(`Total Tokens: ${grandTotalTokens.toLocaleString()}`);
