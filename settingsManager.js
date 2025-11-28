@@ -6,7 +6,6 @@ import {
   debug,
   extension_settings,
   MODULE_NAME,
-  default_settings,
   refresh_settings,
   saveSettingsDebounced,
   get_extension_directory,
@@ -18,6 +17,7 @@ import {
   selected_group,
   selectorsSillyTavern } from
 './index.js';
+import { default_settings } from './defaultSettings.js';
 import { DEFAULT_ENTITY_TYPES } from './entityTypes.js';
 
 // Settings
