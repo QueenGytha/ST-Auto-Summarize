@@ -15,6 +15,7 @@ const OPERATION_TYPES = [
   'auto_lorebooks_bulk_populate',
   'auto_lorebooks_recap_lorebook_entry_compaction',
   'parse_scene_recap',
+  'filter_scene_recap_sl',
   'entity_types',
   'entry_defaults'
 ];

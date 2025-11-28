@@ -4,6 +4,7 @@ import { findArtifactByContent, createArtifact } from './operationArtifacts.js';
 
 const OPERATION_TYPES = [
   'scene_recap',
+  'organize_scene_recap',
   'scene_recap_error_detection',
   'auto_scene_break',
   'running_scene_recap',
@@ -13,6 +14,7 @@ const OPERATION_TYPES = [
   'auto_lorebooks_bulk_populate',
   'auto_lorebooks_recap_lorebook_entry_compaction',
   'parse_scene_recap',
+  'filter_scene_recap_sl',
   'entity_types',
   'entry_defaults'
 ];
