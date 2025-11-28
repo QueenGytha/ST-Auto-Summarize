@@ -50,6 +50,15 @@ export const default_settings = {
   // Set to a positive number (e.g., 10) if you want automatic retry limits.
   max_retries: 0,
 
+  // Delay between queue operations in milliseconds.
+  // This is a rate-limiting delay to avoid hitting API rate limits.
+  // DEFAULT: 5000 (5 seconds)
+  //
+  // Adjust based on your model/provider rate limits:
+  // - Lower values = faster processing but may hit rate limits
+  // - Higher values = slower processing but safer for strict rate limits
+  operation_delay_ms: 5000,
+
   // --- Core Settings (non-operation-specific) ---
   debug_mode: true,
   default_chat_enabled: true,

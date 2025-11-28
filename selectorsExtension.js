@@ -160,6 +160,7 @@ export const selectorsExtension = {
     defaultEnabled: '[data-testid="misc-default-enabled"]',  // #default_chat_enabled
     globalToggle: '[data-testid="misc-global-toggle"]',      // #use_global_toggle_state
     compactionThreshold: '[data-testid="lorebook-compaction-threshold"]', // #lorebook_compaction_threshold
+    operationDelay: '[data-testid="misc-operation-delay"]',  // #operation_delay_ms
   },
 
   // Auto-Hide Settings

@@ -1717,6 +1717,12 @@ export function registerAllOperationHandlers() {
     const signal = getAbortSignal(operation);
     debug(SUBSYSTEM.QUEUE, `Executing COMBINE_SCENE_WITH_RUNNING for index ${index}`);
 
+    // Reorder lorebook entries alphabetically (single reorder after all lorebook ops complete)
+    const lorebookName = getAttachedLorebook();
+    if (lorebookName) {
+      await reorderLorebookEntriesAlphabetically(lorebookName);
+    }
+
     const result = await combine_scene_with_running_recap(index);
 
     // Check if cancelled after LLM call (before return)
@@ -2485,8 +2491,7 @@ export function registerAllOperationHandlers() {
 
     debug(SUBSYSTEM.QUEUE, `✓ Updated registry for type ${entityType}`);
 
-    // Reorder entries alphabetically after successful create/merge
-    await reorderLorebookEntriesAlphabetically(lorebookName);
+    // Reorder moved to COMBINE_SCENE_WITH_RUNNING for efficiency (single reorder after all lorebook ops)
 
     // Complete pending entry (cleanup)
     completePendingEntry(entryId);

@@ -630,6 +630,18 @@
                             <input id="auto_lorebooks_compaction_threshold" data-testid="lorebook-compaction-threshold" class="text_pole widthUnset inline_setting" type="number" min="0" max="10000" step="100" />
                             <span>Lorebook Compaction Threshold</span>
                         </label>
+
+                        <hr>
+
+                        <label title="Delay between queue operations in milliseconds. This rate-limiting delay helps avoid API rate limits. Lower values = faster but may hit limits. Higher values = slower but safer.">
+                            <input id="operation_delay_ms" data-testid="misc-operation-delay" class="text_pole widthUnset inline_setting" type="number" min="0" max="60000" step="500" />
+                            <span>Operation Delay (ms)</span>
+                        </label>
+
+                        <div class="note-block">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span>Delay between queue operations for rate limiting. Adjust based on your model/provider limits. <strong>Default:</strong> <code>5000</code> (5 seconds). Set lower for faster processing if your provider allows it.</span>
+                        </div>
                     </div>
                 </div>
 

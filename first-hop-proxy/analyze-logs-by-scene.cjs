@@ -25,14 +25,54 @@ function isSceneEndFile(fileName) {
     return fileName.includes('combine_scene_with_running');
 }
 
+// All operation types from operationTypes.js
+const KNOWN_OPERATION_TYPES = [
+    'validate_recap',
+    'detect_scene_break',
+    'detect_scene_break_backwards',
+    'generate_scene_recap',
+    'organize_scene_recap',
+    'parse_scene_recap',
+    'filter_scene_recap_sl',
+    'generate_running_recap',
+    'combine_scene_with_running',
+    'lorebook_entry_lookup',
+    'resolve_lorebook_entry',
+    'create_lorebook_entry',
+    'merge_lorebook_entry',
+    'auto_lorebooks_recap_lorebook_entry_compaction',
+    'populate_registries',
+    'update_lorebook_registry',
+    'update_lorebook_snapshot',
+    'chat'
+];
+
+// Variants that should be tracked separately (suffixes to base operation types)
+const TRACKED_VARIANTS = ['_FORCED'];
+
 function getOperationType(fileName) {
-    if (fileName.includes('detect_scene_break')) return 'detect_scene_break';
-    if (fileName.includes('generate_scene_recap')) return 'generate_scene_recap';
-    if (fileName.includes('parse_scene_recap')) return 'parse_scene_recap';
-    if (fileName.includes('lorebook_entry_lookup')) return 'lorebook_entry_lookup';
-    if (fileName.includes('resolve_lorebook')) return 'resolve_lorebook';
-    if (fileName.includes('merge_lorebook')) return 'merge_lorebook';
-    if (fileName.includes('combine_scene_with_running')) return 'combine_scene_with_running';
+    // Check each known operation type (longer matches first to avoid partial matches)
+    const sortedTypes = [...KNOWN_OPERATION_TYPES].sort((a, b) => b.length - a.length);
+
+    for (const opType of sortedTypes) {
+        if (fileName.includes(opType)) {
+            // Check for tracked variants
+            for (const variant of TRACKED_VARIANTS) {
+                if (fileName.includes(opType + variant)) {
+                    return opType + variant;
+                }
+            }
+            return opType;
+        }
+    }
+
+    // Extract what appears to be the operation type for unknown cases
+    // Format: NNNNN-operation_type-other_stuff.md
+    const match = fileName.match(/^\d+-([a-z_]+)/i);
+    if (match) {
+        return `unknown:${match[1]}`;
+    }
+
     return 'unknown';
 }
 

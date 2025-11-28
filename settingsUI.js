@@ -81,6 +81,7 @@ async function initialize_settings_listeners() {
   bind_setting(selectorsExtension.misc.defaultEnabled, 'default_chat_enabled', 'boolean');
   bind_setting(selectorsExtension.misc.globalToggle, 'use_global_toggle_state', 'boolean');
   bind_setting(selectorsExtension.misc.compactionThreshold, 'auto_lorebooks_compaction_threshold', 'number');
+  bind_setting(selectorsExtension.misc.operationDelay, 'operation_delay_ms', 'number');
 
   // --- Scene Recap Settings ---
   // Scene names are now provided by the recap output itself (scene_name field)

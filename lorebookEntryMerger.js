@@ -7,7 +7,7 @@ import { buildAllMacroParams, substitute_params } from './macros/index.js';
 
 // Will be imported from index.js via barrel exports
 let log , debug , error ; // Logging functions - any type is legitimate
-let modifyLorebookEntry , getLorebookEntries , reorderLorebookEntriesAlphabetically , getLorebookEntryTokenCount ; // Lorebook functions - any type is legitimate
+let modifyLorebookEntry , getLorebookEntries , getLorebookEntryTokenCount ; // Lorebook functions - any type is legitimate
 let get_settings ; // Settings function - any type is legitimate
 let enqueueOperation , OperationType ; // Queue functions - any type is legitimate
 
@@ -21,7 +21,6 @@ export function initLorebookEntryMerger(utils , lorebookManagerModule , settings
   if (lorebookManagerModule) {
     modifyLorebookEntry = lorebookManagerModule.modifyLorebookEntry;
     getLorebookEntries = lorebookManagerModule.getLorebookEntries;
-    reorderLorebookEntriesAlphabetically = lorebookManagerModule.reorderLorebookEntriesAlphabetically;
     getLorebookEntryTokenCount = lorebookManagerModule.getLorebookEntryTokenCount;
   }
 
@@ -457,11 +456,7 @@ export async function executeMerge(lorebookName , existingEntry , newEntryData )
 
     log(`Successfully merged entry: ${existingEntry.comment}`);
 
-    // If entry was renamed, trigger alphabetical reordering
-    if (finalCanonicalName && reorderLorebookEntriesAlphabetically) {
-      debug(`Entry was renamed, triggering alphabetical reordering for lorebook: ${lorebookName}`);
-      await reorderLorebookEntriesAlphabetically(lorebookName);
-    }
+    // Reorder moved to COMBINE_SCENE_WITH_RUNNING for efficiency (single reorder after all lorebook ops)
 
     return {
       success: true,

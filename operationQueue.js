@@ -129,7 +129,7 @@ export async function initOperationQueue() {
 
   // Ensure the queue entry exists in the lorebook
   log(SUBSYSTEM.QUEUE, 'Checking for queue entry in lorebook...');
-  const queueEntry = await getQueueEntry();
+  const { entry: queueEntry } = await getQueueEntry();
   if (queueEntry) {
     log(SUBSYSTEM.QUEUE, `✓ Queue entry exists with UID ${queueEntry.uid}`);
   } else {
@@ -208,7 +208,7 @@ async function getQueueEntry() {
   const lorebookName = getAttachedLorebook();
   if (!lorebookName) {
     log(SUBSYSTEM.QUEUE, '⚠ No lorebook attached, cannot access queue entry');
-    return null;
+    return { entry: null, worldInfo: null };
   }
 
   log(SUBSYSTEM.QUEUE, `Lorebook attached: "${lorebookName}"`);
@@ -230,7 +230,7 @@ async function getQueueEntry() {
       if (!reattached) {
         error(SUBSYSTEM.QUEUE, 'Failed to reattach lorebook');
         toast('CRITICAL: Queue lorebook is detached and reattachment failed!', 'error');
-        return null;
+        return { entry: null, worldInfo: null };
       }
 
       // Verify the reattachment actually worked
@@ -238,14 +238,14 @@ async function getQueueEntry() {
       if (nowAttached !== lorebookName) {
         error(SUBSYSTEM.QUEUE, `CRITICAL: Reattached lorebook but metadata shows "${nowAttached}" instead of "${lorebookName}"`);
         toast('CRITICAL: Queue lorebook reattachment verification failed!', 'error');
-        return null;
+        return { entry: null, worldInfo: null };
       }
 
       log(SUBSYSTEM.QUEUE, 'Successfully reattached and verified lorebook');
     } else {
       error(SUBSYSTEM.QUEUE, 'Lorebook file does not exist at all');
       toast('CRITICAL: Queue lorebook file is missing! Extension cannot function.', 'error');
-      return null;
+      return { entry: null, worldInfo: null };
     }
   }
 
@@ -253,7 +253,7 @@ async function getQueueEntry() {
   const worldInfo = await loadWorldInfo(lorebookName);
   if (!worldInfo) {
     error(SUBSYSTEM.QUEUE, 'Failed to load lorebook:', lorebookName);
-    return null;
+    return { entry: null, worldInfo: null };
   }
 
   // Convert entries to array if it's an object (SillyTavern uses object with UID keys)
@@ -312,11 +312,11 @@ async function getQueueEntry() {
       log(SUBSYSTEM.QUEUE, `✓ Created queue entry with UID: ${queueEntry.uid}`);
     } catch (saveErr) {
       error(SUBSYSTEM.QUEUE, 'Failed to save lorebook after creating queue entry:', saveErr);
-      return null;
+      return { entry: null, worldInfo: null };
     }
   }
 
-  return queueEntry;
+  return { entry: queueEntry, worldInfo };
 }
 
 async function loadQueue() {
@@ -324,7 +324,7 @@ async function loadQueue() {
     log(SUBSYSTEM.QUEUE, 'Loading queue from lorebook...');
 
     // Load from lorebook entry
-    const queueEntry = await getQueueEntry();
+    const { entry: queueEntry } = await getQueueEntry();
 
     if (queueEntry) {
       log(SUBSYSTEM.QUEUE, '✓ Found existing queue entry in lorebook');
@@ -422,29 +422,10 @@ async function saveQueue(force = false) {
       return;
     }
 
-    // Ensure the queue entry exists first
-    const existingEntry = await getQueueEntry();
-    if (!existingEntry) {
+    // Get queue entry and worldInfo in a single load (optimization: avoids double loadWorldInfo)
+    const { entry: queueEntry, worldInfo } = await getQueueEntry();
+    if (!queueEntry || !worldInfo) {
       error(SUBSYSTEM.QUEUE, 'Failed to get or create queue entry, cannot save');
-      return;
-    }
-
-    // Load the lorebook fresh to get current state
-    const worldInfo = await loadWorldInfo(lorebookName);
-    if (!worldInfo) {
-      error(SUBSYSTEM.QUEUE, 'Failed to load lorebook:', lorebookName);
-      return;
-    }
-
-    // Convert entries to array if it's an object
-    const entriesArray = Array.isArray(worldInfo.entries) ?
-    worldInfo.entries :
-    Object.values(worldInfo.entries || {});
-
-    // Find the queue entry in the freshly loaded worldInfo
-    const queueEntry = entriesArray.find((e) => e.comment === QUEUE_ENTRY_NAME);
-    if (!queueEntry) {
-      error(SUBSYSTEM.QUEUE, 'Queue entry disappeared after creation, cannot save');
       return;
     }
 
@@ -1136,10 +1117,11 @@ function startQueueProcessor() {
         // Continue processing other operations
       }debug(SUBSYSTEM.QUEUE, `[LOOP] After executeOperation, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
       // Sequential execution required: rate limiting delay between operations
-      debug(SUBSYSTEM.QUEUE, `[LOOP] Starting 5-second delay, queue state: blocked=${String(isChatBlocked)}`);
+      const operationDelayMs = get_settings('operation_delay_ms') ?? OPERATION_FETCH_TIMEOUT_MS;
+      debug(SUBSYSTEM.QUEUE, `[LOOP] Starting ${operationDelayMs}ms delay, queue state: blocked=${String(isChatBlocked)}`);
       // eslint-disable-next-line no-await-in-loop -- Rate limiting delay required between operations
-      await new Promise((resolve) => setTimeout(resolve, OPERATION_FETCH_TIMEOUT_MS));
-      debug(SUBSYSTEM.QUEUE, `[LOOP] After 5-second delay, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
+      await new Promise((resolve) => setTimeout(resolve, operationDelayMs));
+      debug(SUBSYSTEM.QUEUE, `[LOOP] After ${operationDelayMs}ms delay, queue state: blocked=${String(isChatBlocked)}, queueLength=${currentQueue?.queue?.length ?? 0}`);
     }
     } finally {
       // CRITICAL: Always clear the active flag when processor exits (safety net)

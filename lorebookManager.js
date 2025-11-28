@@ -952,7 +952,7 @@ export async function addLorebookEntry(lorebookName , entryData  = {}) {
 
     log(`Added entry to lorebook "${lorebookName}": UID ${newEntry.uid}`);
 
-    await reorderLorebookEntriesAlphabetically(lorebookName);
+    // Reorder moved to COMBINE_SCENE_WITH_RUNNING for efficiency (single reorder after all lorebook ops)
 
     return newEntry;
 
@@ -1042,10 +1042,7 @@ export async function modifyLorebookEntry(lorebookName , uid , updates  = {}) {
 
     log(`Modified entry UID ${uid} in lorebook "${lorebookName}"`);
 
-    // Reorder entries alphabetically if comment field was changed
-    if (updates.comment !== undefined) {
-      await reorderLorebookEntriesAlphabetically(lorebookName);
-    }
+    // Reorder moved to COMBINE_SCENE_WITH_RUNNING for efficiency (single reorder after all lorebook ops)
 
     return true;
 
