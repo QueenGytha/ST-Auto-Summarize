@@ -566,8 +566,16 @@ async function initializeExtension() {
 // Call initialization immediately when module loads
 debug(SUBSYSTEM.EVENT, 'Module loaded, calling initializeExtension()...');
 initializeExtension().catch((err) => {
-  console.error('[EVENT HANDLERS] Failed to initialize extension:', err);
-  console.error('[EVENT HANDLERS] Stack trace:', err.stack);
+  console.error('[AutoRecap] Failed to initialize extension:', err);
+  console.error('[AutoRecap] Stack trace:', err.stack);
+
+  // Surface the error visibly so users know what's wrong
+  const errorMsg = `Auto-Recap failed to load: ${err.message}`;
+  if (typeof toastr !== 'undefined') {
+    toastr.error(errorMsg, 'Extension Error', { timeOut: 0, extendedTimeOut: 0 });
+  } else {
+    alert(errorMsg);
+  }
 });
 
 export {
