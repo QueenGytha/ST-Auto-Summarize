@@ -1437,6 +1437,13 @@ export async function processNewMessageForSceneBreak(messageIndex ) {
     return;
   }
 
+  // Check if queue is already processing - avoid duplicate detections
+  const queueStats = getQueueStats();
+  if (queueStats.pending > 0 || queueStats.in_progress > 0) {
+    debug(SUBSYSTEM.SCENE, `Skipping new message detection - queue already has ${queueStats.pending} pending, ${queueStats.in_progress} in progress`);
+    return;
+  }
+
   const forceFullRescan = typeof window !== 'undefined' && window.autoRecapForceSceneBreakRescan === true;
 
   debug(
