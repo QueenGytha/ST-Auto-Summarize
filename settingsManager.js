@@ -202,6 +202,10 @@ async function reset_settings() {
 }
 function set_settings(key , value ) {
   // Set a setting for the extension and save it (value can be any type - legitimate use of any)
+  // Ensure extension_settings namespace exists (may not for new users before initialize_settings())
+  if (!extension_settings[MODULE_NAME]) {
+    extension_settings[MODULE_NAME] = {};
+  }
   extension_settings[MODULE_NAME][key] = value;
   saveSettingsDebounced();
 }
