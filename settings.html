@@ -633,14 +633,14 @@
 
                         <hr>
 
-                        <label title="Delay between queue operations in milliseconds. This rate-limiting delay helps avoid API rate limits. Lower values = faster but may hit limits. Higher values = slower but safer.">
+                        <label title="Delay between queue operations in milliseconds. Optional rate-limiting delay. Operations retry automatically on rate limits.">
                             <input id="operation_delay_ms" data-testid="misc-operation-delay" class="text_pole widthUnset inline_setting" type="number" min="0" max="60000" step="500" />
                             <span>Operation Delay (ms)</span>
                         </label>
 
                         <div class="note-block">
                             <i class="fa-solid fa-info-circle"></i>
-                            <span>Delay between queue operations for rate limiting. Adjust based on your model/provider limits. <strong>Default:</strong> <code>5000</code> (5 seconds). Set lower for faster processing if your provider allows it.</span>
+                            <span>Optional delay between queue operations. <strong>Default:</strong> <code>0</code> (no delay). Operations automatically retry on rate limits. Increase if you want to reduce rate limit retries.</span>
                         </div>
                     </div>
                 </div>

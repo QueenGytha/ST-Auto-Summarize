@@ -51,13 +51,13 @@ export const default_settings = {
   max_retries: 0,
 
   // Delay between queue operations in milliseconds.
-  // This is a rate-limiting delay to avoid hitting API rate limits.
-  // DEFAULT: 5000 (5 seconds)
+  // This is an optional rate-limiting delay to avoid hitting API rate limits.
+  // DEFAULT: 0 (no delay - operations retry automatically on rate limits)
   //
   // Adjust based on your model/provider rate limits:
-  // - Lower values = faster processing but may hit rate limits
-  // - Higher values = slower processing but safer for strict rate limits
-  operation_delay_ms: 5000,
+  // - 0 = fastest processing, relies on automatic retry for rate limits
+  // - Higher values = slower processing but fewer rate limit retries
+  operation_delay_ms: 0,
 
   // --- Core Settings (non-operation-specific) ---
   debug_mode: true,
