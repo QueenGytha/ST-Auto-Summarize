@@ -1,5 +1,6 @@
 
-import { get_settings, set_settings, log, SUBSYSTEM, saveSettingsDebounced, extension_settings, MODULE_NAME, default_settings } from './index.js';
+import { get_settings, set_settings, log, SUBSYSTEM, saveSettingsDebounced, extension_settings, MODULE_NAME } from './index.js';
+import { default_settings } from './defaultSettings.js';
 
 const ERROR_PRESET_NAME_REQUIRED = 'Preset name is required and must be a string';
 

@@ -1,5 +1,6 @@
 
-import { get_settings, set_settings, log, SUBSYSTEM, saveSettingsDebounced, default_settings } from './index.js';
+import { get_settings, set_settings, log, SUBSYSTEM, saveSettingsDebounced } from './index.js';
+import { default_settings } from './defaultSettings.js';
 import { resolveOperationsPreset } from './operationsPresetsResolution.js';
 
 const OPERATION_TYPES = [

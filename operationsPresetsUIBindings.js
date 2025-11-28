@@ -7,9 +7,9 @@ import {
   get_current_chat_identifier,
   saveSettingsDebounced,
   set_settings,
-  get_settings,
-  default_settings
+  get_settings
 } from './index.js';
+import { default_settings } from './defaultSettings.js';
 import { getArtifactSelector } from './selectorsExtension.js';
 import { get_connection_profile_objects } from './connectionProfiles.js';
 import { get_presets } from './presetManager.js';

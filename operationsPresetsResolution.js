@@ -1,5 +1,6 @@
 
-import { get_settings, set_settings, error, log, debug, SUBSYSTEM, get_current_chat_identifier, get_current_character_identifier, getContext, default_settings } from './index.js';
+import { get_settings, set_settings, error, log, debug, SUBSYSTEM, get_current_chat_identifier, get_current_character_identifier, getContext } from './index.js';
+import { default_settings } from './defaultSettings.js';
 
 export function presetExists(presetName) {
   if (!presetName || typeof presetName !== 'string') {
