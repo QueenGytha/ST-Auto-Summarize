@@ -1280,6 +1280,36 @@ async function tryQueueSceneBreaks(config) {
   return null;
 }
 
+// Helper: Find the latest visible scene break index in the chat
+function findLatestVisibleSceneBreakIndex(chat, maxIndex) {
+  for (let i = maxIndex; i >= 0; i--) {
+    try {
+      const hasSceneBreak = get_data(chat[i], 'scene_break');
+      const isVisible = get_data(chat[i], 'scene_break_visible');
+      if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
+        return i;
+      }
+    } catch {/* ignore lookup errors */}
+  }
+  return -1;
+}
+
+// Helper: Find the last consecutive checked message index after a starting point
+// Returns the starting point if no checked messages found after it
+function findLastConsecutiveCheckedIndex(chat, startAfterIndex, maxIndex) {
+  let lastChecked = startAfterIndex;
+  for (let i = startAfterIndex + 1; i <= maxIndex; i++) {
+    try {
+      if (get_data(chat[i], 'auto_scene_break_checked')) {
+        lastChecked = i;
+      } else {
+        break; // Stop at first unchecked message
+      }
+    } catch {/* ignore lookup errors */}
+  }
+  return lastChecked;
+}
+
 // Core unified scene break detection function
 async function detectSceneBreaksInRange(chat, options = {}) {
   const {
@@ -1310,20 +1340,15 @@ async function detectSceneBreaksInRange(chat, options = {}) {
   }
 
   // Find the latest visible scene break to determine start
-  let latestVisibleSceneBreakIndex = -1;
-  for (let i = maxEligibleIndex; i >= 0; i--) {
-    try {
-      const hasSceneBreak = get_data(chat[i], 'scene_break');
-      const isVisible = get_data(chat[i], 'scene_break_visible');
-      if (hasSceneBreak && (isVisible === undefined || isVisible === true)) {
-        latestVisibleSceneBreakIndex = i;
-        break;
-      }
-    } catch {/* ignore lookup errors */}
-  }
+  const latestVisibleSceneBreakIndex = findLatestVisibleSceneBreakIndex(chat, maxEligibleIndex);
 
-  // Determine actual start index
-  const actualStart = startIndex !== null ? startIndex : (latestVisibleSceneBreakIndex + 1);
+  // Find the last consecutive checked message after the scene break
+  // This prevents re-checking messages when scene breaks are deleted
+  const lastCheckedIndex = findLastConsecutiveCheckedIndex(chat, latestVisibleSceneBreakIndex, maxEligibleIndex);
+
+  // Determine actual start index - use explicit startIndex if provided,
+  // otherwise start after the last checked message (not just the last scene break)
+  const actualStart = startIndex !== null ? startIndex : (lastCheckedIndex + 1);
 
   // Validate range
   if (actualStart > maxEligibleIndex) {
@@ -1333,19 +1358,7 @@ async function detectSceneBreaksInRange(chat, options = {}) {
 
   log(
     SUBSYSTEM.SCENE,
-    'Processing scene break detection - eligible range:',
-    actualStart,
-    'to',
-    maxEligibleIndex,
-    ', full range:',
-    actualStart,
-    'to',
-    rawEnd,
-    '(offset:',
-    offset,
-    ', checking:',
-    checkWhich,
-    ')'
+    `Processing scene break detection - latestSceneBreak: ${latestVisibleSceneBreakIndex}, lastChecked: ${lastCheckedIndex}, actualStart: ${actualStart}, eligible range: ${actualStart}-${maxEligibleIndex}, full range: ${actualStart}-${rawEnd} (offset: ${offset}, checking: ${checkWhich})`
   );
 
   // Queue the detection operation
