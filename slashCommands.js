@@ -621,13 +621,16 @@ function initialize_slash_commands() {
       const finalCompressionRatio = finalScene.compressionRatio;
 
       let cumulativeHistoricalSavings = 0;
-      let totalUserMessagesAnalyzed = 0;
+      let userMessagesInScenes = 0;
       for (const scene of sceneStats) {
         for (const msgStat of scene.perMessageStats) {
           cumulativeHistoricalSavings += msgStat.savings;
-          totalUserMessagesAnalyzed++;
+          userMessagesInScenes++;
         }
       }
+
+      // Count total user messages in entire chat for comparison
+      const totalUserMessages = chat.filter((msg) => msg.is_user).length;
 
       const allMessagesTokens = calculate_tokens_for_messages(chat);
       const { lorebookTokens: currentLorebookTokens, lorebookEntryCount: currentLorebookEntryCount } =
@@ -654,7 +657,8 @@ function initialize_slash_commands() {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 Overall Statistics:
   • Scenes Analyzed: ${totalScenes}
-  • Total Messages: ${totalMessages} (${totalUserMessagesAnalyzed} user messages analyzed)
+  • Total Messages: ${totalMessages} (${totalUserMessages} user, ${totalMessages - totalUserMessages} assistant)
+  • User Messages in Scenes: ${userMessagesInScenes} of ${totalUserMessages}
   • Cumulative Historical Savings: ${cumulativeHistoricalSavings.toLocaleString()} tokens
   • Final Scene Compression Ratio: ${finalCompressionRatio}:1
 
@@ -693,7 +697,8 @@ function initialize_slash_commands() {
       log('[Effective Token Analysis] ===== DETAILED DATA =====');
       log('[Effective Token Analysis] Scene statistics:', sceneStats);
       log('\n[Effective Token Analysis] ===== SAVINGS COMPARISON =====');
-      log(`  User messages analyzed: ${totalUserMessagesAnalyzed} (out of ${totalMessages} total messages)`);
+      log(`  Total messages: ${totalMessages} (${totalUserMessages} user, ${totalMessages - totalUserMessages} assistant)`);
+      log(`  User messages in completed scenes: ${userMessagesInScenes} of ${totalUserMessages}`);
       log(`  Cumulative historical savings (all user messages as sent): ${cumulativeHistoricalSavings.toLocaleString()} tokens`);
       log(`  Current state savings (vs sending all messages now): ${totalSavingsVsFullChain.toLocaleString()} tokens (${savingsPercentage}%)`);
       log('\n[Effective Token Analysis] ===== END-TO-END COMPARISON =====');
