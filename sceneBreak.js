@@ -1443,10 +1443,17 @@ function normalizeStage1Extraction(parsed) {
     return parsed;
   }
 
-  // Entity-based format (current pipeline): {sn, plot (string), entities (array)}
-  if (parsed && typeof parsed === 'object' && typeof parsed.plot === 'string' && Array.isArray(parsed.entities)) {
-    debug(SUBSYSTEM.SCENE, `Stage 1 returned entity-based format: ${parsed.entities.length} entities, plot length=${parsed.plot.length}, sn="${parsed.sn || ''}"`);
-    return parsed;
+  // Entity-based format (current pipeline): {sn, plot/rc (string), entities (array)}
+  // Accept both "plot" and "rc" as the summary field (prompt says "rc" but we normalize to "plot")
+  const plotField = parsed?.plot ?? parsed?.rc;
+  if (parsed && typeof parsed === 'object' && typeof plotField === 'string' && Array.isArray(parsed.entities)) {
+    // Normalize rc -> plot for downstream consistency
+    const normalized = { ...parsed, plot: plotField };
+    if (parsed.rc && !parsed.plot) {
+      delete normalized.rc;
+    }
+    debug(SUBSYSTEM.SCENE, `Stage 1 returned entity-based format: ${normalized.entities.length} entities, plot length=${normalized.plot.length}, sn="${normalized.sn || ''}"`);
+    return normalized;
   }
 
   // Faceted format (legacy 3-stage pipeline) - preserve as-is including sn
@@ -1467,15 +1474,17 @@ function normalizeStage1Extraction(parsed) {
 // Helper: Validate Stage 1 extraction has non-empty content
 function validateStage1Content(parsed) {
   const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
-  const isEntityFormat = typeof parsed.plot === 'string' && Array.isArray(parsed.entities);
+  // Accept both "plot" and "rc" as the summary field (already normalized in normalizeStage1Extraction)
+  const plotField = parsed.plot ?? parsed.rc;
+  const isEntityFormat = typeof plotField === 'string' && Array.isArray(parsed.entities);
   const isLegacyFormat = Array.isArray(parsed.chronological_items);
   const isFacetedFormat = facetKeys.some(key => Array.isArray(parsed[key]));
 
   if (isEntityFormat) {
-    if (parsed.entities.length === 0 && !parsed.plot?.trim()) {
+    if (parsed.entities.length === 0 && !plotField?.trim()) {
       throw new Error("AI returned empty extraction (no entities and no plot)");
     }
-    debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (entity-based): ${parsed.entities.length} entities, plot length=${parsed.plot.length}, sn="${parsed.sn || ''}"`);
+    debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (entity-based): ${parsed.entities.length} entities, plot length=${plotField.length}, sn="${parsed.sn || ''}"`);
   } else if (isLegacyFormat) {
     if (parsed.chronological_items.length === 0) {
       throw new Error("AI returned empty extraction (no items)");
