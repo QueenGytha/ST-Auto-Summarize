@@ -23,6 +23,16 @@ OUTCOME vs STEP test:
 "If I delete this and keep only what follows, do I lose information?"
 YES → outcome. NO → step (drop).
 
+COMPLETION SUPERSESSION (CRITICAL):
+When NEW_SCENE_RECAP shows something COMPLETED that appears as "in progress/agreed/promised/requested" in CURRENT_RUNNING_RECAP:
+→ REMOVE the old statement from DEV entirely
+→ Evaluate: might this be referenced later? (see RESOLVED EVENTS below)
+
+Examples:
+- "commissioned armor" then "armor delivered" → REMOVE from DEV
+- "seeking audience with king" then "audience granted" → REMOVE from DEV
+- "wound being treated" then "recovered" → REMOVE from DEV
+
 ================================================================================
 PEND (plot threads)
 ================================================================================
@@ -42,14 +52,14 @@ NO = scheduling, logistics, implementation details → drop
 RESOLVED EVENTS (entities)
 ================================================================================
 
-When an outcome is fully resolved but might be referenced/called back later:
-→ Create an EVENT entity (keyword-triggered, not always in context)
-→ Remove from DEV (no longer active)
+For COMPLETED items removed from DEV or resolved PEND threads:
 
-DROP if resolved AND unlikely to ever be referenced.
+Will this be referenced later via non-character keywords?
 
-EVENT entities: minimal detail, just enough to recognize if mentioned.
-Keywords should be names/terms that would trigger the callback.
+YES → Create EVENT entity (keyword-triggered, minimal detail)
+NO → DROP entirely
+
+DEFAULT TO DROP.
 
 ================================================================================
 OUTPUT
