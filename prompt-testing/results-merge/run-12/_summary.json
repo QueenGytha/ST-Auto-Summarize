@@ -1,0 +1,16 @@
+{
+  "run": 12,
+  "stage4_run": 4,
+  "timestamp": "2025-11-27T22:49:13.154Z",
+  "entities_tested": 1,
+  "total_merges": 3,
+  "entities": [
+    {
+      "name": "Senta",
+      "type": "character",
+      "scenes": 4,
+      "merges": 3,
+      "final_length": 1606
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 27.324,
+  "tokens": 2736,
+  "input_entities": 4,
+  "output_entities": 4,
+  "filtered_out": 0,
+  "new_entities": 2,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Gift-shock coma for 4 days during transit; stabilized by herbs but channels remain fragile. Committed to contingency: demands knockout if he loses control to prevent harming leadership. Currently unconscious in Healers' Collegium.",
+        "k": [
+          "Rance"
+        ],
+        "u": "1"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: bond deepening—protective, affectionate ('you are mine as you are mine'); impressed by his strategic thinking and caution regarding regicide risk; refuses separation even after exhaustion from 4-day forced march. IDENTITY: Record-speed journey to Haven (4 days); supernatural endurance demonstrated. Speculation confirmed to self: Rance's Gift likely unprecedented, untrainable—worse than Firestarting, not seen in 5 centuries.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Met Senta at Collegium gates; offered support and reassurance.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Karsite Blood Magic",
+        "c": "Rance theorizes prisoner-taking relates to ritual sacrifice, demon summoning—practices officially banned in Karse for decades but potentially revived. Red-robed attackers obscured Karsite features to implicate Menmellith. Senta confirms: 'Fires of Vkandis Sunlord' consumed 'impure souls' for centuries; stories hold more truth than Valdemarans know.",
+        "k": [
+          "Karsite Blood Magic",
+          "Karse",
+          "Vkandis Sunlord"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Gift-shock coma for 4 days during transit; stabilized by herbs but channels remain fragile. Committed to contingency: demands knockout if he loses control to prevent harming leadership. Currently unconscious in Healers' Collegium.\",\n      \"k\": [\n        \"Rance\"\n      ],\n      \"u\": \"1\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: bond deepening—protective, affectionate ('you are mine as you are mine'); impressed by his strategic thinking and caution regarding regicide risk; refuses separation even after exhaustion from 4-day forced march. IDENTITY: Record-speed journey to Haven (4 days); supernatural endurance demonstrated. Speculation confirmed to self: Rance's Gift likely unprecedented, untrainable—worse than Firestarting, not seen in 5 centuries.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Met Senta at Collegium gates; offered support and reassurance.\",\n      \"k\": [\n        \"Rolan\",\n        \"Queen's Own\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Karsite Blood Magic\",\n      \"c\": \"Rance theorizes prisoner-taking relates to ritual sacrifice, demon summoning—practices officially banned in Karse for decades but potentially revived. Red-robed attackers obscured Karsite features to implicate Menmellith. Senta confirms: 'Fires of Vkandis Sunlord' consumed 'impure souls' for centuries; stories hold more truth than Valdemarans know.\",\n      \"k\": [\n        \"Karsite Blood Magic\",\n        \"Karse\",\n        \"Vkandis Sunlord\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "Gift-shock coma for 4 days during transit; stabilized by herbs but channels remain fragile. Committed to contingency: demands knockout if he loses control to prevent harming leadership. Currently unconscious in Healers' Collegium.",
+      "k": [
+        "Rance"
+      ],
+      "u": "1"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STANCE-Rance: bond deepening—protective, affectionate ('you are mine as you are mine'); impressed by his strategic thinking and caution regarding regicide risk; refuses separation even after exhaustion from 4-day forced march. IDENTITY: Record-speed journey to Haven (4 days); supernatural endurance demonstrated. Speculation confirmed to self: Rance's Gift likely unprecedented, untrainable—worse than Firestarting, not seen in 5 centuries.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "character",
+      "n": "Rolan",
+      "c": "Queen's Own Companion. Met Senta at Collegium gates; offered support and reassurance.",
+      "k": [
+        "Rolan",
+        "Queen's Own"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Karsite Blood Magic",
+      "c": "Rance theorizes prisoner-taking relates to ritual sacrifice, demon summoning—practices officially banned in Karse for decades but potentially revived. Red-robed attackers obscured Karsite features to implicate Menmellith. Senta confirms: 'Fires of Vkandis Sunlord' consumed 'impure souls' for centuries; stories hold more truth than Valdemarans know.",
+      "k": [
+        "Karsite Blood Magic",
+        "Karse",
+        "Vkandis Sunlord"
+      ]
+    }
+  ],
+  "error": null
+}

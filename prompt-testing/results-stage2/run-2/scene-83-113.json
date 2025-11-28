@@ -1,0 +1,42 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 12.516,
+  "tokens": 3122,
+  "stage1_entities": 3,
+  "stage2_entities": 3,
+  "parsed": {
+    "sn": "Formalization and Consummation",
+    "plot": "DEV: Talia decided to formalize connection with Rance officially to Selenay/Circle but keep public unaware; Rance agreed with semi-official structure to protect his Mage-Gift secret; Talia and Rance consummated relationship—she lost virginity, surrendered control completely, discovered arousal through degradation/domination, was marked and filled. PEND: Meeting with Selenay imminent (under two candlemarks); must present composed facade while dealing with transformation; implementation of co-advisor structure unresolved; Talia's ability to function professionally after intense experience uncertain.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "IDENTITY: Revealed complete sexual inexperience despite adult age and position—virgin until this encounter, limited to theoretical knowledge. TRANSFORMATION: Lost virginity to Rance in rough, dominating encounter; experienced first orgasms (multiple, intense). Discovered she responds intensely to degradation, being called crude names (especially 'Holderkin bitch'), domination, being pinned/controlled—finds liberation in surrendering authority after years carrying Kingdom's burdens. Broke own standards by using profanity ('fuck'), begging to be degraded, calling herself 'worthless vessel/hole to use.' PHYSICAL STATE: Marked with bite bruise on breast (hidden under Whites); filled with Rance's cum; virgin blood and sexual fluids on thighs; thoroughly disheveled. STANCE-RANCE: Surrendered completely—no longer maintains careful distance or diplomatic reserve with him. Acknowledged relationship transcends political partnership: 'What would I prefer? A partner who understands... someone who can share what no one else has been permitted to see.' Committed to undefined intimate bond ('This is ours'). Trusts him to handle everything, accepted his control during sex. Called encounter transformative, thanked him afterward. EMOTIONAL: Experienced overwhelming vulnerability—cried during sex (from intensity, not regret), struggled with humiliation yet found it arousing, terrified of change but chose it anyway. Post-encounter must reconcile passionate abandon with imminent professional duties to Selenay.",
+        "k": [
+          "Talia",
+          "Queen's Own",
+          "Holderkin"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Demonstrated untrained Mage-Gift usage—telekinetically slammed door and closed curtains, used more force than intended, experienced pain from energy through 'burned open channels still very raw around edges.' STANCE-TALIA: Claimed her sexually with deliberate dominance—commanded her silence during sex, bit her breast to mark her, used crude/degrading language ('Holderkin bitch,' 'worthless cunt'), demanded she beg and degrade herself. Stated priorities explicitly: 'Valdemar will always come first. Then the Queen. And then you.' Told her 'I will handle everything,' took complete control. Recognized her need for surrender even before she did. Committed to undefined relationship ('This is ours'). Maintains mental support for her shields.",
+        "k": [
+          "Rance"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Withdrew physically from cottage during sexual encounter but remained connected through bond—experienced everything despite attempting distance, expressed embarrassment and discomfort at witnessing intimacy. Provided pragmatic warnings about time constraints and Selenay's meeting throughout. STANCE: Moved from concern about complications to 'resigned acceptance that their lives had become hopelessly complicated.' Observed Talia discovering aspects of herself even the memory-merge hadn't revealed. Commented dryly on situation settling 'the question of what you are to each other.' Maintained guard duty despite awkwardness, prioritizing their privacy/security.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Formalization and Consummation\",\n  \"plot\": \"DEV: Talia decided to formalize connection with Rance officially to Selenay/Circle but keep public unaware; Rance agreed with semi-official structure to protect his Mage-Gift secret; Talia and Rance consummated relationship—she lost virginity, surrendered control completely, discovered arousal through degradation/domination, was marked and filled. PEND: Meeting with Selenay imminent (under two candlemarks); must present composed facade while dealing with transformation; implementation of co-advisor structure unresolved; Talia's ability to function professionally after intense experience uncertain.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"IDENTITY: Revealed complete sexual inexperience despite adult age and position—virgin until this encounter, limited to theoretical knowledge. TRANSFORMATION: Lost virginity to Rance in rough, dominating encounter; experienced first orgasms (multiple, intense). Discovered she responds intensely to degradation, being called crude names (especially 'Holderkin bitch'), domination, being pinned/controlled—finds liberation in surrendering authority after years carrying Kingdom's burdens. Broke own standards by using profanity ('fuck'), begging to be degraded, calling herself 'worthless vessel/hole to use.' PHYSICAL STATE: Marked with bite bruise on breast (hidden under Whites); filled with Rance's cum; virgin blood and sexual fluids on thighs; thoroughly disheveled. STANCE-RANCE: Surrendered completely—no longer maintains careful distance or diplomatic reserve with him. Acknowledged relationship transcends political partnership: 'What would I prefer? A partner who understands... someone who can share what no one else has been permitted to see.' Committed to undefined intimate bond ('This is ours'). Trusts him to handle everything, accepted his control during sex. Called encounter transformative, thanked him afterward. EMOTIONAL: Experienced overwhelming vulnerability—cried during sex (from intensity, not regret), struggled with humiliation yet found it arousing, terrified of change but chose it anyway. Post-encounter must reconcile passionate abandon with imminent professional duties to Selenay.\",\n      \"k\": [\"Talia\", \"Queen's Own\", \"Holderkin\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Demonstrated untrained Mage-Gift usage—telekinetically slammed door and closed curtains, used more force than intended, experienced pain from energy through 'burned open channels still very raw around edges.' STANCE-TALIA: Claimed her sexually with deliberate dominance—commanded her silence during sex, bit her breast to mark her, used crude/degrading language ('Holderkin bitch,' 'worthless cunt'), demanded she beg and degrade herself. Stated priorities explicitly: 'Valdemar will always come first. Then the Queen. And then you.' Told her 'I will handle everything,' took complete control. Recognized her need for surrender even before she did. Committed to undefined relationship ('This is ours'). Maintains mental support for her shields.\",\n      \"k\": [\"Rance\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Withdrew physically from cottage during sexual encounter but remained connected through bond—experienced everything despite attempting distance, expressed embarrassment and discomfort at witnessing intimacy. Provided pragmatic warnings about time constraints and Selenay's meeting throughout. STANCE: Moved from concern about complications to 'resigned acceptance that their lives had become hopelessly complicated.' Observed Talia discovering aspects of herself even the memory-merge hadn't revealed. Commented dryly on situation settling 'the question of what you are to each other.' Maintained guard duty despite awkwardness, prioritizing their privacy/security.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

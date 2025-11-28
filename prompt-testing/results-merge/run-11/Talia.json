@@ -1,0 +1,33 @@
+{
+  "entityName": "Talia",
+  "type": "character",
+  "keywords": [
+    "Talia",
+    "Queen's Own"
+  ],
+  "totalScenes": 2,
+  "mergeResults": [
+    {
+      "scene": "scene-72-82",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 565,
+      "merged_length": 565,
+      "content": "STATE: Emotional transformation overnight—vulnerability replaced by controlled determination and resolve. Made specific decision about handling shared-memory situation; wants Rance's input before presenting to Selenay. STANCE-Rance: Seeks collaborative approach ('discuss it with you first'); acknowledges ongoing disorientation from fragmented access to his memories ('woke reaching for memories that should be there but aren't'); treats as equal partner in crisis resolution despite rank difference. Decision 'potentially changes everything about how we proceed.'"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 14.084,
+      "tokens": 2372,
+      "existing_length": 565,
+      "new_length": 997,
+      "merged_length": 1067,
+      "delta": 502,
+      "canonicalName": null,
+      "content": "STATE: Emotional and physical transformation complete—virginity taken; marked (bite bruise on breast); sore from rough first intercourse. Discovered submissive desires contrary to public persona; found liberation in surrender of control after years carrying kingdom's burdens alone. STANCE-Rance: Surrendered completely; claimed woman who degraded herself willingly (called herself 'Holderkin slut/vessel/hole'); experienced first orgasms; filled with his seed. Can compartmentalize lover-self from diplomat-self—transformation doesn't compromise duty. Seeks collaborative approach despite rank difference ('discuss it with you first'); acknowledges ongoing disorientation from fragmented access to his memories ('woke reaching for memories that should be there but aren't'). DECISION: Propose formalized partnership to Selenay (co-advisors known to Circle, hidden from public)—reasoning: embrace unprecedented situation as strength rather than hide vulnerability. Wants Rance's input before presenting to Queen. 'Potentially changes everything about how we proceed.'",
+      "raw": "{\n  \"mergedContent\": \"STATE: Emotional and physical transformation complete—virginity taken; marked (bite bruise on breast); sore from rough first intercourse. Discovered submissive desires contrary to public persona; found liberation in surrender of control after years carrying kingdom's burdens alone. STANCE-Rance: Surrendered completely; claimed woman who degraded herself willingly (called herself 'Holderkin slut/vessel/hole'); experienced first orgasms; filled with his seed. Can compartmentalize lover-self from diplomat-self—transformation doesn't compromise duty. Seeks collaborative approach despite rank difference ('discuss it with you first'); acknowledges ongoing disorientation from fragmented access to his memories ('woke reaching for memories that should be there but aren't'). DECISION: Propose formalized partnership to Selenay (co-advisors known to Circle, hidden from public)—reasoning: embrace unprecedented situation as strength rather than hide vulnerability. Wants Rance's input before presenting to Queen. 'Potentially changes everything about how we proceed.'\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "STATE: Emotional and physical transformation complete—virginity taken; marked (bite bruise on breast); sore from rough first intercourse. Discovered submissive desires contrary to public persona; found liberation in surrender of control after years carrying kingdom's burdens alone. STANCE-Rance: Surrendered completely; claimed woman who degraded herself willingly (called herself 'Holderkin slut/vessel/hole'); experienced first orgasms; filled with his seed. Can compartmentalize lover-self from diplomat-self—transformation doesn't compromise duty. Seeks collaborative approach despite rank difference ('discuss it with you first'); acknowledges ongoing disorientation from fragmented access to his memories ('woke reaching for memories that should be there but aren't'). DECISION: Propose formalized partnership to Selenay (co-advisors known to Circle, hidden from public)—reasoning: embrace unprecedented situation as strength rather than hide vulnerability. Wants Rance's input before presenting to Queen. 'Potentially changes everything about how we proceed.'"
+}

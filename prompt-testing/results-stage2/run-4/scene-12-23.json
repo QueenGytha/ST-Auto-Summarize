@@ -1,0 +1,64 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 11.153,
+  "tokens": 2735,
+  "userName": "Rance",
+  "stage1_entities": 5,
+  "stage2_entities": 5,
+  "parsed": {
+    "sn": "Journey to Haven",
+    "plot": "DEV: Rance downed herbs; stabilized from Gift-shock; collapsed into exhausted sleep for days; Senta maintained relentless pace to Haven; arrived at Collegium after four days; Healers received him; Rolan greeted Senta. PEND: Rance's recovery and Gift assessment; retrieving blocked memories of attack; reporting to Circle about Karsite involvement and blood magic theory; training unprecedented Gift.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: partnership solidified; warmed by his unexpected affection and nuzzling; protective—will knock him out if he loses control per his instruction; impressed by his military assessment and pragmatism. Revealed Rance's Gift likely unprecedented—not seen in five centuries, more dangerous than Firestarting; no one capable of training it exists. Suspects Karsite blood magic involvement—stories hold historical truth. Made four-day relentless journey to Haven without proper rest; exhausted but refused separation from Chosen upon arrival. Met by Rolan (Queen's Own Companion) at Collegium; Healers took Rance.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Greeted Senta upon arrival at Collegium; offered support and reassurance; powerful mindvoice.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Herald-Mages and Karsite History",
+        "c": "Rance believed Herald-Mages were historical fiction/idealized legend, unaware they're real history. Karsite ritual sacrifice and blood magic are historical fact, not myth; officially banned in Karse for decades but possibly returning. Vanyel Ashkevron's last stand at the pass is historical, not legend.",
+        "k": [
+          "Herald-Mages",
+          "Karse",
+          "Karsite",
+          "Vanyel Ashkevron",
+          "blood magic"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Gift-Shock and Wild Talents",
+        "c": "Willow bark, valerian, and comfrey mixture stabilizes Gift-shock; tastes foul. Aftermath causes physical weakness, mental disorientation, pressure in mind, trembling. Recovery requires days of unconscious healing sleep. Circle won't meet uncontrolled wild talents without precautions—specialized Healers assess first before royal audience.",
+        "k": [
+          "Gift-shock",
+          "wild talents"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Companion Bond Knowledge Transfer",
+        "c": "Herald-basics flow naturally through Companion bond immediately—tactical knowledge, organizational structure (the Circle, Queen's Own), diplomatic protocols appear instinctively in newly Chosen.",
+        "k": [
+          "Companion bond",
+          "Chosen"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Journey to Haven\",\n  \"plot\": \"DEV: Rance downed herbs; stabilized from Gift-shock; collapsed into exhausted sleep for days; Senta maintained relentless pace to Haven; arrived at Collegium after four days; Healers received him; Rolan greeted Senta. PEND: Rance's recovery and Gift assessment; retrieving blocked memories of attack; reporting to Circle about Karsite involvement and blood magic theory; training unprecedented Gift.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: partnership solidified; warmed by his unexpected affection and nuzzling; protective—will knock him out if he loses control per his instruction; impressed by his military assessment and pragmatism. Revealed Rance's Gift likely unprecedented—not seen in five centuries, more dangerous than Firestarting; no one capable of training it exists. Suspects Karsite blood magic involvement—stories hold historical truth. Made four-day relentless journey to Haven without proper rest; exhausted but refused separation from Chosen upon arrival. Met by Rolan (Queen's Own Companion) at Collegium; Healers took Rance.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Greeted Senta upon arrival at Collegium; offered support and reassurance; powerful mindvoice.\",\n      \"k\": [\"Rolan\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Herald-Mages and Karsite History\",\n      \"c\": \"Rance believed Herald-Mages were historical fiction/idealized legend, unaware they're real history. Karsite ritual sacrifice and blood magic are historical fact, not myth; officially banned in Karse for decades but possibly returning. Vanyel Ashkevron's last stand at the pass is historical, not legend.\",\n      \"k\": [\"Herald-Mages\", \"Karse\", \"Karsite\", \"Vanyel Ashkevron\", \"blood magic\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Gift-Shock and Wild Talents\",\n      \"c\": \"Willow bark, valerian, and comfrey mixture stabilizes Gift-shock; tastes foul. Aftermath causes physical weakness, mental disorientation, pressure in mind, trembling. Recovery requires days of unconscious healing sleep. Circle won't meet uncontrolled wild talents without precautions—specialized Healers assess first before royal audience.\",\n      \"k\": [\"Gift-shock\", \"wild talents\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Companion Bond Knowledge Transfer\",\n      \"c\": \"Herald-basics flow naturally through Companion bond immediately—tactical knowledge, organizational structure (the Circle, Queen's Own), diplomatic protocols appear instinctively in newly Chosen.\",\n      \"k\": [\"Companion bond\", \"Chosen\"]\n    }\n  ]\n}\n",
+  "error": null
+}

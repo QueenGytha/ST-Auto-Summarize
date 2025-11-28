@@ -1,0 +1,253 @@
+{
+  "scene": "scene-24-59",
+  "success": true,
+  "duration": 19.606,
+  "tokens": 7117,
+  "input_entities": 13,
+  "output_entities": 13,
+  "filtered_out": 0,
+  "new_entities": 10,
+  "updated_entities": 3,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Mage-Gift officially confirmed to Circle—power capable of leveling villages, not seen since Vanyel's era. Complete mind-merge with Talia gave him all her memories, training, state secrets, intimate knowledge; can use her shielding techniques and protocol; occasionally slips into her mannerisms/authority. Untrained Mindspeech forced through Talia's shields, stabilized her mental collapse through direct contact, closed connection via kiss. Demonstrated impossible magical feats (full memory-merge should be fatal). Assigned Healer's cottage for containment. Taking on strategic leadership role using combined knowledge of headman experience and Talia's expertise. Instinctive distrust of Karsites from decades fighting border raids, but assessed Alberich's loyalty pragmatically.",
+        "k": [
+          "Rance",
+          "Herald-Mage"
+        ],
+        "u": "1"
+      },
+      {
+        "t": "character",
+        "n": "Herald Talia (Queen's Own)",
+        "c": "Suffered complete mind-merge with Rance during memory recovery—all barriers collapsed, entire lifetime exposed including: arranged marriage escape, Empathy awakening trauma, decades of buried pain from being overwhelmed by others' emotions, fear of losing identity, self-doubt about worthiness as Queen's Own, terror of Empathy consuming her. Rance guided her through confronting suppressed trauma she'd never processed. Left 'profoundly overwhelmed' but in 'better state than before'—fundamental healing of emotional wounds occurred. Physically stable but recovering with Healer Crescent. All her memories, training, state secrets now possessed by Rance. Role as Queen's Own temporarily compromised; recovery expected but timeline uncertain.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Stood guard during memory recovery, witnessed unprecedented full mind-merge. Confirmed contingency to knock Rance unconscious if he loses control. Identified his Gift as Mage-Gift—raw, wild type not seen since Vanyel. Exhausted from days of hard travel carrying unconscious Rance across Valdemar; coat dulled with road dust. Increasingly awed by scope of Rance's abilities while concerned about political/magical ramifications.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "character",
+        "n": "Queen Selenay",
+        "c": "Learned of: Lisle's destruction, Karsite blood magic return, Rance's Mage-Gift, his complete possession of Talia's memories/secrets. Composed despite shock—authorized Healer's cottage quarantine, ordered diplomatic inquiries to allies. Uncomfortable with Rance knowing intimate details (wine preferences) only Talia should possess. Grateful for warning but calculating political/security implications of two people holding Queen's Own knowledge.",
+        "k": [
+          "Selenay",
+          "Queen"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Companion Rolan",
+        "c": "Entered Circle chambers without his Chosen—unprecedented. Stood beside Rance throughout report, silent endorsement lending legitimacy to extraordinary claims. Presence reassured Circle members that situation, while unprecedented, wasn't catastrophic.",
+        "k": [
+          "Rolan",
+          "Grove-Born"
+        ],
+        "u": "6"
+      },
+      {
+        "t": "faction",
+        "n": "The Circle",
+        "c": "Emergency session convened. Learned: Mage-Gift returned after centuries, Karsite blood magic resurgence, Rance possesses all of Talia's knowledge. Information sealed to Circle only—court panic feared. Ordered: archive search for Vanyel-era Mage-Gift training records (Herald Myste), diplomatic inquiries about Karsite activity (Herald Kyril), Healer's cottage quarantine for Rance. Struggling with no protocol for dual-knowledge situation or training Herald-Mage without living teachers.",
+        "k": [
+          "Circle"
+        ]
+      },
+      {
+        "t": "faction",
+        "n": "Karse",
+        "c": "Attacked Lisle with special forces disguised as Menmellith bandits. Taking live captives (including young/elderly) across borders—not slavery. Evidence confirms: Sun-Priests involved, military-grade weapons (officer quality, recent manufacture within 2 years), blood magic/human sacrifice likely, possible demon summoning. Represents fundamental policy shift—official condemnation of such practices abandoned. Suggests internal instability driving return to extremism. Valdemar investigating if attack unique or part of broader campaign against multiple nations.",
+        "k": [
+          "Karse",
+          "Sun-Priests"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Healer's Cottage (Companion's Field)",
+        "c": "Assigned as Rance's quarters. Remote enough to contain magical incidents without leveling Collegium, close enough to avoid isolation, allows discreet meetings. Chosen for safety during Mage-Gift training.",
+        "k": [
+          "Healer's Cottage"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Circle Chambers",
+        "c": "Semicircular room for most sensitive state discussions. Tall windows, polished marble floors. Where Rance delivered report and Mage-Gift was officially confirmed to Valdemar's leadership.",
+        "k": [
+          "Circle Chambers"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Shielded Chamber",
+        "c": "Deep beneath Collegium. Circular design with walls inscribed with shifting protective patterns, silver containment ring inlaid in floor, central chair. Originally for training unstable Gifts. Contains magical outbursts—successfully contained Rance/Talia's mind-merge energy surge. Inside, Rance's overwhelming magical awareness fades, allowing clearer thought.",
+        "k": [
+          "Shielded Chamber"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Mind-Merge",
+        "c": "Complete fusion of two minds—all memories, thoughts, experiences shared bidirectionally. Should be fatal or cause permanent insanity without decades of training. Rance accomplished it untrained during memory recovery when his raw power and Talia's collapsed Empathic shields created uncontrolled cascade. Talia experienced his Lisle trauma; Rance lived her entire life. Connection closed via physical contact (kiss). Leaves permanent intimate knowledge of each other. Unprecedented in recorded history.",
+        "k": [
+          "Mind-Merge"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Mage-Gift",
+        "c": "True Mage-Gift returned to Valdemar for first time since Vanyel's era (centuries ago). Raw, wild type capable of reshaping reality itself. Rance's manifestation: energy blast leveling entire village. No living teachers remain—training must be improvised from archived records. Represents both extraordinary opportunity and unprecedented risk. Can perform 'impossible' feats like stabilizing collapsing minds through direct contact.",
+        "k": [
+          "Mage-Gift",
+          "Herald-Mage"
+        ]
+      },
+      {
+        "t": "event",
+        "n": "Queen's Circle Briefing",
+        "c": "Rance reported Lisle destruction and Karsite blood magic involvement to Queen's Circle via full mind-merge with Talia",
+        "k": [
+          "Circle",
+          "briefing",
+          "mind-merge",
+          "Talia",
+          "report"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Mage-Gift officially confirmed to Circle—power capable of leveling villages, not seen since Vanyel's era. Complete mind-merge with Talia gave him all her memories, training, state secrets, intimate knowledge; can use her shielding techniques and protocol; occasionally slips into her mannerisms/authority. Untrained Mindspeech forced through Talia's shields, stabilized her mental collapse through direct contact, closed connection via kiss. Demonstrated impossible magical feats (full memory-merge should be fatal). Assigned Healer's cottage for containment. Taking on strategic leadership role using combined knowledge of headman experience and Talia's expertise. Instinctive distrust of Karsites from decades fighting border raids, but assessed Alberich's loyalty pragmatically.\",\n      \"k\": [\n        \"Rance\",\n        \"Herald-Mage\"\n      ],\n      \"u\": \"1\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Herald Talia (Queen's Own)\",\n      \"c\": \"Suffered complete mind-merge with Rance during memory recovery—all barriers collapsed, entire lifetime exposed including: arranged marriage escape, Empathy awakening trauma, decades of buried pain from being overwhelmed by others' emotions, fear of losing identity, self-doubt about worthiness as Queen's Own, terror of Empathy consuming her. Rance guided her through confronting suppressed trauma she'd never processed. Left 'profoundly overwhelmed' but in 'better state than before'—fundamental healing of emotional wounds occurred. Physically stable but recovering with Healer Crescent. All her memories, training, state secrets now possessed by Rance. Role as Queen's Own temporarily compromised; recovery expected but timeline uncertain.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Stood guard during memory recovery, witnessed unprecedented full mind-merge. Confirmed contingency to knock Rance unconscious if he loses control. Identified his Gift as Mage-Gift—raw, wild type not seen since Vanyel. Exhausted from days of hard travel carrying unconscious Rance across Valdemar; coat dulled with road dust. Increasingly awed by scope of Rance's abilities while concerned about political/magical ramifications.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Queen Selenay\",\n      \"c\": \"Learned of: Lisle's destruction, Karsite blood magic return, Rance's Mage-Gift, his complete possession of Talia's memories/secrets. Composed despite shock—authorized Healer's cottage quarantine, ordered diplomatic inquiries to allies. Uncomfortable with Rance knowing intimate details (wine preferences) only Talia should possess. Grateful for warning but calculating political/security implications of two people holding Queen's Own knowledge.\",\n      \"k\": [\n        \"Selenay\",\n        \"Queen\"\n      ]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Companion Rolan\",\n      \"c\": \"Entered Circle chambers without his Chosen—unprecedented. Stood beside Rance throughout report, silent endorsement lending legitimacy to extraordinary claims. Presence reassured Circle members that situation, while unprecedented, wasn't catastrophic.\",\n      \"k\": [\n        \"Rolan\",\n        \"Grove-Born\"\n      ],\n      \"u\": \"6\"\n    },\n    {\n      \"t\": \"faction\",\n      \"n\": \"The Circle\",\n      \"c\": \"Emergency session convened. Learned: Mage-Gift returned after centuries, Karsite blood magic resurgence, Rance possesses all of Talia's knowledge. Information sealed to Circle only—court panic feared. Ordered: archive search for Vanyel-era Mage-Gift training records (Herald Myste), diplomatic inquiries about Karsite activity (Herald Kyril), Healer's cottage quarantine for Rance. Struggling with no protocol for dual-knowledge situation or training Herald-Mage without living teachers.\",\n      \"k\": [\n        \"Circle\"\n      ]\n    },\n    {\n      \"t\": \"faction\",\n      \"n\": \"Karse\",\n      \"c\": \"Attacked Lisle with special forces disguised as Menmellith bandits. Taking live captives (including young/elderly) across borders—not slavery. Evidence confirms: Sun-Priests involved, military-grade weapons (officer quality, recent manufacture within 2 years), blood magic/human sacrifice likely, possible demon summoning. Represents fundamental policy shift—official condemnation of such practices abandoned. Suggests internal instability driving return to extremism. Valdemar investigating if attack unique or part of broader campaign against multiple nations.\",\n      \"k\": [\n        \"Karse\",\n        \"Sun-Priests\"\n      ]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Healer's Cottage (Companion's Field)\",\n      \"c\": \"Assigned as Rance's quarters. Remote enough to contain magical incidents without leveling Collegium, close enough to avoid isolation, allows discreet meetings. Chosen for safety during Mage-Gift training.\",\n      \"k\": [\n        \"Healer's Cottage\"\n      ]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Circle Chambers\",\n      \"c\": \"Semicircular room for most sensitive state discussions. Tall windows, polished marble floors. Where Rance delivered report and Mage-Gift was officially confirmed to Valdemar's leadership.\",\n      \"k\": [\n        \"Circle Chambers\"\n      ]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Shielded Chamber\",\n      \"c\": \"Deep beneath Collegium. Circular design with walls inscribed with shifting protective patterns, silver containment ring inlaid in floor, central chair. Originally for training unstable Gifts. Contains magical outbursts—successfully contained Rance/Talia's mind-merge energy surge. Inside, Rance's overwhelming magical awareness fades, allowing clearer thought.\",\n      \"k\": [\n        \"Shielded Chamber\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Mind-Merge\",\n      \"c\": \"Complete fusion of two minds—all memories, thoughts, experiences shared bidirectionally. Should be fatal or cause permanent insanity without decades of training. Rance accomplished it untrained during memory recovery when his raw power and Talia's collapsed Empathic shields created uncontrolled cascade. Talia experienced his Lisle trauma; Rance lived her entire life. Connection closed via physical contact (kiss). Leaves permanent intimate knowledge of each other. Unprecedented in recorded history.\",\n      \"k\": [\n        \"Mind-Merge\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Mage-Gift\",\n      \"c\": \"True Mage-Gift returned to Valdemar for first time since Vanyel's era (centuries ago). Raw, wild type capable of reshaping reality itself. Rance's manifestation: energy blast leveling entire village. No living teachers remain—training must be improvised from archived records. Represents both extraordinary opportunity and unprecedented risk. Can perform 'impossible' feats like stabilizing collapsing minds through direct contact.\",\n      \"k\": [\n        \"Mage-Gift\",\n        \"Herald-Mage\"\n      ]\n    },\n    {\n      \"t\": \"event\",\n      \"n\": \"Queen's Circle Briefing\",\n      \"c\": \"Rance reported Lisle destruction and Karsite blood magic involvement to Queen's Circle via full mind-merge with Talia\",\n      \"k\": [\n        \"Circle\",\n        \"briefing\",\n        \"mind-merge\",\n        \"Talia\",\n        \"report\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "Mage-Gift officially confirmed to Circle—power capable of leveling villages, not seen since Vanyel's era. Complete mind-merge with Talia gave him all her memories, training, state secrets, intimate knowledge; can use her shielding techniques and protocol; occasionally slips into her mannerisms/authority. Untrained Mindspeech forced through Talia's shields, stabilized her mental collapse through direct contact, closed connection via kiss. Demonstrated impossible magical feats (full memory-merge should be fatal). Assigned Healer's cottage for containment. Taking on strategic leadership role using combined knowledge of headman experience and Talia's expertise. Instinctive distrust of Karsites from decades fighting border raids, but assessed Alberich's loyalty pragmatically.",
+      "k": [
+        "Rance",
+        "Herald-Mage"
+      ],
+      "u": "1"
+    },
+    {
+      "t": "character",
+      "n": "Herald Talia (Queen's Own)",
+      "c": "Suffered complete mind-merge with Rance during memory recovery—all barriers collapsed, entire lifetime exposed including: arranged marriage escape, Empathy awakening trauma, decades of buried pain from being overwhelmed by others' emotions, fear of losing identity, self-doubt about worthiness as Queen's Own, terror of Empathy consuming her. Rance guided her through confronting suppressed trauma she'd never processed. Left 'profoundly overwhelmed' but in 'better state than before'—fundamental healing of emotional wounds occurred. Physically stable but recovering with Healer Crescent. All her memories, training, state secrets now possessed by Rance. Role as Queen's Own temporarily compromised; recovery expected but timeline uncertain.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ]
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Stood guard during memory recovery, witnessed unprecedented full mind-merge. Confirmed contingency to knock Rance unconscious if he loses control. Identified his Gift as Mage-Gift—raw, wild type not seen since Vanyel. Exhausted from days of hard travel carrying unconscious Rance across Valdemar; coat dulled with road dust. Increasingly awed by scope of Rance's abilities while concerned about political/magical ramifications.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "character",
+      "n": "Queen Selenay",
+      "c": "Learned of: Lisle's destruction, Karsite blood magic return, Rance's Mage-Gift, his complete possession of Talia's memories/secrets. Composed despite shock—authorized Healer's cottage quarantine, ordered diplomatic inquiries to allies. Uncomfortable with Rance knowing intimate details (wine preferences) only Talia should possess. Grateful for warning but calculating political/security implications of two people holding Queen's Own knowledge.",
+      "k": [
+        "Selenay",
+        "Queen"
+      ]
+    },
+    {
+      "t": "character",
+      "n": "Companion Rolan",
+      "c": "Entered Circle chambers without his Chosen—unprecedented. Stood beside Rance throughout report, silent endorsement lending legitimacy to extraordinary claims. Presence reassured Circle members that situation, while unprecedented, wasn't catastrophic.",
+      "k": [
+        "Rolan",
+        "Grove-Born"
+      ],
+      "u": "6"
+    },
+    {
+      "t": "faction",
+      "n": "The Circle",
+      "c": "Emergency session convened. Learned: Mage-Gift returned after centuries, Karsite blood magic resurgence, Rance possesses all of Talia's knowledge. Information sealed to Circle only—court panic feared. Ordered: archive search for Vanyel-era Mage-Gift training records (Herald Myste), diplomatic inquiries about Karsite activity (Herald Kyril), Healer's cottage quarantine for Rance. Struggling with no protocol for dual-knowledge situation or training Herald-Mage without living teachers.",
+      "k": [
+        "Circle"
+      ]
+    },
+    {
+      "t": "faction",
+      "n": "Karse",
+      "c": "Attacked Lisle with special forces disguised as Menmellith bandits. Taking live captives (including young/elderly) across borders—not slavery. Evidence confirms: Sun-Priests involved, military-grade weapons (officer quality, recent manufacture within 2 years), blood magic/human sacrifice likely, possible demon summoning. Represents fundamental policy shift—official condemnation of such practices abandoned. Suggests internal instability driving return to extremism. Valdemar investigating if attack unique or part of broader campaign against multiple nations.",
+      "k": [
+        "Karse",
+        "Sun-Priests"
+      ]
+    },
+    {
+      "t": "location",
+      "n": "Healer's Cottage (Companion's Field)",
+      "c": "Assigned as Rance's quarters. Remote enough to contain magical incidents without leveling Collegium, close enough to avoid isolation, allows discreet meetings. Chosen for safety during Mage-Gift training.",
+      "k": [
+        "Healer's Cottage"
+      ]
+    },
+    {
+      "t": "location",
+      "n": "Circle Chambers",
+      "c": "Semicircular room for most sensitive state discussions. Tall windows, polished marble floors. Where Rance delivered report and Mage-Gift was officially confirmed to Valdemar's leadership.",
+      "k": [
+        "Circle Chambers"
+      ]
+    },
+    {
+      "t": "location",
+      "n": "Shielded Chamber",
+      "c": "Deep beneath Collegium. Circular design with walls inscribed with shifting protective patterns, silver containment ring inlaid in floor, central chair. Originally for training unstable Gifts. Contains magical outbursts—successfully contained Rance/Talia's mind-merge energy surge. Inside, Rance's overwhelming magical awareness fades, allowing clearer thought.",
+      "k": [
+        "Shielded Chamber"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Mind-Merge",
+      "c": "Complete fusion of two minds—all memories, thoughts, experiences shared bidirectionally. Should be fatal or cause permanent insanity without decades of training. Rance accomplished it untrained during memory recovery when his raw power and Talia's collapsed Empathic shields created uncontrolled cascade. Talia experienced his Lisle trauma; Rance lived her entire life. Connection closed via physical contact (kiss). Leaves permanent intimate knowledge of each other. Unprecedented in recorded history.",
+      "k": [
+        "Mind-Merge"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Mage-Gift",
+      "c": "True Mage-Gift returned to Valdemar for first time since Vanyel's era (centuries ago). Raw, wild type capable of reshaping reality itself. Rance's manifestation: energy blast leveling entire village. No living teachers remain—training must be improvised from archived records. Represents both extraordinary opportunity and unprecedented risk. Can perform 'impossible' feats like stabilizing collapsing minds through direct contact.",
+      "k": [
+        "Mage-Gift",
+        "Herald-Mage"
+      ]
+    },
+    {
+      "t": "event",
+      "n": "Queen's Circle Briefing",
+      "c": "Rance reported Lisle destruction and Karsite blood magic involvement to Queen's Circle via full mind-merge with Talia",
+      "k": [
+        "Circle",
+        "briefing",
+        "mind-merge",
+        "Talia",
+        "report"
+      ]
+    }
+  ],
+  "error": null
+}

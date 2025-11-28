@@ -1,0 +1,45 @@
+{
+  "run": 2,
+  "stage1_run": 14,
+  "timestamp": "2025-11-27T21:02:46.845Z",
+  "total": 5,
+  "successful": 5,
+  "failed": 0,
+  "scenes": [
+    {
+      "id": "scene-0-11",
+      "success": true,
+      "stage1_entities": 5,
+      "stage2_entities": 5,
+      "error": null
+    },
+    {
+      "id": "scene-12-23",
+      "success": true,
+      "stage1_entities": 6,
+      "stage2_entities": 6,
+      "error": null
+    },
+    {
+      "id": "scene-24-59",
+      "success": true,
+      "stage1_entities": 12,
+      "stage2_entities": 12,
+      "error": null
+    },
+    {
+      "id": "scene-72-82",
+      "success": true,
+      "stage1_entities": 3,
+      "stage2_entities": 3,
+      "error": null
+    },
+    {
+      "id": "scene-83-113",
+      "success": true,
+      "stage1_entities": 3,
+      "stage2_entities": 3,
+      "error": null
+    }
+  ]
+}

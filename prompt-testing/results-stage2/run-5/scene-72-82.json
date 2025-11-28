@@ -1,0 +1,34 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 8.06,
+  "tokens": 2029,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Morning After Memory Transfer",
+    "plot": "DEV: Rance woke early, prepared for possible Alberich training; groomed and bonded with Senta over evening care. Talia arrived at dawn before Selenay meeting with urgent private matter—has made decision about handling their shared-memory situation, seeks Rance's input before presenting to Queen. PEND: Talia's decision about how to proceed; her meeting with Selenay; Alberich's training approach; how Circle will manage security risk.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Fully recovered after grooming and rest—coat restored to gleaming silver-white, energy renewed. Alert and protective, monitoring for threats. STANCE-Rance: fierce protectiveness; bonds come in many forms, all require care; committed to facing everything together.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "Emotional state transformed overnight—resolved, controlled, certain (contrast to previous vulnerability). Made significant decision about handling shared-memory situation; seeks Rance's input before Selenay meeting. Still experiencing disorientation: wakes reaching for Rance's memories, only fragments remain; stride differences when walking. Decision 'potentially changes everything about how we proceed.'",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Morning After Memory Transfer\",\n  \"plot\": \"DEV: Rance woke early, prepared for possible Alberich training; groomed and bonded with Senta over evening care. Talia arrived at dawn before Selenay meeting with urgent private matter—has made decision about handling their shared-memory situation, seeks Rance's input before presenting to Queen. PEND: Talia's decision about how to proceed; her meeting with Selenay; Alberich's training approach; how Circle will manage security risk.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Fully recovered after grooming and rest—coat restored to gleaming silver-white, energy renewed. Alert and protective, monitoring for threats. STANCE-Rance: fierce protectiveness; bonds come in many forms, all require care; committed to facing everything together.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"Emotional state transformed overnight—resolved, controlled, certain (contrast to previous vulnerability). Made significant decision about handling shared-memory situation; seeks Rance's input before Selenay meeting. Still experiencing disorientation: wakes reaching for Rance's memories, only fragments remain; stride differences when walking. Decision 'potentially changes everything about how we proceed.'\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    }\n  ]\n}\n",
+  "error": null
+}

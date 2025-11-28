@@ -1,0 +1,34 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 7.679,
+  "tokens": 2026,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Dawn consultation",
+    "plot": "DEV: Rance anticipated possible Alberich training; groomed Senta; Talia arrived at dawn before her Selenay meeting with urgent matter requiring privacy. PEND: Talia's decision about handling their shared-memory situation; what she'll propose to Selenay; potential changes to how they proceed.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Fully recovered—coat gleaming, energy restored. STANCE-Rance: fiercely protective; certain Choosing him was right despite complications; provides grounding through simple moments like grooming. Alert and cautious about Talia's changed demeanor.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "Made significant decision overnight about handling shared-memory situation; emotional state shifted from vulnerable to resolved and controlled; fragments of Rance's memories remain but fading. Seeks Rance's input before presenting plan to Selenay—decision 'concerns both of us' and 'potentially changes everything.' More formal, determined bearing.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Dawn consultation\",\n  \"plot\": \"DEV: Rance anticipated possible Alberich training; groomed Senta; Talia arrived at dawn before her Selenay meeting with urgent matter requiring privacy. PEND: Talia's decision about handling their shared-memory situation; what she'll propose to Selenay; potential changes to how they proceed.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Fully recovered—coat gleaming, energy restored. STANCE-Rance: fiercely protective; certain Choosing him was right despite complications; provides grounding through simple moments like grooming. Alert and cautious about Talia's changed demeanor.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"Made significant decision overnight about handling shared-memory situation; emotional state shifted from vulnerable to resolved and controlled; fragments of Rance's memories remain but fading. Seeks Rance's input before presenting plan to Selenay—decision 'concerns both of us' and 'potentially changes everything.' More formal, determined bearing.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    }\n  ]\n}\n",
+  "error": null
+}

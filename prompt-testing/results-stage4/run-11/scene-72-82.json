@@ -1,0 +1,57 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 21.518,
+  "tokens": 4169,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "SHIFT: Resolved overnight struggle into concrete decision about managing shared-memory crisis. Emotional state transformed from vulnerable to controlled/certain. Now seeks Rance's input before presenting plan to Selenay—treating him as collaborator rather than problem.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "9"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STATE: Fully recovered—coat restored to gleaming silver-white, energy and alertness returned. STANCE-Rance: Absolute certainty about Choosing him despite chaos ('most right thing I've ever done'). Advised cryptically about bonds: 'Some chosen, some thrust upon us. All requiring care.'",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"SHIFT: Resolved overnight struggle into concrete decision about managing shared-memory crisis. Emotional state transformed from vulnerable to controlled/certain. Now seeks Rance's input before presenting plan to Selenay—treating him as collaborator rather than problem.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"9\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STATE: Fully recovered—coat restored to gleaming silver-white, energy and alertness returned. STANCE-Rance: Absolute certainty about Choosing him despite chaos ('most right thing I've ever done'). Advised cryptically about bonds: 'Some chosen, some thrust upon us. All requiring care.'\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "SHIFT: Resolved overnight struggle into concrete decision about managing shared-memory crisis. Emotional state transformed from vulnerable to controlled/certain. Now seeks Rance's input before presenting plan to Selenay—treating him as collaborator rather than problem.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "9"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STATE: Fully recovered—coat restored to gleaming silver-white, energy and alertness returned. STANCE-Rance: Absolute certainty about Choosing him despite chaos ('most right thing I've ever done'). Advised cryptically about bonds: 'Some chosen, some thrust upon us. All requiring care.'",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    }
+  ],
+  "error": null
+}

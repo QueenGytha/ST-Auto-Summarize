@@ -1,0 +1,58 @@
+{
+  "entityName": "Senta",
+  "type": "character",
+  "keywords": [
+    "Senta"
+  ],
+  "totalScenes": 4,
+  "mergeResults": [
+    {
+      "scene": "scene-0-11",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 471,
+      "merged_length": 471,
+      "content": "Companion mare, unpartnered for 3 years until now. CHOSE Rance after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: bonded as Chosen/Companion; protective yet exasperated by his stubbornness; stabilizing his burned-open channels through bond; firm that he must survive journey to Haven. Knows he caused the destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits."
+    },
+    {
+      "scene": "scene-12-23",
+      "action": "merge",
+      "duration": 7.995,
+      "tokens": 1688,
+      "existing_length": 471,
+      "new_length": 583,
+      "merged_length": 1024,
+      "delta": 553,
+      "canonicalName": null,
+      "content": "Companion mare, unpartnered for 3 years until now. CHOSE Rance after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: bonded as Chosen/Companion; warmed by his unexpected affection; protective yet exasperated by his stubbornness; will knock him out if he loses control per his instruction; impressed by his military assessment and pragmatism. Stabilizing his burned-open channels through bond; firm that he must survive journey to Haven. Knows he caused the destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits. Revealed his Gift likely unprecedented—not seen in five centuries, more dangerous than Firestarting; no one capable of training it exists. Suspects Karsite blood magic involvement—stories hold historical truth. Made four-day relentless journey to Haven without proper rest; exhausted but refused separation from Chosen upon arrival. Met by Rolan (Queen's Own Companion) at Collegium; Healers took Rance.",
+      "raw": "{\n  \"mergedContent\": \"Companion mare, unpartnered for 3 years until now. CHOSE Rance after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: bonded as Chosen/Companion; warmed by his unexpected affection; protective yet exasperated by his stubbornness; will knock him out if he loses control per his instruction; impressed by his military assessment and pragmatism. Stabilizing his burned-open channels through bond; firm that he must survive journey to Haven. Knows he caused the destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits. Revealed his Gift likely unprecedented—not seen in five centuries, more dangerous than Firestarting; no one capable of training it exists. Suspects Karsite blood magic involvement—stories hold historical truth. Made four-day relentless journey to Haven without proper rest; exhausted but refused separation from Chosen upon arrival. Met by Rolan (Queen's Own Companion) at Collegium; Healers took Rance.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-72-82",
+      "action": "merge",
+      "duration": 9.151,
+      "tokens": 1913,
+      "existing_length": 1024,
+      "new_length": 485,
+      "merged_length": 1315,
+      "delta": 291,
+      "canonicalName": null,
+      "content": "Companion mare, unpartnered for 3 years until Choosing Rance. CHOSE him after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: Bonded as Chosen/Companion; no regret despite unprecedented complications; fierce protectiveness mixed with exhausted humor about his chaos ('rewrite magical theory and give me heart failure'); values small moments of normalcy grooming provides; warmed by his unexpected affection yet exasperated by stubbornness; will knock him out if he loses control per his instruction; impressed by military assessment and pragmatism; believes his leadership experience justifies Choice timing regardless of age. Stabilizing his burned-open channels through bond; firm he must survive. Knows he caused destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits. Revealed his Gift likely unprecedented—not seen in five centuries, more dangerous than Firestarting; no one capable of training it exists. Suspects Karsite blood magic involvement—stories hold historical truth. Made four-day relentless journey to Haven; fully recovered now—groomed, rested, energy restored. Met by Rolan at Collegium; Healers took Rance. Monitors for threats; detects Talia's emotional shift to resolved determination.",
+      "raw": "{\n  \"mergedContent\": \"Companion mare, unpartnered for 3 years until Choosing Rance. CHOSE him after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: Bonded as Chosen/Companion; no regret despite unprecedented complications; fierce protectiveness mixed with exhausted humor about his chaos ('rewrite magical theory and give me heart failure'); values small moments of normalcy grooming provides; warmed by his unexpected affection yet exasperated by stubbornness; will knock him out if he loses control per his instruction; impressed by military assessment and pragmatism; believes his leadership experience justifies Choice timing regardless of age. Stabilizing his burned-open channels through bond; firm he must survive. Knows he caused destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits. Revealed his Gift likely unprecedented—not seen in five centuries, more dangerous than Firestarting; no one capable of training it exists. Suspects Karsite blood magic involvement—stories hold historical truth. Made four-day relentless journey to Haven; fully recovered now—groomed, rested, energy restored. Met by Rolan at Collegium; Healers took Rance. Monitors for threats; detects Talia's emotional shift to resolved determination.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 8.433,
+      "tokens": 2157,
+      "existing_length": 1315,
+      "new_length": 631,
+      "merged_length": 1681,
+      "delta": 366,
+      "canonicalName": null,
+      "content": "Companion mare, unpartnered for 3 years until Choosing Rance. CHOSE him after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: Bonded as Chosen/Companion; no regret despite unprecedented complications; fierce protectiveness mixed with exhausted humor about his chaos ('rewrite magical theory and give me heart failure,' 'at least no one can accuse you of being predictable'); values small moments of normalcy grooming provides; warmed by his unexpected affection yet exasperated by stubbornness; will knock him out if he loses control per his instruction; impressed by military assessment and pragmatism; believes his leadership experience justifies Choice timing regardless of age; resigned acceptance of relationship complications with Talia though concerned about timing/propriety; cautioned against untrained Mage-Gift use (door slam). Stabilizing his burned-open channels through bond; firm he must survive. Knows he caused destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits. Revealed his Gift likely unprecedented—not seen in five centuries, more dangerous than Firestarting; no one capable of training it exists. Suspects Karsite blood magic involvement—stories hold historical truth. Made four-day relentless journey to Haven; fully recovered—groomed, rested, energy restored. Met by Rolan at Collegium; Healers took Rance. Monitors for threats; detects Talia's emotional shift to resolved determination. Maintained physical guard outside cottage during Rance's intimacy with Talia despite attempting bond privacy. Pragmatic focus on approaching Selenay meeting.",
+      "raw": "{\n  \"mergedContent\": \"Companion mare, unpartnered for 3 years until Choosing Rance. CHOSE him after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: Bonded as Chosen/Companion; no regret despite unprecedented complications; fierce protectiveness mixed with exhausted humor about his chaos ('rewrite magical theory and give me heart failure,' 'at least no one can accuse you of being predictable'); values small moments of normalcy grooming provides; warmed by his unexpected affection yet exasperated by stubbornness; will knock him out if he loses control per his instruction; impressed by military assessment and pragmatism; believes his leadership experience justifies Choice timing regardless of age; resigned acceptance of relationship complications with Talia though concerned about timing/propriety; cautioned against untrained Mage-Gift use (door slam). Stabilizing his burned-open channels through bond; firm he must survive. Knows he caused destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits. Revealed his Gift likely unprecedented—not seen in five centuries, more dangerous than Firestarting; no one capable of training it exists. Suspects Karsite blood magic involvement—stories hold historical truth. Made four-day relentless journey to Haven; fully recovered—groomed, rested, energy restored. Met by Rolan at Collegium; Healers took Rance. Monitors for threats; detects Talia's emotional shift to resolved determination. Maintained physical guard outside cottage during Rance's intimacy with Talia despite attempting bond privacy. Pragmatic focus on approaching Selenay meeting.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "Companion mare, unpartnered for 3 years until Choosing Rance. CHOSE him after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: Bonded as Chosen/Companion; no regret despite unprecedented complications; fierce protectiveness mixed with exhausted humor about his chaos ('rewrite magical theory and give me heart failure,' 'at least no one can accuse you of being predictable'); values small moments of normalcy grooming provides; warmed by his unexpected affection yet exasperated by stubbornness; will knock him out if he loses control per his instruction; impressed by military assessment and pragmatism; believes his leadership experience justifies Choice timing regardless of age; resigned acceptance of relationship complications with Talia though concerned about timing/propriety; cautioned against untrained Mage-Gift use (door slam). Stabilizing his burned-open channels through bond; firm he must survive. Knows he caused destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits. Revealed his Gift likely unprecedented—not seen in five centuries, more dangerous than Firestarting; no one capable of training it exists. Suspects Karsite blood magic involvement—stories hold historical truth. Made four-day relentless journey to Haven; fully recovered—groomed, rested, energy restored. Met by Rolan at Collegium; Healers took Rance. Monitors for threats; detects Talia's emotional shift to resolved determination. Maintained physical guard outside cottage during Rance's intimacy with Talia despite attempting bond privacy. Pragmatic focus on approaching Selenay meeting."
+}

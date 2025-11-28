@@ -42,6 +42,7 @@ Candidate setting_lore entries (full content, JSON array):
 </CANDIDATE_ENTRIES>
 
 Rules:
+- USER CHARACTER ({{user}}): If the entry is for {{user}}, apply strict filtering. User entries should contain ONLY physical state, status/titles, commitments. Drop relationships (belong in NPC entries), development, personality. User plays their own character. If entry is mostly relationships/development, consider if it should exist at all.
 - Validate the new candidate is a single entity and the content uses bullet points with an identity bullet first.
 - Validate content uses specific names (not pronouns or vague references).
 - If none of the candidates match, set the resolvedUid field to "new".

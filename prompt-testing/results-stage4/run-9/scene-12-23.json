@@ -1,0 +1,93 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 47.957,
+  "tokens": 2484,
+  "input_entities": 4,
+  "output_entities": 4,
+  "filtered_out": 0,
+  "new_entities": 2,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Gift-shock induced unconsciousness for four days. Swore contingency order to Senta: knock him out if he loses control during debriefing to prevent accidental harm to Valdemaran leadership.",
+        "k": [
+          "Rance"
+        ],
+        "u": "1"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: refused separation even after reaching Haven. Suspects Rance's Gift is unprecedented—rarer than Firestarting, unseen for five centuries, with no available trainers. Confirmed Karsite blood magic stories are historical fact, not myth.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Met Senta at Collegium arrival; offered support and reassurance.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Karsite Blood Magic",
+        "c": "Historical practice of capturing prisoners for ritual sacrifice, demon summoning. Officially banned in Karse for decades, but Lisle attack suggests possible resurgence. Red-robed attackers with Karsite features disguised as bandits, attempting to implicate Menmellith.",
+        "k": [
+          "Karsite Blood Magic",
+          "Karse",
+          "blood magic"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Gift-shock induced unconsciousness for four days. Swore contingency order to Senta: knock him out if he loses control during debriefing to prevent accidental harm to Valdemaran leadership.\",\n      \"k\": [\n        \"Rance\"\n      ],\n      \"u\": \"1\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: refused separation even after reaching Haven. Suspects Rance's Gift is unprecedented—rarer than Firestarting, unseen for five centuries, with no available trainers. Confirmed Karsite blood magic stories are historical fact, not myth.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Met Senta at Collegium arrival; offered support and reassurance.\",\n      \"k\": [\n        \"Rolan\",\n        \"Queen's Own\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Karsite Blood Magic\",\n      \"c\": \"Historical practice of capturing prisoners for ritual sacrifice, demon summoning. Officially banned in Karse for decades, but Lisle attack suggests possible resurgence. Red-robed attackers with Karsite features disguised as bandits, attempting to implicate Menmellith.\",\n      \"k\": [\n        \"Karsite Blood Magic\",\n        \"Karse\",\n        \"blood magic\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "Gift-shock induced unconsciousness for four days. Swore contingency order to Senta: knock him out if he loses control during debriefing to prevent accidental harm to Valdemaran leadership.",
+      "k": [
+        "Rance"
+      ],
+      "u": "1"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STANCE-Rance: refused separation even after reaching Haven. Suspects Rance's Gift is unprecedented—rarer than Firestarting, unseen for five centuries, with no available trainers. Confirmed Karsite blood magic stories are historical fact, not myth.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "character",
+      "n": "Rolan",
+      "c": "Queen's Own Companion. Met Senta at Collegium arrival; offered support and reassurance.",
+      "k": [
+        "Rolan",
+        "Queen's Own"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Karsite Blood Magic",
+      "c": "Historical practice of capturing prisoners for ritual sacrifice, demon summoning. Officially banned in Karse for decades, but Lisle attack suggests possible resurgence. Red-robed attackers with Karsite features disguised as bandits, attempting to implicate Menmellith.",
+      "k": [
+        "Karsite Blood Magic",
+        "Karse",
+        "blood magic"
+      ]
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,34 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 28.97,
+  "tokens": 2058,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Intimacy Before the Queen",
+    "plot": "DEV: Rance and Talia consummated their relationship; she discovered preference for sexual submission/degradation; established semi-official partnership (known to Circle/Selenay only). PEND: Talia must report to Selenay while still bearing physical evidence of coupling; formal arrangement yet to be presented to Queen.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STATE: virginity taken by Rance; bite mark on breast; physically marked. ARC: crossed threshold from untouched to claimed; discovered arousal from submission/degradation; surrendered control for first time in adult life; broke years of self-denial. STANCE-Rance: sexually claimed; responds intensely to dominance and crude language; begged to be degraded during sex; needs him as partner who understands her completely; decided to recommend formalizing connection to Selenay as co-advisors (semi-official—Circle knows, public doesn't); shields waver around him but he can shore them up; terrified of losing herself but trusts him to prevent it.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: resigned acceptance their lives became complicated; concerned about untrained Mage-Gift use (door slam, potential fire lighting); maintains physical distance during intimate moments but cannot fully shield through bond; pragmatic about time constraints. STANCE-Talia: protective; understands she needed vulnerability/surrender after years of isolation.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Intimacy Before the Queen\",\n  \"plot\": \"DEV: Rance and Talia consummated their relationship; she discovered preference for sexual submission/degradation; established semi-official partnership (known to Circle/Selenay only). PEND: Talia must report to Selenay while still bearing physical evidence of coupling; formal arrangement yet to be presented to Queen.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STATE: virginity taken by Rance; bite mark on breast; physically marked. ARC: crossed threshold from untouched to claimed; discovered arousal from submission/degradation; surrendered control for first time in adult life; broke years of self-denial. STANCE-Rance: sexually claimed; responds intensely to dominance and crude language; begged to be degraded during sex; needs him as partner who understands her completely; decided to recommend formalizing connection to Selenay as co-advisors (semi-official—Circle knows, public doesn't); shields waver around him but he can shore them up; terrified of losing herself but trusts him to prevent it.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: resigned acceptance their lives became complicated; concerned about untrained Mage-Gift use (door slam, potential fire lighting); maintains physical distance during intimate moments but cannot fully shield through bond; pragmatic about time constraints. STANCE-Talia: protective; understands she needed vulnerability/surrender after years of isolation.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

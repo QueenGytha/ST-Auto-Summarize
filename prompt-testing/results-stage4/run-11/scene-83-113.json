@@ -1,0 +1,57 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 7.519,
+  "tokens": 4422,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "PHYSICAL: Lost virginity to Rance—bite mark evidence. STANCE-Rance: Relationship transformed to sexual/romantic bond. Discovered submissive desires—responds intensely to degradation, surrender of control. Found liberation in being dominated after lifetime of responsibility.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "9"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: Concern about untrained Mage-Gift cottage damage—'leveling cottage would require extensive paperwork.' STANCE-Talia: Surprised by her submissive response—understanding of her need for surrender after years of responsibility. STATE: Unable to fully shield from bond during intimacy despite withdrawal attempt; positioned outside cottage as sentry.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"PHYSICAL: Lost virginity to Rance—bite mark evidence. STANCE-Rance: Relationship transformed to sexual/romantic bond. Discovered submissive desires—responds intensely to degradation, surrender of control. Found liberation in being dominated after lifetime of responsibility.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"9\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: Concern about untrained Mage-Gift cottage damage—'leveling cottage would require extensive paperwork.' STANCE-Talia: Surprised by her submissive response—understanding of her need for surrender after years of responsibility. STATE: Unable to fully shield from bond during intimacy despite withdrawal attempt; positioned outside cottage as sentry.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "PHYSICAL: Lost virginity to Rance—bite mark evidence. STANCE-Rance: Relationship transformed to sexual/romantic bond. Discovered submissive desires—responds intensely to degradation, surrender of control. Found liberation in being dominated after lifetime of responsibility.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "9"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STANCE-Rance: Concern about untrained Mage-Gift cottage damage—'leveling cottage would require extensive paperwork.' STANCE-Talia: Surprised by her submissive response—understanding of her need for surrender after years of responsibility. STATE: Unable to fully shield from bond during intimacy despite withdrawal attempt; positioned outside cottage as sentry.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    }
+  ],
+  "error": null
+}

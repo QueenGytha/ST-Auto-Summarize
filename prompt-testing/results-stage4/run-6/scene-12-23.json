@@ -1,0 +1,93 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 8.701,
+  "tokens": 2843,
+  "input_entities": 4,
+  "output_entities": 4,
+  "filtered_out": 0,
+  "new_entities": 3,
+  "updated_entities": 1,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Exhausted from three-day non-stop run to Haven but refused rest to stay with Chosen. Confirmed knowledge: Herald-Mages are historical fact; Karsite blood magic is real history, officially banned for decades. Instructed Rance on Gift-shock treatment (willow bark/valerian/comfrey mixture). Monitored his unconscious state throughout journey—stable but fragile, mind slowly mending. Made contingency agreement: will knock Rance out if he loses control. Avoided main thoroughfares when possible to minimize attention.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Greeted Senta upon arrival at Haven; offered support and reassurance. Recognized urgency of situation.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Karsite Blood Magic",
+        "c": "Historical practice of capturing people for ritual sacrifice, demon summoning. 'Fires of Vkandis Sunlord' consumed many 'impure' souls over centuries. Officially banned in Karse for decades—if now returning, significant threat. Red-robed attackers at Lisle suggest organized magic-users, possibly Karsite operatives disguised as bandits while implicating Menmellith.",
+        "k": [
+          "Karsite Blood Magic",
+          "Vkandis Sunlord",
+          "Karse"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Companion-Herald Bond Mechanics",
+        "c": "Herald-basics flow naturally through bond—tactical knowledge, organizational awareness transfers automatically. Bond strengthens with time/distance; thoughts and emotions become mutually clearer. 'Two beings becoming something greater than the sum of their parts.'",
+        "k": [
+          "Companion-Herald Bond",
+          "bond"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Exhausted from three-day non-stop run to Haven but refused rest to stay with Chosen. Confirmed knowledge: Herald-Mages are historical fact; Karsite blood magic is real history, officially banned for decades. Instructed Rance on Gift-shock treatment (willow bark/valerian/comfrey mixture). Monitored his unconscious state throughout journey—stable but fragile, mind slowly mending. Made contingency agreement: will knock Rance out if he loses control. Avoided main thoroughfares when possible to minimize attention.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Greeted Senta upon arrival at Haven; offered support and reassurance. Recognized urgency of situation.\",\n      \"k\": [\n        \"Rolan\",\n        \"Queen's Own\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Karsite Blood Magic\",\n      \"c\": \"Historical practice of capturing people for ritual sacrifice, demon summoning. 'Fires of Vkandis Sunlord' consumed many 'impure' souls over centuries. Officially banned in Karse for decades—if now returning, significant threat. Red-robed attackers at Lisle suggest organized magic-users, possibly Karsite operatives disguised as bandits while implicating Menmellith.\",\n      \"k\": [\n        \"Karsite Blood Magic\",\n        \"Vkandis Sunlord\",\n        \"Karse\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Companion-Herald Bond Mechanics\",\n      \"c\": \"Herald-basics flow naturally through bond—tactical knowledge, organizational awareness transfers automatically. Bond strengthens with time/distance; thoughts and emotions become mutually clearer. 'Two beings becoming something greater than the sum of their parts.'\",\n      \"k\": [\n        \"Companion-Herald Bond\",\n        \"bond\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Exhausted from three-day non-stop run to Haven but refused rest to stay with Chosen. Confirmed knowledge: Herald-Mages are historical fact; Karsite blood magic is real history, officially banned for decades. Instructed Rance on Gift-shock treatment (willow bark/valerian/comfrey mixture). Monitored his unconscious state throughout journey—stable but fragile, mind slowly mending. Made contingency agreement: will knock Rance out if he loses control. Avoided main thoroughfares when possible to minimize attention.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "character",
+      "n": "Rolan",
+      "c": "Queen's Own Companion. Greeted Senta upon arrival at Haven; offered support and reassurance. Recognized urgency of situation.",
+      "k": [
+        "Rolan",
+        "Queen's Own"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Karsite Blood Magic",
+      "c": "Historical practice of capturing people for ritual sacrifice, demon summoning. 'Fires of Vkandis Sunlord' consumed many 'impure' souls over centuries. Officially banned in Karse for decades—if now returning, significant threat. Red-robed attackers at Lisle suggest organized magic-users, possibly Karsite operatives disguised as bandits while implicating Menmellith.",
+      "k": [
+        "Karsite Blood Magic",
+        "Vkandis Sunlord",
+        "Karse"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Companion-Herald Bond Mechanics",
+      "c": "Herald-basics flow naturally through bond—tactical knowledge, organizational awareness transfers automatically. Bond strengthens with time/distance; thoughts and emotions become mutually clearer. 'Two beings becoming something greater than the sum of their parts.'",
+      "k": [
+        "Companion-Herald Bond",
+        "bond"
+      ]
+    }
+  ],
+  "error": null
+}

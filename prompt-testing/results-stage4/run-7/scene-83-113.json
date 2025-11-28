@@ -1,0 +1,57 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 6.748,
+  "tokens": 3691,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: intimate partner; surrendered control for first time; discovered arousal from degradation/dominance after lifetime of authority. Lost virginity; marked (bite bruise on breast); filled with his seed. Struggling to reconcile Queen's Own authority with submission; found liberation in surrender. Will formalize co-advisor arrangement with Selenay while concealing intimate relationship.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "11"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: Resigned acceptance of complicated bond; maintains physical distance during intimacy but cannot fully shield through Companion-bond; pragmatic about unprecedented situation. Witnessed/sensed Talia's transformation; concerned about timing constraints and political complications.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: intimate partner; surrendered control for first time; discovered arousal from degradation/dominance after lifetime of authority. Lost virginity; marked (bite bruise on breast); filled with his seed. Struggling to reconcile Queen's Own authority with submission; found liberation in surrender. Will formalize co-advisor arrangement with Selenay while concealing intimate relationship.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"11\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: Resigned acceptance of complicated bond; maintains physical distance during intimacy but cannot fully shield through Companion-bond; pragmatic about unprecedented situation. Witnessed/sensed Talia's transformation; concerned about timing constraints and political complications.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "STANCE-Rance: intimate partner; surrendered control for first time; discovered arousal from degradation/dominance after lifetime of authority. Lost virginity; marked (bite bruise on breast); filled with his seed. Struggling to reconcile Queen's Own authority with submission; found liberation in surrender. Will formalize co-advisor arrangement with Selenay while concealing intimate relationship.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "11"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STANCE-Rance: Resigned acceptance of complicated bond; maintains physical distance during intimacy but cannot fully shield through Companion-bond; pragmatic about unprecedented situation. Witnessed/sensed Talia's transformation; concerned about timing constraints and political complications.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    }
+  ],
+  "error": null
+}

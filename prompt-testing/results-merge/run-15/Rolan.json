@@ -1,0 +1,33 @@
+{
+  "entityName": "Rolan",
+  "type": "character",
+  "keywords": [
+    "Rolan",
+    "Queen's Own Companion"
+  ],
+  "totalScenes": 2,
+  "mergeResults": [
+    {
+      "scene": "scene-12-23",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 121,
+      "merged_length": 121,
+      "content": "Queen's Own Companion. Greeted Senta at Haven arrival, offered support and reassurance about Healers. Powerful mindvoice."
+    },
+    {
+      "scene": "scene-24-59",
+      "action": "merge",
+      "duration": 5.911,
+      "tokens": 1953,
+      "existing_length": 121,
+      "new_length": 202,
+      "merged_length": 343,
+      "delta": 222,
+      "canonicalName": null,
+      "content": "Queen's Own Companion. Powerful mindvoice. Greeted Senta at Haven arrival, offered support and reassurance about Healers. Entered Circle without Chosen—unprecedented breach of protocol. Stood beside Rance throughout report, lending legitimacy. Sapphire eyes inscrutable. Coordinated with Senta during crisis. Presence reassures Circle members.",
+      "raw": "{\n  \"mergedContent\": \"Queen's Own Companion. Powerful mindvoice. Greeted Senta at Haven arrival, offered support and reassurance about Healers. Entered Circle without Chosen—unprecedented breach of protocol. Stood beside Rance throughout report, lending legitimacy. Sapphire eyes inscrutable. Coordinated with Senta during crisis. Presence reassures Circle members.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "Queen's Own Companion. Powerful mindvoice. Greeted Senta at Haven arrival, offered support and reassurance about Healers. Entered Circle without Chosen—unprecedented breach of protocol. Stood beside Rance throughout report, lending legitimacy. Sapphire eyes inscrutable. Coordinated with Senta during crisis. Presence reassures Circle members."
+}

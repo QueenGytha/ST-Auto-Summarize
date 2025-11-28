@@ -50,6 +50,12 @@ function loadScene(sceneId) {
   return JSON.parse(content);
 }
 
+function extractUserName(sceneContent) {
+  // Extract user name from [USER: <name>] pattern
+  const match = sceneContent.match(/\[USER:\s*([^\]]+)\]/);
+  return match ? match[1].trim() : null;
+}
+
 function buildPromptForScene(promptTemplate, scene) {
   // Replace the {{scene_messages}} placeholder with actual scene content
   let prompt = promptTemplate.replace('{{scene_messages}}', scene.content);
@@ -63,7 +69,13 @@ lore: World history, mythology, events.`;
 
   prompt = prompt.replace(/\{\{lorebook_entry_types_with_guidance\}\}/g, defaultEntityTypes);
 
-  return prompt;
+  // Replace {{user}} with detected user name
+  const userName = extractUserName(scene.content);
+  if (userName) {
+    prompt = prompt.replace(/\{\{user\}\}/g, userName);
+  }
+
+  return { prompt, userName };
 }
 
 function sleep(ms) {
@@ -166,7 +178,10 @@ async function testScene(scene, promptTemplate, config) {
   console.log(`Messages: ${scene.messages}`);
   console.log(`${'='.repeat(60)}`);
 
-  const userPrompt = buildPromptForScene(promptTemplate, scene);
+  const { prompt: userPrompt, userName } = buildPromptForScene(promptTemplate, scene);
+  if (userName) {
+    console.log(`User character: ${userName}`);
+  }
 
   const messages = [
     { role: 'user', content: userPrompt },
@@ -204,6 +219,7 @@ async function testScene(scene, promptTemplate, config) {
       success: !error,
       duration,
       tokens: result.usage?.total_tokens,
+      userName,
       parsed,
       raw,
       error
@@ -213,6 +229,7 @@ async function testScene(scene, promptTemplate, config) {
     return {
       scene: scene.id,
       success: false,
+      userName,
       error: err.message
     };
   }

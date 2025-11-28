@@ -1,0 +1,25 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 7.176,
+  "tokens": 1691,
+  "userName": "Rance",
+  "stage1_entities": 1,
+  "stage2_entities": 1,
+  "parsed": {
+    "sn": "Morning Counsel Before Selenay",
+    "plot": "DEV: Talia arrived at dawn before her scheduled meeting with Selenay, having made a decision overnight about handling their shared-memory situation. She requested private discussion with Rance first. PEND: Talia's decision about how to present their situation to Selenay and the Circle; potential policy changes affecting both of them.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: Seeks his counsel before presenting decisions to Selenay—treating him as collaborative partner rather than subordinate despite rank difference. Comfortable enough to visit his isolated cottage alone at dawn. Overnight resolved internal conflict about how to handle situation. Now more controlled, certain, determined—shifted from vulnerable confusion to decisive action.",
+        "k": [
+          "Talia"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Morning Counsel Before Selenay\",\n  \"plot\": \"DEV: Talia arrived at dawn before her scheduled meeting with Selenay, having made a decision overnight about handling their shared-memory situation. She requested private discussion with Rance first. PEND: Talia's decision about how to present their situation to Selenay and the Circle; potential policy changes affecting both of them.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: Seeks his counsel before presenting decisions to Selenay—treating him as collaborative partner rather than subordinate despite rank difference. Comfortable enough to visit his isolated cottage alone at dawn. Overnight resolved internal conflict about how to handle situation. Now more controlled, certain, determined—shifted from vulnerable confusion to decisive action.\",\n      \"k\": [\"Talia\"]\n    }\n  ]\n}\n",
+  "error": null
+}

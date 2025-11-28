@@ -1,0 +1,71 @@
+{
+  "entityName": "Senta",
+  "type": "character",
+  "keywords": [
+    "Senta"
+  ],
+  "totalScenes": 5,
+  "mergeResults": [
+    {
+      "scene": "scene-0-11",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 414,
+      "merged_length": 414,
+      "content": "IDENTITY: Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. ARC: Chose Rance—bond formed; stabilizing his wild Gift through connection; determined to get him to Haven alive despite his recklessness. STANCE-Rance: unconditional love through Choice bond; frustrated by his stubbornness and self-destructive behavior; protective; shares purpose to reach Haven and train his Gift"
+    },
+    {
+      "scene": "scene-12-23",
+      "action": "merge",
+      "duration": 7.429,
+      "tokens": 1538,
+      "existing_length": 414,
+      "new_length": 419,
+      "merged_length": 753,
+      "delta": 339,
+      "canonicalName": null,
+      "content": "Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. Chose Rance—bond formed; stabilizing his wild Gift through connection. Gift assessment: likely rarer/more dangerous than Firestarting; unprecedented in 5 centuries; no one capable of training him. Observes Rance thinks like Herald already—shows military-level tactical analysis beyond village headman norm. Journey: maintained tireless 4-day pace to Haven; exhausted on arrival but refused to leave Chosen's side. Met Rolan (Queen's Own Companion) upon arrival. STANCE-Rance: unconditional love through Choice bond; frustrated by his stubbornness and self-destructive behavior; protective; determined to get him to Haven alive and trained despite his recklessness.",
+      "raw": "{\n  \"mergedContent\": \"Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. Chose Rance—bond formed; stabilizing his wild Gift through connection. Gift assessment: likely rarer/more dangerous than Firestarting; unprecedented in 5 centuries; no one capable of training him. Observes Rance thinks like Herald already—shows military-level tactical analysis beyond village headman norm. Journey: maintained tireless 4-day pace to Haven; exhausted on arrival but refused to leave Chosen's side. Met Rolan (Queen's Own Companion) upon arrival. STANCE-Rance: unconditional love through Choice bond; frustrated by his stubbornness and self-destructive behavior; protective; determined to get him to Haven alive and trained despite his recklessness.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-24-59",
+      "action": "merge",
+      "duration": 9.371,
+      "tokens": 1711,
+      "existing_length": 753,
+      "new_length": 412,
+      "merged_length": 993,
+      "delta": 240,
+      "canonicalName": null,
+      "content": "Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. Chose Rance—bond formed; stabilizing his wild Mage-Gift (raw talent not seen since Vanyel's time) through connection. Understands he rewrote magical theory within days of Choosing; unprecedented in 5 centuries; no one capable of training him. Observes Rance thinks like Herald already—shows military-level tactical analysis beyond village headman norm. Journey: maintained tireless 4-day pace to Haven; exhausted on arrival but refused to leave Chosen's side. Met Rolan (Queen's Own Companion) upon arrival. STANCE-Rance: unconditional love through Choice bond; protective (especially during Circle meeting); proud of his practical leadership; concerned about political tightrope he walks; frustrated by his stubbornness and self-destructive behavior; dry humor about expecting complications but not this scale; steady anchor through extraordinary events; accepts their life won't be dull Circuit routes.",
+      "raw": "{\n  \"mergedContent\": \"Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. Chose Rance—bond formed; stabilizing his wild Mage-Gift (raw talent not seen since Vanyel's time) through connection. Understands he rewrote magical theory within days of Choosing; unprecedented in 5 centuries; no one capable of training him. Observes Rance thinks like Herald already—shows military-level tactical analysis beyond village headman norm. Journey: maintained tireless 4-day pace to Haven; exhausted on arrival but refused to leave Chosen's side. Met Rolan (Queen's Own Companion) upon arrival. STANCE-Rance: unconditional love through Choice bond; protective (especially during Circle meeting); proud of his practical leadership; concerned about political tightrope he walks; frustrated by his stubbornness and self-destructive behavior; dry humor about expecting complications but not this scale; steady anchor through extraordinary events; accepts their life won't be dull Circuit routes.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-72-82",
+      "action": "merge",
+      "duration": 7.408,
+      "tokens": 1679,
+      "existing_length": 993,
+      "new_length": 72,
+      "merged_length": 985,
+      "delta": -8,
+      "canonicalName": null,
+      "content": "Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. Chose Rance—bond formed; stabilizing his wild Mage-Gift (raw talent not seen since Vanyel's time) through connection. Understands he rewrote magical theory within days of Choosing; unprecedented in 5 centuries; no one capable of training him. Observes Rance thinks like Herald already—shows military-level tactical analysis beyond village headman norm. Journey: maintained tireless 4-day pace to Haven. Met Rolan (Queen's Own Companion) upon arrival. Fully recovered; coat gleaming, energy restored. STANCE-Rance: unconditional love through Choice bond; protective (especially during Circle meeting); proud of his practical leadership; concerned about political tightrope he walks; frustrated by his stubbornness and self-destructive behavior; dry humor about expecting complications but not this scale; steady anchor through extraordinary events; accepts their life won't be dull Circuit routes.",
+      "raw": "{\n  \"mergedContent\": \"Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. Chose Rance—bond formed; stabilizing his wild Mage-Gift (raw talent not seen since Vanyel's time) through connection. Understands he rewrote magical theory within days of Choosing; unprecedented in 5 centuries; no one capable of training him. Observes Rance thinks like Herald already—shows military-level tactical analysis beyond village headman norm. Journey: maintained tireless 4-day pace to Haven. Met Rolan (Queen's Own Companion) upon arrival. Fully recovered; coat gleaming, energy restored. STANCE-Rance: unconditional love through Choice bond; protective (especially during Circle meeting); proud of his practical leadership; concerned about political tightrope he walks; frustrated by his stubbornness and self-destructive behavior; dry humor about expecting complications but not this scale; steady anchor through extraordinary events; accepts their life won't be dull Circuit routes.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 39.598,
+      "tokens": 1837,
+      "existing_length": 985,
+      "new_length": 314,
+      "merged_length": 1273,
+      "delta": 288,
+      "canonicalName": null,
+      "content": "Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. Chose Rance—bond formed; stabilizing his wild Mage-Gift (raw talent not seen since Vanyel's time) through connection. Understands he rewrote magical theory within days of Choosing; unprecedented in 5 centuries; no one capable of training him. Observes Rance thinks like Herald already—shows military-level tactical analysis beyond village headman norm. Journey: maintained tireless 4-day pace to Haven. Met Rolan (Queen's Own Companion) upon arrival. Fully recovered; coat gleaming, energy restored. STANCE-Rance: unconditional love through Choice bond; protective (especially during Circle meeting); proud of his practical leadership; concerned about political tightrope he walks and untrained Mage-Gift use (door slam, potential fire lighting); frustrated by his stubbornness and self-destructive behavior; maintains physical distance during intimate moments but cannot fully shield through bond; pragmatic about time constraints; dry humor about expecting complications but not this scale; steady anchor through extraordinary events; accepts their life won't be dull Circuit routes. STANCE-Talia: protective; understands she needed vulnerability/surrender after years of isolation.",
+      "raw": "{\n  \"mergedContent\": \"Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. Chose Rance—bond formed; stabilizing his wild Mage-Gift (raw talent not seen since Vanyel's time) through connection. Understands he rewrote magical theory within days of Choosing; unprecedented in 5 centuries; no one capable of training him. Observes Rance thinks like Herald already—shows military-level tactical analysis beyond village headman norm. Journey: maintained tireless 4-day pace to Haven. Met Rolan (Queen's Own Companion) upon arrival. Fully recovered; coat gleaming, energy restored. STANCE-Rance: unconditional love through Choice bond; protective (especially during Circle meeting); proud of his practical leadership; concerned about political tightrope he walks and untrained Mage-Gift use (door slam, potential fire lighting); frustrated by his stubbornness and self-destructive behavior; maintains physical distance during intimate moments but cannot fully shield through bond; pragmatic about time constraints; dry humor about expecting complications but not this scale; steady anchor through extraordinary events; accepts their life won't be dull Circuit routes. STANCE-Talia: protective; understands she needed vulnerability/surrender after years of isolation.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. Chose Rance—bond formed; stabilizing his wild Mage-Gift (raw talent not seen since Vanyel's time) through connection. Understands he rewrote magical theory within days of Choosing; unprecedented in 5 centuries; no one capable of training him. Observes Rance thinks like Herald already—shows military-level tactical analysis beyond village headman norm. Journey: maintained tireless 4-day pace to Haven. Met Rolan (Queen's Own Companion) upon arrival. Fully recovered; coat gleaming, energy restored. STANCE-Rance: unconditional love through Choice bond; protective (especially during Circle meeting); proud of his practical leadership; concerned about political tightrope he walks and untrained Mage-Gift use (door slam, potential fire lighting); frustrated by his stubbornness and self-destructive behavior; maintains physical distance during intimate moments but cannot fully shield through bond; pragmatic about time constraints; dry humor about expecting complications but not this scale; steady anchor through extraordinary events; accepts their life won't be dull Circuit routes. STANCE-Talia: protective; understands she needed vulnerability/surrender after years of isolation."
+}

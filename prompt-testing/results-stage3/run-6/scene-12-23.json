@@ -1,0 +1,16 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 7.401,
+  "tokens": 1318,
+  "input_recap_length": 390,
+  "input_plot_length": 399,
+  "output_recap_length": 537,
+  "parsed": {
+    "recap": "DEV: Rance's latent mage-gift exploded during bandit attack; obliterated Lisle village; Companion Senta arrived and Chose him; discovered red robes hidden under bandit clothing suggesting organized attack; Rance stabilized from Gift-shock after herbs; traveled to Haven at relentless pace; arrived at Collegium; Healers received him; Rolan greeted Senta.\n\nPEND: Rance's recovery and Gift assessment; retrieving blocked memories of attack; reporting to Circle about Karsite involvement and blood magic theory; training unprecedented Gift."
+  },
+  "raw": "{\n  \"recap\": \"DEV: Rance's latent mage-gift exploded during bandit attack; obliterated Lisle village; Companion Senta arrived and Chose him; discovered red robes hidden under bandit clothing suggesting organized attack; Rance stabilized from Gift-shock after herbs; traveled to Haven at relentless pace; arrived at Collegium; Healers received him; Rolan greeted Senta.\\n\\nPEND: Rance's recovery and Gift assessment; retrieving blocked memories of attack; reporting to Circle about Karsite involvement and blood magic theory; training unprecedented Gift.\"\n}\n",
+  "recap": "DEV: Rance's latent mage-gift exploded during bandit attack; obliterated Lisle village; Companion Senta arrived and Chose him; discovered red robes hidden under bandit clothing suggesting organized attack; Rance stabilized from Gift-shock after herbs; traveled to Haven at relentless pace; arrived at Collegium; Healers received him; Rolan greeted Senta.\n\nPEND: Rance's recovery and Gift assessment; retrieving blocked memories of attack; reporting to Circle about Karsite involvement and blood magic theory; training unprecedented Gift.",
+  "entities": [],
+  "error": null
+}

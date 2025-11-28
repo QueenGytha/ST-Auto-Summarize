@@ -1,0 +1,75 @@
+{
+  "run": 5,
+  "stage2_run": 3,
+  "timestamp": "2025-11-27T22:05:07.806Z",
+  "total": 5,
+  "successful": 5,
+  "failed": 0,
+  "final_recap": "DEV: Rance's wild Mage-Gift awakened during bandit attack; obliterated Lisle village; Companion Senta Chose him; red robes found hidden under bandit clothing—organized attack suggesting Karse; prisoner-taking indicates blood magic revival; four-day ride to Haven completed; arrived Haven; Healers alerted to wild talent danger; reported Lisle attack to Circle; complete mind-merge with Talia confirmed; Mage-Gift confirmed; quartered at Healer's cottage; Kyril to contact bordering nations; Talia arrived at dawn; requested private discussion; consummated relationship with Rance; discovered preference for sexual submission/degradation; established semi-official partnership (known to Circle/Selenay only).\nPEND: Rance's memories of attack still blocked; Mage-Gift training without teachers; fate of Lisle prisoners unknown; Karse blood magic threat assessment needed; red-robed attackers may return; Rance's Gift untrained, dangerous; scope of threat beyond Valderan; political ramifications of two people with Queen's Own knowledge; Talia must report to Selenay bearing physical evidence of coupling; formal arrangement yet to be presented to Queen.",
+  "final_recap_length": 1152,
+  "total_event_entities": 2,
+  "all_entities": [
+    {
+      "t": "event",
+      "n": "Lisle village destruction",
+      "c": "Obliterated by Rance's awakening wild Gift during bandit attack",
+      "k": [
+        "Lisle",
+        "village destruction",
+        "awakening"
+      ]
+    },
+    {
+      "type": "event",
+      "name": "Queen's Circle briefing",
+      "content": "Rance reported Lisle attack to Circle; Karsite blood magic suspected",
+      "keywords": [
+        "Circle briefing",
+        "Rance report",
+        "Lisle attack report"
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene-0-11",
+      "success": true,
+      "input_recap_length": 0,
+      "output_recap_length": 313,
+      "entities_count": 0,
+      "error": null
+    },
+    {
+      "id": "scene-12-23",
+      "success": true,
+      "input_recap_length": 313,
+      "output_recap_length": 660,
+      "entities_count": 1,
+      "error": null
+    },
+    {
+      "id": "scene-24-59",
+      "success": true,
+      "input_recap_length": 660,
+      "output_recap_length": 845,
+      "entities_count": 1,
+      "error": null
+    },
+    {
+      "id": "scene-72-82",
+      "success": true,
+      "input_recap_length": 845,
+      "output_recap_length": 1058,
+      "entities_count": 0,
+      "error": null
+    },
+    {
+      "id": "scene-83-113",
+      "success": true,
+      "input_recap_length": 1058,
+      "output_recap_length": 1152,
+      "entities_count": 0,
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 7.637,
+  "tokens": 3442,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STATE: No longer a virgin—hymen torn, breast marked, carries physical evidence. ARC: Discovered she responds intensely to domination, rough treatment, and degradation—finds release in surrender after years of responsibility. Broke through her terror of losing herself in another person. Used crude language and Holderkin degradation vocabulary she'd rejected for decades. Allowed herself to prioritize personal need over duty for the first time.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "9"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Talia: Sensed her complete surrender and discovered desires even the memory-merge hadn't revealed.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STATE: No longer a virgin—hymen torn, breast marked, carries physical evidence. ARC: Discovered she responds intensely to domination, rough treatment, and degradation—finds release in surrender after years of responsibility. Broke through her terror of losing herself in another person. Used crude language and Holderkin degradation vocabulary she'd rejected for decades. Allowed herself to prioritize personal need over duty for the first time.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"9\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Talia: Sensed her complete surrender and discovered desires even the memory-merge hadn't revealed.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "STATE: No longer a virgin—hymen torn, breast marked, carries physical evidence. ARC: Discovered she responds intensely to domination, rough treatment, and degradation—finds release in surrender after years of responsibility. Broke through her terror of losing herself in another person. Used crude language and Holderkin degradation vocabulary she'd rejected for decades. Allowed herself to prioritize personal need over duty for the first time.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "9"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STANCE-Talia: Sensed her complete surrender and discovered desires even the memory-merge hadn't revealed.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    }
+  ],
+  "error": null
+}

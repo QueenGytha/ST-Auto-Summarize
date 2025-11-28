@@ -1,0 +1,42 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 11.18,
+  "tokens": 2738,
+  "stage1_entities": 3,
+  "stage2_entities": 3,
+  "parsed": {
+    "sn": "Dawn Decision at Haven",
+    "plot": "DEV: Rance and Senta arrived at Haven; isolated in cottage at Companion's Field edge; Rance demonstrated unprecedented Mage-Gift to Circle, accessing nodes without trance; shares complete memories with Talia bidirectionally. PEND: Talia meeting with Selenay after discussing decision with Rance; Alberich's training approach uncertain; managing security risk of shared Queen's Own memories.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Identity: Former headman of Lisle, elderly newly Chosen Herald. State: Housed in isolated cottage at Companion's Field edge due to security concerns; physically recovered from unconsciousness after Gift demonstration. Arc: Demonstrated to Circle he can access ley-line nodes without trance, upending fundamental magical theory; now positioned as informal advisor before even receiving Trainee Greys. Relationship with Talia: Shares her complete memories bidirectionally—experiences physical disorientation from stride length differences, reaches for her memories instinctively; she knows everything he knows about her role. Relationship with Senta: Deep bond strengthened through crisis; exchanges dry humor about their extraordinary situation ('just another day as your Companion'); she chose him without regret despite chaos. Relationship with Circle: Demonstrated Gift abilities that challenged Mage Savil's fundamental understanding; earned provisional trust despite being security risk.",
+        "k": [
+          "Rance",
+          "headman of Lisle"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "State: Physically restored after thorough grooming removed road grime from carrying Rance across half Valdemar; coat gleaming silver-white again. Arc: Navigating bond with unprecedented Chosen—carries exhausted humor about watching him 'casually destroy fundamental magical theory' and joke about leveling Haven. Relationship with Rance: Chose him with absolute certainty ('most right thing I've ever done'); provides grounding through simple acts like grooming; fiercely protective; sleeps in lean-to shelter attached to cottage to remain close. Stance: Sees his age as irrelevant ('Companions Choose when time is right, not when convenient'); believes his headman experience will accelerate training; projects cautious concern about Talia's early morning visit and changed emotional state.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "State: Emotionally different from previous evening—more resolved, controlled, certain after night of decision-making. Arc: Made significant decision overnight about handling shared memory situation; chose to discuss with Rance before presenting to Selenay, treating him as equal stakeholder rather than subordinate. Relationship with Rance: Experiences disorientation from shared memories—woke reaching for his memories, only fragments remain of what should be there; acknowledges stride length differences affect her instinctively. Stance: Using formal Court cadence to discuss decision that 'potentially changes everything about how we proceed'; decision concerns both of them and affects relationship with Selenay and Circle.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Dawn Decision at Haven\",\n  \"plot\": \"DEV: Rance and Senta arrived at Haven; isolated in cottage at Companion's Field edge; Rance demonstrated unprecedented Mage-Gift to Circle, accessing nodes without trance; shares complete memories with Talia bidirectionally. PEND: Talia meeting with Selenay after discussing decision with Rance; Alberich's training approach uncertain; managing security risk of shared Queen's Own memories.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Identity: Former headman of Lisle, elderly newly Chosen Herald. State: Housed in isolated cottage at Companion's Field edge due to security concerns; physically recovered from unconsciousness after Gift demonstration. Arc: Demonstrated to Circle he can access ley-line nodes without trance, upending fundamental magical theory; now positioned as informal advisor before even receiving Trainee Greys. Relationship with Talia: Shares her complete memories bidirectionally—experiences physical disorientation from stride length differences, reaches for her memories instinctively; she knows everything he knows about her role. Relationship with Senta: Deep bond strengthened through crisis; exchanges dry humor about their extraordinary situation ('just another day as your Companion'); she chose him without regret despite chaos. Relationship with Circle: Demonstrated Gift abilities that challenged Mage Savil's fundamental understanding; earned provisional trust despite being security risk.\",\n      \"k\": [\"Rance\", \"headman of Lisle\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"State: Physically restored after thorough grooming removed road grime from carrying Rance across half Valdemar; coat gleaming silver-white again. Arc: Navigating bond with unprecedented Chosen—carries exhausted humor about watching him 'casually destroy fundamental magical theory' and joke about leveling Haven. Relationship with Rance: Chose him with absolute certainty ('most right thing I've ever done'); provides grounding through simple acts like grooming; fiercely protective; sleeps in lean-to shelter attached to cottage to remain close. Stance: Sees his age as irrelevant ('Companions Choose when time is right, not when convenient'); believes his headman experience will accelerate training; projects cautious concern about Talia's early morning visit and changed emotional state.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"State: Emotionally different from previous evening—more resolved, controlled, certain after night of decision-making. Arc: Made significant decision overnight about handling shared memory situation; chose to discuss with Rance before presenting to Selenay, treating him as equal stakeholder rather than subordinate. Relationship with Rance: Experiences disorientation from shared memories—woke reaching for his memories, only fragments remain of what should be there; acknowledges stride length differences affect her instinctively. Stance: Using formal Court cadence to discuss decision that 'potentially changes everything about how we proceed'; decision concerns both of them and affects relationship with Selenay and Circle.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    }\n  ]\n}\n",
+  "error": null
+}

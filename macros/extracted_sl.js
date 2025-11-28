@@ -8,7 +8,7 @@ export function build(entries) {
 }
 
 export const description = {
-  format: 'JSON array of setting_lore entries [{t, n, c, k}, ...]',
-  source: 'Stage 2 output .sl field',
+  format: 'JSON array of entity entries [{t, n, c, k}, ...]',
+  source: 'Combined entities from Stage 2 (.entities) and Stage 3 (.entities for events)',
   usedBy: ['scene-recap-stage4-filter-sl.js']
 };

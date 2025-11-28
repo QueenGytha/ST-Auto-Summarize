@@ -1,0 +1,57 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 7.716,
+  "tokens": 4950,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STATE: virginity taken by Rance; bite mark on breast; physically marked. ARC: crossed threshold from untouched to claimed; discovered arousal from submission/degradation; surrendered control for first time in adult life; broke years of self-denial. STANCE-Rance: sexually claimed; responds intensely to dominance and crude language; begged to be degraded during sex; decided to recommend formalizing connection to Selenay as co-advisors (semi-official—Circle knows, public doesn't); shields waver around him but he can shore them up; terrified of losing herself but trusts him to prevent it.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "11"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: concerned about untrained Mage-Gift use (door slam, potential fire lighting); maintains physical distance during intimate moments but cannot fully shield through bond; pragmatic about time constraints. STANCE-Talia: protective; understands she needed vulnerability/surrender after years of isolation.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STATE: virginity taken by Rance; bite mark on breast; physically marked. ARC: crossed threshold from untouched to claimed; discovered arousal from submission/degradation; surrendered control for first time in adult life; broke years of self-denial. STANCE-Rance: sexually claimed; responds intensely to dominance and crude language; begged to be degraded during sex; decided to recommend formalizing connection to Selenay as co-advisors (semi-official—Circle knows, public doesn't); shields waver around him but he can shore them up; terrified of losing herself but trusts him to prevent it.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"11\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: concerned about untrained Mage-Gift use (door slam, potential fire lighting); maintains physical distance during intimate moments but cannot fully shield through bond; pragmatic about time constraints. STANCE-Talia: protective; understands she needed vulnerability/surrender after years of isolation.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "STATE: virginity taken by Rance; bite mark on breast; physically marked. ARC: crossed threshold from untouched to claimed; discovered arousal from submission/degradation; surrendered control for first time in adult life; broke years of self-denial. STANCE-Rance: sexually claimed; responds intensely to dominance and crude language; begged to be degraded during sex; decided to recommend formalizing connection to Selenay as co-advisors (semi-official—Circle knows, public doesn't); shields waver around him but he can shore them up; terrified of losing herself but trusts him to prevent it.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "11"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STANCE-Rance: concerned about untrained Mage-Gift use (door slam, potential fire lighting); maintains physical distance during intimate moments but cannot fully shield through bond; pragmatic about time constraints. STANCE-Talia: protective; understands she needed vulnerability/surrender after years of isolation.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    }
+  ],
+  "error": null
+}

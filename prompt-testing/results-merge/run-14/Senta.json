@@ -1,0 +1,71 @@
+{
+  "entityName": "Senta",
+  "type": "character",
+  "keywords": [
+    "Senta"
+  ],
+  "totalScenes": 5,
+  "mergeResults": [
+    {
+      "scene": "scene-0-11",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 578,
+      "merged_length": 578,
+      "content": "IDENTITY: Unpartnered Companion mare for 3 years until now. White coat, silver hooves, sapphire eyes. Can travel triple distance of ordinary horses. STANCE-Rance: Chose him despite his age (40) and devastated state. Bond formed—pours unconditional love into him, stabilizes his ragged channels. Frustrated by his stubbornness but recognizes steel beneath grief. Shares purpose: get evidence to Haven, train his Gift. Views him as 'right Chosen' regardless of circumstances. Protective—refuses to let him examine bodies initially, insists on Waystation rest despite his protests."
+    },
+    {
+      "scene": "scene-12-23",
+      "action": "merge",
+      "duration": 7.368,
+      "tokens": 2303,
+      "existing_length": 578,
+      "new_length": 426,
+      "merged_length": 819,
+      "delta": 241,
+      "canonicalName": null,
+      "content": "IDENTITY: Unpartnered Companion mare for 3 years until now. White coat, silver hooves, sapphire eyes. Can travel triple distance of ordinary horses. Connected to Rolan (Queen's Own Companion) who greeted her at Haven. STANCE-Rance: Chose him despite his age (40) and devastated state. Bond formed—pours unconditional love into him, stabilizes his ragged channels. Frustrated by his stubbornness but recognizes steel beneath grief, approved of matching stubbornness and caring beneath gruff exterior. Shares purpose: get evidence to Haven, train his Gift. Views him as 'right Chosen' regardless of circumstances. Protective—monitored his Gift-shock constantly, refused separation even after arriving Haven. Trust established: agreed to knock him out if he loses control near Queen. Sees him thinking like Herald already.",
+      "raw": "{\n  \"mergedContent\": \"IDENTITY: Unpartnered Companion mare for 3 years until now. White coat, silver hooves, sapphire eyes. Can travel triple distance of ordinary horses. Connected to Rolan (Queen's Own Companion) who greeted her at Haven. STANCE-Rance: Chose him despite his age (40) and devastated state. Bond formed—pours unconditional love into him, stabilizes his ragged channels. Frustrated by his stubbornness but recognizes steel beneath grief, approved of matching stubbornness and caring beneath gruff exterior. Shares purpose: get evidence to Haven, train his Gift. Views him as 'right Chosen' regardless of circumstances. Protective—monitored his Gift-shock constantly, refused separation even after arriving Haven. Trust established: agreed to knock him out if he loses control near Queen. Sees him thinking like Herald already.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-24-59",
+      "action": "merge",
+      "duration": 44.079,
+      "tokens": 2336,
+      "existing_length": 819,
+      "new_length": 291,
+      "merged_length": 821,
+      "delta": 2,
+      "canonicalName": null,
+      "content": "IDENTITY: Unpartnered Companion mare for 3 years until now. White coat, silver hovers, sapphire eyes. Can travel triple distance of ordinary horses. Connected to Rolan (Queen's Own Companion) who greeted her at Haven. STANCE-Rance: Chose him despite his age (40) and devastated state. Bond formed—pours unconditional love into him, stabilizes his ragged channels. Protective—monitored his Gift-shock constantly, refused separation even after arriving Haven. Trust established: agreed to knock him out if he loses control near Queen. Proud of his practical leadership and contingency planning; exasperated by his spite-driven approach to 'impossible' feats. Recognizes he thinks like both Herald and headman—combines stubbornness with caring beneath gruff exterior. Views him as 'right Chosen' regardless of circumstances.",
+      "raw": "{\n  \"mergedContent\": \"IDENTITY: Unpartnered Companion mare for 3 years until now. White coat, silver hovers, sapphire eyes. Can travel triple distance of ordinary horses. Connected to Rolan (Queen's Own Companion) who greeted her at Haven. STANCE-Rance: Chose him despite his age (40) and devastated state. Bond formed—pours unconditional love into him, stabilizes his ragged channels. Protective—monitored his Gift-shock constantly, refused separation even after arriving Haven. Trust established: agreed to knock him out if he loses control near Queen. Proud of his practical leadership and contingency planning; exasperated by his spite-driven approach to 'impossible' feats. Recognizes he thinks like both Herald and headman—combines stubbornness with caring beneath gruff exterior. Views him as 'right Chosen' regardless of circumstances.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-72-82",
+      "action": "merge",
+      "duration": 7.347,
+      "tokens": 2384,
+      "existing_length": 821,
+      "new_length": 285,
+      "merged_length": 983,
+      "delta": 162,
+      "canonicalName": null,
+      "content": "IDENTITY: Unpartnered Companion mare for 3 years until now. White coat, silver hooves, sapphire eyes. Can travel triple distance of ordinary horses. Connected to Rolan (Queen's Own Companion) who greeted her at Haven. Fully recovered—coat gleaming silver-white, energy and alertness returned. STANCE-Rance: Chose him despite his age (40) and devastated state—absolute certainty ('most right thing I've ever done'). Bond formed—pours unconditional love into him, stabilizes his ragged channels. Protective—monitored his Gift-shock constantly, refused separation even after arriving Haven. Trust established: agreed to knock him out if he loses control near Queen. Proud of his practical leadership and contingency planning; exasperated by his spite-driven approach to 'impossible' feats. Recognizes he thinks like both Herald and headman—combines stubbornness with caring beneath gruff exterior. Advised cryptically about bonds: 'Some chosen, some thrust upon us. All requiring care.'",
+      "raw": "{\n  \"mergedContent\": \"IDENTITY: Unpartnered Companion mare for 3 years until now. White coat, silver hooves, sapphire eyes. Can travel triple distance of ordinary horses. Connected to Rolan (Queen's Own Companion) who greeted her at Haven. Fully recovered—coat gleaming silver-white, energy and alertness returned. STANCE-Rance: Chose him despite his age (40) and devastated state—absolute certainty ('most right thing I've ever done'). Bond formed—pours unconditional love into him, stabilizes his ragged channels. Protective—monitored his Gift-shock constantly, refused separation even after arriving Haven. Trust established: agreed to knock him out if he loses control near Queen. Proud of his practical leadership and contingency planning; exasperated by his spite-driven approach to 'impossible' feats. Recognizes he thinks like both Herald and headman—combines stubbornness with caring beneath gruff exterior. Advised cryptically about bonds: 'Some chosen, some thrust upon us. All requiring care.'\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 7.963,
+      "tokens": 2548,
+      "existing_length": 983,
+      "new_length": 360,
+      "merged_length": 1286,
+      "delta": 303,
+      "canonicalName": null,
+      "content": "IDENTITY: Unpartnered Companion mare for 3 years until now. White coat, silver hooves, sapphire eyes. Can travel triple distance of ordinary horses. Connected to Rolan (Queen's Own Companion) who greeted her at Haven. Fully recovered—coat gleaming silver-white, energy and alertness returned. STANCE-Rance: Chose him despite his age (40) and devastated state—absolute certainty ('most right thing I've ever done'). Bond formed—pours unconditional love into him, stabilizes his ragged channels. Protective—monitored his Gift-shock constantly, refused separation even after arriving Haven. Trust established: agreed to knock him out if he loses control near Queen. Proud of his practical leadership and contingency planning; exasperated by his spite-driven approach to 'impossible' feats. Recognizes he thinks like both Herald and headman—combines stubbornness with caring beneath gruff exterior. Advised cryptically about bonds: 'Some chosen, some thrust upon us. All requiring care.' Concern about untrained Mage-Gift cottage damage—'leveling cottage would require extensive paperwork.' Cannot fully shield from bond during his intimacy despite withdrawal attempt. STANCE-Talia: Surprised by her submissive response—understanding of her need for surrender after years of responsibility.",
+      "raw": "{\n  \"mergedContent\": \"IDENTITY: Unpartnered Companion mare for 3 years until now. White coat, silver hooves, sapphire eyes. Can travel triple distance of ordinary horses. Connected to Rolan (Queen's Own Companion) who greeted her at Haven. Fully recovered—coat gleaming silver-white, energy and alertness returned. STANCE-Rance: Chose him despite his age (40) and devastated state—absolute certainty ('most right thing I've ever done'). Bond formed—pours unconditional love into him, stabilizes his ragged channels. Protective—monitored his Gift-shock constantly, refused separation even after arriving Haven. Trust established: agreed to knock him out if he loses control near Queen. Proud of his practical leadership and contingency planning; exasperated by his spite-driven approach to 'impossible' feats. Recognizes he thinks like both Herald and headman—combines stubbornness with caring beneath gruff exterior. Advised cryptically about bonds: 'Some chosen, some thrust upon us. All requiring care.' Concern about untrained Mage-Gift cottage damage—'leveling cottage would require extensive paperwork.' Cannot fully shield from bond during his intimacy despite withdrawal attempt. STANCE-Talia: Surprised by her submissive response—understanding of her need for surrender after years of responsibility.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "IDENTITY: Unpartnered Companion mare for 3 years until now. White coat, silver hooves, sapphire eyes. Can travel triple distance of ordinary horses. Connected to Rolan (Queen's Own Companion) who greeted her at Haven. Fully recovered—coat gleaming silver-white, energy and alertness returned. STANCE-Rance: Chose him despite his age (40) and devastated state—absolute certainty ('most right thing I've ever done'). Bond formed—pours unconditional love into him, stabilizes his ragged channels. Protective—monitored his Gift-shock constantly, refused separation even after arriving Haven. Trust established: agreed to knock him out if he loses control near Queen. Proud of his practical leadership and contingency planning; exasperated by his spite-driven approach to 'impossible' feats. Recognizes he thinks like both Herald and headman—combines stubbornness with caring beneath gruff exterior. Advised cryptically about bonds: 'Some chosen, some thrust upon us. All requiring care.' Concern about untrained Mage-Gift cottage damage—'leveling cottage would require extensive paperwork.' Cannot fully shield from bond during his intimacy despite withdrawal attempt. STANCE-Talia: Surprised by her submissive response—understanding of her need for surrender after years of responsibility."
+}

@@ -1,0 +1,34 @@
+{
+  "entityName": "Karsite Blood Magic",
+  "type": "lore",
+  "keywords": [
+    "Blood Magic",
+    "Karsite",
+    "Sun-Priests"
+  ],
+  "totalScenes": 2,
+  "mergeResults": [
+    {
+      "scene": "scene-12-23",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 242,
+      "merged_length": 242,
+      "content": "Historical practice: capturing people for ritual sacrifice, demon summoning. Fires of Vkandis Sunlord consumed 'impure souls' for centuries. Officially banned in Karse for decades, but current attack suggests possible return to old practices."
+    },
+    {
+      "scene": "scene-24-59",
+      "action": "merge",
+      "duration": 43.115,
+      "tokens": 2144,
+      "existing_length": 242,
+      "new_length": 466,
+      "merged_length": 573,
+      "delta": 331,
+      "canonicalName": null,
+      "content": "Historical practice in Karse: capturing people for ritual sacrifice and demon summoning, fires of Vkandis Sunlord consuming 'impure souls' for centuries. Officially banned for generations, but recent attack on Lisle confirms return to old practices—Sun-Priests taking live captives (including young/elderly) for blood magic rituals. 'Fresher sacrifice generates more power.' Red priestly robes recovered from raid. Military-grade special forces involvement indicates state-sanctioned operation, suggesting fundamental Karsite policy shift and possible internal instability.",
+      "raw": "{\n  \"mergedContent\": \"Historical practice in Karse: capturing people for ritual sacrifice and demon summoning, fires of Vkandis Sunlord consuming 'impure souls' for centuries. Officially banned for generations, but recent attack on Lisle confirms return to old practices—Sun-Priests taking live captives (including young/elderly) for blood magic rituals. 'Fresher sacrifice generates more power.' Red priestly robes recovered from raid. Military-grade special forces involvement indicates state-sanctioned operation, suggesting fundamental Karsite policy shift and possible internal instability.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "Historical practice in Karse: capturing people for ritual sacrifice and demon summoning, fires of Vkandis Sunlord consuming 'impure souls' for centuries. Officially banned for generations, but recent attack on Lisle confirms return to old practices—Sun-Priests taking live captives (including young/elderly) for blood magic rituals. 'Fresher sacrifice generates more power.' Red priestly robes recovered from raid. Military-grade special forces involvement indicates state-sanctioned operation, suggesting fundamental Karsite policy shift and possible internal instability."
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "comment": "Rance",
+    "uid": "1",
+    "key": [
+      "Rance",
+      "Herald"
+    ],
+    "content": "Identity: 40-year-old former headman of Lisle; skilled rider with possible military background; stoic, pragmatic, stubborn to the point of self-destruction. State: Newly awakened immensely powerful Mage-Gift (unknown type, possibly Firestarting)—burned open mental channels cause white-hot agony, blurred vision, teetering sanity; Gift-shock severe; physically exhausted but forcing himself through sheer willpower. Arc: Witnessed entire village destroyed and people carried off during bandit attack; believes others caused destruction—doesn't yet fully accept he did it himself; driven by duty to warn Haven despite trauma; initially dismissed Senta as 'insufferable horse,' called her for mercy killing. Relationship with Senta: Chosen by her—bond snapped into place when their eyes locked; her unconditional love and mental bridges stabilized his fracturing mind enough to survive; accepts bond pragmatically ('I'm in no position to argue') but resists her care ('If you tire, I'll drag you'); their connection allows mind-speech though it pains his ragged channels. Evidence gathered: Red robes hidden under bandit clothing; suspects organized sect, not simple bandits; tracks lead toward Menmellith.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Senta",
+    "uid": "2",
+    "key": [
+      "Senta",
+      "Companion"
+    ],
+    "content": "Identity: Adult Companion mare, brilliant white coat, silver hooves, sapphire eyes, silver-white mane; unpartnered for three years before this. Arc: Drew toward devastation by the Call; found Rance collapsed in crater surrounded by wild magic residue; recognized Gift-shock and uncontrolled awakening; Chose him despite his age, bitterness, and catastrophic first manifestation—'There is only the right Chosen for each Companion.' Relationship with Rance: Chose him after he examined evidence; bond formed when eyes locked—her mindvoice 'clear as crystal bells, warm as summer sunshine'; poured unconditional love into him, stabilized his fracturing mind with mental bridges across burned channels; revealed he caused the destruction himself; frustrated by his stubbornness (insulted when he called her 'horse,' irritated when he insisted on examining bodies, nipped his shoulder to get attention); accepts his determination but insists on Waystation stop for herbs/rest; their bond already stabilizing his wild Gift; shares his purpose to warn Haven. Abilities: Mind-speech with Chosen; can travel three times distance of ordinary horses; heightened magical senses.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Lisle",
+    "uid": "3",
+    "key": [
+      "Lisle"
+    ],
+    "content": "Small village on Valdemar's outskirts near borders with Karse, Rethwellan, and Menmellith. State: Completely obliterated—nothing but ash, charred timber fragments, scorched stone foundations, small crater at epicenter where Rance collapsed; stench of wild uncontrolled magic hangs in air; bodies at edge (one villager, one bandit) caught in blast while villager was being carried off. Destroyed when Rance's latent Mage-Gift violently awakened during organized attack by red-robed figures disguised as bandits; attackers were incapacitating and carrying off villagers before fleeing toward Menmellith when explosion occurred.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Red-Robed Attackers",
+    "uid": "4",
+    "key": [
+      "Red-Robed Attackers",
+      "red robes"
+    ],
+    "content": "Organized group disguised as bandits attacking Lisle; wore red robes hidden under bandit coverings; systematically incapacitating and carrying off villagers rather than killing; fled toward Menmellith border when Rance's Gift exploded; some killed in blast. Purpose unknown but suggests sect or cult with specific goals beyond simple banditry. May return to Lisle site.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Choosing Bond",
+    "uid": "5",
+    "key": [
+      "Choosing",
+      "Companion bond",
+      "Choice"
+    ],
+    "content": "When Companion and Chosen's eyes lock, time pauses; Companion speaks directly into mind ('I Choose you'); bond snaps into place 'like a key turning in a lock that had always existed'; unconditional absolute love pours from Companion into Chosen; knowledge flows with it (understanding of self, purpose, future together); forms mental bridges across damaged channels; creates permanent soul-deep connection; enables mind-speech between them; stabilizes wild Gifts. Companion's Choice is not questioned—'There is only the right Chosen for each Companion.'",
+    "world": "",
+    "position": "",
+    "order": ""
+  }
+]

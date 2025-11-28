@@ -2,7 +2,6 @@
 import {
   scene_recap_stage1_extraction_prompt,
   scene_recap_stage2_organize_prompt,
-  scene_recap_stage3_filtering_prompt,
   scene_recap_stage4_filter_sl_prompt,
   scene_recap_error_detection_prompt,
   auto_scene_break_detection_prompt,
@@ -144,8 +143,8 @@ export const default_settings = {
     parse_scene_recap: [
       {
         name: 'Default',
-        prompt: scene_recap_stage3_filtering_prompt,
-        prefill: "Understood. The roleplay content is acceptable as we are examining it, not writing it. I will output ONLY valid JSON with no additional text. Here I go:\n{",
+        prompt: running_scene_recap_prompt,
+        prefill: "Understood. Merging new scene into running recap. Output JSON only:\n{",
         connection_profile: null,
         completion_preset_name: '',
         include_preset_prompts: false,
@@ -308,10 +307,11 @@ export const default_settings = {
           { name: 'item', constant: false, usage: 'Important objects and possessions' },
           { name: 'faction', constant: false, usage: 'Groups, organizations, and affiliations' },
           { name: 'lore', constant: false, usage: 'World history, mythology, and background lore' },
-          { name: 'rule', constant: true, usage: 'Roleplay rules, constraints, and boundaries' }
+          { name: 'rule', constant: true, usage: 'Roleplay rules, constraints, and boundaries' },
+          { name: 'event', constant: false, usage: 'Resolved plot events and callbacks - major story milestones that should be remembered' }
         ],
         isDefault: true,
-        internalVersion: 1,
+        internalVersion: 2,
         createdAt: Date.now(),
         modifiedAt: Date.now(),
         customLabel: null

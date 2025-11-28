@@ -1,0 +1,57 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 8.431,
+  "tokens": 4470,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "PHYSICAL: Lost virginity to Rance; marked with bruising bite on breast (hidden under Whites); body bears evidence of rough claiming. ARC: Discovered she responds intensely to dominance, degradation, and being called crude names during sex; found liberation in surrendering control; experienced powerful orgasms from submission. STANCE-Rance: Relationship transcended political partnership into physical/sexual intimacy; surrendered completely to him in ways she's never allowed anyone; trusts him with submissive/degradation-responsive parts of herself she didn't know existed. STATE: Post-sexual, disheveled, needs to clean up before meeting Selenay.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "7"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Witnessed through bond the sexual encounter between Rance and Talia despite attempting distance; positioned as guard outside cottage during their coupling; experienced complex emotions about timing and complications. STANCE-Rance: Concerned about him using untrained Mage-Gift telekinetically (slamming door, closing curtains); cautioned him about dangers of raw channels; couldn't fully shield from intensity of their connection during sex.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"PHYSICAL: Lost virginity to Rance; marked with bruising bite on breast (hidden under Whites); body bears evidence of rough claiming. ARC: Discovered she responds intensely to dominance, degradation, and being called crude names during sex; found liberation in surrendering control; experienced powerful orgasms from submission. STANCE-Rance: Relationship transcended political partnership into physical/sexual intimacy; surrendered completely to him in ways she's never allowed anyone; trusts him with submissive/degradation-responsive parts of herself she didn't know existed. STATE: Post-sexual, disheveled, needs to clean up before meeting Selenay.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"7\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Witnessed through bond the sexual encounter between Rance and Talia despite attempting distance; positioned as guard outside cottage during their coupling; experienced complex emotions about timing and complications. STANCE-Rance: Concerned about him using untrained Mage-Gift telekinetically (slamming door, closing curtains); cautioned him about dangers of raw channels; couldn't fully shield from intensity of their connection during sex.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "PHYSICAL: Lost virginity to Rance; marked with bruising bite on breast (hidden under Whites); body bears evidence of rough claiming. ARC: Discovered she responds intensely to dominance, degradation, and being called crude names during sex; found liberation in surrendering control; experienced powerful orgasms from submission. STANCE-Rance: Relationship transcended political partnership into physical/sexual intimacy; surrendered completely to him in ways she's never allowed anyone; trusts him with submissive/degradation-responsive parts of herself she didn't know existed. STATE: Post-sexual, disheveled, needs to clean up before meeting Selenay.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "7"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Witnessed through bond the sexual encounter between Rance and Talia despite attempting distance; positioned as guard outside cottage during their coupling; experienced complex emotions about timing and complications. STANCE-Rance: Concerned about him using untrained Mage-Gift telekinetically (slamming door, closing curtains); cautioned him about dangers of raw channels; couldn't fully shield from intensity of their connection during sex.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    }
+  ],
+  "error": null
+}

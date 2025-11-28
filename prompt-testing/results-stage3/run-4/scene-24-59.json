@@ -1,0 +1,43 @@
+{
+  "scene": "scene-24-59",
+  "success": true,
+  "duration": 8.444,
+  "tokens": 1574,
+  "input_recap_length": 590,
+  "input_plot_length": 422,
+  "output_recap_length": 868,
+  "parsed": {
+    "recap": "DEV: Lisle village obliterated when Rance's latent Mage-Gift violently awakened during bandit attack; villagers carried off; Senta found and Chose him; evidence discovered—bandits wore hidden red robes (Karsite), fled toward Menmellith; theorized captives for blood magic ritual; Rance collapsed from Gift-shock; Senta transported him unconscious four days to Haven; arrived Healers' Collegium; reported to Queen's Circle via full mind-merge with Talia; Mage-Gift confirmed; Karsite involvement (blood magic/Sun-Priests) confirmed; quartered at Healer's cottage for safety; diplomatic inquiries to neighboring nations ordered.\n\nPEND: Rance's memories still blocked; Mage-Gift training without living teachers; Karse's blood magic purpose; fate of captured villagers; Talia's recovery and role adjustment; political management of unprecedented dual-knowledge situation.",
+    "entities": [
+      {
+        "t": "event",
+        "n": "Queen's Circle Briefing",
+        "c": "Rance reported Lisle destruction and Karsite blood magic involvement to Queen's Circle via full mind-merge with Talia",
+        "k": [
+          "Circle",
+          "briefing",
+          "mind-merge",
+          "Talia",
+          "report"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"recap\": \"DEV: Lisle village obliterated when Rance's latent Mage-Gift violently awakened during bandit attack; villagers carried off; Senta found and Chose him; evidence discovered—bandits wore hidden red robes (Karsite), fled toward Menmellith; theorized captives for blood magic ritual; Rance collapsed from Gift-shock; Senta transported him unconscious four days to Haven; arrived Healers' Collegium; reported to Queen's Circle via full mind-merge with Talia; Mage-Gift confirmed; Karsite involvement (blood magic/Sun-Priests) confirmed; quartered at Healer's cottage for safety; diplomatic inquiries to neighboring nations ordered.\\n\\nPEND: Rance's memories still blocked; Mage-Gift training without living teachers; Karse's blood magic purpose; fate of captured villagers; Talia's recovery and role adjustment; political management of unprecedented dual-knowledge situation.\",\n  \"entities\": [\n    {\n      \"t\": \"event\",\n      \"n\": \"Queen's Circle Briefing\",\n      \"c\": \"Rance reported Lisle destruction and Karsite blood magic involvement to Queen's Circle via full mind-merge with Talia\",\n      \"k\": [\"Circle\", \"briefing\", \"mind-merge\", \"Talia\", \"report\"]\n    }\n  ]\n}\n",
+  "recap": "DEV: Lisle village obliterated when Rance's latent Mage-Gift violently awakened during bandit attack; villagers carried off; Senta found and Chose him; evidence discovered—bandits wore hidden red robes (Karsite), fled toward Menmellith; theorized captives for blood magic ritual; Rance collapsed from Gift-shock; Senta transported him unconscious four days to Haven; arrived Healers' Collegium; reported to Queen's Circle via full mind-merge with Talia; Mage-Gift confirmed; Karsite involvement (blood magic/Sun-Priests) confirmed; quartered at Healer's cottage for safety; diplomatic inquiries to neighboring nations ordered.\n\nPEND: Rance's memories still blocked; Mage-Gift training without living teachers; Karse's blood magic purpose; fate of captured villagers; Talia's recovery and role adjustment; political management of unprecedented dual-knowledge situation.",
+  "entities": [
+    {
+      "t": "event",
+      "n": "Queen's Circle Briefing",
+      "c": "Rance reported Lisle destruction and Karsite blood magic involvement to Queen's Circle via full mind-merge with Talia",
+      "k": [
+        "Circle",
+        "briefing",
+        "mind-merge",
+        "Talia",
+        "report"
+      ]
+    }
+  ],
+  "error": null
+}

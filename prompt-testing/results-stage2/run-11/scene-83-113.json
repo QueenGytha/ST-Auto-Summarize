@@ -1,0 +1,34 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 9.828,
+  "tokens": 2520,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Intimate Connection Established",
+    "plot": "DEV: Rance and Talia consummated relationship—Talia's first sexual experience revealed submissive desires and psychological resonance with degradation. Rance used untrained Mage-Gift telekinetically (slammed door, closed curtains)—raw channels caused pain, demonstrated unpredictable power. PEND: How to present formalized connection to Selenay—semi-official arrangement known to Circle but hidden publicly.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "IDENTITY: Lost virginity to Rance—physical evidence includes breast bite mark. STANCE-Rance: Relationship transformed to sexual/romantic bond. Discovered submissive desires—responds intensely to degradation, being called 'Holderkin bitch/slut,' surrender of control. Psychological shift: found liberation in being dominated after lifetime of carrying responsibility. Breaking command for silence during orgasm revealed limits of control. Begging/self-degradation awakened suppressed aspects tied to Holderkin upbringing she'd rejected. STATE: Empathic shields wavering under intensity—required Rance's mental support to maintain grounding. ARC: Acceptance that unprecedented connection with Rance is personal as well as political—resolved through physical intimacy.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: Resigned acceptance of complications he creates. Concern about untrained Mage-Gift use. Maintained physical distance during intimacy but bond prevented complete shielding—experienced intensity of coupling through connection despite withdrawal attempt. STANCE-Talia: Surprised by her response to domination—'discovering parts of herself even I didn't see in memory-merge.' Understanding of her need for surrender after years of responsibility.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Intimate Connection Established\",\n  \"plot\": \"DEV: Rance and Talia consummated relationship—Talia's first sexual experience revealed submissive desires and psychological resonance with degradation. Rance used untrained Mage-Gift telekinetically (slammed door, closed curtains)—raw channels caused pain, demonstrated unpredictable power. PEND: How to present formalized connection to Selenay—semi-official arrangement known to Circle but hidden publicly.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"IDENTITY: Lost virginity to Rance—physical evidence includes breast bite mark. STANCE-Rance: Relationship transformed to sexual/romantic bond. Discovered submissive desires—responds intensely to degradation, being called 'Holderkin bitch/slut,' surrender of control. Psychological shift: found liberation in being dominated after lifetime of carrying responsibility. Breaking command for silence during orgasm revealed limits of control. Begging/self-degradation awakened suppressed aspects tied to Holderkin upbringing she'd rejected. STATE: Empathic shields wavering under intensity—required Rance's mental support to maintain grounding. ARC: Acceptance that unprecedented connection with Rance is personal as well as political—resolved through physical intimacy.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: Resigned acceptance of complications he creates. Concern about untrained Mage-Gift use. Maintained physical distance during intimacy but bond prevented complete shielding—experienced intensity of coupling through connection despite withdrawal attempt. STANCE-Talia: Surprised by her response to domination—'discovering parts of herself even I didn't see in memory-merge.' Understanding of her need for surrender after years of responsibility.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

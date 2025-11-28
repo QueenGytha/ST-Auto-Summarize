@@ -1,0 +1,57 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 7.655,
+  "tokens": 3625,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Fully recovered—coat gleaming, energy restored. Alert and cautious about Talia's changed demeanor.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "Made significant decision overnight about handling shared-memory situation; emotional state shifted from vulnerable to resolved and controlled; fragments of Rance's memories remain but fading. Seeks Rance's input before presenting plan to Selenay—decision 'concerns both of us' and 'potentially changes everything.' More formal, determined bearing.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "7"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Fully recovered—coat gleaming, energy restored. Alert and cautious about Talia's changed demeanor.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"Made significant decision overnight about handling shared-memory situation; emotional state shifted from vulnerable to resolved and controlled; fragments of Rance's memories remain but fading. Seeks Rance's input before presenting plan to Selenay—decision 'concerns both of us' and 'potentially changes everything.' More formal, determined bearing.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"7\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Fully recovered—coat gleaming, energy restored. Alert and cautious about Talia's changed demeanor.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "Made significant decision overnight about handling shared-memory situation; emotional state shifted from vulnerable to resolved and controlled; fragments of Rance's memories remain but fading. Seeks Rance's input before presenting plan to Selenay—decision 'concerns both of us' and 'potentially changes everything.' More formal, determined bearing.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "7"
+    }
+  ],
+  "error": null
+}

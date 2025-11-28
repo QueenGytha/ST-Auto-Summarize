@@ -1,0 +1,34 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 11.351,
+  "tokens": 2913,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Unexpected Intimacy Before Council",
+    "plot": "DEV: Rance and Talia consummated their connection in cottage before Selenay meeting. His untrained Mage-Gift manifested (telekinetically slammed door/closed curtains—raw channels, uncontrolled force). Talia lost virginity; discovered she responds intensely to dominance/degradation despite position. Both agreed to formalize connection secretly (Selenay and Circle only). Meeting with Queen now imminent—under two candlemarks became minutes. PEND: How to present arrangement to Selenay with Talia freshly claimed/marked; cleanup and composure recovery urgent; cum/blood evidence of encounter; bite mark on breast hidden under Whites; political implications of consummated relationship between Queen's Own and untrained Herald with state secrets.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "IDENTITY: No longer virgin—claimed/marked by Rance (bite bruise on breast, filled with his seed). Holderkin upbringing vocabulary emerged during sex. INTERNAL SHIFT: Discovered she craves surrender/dominance after lifetime of control and responsibility—responded intensely to degradation (\"Holderkin bitch/slut,\" \"worthless vessel\"). Found liberation in abandoning diplomatic composure. Broke own silence during climax. ARC: Crossed threshold from untouched maiden to sexually awakened woman; surrendered carefully maintained distance/control she'd kept for years due to Empathy fears. Diplomatic mask shattered—experienced two powerful orgasms, complete loss of composure. Now must immediately return to Queen's Own role for Selenay meeting while physically/emotionally transformed. STANCE-Rance: Sexually claimed and marked by him; responds to his dominance/crude language; allowed complete vulnerability she's never permitted before; \"need you\" (her words); connection now explicitly romantic/sexual beyond political partnership; trusts him to \"handle everything\"; physical evidence of bond (his cum inside her, virgin blood, bite mark).",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Positioned herself outside cottage as guard during Rance/Talia's intimacy—attempted privacy but bond meant she sensed everything. STANCE-Rance: Scolded him for using untrained Mage-Gift recklessly (door slam); resigned acceptance their lives are \"hopelessly complicated\"; surprised by intensity of connection with Talia; cautioned about approaching meeting time. Mixed emotions: concern about timing/complications, understanding of their need, reluctant fascination at Talia's responses. STANCE-Talia: Maintained vigil outside; couldn't fully shield from Companion's emotional overflow during sex; witnessed Queen's Own's complete transformation.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Unexpected Intimacy Before Council\",\n  \"plot\": \"DEV: Rance and Talia consummated their connection in cottage before Selenay meeting. His untrained Mage-Gift manifested (telekinetically slammed door/closed curtains—raw channels, uncontrolled force). Talia lost virginity; discovered she responds intensely to dominance/degradation despite position. Both agreed to formalize connection secretly (Selenay and Circle only). Meeting with Queen now imminent—under two candlemarks became minutes. PEND: How to present arrangement to Selenay with Talia freshly claimed/marked; cleanup and composure recovery urgent; cum/blood evidence of encounter; bite mark on breast hidden under Whites; political implications of consummated relationship between Queen's Own and untrained Herald with state secrets.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"IDENTITY: No longer virgin—claimed/marked by Rance (bite bruise on breast, filled with his seed). Holderkin upbringing vocabulary emerged during sex. INTERNAL SHIFT: Discovered she craves surrender/dominance after lifetime of control and responsibility—responded intensely to degradation (\\\"Holderkin bitch/slut,\\\" \\\"worthless vessel\\\"). Found liberation in abandoning diplomatic composure. Broke own silence during climax. ARC: Crossed threshold from untouched maiden to sexually awakened woman; surrendered carefully maintained distance/control she'd kept for years due to Empathy fears. Diplomatic mask shattered—experienced two powerful orgasms, complete loss of composure. Now must immediately return to Queen's Own role for Selenay meeting while physically/emotionally transformed. STANCE-Rance: Sexually claimed and marked by him; responds to his dominance/crude language; allowed complete vulnerability she's never permitted before; \\\"need you\\\" (her words); connection now explicitly romantic/sexual beyond political partnership; trusts him to \\\"handle everything\\\"; physical evidence of bond (his cum inside her, virgin blood, bite mark).\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Positioned herself outside cottage as guard during Rance/Talia's intimacy—attempted privacy but bond meant she sensed everything. STANCE-Rance: Scolded him for using untrained Mage-Gift recklessly (door slam); resigned acceptance their lives are \\\"hopelessly complicated\\\"; surprised by intensity of connection with Talia; cautioned about approaching meeting time. Mixed emotions: concern about timing/complications, understanding of their need, reluctant fascination at Talia's responses. STANCE-Talia: Maintained vigil outside; couldn't fully shield from Companion's emotional overflow during sex; witnessed Queen's Own's complete transformation.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

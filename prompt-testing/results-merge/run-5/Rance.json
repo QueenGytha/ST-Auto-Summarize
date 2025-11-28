@@ -1,0 +1,46 @@
+{
+  "entityName": "Rance",
+  "type": "character",
+  "keywords": [
+    "Rance",
+    "Herald-trainee"
+  ],
+  "totalScenes": 3,
+  "mergeResults": [
+    {
+      "scene": "scene-0-11",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 172,
+      "merged_length": 172,
+      "content": "Gift-shock from awakened wild Mage-Gift; magical channels burned open, causing white-hot agony and blurred vision; Chosen by Senta—bonded; carries red robe hood as evidence"
+    },
+    {
+      "scene": "scene-12-23",
+      "action": "merge",
+      "duration": 6.076,
+      "tokens": 1323,
+      "existing_length": 172,
+      "new_length": 270,
+      "merged_length": 433,
+      "delta": 261,
+      "canonicalName": null,
+      "content": "Gift-shock from awakened wild Mage-Gift; magical channels burned open, now stabilized by herbs but fragile; white-hot agony and blurred vision during initial trauma. Chosen by Senta—bonded; carries red robe hood as evidence. Memories of attack psychologically blocked. Commitment: ordered Senta to knock him out if he loses control near leadership. Status: arrived Haven as new Herald-Chosen; deemed dangerous wild talent by Healers.",
+      "raw": "{\n  \"mergedContent\": \"Gift-shock from awakened wild Mage-Gift; magical channels burned open, now stabilized by herbs but fragile; white-hot agony and blurred vision during initial trauma. Chosen by Senta—bonded; carries red robe hood as evidence. Memories of attack psychologically blocked. Commitment: ordered Senta to knock him out if he loses control near leadership. Status: arrived Haven as new Herald-Chosen; deemed dangerous wild talent by Healers.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-24-59",
+      "action": "merge",
+      "duration": 22.903,
+      "tokens": 1469,
+      "existing_length": 433,
+      "new_length": 282,
+      "merged_length": 644,
+      "delta": 211,
+      "canonicalName": null,
+      "content": "Gift-shock from awakened wild Mage-Gift; magical channels burned open, now stabilized by herbs but fragile; white-hot agony and blurred vision during initial trauma. First Mage-Gift manifestation in generations since Vanyel; energy blast leveled Lisle; no living teachers available. Chosen by Senta—bonded; carries red robe hood as evidence. Memories of attack psychologically blocked. Commitment: ordered Senta to knock him out if he loses control near leadership; maintaining discretion about Mage-Gift. Status: Herald-trainee officially; quartered at Healer's cottage in Companion's Field for safety; deemed dangerous wild talent by Healers.",
+      "raw": "{\n  \"mergedContent\": \"Gift-shock from awakened wild Mage-Gift; magical channels burned open, now stabilized by herbs but fragile; white-hot agony and blurred vision during initial trauma. First Mage-Gift manifestation in generations since Vanyel; energy blast leveled Lisle; no living teachers available. Chosen by Senta—bonded; carries red robe hood as evidence. Memories of attack psychologically blocked. Commitment: ordered Senta to knock him out if he loses control near leadership; maintaining discretion about Mage-Gift. Status: Herald-trainee officially; quartered at Healer's cottage in Companion's Field for safety; deemed dangerous wild talent by Healers.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "Gift-shock from awakened wild Mage-Gift; magical channels burned open, now stabilized by herbs but fragile; white-hot agony and blurred vision during initial trauma. First Mage-Gift manifestation in generations since Vanyel; energy blast leveled Lisle; no living teachers available. Chosen by Senta—bonded; carries red robe hood as evidence. Memories of attack psychologically blocked. Commitment: ordered Senta to knock him out if he loses control near leadership; maintaining discretion about Mage-Gift. Status: Herald-trainee officially; quartered at Healer's cottage in Companion's Field for safety; deemed dangerous wild talent by Healers."
+}

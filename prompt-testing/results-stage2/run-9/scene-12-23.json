@@ -1,0 +1,52 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 9.393,
+  "tokens": 2369,
+  "userName": "Rance",
+  "stage1_entities": 4,
+  "stage2_entities": 4,
+  "parsed": {
+    "sn": "Race to Haven",
+    "plot": "DEV: Senta carried unconscious Rance from border Waystation to Haven over four days. Reached Healers' Collegium; Rance transferred to Healers for Gift-shock treatment. Rolan (Queen's Own Companion) greeted Senta upon arrival. PEND: Rance's recovery and Gift assessment; debriefing about Lisle attack and Karsite involvement; memory retrieval of the incident.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Gift-shock induced unconsciousness for four days. Swore contingency order to Senta: knock him out if he loses control during debriefing to prevent accidental harm to Valdemaran leadership.",
+        "k": [
+          "Rance"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: bond solidified during journey; protective; will enforce his contingency order if necessary; refused separation even after reaching Haven. Suspects Rance's Gift is unprecedented—rarer than Firestarting, unseen for five centuries, with no available trainers. Confirmed Karsite blood magic stories are historical fact, not myth.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Met Senta at Collegium arrival; offered support and reassurance.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Karsite Blood Magic",
+        "c": "Historical practice of capturing prisoners for ritual sacrifice, demon summoning. Officially banned in Karse for decades, but Lisle attack suggests possible resurgence. Red-robed attackers with Karsite features disguised as bandits, attempting to implicate Menmellith.",
+        "k": [
+          "Karsite Blood Magic",
+          "Karse",
+          "blood magic"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Race to Haven\",\n  \"plot\": \"DEV: Senta carried unconscious Rance from border Waystation to Haven over four days. Reached Healers' Collegium; Rance transferred to Healers for Gift-shock treatment. Rolan (Queen's Own Companion) greeted Senta upon arrival. PEND: Rance's recovery and Gift assessment; debriefing about Lisle attack and Karsite involvement; memory retrieval of the incident.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Gift-shock induced unconsciousness for four days. Swore contingency order to Senta: knock him out if he loses control during debriefing to prevent accidental harm to Valdemaran leadership.\",\n      \"k\": [\"Rance\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: bond solidified during journey; protective; will enforce his contingency order if necessary; refused separation even after reaching Haven. Suspects Rance's Gift is unprecedented—rarer than Firestarting, unseen for five centuries, with no available trainers. Confirmed Karsite blood magic stories are historical fact, not myth.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Met Senta at Collegium arrival; offered support and reassurance.\",\n      \"k\": [\"Rolan\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Karsite Blood Magic\",\n      \"c\": \"Historical practice of capturing prisoners for ritual sacrifice, demon summoning. Officially banned in Karse for decades, but Lisle attack suggests possible resurgence. Red-robed attackers with Karsite features disguised as bandits, attempting to implicate Menmellith.\",\n      \"k\": [\"Karsite Blood Magic\", \"Karse\", \"blood magic\"]\n    }\n  ]\n}\n",
+  "error": null
+}

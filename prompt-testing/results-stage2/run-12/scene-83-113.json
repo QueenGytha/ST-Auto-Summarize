@@ -1,0 +1,34 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 22.925,
+  "tokens": 2413,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Intimate Connection Established",
+    "plot": "DEV: Rance and Talia consummated relationship—Talia's first sexual experience, marked by power exchange and degradation that resonated with suppressed aspects of her psychology. Rance used untrained Mage-Gift telekinetically (slammed door, closed curtains)—raw channels caused pain, demonstrated unpredictable power. PEND: How to present formalized connection to Selenay—semi-official arrangement known to Circle but hidden publicly.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "IDENTITY: Lost virginity to Rance—physical evidence includes bite mark. STANCE-Rance: Relationship transformed from political partnership to sexual/romantic bond. Discovered submissive desires—responds intensely to degradation, surrender of control. Psychological shift: found liberation in being dominated after lifetime of carrying responsibility. ARC: Acceptance that unprecedented connection with Rance is personal as well as political.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: Resigned acceptance of complications he creates. Concern about untrained Mage-Gift use—'leveling cottage would require extensive paperwork.' STANCE-Talia: Surprised by her response to domination—understanding of her need for surrender after years of responsibility. STATE: Unable to fully shield from bond during intimacy despite withdrawal attempt; positioned outside cottage as sentry.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Intimate Connection Established\",\n  \"plot\": \"DEV: Rance and Talia consummated relationship—Talia's first sexual experience, marked by power exchange and degradation that resonated with suppressed aspects of her psychology. Rance used untrained Mage-Gift telekinetically (slammed door, closed curtains)—raw channels caused pain, demonstrated unpredictable power. PEND: How to present formalized connection to Selenay—semi-official arrangement known to Circle but hidden publicly.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"IDENTITY: Lost virginity to Rance—physical evidence includes bite mark. STANCE-Rance: Relationship transformed from political partnership to sexual/romantic bond. Discovered submissive desires—responds intensely to degradation, surrender of control. Psychological shift: found liberation in being dominated after lifetime of carrying responsibility. ARC: Acceptance that unprecedented connection with Rance is personal as well as political.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: Resigned acceptance of complications he creates. Concern about untrained Mage-Gift use—'leveling cottage would require extensive paperwork.' STANCE-Talia: Surprised by her response to domination—understanding of her need for surrender after years of responsibility. STATE: Unable to fully shield from bond during intimacy despite withdrawal attempt; positioned outside cottage as sentry.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

@@ -1,0 +1,34 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 8.996,
+  "tokens": 2690,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Talia's First Intimacy",
+    "plot": "DEV: Rance and Talia's connection evolved from political partnership to physical intimacy. Two candlemarks before her meeting with Selenay, they consummated their relationship in the cottage—Talia lost her virginity, discovering she responds intensely to dominance and degradation that echoes her rejected Holderkin upbringing. Rance's untrained Mage-Gift manifested (telekinetically slamming door/curtains with excessive force through raw channels). PEND: How to present their formalized connection to Queen and Circle. Long-term implications of sexual relationship layered over political partnership and mind-bond.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "IDENTITY: No longer virgin—physically marked (bite bruise on breast). Discovered intense responsiveness to dominance/degradation—specifically when Holderkin heritage invoked; finds release in surrendering control after years carrying Kingdom's burdens. STANCE-Rance: Sexually bonded; responds to his dominance with abandon; allows him to see/command vulnerability she's never shown anyone; their connection now explicitly romantic/sexual layered over political partnership and mind-merge; trusts him completely with aspects of herself she'd rejected (Holderkin conditioning). STATE: Physically marked (breast bite, soreness, traces of blood/semen).",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: Resigned acceptance of unprecedented complications; maintains pragmatic support despite discomfort with intimate intensity; concerned about his untrained Mage-Gift manifestation (door slam). Witnessed entire coupling through bond despite attempting distance—cannot fully shield from connection. STANCE-Talia: Surprised by her responsiveness to dominance; recognizes she's discovering hidden aspects of self.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Talia's First Intimacy\",\n  \"plot\": \"DEV: Rance and Talia's connection evolved from political partnership to physical intimacy. Two candlemarks before her meeting with Selenay, they consummated their relationship in the cottage—Talia lost her virginity, discovering she responds intensely to dominance and degradation that echoes her rejected Holderkin upbringing. Rance's untrained Mage-Gift manifested (telekinetically slamming door/curtains with excessive force through raw channels). PEND: How to present their formalized connection to Queen and Circle. Long-term implications of sexual relationship layered over political partnership and mind-bond.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"IDENTITY: No longer virgin—physically marked (bite bruise on breast). Discovered intense responsiveness to dominance/degradation—specifically when Holderkin heritage invoked; finds release in surrendering control after years carrying Kingdom's burdens. STANCE-Rance: Sexually bonded; responds to his dominance with abandon; allows him to see/command vulnerability she's never shown anyone; their connection now explicitly romantic/sexual layered over political partnership and mind-merge; trusts him completely with aspects of herself she'd rejected (Holderkin conditioning). STATE: Physically marked (breast bite, soreness, traces of blood/semen).\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: Resigned acceptance of unprecedented complications; maintains pragmatic support despite discomfort with intimate intensity; concerned about his untrained Mage-Gift manifestation (door slam). Witnessed entire coupling through bond despite attempting distance—cannot fully shield from connection. STANCE-Talia: Surprised by her responsiveness to dominance; recognizes she's discovering hidden aspects of self.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

@@ -1,0 +1,17 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 8.557,
+  "tokens": 1457,
+  "input_recap_length": 576,
+  "input_plot_length": 446,
+  "output_recap_length": 746,
+  "parsed": {
+    "recap": "DEV: Village of Lisle destroyed—Rance's latent Firestarting Gift (or rarer) awakened catastrophically during Karsite raid disguised as banditry; obliterated village. Karsites in red robes (hidden under bandit clothing) captured villagers, possibly for blood magic rituals; organized infiltration, footprints to Menmellith border. Senta Chose Rance; bond stabilized wild Gift enough for survival. Senta carried unconscious Rance to Haven over 4 days; arrived Healers' Collegium.\n\nPEND: Rance's blocked trauma memories need extraction. Uncontrolled Gift poses assassination risk to Valdemaran leadership. Karsite prisoner motive unclear. Karsite organization's full purpose unknown, may return. Testimony needed at Haven regarding organized threat.",
+    "entities": []
+  },
+  "raw": "{\n  \"recap\": \"DEV: Village of Lisle destroyed—Rance's latent Firestarting Gift (or rarer) awakened catastrophically during Karsite raid disguised as banditry; obliterated village. Karsites in red robes (hidden under bandit clothing) captured villagers, possibly for blood magic rituals; organized infiltration, footprints to Menmellith border. Senta Chose Rance; bond stabilized wild Gift enough for survival. Senta carried unconscious Rance to Haven over 4 days; arrived Healers' Collegium.\\n\\nPEND: Rance's blocked trauma memories need extraction. Uncontrolled Gift poses assassination risk to Valdemaran leadership. Karsite prisoner motive unclear. Karsite organization's full purpose unknown, may return. Testimony needed at Haven regarding organized threat.\",\n  \"entities\": []\n}\n",
+  "recap": "DEV: Village of Lisle destroyed—Rance's latent Firestarting Gift (or rarer) awakened catastrophically during Karsite raid disguised as banditry; obliterated village. Karsites in red robes (hidden under bandit clothing) captured villagers, possibly for blood magic rituals; organized infiltration, footprints to Menmellith border. Senta Chose Rance; bond stabilized wild Gift enough for survival. Senta carried unconscious Rance to Haven over 4 days; arrived Healers' Collegium.\n\nPEND: Rance's blocked trauma memories need extraction. Uncontrolled Gift poses assassination risk to Valdemaran leadership. Karsite prisoner motive unclear. Karsite organization's full purpose unknown, may return. Testimony needed at Haven regarding organized threat.",
+  "entities": [],
+  "error": null
+}

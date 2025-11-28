@@ -1,0 +1,16 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 7.579,
+  "tokens": 1265,
+  "input_recap_length": 0,
+  "input_plot_length": 615,
+  "output_recap_length": 585,
+  "parsed": {
+    "recap": "DEV: Lisle village obliterated—Rance's latent Mage-Gift awakened during bandit attack, unleashing catastrophic magical fury that destroyed everything. Examined bodies; found bandit wearing hidden red robes under disguise—tracks lead to Menmellith border, suggesting organized cult/sect involvement. Senta Chose Rance; bond formed, stabilizing burned-open channels. Reached Waystation at twilight.\n\nPEND: Red-robed faction may return; evidence must reach Haven; Rance's Gift type unknown but devastatingly powerful, requires training; villagers carried off before blast—fate unresolved."
+  },
+  "raw": "{\n  \"recap\": \"DEV: Lisle village obliterated—Rance's latent Mage-Gift awakened during bandit attack, unleashing catastrophic magical fury that destroyed everything. Examined bodies; found bandit wearing hidden red robes under disguise—tracks lead to Menmellith border, suggesting organized cult/sect involvement. Senta Chose Rance; bond formed, stabilizing burned-open channels. Reached Waystation at twilight.\\n\\nPEND: Red-robed faction may return; evidence must reach Haven; Rance's Gift type unknown but devastatingly powerful, requires training; villagers carried off before blast—fate unresolved.\"\n}\n",
+  "recap": "DEV: Lisle village obliterated—Rance's latent Mage-Gift awakened during bandit attack, unleashing catastrophic magical fury that destroyed everything. Examined bodies; found bandit wearing hidden red robes under disguise—tracks lead to Menmellith border, suggesting organized cult/sect involvement. Senta Chose Rance; bond formed, stabilizing burned-open channels. Reached Waystation at twilight.\n\nPEND: Red-robed faction may return; evidence must reach Haven; Rance's Gift type unknown but devastatingly powerful, requires training; villagers carried off before blast—fate unresolved.",
+  "entities": [],
+  "error": null
+}

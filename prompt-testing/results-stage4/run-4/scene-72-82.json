@@ -1,0 +1,57 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 8.424,
+  "tokens": 5960,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STATE: Fully recovered—groomed, rested, energy restored after hard journey. STANCE-Rance: No regret about Choosing him despite unprecedented complications; fierce protectiveness mixed with exhausted humor about his chaos ('rewrite magical theory and give me heart failure'); values small moments of normalcy grooming provides; believes his leadership experience justifies Choice timing regardless of age. Monitors for threats; detects Talia's emotional shift to resolved determination.",
+        "k": [
+          "Senta"
+        ],
+        "u": "1"
+      },
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STATE: Emotional transformation overnight—vulnerability replaced by controlled determination and resolve. Made specific decision about handling shared-memory situation; wants Rance's input before presenting to Selenay. STANCE-Rance: Seeks collaborative approach ('discuss it with you first'); acknowledges ongoing disorientation from fragmented access to his memories ('woke reaching for memories that should be there but aren't'); treats as equal partner in crisis resolution despite rank difference. Decision 'potentially changes everything about how we proceed.'",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "10"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STATE: Fully recovered—groomed, rested, energy restored after hard journey. STANCE-Rance: No regret about Choosing him despite unprecedented complications; fierce protectiveness mixed with exhausted humor about his chaos ('rewrite magical theory and give me heart failure'); values small moments of normalcy grooming provides; believes his leadership experience justifies Choice timing regardless of age. Monitors for threats; detects Talia's emotional shift to resolved determination.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"1\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STATE: Emotional transformation overnight—vulnerability replaced by controlled determination and resolve. Made specific decision about handling shared-memory situation; wants Rance's input before presenting to Selenay. STANCE-Rance: Seeks collaborative approach ('discuss it with you first'); acknowledges ongoing disorientation from fragmented access to his memories ('woke reaching for memories that should be there but aren't'); treats as equal partner in crisis resolution despite rank difference. Decision 'potentially changes everything about how we proceed.'\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"10\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STATE: Fully recovered—groomed, rested, energy restored after hard journey. STANCE-Rance: No regret about Choosing him despite unprecedented complications; fierce protectiveness mixed with exhausted humor about his chaos ('rewrite magical theory and give me heart failure'); values small moments of normalcy grooming provides; believes his leadership experience justifies Choice timing regardless of age. Monitors for threats; detects Talia's emotional shift to resolved determination.",
+      "k": [
+        "Senta"
+      ],
+      "u": "1"
+    },
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "STATE: Emotional transformation overnight—vulnerability replaced by controlled determination and resolve. Made specific decision about handling shared-memory situation; wants Rance's input before presenting to Selenay. STANCE-Rance: Seeks collaborative approach ('discuss it with you first'); acknowledges ongoing disorientation from fragmented access to his memories ('woke reaching for memories that should be there but aren't'); treats as equal partner in crisis resolution despite rank difference. Decision 'potentially changes everything about how we proceed.'",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "10"
+    }
+  ],
+  "error": null
+}

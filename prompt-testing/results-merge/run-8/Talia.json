@@ -1,0 +1,33 @@
+{
+  "entityName": "Talia",
+  "type": "character",
+  "keywords": [
+    "Talia",
+    "Queen's Own"
+  ],
+  "totalScenes": 2,
+  "mergeResults": [
+    {
+      "scene": "scene-72-82",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 565,
+      "merged_length": 565,
+      "content": "STATE: Emotional transformation overnight—vulnerability replaced by controlled determination and resolve. Made specific decision about handling shared-memory situation; wants Rance's input before presenting to Selenay. STANCE-Rance: Seeks collaborative approach ('discuss it with you first'); acknowledges ongoing disorientation from fragmented access to his memories ('woke reaching for memories that should be there but aren't'); treats as equal partner in crisis resolution despite rank difference. Decision 'potentially changes everything about how we proceed.'"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 7.281,
+      "tokens": 2088,
+      "existing_length": 565,
+      "new_length": 997,
+      "merged_length": 359,
+      "delta": -206,
+      "canonicalName": null,
+      "content": "STATE: Virginity taken; marked (bite bruise); sore from rough first intercourse. Decided to propose formalized co-advisor partnership to Selenay (hidden from public). STANCE-Rance: Surrendered completely; discovered submissive desires contrary to public persona; filled with his seed; profound gratitude. Seeks his input before presenting proposal to Selenay.",
+      "raw": "{\n  \"mergedContent\": \"STATE: Virginity taken; marked (bite bruise); sore from rough first intercourse. Decided to propose formalized co-advisor partnership to Selenay (hidden from public). STANCE-Rance: Surrendered completely; discovered submissive desires contrary to public persona; filled with his seed; profound gratitude. Seeks his input before presenting proposal to Selenay.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "STATE: Virginity taken; marked (bite bruise); sore from rough first intercourse. Decided to propose formalized co-advisor partnership to Selenay (hidden from public). STANCE-Rance: Surrendered completely; discovered submissive desires contrary to public persona; filled with his seed; profound gratitude. Seeks his input before presenting proposal to Selenay."
+}

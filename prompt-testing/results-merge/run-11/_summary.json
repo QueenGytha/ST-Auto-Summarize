@@ -1,0 +1,16 @@
+{
+  "run": 11,
+  "stage4_run": 4,
+  "timestamp": "2025-11-27T22:48:38.516Z",
+  "entities_tested": 1,
+  "total_merges": 1,
+  "entities": [
+    {
+      "name": "Talia",
+      "type": "character",
+      "scenes": 2,
+      "merges": 1,
+      "final_length": 1067
+    }
+  ]
+}

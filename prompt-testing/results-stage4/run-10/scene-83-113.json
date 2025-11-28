@@ -1,0 +1,57 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 8.663,
+  "tokens": 3659,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: Sexually claimed; surrendered virginity and control completely; discovered arousal from degradation/domination—responds intensely to being called 'Holderkin bitch/slut,' being ordered to degrade herself; begged to be used/marked/filled; conflicted between queenly dignity and newly awakened submissive desires but chose submission willingly. Bite bruise on breast; soreness from rough first sex. Decision solidified: wants formal co-advisor arrangement with Selenay's knowledge only; accepts their bond is now intimate partnership beyond professional. Vulnerability: years of denying personal needs shattered; found liberation in surrendering responsibility during sex.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "6"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Experienced entire sexual encounter through unavoidable bond with Talia; reactions: embarrassment, concern about timing, reluctant fascination, pragmatic worry. STANCE-Rance: Accepts relationship has become intensely complicated; resigned understanding mixed with concern; maintains supportive role despite discomfort witnessing intimacy.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: Sexually claimed; surrendered virginity and control completely; discovered arousal from degradation/domination—responds intensely to being called 'Holderkin bitch/slut,' being ordered to degrade herself; begged to be used/marked/filled; conflicted between queenly dignity and newly awakened submissive desires but chose submission willingly. Bite bruise on breast; soreness from rough first sex. Decision solidified: wants formal co-advisor arrangement with Selenay's knowledge only; accepts their bond is now intimate partnership beyond professional. Vulnerability: years of denying personal needs shattered; found liberation in surrendering responsibility during sex.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"6\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Experienced entire sexual encounter through unavoidable bond with Talia; reactions: embarrassment, concern about timing, reluctant fascination, pragmatic worry. STANCE-Rance: Accepts relationship has become intensely complicated; resigned understanding mixed with concern; maintains supportive role despite discomfort witnessing intimacy.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "STANCE-Rance: Sexually claimed; surrendered virginity and control completely; discovered arousal from degradation/domination—responds intensely to being called 'Holderkin bitch/slut,' being ordered to degrade herself; begged to be used/marked/filled; conflicted between queenly dignity and newly awakened submissive desires but chose submission willingly. Bite bruise on breast; soreness from rough first sex. Decision solidified: wants formal co-advisor arrangement with Selenay's knowledge only; accepts their bond is now intimate partnership beyond professional. Vulnerability: years of denying personal needs shattered; found liberation in surrendering responsibility during sex.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "6"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Experienced entire sexual encounter through unavoidable bond with Talia; reactions: embarrassment, concern about timing, reluctant fascination, pragmatic worry. STANCE-Rance: Accepts relationship has become intensely complicated; resigned understanding mixed with concern; maintains supportive role despite discomfort witnessing intimacy.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    }
+  ],
+  "error": null
+}

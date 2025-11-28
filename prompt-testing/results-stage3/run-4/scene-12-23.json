@@ -1,0 +1,39 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 8.729,
+  "tokens": 1397,
+  "input_recap_length": 423,
+  "input_plot_length": 395,
+  "output_recap_length": 590,
+  "parsed": {
+    "recap": "DEV: Lisle village obliterated when Rance's latent Mage-Gift violently awakened during bandit attack; villagers carried off; Rance collapsed in crater; Senta found and Chose him; evidence discovered—bandits wore hidden red robes (Karsite), fled toward Menmellith; theorized captives for blood magic ritual; Rance collapsed from Gift-shock; Senta transported him unconscious four days to Haven; arrived Healers' Collegium.\n\nPEND: Rance's memories still blocked; untrained dangerous Gift; Queen's Circle briefing imminent; Karsite blood magic revival implications; fate of captured villagers.",
+    "entities": [
+      {
+        "t": "event",
+        "n": "Rance's Choosing",
+        "c": "Senta Chose Rance; bond accepted",
+        "k": [
+          "Choosing",
+          "bond",
+          "Senta Chose"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"recap\": \"DEV: Lisle village obliterated when Rance's latent Mage-Gift violently awakened during bandit attack; villagers carried off; Rance collapsed in crater; Senta found and Chose him; evidence discovered—bandits wore hidden red robes (Karsite), fled toward Menmellith; theorized captives for blood magic ritual; Rance collapsed from Gift-shock; Senta transported him unconscious four days to Haven; arrived Healers' Collegium.\\n\\nPEND: Rance's memories still blocked; untrained dangerous Gift; Queen's Circle briefing imminent; Karsite blood magic revival implications; fate of captured villagers.\",\n  \"entities\": [\n    {\n      \"t\": \"event\",\n      \"n\": \"Rance's Choosing\",\n      \"c\": \"Senta Chose Rance; bond accepted\",\n      \"k\": [\"Choosing\", \"bond\", \"Senta Chose\"]\n    }\n  ]\n}\n",
+  "recap": "DEV: Lisle village obliterated when Rance's latent Mage-Gift violently awakened during bandit attack; villagers carried off; Rance collapsed in crater; Senta found and Chose him; evidence discovered—bandits wore hidden red robes (Karsite), fled toward Menmellith; theorized captives for blood magic ritual; Rance collapsed from Gift-shock; Senta transported him unconscious four days to Haven; arrived Healers' Collegium.\n\nPEND: Rance's memories still blocked; untrained dangerous Gift; Queen's Circle briefing imminent; Karsite blood magic revival implications; fate of captured villagers.",
+  "entities": [
+    {
+      "t": "event",
+      "n": "Rance's Choosing",
+      "c": "Senta Chose Rance; bond accepted",
+      "k": [
+        "Choosing",
+        "bond",
+        "Senta Chose"
+      ]
+    }
+  ],
+  "error": null
+}

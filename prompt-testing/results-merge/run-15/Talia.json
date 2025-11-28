@@ -1,0 +1,46 @@
+{
+  "entityName": "Talia",
+  "type": "character",
+  "keywords": [
+    "Talia",
+    "Queen's Own"
+  ],
+  "totalScenes": 3,
+  "mergeResults": [
+    {
+      "scene": "scene-24-59",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 556,
+      "merged_length": 556,
+      "content": "STATE: Overwhelmed but stable after mind-merge. Rance helped her confront buried trauma—arranged marriage, Empathy training struggles, decades of isolation/self-doubt, fear of losing identity to Gift. Emotionally vulnerable but \"better state than before.\" With Crescent for recovery.\n\nSTANCE-Rance: Complete intimacy—he lived her entire life. Kissed by him to close merge. Trusts him with her vulnerabilities + role. He has all her memories/knowledge.\n\nARC: First time allowing someone to share her burdens. Walls between compartmentalized self dissolving."
+    },
+    {
+      "scene": "scene-72-82",
+      "action": "merge",
+      "duration": 44.545,
+      "tokens": 2274,
+      "existing_length": 556,
+      "new_length": 373,
+      "merged_length": 789,
+      "delta": 233,
+      "canonicalName": null,
+      "content": "STATE: Stable after mind-merge with Rance. He helped her confront buried trauma—arranged marriage, Empathy training struggles, decades of isolation/self-doubt, fear of losing identity to Gift. Emotionally vulnerable but resolute. With Crescent for recovery.\n\nSTANCE-Rance: Complete intimacy—he lived her entire life and has all her memories/knowledge. Seeks his counsel before presenting decisions to Selenay, treating him as collaborative partner despite rank difference. Comfortable visiting his isolated cottage alone at dawn. Uses formal Court cadence when discussing matters of weight. Kissed by him to close merge.\n\nARC: First time allowing someone to share her burdens. Walls between compartmentalized self dissolving. Shifted from vulnerable confusion to decisive action overnight.",
+      "raw": "{\n  \"mergedContent\": \"STATE: Stable after mind-merge with Rance. He helped her confront buried trauma—arranged marriage, Empathy training struggles, decades of isolation/self-doubt, fear of losing identity to Gift. Emotionally vulnerable but resolute. With Crescent for recovery.\\n\\nSTANCE-Rance: Complete intimacy—he lived her entire life and has all her memories/knowledge. Seeks his counsel before presenting decisions to Selenay, treating him as collaborative partner despite rank difference. Comfortable visiting his isolated cottage alone at dawn. Uses formal Court cadence when discussing matters of weight. Kissed by him to close merge.\\n\\nARC: First time allowing someone to share her burdens. Walls between compartmentalized self dissolving. Shifted from vulnerable confusion to decisive action overnight.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 7.512,
+      "tokens": 2465,
+      "existing_length": 789,
+      "new_length": 605,
+      "merged_length": 956,
+      "delta": 167,
+      "canonicalName": null,
+      "content": "STATE: Stable after mind-merge with Rance. He helped her confront buried trauma—arranged marriage, Empathy training struggles, decades of isolation/self-doubt, fear of losing identity to Gift. No longer a virgin; body marked (will be hidden beneath her Whites when meeting Selenay). With Crescent for recovery.\n\nSTANCE-Rance: Complete intimacy—he lived her entire life and has all her memories/knowledge. Seeks his counsel before presenting decisions to Selenay, treating him as collaborative partner despite rank difference. Comfortable visiting his isolated cottage alone at dawn. Uses formal Court cadence when discussing matters of weight.\n\nARC: First time allowing someone to share her burdens. Broke through terror of losing herself in another person—discovered she responds intensely to surrender after years of carrying responsibility. Walls between compartmentalized self dissolving. Shifted from vulnerable confusion to decisive action overnight.",
+      "raw": "{\n  \"mergedContent\": \"STATE: Stable after mind-merge with Rance. He helped her confront buried trauma—arranged marriage, Empathy training struggles, decades of isolation/self-doubt, fear of losing identity to Gift. No longer a virgin; body marked (will be hidden beneath her Whites when meeting Selenay). With Crescent for recovery.\\n\\nSTANCE-Rance: Complete intimacy—he lived her entire life and has all her memories/knowledge. Seeks his counsel before presenting decisions to Selenay, treating him as collaborative partner despite rank difference. Comfortable visiting his isolated cottage alone at dawn. Uses formal Court cadence when discussing matters of weight.\\n\\nARC: First time allowing someone to share her burdens. Broke through terror of losing herself in another person—discovered she responds intensely to surrender after years of carrying responsibility. Walls between compartmentalized self dissolving. Shifted from vulnerable confusion to decisive action overnight.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "STATE: Stable after mind-merge with Rance. He helped her confront buried trauma—arranged marriage, Empathy training struggles, decades of isolation/self-doubt, fear of losing identity to Gift. No longer a virgin; body marked (will be hidden beneath her Whites when meeting Selenay). With Crescent for recovery.\n\nSTANCE-Rance: Complete intimacy—he lived her entire life and has all her memories/knowledge. Seeks his counsel before presenting decisions to Selenay, treating him as collaborative partner despite rank difference. Comfortable visiting his isolated cottage alone at dawn. Uses formal Court cadence when discussing matters of weight.\n\nARC: First time allowing someone to share her burdens. Broke through terror of losing herself in another person—discovered she responds intensely to surrender after years of carrying responsibility. Walls between compartmentalized self dissolving. Shifted from vulnerable confusion to decisive action overnight."
+}

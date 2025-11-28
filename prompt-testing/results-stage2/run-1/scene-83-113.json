@@ -1,0 +1,42 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 25.827,
+  "tokens": 2547,
+  "stage1_entities": 3,
+  "stage2_entities": 3,
+  "parsed": {
+    "sn": "Private Claiming",
+    "plot": "DEV: Rance and Talia physically consummated their connection in the cottage before her meeting with Selenay—her first sexual experience, explicitly claimed and marked by him. PEND: Selenay meeting in under two candlemarks; Talia must present herself as composed Queen's Own while physically bearing evidence of what occurred; their semi-official partnership proposal now carries unspoken personal dimension.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "Lost virginity to Rance in intense, physically rough encounter that she explicitly consented to and found psychologically liberating. Discovered she responds intensely to dominance, degradation (specifically being called 'Holderkin bitch'), and surrender of control—psychological needs rooted in lifelong burden of responsibility and Holderkin upbringing she rejected. Experienced two powerful orgasms, first time using profanity, begged to be degraded. Physically marked (bite bruise on breast, filled with his seed). No longer maintains careful distance—fully claimed by him emotionally and physically. Still committed to duty but fundamentally changed in how she relates to him: 'Thank you' after sex showed gratitude for permission to surrender. Now carrying intimate physical evidence while preparing to advise Queen on formalizing their connection.",
+        "k": [
+          "Talia",
+          "Queen's Own",
+          "Holderkin"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Claimed Talia completely—took her virginity roughly, dominated her physically and psychologically, commanded her silence then her degradation. Demonstrated intuitive understanding of her need to surrender control despite lack of prior intimate knowledge of her. Used his untrained Mage-Gift instinctively (telekinetically slammed door, closed curtains) despite raw channels causing pain—control improving under emotional intensity. Established sexual dynamic: physically forceful, verbally crude, demands submission. Called her 'Holderkin bitch' knowing it would trigger her psychologically. Now in undefined but clearly intimate relationship with Queen's Own hours before presenting partnership to Selenay.",
+        "k": [
+          "Rance"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Attempted to give privacy but remained aware through bond—experienced their intimate encounter despite withdrawal, couldn't fully shield from intensity. Showed complex reactions: initial embarrassment, pragmatic concern about timing/Mage-Gift use, reluctant fascination at Talia's responses, surprised recognition that Talia found liberation in surrender. Maintained guard duty outside cottage during sex. Expressed dry resignation about complications: 'At least no one can accuse you of being predictable.' Bond connection means she experienced/knows details of their coupling despite physical distance.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Private Claiming\",\n  \"plot\": \"DEV: Rance and Talia physically consummated their connection in the cottage before her meeting with Selenay—her first sexual experience, explicitly claimed and marked by him. PEND: Selenay meeting in under two candlemarks; Talia must present herself as composed Queen's Own while physically bearing evidence of what occurred; their semi-official partnership proposal now carries unspoken personal dimension.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"Lost virginity to Rance in intense, physically rough encounter that she explicitly consented to and found psychologically liberating. Discovered she responds intensely to dominance, degradation (specifically being called 'Holderkin bitch'), and surrender of control—psychological needs rooted in lifelong burden of responsibility and Holderkin upbringing she rejected. Experienced two powerful orgasms, first time using profanity, begged to be degraded. Physically marked (bite bruise on breast, filled with his seed). No longer maintains careful distance—fully claimed by him emotionally and physically. Still committed to duty but fundamentally changed in how she relates to him: 'Thank you' after sex showed gratitude for permission to surrender. Now carrying intimate physical evidence while preparing to advise Queen on formalizing their connection.\",\n      \"k\": [\"Talia\", \"Queen's Own\", \"Holderkin\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Claimed Talia completely—took her virginity roughly, dominated her physically and psychologically, commanded her silence then her degradation. Demonstrated intuitive understanding of her need to surrender control despite lack of prior intimate knowledge of her. Used his untrained Mage-Gift instinctively (telekinetically slammed door, closed curtains) despite raw channels causing pain—control improving under emotional intensity. Established sexual dynamic: physically forceful, verbally crude, demands submission. Called her 'Holderkin bitch' knowing it would trigger her psychologically. Now in undefined but clearly intimate relationship with Queen's Own hours before presenting partnership to Selenay.\",\n      \"k\": [\"Rance\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Attempted to give privacy but remained aware through bond—experienced their intimate encounter despite withdrawal, couldn't fully shield from intensity. Showed complex reactions: initial embarrassment, pragmatic concern about timing/Mage-Gift use, reluctant fascination at Talia's responses, surprised recognition that Talia found liberation in surrender. Maintained guard duty outside cottage during sex. Expressed dry resignation about complications: 'At least no one can accuse you of being predictable.' Bond connection means she experienced/knows details of their coupling despite physical distance.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

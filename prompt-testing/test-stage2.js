@@ -64,7 +64,15 @@ function getLatestRunNumber() {
 function buildPromptForScene(promptTemplate, stage1Result) {
   // Replace {{extracted_data}} with the stage1 parsed output
   const extractedData = JSON.stringify(stage1Result.parsed, null, 2);
-  return promptTemplate.replace('{{extracted_data}}', extractedData);
+  let prompt = promptTemplate.replace('{{extracted_data}}', extractedData);
+
+  // Replace {{user}} with user name from stage1 results
+  const userName = stage1Result.userName;
+  if (userName) {
+    prompt = prompt.replace(/\{\{user\}\}/g, userName);
+  }
+
+  return { prompt, userName };
 }
 
 function sleep(ms) {
@@ -178,7 +186,10 @@ async function testScene(stage1Result, promptTemplate, config) {
     };
   }
 
-  const userPrompt = buildPromptForScene(promptTemplate, stage1Result);
+  const { prompt: userPrompt, userName } = buildPromptForScene(promptTemplate, stage1Result);
+  if (userName) {
+    console.log(`User character: ${userName}`);
+  }
 
   const messages = [
     { role: 'user', content: userPrompt },
@@ -219,6 +230,7 @@ async function testScene(stage1Result, promptTemplate, config) {
       success: !error,
       duration,
       tokens: result.usage?.total_tokens,
+      userName,
       stage1_entities: stage1Result.parsed?.entities?.length || 0,
       stage2_entities: parsed?.entities?.length || 0,
       parsed,
@@ -230,6 +242,7 @@ async function testScene(stage1Result, promptTemplate, config) {
     return {
       scene: sceneId,
       success: false,
+      userName,
       error: err.message
     };
   }

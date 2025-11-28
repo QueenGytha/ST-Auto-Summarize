@@ -1,0 +1,52 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 10.649,
+  "tokens": 2700,
+  "userName": "Rance",
+  "stage1_entities": 4,
+  "stage2_entities": 4,
+  "parsed": {
+    "sn": "Urgent Flight to Haven",
+    "plot": "DEV: Senta extracted Rance's commitment to contingency (knock him out if he loses control). Rance collapsed into Gift-shock sleep for days. Senta made relentless three-day journey to Haven, stopping only when necessary. Arrived Haven morning of fourth day; guards alerted Collegium. Healers transferred unconscious Rance to stretcher. Rolan (Queen's Own Companion) greeted Senta, offered support. PEND: Rance still unconscious, needs Healing and training; Karsite blood magic threat unresolved; memories of attack remain blocked; nature of his Gift (possibly unprecedented in 500 years) unknown to leadership.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Suspects Rance's Gift unprecedented in ~500 years—rarer/more dangerous than Firestarting, no one capable of training him. Confirmed Karsite blood magic historically real, officially banned for decades. Maintained tireless pace three days straight to Haven (record time); exhausted but refused to leave Rance's side upon arrival. STANCE-Rance: protective; will protect him even from himself; refused separation even in exhaustion.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Gift-shock collapsed him into unconscious sleep for three days straight. Committed to contingency: ordered Senta to knock him out if he loses control; fears accidentally killing Queen/Circle. Identified attackers as Karsite despite disguise; theorizes blood magic/ritual sacrifice.",
+        "k": [
+          "Rance"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Greeted Senta upon arrival at Haven Collegium; offered support, told her she'd done well and should rest.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Haven",
+        "c": "Capital city; white stone walls; Palace complex at heart contains Collegium (Herald training). Healers' Collegium within Palace grounds responded to Senta's arrival. Rance delivered here unconscious after three-day journey.",
+        "k": [
+          "Haven",
+          "Collegium",
+          "Palace"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Urgent Flight to Haven\",\n  \"plot\": \"DEV: Senta extracted Rance's commitment to contingency (knock him out if he loses control). Rance collapsed into Gift-shock sleep for days. Senta made relentless three-day journey to Haven, stopping only when necessary. Arrived Haven morning of fourth day; guards alerted Collegium. Healers transferred unconscious Rance to stretcher. Rolan (Queen's Own Companion) greeted Senta, offered support. PEND: Rance still unconscious, needs Healing and training; Karsite blood magic threat unresolved; memories of attack remain blocked; nature of his Gift (possibly unprecedented in 500 years) unknown to leadership.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Suspects Rance's Gift unprecedented in ~500 years—rarer/more dangerous than Firestarting, no one capable of training him. Confirmed Karsite blood magic historically real, officially banned for decades. Maintained tireless pace three days straight to Haven (record time); exhausted but refused to leave Rance's side upon arrival. STANCE-Rance: protective; will protect him even from himself; refused separation even in exhaustion.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Gift-shock collapsed him into unconscious sleep for three days straight. Committed to contingency: ordered Senta to knock him out if he loses control; fears accidentally killing Queen/Circle. Identified attackers as Karsite despite disguise; theorizes blood magic/ritual sacrifice.\",\n      \"k\": [\"Rance\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Greeted Senta upon arrival at Haven Collegium; offered support, told her she'd done well and should rest.\",\n      \"k\": [\"Rolan\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Haven\",\n      \"c\": \"Capital city; white stone walls; Palace complex at heart contains Collegium (Herald training). Healers' Collegium within Palace grounds responded to Senta's arrival. Rance delivered here unconscious after three-day journey.\",\n      \"k\": [\"Haven\", \"Collegium\", \"Palace\"]\n    }\n  ]\n}\n",
+  "error": null
+}

@@ -1,0 +1,58 @@
+{
+  "entityName": "Senta",
+  "type": "character",
+  "keywords": [
+    "Senta"
+  ],
+  "totalScenes": 4,
+  "mergeResults": [
+    {
+      "scene": "scene-0-11",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 471,
+      "merged_length": 471,
+      "content": "Companion mare, unpartnered for 3 years until now. CHOSE Rance after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: bonded as Chosen/Companion; protective yet exasperated by his stubbornness; stabilizing his burned-open channels through bond; firm that he must survive journey to Haven. Knows he caused the destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits."
+    },
+    {
+      "scene": "scene-12-23",
+      "action": "merge",
+      "duration": 8.101,
+      "tokens": 1961,
+      "existing_length": 471,
+      "new_length": 583,
+      "merged_length": 447,
+      "delta": -24,
+      "canonicalName": null,
+      "content": "Companion mare, unpartnered 3 years until CHOOSING Rance after his Gift destroyed Lisle. STANCE-Rance: bonded; protective; will knock him out if loses control per instruction; stabilizing burned channels. His Gift unprecedented—not seen 5 centuries, more dangerous than Firestarting; no one can train it. Suspects Karsite blood magic. Reached Haven after 4-day relentless journey; exhausted, refused separation. Rolan met them; Healers took Rance.",
+      "raw": "{\n  \"mergedContent\": \"Companion mare, unpartnered 3 years until CHOOSING Rance after his Gift destroyed Lisle. STANCE-Rance: bonded; protective; will knock him out if loses control per instruction; stabilizing burned channels. His Gift unprecedented—not seen 5 centuries, more dangerous than Firestarting; no one can train it. Suspects Karsite blood magic. Reached Haven after 4-day relentless journey; exhausted, refused separation. Rolan met them; Healers took Rance.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-72-82",
+      "action": "merge",
+      "duration": 7.163,
+      "tokens": 1916,
+      "existing_length": 447,
+      "new_length": 485,
+      "merged_length": 421,
+      "delta": -26,
+      "canonicalName": null,
+      "content": "Companion mare, unpartnered 3 years until CHOOSING Rance after his Gift destroyed Lisle. His Gift unprecedented—not seen 5 centuries, more dangerous than Firestarting; no one can train it. Suspects Karsite blood magic. STANCE-Rance: bonded; fiercely protective; will knock him out if loses control per instruction; stabilizing burned channels; no regret despite chaos ('rewrite magical theory and give me heart failure').",
+      "raw": "{\n  \"mergedContent\": \"Companion mare, unpartnered 3 years until CHOOSING Rance after his Gift destroyed Lisle. His Gift unprecedented—not seen 5 centuries, more dangerous than Firestarting; no one can train it. Suspects Karsite blood magic. STANCE-Rance: bonded; fiercely protective; will knock him out if loses control per instruction; stabilizing burned channels; no regret despite chaos ('rewrite magical theory and give me heart failure').\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 7.089,
+      "tokens": 1976,
+      "existing_length": 421,
+      "new_length": 631,
+      "merged_length": 502,
+      "delta": 81,
+      "canonicalName": null,
+      "content": "Companion mare, unpartnered 3 years until CHOOSING Rance after his Gift destroyed Lisle. His Gift unprecedented—not seen 5 centuries, more dangerous than Firestarting; no one can train it. Suspects Karsite blood magic. STANCE-Rance: bonded; fiercely protective; will knock him out if loses control per instruction; stabilizing burned channels; resigned acceptance of complications with Talia; dry humor ('at least no one can't accuse you of being predictable'); cautioned about untrained Mage-Gift use.",
+      "raw": "{\n  \"mergedContent\": \"Companion mare, unpartnered 3 years until CHOOSING Rance after his Gift destroyed Lisle. His Gift unprecedented—not seen 5 centuries, more dangerous than Firestarting; no one can train it. Suspects Karsite blood magic. STANCE-Rance: bonded; fiercely protective; will knock him out if loses control per instruction; stabilizing burned channels; resigned acceptance of complications with Talia; dry humor ('at least no one can't accuse you of being predictable'); cautioned about untrained Mage-Gift use.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "Companion mare, unpartnered 3 years until CHOOSING Rance after his Gift destroyed Lisle. His Gift unprecedented—not seen 5 centuries, more dangerous than Firestarting; no one can train it. Suspects Karsite blood magic. STANCE-Rance: bonded; fiercely protective; will knock him out if loses control per instruction; stabilizing burned channels; resigned acceptance of complications with Talia; dry humor ('at least no one can't accuse you of being predictable'); cautioned about untrained Mage-Gift use."
+}

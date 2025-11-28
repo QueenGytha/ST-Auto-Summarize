@@ -1,0 +1,55 @@
+{
+  "run": 7,
+  "stage2_run": 7,
+  "stage3_run": 6,
+  "timestamp": "2025-11-27T23:22:01.959Z",
+  "total": 5,
+  "successful": 5,
+  "failed": 0,
+  "final_lorebook_entries": 11,
+  "total_input_entities": 20,
+  "total_output_entities": 20,
+  "total_filtered_out": 0,
+  "scenes": [
+    {
+      "id": "scene-0-11",
+      "success": true,
+      "input_entities": 4,
+      "output_entities": 4,
+      "filtered_out": 0,
+      "error": null
+    },
+    {
+      "id": "scene-12-23",
+      "success": true,
+      "input_entities": 4,
+      "output_entities": 5,
+      "filtered_out": -1,
+      "error": null
+    },
+    {
+      "id": "scene-24-59",
+      "success": true,
+      "input_entities": 8,
+      "output_entities": 7,
+      "filtered_out": 1,
+      "error": null
+    },
+    {
+      "id": "scene-72-82",
+      "success": true,
+      "input_entities": 2,
+      "output_entities": 2,
+      "filtered_out": 0,
+      "error": null
+    },
+    {
+      "id": "scene-83-113",
+      "success": true,
+      "input_entities": 2,
+      "output_entities": 2,
+      "filtered_out": 0,
+      "error": null
+    }
+  ]
+}

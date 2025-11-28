@@ -732,6 +732,11 @@ async function reduceMessagesUntilTokenFit(config) {
   // during backtrack operations (coarse → medium → fine phases may revisit same end indices)
   const sceneRecapTokenCache = new Map();
 
+  // PERF: Track baseline for proportional estimation during fine reduction
+  // This avoids expensive WI scans on every fine iteration
+  let baselineSceneRecapTokens = null;
+  let baselineMessageCount = null;
+
   // PERF: Hoist import to avoid repeated dynamic imports in loop
   const { updateOperationMetadata } = await import('./operationQueue.js');
   updateOperationMetadataFn = updateOperationMetadata;
@@ -792,17 +797,33 @@ async function reduceMessagesUntilTokenFit(config) {
 
     // ALSO calculate tokens for scene recap generation (which includes lorebooks)
     // sceneRecapStartIndex was calculated once before the loop (performance optimization)
-    // PERF: Use cache to avoid recalculating for same endIndex during backtrack operations
+    // PERF: Use cache for exact matches, estimate proportionally during fine reduction
     let sceneRecapTokens;
     const cacheKey = `${sceneRecapStartIndex}-${currentEndIndex}`;
+    const currentMessageCount = currentEndIndex - sceneRecapStartIndex + 1;
+
     if (sceneRecapTokenCache.has(cacheKey)) {
       sceneRecapTokens = sceneRecapTokenCache.get(cacheKey);
       debug(SUBSYSTEM.OPERATIONS, `[PERF] Scene recap tokens cache HIT for ${cacheKey}: ${sceneRecapTokens}`);
+    } else if (reductionPhase === 'fine' && baselineSceneRecapTokens !== null && baselineMessageCount !== null) {
+      // PERF: During fine reduction, estimate proportionally instead of expensive WI scan
+      // Lorebook tokens are relatively stable, message tokens scale with count
+      const ratio = currentMessageCount / baselineMessageCount;
+      sceneRecapTokens = Math.ceil(baselineSceneRecapTokens * ratio);
+      const RATIO_DECIMALS = 3;
+      debug(SUBSYSTEM.OPERATIONS, `[PERF] Scene recap tokens ESTIMATED for ${cacheKey}: ${sceneRecapTokens} (ratio: ${ratio.toFixed(RATIO_DECIMALS)}, baseline: ${baselineSceneRecapTokens})`);
     } else {
       // eslint-disable-next-line no-await-in-loop -- Need to calculate scene recap tokens to ensure it will also fit
       sceneRecapTokens = await calculateSceneRecapTokensForRange(sceneRecapStartIndex, currentEndIndex, chat, ctx);
       sceneRecapTokenCache.set(cacheKey, sceneRecapTokens);
       debug(SUBSYSTEM.OPERATIONS, `[PERF] Scene recap tokens cache MISS for ${cacheKey}: ${sceneRecapTokens}`);
+
+      // Store baseline for future estimation (use first calculation in medium or coarse phase)
+      if (baselineSceneRecapTokens === null) {
+        baselineSceneRecapTokens = sceneRecapTokens;
+        baselineMessageCount = currentMessageCount;
+        debug(SUBSYSTEM.OPERATIONS, `[PERF] Set baseline for estimation: ${baselineSceneRecapTokens} tokens, ${baselineMessageCount} messages`);
+      }
     }
 
     // Reserve tokens for whichever prompt is LARGER (scene break detection or scene recap generation)
@@ -853,10 +874,17 @@ async function reduceMessagesUntilTokenFit(config) {
           };
         }
 
-        debug(SUBSYSTEM.OPERATIONS, `API rejected request (context exceeded), continuing reduction from ${currentEndIndex}`);
-        reductionPhase = 'coarse';
-        lastCoarseReduction = 0;
-        lastMediumReduction = 0;
+        // API rejected (context exceeded) despite our calculation saying it fits
+        // Do ONE fine reduction and continue - don't reset to coarse (causes infinite loop)
+        const reductionAmount = calculateReductionAmount(checkWhich, chat, currentEndIndex);
+        currentEndIndex -= reductionAmount;
+        debug(SUBSYSTEM.OPERATIONS, `API rejected request, fine reduction by ${reductionAmount} to index ${currentEndIndex}`);
+        // eslint-disable-next-line no-await-in-loop -- Update operation metadata after API rejection reduction
+        await updateOperationRange(currentEndIndex, 'api_rejection');
+        // Stay in current phase (or switch to fine if not already)
+        if (reductionPhase !== 'fine') {
+          reductionPhase = 'fine';
+        }
       }
     } else {
       const largerPromptType = sceneRecapTokens > sceneBreakTokens ? 'scene recap (with lorebooks)' : 'scene break detection';

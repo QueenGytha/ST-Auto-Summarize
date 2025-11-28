@@ -1,0 +1,33 @@
+{
+  "entityName": "Rance",
+  "type": "character",
+  "keywords": [
+    "Rance",
+    "Herald-trainee"
+  ],
+  "totalScenes": 2,
+  "mergeResults": [
+    {
+      "scene": "scene-0-11",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 319,
+      "merged_length": 319,
+      "content": "PHYSICAL: Gift-shock—magical channels forcibly burned open, causing white-hot agony, blurred vision, difficulty focusing. Slowly stabilizing via bond with Senta but still fragile. STATUS: Chosen by Companion Senta—now Herald-trainee. COMMITMENT: Sworn to deliver evidence of red-robed attackers to Haven 'without rest.'"
+    },
+    {
+      "scene": "scene-24-59",
+      "action": "merge",
+      "duration": 6.141,
+      "tokens": 2140,
+      "existing_length": 319,
+      "new_length": 460,
+      "merged_length": 504,
+      "delta": 185,
+      "canonicalName": null,
+      "content": "STATUS: Herald-trainee (public cover). Possesses complete memory-merge with Herald Talia—all state secrets, diplomatic knowledge, Empathy training techniques. Can mind-speak with forceful untrained broadcast, broke through Talia's shields. Assigned quarters at Healer's cottage in Companion's Field (isolated for safety). COMMITMENT: Sworn to deliver evidence of red-robed attackers to Haven. Information control—Mage-Gift sealed to Circle only. Contingency with Senta to knock him out if losing control.",
+      "raw": "{\n  \"mergedContent\": \"STATUS: Herald-trainee (public cover). Possesses complete memory-merge with Herald Talia—all state secrets, diplomatic knowledge, Empathy training techniques. Can mind-speak with forceful untrained broadcast, broke through Talia's shields. Assigned quarters at Healer's cottage in Companion's Field (isolated for safety). COMMITMENT: Sworn to deliver evidence of red-robed attackers to Haven. Information control—Mage-Gift sealed to Circle only. Contingency with Senta to knock him out if losing control.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "STATUS: Herald-trainee (public cover). Possesses complete memory-merge with Herald Talia—all state secrets, diplomatic knowledge, Empathy training techniques. Can mind-speak with forceful untrained broadcast, broke through Talia's shields. Assigned quarters at Healer's cottage in Companion's Field (isolated for safety). COMMITMENT: Sworn to deliver evidence of red-robed attackers to Haven. Information control—Mage-Gift sealed to Circle only. Contingency with Senta to knock him out if losing control."
+}

@@ -6,6 +6,6 @@ export function build(content) {
 
 export const description = {
   format: 'String with DEV/PEND sections or empty string',
-  source: 'Stage 2 output .rc field',
-  usedBy: ['scene-recap-stage3-filtering.js']
+  source: 'Stage 2 output .plot field (legacy support)',
+  usedBy: ['running-scene-recap.js (legacy)']
 };

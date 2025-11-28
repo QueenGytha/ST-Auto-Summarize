@@ -1,0 +1,34 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 27.018,
+  "tokens": 2869,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Intimacy Before the Queen",
+    "plot": "DEV: Rance and Talia consummated their relationship in the cottage. Talia lost her virginity—Rance claimed her roughly, marking her breast and filling her with his seed. She experienced her first orgasms and discovered she responds intensely to domination and degradation. Rance used his Mage-Gift telekinetically despite raw channels causing discomfort. PEND: Talia must present their political arrangement to Selenay while carrying physical evidence of their coupling. They still need to formalize their semi-official partnership arrangement with the Queen and Circle.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "IDENTITY: Was a virgin until this morning—her arranged Holderkin marriage as a child was never consummated. STATE: No longer a virgin—hymen torn, breast bitten/marked, filled with Rance's seed. Body marked with evidence that will be hidden beneath her Whites when she meets Selenay. ARC: Discovered she responds intensely to domination, rough treatment, and degradation—finds release in surrender after years of carrying responsibility. Broke through her terror of losing herself in another person. Used crude language and Holderkin degradation vocabulary that she'd rejected for decades. Experienced two powerful orgasms. The careful control and diplomatic mask she maintained for years was thoroughly shattered. STANCE-Rance: Surrendered completely to him—physically claimed. Their connection now extends beyond mental/political partnership into physical intimacy and power exchange dynamics. She needs him as \"partner, confidant, something entirely new.\"",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STATE: Maintained guard outside cottage during Rance and Talia's intimacy, attempting to give privacy while unable to fully shield from their bond connection. ARC: Witnessed/sensed the unprecedented development between her Chosen and the Queen's Own. Initial embarrassment gave way to resigned acceptance of complications. STANCE-Rance: Concerned about his untrained Mage-Gift use (telekinesis with excessive force). Dry humor about complications. STANCE-Talia: Sensed her complete surrender and discovered desires even the memory-merge hadn't revealed.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Intimacy Before the Queen\",\n  \"plot\": \"DEV: Rance and Talia consummated their relationship in the cottage. Talia lost her virginity—Rance claimed her roughly, marking her breast and filling her with his seed. She experienced her first orgasms and discovered she responds intensely to domination and degradation. Rance used his Mage-Gift telekinetically despite raw channels causing discomfort. PEND: Talia must present their political arrangement to Selenay while carrying physical evidence of their coupling. They still need to formalize their semi-official partnership arrangement with the Queen and Circle.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"IDENTITY: Was a virgin until this morning—her arranged Holderkin marriage as a child was never consummated. STATE: No longer a virgin—hymen torn, breast bitten/marked, filled with Rance's seed. Body marked with evidence that will be hidden beneath her Whites when she meets Selenay. ARC: Discovered she responds intensely to domination, rough treatment, and degradation—finds release in surrender after years of carrying responsibility. Broke through her terror of losing herself in another person. Used crude language and Holderkin degradation vocabulary that she'd rejected for decades. Experienced two powerful orgasms. The careful control and diplomatic mask she maintained for years was thoroughly shattered. STANCE-Rance: Surrendered completely to him—physically claimed. Their connection now extends beyond mental/political partnership into physical intimacy and power exchange dynamics. She needs him as \\\"partner, confidant, something entirely new.\\\"\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STATE: Maintained guard outside cottage during Rance and Talia's intimacy, attempting to give privacy while unable to fully shield from their bond connection. ARC: Witnessed/sensed the unprecedented development between her Chosen and the Queen's Own. Initial embarrassment gave way to resigned acceptance of complications. STANCE-Rance: Concerned about his untrained Mage-Gift use (telekinesis with excessive force). Dry humor about complications. STANCE-Talia: Sensed her complete surrender and discovered desires even the memory-merge hadn't revealed.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

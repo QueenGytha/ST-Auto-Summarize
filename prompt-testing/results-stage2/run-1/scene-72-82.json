@@ -1,0 +1,41 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 9.026,
+  "tokens": 2017,
+  "stage1_entities": 3,
+  "stage2_entities": 3,
+  "parsed": {
+    "sn": "Morning After Memory Transfer",
+    "plot": "DEV: Rance and Senta settled into isolated cottage at Haven's edge. Talia resolved overnight to propose major plan regarding their shared memories, seeking Rance's input before presenting to Selenay. PEND: Talia's unspecified decision about handling their situation. Alberich's potential training approach uncertain. Talia's imminent meeting with Selenay.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Now housed in isolated cottage at edge of Companion's Field due to security concerns. Experiencing physical confusion from memory mismatch (his longer stride vs Talia's remembered movements). Anticipating Weaponsmaster Alberich may demand early training despite Gift concerns. Relationship with Talia: developing working partnership based on shared memory crisis; met privately before dawn at his initiative.",
+        "k": [
+          "Rance"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Fully recovered after thorough grooming and night's rest; coat restored to gleaming silver-white. Reaffirmed zero regret about Choosing Rance despite unprecedented complications. Growing more protective and alert to political dangers. Can sense Talia's emotional state has shifted overnight from vulnerable to resolved and determined.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "Underwent significant internal shift overnight. Now resolved and certain about course of action. Made unspecified decision about handling shared memory situation. Experiencing memory fragments and disorientation—reaches for Rance's memories that are fading, feels physical confusion from body differences. Chose to approach Rance privately at dawn before meeting Selenay, seeking his input on her plan.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Morning After Memory Transfer\",\n  \"plot\": \"DEV: Rance and Senta settled into isolated cottage at Haven's edge. Talia resolved overnight to propose major plan regarding their shared memories, seeking Rance's input before presenting to Selenay. PEND: Talia's unspecified decision about handling their situation. Alberich's potential training approach uncertain. Talia's imminent meeting with Selenay.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Now housed in isolated cottage at edge of Companion's Field due to security concerns. Experiencing physical confusion from memory mismatch (his longer stride vs Talia's remembered movements). Anticipating Weaponsmaster Alberich may demand early training despite Gift concerns. Relationship with Talia: developing working partnership based on shared memory crisis; met privately before dawn at his initiative.\",\n      \"k\": [\"Rance\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Fully recovered after thorough grooming and night's rest; coat restored to gleaming silver-white. Reaffirmed zero regret about Choosing Rance despite unprecedented complications. Growing more protective and alert to political dangers. Can sense Talia's emotional state has shifted overnight from vulnerable to resolved and determined.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"Underwent significant internal shift overnight. Now resolved and certain about course of action. Made unspecified decision about handling shared memory situation. Experiencing memory fragments and disorientation—reaches for Rance's memories that are fading, feels physical confusion from body differences. Chose to approach Rance privately at dawn before meeting Selenay, seeking his input on her plan.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    }\n  ]\n}\n",
+  "error": null
+}

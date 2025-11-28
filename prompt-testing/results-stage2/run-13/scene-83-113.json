@@ -1,0 +1,34 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 26.895,
+  "tokens": 2567,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Intimacy Before the Queen",
+    "plot": "DEV: Rance and Talia consummated their relationship. Talia lost her virginity and discovered she responds intensely to domination and degradation. Rance used his Mage-Gift telekinetically despite raw channels. PEND: Talia must present their political arrangement to Selenay while carrying physical evidence of their coupling. They still need to formalize their partnership arrangement with the Queen and Circle.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STATE: No longer a virgin—hymen torn, breast marked, carries physical evidence. ARC: Discovered she responds intensely to domination, rough treatment, and degradation—finds release in surrender after years of responsibility. Broke through her terror of losing herself in another person. Used crude language and Holderkin degradation vocabulary she'd rejected for decades. Allowed herself to prioritize personal need over duty for the first time.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: Concerned about his untrained Mage-Gift use (telekinesis with excessive force). Dry humor about complications. STANCE-Talia: Sensed her complete surrender and discovered desires even the memory-merge hadn't revealed.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Intimacy Before the Queen\",\n  \"plot\": \"DEV: Rance and Talia consummated their relationship. Talia lost her virginity and discovered she responds intensely to domination and degradation. Rance used his Mage-Gift telekinetically despite raw channels. PEND: Talia must present their political arrangement to Selenay while carrying physical evidence of their coupling. They still need to formalize their partnership arrangement with the Queen and Circle.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STATE: No longer a virgin—hymen torn, breast marked, carries physical evidence. ARC: Discovered she responds intensely to domination, rough treatment, and degradation—finds release in surrender after years of responsibility. Broke through her terror of losing herself in another person. Used crude language and Holderkin degradation vocabulary she'd rejected for decades. Allowed herself to prioritize personal need over duty for the first time.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: Concerned about his untrained Mage-Gift use (telekinesis with excessive force). Dry humor about complications. STANCE-Talia: Sensed her complete surrender and discovered desires even the memory-merge hadn't revealed.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

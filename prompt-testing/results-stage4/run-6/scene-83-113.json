@@ -1,0 +1,75 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 26.75,
+  "tokens": 5077,
+  "input_entities": 3,
+  "output_entities": 3,
+  "filtered_out": 0,
+  "new_entities": 1,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "IDENTITY: Lost virginity to Rance—physical evidence (bite mark on breast, soreness, his seed inside her) will be hidden beneath Whites when meeting Selenay. STATE: Discovered she's aroused by degradation/submission—specifically being called 'Holderkin bitch/slut,' treated as vessel/property; conflicts with Queen's Own dignity but provides profound release from responsibility. Holderkin upbringing vocabulary enables her degradation fantasies. Two intense orgasms; first time experiencing this loss of control. Post-coital clarity returning but fundamentally changed. Ready to present co-advisor arrangement to Selenay while concealing intimate dimension.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "8"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STATE: Maintained physical distance during coupling but couldn't fully shield from bond—experienced intensity of both participants' emotions despite discomfort. Witnessed Talia's complete transformation and surrender. STANCE-Rance: Concerned about untrained Mage-Gift use (door slam, curtain closure via telekinesis). STANCE-Talia: Surprised by Talia's response to dominance/degradation; recognizes this surrender provides release from constant responsibility.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "lore",
+        "n": "Rance's Mage-Gift",
+        "c": "Displayed untrained telekinesis—slammed door and closed curtains with more force than intended; channels described as 'burned open' and 'raw around edges,' causing pain when used; dangerous when uncontrolled (Talia noted could level building). Requires formal training to prevent accidents.",
+        "k": [
+          "Mage-Gift",
+          "telekinesis"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"IDENTITY: Lost virginity to Rance—physical evidence (bite mark on breast, soreness, his seed inside her) will be hidden beneath Whites when meeting Selenay. STATE: Discovered she's aroused by degradation/submission—specifically being called 'Holderkin bitch/slut,' treated as vessel/property; conflicts with Queen's Own dignity but provides profound release from responsibility. Holderkin upbringing vocabulary enables her degradation fantasies. Two intense orgasms; first time experiencing this loss of control. Post-coital clarity returning but fundamentally changed. Ready to present co-advisor arrangement to Selenay while concealing intimate dimension.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"8\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STATE: Maintained physical distance during coupling but couldn't fully shield from bond—experienced intensity of both participants' emotions despite discomfort. Witnessed Talia's complete transformation and surrender. STANCE-Rance: Concerned about untrained Mage-Gift use (door slam, curtain closure via telekinesis). STANCE-Talia: Surprised by Talia's response to dominance/degradation; recognizes this surrender provides release from constant responsibility.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Rance's Mage-Gift\",\n      \"c\": \"Displayed untrained telekinesis—slammed door and closed curtains with more force than intended; channels described as 'burned open' and 'raw around edges,' causing pain when used; dangerous when uncontrolled (Talia noted could level building). Requires formal training to prevent accidents.\",\n      \"k\": [\n        \"Mage-Gift\",\n        \"telekinesis\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "IDENTITY: Lost virginity to Rance—physical evidence (bite mark on breast, soreness, his seed inside her) will be hidden beneath Whites when meeting Selenay. STATE: Discovered she's aroused by degradation/submission—specifically being called 'Holderkin bitch/slut,' treated as vessel/property; conflicts with Queen's Own dignity but provides profound release from responsibility. Holderkin upbringing vocabulary enables her degradation fantasies. Two intense orgasms; first time experiencing this loss of control. Post-coital clarity returning but fundamentally changed. Ready to present co-advisor arrangement to Selenay while concealing intimate dimension.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "8"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STATE: Maintained physical distance during coupling but couldn't fully shield from bond—experienced intensity of both participants' emotions despite discomfort. Witnessed Talia's complete transformation and surrender. STANCE-Rance: Concerned about untrained Mage-Gift use (door slam, curtain closure via telekinesis). STANCE-Talia: Surprised by Talia's response to dominance/degradation; recognizes this surrender provides release from constant responsibility.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "lore",
+      "n": "Rance's Mage-Gift",
+      "c": "Displayed untrained telekinesis—slammed door and closed curtains with more force than intended; channels described as 'burned open' and 'raw around edges,' causing pain when used; dangerous when uncontrolled (Talia noted could level building). Requires formal training to prevent accidents.",
+      "k": [
+        "Mage-Gift",
+        "telekinesis"
+      ]
+    }
+  ],
+  "error": null
+}

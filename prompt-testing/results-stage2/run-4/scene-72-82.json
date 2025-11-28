@@ -1,0 +1,34 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 8.402,
+  "tokens": 2132,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Dawn Decision at Haven",
+    "plot": "DEV: Rance settled into isolated cottage; Senta recovered from journey; Talia visited before dawn with decision about their shared memory situation. PEND: Talia's proposal about handling situation with Selenay/Circle; Alberich's training approach; Talia's meeting with Selenay.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STATE: Fully recovered—groomed, rested, energy restored after hard journey. STANCE-Rance: No regret about Choosing him despite unprecedented complications; fierce protectiveness mixed with exhausted humor about his chaos ('rewrite magical theory and give me heart failure'); values small moments of normalcy grooming provides; believes his leadership experience justifies Choice timing regardless of age. Monitors for threats; detects Talia's emotional shift to resolved determination.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STATE: Emotional transformation overnight—vulnerability replaced by controlled determination and resolve. Made specific decision about handling shared-memory situation; wants Rance's input before presenting to Selenay. STANCE-Rance: Seeks collaborative approach ('discuss it with you first'); acknowledges ongoing disorientation from fragmented access to his memories ('woke reaching for memories that should be there but aren't'); treats as equal partner in crisis resolution despite rank difference. Decision 'potentially changes everything about how we proceed.'",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Dawn Decision at Haven\",\n  \"plot\": \"DEV: Rance settled into isolated cottage; Senta recovered from journey; Talia visited before dawn with decision about their shared memory situation. PEND: Talia's proposal about handling situation with Selenay/Circle; Alberich's training approach; Talia's meeting with Selenay.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STATE: Fully recovered—groomed, rested, energy restored after hard journey. STANCE-Rance: No regret about Choosing him despite unprecedented complications; fierce protectiveness mixed with exhausted humor about his chaos ('rewrite magical theory and give me heart failure'); values small moments of normalcy grooming provides; believes his leadership experience justifies Choice timing regardless of age. Monitors for threats; detects Talia's emotional shift to resolved determination.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STATE: Emotional transformation overnight—vulnerability replaced by controlled determination and resolve. Made specific decision about handling shared-memory situation; wants Rance's input before presenting to Selenay. STANCE-Rance: Seeks collaborative approach ('discuss it with you first'); acknowledges ongoing disorientation from fragmented access to his memories ('woke reaching for memories that should be there but aren't'); treats as equal partner in crisis resolution despite rank difference. Decision 'potentially changes everything about how we proceed.'\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    }\n  ]\n}\n",
+  "error": null
+}

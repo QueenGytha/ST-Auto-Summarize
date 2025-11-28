@@ -1,0 +1,111 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 43.731,
+  "tokens": 2630,
+  "input_entities": 4,
+  "output_entities": 5,
+  "filtered_out": -1,
+  "new_entities": 2,
+  "updated_entities": 3,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Suspects Rance's Gift unprecedented in ~500 years—rarer/more dangerous than Firestarting, no one capable of training him. Confirmed Karsite blood magic historically real, officially banned for decades. Maintained tireless pace three days straight to Haven (record time); exhausted but refused to leave Rance's side upon arrival.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Gift-shock collapsed him into unconscious sleep for three days straight. Committed to contingency: ordered Senta to knock him out if he loses control; fears accidentally killing Queen/Circle.",
+        "k": [
+          "Rance"
+        ],
+        "u": "1"
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Greeted Senta upon arrival at Haven Collegium; offered support, told her she'd done well and should rest.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Haven",
+        "c": "Capital city; white stone walls; Palace complex at heart contains Collegium (Herald training). Healers' Collegium within Palace grounds responded to Senta's arrival. Rance delivered here unconscious after three-day journey.",
+        "k": [
+          "Haven",
+          "Collegium",
+          "Palace"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Red Robe Organization",
+        "c": "Identified as Karsite despite disguise; theorizes blood magic/ritual sacrifice.",
+        "k": [
+          "Red Robe Organization"
+        ],
+        "u": "4"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Suspects Rance's Gift unprecedented in ~500 years—rarer/more dangerous than Firestarting, no one capable of training him. Confirmed Karsite blood magic historically real, officially banned for decades. Maintained tireless pace three days straight to Haven (record time); exhausted but refused to leave Rance's side upon arrival.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Gift-shock collapsed him into unconscious sleep for three days straight. Committed to contingency: ordered Senta to knock him out if he loses control; fears accidentally killing Queen/Circle.\",\n      \"k\": [\n        \"Rance\"\n      ],\n      \"u\": \"1\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Greeted Senta upon arrival at Haven Collegium; offered support, told her she'd done well and should rest.\",\n      \"k\": [\n        \"Rolan\",\n        \"Queen's Own\"\n      ]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Haven\",\n      \"c\": \"Capital city; white stone walls; Palace complex at heart contains Collegium (Herald training). Healers' Collegium within Palace grounds responded to Senta's arrival. Rance delivered here unconscious after three-day journey.\",\n      \"k\": [\n        \"Haven\",\n        \"Collegium\",\n        \"Palace\"\n      ]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Red Robe Organization\",\n      \"c\": \"Identified as Karsite despite disguise; theorizes blood magic/ritual sacrifice.\",\n      \"k\": [\n        \"Red Robe Organization\"\n      ],\n      \"u\": \"4\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Suspects Rance's Gift unprecedented in ~500 years—rarer/more dangerous than Firestarting, no one capable of training him. Confirmed Karsite blood magic historically real, officially banned for decades. Maintained tireless pace three days straight to Haven (record time); exhausted but refused to leave Rance's side upon arrival.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "Gift-shock collapsed him into unconscious sleep for three days straight. Committed to contingency: ordered Senta to knock him out if he loses control; fears accidentally killing Queen/Circle.",
+      "k": [
+        "Rance"
+      ],
+      "u": "1"
+    },
+    {
+      "t": "character",
+      "n": "Rolan",
+      "c": "Queen's Own Companion. Greeted Senta upon arrival at Haven Collegium; offered support, told her she'd done well and should rest.",
+      "k": [
+        "Rolan",
+        "Queen's Own"
+      ]
+    },
+    {
+      "t": "location",
+      "n": "Haven",
+      "c": "Capital city; white stone walls; Palace complex at heart contains Collegium (Herald training). Healers' Collegium within Palace grounds responded to Senta's arrival. Rance delivered here unconscious after three-day journey.",
+      "k": [
+        "Haven",
+        "Collegium",
+        "Palace"
+      ]
+    },
+    {
+      "t": "character",
+      "n": "Red Robe Organization",
+      "c": "Identified as Karsite despite disguise; theorizes blood magic/ritual sacrifice.",
+      "k": [
+        "Red Robe Organization"
+      ],
+      "u": "4"
+    }
+  ],
+  "error": null
+}

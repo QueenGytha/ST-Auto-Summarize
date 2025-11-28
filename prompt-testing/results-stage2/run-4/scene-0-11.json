@@ -1,0 +1,60 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 12.623,
+  "tokens": 2992,
+  "userName": "Rance",
+  "stage1_entities": 5,
+  "stage2_entities": 5,
+  "parsed": {
+    "sn": "Awakening at Lisle's Ashes",
+    "plot": "DEV: Rance's latent mage-gift exploded during bandit attack; obliterated Lisle village; Companion Senta arrived and Chose him; discovered red robes hidden under bandit clothing suggesting organized attack; heading to Waystation then Haven. PEND: Identity of red-robed attackers; whether they'll return; Rance's uncontrolled Gift requiring training; his testimony to Haven about the threat.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Companion mare, unpartnered for 3 years until now. CHOSE Rance after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: bonded as Chosen/Companion; protective yet exasperated by his stubbornness; stabilizing his burned-open channels through bond; firm that he must survive journey to Haven. Knows he caused the destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits.",
+        "k": [
+          "Senta",
+          "Companion"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Age 40, former Lisle village headman. Latent mage-gift violently awakened during bandit attack—channels burned open, unleashed devastating blast that destroyed entire village. In severe Gift-shock: vision blurred, mental agony, teetering near insanity. Skilled rider with possible military background. Found evidence: red robes hidden under bandit garb, tracks toward Menmellith border. Determined to report threat to Haven despite near-death state. All villagers dead or captured.",
+        "k": [
+          "Rance"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Lisle",
+        "c": "Small Valdemar border village near Karse/Rethwellan/Menmellith. Completely obliterated by Rance's awakened Gift during supposed bandit raid—only ash, charred foundations, bodies remain. Villagers were being systematically captured before Gift detonation killed some attackers, drove rest over Menmellith border.",
+        "k": [
+          "Lisle"
+        ]
+      },
+      {
+        "t": "faction",
+        "n": "Red Robe Organization",
+        "c": "Unknown group staging attacks disguised as bandits. Members wear red robes hidden under bandit clothing. Attacked Lisle to capture villagers (unknown purpose). Attack triggered Rance's Gift awakening—may not have anticipated mage potential. Fled toward Menmellith border after devastation. Organized, methodical threat to Valdemar.",
+        "k": [
+          "Red Robe Organization",
+          "red robes"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Choosing Bond",
+        "c": "When Companion Chooses: mental contact opens (':Chosen:'); unconditional love floods bond; knowledge of Gift nature transfers; bridges form across Chosen's damaged mental channels (doesn't heal, but stabilizes); creates permanent soul-bond. Companion mindvoice described as 'crystal bells, warm as summer sunshine.' Bond allows Companion to help control/stabilize wild Gifts. Time seems to pause during moment of Choice.",
+        "k": [
+          "Choosing Bond",
+          "Choosing"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Awakening at Lisle's Ashes\",\n  \"plot\": \"DEV: Rance's latent mage-gift exploded during bandit attack; obliterated Lisle village; Companion Senta arrived and Chose him; discovered red robes hidden under bandit clothing suggesting organized attack; heading to Waystation then Haven. PEND: Identity of red-robed attackers; whether they'll return; Rance's uncontrolled Gift requiring training; his testimony to Haven about the threat.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Companion mare, unpartnered for 3 years until now. CHOSE Rance after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: bonded as Chosen/Companion; protective yet exasperated by his stubbornness; stabilizing his burned-open channels through bond; firm that he must survive journey to Haven. Knows he caused the destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits.\",\n      \"k\": [\"Senta\", \"Companion\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Age 40, former Lisle village headman. Latent mage-gift violently awakened during bandit attack—channels burned open, unleashed devastating blast that destroyed entire village. In severe Gift-shock: vision blurred, mental agony, teetering near insanity. Skilled rider with possible military background. Found evidence: red robes hidden under bandit garb, tracks toward Menmellith border. Determined to report threat to Haven despite near-death state. All villagers dead or captured.\",\n      \"k\": [\"Rance\"]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Lisle\",\n      \"c\": \"Small Valdemar border village near Karse/Rethwellan/Menmellith. Completely obliterated by Rance's awakened Gift during supposed bandit raid—only ash, charred foundations, bodies remain. Villagers were being systematically captured before Gift detonation killed some attackers, drove rest over Menmellith border.\",\n      \"k\": [\"Lisle\"]\n    },\n    {\n      \"t\": \"faction\",\n      \"n\": \"Red Robe Organization\",\n      \"c\": \"Unknown group staging attacks disguised as bandits. Members wear red robes hidden under bandit clothing. Attacked Lisle to capture villagers (unknown purpose). Attack triggered Rance's Gift awakening—may not have anticipated mage potential. Fled toward Menmellith border after devastation. Organized, methodical threat to Valdemar.\",\n      \"k\": [\"Red Robe Organization\", \"red robes\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Choosing Bond\",\n      \"c\": \"When Companion Chooses: mental contact opens (':Chosen:'); unconditional love floods bond; knowledge of Gift nature transfers; bridges form across Chosen's damaged mental channels (doesn't heal, but stabilizes); creates permanent soul-bond. Companion mindvoice described as 'crystal bells, warm as summer sunshine.' Bond allows Companion to help control/stabilize wild Gifts. Time seems to pause during moment of Choice.\",\n      \"k\": [\"Choosing Bond\", \"Choosing\"]\n    }\n  ]\n}\n",
+  "error": null
+}

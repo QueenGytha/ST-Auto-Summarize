@@ -1,0 +1,42 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 15.881,
+  "tokens": 2791,
+  "userName": "Rance",
+  "stage1_entities": 3,
+  "stage2_entities": 3,
+  "parsed": {
+    "sn": "Intimate Bond Forged",
+    "plot": "DEV: Rance and Talia consummated relationship in cottage; Talia lost virginity; intense physical and emotional connection established; meeting with Selenay approaches. PEND: How to present their partnership to Queen; managing dual nature of their bond (political/personal); Talia must compose herself for royal meeting; physical evidence of intimacy.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: Deeply bonded beyond politics—surrendered completely; discovered submissive desires contrary to public persona; virginity taken; marked (bite bruise on breast); filled with his seed. Transformation complete: no longer untouched Queen's Own maintaining careful distance, now claimed woman who degraded herself willingly (called herself 'Holderkin slut/vessel/hole'); experienced first orgasms; found liberation in surrender of control after years carrying kingdom's burdens. Conflict between dignity/duty and awakened needs resolved through compartmentalization—can separate lover-self from diplomat-self. Decided to propose formalized partnership to Selenay (co-advisors known to Circle, hidden from public); reasoning: embrace unprecedented situation as strength rather than hide vulnerability. Physical state: sore from rough first intercourse; virgin blood and semen evidence requiring cleanup before meeting Queen. Emotional state: profound gratitude; transformed but maintaining composure through discipline.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Witnessed/experienced through bond Rance's intimacy with Talia despite attempting privacy; maintained physical guard outside cottage. STANCE-Rance: Resigned acceptance of complications; concerned about timing/propriety but understands Talia's need; dry humor about situation ('at least no one can accuse you of being predictable'); cautioned about untrained Mage-Gift use (door slam). Observations: Talia discovering aspects of self hidden even in memory-merge; finding release in surrender after years of responsibility; relationship settles question of what they are to each other. Pragmatic focus on approaching Selenay meeting.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Untrained Mage-Gift: telekinetically slammed door and closed curtains (used excessive force; channels still raw from trauma-breaking); Senta warned about danger.",
+        "k": [
+          "Rance"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Intimate Bond Forged\",\n  \"plot\": \"DEV: Rance and Talia consummated relationship in cottage; Talia lost virginity; intense physical and emotional connection established; meeting with Selenay approaches. PEND: How to present their partnership to Queen; managing dual nature of their bond (political/personal); Talia must compose herself for royal meeting; physical evidence of intimacy.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: Deeply bonded beyond politics—surrendered completely; discovered submissive desires contrary to public persona; virginity taken; marked (bite bruise on breast); filled with his seed. Transformation complete: no longer untouched Queen's Own maintaining careful distance, now claimed woman who degraded herself willingly (called herself 'Holderkin slut/vessel/hole'); experienced first orgasms; found liberation in surrender of control after years carrying kingdom's burdens. Conflict between dignity/duty and awakened needs resolved through compartmentalization—can separate lover-self from diplomat-self. Decided to propose formalized partnership to Selenay (co-advisors known to Circle, hidden from public); reasoning: embrace unprecedented situation as strength rather than hide vulnerability. Physical state: sore from rough first intercourse; virgin blood and semen evidence requiring cleanup before meeting Queen. Emotional state: profound gratitude; transformed but maintaining composure through discipline.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Witnessed/experienced through bond Rance's intimacy with Talia despite attempting privacy; maintained physical guard outside cottage. STANCE-Rance: Resigned acceptance of complications; concerned about timing/propriety but understands Talia's need; dry humor about situation ('at least no one can accuse you of being predictable'); cautioned about untrained Mage-Gift use (door slam). Observations: Talia discovering aspects of self hidden even in memory-merge; finding release in surrender after years of responsibility; relationship settles question of what they are to each other. Pragmatic focus on approaching Selenay meeting.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Untrained Mage-Gift: telekinetically slammed door and closed curtains (used excessive force; channels still raw from trauma-breaking); Senta warned about danger.\",\n      \"k\": [\"Rance\"]\n    }\n  ]\n}\n",
+  "error": null
+}

@@ -1,0 +1,15 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 6.817,
+  "tokens": 1389,
+  "input_recap_length": 460,
+  "input_plot_length": 446,
+  "output_recap_length": 549,
+  "parsed": {
+    "recap": "DEV: Lisle destroyed; Rance's Mage-Gift (likely Firestarting or rarer) awakened catastrophically during Karsite raid, obliterated village. Karsites disguised as bandits captured villagers for blood magic. Senta Chose Rance; bond stabilized wild Gift. Arrived Haven, Healers' Collegium after 4-day journey.\n\nPEND: Rance's blocked trauma memories need extraction. Uncontrolled Gift poses assassination risk to Valdemaran leadership. Karsite organization's purpose unknown; prisoner motive unclear. Testimony needed at Haven regarding organized threat."
+  },
+  "raw": "{\n  \"recap\": \"DEV: Lisle destroyed; Rance's Mage-Gift (likely Firestarting or rarer) awakened catastrophically during Karsite raid, obliterated village. Karsites disguised as bandits captured villagers for blood magic. Senta Chose Rance; bond stabilized wild Gift. Arrived Haven, Healers' Collegium after 4-day journey.\\n\\nPEND: Rance's blocked trauma memories need extraction. Uncontrolled Gift poses assassination risk to Valdemaran leadership. Karsite organization's purpose unknown; prisoner motive unclear. Testimony needed at Haven regarding organized threat.\"\n}\n",
+  "recap": "DEV: Lisle destroyed; Rance's Mage-Gift (likely Firestarting or rarer) awakened catastrophically during Karsite raid, obliterated village. Karsites disguised as bandits captured villagers for blood magic. Senta Chose Rance; bond stabilized wild Gift. Arrived Haven, Healers' Collegium after 4-day journey.\n\nPEND: Rance's blocked trauma memories need extraction. Uncontrolled Gift poses assassination risk to Valdemaran leadership. Karsite organization's purpose unknown; prisoner motive unclear. Testimony needed at Haven regarding organized threat.",
+  "error": null
+}

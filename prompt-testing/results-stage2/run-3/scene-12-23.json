@@ -1,0 +1,76 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 12.886,
+  "tokens": 3115,
+  "userName": "Rance",
+  "stage1_entities": 6,
+  "stage2_entities": 6,
+  "parsed": {
+    "sn": "Race to Haven",
+    "plot": "DEV: Rance confronted Gift awakening; Senta suspected rare untrained power beyond Firestarting; Karse implicated—red robes, prisoner-taking suggests blood magic revival; four-day relentless ride to Haven completed; Rance unconscious from Gift-shock throughout journey; arrived Haven; Healers alerted to wild talent danger. PEND: Rance's memories of attack still blocked; nature of rare Gift unconfirmed; fate of Lisle prisoners unknown; Karse blood magic threat assessment needed; Queen's Circle briefing imminent.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Gift-shock: unconscious 4 days; channels stabilized by herbs but fragile; memories of attack psychologically blocked. Commitment: ordered Senta to knock him out if he loses control near leadership. Status: arrived Haven as new Herald-Chosen; deemed dangerous wild talent by Healers.",
+        "k": [
+          "Rance",
+          "Herald-Chosen"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "BOND-Rance: fully committed; refused separation even after exhaustive journey. Suspicion confirmed: Gift likely rarer/more dangerous than Firestarting; unprecedented in 5 centuries; no one capable of training him. Assessment: Rance thinks like Herald already; shows military-level tactical analysis beyond village headman norm. Journey: maintained tireless 4-day pace to Haven without real rest; exhausted on arrival but refused to leave Chosen's side. Met Rolan (Queen's Own Companion) on arrival.",
+        "k": [
+          "Senta",
+          "Companion"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Karsite Blood Magic",
+        "c": "Historical practice: ritual sacrifice, demon summoning via captured prisoners—Valdemaran stories dismissed as myth hold truth. Officially banned in Karse for decades. Lisle attack evidence: red-robed figures (Karsite features despite Menmellith misdirection), organized prisoner-taking instead of killing (requires effort/risk), suggests possible revival of blood magic practices. Border implications: Lisle near three-nation border; enough interaction for Rance to recognize Karsite features.",
+        "k": [
+          "Karsite Blood Magic",
+          "Karse",
+          "blood magic",
+          "red robes"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Herald-Mage History",
+        "c": "Rance believed Herald-Mages were historical fiction/idealized myth. Reality: Vanyel Ashkevron's last stand, Valdemaran border construction, Karse war—all actual history. Herald-Mage Savil's teaching referenced: 'Power is neither good nor evil, only its application.'",
+        "k": [
+          "Herald-Mage",
+          "Vanyel Ashkevron",
+          "Savil"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Companion Bond Mechanics",
+        "c": "Herald-basics transfer naturally through bond—Chosen gain knowledge of Empaths, Mind-Healers, protocol without prior training. Bond strengthens with time/distance; thoughts and emotions become clearer to both parties. Connection makes two beings 'something greater than sum of parts.'",
+        "k": [
+          "Companion Bond",
+          "Herald Bond",
+          "Choosing"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Haven",
+        "c": "Capital city reached after 4-day journey from Lisle region. Features: white stone walls, Palace complex at heart, Collegium for Herald training within grounds, Healers' Collegium. Guards recognize Companion emergencies; messengers alert appropriate personnel. Queen's Own Companion Rolan present. Protocol: wild talents see specialized Healers before Circle exposure due to danger.",
+        "k": [
+          "Haven",
+          "Palace",
+          "Collegium"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Race to Haven\",\n  \"plot\": \"DEV: Rance confronted Gift awakening; Senta suspected rare untrained power beyond Firestarting; Karse implicated—red robes, prisoner-taking suggests blood magic revival; four-day relentless ride to Haven completed; Rance unconscious from Gift-shock throughout journey; arrived Haven; Healers alerted to wild talent danger. PEND: Rance's memories of attack still blocked; nature of rare Gift unconfirmed; fate of Lisle prisoners unknown; Karse blood magic threat assessment needed; Queen's Circle briefing imminent.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Gift-shock: unconscious 4 days; channels stabilized by herbs but fragile; memories of attack psychologically blocked. Commitment: ordered Senta to knock him out if he loses control near leadership. Status: arrived Haven as new Herald-Chosen; deemed dangerous wild talent by Healers.\",\n      \"k\": [\"Rance\", \"Herald-Chosen\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"BOND-Rance: fully committed; refused separation even after exhaustive journey. Suspicion confirmed: Gift likely rarer/more dangerous than Firestarting; unprecedented in 5 centuries; no one capable of training him. Assessment: Rance thinks like Herald already; shows military-level tactical analysis beyond village headman norm. Journey: maintained tireless 4-day pace to Haven without real rest; exhausted on arrival but refused to leave Chosen's side. Met Rolan (Queen's Own Companion) on arrival.\",\n      \"k\": [\"Senta\", \"Companion\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Karsite Blood Magic\",\n      \"c\": \"Historical practice: ritual sacrifice, demon summoning via captured prisoners—Valdemaran stories dismissed as myth hold truth. Officially banned in Karse for decades. Lisle attack evidence: red-robed figures (Karsite features despite Menmellith misdirection), organized prisoner-taking instead of killing (requires effort/risk), suggests possible revival of blood magic practices. Border implications: Lisle near three-nation border; enough interaction for Rance to recognize Karsite features.\",\n      \"k\": [\"Karsite Blood Magic\", \"Karse\", \"blood magic\", \"red robes\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Herald-Mage History\",\n      \"c\": \"Rance believed Herald-Mages were historical fiction/idealized myth. Reality: Vanyel Ashkevron's last stand, Valdemaran border construction, Karse war—all actual history. Herald-Mage Savil's teaching referenced: 'Power is neither good nor evil, only its application.'\",\n      \"k\": [\"Herald-Mage\", \"Vanyel Ashkevron\", \"Savil\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Companion Bond Mechanics\",\n      \"c\": \"Herald-basics transfer naturally through bond—Chosen gain knowledge of Empaths, Mind-Healers, protocol without prior training. Bond strengthens with time/distance; thoughts and emotions become clearer to both parties. Connection makes two beings 'something greater than sum of parts.'\",\n      \"k\": [\"Companion Bond\", \"Herald Bond\", \"Choosing\"]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Haven\",\n      \"c\": \"Capital city reached after 4-day journey from Lisle region. Features: white stone walls, Palace complex at heart, Collegium for Herald training within grounds, Healers' Collegium. Guards recognize Companion emergencies; messengers alert appropriate personnel. Queen's Own Companion Rolan present. Protocol: wild talents see specialized Healers before Circle exposure due to danger.\",\n      \"k\": [\"Haven\", \"Palace\", \"Collegium\"]\n    }\n  ]\n}\n",
+  "error": null
+}

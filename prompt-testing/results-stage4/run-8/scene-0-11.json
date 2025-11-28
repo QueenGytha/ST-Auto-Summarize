@@ -1,0 +1,87 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 9.023,
+  "tokens": 2401,
+  "input_entities": 4,
+  "output_entities": 4,
+  "filtered_out": 0,
+  "new_entities": 4,
+  "updated_entities": 0,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Village headman of Lisle, age 40; skilled rider with possible military background. Suffered severe Gift-shock from latent Mage-Gift forcibly awakening—channels burned open by raw uncontrolled power during defense of village; vision blurry, mental agony from newly opened magical channels he cannot understand or control; believes external force destroyed Lisle, unaware he caused it. Channels remain damaged, needs Healing at Haven.",
+        "k": [
+          "Rance",
+          "headman"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Adult Companion mare, brilliant white coat, silver hooves, sapphire eyes; unpartnered for 3 years until now. STANCE-Rance: Chose him as her Herald despite his age and circumstances; bond formed—loves him unconditionally, protective, exasperated by his stubbornness, determined to keep him alive and get him proper training; knows he caused Lisle's destruction though he doesn't yet understand; recognizes red robes as organized threat beyond common banditry. Can sense magic; travel endurance far exceeds normal horses.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Lisle",
+        "c": "Small village on Valdemar's outskirts near borders with Karse, Rethwellan, and Menmellith. Completely obliterated—charred timber, scorched foundations, crater at center, ash covering everything. Destroyed by Rance's awakened Gift during bandit attack; some attackers killed, rest fled toward Menmellith border. Now abandoned ruins.",
+        "k": [
+          "Lisle"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Red Robe Attackers",
+        "c": "Organized group disguised as bandits—wore red robes hidden under bandit garb. Attacked Lisle, incapacitated and carried off villagers systematically; attack triggered Rance's latent Gift awakening. Fled toward Menmellith after magical explosion. Suggests cult/sect with specific purpose beyond simple banditry; potential threat to Valdemar Kingdom requiring Haven's attention.",
+        "k": [
+          "Red Robe Attackers",
+          "red robes"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Village headman of Lisle, age 40; skilled rider with possible military background. Suffered severe Gift-shock from latent Mage-Gift forcibly awakening—channels burned open by raw uncontrolled power during defense of village; vision blurry, mental agony from newly opened magical channels he cannot understand or control; believes external force destroyed Lisle, unaware he caused it. Channels remain damaged, needs Healing at Haven.\",\n      \"k\": [\n        \"Rance\",\n        \"headman\"\n      ]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Adult Companion mare, brilliant white coat, silver hooves, sapphire eyes; unpartnered for 3 years until now. STANCE-Rance: Chose him as her Herald despite his age and circumstances; bond formed—loves him unconditionally, protective, exasperated by his stubbornness, determined to keep him alive and get him proper training; knows he caused Lisle's destruction though he doesn't yet understand; recognizes red robes as organized threat beyond common banditry. Can sense magic; travel endurance far exceeds normal horses.\",\n      \"k\": [\n        \"Senta\"\n      ]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Lisle\",\n      \"c\": \"Small village on Valdemar's outskirts near borders with Karse, Rethwellan, and Menmellith. Completely obliterated—charred timber, scorched foundations, crater at center, ash covering everything. Destroyed by Rance's awakened Gift during bandit attack; some attackers killed, rest fled toward Menmellith border. Now abandoned ruins.\",\n      \"k\": [\n        \"Lisle\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Red Robe Attackers\",\n      \"c\": \"Organized group disguised as bandits—wore red robes hidden under bandit garb. Attacked Lisle, incapacitated and carried off villagers systematically; attack triggered Rance's latent Gift awakening. Fled toward Menmellith after magical explosion. Suggests cult/sect with specific purpose beyond simple banditry; potential threat to Valdemar Kingdom requiring Haven's attention.\",\n      \"k\": [\n        \"Red Robe Attackers\",\n        \"red robes\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "Village headman of Lisle, age 40; skilled rider with possible military background. Suffered severe Gift-shock from latent Mage-Gift forcibly awakening—channels burned open by raw uncontrolled power during defense of village; vision blurry, mental agony from newly opened magical channels he cannot understand or control; believes external force destroyed Lisle, unaware he caused it. Channels remain damaged, needs Healing at Haven.",
+      "k": [
+        "Rance",
+        "headman"
+      ]
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Adult Companion mare, brilliant white coat, silver hooves, sapphire eyes; unpartnered for 3 years until now. STANCE-Rance: Chose him as her Herald despite his age and circumstances; bond formed—loves him unconditionally, protective, exasperated by his stubbornness, determined to keep him alive and get him proper training; knows he caused Lisle's destruction though he doesn't yet understand; recognizes red robes as organized threat beyond common banditry. Can sense magic; travel endurance far exceeds normal horses.",
+      "k": [
+        "Senta"
+      ]
+    },
+    {
+      "t": "location",
+      "n": "Lisle",
+      "c": "Small village on Valdemar's outskirts near borders with Karse, Rethwellan, and Menmellith. Completely obliterated—charred timber, scorched foundations, crater at center, ash covering everything. Destroyed by Rance's awakened Gift during bandit attack; some attackers killed, rest fled toward Menmellith border. Now abandoned ruins.",
+      "k": [
+        "Lisle"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Red Robe Attackers",
+      "c": "Organized group disguised as bandits—wore red robes hidden under bandit garb. Attacked Lisle, incapacitated and carried off villagers systematically; attack triggered Rance's latent Gift awakening. Fled toward Menmellith after magical explosion. Suggests cult/sect with specific purpose beyond simple banditry; potential threat to Valdemar Kingdom requiring Haven's attention.",
+      "k": [
+        "Red Robe Attackers",
+        "red robes"
+      ]
+    }
+  ],
+  "error": null
+}

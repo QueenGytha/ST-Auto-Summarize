@@ -1,0 +1,67 @@
+{
+  "run": 3,
+  "stage2_run": 1,
+  "timestamp": "2025-11-27T20:50:52.614Z",
+  "total": 5,
+  "successful": 5,
+  "failed": 0,
+  "final_recap": "DEV: Village of Lisle destroyed—Rance's Mage-Gift awakened catastrophically during Karsite raid disguised as banditry; obliterated village. Karsites in red robes (hidden under bandit clothing) captured villagers for suspected blood magic/demon summoning; organized infiltration, footprints to Menmellith border. Senta Chose Rance; bond stabilized wild Gift. Senta carried unconscious Rance to Haven over 4 days. Complete mind-merge with Talia during memory recovery—Rance now possesses all her memories/knowledge/training as Queen's Own; Talia has his trauma. Circle ordered: archives search for Mage-Gift training, discreet diplomatic inquiries to Karse's neighbors, Rance quartered at remote Healer's cottage, information sealed to Circle only; official cover ordinary trainee. Rance and Senta settled into isolated cottage at Haven's edge. Talia resolved to propose major plan to Selenay regarding shared memories situation; seeking Rance's input first. Rance and Talia consummated connection at cottage—her first sexual experience; explicitly claimed by him.\n\nPEND: Court power structure threatened by two people holding Queen's Own knowledge. No living teachers for Mage-Gift; uncontrolled Gift poses assassination risk to Valdemaran leadership. Karsite blood magic intent unknown; organization may return. Talia meeting Selenay within two candlemarks to present mind-merge plan; must appear composed Queen's Own while bearing physical evidence of intimacy; partnership proposal now carries unspoken personal dimension.",
+  "final_recap_length": 1524,
+  "total_event_entities": 1,
+  "all_entities": [
+    {
+      "t": "event",
+      "n": "Lisle Attack Report to Circle",
+      "c": "Rance reported Karsite special forces disguised as bandits taking live captives",
+      "k": [
+        "Lisle",
+        "report",
+        "Circle",
+        "testimony",
+        "Karsite raid"
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene-0-11",
+      "success": true,
+      "input_recap_length": 0,
+      "output_recap_length": 576,
+      "entities_count": 0,
+      "error": null
+    },
+    {
+      "id": "scene-12-23",
+      "success": true,
+      "input_recap_length": 576,
+      "output_recap_length": 746,
+      "entities_count": 0,
+      "error": null
+    },
+    {
+      "id": "scene-24-59",
+      "success": true,
+      "input_recap_length": 746,
+      "output_recap_length": 1061,
+      "entities_count": 1,
+      "error": null
+    },
+    {
+      "id": "scene-72-82",
+      "success": true,
+      "input_recap_length": 1061,
+      "output_recap_length": 1331,
+      "entities_count": 0,
+      "error": null
+    },
+    {
+      "id": "scene-83-113",
+      "success": true,
+      "input_recap_length": 1331,
+      "output_recap_length": 1524,
+      "entities_count": 0,
+      "error": null
+    }
+  ]
+}

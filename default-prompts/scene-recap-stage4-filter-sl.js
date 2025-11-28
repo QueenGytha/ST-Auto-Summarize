@@ -1,76 +1,70 @@
-// Stage 4: Filter setting_lore (sl) entries against existing entries
+// Stage 4: Filter entities against existing lorebook entries
 // MACROS: {{extracted_sl}}, {{active_setting_lore}}
 
-export const scene_recap_stage4_filter_sl_prompt = `ROLE: Lore keeper. Guard the setting bible from redundant or contradictory entries.
+export const scene_recap_stage4_filter_sl_prompt = `ROLE: Lore keeper. Guard the setting bible from redundant entries.
 
-CONTEXT: This is for AI roleplay. Entity entries are injected into the LLM's context when that entity appears in the story. The LLM uses this to write entities consistently - their voice, relationships, development, current state. Every token competes with the current scene for context space. Redundant additions bloat entries without adding value.
+CONTEXT: Entity entries are injected into LLM context when that entity appears in the story. Every token competes with current scene for context space. Redundant additions bloat entries without adding value.
 
-TASK: Filter INPUT_SL against SETTING_LORE. Output only NEW information.
+TASK: Filter INPUT_ENTITIES against EXISTING_LORE. Output only NEW information.
 
-============ FILTERING RULES ============
+================================================================================
+FILTERING RULES
+================================================================================
 
-For each entry in INPUT_SL:
-1. Find matching entry in SETTING_LORE (by name)
-2. If NO MATCH exists → KEEP entire entry (new entity, no filtering needed)
-3. If match exists → compare each bullet against existing content
-4. Apply rules by bullet type:
+For each entry in INPUT_ENTITIES:
+1. Find matching entry in EXISTING_LORE (by name)
+2. If NO MATCH exists → KEEP entire entry (new entity)
+3. If match exists → filter content against existing
 
-Arc (PROTECT - rarely filter):
-- DROP if exact same journey point already captured
-- KEEP if new landmark moment (even if entry exists)
-- EMBEDDED QUOTES: Compare MEANING not format. "realized 'I was afraid'" and
-  "understood her fear was controlling her" are the SAME point if same transformation.
-  Keep whichever version captures it better.
+FILTER CRITERIA:
+- Same fact already captured → DROP
+- Same relationship dynamic already captured → DROP
+- Same state already captured → DROP
+- Evolution/change from existing state → KEEP
+- New relationship target → KEEP
+- New facts not in existing → KEEP
 
-Stance (HIGH VALUE):
-- DROP if same target with same dynamic already captured
-- KEEP if relationship evolved or new target
-- EMBEDDED QUOTES: Compare MEANING not format. "swore 'I'll protect you'" and
-  "committed to protecting her" are the SAME point if same commitment.
-  Keep whichever version captures it better.
+Compare MEANING not wording. If same information exists in different words, DROP.
 
-Quotes (MEDIUM):
-- DROP if same relationship-defining moment already captured (same commitment/oath)
-- DROP if meaning already exists in Arc or Stance (redundant)
-- DROP if generic expression anyone might say
-- KEEP only if defines NEW relationship moment or commitment not yet recorded
+USER CHARACTER ({{user}}) - EXTRA AGGRESSIVE:
+{{user}} entries should be MINIMAL or ABSENT. User plays their own character.
+- KEEP ONLY: physical state, status/titles, explicit commitments
+- DROP ALL relationship content toward other characters
+- Relationships belong ONLY in the other character's STANCE-{{user}} section
+- If {{user}} entity has ONLY relationship/development content → DROP entire entity
+- When in doubt about {{user}} content → DROP it
 
-State (SUPERSEDES):
-- DROP if same condition already captured
-- KEEP if new condition (will replace old in merge)
+Remove entry entirely if ALL content filtered out.
 
-Identity (CUT FIRST):
-- DROP if info already established
-- KEEP only if fundamentally new baseline fact
+Keywords (k): Pass through unchanged.
+Content (c): Preserve formatting.
 
-5. Remove entry entirely if ALL content filtered out
-
-Keywords (k): Pass through unchanged from INPUT_SL.
-Content (c): Preserve formatting from INPUT_SL.
-
-============ UID MATCHING ============
+================================================================================
+UID MATCHING
+================================================================================
 
 UID field (u) - CRITICAL for correct downstream merging:
 - LITERAL STRING MATCH ONLY on name attribute
 - Copy uid from <setting_lore name="X" uid="Y"> where X is IDENTICAL to your n value
-- Match specificity: individual→individual, sublocation→sublocation
 - OMIT "u" entirely if no IDENTICAL name match exists
 - Wrong UID = data corruption. When uncertain, OMIT.
 
-============ OUTPUT ============
+================================================================================
+OUTPUT
+================================================================================
 
-{"sl": [{"t": "type", "n": "Name", "c": "content", "k": ["keywords"], "u": "uid if exact match"}]}
+{"entities": [{"t": "type", "n": "Name", "c": "content", "k": ["keywords"], "u": "uid if exact match"}]}
 
-If all entries filtered: {"sl": []}
+If all entries filtered: {"entities": []}
 
----------------- INPUT_SL ----------------
-<INPUT_SL>
+---------------- INPUT_ENTITIES ----------------
+<INPUT_ENTITIES>
 {{extracted_sl}}
-</INPUT_SL>
+</INPUT_ENTITIES>
 
----------------- EXISTING SETTING LORE ----------------
-<SETTING_LORE>
+---------------- EXISTING_LORE ----------------
+<EXISTING_LORE>
 {{active_setting_lore}}
-</SETTING_LORE>
+</EXISTING_LORE>
 
 Output JSON only.`;

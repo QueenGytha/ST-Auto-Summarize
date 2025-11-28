@@ -1,0 +1,39 @@
+{
+  "scene": "scene-24-59",
+  "success": true,
+  "duration": 9.144,
+  "tokens": 1570,
+  "input_recap_length": 660,
+  "input_plot_length": 392,
+  "output_recap_length": 845,
+  "parsed": {
+    "recap": "DEV: Rance's wild Mage-Gift awakened during bandit attack; obliterated Lisle village; Companion Senta Chose him; red robes found hidden under bandit clothing—organized attack suggesting Karse; prisoner-taking indicates blood magic revival; four-day ride to Haven completed; arrived Haven; Healers alerted to wild talent danger; reported Lisle attack to Circle; complete mind-merge with Talia confirmed; Mage-Gift confirmed; quartered at Healer's cottage; Kyril to contact bordering nations. PEND: Rance's memories of attack still blocked; Talia's recovery and role; Mage-Gift training without teachers; fate of Lisle prisoners unknown; Karse blood magic threat assessment needed; red-robed attackers may return; Rance's Gift untrained, dangerous; scope of threat beyond Valderan; political ramifications of two people with Queen's Own knowledge.",
+    "entities": [
+      {
+        "type": "event",
+        "name": "Queen's Circle briefing",
+        "content": "Rance reported Lisle attack to Circle; Karsite blood magic suspected",
+        "keywords": [
+          "Circle briefing",
+          "Rance report",
+          "Lisle attack report"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"recap\": \"DEV: Rance's wild Mage-Gift awakened during bandit attack; obliterated Lisle village; Companion Senta Chose him; red robes found hidden under bandit clothing—organized attack suggesting Karse; prisoner-taking indicates blood magic revival; four-day ride to Haven completed; arrived Haven; Healers alerted to wild talent danger; reported Lisle attack to Circle; complete mind-merge with Talia confirmed; Mage-Gift confirmed; quartered at Healer's cottage; Kyril to contact bordering nations. PEND: Rance's memories of attack still blocked; Talia's recovery and role; Mage-Gift training without teachers; fate of Lisle prisoners unknown; Karse blood magic threat assessment needed; red-robed attackers may return; Rance's Gift untrained, dangerous; scope of threat beyond Valderan; political ramifications of two people with Queen's Own knowledge.\",\n  \"entities\": [\n    {\n      \"type\": \"event\",\n      \"name\": \"Queen's Circle briefing\",\n      \"content\": \"Rance reported Lisle attack to Circle; Karsite blood magic suspected\",\n      \"keywords\": [\"Circle briefing\", \"Rance report\", \"Lisle attack report\"]\n    }\n  ]\n}\n",
+  "recap": "DEV: Rance's wild Mage-Gift awakened during bandit attack; obliterated Lisle village; Companion Senta Chose him; red robes found hidden under bandit clothing—organized attack suggesting Karse; prisoner-taking indicates blood magic revival; four-day ride to Haven completed; arrived Haven; Healers alerted to wild talent danger; reported Lisle attack to Circle; complete mind-merge with Talia confirmed; Mage-Gift confirmed; quartered at Healer's cottage; Kyril to contact bordering nations. PEND: Rance's memories of attack still blocked; Talia's recovery and role; Mage-Gift training without teachers; fate of Lisle prisoners unknown; Karse blood magic threat assessment needed; red-robed attackers may return; Rance's Gift untrained, dangerous; scope of threat beyond Valderan; political ramifications of two people with Queen's Own knowledge.",
+  "entities": [
+    {
+      "type": "event",
+      "name": "Queen's Circle briefing",
+      "content": "Rance reported Lisle attack to Circle; Karsite blood magic suspected",
+      "keywords": [
+        "Circle briefing",
+        "Rance report",
+        "Lisle attack report"
+      ]
+    }
+  ],
+  "error": null
+}

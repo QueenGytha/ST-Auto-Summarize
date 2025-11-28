@@ -1,0 +1,42 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 10.766,
+  "tokens": 2652,
+  "userName": "Rance",
+  "stage1_entities": 3,
+  "stage2_entities": 3,
+  "parsed": {
+    "sn": "Awakening at Lisle's Ashes",
+    "plot": "DEV: Lisle village destroyed; Rance's latent Mage-Gift awakened by trauma of bandit attack, obliterating village and some attackers in uncontrolled blast. Rance examined bodies at crater edge—found red robe hidden under bandit garb, footprints leading to Menmellith border. Senta Chose Rance; bond formed, stabilizing his ravaged channels partially. Reached Waystation by twilight. PEND: Red-robed attackers' identity and purpose unknown; may return. Rance's Gift type uncertain but devastatingly powerful. Evidence must reach Haven. Rance requires Healing for burned mental channels.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "IDENTITY: Unpartnered Companion mare for 3 years until now; sapphire eyes, silver-white coat and mane. STATE: Chose Rance at Lisle ruins; bond now formed. STANCE-Rance: Chose him despite his age/bitterness; unconditional love through bond; frustrated by his stubbornness but committed; recognizes steel core beneath his guilt. Knows he caused Lisle's destruction via awakened Gift; using bond to partially stabilize his burned channels. Determined to get him to Haven alive for training and testimony.",
+        "k": [
+          "Senta",
+          "Companion"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Former headman of Lisle, age 40. Latent Mage-Gift (type unknown, immensely powerful) awakened by trauma—uncontrolled release obliterated Lisle village. Gift burned open mental channels; suffering severe Gift-shock with white-hot agony, blurred vision, inability to control newfound magical awareness. Doesn't yet comprehend he caused the destruction. Collected evidence: red robe hidden under bandit garb, blade. Sworn to report threat to Haven. Chosen by Senta—bond formed, providing partial stabilization.",
+        "k": [
+          "Rance"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Lisle",
+        "c": "Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations, central crater. Destroyed by Rance's uncontrolled Gift awakening during bandit attack. Villagers carried off by attackers before destruction; some attackers caught in blast. Evidence suggests organized force disguised as bandits (red robes under bandit garb), footprints leading toward Menmellith.",
+        "k": [
+          "Lisle"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Awakening at Lisle's Ashes\",\n  \"plot\": \"DEV: Lisle village destroyed; Rance's latent Mage-Gift awakened by trauma of bandit attack, obliterating village and some attackers in uncontrolled blast. Rance examined bodies at crater edge—found red robe hidden under bandit garb, footprints leading to Menmellith border. Senta Chose Rance; bond formed, stabilizing his ravaged channels partially. Reached Waystation by twilight. PEND: Red-robed attackers' identity and purpose unknown; may return. Rance's Gift type uncertain but devastatingly powerful. Evidence must reach Haven. Rance requires Healing for burned mental channels.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"IDENTITY: Unpartnered Companion mare for 3 years until now; sapphire eyes, silver-white coat and mane. STATE: Chose Rance at Lisle ruins; bond now formed. STANCE-Rance: Chose him despite his age/bitterness; unconditional love through bond; frustrated by his stubbornness but committed; recognizes steel core beneath his guilt. Knows he caused Lisle's destruction via awakened Gift; using bond to partially stabilize his burned channels. Determined to get him to Haven alive for training and testimony.\",\n      \"k\": [\"Senta\", \"Companion\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Former headman of Lisle, age 40. Latent Mage-Gift (type unknown, immensely powerful) awakened by trauma—uncontrolled release obliterated Lisle village. Gift burned open mental channels; suffering severe Gift-shock with white-hot agony, blurred vision, inability to control newfound magical awareness. Doesn't yet comprehend he caused the destruction. Collected evidence: red robe hidden under bandit garb, blade. Sworn to report threat to Haven. Chosen by Senta—bond formed, providing partial stabilization.\",\n      \"k\": [\"Rance\"]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Lisle\",\n      \"c\": \"Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations, central crater. Destroyed by Rance's uncontrolled Gift awakening during bandit attack. Villagers carried off by attackers before destruction; some attackers caught in blast. Evidence suggests organized force disguised as bandits (red robes under bandit garb), footprints leading toward Menmellith.\",\n      \"k\": [\"Lisle\"]\n    }\n  ]\n}\n",
+  "error": null
+}

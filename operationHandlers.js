@@ -1193,12 +1193,10 @@ export function registerAllOperationHandlers() {
       // Get lorebook metadata from Stage 1
       const lorebookMetadata = get_data(message, 'stage1_lorebook_metadata') || {};
 
-      // Strip scene name fields - Stage 2 doesn't need them (already extracted in Stage 1)
-      const { sn: _sn, scene_name: _scene_name, ...stage1DataWithoutName } = stage1Data;
-
-      // Prepare Stage 2 (organize) prompt
+      // Pass Stage 1 data to Stage 2 (including sn for pass-through)
+      // Stage 2 prompt expects sn and passes it through unchanged
       const { prepareOrganizeScenePrompt } = await import('./prepareOrganizeScenePrompt.js');
-      const { prompt, prefill } = await prepareOrganizeScenePrompt(stage1DataWithoutName, ctx);
+      const { prompt, prefill } = await prepareOrganizeScenePrompt(stage1Data, ctx);
 
       // Get config for connection profile
       const config = await resolveOperationConfig('organize_scene_recap');
@@ -1357,12 +1355,10 @@ export function registerAllOperationHandlers() {
       const lorebookMetadata = get_data(message, 'stage1_lorebook_metadata') || {};
       debug(SUBSYSTEM.QUEUE, `Retrieved Stage 1 lorebook metadata: startIdx=${lorebookMetadata?.startIdx}, endIdx=${lorebookMetadata?.endIdx}`);
 
-      // Strip scene name fields - Stage 3 doesn't need them (already extracted in Stage 1)
-      const { sn: _sn, scene_name: _scene_name, ...stage2DataWithoutName } = stage2Data;
-
       // Prepare Stage 3 prompt (endIdx is the scene break message index)
+      // Stage 3 uses sn for scene name in {{scene_recaps}} macro
       const endIdx = index;
-      const { prompt, prefill } = await prepareParseScenePrompt(stage2DataWithoutName, ctx, endIdx, get_data);
+      const { prompt, prefill } = await prepareParseScenePrompt(stage2Data, ctx, endIdx, get_data);
 
       // Get config for connection profile
       const config = await resolveOperationConfig('parse_scene_recap');
@@ -1519,13 +1515,16 @@ export function registerAllOperationHandlers() {
         throw new Error(`Failed to parse stage data: ${err.message}`);
       }
 
-      // Get stage2 data for sl extraction
+      // Get stage2 data for entity extraction
       const stage2Data = existingStages.stage2;
       if (!stage2Data) {
         throw new Error(`No stage2 data found for message ${index}`);
       }
 
-      debug(SUBSYSTEM.QUEUE, `Parsed Stage 2 data for Stage 4 processing at message ${index}`);
+      // Get stage3 data for event entities (may be null if no events)
+      const stage3Data = existingStages.stage3;
+
+      debug(SUBSYSTEM.QUEUE, `Parsed Stage 2/3 data for Stage 4 processing at message ${index}`);
 
       // Get lorebook metadata from Stage 1 (stored temporarily in 'stage1_lorebook_metadata')
       const lorebookMetadata = get_data(message, 'stage1_lorebook_metadata') || {};
@@ -1537,7 +1536,8 @@ export function registerAllOperationHandlers() {
       debug(SUBSYSTEM.QUEUE, `Stage 4 using indices: startIdx=${startIdx}, endIdx=${endIdx} (from operation.metadata: ${operation.metadata?.start_index !== undefined})`);
 
       // Prepare Stage 4 prompt (endIdx is the scene break message index)
-      const { prompt, prefill } = await prepareFilterSlPrompt(stage2Data, ctx, endIdx, get_data);
+      // Pass both stage2 and stage3 data to combine entities from both stages
+      const { prompt, prefill } = await prepareFilterSlPrompt(stage2Data, stage3Data, ctx, endIdx, get_data);
 
       // Get config for connection profile
       const config = await resolveOperationConfig('filter_scene_recap_sl');
@@ -1638,8 +1638,8 @@ export function registerAllOperationHandlers() {
 
       toast(`✓ Scene recap filtered and saved for message ${index}`, 'success');
 
-      // Check if Stage 3 output has rc content for running recap
-      const hasRecapContent = existingStages.stage3?.rc?.trim();
+      // Check if Stage 3 output has recap content for running recap
+      const hasRecapContent = existingStages.stage3?.recap?.trim();
 
       // Queue COMBINE operation if not manual, auto-generate is enabled, and has rc content
       if (!isManual && get_settings('running_scene_recap_auto_generate') && hasRecapContent) {
@@ -1659,7 +1659,7 @@ export function registerAllOperationHandlers() {
           metadata: combineMetadata
         });
       } else {
-        const skipReason = isManual ? 'manual' : !hasRecapContent ? 'empty rc' : 'disabled';
+        const skipReason = isManual ? 'manual' : !hasRecapContent ? 'empty recap' : 'disabled';
         debug(SUBSYSTEM.QUEUE, `Skipping auto-combine for ${skipReason} scene recap at index ${index}`);
 
         // If COMBINE won't run, queue snapshot update directly (depends on lorebook ops)

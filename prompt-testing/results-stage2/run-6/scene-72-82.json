@@ -1,0 +1,34 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 8.474,
+  "tokens": 2195,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Dawn Council Before Selenay",
+    "plot": "DEV: Rance woke before dawn anticipating Alberich; groomed Senta thoroughly previous night, restoring her coat. Morning arrived—no Alberich appeared. Talia approached cottage at dawn before her scheduled meeting with Selenay, stating she'd made decision about handling their memory-sharing situation; requested private discussion with Rance first. PEND: Talia's decision about how to proceed with Selenay/Circle; what changes she's proposing; her altered emotional state overnight.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "PHYSICAL: Fully recovered after thorough grooming and night's rest; coat restored to gleaming silver-white. STANCE-Rance: Fierce protectiveness intensifying; admiration for his leadership under uncertainty; comfortable physical intimacy (grooming ritual established). Monitoring for threats; noted Talia's emotional state shift from vulnerable to resolved/controlled overnight.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "INTERNAL SHIFT: Overnight reached definitive decision about handling memory-sharing situation; emotional state transformed from vulnerable/uncertain to controlled/determined/resolved. Experiencing disorientation from fragmented access to Rance's memories (waking reaching for memories that aren't fully there; stride-length mismatch). STANCE-Rance: Seeks his counsel before presenting decision to Selenay; treats as collaborative rather than subordinate despite rank difference. Decision 'potentially changes everything about how we proceed' and 'concerns both of us.'",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Dawn Council Before Selenay\",\n  \"plot\": \"DEV: Rance woke before dawn anticipating Alberich; groomed Senta thoroughly previous night, restoring her coat. Morning arrived—no Alberich appeared. Talia approached cottage at dawn before her scheduled meeting with Selenay, stating she'd made decision about handling their memory-sharing situation; requested private discussion with Rance first. PEND: Talia's decision about how to proceed with Selenay/Circle; what changes she's proposing; her altered emotional state overnight.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"PHYSICAL: Fully recovered after thorough grooming and night's rest; coat restored to gleaming silver-white. STANCE-Rance: Fierce protectiveness intensifying; admiration for his leadership under uncertainty; comfortable physical intimacy (grooming ritual established). Monitoring for threats; noted Talia's emotional state shift from vulnerable to resolved/controlled overnight.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"INTERNAL SHIFT: Overnight reached definitive decision about handling memory-sharing situation; emotional state transformed from vulnerable/uncertain to controlled/determined/resolved. Experiencing disorientation from fragmented access to Rance's memories (waking reaching for memories that aren't fully there; stride-length mismatch). STANCE-Rance: Seeks his counsel before presenting decision to Selenay; treats as collaborative rather than subordinate despite rank difference. Decision 'potentially changes everything about how we proceed' and 'concerns both of us.'\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    }\n  ]\n}\n",
+  "error": null
+}

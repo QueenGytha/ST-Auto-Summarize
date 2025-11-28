@@ -1,0 +1,46 @@
+{
+  "entityName": "Talia",
+  "type": "character",
+  "keywords": [
+    "Talia",
+    "Queen's Own"
+  ],
+  "totalScenes": 3,
+  "mergeResults": [
+    {
+      "scene": "scene-24-59",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 523,
+      "merged_length": 523,
+      "content": "Queen's Own Herald. Complete mind-merge with Rance—he now possesses all her memories, training, state secrets; she received his trauma memories. Currently with Healer Crescent, overwhelmed but unharmed. Rance helped her process deeply buried trauma during merge—arranged marriage escape, Empathy awakening struggles, fear of losing identity, constant responsibility pressure. STANCE-Rance: profoundly intimate knowledge shared; boundaries violated but ultimately therapeutic; complicated mix of gratitude and vulnerability."
+    },
+    {
+      "scene": "scene-72-82",
+      "action": "merge",
+      "duration": 6.31,
+      "tokens": 2236,
+      "existing_length": 523,
+      "new_length": 365,
+      "merged_length": 711,
+      "delta": 188,
+      "canonicalName": null,
+      "content": "Queen's Own Herald. Complete mind-merge with Rance—he now possesses all her memories, training, state secrets; she received his trauma memories. Rance helped her process deeply buried trauma during merge—arranged marriage escape, Empathy awakening struggles, fear of losing identity, constant responsibility pressure. Reached decision about managing shared-memory crisis; meeting Selenay to present plan. STANCE-Rance: profoundly intimate knowledge shared; boundaries violated but ultimately therapeutic; complicated mix of gratitude and vulnerability; seeks his counsel before presenting major decisions; considers him relevant stakeholder in matters affecting both; uses formal cadence around weighty matters.",
+      "raw": "{\n  \"mergedContent\": \"Queen's Own Herald. Complete mind-merge with Rance—he now possesses all her memories, training, state secrets; she received his trauma memories. Rance helped her process deeply buried trauma during merge—arranged marriage escape, Empathy awakening struggles, fear of losing identity, constant responsibility pressure. Reached decision about managing shared-memory crisis; meeting Selenay to present plan. STANCE-Rance: profoundly intimate knowledge shared; boundaries violated but ultimately therapeutic; complicated mix of gratitude and vulnerability; seeks his counsel before presenting major decisions; considers him relevant stakeholder in matters affecting both; uses formal cadence around weighty matters.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 7.783,
+      "tokens": 2548,
+      "existing_length": 711,
+      "new_length": 683,
+      "merged_length": 1233,
+      "delta": 522,
+      "canonicalName": null,
+      "content": "Queen's Own Herald. Complete mind-merge with Rance—he now possesses all her memories, training, state secrets; she received his trauma memories. Rance helped her process deeply buried trauma during merge—arranged marriage escape, Empathy awakening struggles, fear of losing identity, constant responsibility pressure. Decision solidified: pursuing formal co-advisor arrangement with Selenay's knowledge only; accepts their bond is now intimate partnership beyond professional. STANCE-Rance: profoundly intimate knowledge shared; boundaries violated but ultimately therapeutic; complicated mix of gratitude and vulnerability; seeks his counsel before presenting major decisions; considers him relevant stakeholder in matters affecting both. Sexually claimed; surrendered virginity and control completely; discovered arousal from degradation/domination—responds intensely to being called 'Holderkin bitch/slut,' being ordered to degrade herself; begged to be used/marked/filled. Conflicted between queenly dignity and newly awakened submissive desires but chose submission willingly; finds liberation in surrendering responsibility during intimacy. Years of denying personal needs shattered. Uses formal cadence around weighty matters.",
+      "raw": "{\n  \"mergedContent\": \"Queen's Own Herald. Complete mind-merge with Rance—he now possesses all her memories, training, state secrets; she received his trauma memories. Rance helped her process deeply buried trauma during merge—arranged marriage escape, Empathy awakening struggles, fear of losing identity, constant responsibility pressure. Decision solidified: pursuing formal co-advisor arrangement with Selenay's knowledge only; accepts their bond is now intimate partnership beyond professional. STANCE-Rance: profoundly intimate knowledge shared; boundaries violated but ultimately therapeutic; complicated mix of gratitude and vulnerability; seeks his counsel before presenting major decisions; considers him relevant stakeholder in matters affecting both. Sexually claimed; surrendered virginity and control completely; discovered arousal from degradation/domination—responds intensely to being called 'Holderkin bitch/slut,' being ordered to degrade herself; begged to be used/marked/filled. Conflicted between queenly dignity and newly awakened submissive desires but chose submission willingly; finds liberation in surrendering responsibility during intimacy. Years of denying personal needs shattered. Uses formal cadence around weighty matters.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "Queen's Own Herald. Complete mind-merge with Rance—he now possesses all her memories, training, state secrets; she received his trauma memories. Rance helped her process deeply buried trauma during merge—arranged marriage escape, Empathy awakening struggles, fear of losing identity, constant responsibility pressure. Decision solidified: pursuing formal co-advisor arrangement with Selenay's knowledge only; accepts their bond is now intimate partnership beyond professional. STANCE-Rance: profoundly intimate knowledge shared; boundaries violated but ultimately therapeutic; complicated mix of gratitude and vulnerability; seeks his counsel before presenting major decisions; considers him relevant stakeholder in matters affecting both. Sexually claimed; surrendered virginity and control completely; discovered arousal from degradation/domination—responds intensely to being called 'Holderkin bitch/slut,' being ordered to degrade herself; begged to be used/marked/filled. Conflicted between queenly dignity and newly awakened submissive desires but chose submission willingly; finds liberation in surrendering responsibility during intimacy. Years of denying personal needs shattered. Uses formal cadence around weighty matters."
+}

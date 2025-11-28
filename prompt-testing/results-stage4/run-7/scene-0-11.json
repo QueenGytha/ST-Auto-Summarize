@@ -1,0 +1,89 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 9.905,
+  "tokens": 2266,
+  "input_entities": 4,
+  "output_entities": 4,
+  "filtered_out": 0,
+  "new_entities": 4,
+  "updated_entities": 0,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Wild latent Mage-Gift forcibly awakened by trauma—immensely powerful, nature unclear, capable of leveling entire village. Mental channels burned open, severe Gift-shock but stabilizing via Companion bond. Chosen by Senta. Physical: exhausted, vision impaired but recovering, channels agonizingly raw. Carrying red robe hood wrapped around bandit blade as evidence. Now Herald-trainee bound for Haven.",
+        "k": [
+          "Rance",
+          "Herald-trainee"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Adult Companion mare, unpartnered for 3 years until now. Sapphire eyes, silver-white coat/mane/hooves. STANCE-Rance: Chose him—bond absolute, protective, exasperated by his stubbornness. Recognizes his Gift as unprecedented threat/asset. Determined to get him to Haven alive, stabilize his channels. Practical, witty, dignified (deeply offended at being called 'horse'). Leading him to Waystation first for herb treatment.",
+        "k": [
+          "Senta",
+          "Companion"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Lisle",
+        "c": "Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations. Central crater where Rance collapsed. Bodies at edge: villagers and attackers caught in blast. Evidence of organized raid, not random banditry.",
+        "k": [
+          "Lisle"
+        ]
+      },
+      {
+        "t": "faction",
+        "n": "Red Robe Organization",
+        "c": "Unknown sect/cult operating near Menmellith border. Disguised as bandits but wore hidden red robes. Attacked Lisle, captured villagers systematically. Fled when Rance's Gift triggered. Purpose unknown but organized, dangerous enough to threaten Kingdom per Rance's assessment.",
+        "k": [
+          "Red Robe Organization",
+          "red robes"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Wild latent Mage-Gift forcibly awakened by trauma—immensely powerful, nature unclear, capable of leveling entire village. Mental channels burned open, severe Gift-shock but stabilizing via Companion bond. Chosen by Senta. Physical: exhausted, vision impaired but recovering, channels agonizingly raw. Carrying red robe hood wrapped around bandit blade as evidence. Now Herald-trainee bound for Haven.\",\n      \"k\": [\n        \"Rance\",\n        \"Herald-trainee\"\n      ]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Adult Companion mare, unpartnered for 3 years until now. Sapphire eyes, silver-white coat/mane/hooves. STANCE-Rance: Chose him—bond absolute, protective, exasperated by his stubbornness. Recognizes his Gift as unprecedented threat/asset. Determined to get him to Haven alive, stabilize his channels. Practical, witty, dignified (deeply offended at being called 'horse'). Leading him to Waystation first for herb treatment.\",\n      \"k\": [\n        \"Senta\",\n        \"Companion\"\n      ]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Lisle\",\n      \"c\": \"Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations. Central crater where Rance collapsed. Bodies at edge: villagers and attackers caught in blast. Evidence of organized raid, not random banditry.\",\n      \"k\": [\n        \"Lisle\"\n      ]\n    },\n    {\n      \"t\": \"faction\",\n      \"n\": \"Red Robe Organization\",\n      \"c\": \"Unknown sect/cult operating near Menmellith border. Disguised as bandits but wore hidden red robes. Attacked Lisle, captured villagers systematically. Fled when Rance's Gift triggered. Purpose unknown but organized, dangerous enough to threaten Kingdom per Rance's assessment.\",\n      \"k\": [\n        \"Red Robe Organization\",\n        \"red robes\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "Wild latent Mage-Gift forcibly awakened by trauma—immensely powerful, nature unclear, capable of leveling entire village. Mental channels burned open, severe Gift-shock but stabilizing via Companion bond. Chosen by Senta. Physical: exhausted, vision impaired but recovering, channels agonizingly raw. Carrying red robe hood wrapped around bandit blade as evidence. Now Herald-trainee bound for Haven.",
+      "k": [
+        "Rance",
+        "Herald-trainee"
+      ]
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Adult Companion mare, unpartnered for 3 years until now. Sapphire eyes, silver-white coat/mane/hooves. STANCE-Rance: Chose him—bond absolute, protective, exasperated by his stubbornness. Recognizes his Gift as unprecedented threat/asset. Determined to get him to Haven alive, stabilize his channels. Practical, witty, dignified (deeply offended at being called 'horse'). Leading him to Waystation first for herb treatment.",
+      "k": [
+        "Senta",
+        "Companion"
+      ]
+    },
+    {
+      "t": "location",
+      "n": "Lisle",
+      "c": "Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations. Central crater where Rance collapsed. Bodies at edge: villagers and attackers caught in blast. Evidence of organized raid, not random banditry.",
+      "k": [
+        "Lisle"
+      ]
+    },
+    {
+      "t": "faction",
+      "n": "Red Robe Organization",
+      "c": "Unknown sect/cult operating near Menmellith border. Disguised as bandits but wore hidden red robes. Attacked Lisle, captured villagers systematically. Fled when Rance's Gift triggered. Purpose unknown but organized, dangerous enough to threaten Kingdom per Rance's assessment.",
+      "k": [
+        "Red Robe Organization",
+        "red robes"
+      ]
+    }
+  ],
+  "error": null
+}

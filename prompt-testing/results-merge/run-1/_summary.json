@@ -1,0 +1,16 @@
+{
+  "run": 1,
+  "stage4_run": 2,
+  "timestamp": "2025-11-27T21:33:15.000Z",
+  "entities_tested": 1,
+  "total_merges": 2,
+  "entities": [
+    {
+      "name": "Rance",
+      "type": "character",
+      "scenes": 3,
+      "merges": 2,
+      "final_length": 2368
+    }
+  ]
+}

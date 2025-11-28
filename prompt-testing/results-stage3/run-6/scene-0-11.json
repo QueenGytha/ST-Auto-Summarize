@@ -1,0 +1,16 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 6.561,
+  "tokens": 1158,
+  "input_recap_length": 0,
+  "input_plot_length": 389,
+  "output_recap_length": 390,
+  "parsed": {
+    "recap": "DEV: Rance's latent mage-gift exploded during bandit attack; obliterated Lisle village; Companion Senta arrived and Chose him; discovered red robes hidden under bandit clothing suggesting organized attack; heading to Waystation then Haven.\n\nPEND: Identity of red-robed attackers; whether they'll return; Rance's uncontrolled Gift requiring training; his testimony to Haven about the threat."
+  },
+  "raw": "{\n  \"recap\": \"DEV: Rance's latent mage-gift exploded during bandit attack; obliterated Lisle village; Companion Senta arrived and Chose him; discovered red robes hidden under bandit clothing suggesting organized attack; heading to Waystation then Haven.\\n\\nPEND: Identity of red-robed attackers; whether they'll return; Rance's uncontrolled Gift requiring training; his testimony to Haven about the threat.\"\n}\n",
+  "recap": "DEV: Rance's latent mage-gift exploded during bandit attack; obliterated Lisle village; Companion Senta arrived and Chose him; discovered red robes hidden under bandit clothing suggesting organized attack; heading to Waystation then Haven.\n\nPEND: Identity of red-robed attackers; whether they'll return; Rance's uncontrolled Gift requiring training; his testimony to Haven about the threat.",
+  "entities": [],
+  "error": null
+}

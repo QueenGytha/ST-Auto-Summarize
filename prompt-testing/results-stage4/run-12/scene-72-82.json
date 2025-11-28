@@ -1,0 +1,37 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 51.915,
+  "tokens": 3107,
+  "input_entities": 1,
+  "output_entities": 1,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 1,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: Seeks his counsel before presenting decisions to Selenay—treating him as collaborative partner rather than subordinate despite rank difference. Comfortable enough to visit his isolated cottage alone at dawn. Overnight resolved internal conflict about how to handle situation. Now more controlled, certain, determined—shifted from vulnerable confusion to decisive action.",
+        "k": [
+          "Talia"
+        ],
+        "u": "9"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: Seeks his counsel before presenting decisions to Selenay—treating him as collaborative partner rather than subordinate despite rank difference. Comfortable enough to visit his isolated cottage alone at dawn. Overnight resolved internal conflict about how to handle situation. Now more controlled, certain, determined—shifted from vulnerable confusion to decisive action.\",\n      \"k\": [\n        \"Talia\"\n      ],\n      \"u\": \"9\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "STANCE-Rance: Seeks his counsel before presenting decisions to Selenay—treating him as collaborative partner rather than subordinate despite rank difference. Comfortable enough to visit his isolated cottage alone at dawn. Overnight resolved internal conflict about how to handle situation. Now more controlled, certain, determined—shifted from vulnerable confusion to decisive action.",
+      "k": [
+        "Talia"
+      ],
+      "u": "9"
+    }
+  ],
+  "error": null
+}

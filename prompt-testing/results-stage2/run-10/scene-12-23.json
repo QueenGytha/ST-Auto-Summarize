@@ -1,0 +1,42 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 8.885,
+  "tokens": 2287,
+  "userName": "Rance",
+  "stage1_entities": 3,
+  "stage2_entities": 3,
+  "parsed": {
+    "sn": "Flight to Haven",
+    "plot": "DEV: Rance revealed Karsite involvement (red robes), suspects blood magic/ritual sacrifice as motive for captives. Collapsed from Gift-shock; Senta carried him unconscious for four days to Haven. Arrived at Healers' Collegium; Rance transferred to care. Rolan (Queen's Own Companion) greeted Senta. PEND: Rance's memories blocked by trauma—needs Mind-Healer/Empath to retrieve. Gift identification uncertain (possibly rarer than Firestarting, unseen for 500 years). Karsite blood magic resurgence unconfirmed. Control training required before meeting Circle/Queen.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: bonded/Chosen him; growing attachment and protectiveness; matches his stubbornness; won't leave his side. Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Promised to knock Rance out if he loses control.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Gift-shock stabilized with herbs; collapsed into healing sleep for four days. Now in Healers' Collegium care at Haven. Committed to contingency: ordered Senta to knock him out if he loses control. Memories of Lisle attack blocked by trauma.",
+        "k": [
+          "Rance"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Greeted Senta at Haven; offered support; confirmed Healers would care for Rance.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Flight to Haven\",\n  \"plot\": \"DEV: Rance revealed Karsite involvement (red robes), suspects blood magic/ritual sacrifice as motive for captives. Collapsed from Gift-shock; Senta carried him unconscious for four days to Haven. Arrived at Healers' Collegium; Rance transferred to care. Rolan (Queen's Own Companion) greeted Senta. PEND: Rance's memories blocked by trauma—needs Mind-Healer/Empath to retrieve. Gift identification uncertain (possibly rarer than Firestarting, unseen for 500 years). Karsite blood magic resurgence unconfirmed. Control training required before meeting Circle/Queen.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: bonded/Chosen him; growing attachment and protectiveness; matches his stubbornness; won't leave his side. Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Promised to knock Rance out if he loses control.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Gift-shock stabilized with herbs; collapsed into healing sleep for four days. Now in Healers' Collegium care at Haven. Committed to contingency: ordered Senta to knock him out if he loses control. Memories of Lisle attack blocked by trauma.\",\n      \"k\": [\"Rance\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Greeted Senta at Haven; offered support; confirmed Healers would care for Rance.\",\n      \"k\": [\"Rolan\", \"Queen's Own\"]\n    }\n  ]\n}\n",
+  "error": null
+}

@@ -1,0 +1,54 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 12.002,
+  "tokens": 2547,
+  "userName": "Rance",
+  "stage1_entities": 4,
+  "stage2_entities": 4,
+  "parsed": {
+    "sn": "Ride to Haven",
+    "plot": "DEV: Senta explained Gift awakening—Firestarting or rarer untrainable Gift leveled Lisle when suppression broke during attack. Identified attackers as Karsite (red robes) disguised as bandits, taking prisoners—not random raid. Rance theorized blood magic/ritual sacrifice revival. At Waystation, Rance took herbs for Gift-shock stabilization. Agreed no advance warning to Haven to avoid panic, need Mind-Healer to recover blocked trauma memories. Established contingency: Senta to knock Rance out if he loses control. Rance collapsed into Gift-shock sleep. Senta rode non-stop three days, reached Haven morning of fourth day. Rance transferred to Healers' Collegium unconscious. Rolan greeted Senta, offered rest—she refused separation. PEND: Rance's treatment and memory recovery. Identification of Gift type. Briefing Circle/Queen on Karsite attack. Fate of Lisle prisoners.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: Bond deepened through journey—moved from frustrated duty to genuine attachment. Felt his affection when he nuzzled her, recognized caring beneath his granite exterior. Now fiercely protective, refuses separation even when exhausted. Sees him as true partner ('we face it together'). STANCE-Rolan: Met briefly at Haven arrival, accepted his greeting but prioritized staying with Rance over rest.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Companion Bond Mechanics",
+        "c": "Herald-basics (knowledge of roles, protocols, Gift types) flow naturally through bond without explicit teaching. Bond strengthens over time—thoughts/emotions become clearer as minds open to each other. Creates 'something greater than sum of parts.'",
+        "k": [
+          "Companion Bond",
+          "bond"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Karsite Blood Magic History",
+        "c": "Stories of ritual sacrifice/blood magic/demon summoning are historical fact, not myth. 'Fires of Vkandis Sunlord' consumed many 'impure souls' over centuries. Officially banned in Karse for decades—current revival implies major policy shift.",
+        "k": [
+          "Karsite",
+          "Karse",
+          "blood magic",
+          "Vkandis Sunlord"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Greeted Senta at Haven arrival, offered support and reassurance about Healers. Powerful mindvoice.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Ride to Haven\",\n  \"plot\": \"DEV: Senta explained Gift awakening—Firestarting or rarer untrainable Gift leveled Lisle when suppression broke during attack. Identified attackers as Karsite (red robes) disguised as bandits, taking prisoners—not random raid. Rance theorized blood magic/ritual sacrifice revival. At Waystation, Rance took herbs for Gift-shock stabilization. Agreed no advance warning to Haven to avoid panic, need Mind-Healer to recover blocked trauma memories. Established contingency: Senta to knock Rance out if he loses control. Rance collapsed into Gift-shock sleep. Senta rode non-stop three days, reached Haven morning of fourth day. Rance transferred to Healers' Collegium unconscious. Rolan greeted Senta, offered rest—she refused separation. PEND: Rance's treatment and memory recovery. Identification of Gift type. Briefing Circle/Queen on Karsite attack. Fate of Lisle prisoners.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: Bond deepened through journey—moved from frustrated duty to genuine attachment. Felt his affection when he nuzzled her, recognized caring beneath his granite exterior. Now fiercely protective, refuses separation even when exhausted. Sees him as true partner ('we face it together'). STANCE-Rolan: Met briefly at Haven arrival, accepted his greeting but prioritized staying with Rance over rest.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Companion Bond Mechanics\",\n      \"c\": \"Herald-basics (knowledge of roles, protocols, Gift types) flow naturally through bond without explicit teaching. Bond strengthens over time—thoughts/emotions become clearer as minds open to each other. Creates 'something greater than sum of parts.'\",\n      \"k\": [\"Companion Bond\", \"bond\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Karsite Blood Magic History\",\n      \"c\": \"Stories of ritual sacrifice/blood magic/demon summoning are historical fact, not myth. 'Fires of Vkandis Sunlord' consumed many 'impure souls' over centuries. Officially banned in Karse for decades—current revival implies major policy shift.\",\n      \"k\": [\"Karsite\", \"Karse\", \"blood magic\", \"Vkandis Sunlord\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Greeted Senta at Haven arrival, offered support and reassurance about Healers. Powerful mindvoice.\",\n      \"k\": [\"Rolan\", \"Queen's Own\"]\n    }\n  ]\n}\n",
+  "error": null
+}

@@ -1,0 +1,73 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 42.911,
+  "tokens": 2218,
+  "input_entities": 3,
+  "output_entities": 3,
+  "filtered_out": 0,
+  "new_entities": 1,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: growing attachment and protectiveness; matches his stubbornness; won't leave his side. Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Promised to knock Rance out if he loses control.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Gift-shock stabilized with herbs; collapsed into healing sleep for four days. Now in Healers' Collegium care at Haven. Committed to contingency: ordered Senta to knock him out if he loses control. Memories of Lisle attack blocked by trauma.",
+        "k": [
+          "Rance"
+        ],
+        "u": "1"
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Greeted Senta at Haven; offered support; confirmed Healers would care for Rance.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: growing attachment and protectiveness; matches his stubbornness; won't leave his side. Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Promised to knock Rance out if he loses control.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Gift-shock stabilized with herbs; collapsed into healing sleep for four days. Now in Healers' Collegium care at Haven. Committed to contingency: ordered Senta to knock him out if he loses control. Memories of Lisle attack blocked by trauma.\",\n      \"k\": [\n        \"Rance\"\n      ],\n      \"u\": \"1\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Greeted Senta at Haven; offered support; confirmed Healers would care for Rance.\",\n      \"k\": [\n        \"Rolan\",\n        \"Queen's Own\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STANCE-Rance: growing attachment and protectiveness; matches his stubbornness; won't leave his side. Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Promised to knock Rance out if he loses control.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "Gift-shock stabilized with herbs; collapsed into healing sleep for four days. Now in Healers' Collegium care at Haven. Committed to contingency: ordered Senta to knock him out if he loses control. Memories of Lisle attack blocked by trauma.",
+      "k": [
+        "Rance"
+      ],
+      "u": "1"
+    },
+    {
+      "t": "character",
+      "n": "Rolan",
+      "c": "Queen's Own Companion. Greeted Senta at Haven; offered support; confirmed Healers would care for Rance.",
+      "k": [
+        "Rolan",
+        "Queen's Own"
+      ]
+    }
+  ],
+  "error": null
+}

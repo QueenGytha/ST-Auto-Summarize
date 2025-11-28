@@ -420,11 +420,11 @@ function extractRecapFromJSON(scene_recap ) {
   try {
     const parsed = JSON.parse(json_to_parse);
     if (parsed && typeof parsed === 'object') {
-      // Check for multi-stage format (stage3.rc) first, then legacy recap field
-      const stage3Recap = parsed.stage3?.rc;
+      // Check for multi-stage format (stage3.recap) first, then legacy recap field
+      const stage3Recap = parsed.stage3?.recap;
       if (stage3Recap) {
         extracted_text = stage3Recap;
-        debug(SUBSYSTEM.RUNNING, `Extracted stage3.rc from multi-stage JSON (${extracted_text.length} chars)`);
+        debug(SUBSYSTEM.RUNNING, `Extracted stage3.recap from multi-stage JSON (${extracted_text.length} chars)`);
       } else if (parsed.recap) {
         extracted_text = parsed.recap;
         debug(SUBSYSTEM.RUNNING, `Extracted recap field from JSON (${extracted_text.length} chars)`);

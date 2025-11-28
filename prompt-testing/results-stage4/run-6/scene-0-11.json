@@ -1,0 +1,89 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 9.836,
+  "tokens": 2243,
+  "input_entities": 4,
+  "output_entities": 4,
+  "filtered_out": 0,
+  "new_entities": 4,
+  "updated_entities": 0,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Former village headman of Lisle; age 40; skilled rider with possible military background. Gift-shock from violently awakened Mage-Gift (immensely powerful, type uncertain, possibly Firestarting-adjacent)—mental channels burned open, causing white-hot agony and inability to control magical awareness. Vision blurry, barely functional. Possesses red robe hood/blade as evidence.",
+        "k": [
+          "Rance",
+          "headman"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "White Companion mare, sapphire eyes, silver mane. Adult status 3 years, unpartnered until now. STANCE-Rance: Chose him despite his age/bitterness; bond formed—provides unconditional love, mental stabilization of ragged channels, knowledge of what he is; frustrated by his stubbornness but committed; shares purpose to reach Haven and train his Gift. Recognized red robes indicate organized threat beyond ordinary bandits.",
+        "k": [
+          "Senta",
+          "Companion"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Lisle",
+        "c": "Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations, crater at epicenter. Destroyed by Rance's uncontrolled Gift release. Population dead or captured. Bandit/cultist footprints lead toward Menmellith.",
+        "k": [
+          "Lisle"
+        ]
+      },
+      {
+        "t": "faction",
+        "n": "Red Robe Attackers",
+        "c": "Organized group disguised as bandits (red robes hidden under bandit garb). Attacked Lisle to capture villagers; triggered Rance's Gift awakening (unknown if intentional); suffered casualties from magical blast; fled toward Menmellith. Motive unknown. May return.",
+        "k": [
+          "Red Robe Attackers",
+          "red robes"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Former village headman of Lisle; age 40; skilled rider with possible military background. Gift-shock from violently awakened Mage-Gift (immensely powerful, type uncertain, possibly Firestarting-adjacent)—mental channels burned open, causing white-hot agony and inability to control magical awareness. Vision blurry, barely functional. Possesses red robe hood/blade as evidence.\",\n      \"k\": [\n        \"Rance\",\n        \"headman\"\n      ]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"White Companion mare, sapphire eyes, silver mane. Adult status 3 years, unpartnered until now. STANCE-Rance: Chose him despite his age/bitterness; bond formed—provides unconditional love, mental stabilization of ragged channels, knowledge of what he is; frustrated by his stubbornness but committed; shares purpose to reach Haven and train his Gift. Recognized red robes indicate organized threat beyond ordinary bandits.\",\n      \"k\": [\n        \"Senta\",\n        \"Companion\"\n      ]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Lisle\",\n      \"c\": \"Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations, crater at epicenter. Destroyed by Rance's uncontrolled Gift release. Population dead or captured. Bandit/cultist footprints lead toward Menmellith.\",\n      \"k\": [\n        \"Lisle\"\n      ]\n    },\n    {\n      \"t\": \"faction\",\n      \"n\": \"Red Robe Attackers\",\n      \"c\": \"Organized group disguised as bandits (red robes hidden under bandit garb). Attacked Lisle to capture villagers; triggered Rance's Gift awakening (unknown if intentional); suffered casualties from magical blast; fled toward Menmellith. Motive unknown. May return.\",\n      \"k\": [\n        \"Red Robe Attackers\",\n        \"red robes\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "Former village headman of Lisle; age 40; skilled rider with possible military background. Gift-shock from violently awakened Mage-Gift (immensely powerful, type uncertain, possibly Firestarting-adjacent)—mental channels burned open, causing white-hot agony and inability to control magical awareness. Vision blurry, barely functional. Possesses red robe hood/blade as evidence.",
+      "k": [
+        "Rance",
+        "headman"
+      ]
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "White Companion mare, sapphire eyes, silver mane. Adult status 3 years, unpartnered until now. STANCE-Rance: Chose him despite his age/bitterness; bond formed—provides unconditional love, mental stabilization of ragged channels, knowledge of what he is; frustrated by his stubbornness but committed; shares purpose to reach Haven and train his Gift. Recognized red robes indicate organized threat beyond ordinary bandits.",
+      "k": [
+        "Senta",
+        "Companion"
+      ]
+    },
+    {
+      "t": "location",
+      "n": "Lisle",
+      "c": "Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations, crater at epicenter. Destroyed by Rance's uncontrolled Gift release. Population dead or captured. Bandit/cultist footprints lead toward Menmellith.",
+      "k": [
+        "Lisle"
+      ]
+    },
+    {
+      "t": "faction",
+      "n": "Red Robe Attackers",
+      "c": "Organized group disguised as bandits (red robes hidden under bandit garb). Attacked Lisle to capture villagers; triggered Rance's Gift awakening (unknown if intentional); suffered casualties from magical blast; fled toward Menmellith. Motive unknown. May return.",
+      "k": [
+        "Red Robe Attackers",
+        "red robes"
+      ]
+    }
+  ],
+  "error": null
+}

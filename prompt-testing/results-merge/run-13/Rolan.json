@@ -1,0 +1,33 @@
+{
+  "entityName": "Rolan",
+  "type": "character",
+  "keywords": [
+    "Rolan",
+    "Queen's Own Companion"
+  ],
+  "totalScenes": 2,
+  "mergeResults": [
+    {
+      "scene": "scene-12-23",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 103,
+      "merged_length": 103,
+      "content": "Queen's Own Companion. Greeted Senta at Haven; offered support; confirmed Healers would care for Rance."
+    },
+    {
+      "scene": "scene-24-59",
+      "action": "merge",
+      "duration": 6.836,
+      "tokens": 2013,
+      "existing_length": 103,
+      "new_length": 340,
+      "merged_length": 421,
+      "delta": 318,
+      "canonicalName": null,
+      "content": "Talia's Companion, Queen's Own Companion. Centuries-old perspective. Greeted Senta at Haven; offered support; confirmed Healers would care for Rance. Attended Circle meeting without his Chosen; positioned beside Rance throughout report—presence lent legitimacy to extraordinary claims. Assessment suggests grave concern tempered with hope. STANCE-Rance: monitoring; appears to endorse despite unprecedented circumstances.",
+      "raw": "{\n  \"mergedContent\": \"Talia's Companion, Queen's Own Companion. Centuries-old perspective. Greeted Senta at Haven; offered support; confirmed Healers would care for Rance. Attended Circle meeting without his Chosen; positioned beside Rance throughout report—presence lent legitimacy to extraordinary claims. Assessment suggests grave concern tempered with hope. STANCE-Rance: monitoring; appears to endorse despite unprecedented circumstances.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "Talia's Companion, Queen's Own Companion. Centuries-old perspective. Greeted Senta at Haven; offered support; confirmed Healers would care for Rance. Attended Circle meeting without his Chosen; positioned beside Rance throughout report—presence lent legitimacy to extraordinary claims. Assessment suggests grave concern tempered with hope. STANCE-Rance: monitoring; appears to endorse despite unprecedented circumstances."
+}

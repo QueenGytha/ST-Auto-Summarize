@@ -1,0 +1,53 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 11.733,
+  "tokens": 2738,
+  "userName": "Rance",
+  "stage1_entities": 4,
+  "stage2_entities": 4,
+  "parsed": {
+    "sn": "Race to Haven",
+    "plot": "DEV: Rance revealed Karsite involvement—red robes, deliberate prisoner capture; suspected blood magic/ritual sacrifice. Senta confirmed Herald-Mages are historical fact, not fiction. Rance collapsed into Gift-shock sleep for three days. Senta made relentless journey to Haven without stopping. Arrived Haven gates; guards alerted Healers' Collegium. Rance transferred to Healers; Rolan (Queen's Own Companion) greeted Senta. PEND: Rance unconscious, being treated for Gift-shock; needs memory recovery and Gift identification/training; Karsite attack intel must reach Circle; potential blood magic resurgence threat.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: bond solidified during journey; protective ('I will do what's necessary to protect you and others, even from yourself'); warm affection growing ('Stubborn enough to match me'); committed to never leaving him. Exhausted from three-day non-stop run to Haven but refused rest to stay with Chosen. Confirmed knowledge: Herald-Mages are historical fact; Karsite blood magic is real history, officially banned for decades. Instructed Rance on Gift-shock treatment (willow bark/valerian/comfrey mixture). Monitored his unconscious state throughout journey—stable but fragile, mind slowly mending. Made contingency agreement: will knock Rance out if he loses control. Avoided main thoroughfares when possible to minimize attention.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Greeted Senta upon arrival at Haven; offered support and reassurance. Recognized urgency of situation.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Karsite Blood Magic",
+        "c": "Historical practice of capturing people for ritual sacrifice, demon summoning. 'Fires of Vkandis Sunlord' consumed many 'impure' souls over centuries. Officially banned in Karse for decades—if now returning, significant threat. Red-robed attackers at Lisle suggest organized magic-users, possibly Karsite operatives disguised as bandits while implicating Menmellith.",
+        "k": [
+          "Karsite Blood Magic",
+          "Vkandis Sunlord",
+          "Karse"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Companion-Herald Bond Mechanics",
+        "c": "Herald-basics flow naturally through bond—tactical knowledge, organizational awareness transfers automatically. Bond strengthens with time/distance; thoughts and emotions become mutually clearer. 'Two beings becoming something greater than the sum of their parts.'",
+        "k": [
+          "Companion-Herald Bond",
+          "bond"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Race to Haven\",\n  \"plot\": \"DEV: Rance revealed Karsite involvement—red robes, deliberate prisoner capture; suspected blood magic/ritual sacrifice. Senta confirmed Herald-Mages are historical fact, not fiction. Rance collapsed into Gift-shock sleep for three days. Senta made relentless journey to Haven without stopping. Arrived Haven gates; guards alerted Healers' Collegium. Rance transferred to Healers; Rolan (Queen's Own Companion) greeted Senta. PEND: Rance unconscious, being treated for Gift-shock; needs memory recovery and Gift identification/training; Karsite attack intel must reach Circle; potential blood magic resurgence threat.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: bond solidified during journey; protective ('I will do what's necessary to protect you and others, even from yourself'); warm affection growing ('Stubborn enough to match me'); committed to never leaving him. Exhausted from three-day non-stop run to Haven but refused rest to stay with Chosen. Confirmed knowledge: Herald-Mages are historical fact; Karsite blood magic is real history, officially banned for decades. Instructed Rance on Gift-shock treatment (willow bark/valerian/comfrey mixture). Monitored his unconscious state throughout journey—stable but fragile, mind slowly mending. Made contingency agreement: will knock Rance out if he loses control. Avoided main thoroughfares when possible to minimize attention.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Greeted Senta upon arrival at Haven; offered support and reassurance. Recognized urgency of situation.\",\n      \"k\": [\"Rolan\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Karsite Blood Magic\",\n      \"c\": \"Historical practice of capturing people for ritual sacrifice, demon summoning. 'Fires of Vkandis Sunlord' consumed many 'impure' souls over centuries. Officially banned in Karse for decades—if now returning, significant threat. Red-robed attackers at Lisle suggest organized magic-users, possibly Karsite operatives disguised as bandits while implicating Menmellith.\",\n      \"k\": [\"Karsite Blood Magic\", \"Vkandis Sunlord\", \"Karse\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Companion-Herald Bond Mechanics\",\n      \"c\": \"Herald-basics flow naturally through bond—tactical knowledge, organizational awareness transfers automatically. Bond strengthens with time/distance; thoughts and emotions become mutually clearer. 'Two beings becoming something greater than the sum of their parts.'\",\n      \"k\": [\"Companion-Herald Bond\", \"bond\"]\n    }\n  ]\n}\n",
+  "error": null
+}

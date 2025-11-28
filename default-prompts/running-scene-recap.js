@@ -47,7 +47,6 @@ When an outcome is fully resolved but might be referenced/called back later:
 → Remove from DEV (no longer active)
 
 DROP if resolved AND unlikely to ever be referenced.
-"traveled to Haven; delivered report" → done, won't come up, drop
 
 EVENT entities: minimal detail, just enough to recognize if mentioned.
 Keywords should be names/terms that would trigger the callback.

@@ -1,0 +1,57 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 7.872,
+  "tokens": 4293,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "PHYSICAL: Fully recovered after thorough grooming and night's rest; coat restored to gleaming silver-white. STANCE-Rance: Comfortable physical intimacy (grooming ritual established). Monitoring for threats; noted Talia's emotional state shift from vulnerable to resolved/controlled overnight.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "INTERNAL SHIFT: Overnight reached definitive decision about handling memory-sharing situation; emotional state transformed from vulnerable/uncertain to controlled/determined/resolved. Experiencing disorientation from fragmented access to Rance's memories (waking reaching for memories that aren't fully there; stride-length mismatch). STANCE-Rance: Seeks his counsel before presenting decision to Selenay; treats as collaborative rather than subordinate despite rank difference. Decision 'potentially changes everything about how we proceed' and 'concerns both of us.'",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "8"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"PHYSICAL: Fully recovered after thorough grooming and night's rest; coat restored to gleaming silver-white. STANCE-Rance: Comfortable physical intimacy (grooming ritual established). Monitoring for threats; noted Talia's emotional state shift from vulnerable to resolved/controlled overnight.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"INTERNAL SHIFT: Overnight reached definitive decision about handling memory-sharing situation; emotional state transformed from vulnerable/uncertain to controlled/determined/resolved. Experiencing disorientation from fragmented access to Rance's memories (waking reaching for memories that aren't fully there; stride-length mismatch). STANCE-Rance: Seeks his counsel before presenting decision to Selenay; treats as collaborative rather than subordinate despite rank difference. Decision 'potentially changes everything about how we proceed' and 'concerns both of us.'\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"8\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "PHYSICAL: Fully recovered after thorough grooming and night's rest; coat restored to gleaming silver-white. STANCE-Rance: Comfortable physical intimacy (grooming ritual established). Monitoring for threats; noted Talia's emotional state shift from vulnerable to resolved/controlled overnight.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "INTERNAL SHIFT: Overnight reached definitive decision about handling memory-sharing situation; emotional state transformed from vulnerable/uncertain to controlled/determined/resolved. Experiencing disorientation from fragmented access to Rance's memories (waking reaching for memories that aren't fully there; stride-length mismatch). STANCE-Rance: Seeks his counsel before presenting decision to Selenay; treats as collaborative rather than subordinate despite rank difference. Decision 'potentially changes everything about how we proceed' and 'concerns both of us.'",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "8"
+    }
+  ],
+  "error": null
+}

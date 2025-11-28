@@ -1,0 +1,33 @@
+{
+  "entityName": "Rolan",
+  "type": "character",
+  "keywords": [
+    "Rolan",
+    "Queen's Own Companion"
+  ],
+  "totalScenes": 2,
+  "mergeResults": [
+    {
+      "scene": "scene-12-23",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 116,
+      "merged_length": 116,
+      "content": "IDENTITY: Queen's Own Companion. Greeted Senta at Haven Collegium, offered support. Recognized urgency of situation."
+    },
+    {
+      "scene": "scene-24-59",
+      "action": "merge",
+      "duration": 6.375,
+      "tokens": 1956,
+      "existing_length": 116,
+      "new_length": 255,
+      "merged_length": 300,
+      "delta": 184,
+      "canonicalName": null,
+      "content": "IDENTITY: Queen's Own Companion. Greeted Senta at Haven Collegium, offered support. Recognized urgency of situation.\n\nCircle meeting: Positioned himself beside Rance throughout—silent endorsement lending legitimacy. Monitored situation with centuries of perspective. Grave concern tempered with hope.",
+      "raw": "{\n  \"mergedContent\": \"IDENTITY: Queen's Own Companion. Greeted Senta at Haven Collegium, offered support. Recognized urgency of situation.\\n\\nCircle meeting: Positioned himself beside Rance throughout—silent endorsement lending legitimacy. Monitored situation with centuries of perspective. Grave concern tempered with hope.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "IDENTITY: Queen's Own Companion. Greeted Senta at Haven Collegium, offered support. Recognized urgency of situation.\n\nCircle meeting: Positioned himself beside Rance throughout—silent endorsement lending legitimacy. Monitored situation with centuries of perspective. Grave concern tempered with hope."
+}

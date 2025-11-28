@@ -1,0 +1,57 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 6.816,
+  "tokens": 3186,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: seeks his counsel before presenting plan to Selenay; considers him relevant stakeholder in decisions affecting both; uses formal cadence around weighty matters. STATE: Resolved after night's deliberation—reached decision about managing shared-memory crisis; emotional state controlled/certain. Herald Queen's Own meeting Selenay after this discussion.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "6"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: fierce protectiveness; admiration for leadership under uncertainty; monitors threats to him constantly.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: seeks his counsel before presenting plan to Selenay; considers him relevant stakeholder in decisions affecting both; uses formal cadence around weighty matters. STATE: Resolved after night's deliberation—reached decision about managing shared-memory crisis; emotional state controlled/certain. Herald Queen's Own meeting Selenay after this discussion.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"6\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: fierce protectiveness; admiration for leadership under uncertainty; monitors threats to him constantly.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "STANCE-Rance: seeks his counsel before presenting plan to Selenay; considers him relevant stakeholder in decisions affecting both; uses formal cadence around weighty matters. STATE: Resolved after night's deliberation—reached decision about managing shared-memory crisis; emotional state controlled/certain. Herald Queen's Own meeting Selenay after this discussion.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "6"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STANCE-Rance: fierce protectiveness; admiration for leadership under uncertainty; monitors threats to him constantly.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    }
+  ],
+  "error": null
+}

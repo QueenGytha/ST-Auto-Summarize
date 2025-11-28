@@ -1,0 +1,137 @@
+[
+  {
+    "comment": "Rance",
+    "uid": "1",
+    "key": [
+      "Rance",
+      "Herald-trainee"
+    ],
+    "content": "Wild latent Mage-Gift forcibly awakened by trauma—immensely powerful, nature unclear, capable of leveling entire village. Mental channels burned open, severe Gift-shock but stabilizing via Companion bond. Chosen by Senta. Physical: exhausted, vision impaired but recovering, channels agonizingly raw. Carrying red robe hood wrapped around bandit blade as evidence. Now Herald-trainee bound for Haven.\n\nGift-shock collapsed him into unconscious sleep for three days straight. Committed to contingency: ordered Senta to knock him out if he loses control; fears accidentally killing Queen/Circle.\n\nPossesses complete memory-merge with Talia—all her life experiences, training, state secrets, shielding techniques, protocol knowledge, intimate court details. Can use her Empathy training concepts through untrained channels. Status: Herald-trainee (official cover); actual Mage-Gift wielder with Queen's Own-level knowledge. Assigned quarters: Healer's cottage in Companion's Field (containment precaution).",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Senta",
+    "uid": "2",
+    "key": [
+      "Senta",
+      "Companion"
+    ],
+    "content": "Adult Companion mare, unpartnered for 3 years until now. Sapphire eyes, silver-white coat/mane/hooves. STANCE-Rance: Chose him—bond absolute, protective, exasperated by his stubbornness. Recognizes his Gift as unprecedented threat/asset. Determined to get him to Haven alive, stabilize his channels. Practical, witty, dignified (deeply offended at being called 'horse'). Leading him to Waystation first for herb treatment.\n\nSuspects Rance's Gift unprecedented in ~500 years—rarer/more dangerous than Firestarting, no one capable of training him. Confirmed Karsite blood magic historically real, officially banned for decades. Maintained tireless pace three days straight to Haven (record time); exhausted but refused to leave Rance's side upon arrival.\n\nSTANCE-Rance: pride in his political/strategic thinking; concern over his casual impossibilities; protective during Circle meeting. Positioned herself at his side throughout Circle meeting alongside Rolan—symbolic dual-Companion endorsement.\n\nFully recovered after grooming and rest—coat gleaming, energy restored. Alert and protective, monitoring for threats (Alberich, political complications). Reads Talia's emotional shift as significant.\n\nSTANCE-Rance: Resigned acceptance of complicated bond; maintains physical distance during intimacy but cannot fully shield through Companion-bond; pragmatic about unprecedented situation. Witnessed/sensed Talia's transformation; concerned about timing constraints and political complications.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Lisle",
+    "uid": "3",
+    "key": [
+      "Lisle"
+    ],
+    "content": "Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations. Central crater where Rance collapsed. Bodies at edge: villagers and attackers caught in blast. Evidence of organized raid, not random banditry.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Red Robe Organization",
+    "uid": "4",
+    "key": [
+      "Red Robe Organization",
+      "red robes"
+    ],
+    "content": "Unknown sect/cult operating near Menmellith border. Disguised as bandits but wore hidden red robes. Attacked Lisle, captured villagers systematically. Fled when Rance's Gift triggered. Purpose unknown but organized, dangerous enough to threaten Kingdom per Rance's assessment.\n\nIdentified as Karsite despite disguise; theorizes blood magic/ritual sacrifice.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Rolan",
+    "uid": "5",
+    "key": [
+      "Rolan",
+      "Queen's Own",
+      "Queen's Own Companion"
+    ],
+    "content": "Queen's Own Companion. Greeted Senta upon arrival at Haven Collegium; offered support, told her she'd done well and should rest.\n\nQueen's Own Companion (Talia's). Stood beside Rance throughout Circle meeting despite Talia's absence—deliberate endorsement lending legitimacy. Silent assessment/monitoring of unprecedented situation.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Haven",
+    "uid": "6",
+    "key": [
+      "Haven",
+      "Collegium",
+      "Palace"
+    ],
+    "content": "Capital city; white stone walls; Palace complex at heart contains Collegium (Herald training). Healers' Collegium within Palace grounds responded to Senta's arrival. Rance delivered here unconscious after three-day journey.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Herald Talia",
+    "uid": "7",
+    "key": [
+      "Talia",
+      "Queen's Own"
+    ],
+    "content": "STANCE-Rance: intimate mind-merge created profound connection; he helped her process buried trauma (arranged marriage escape, Empathy overwhelm, chronic self-doubt, fear of identity loss, inability to accept help); kissed during connection closure; trusts him with vulnerabilities never shared before. STATE: Currently with Healer Crescent, recovering from merge—emotionally overwhelmed but better state than before; deep trauma finally addressed after decades of compartmentalization. Physically stable but needs processing time. Queen's Own capabilities expected to recover fully.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Queen Selenay",
+    "uid": "8",
+    "key": [
+      "Selenay",
+      "Queen"
+    ],
+    "content": "Aware Rance possesses Talia's intimate knowledge. Processing extraordinary threat: first Mage-Gift in generations coinciding with Karsite blood magic resurgence. Approved cover story (Herald-trainee), remote quartering (Healer's cottage), information lockdown (Circle-sealed), and diplomatic inquiries to neighboring kingdoms. Concerned about security implications of two people with Queen's Own knowledge.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Mage-Gift Manifestation",
+    "uid": "9",
+    "key": [
+      "Mage-Gift",
+      "Vanyel"
+    ],
+    "content": "First confirmed Mage-Gift in Valdemar since Vanyel's era (generations ago). Rance's manifestation: energy blast leveling entire village during trauma. Can cause complete mind-merge (previously thought impossible/fatal). No living teachers exist—training must be reconstructed from archives. Power level unprecedented in recent records. Circle-sealed information; public narrative: ordinary Herald-trainee.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Karsite Blood Magic Resurgence",
+    "uid": "10",
+    "key": [
+      "Karsite",
+      "Blood Magic",
+      "Sun-Priests",
+      "Karse"
+    ],
+    "content": "Sun-Priests (red-robed) conducting raids disguised as Menmellith bandits. Taking live captives (all ages—not slavery pattern) for suspected blood magic rituals/demon summoning. Using military-grade weapons (special forces, officer grade, recent manufacture within 2 years). Purposeful capture strategy with non-lethal tactics. Represents fundamental policy shift—Karse officially condemned blood magic for generations. Unknown if targeting only Valdemar or broader campaign.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Talia",
+    "uid": "11",
+    "key": [
+      "Talia",
+      "Queen's Own"
+    ],
+    "content": "After night processing shared memories, reached definitive decision about handling situation—more resolved, controlled certainty replaced previous vulnerability. Sought Rance out before Selenay meeting to discuss decision first ('concerns both of us, potentially changes everything'). Still experiencing disorientation from memory fragments—wakes reaching for Rance's memories that aren't fully there, his stride length conflicts with her instincts.\n\nSTANCE-Rance: intimate partner; surrendered control for first time; discovered arousal from degradation/dominance after lifetime of authority. Lost virginity; marked (bite bruise on breast); filled with his seed. Struggling to reconcile Queen's Own authority with submission; found liberation in surrender. Will formalize co-advisor arrangement with Selenay while concealing intimate relationship.",
+    "world": "",
+    "position": "",
+    "order": ""
+  }
+]

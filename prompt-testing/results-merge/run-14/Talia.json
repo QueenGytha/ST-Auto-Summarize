@@ -1,0 +1,46 @@
+{
+  "entityName": "Talia",
+  "type": "character",
+  "keywords": [
+    "Talia",
+    "Queen's Own"
+  ],
+  "totalScenes": 3,
+  "mergeResults": [
+    {
+      "scene": "scene-24-59",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 849,
+      "merged_length": 849,
+      "content": "Experienced complete mind-merge with Rance—he possesses all her memories, training, state secrets, personal history. Her entire life now known to him: arranged marriage escape, untrained Empathy nearly driving her mad, buried trauma from never learning to share burdens, constant fear of losing identity to Gift, self-doubt about worthiness as Queen's Own. Rance guided her through confronting deeply walled trauma—first time truly vulnerable, accepting help. Currently with Healer Crescent, overwhelmed but in better emotional state than before merge. Recovery expected. STANCE-Rance: Profound intimacy from shared consciousness. He kissed her to close mental connection. Conflicted—feels violated yet grateful, fascinated yet professionally concerned. Recognizes his untrained power prevented catastrophic damage that should have killed them both."
+    },
+    {
+      "scene": "scene-72-82",
+      "action": "merge",
+      "duration": 7.749,
+      "tokens": 2373,
+      "existing_length": 849,
+      "new_length": 269,
+      "merged_length": 933,
+      "delta": 84,
+      "canonicalName": null,
+      "content": "Experienced complete mind-merge with Rance—he possesses all her memories, training, state secrets, personal history. Her entire life now known to him: arranged marriage escape, untrained Empathy nearly driving her mad, buried trauma from never learning to share burdens, constant fear of losing identity to Gift, self-doubt about worthiness as Queen's Own. Rance guided her through confronting deeply walled trauma—first time truly vulnerable, accepting help. Resolved overnight struggle into concrete decision about managing shared-memory crisis; now seeks Rance's input before presenting plan to Selenay—treating him as collaborator rather than problem. STANCE-Rance: Profound intimacy from shared consciousness. He kissed her to close mental connection. Conflicted—feels violated yet grateful, fascinated yet professionally concerned. Recognizes his untrained power prevented catastrophic damage that should have killed them both.",
+      "raw": "{\n  \"mergedContent\": \"Experienced complete mind-merge with Rance—he possesses all her memories, training, state secrets, personal history. Her entire life now known to him: arranged marriage escape, untrained Empathy nearly driving her mad, buried trauma from never learning to share burdens, constant fear of losing identity to Gift, self-doubt about worthiness as Queen's Own. Rance guided her through confronting deeply walled trauma—first time truly vulnerable, accepting help. Resolved overnight struggle into concrete decision about managing shared-memory crisis; now seeks Rance's input before presenting plan to Selenay—treating him as collaborator rather than problem. STANCE-Rance: Profound intimacy from shared consciousness. He kissed her to close mental connection. Conflicted—feels violated yet grateful, fascinated yet professionally concerned. Recognizes his untrained power prevented catastrophic damage that should have killed them both.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 7.699,
+      "tokens": 2430,
+      "existing_length": 933,
+      "new_length": 274,
+      "merged_length": 1033,
+      "delta": 100,
+      "canonicalName": null,
+      "content": "Experienced complete mind-merge with Rance—he possesses all her memories, training, state secrets, personal history. Her entire life now known to him: arranged marriage escape, untrained Empathy nearly driving her mad, buried trauma from never learning to share burdens, constant fear of losing identity to Gift, self-doubt about worthiness as Queen's Own. Rance guided her through confronting deeply walled trauma—first time truly vulnerable, accepting help. Resolved overnight struggle into concrete decision about managing shared-memory crisis; now seeks Rance's input before presenting plan to Selenay—treating him as collaborator rather than problem. Lost virginity to Rance—bite mark evidence. STANCE-Rance: Sexual/romantic bond. Profound intimacy from shared consciousness. Discovered submissive desires—responds intensely to degradation, surrender of control; found liberation in being dominated after lifetime of responsibility. Recognizes his untrained power prevented catastrophic damage that should have killed them both.",
+      "raw": "{\n  \"mergedContent\": \"Experienced complete mind-merge with Rance—he possesses all her memories, training, state secrets, personal history. Her entire life now known to him: arranged marriage escape, untrained Empathy nearly driving her mad, buried trauma from never learning to share burdens, constant fear of losing identity to Gift, self-doubt about worthiness as Queen's Own. Rance guided her through confronting deeply walled trauma—first time truly vulnerable, accepting help. Resolved overnight struggle into concrete decision about managing shared-memory crisis; now seeks Rance's input before presenting plan to Selenay—treating him as collaborator rather than problem. Lost virginity to Rance—bite mark evidence. STANCE-Rance: Sexual/romantic bond. Profound intimacy from shared consciousness. Discovered submissive desires—responds intensely to degradation, surrender of control; found liberation in being dominated after lifetime of responsibility. Recognizes his untrained power prevented catastrophic damage that should have killed them both.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "Experienced complete mind-merge with Rance—he possesses all her memories, training, state secrets, personal history. Her entire life now known to him: arranged marriage escape, untrained Empathy nearly driving her mad, buried trauma from never learning to share burdens, constant fear of losing identity to Gift, self-doubt about worthiness as Queen's Own. Rance guided her through confronting deeply walled trauma—first time truly vulnerable, accepting help. Resolved overnight struggle into concrete decision about managing shared-memory crisis; now seeks Rance's input before presenting plan to Selenay—treating him as collaborator rather than problem. Lost virginity to Rance—bite mark evidence. STANCE-Rance: Sexual/romantic bond. Profound intimacy from shared consciousness. Discovered submissive desires—responds intensely to degradation, surrender of control; found liberation in being dominated after lifetime of responsibility. Recognizes his untrained power prevented catastrophic damage that should have killed them both."
+}

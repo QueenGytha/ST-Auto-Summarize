@@ -1,0 +1,16 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 25.137,
+  "tokens": 1544,
+  "input_recap_length": 814,
+  "input_plot_length": 277,
+  "output_recap_length": 982,
+  "parsed": {
+    "recap": "DEV: Rance's latent mage-gift exploded during bandit attack; obliterated Lisle village; Companion Senta arrived and Chose him; discovered red robes hidden under bandit clothing; Rance stabilized from Gift-shock; traveled to Haven; arrived at Collegium; Rance/Talia full mind-merge during memory recovery; Rance now possesses all Talia's knowledge/training; Mage-Gift confirmed—first since Vanyel; evidence confirms Karsite Sun-Priests using blood magic/taking live captives from Lisle; Circle briefed under secrecy; Rance quartered at Healer's cottage in Companion's Field; Talia visited Rance before dawn with decision about shared memory situation.\n\nPEND: Talia's proposal to Selenay/Circle about memory situation; diplomatic inquiries to neighboring kingdoms about Karsite activity; Mage-Gift training with no living teachers; political implications of two people with Queen's Own knowledge; Karsite blood magic threat; Alberich's training approach; Talia's meeting with Selenay."
+  },
+  "raw": "{\n  \"recap\": \"DEV: Rance's latent mage-gift exploded during bandit attack; obliterated Lisle village; Companion Senta arrived and Chose him; discovered red robes hidden under bandit clothing; Rance stabilized from Gift-shock; traveled to Haven; arrived at Collegium; Rance/Talia full mind-merge during memory recovery; Rance now possesses all Talia's knowledge/training; Mage-Gift confirmed—first since Vanyel; evidence confirms Karsite Sun-Priests using blood magic/taking live captives from Lisle; Circle briefed under secrecy; Rance quartered at Healer's cottage in Companion's Field; Talia visited Rance before dawn with decision about shared memory situation.\\n\\nPEND: Talia's proposal to Selenay/Circle about memory situation; diplomatic inquiries to neighboring kingdoms about Karsite activity; Mage-Gift training with no living teachers; political implications of two people with Queen's Own knowledge; Karsite blood magic threat; Alberich's training approach; Talia's meeting with Selenay.\"\n}\n",
+  "recap": "DEV: Rance's latent mage-gift exploded during bandit attack; obliterated Lisle village; Companion Senta arrived and Chose him; discovered red robes hidden under bandit clothing; Rance stabilized from Gift-shock; traveled to Haven; arrived at Collegium; Rance/Talia full mind-merge during memory recovery; Rance now possesses all Talia's knowledge/training; Mage-Gift confirmed—first since Vanyel; evidence confirms Karsite Sun-Priests using blood magic/taking live captives from Lisle; Circle briefed under secrecy; Rance quartered at Healer's cottage in Companion's Field; Talia visited Rance before dawn with decision about shared memory situation.\n\nPEND: Talia's proposal to Selenay/Circle about memory situation; diplomatic inquiries to neighboring kingdoms about Karsite activity; Mage-Gift training with no living teachers; political implications of two people with Queen's Own knowledge; Karsite blood magic threat; Alberich's training approach; Talia's meeting with Selenay.",
+  "entities": [],
+  "error": null
+}

@@ -1,0 +1,39 @@
+{
+  "scene": "scene-24-59",
+  "success": true,
+  "duration": 11.818,
+  "tokens": 2002,
+  "input_recap_length": 1056,
+  "input_plot_length": 1041,
+  "output_recap_length": 1303,
+  "parsed": {
+    "recap": "DEV: Lisle village obliterated—Rance's latent Mage-Gift awakened during bandit attack, unleashing catastrophic magical fury; Senta Chose Rance during crisis, stabilizing burned-open channels. Attackers identified as Karsite special forces disguised as bandits; red Sun-Priest robes recovered from bodies; took live captives for blood magic/human sacrifice. Four-day ride to Haven; Healers stabilized Rance. Addressed Queen's Circle—revealed complete mind-merge with Talia during Mind-Healing memory recovery; now shares all memories, state secrets, training, protocol knowledge. Circle sealed information; arranged Healer's cottage in Companion's Field for isolation/safety. Herald Myste dispatched to archives for Mage-Gift training records (first Mage-Gift since Vanyel, centuries ago). Kyril tasked with contacting Rethwellan/Hardorn/Menmellith regarding Karsite activity. Official cover: ordinary Herald-trainee.\n\nPEND: Talia's recovery and implications of two people possessing Queen's Own knowledge/capabilities. Training regimen for unprecedented Mage-Gift without living teachers. Karsite blood magic campaign scope—Valdemar-specific or broader threat? Fate of captured villagers unresolved. Contingency if Rance loses control. Circle's private deliberations on security/political ramifications.",
+    "entities": [
+      {
+        "t": "event",
+        "n": "Lisle Destruction",
+        "c": "Village obliterated by Rance's Gift-awakening; Karsite special forces took captives before blast",
+        "k": [
+          "Lisle",
+          "village destruction",
+          "awakening"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"recap\": \"DEV: Lisle village obliterated—Rance's latent Mage-Gift awakened during bandit attack, unleashing catastrophic magical fury; Senta Chose Rance during crisis, stabilizing burned-open channels. Attackers identified as Karsite special forces disguised as bandits; red Sun-Priest robes recovered from bodies; took live captives for blood magic/human sacrifice. Four-day ride to Haven; Healers stabilized Rance. Addressed Queen's Circle—revealed complete mind-merge with Talia during Mind-Healing memory recovery; now shares all memories, state secrets, training, protocol knowledge. Circle sealed information; arranged Healer's cottage in Companion's Field for isolation/safety. Herald Myste dispatched to archives for Mage-Gift training records (first Mage-Gift since Vanyel, centuries ago). Kyril tasked with contacting Rethwellan/Hardorn/Menmellith regarding Karsite activity. Official cover: ordinary Herald-trainee.\\n\\nPEND: Talia's recovery and implications of two people possessing Queen's Own knowledge/capabilities. Training regimen for unprecedented Mage-Gift without living teachers. Karsite blood magic campaign scope—Valdemar-specific or broader threat? Fate of captured villagers unresolved. Contingency if Rance loses control. Circle's private deliberations on security/political ramifications.\",\n  \"entities\": [\n    {\n      \"t\": \"event\",\n      \"n\": \"Lisle Destruction\",\n      \"c\": \"Village obliterated by Rance's Gift-awakening; Karsite special forces took captives before blast\",\n      \"k\": [\"Lisle\", \"village destruction\", \"awakening\"]\n    }\n  ]\n}\n",
+  "recap": "DEV: Lisle village obliterated—Rance's latent Mage-Gift awakened during bandit attack, unleashing catastrophic magical fury; Senta Chose Rance during crisis, stabilizing burned-open channels. Attackers identified as Karsite special forces disguised as bandits; red Sun-Priest robes recovered from bodies; took live captives for blood magic/human sacrifice. Four-day ride to Haven; Healers stabilized Rance. Addressed Queen's Circle—revealed complete mind-merge with Talia during Mind-Healing memory recovery; now shares all memories, state secrets, training, protocol knowledge. Circle sealed information; arranged Healer's cottage in Companion's Field for isolation/safety. Herald Myste dispatched to archives for Mage-Gift training records (first Mage-Gift since Vanyel, centuries ago). Kyril tasked with contacting Rethwellan/Hardorn/Menmellith regarding Karsite activity. Official cover: ordinary Herald-trainee.\n\nPEND: Talia's recovery and implications of two people possessing Queen's Own knowledge/capabilities. Training regimen for unprecedented Mage-Gift without living teachers. Karsite blood magic campaign scope—Valdemar-specific or broader threat? Fate of captured villagers unresolved. Contingency if Rance loses control. Circle's private deliberations on security/political ramifications.",
+  "entities": [
+    {
+      "t": "event",
+      "n": "Lisle Destruction",
+      "c": "Village obliterated by Rance's Gift-awakening; Karsite special forces took captives before blast",
+      "k": [
+        "Lisle",
+        "village destruction",
+        "awakening"
+      ]
+    }
+  ],
+  "error": null
+}

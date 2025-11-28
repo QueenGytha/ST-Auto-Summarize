@@ -1,0 +1,34 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 8.805,
+  "tokens": 2501,
+  "userName": "Rance",
+  "stage1_entities": 3,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Intimacy Before the Queen",
+    "plot": "DEV: Rance and Talia consummated their connection; took her virginity; established dominant/submissive dynamic; both climaxed; meeting with Selenay in under two candlemarks. PEND: How to present themselves to Queen; explaining new relationship dynamic to Selenay.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: Sexually claimed; surrendered virginity and control completely; discovered arousal from degradation/domination—responds intensely to being called 'Holderkin bitch/slut,' being ordered to degrade herself; begged to be used/marked/filled; conflicted between queenly dignity and newly awakened submissive desires but chose submission willingly. Bite bruise on breast; soreness from rough first sex. Decision solidified: wants formal co-advisor arrangement with Selenay's knowledge only; accepts their bond is now intimate partnership beyond professional. Vulnerability: years of denying personal needs shattered; found liberation in surrendering responsibility during sex.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Experienced entire sexual encounter through unavoidable bond with Talia; reactions: embarrassment, concern about timing, reluctant fascination, pragmatic worry. STANCE-Rance: Accepts relationship has become intensely complicated; resigned understanding mixed with concern; maintains supportive role despite discomfort witnessing intimacy.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Intimacy Before the Queen\",\n  \"plot\": \"DEV: Rance and Talia consummated their connection; took her virginity; established dominant/submissive dynamic; both climaxed; meeting with Selenay in under two candlemarks. PEND: How to present themselves to Queen; explaining new relationship dynamic to Selenay.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: Sexually claimed; surrendered virginity and control completely; discovered arousal from degradation/domination—responds intensely to being called 'Holderkin bitch/slut,' being ordered to degrade herself; begged to be used/marked/filled; conflicted between queenly dignity and newly awakened submissive desires but chose submission willingly. Bite bruise on breast; soreness from rough first sex. Decision solidified: wants formal co-advisor arrangement with Selenay's knowledge only; accepts their bond is now intimate partnership beyond professional. Vulnerability: years of denying personal needs shattered; found liberation in surrendering responsibility during sex.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Experienced entire sexual encounter through unavoidable bond with Talia; reactions: embarrassment, concern about timing, reluctant fascination, pragmatic worry. STANCE-Rance: Accepts relationship has become intensely complicated; resigned understanding mixed with concern; maintains supportive role despite discomfort witnessing intimacy.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

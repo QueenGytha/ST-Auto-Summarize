@@ -1,0 +1,42 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 10.12,
+  "tokens": 2094,
+  "stage1_entities": 3,
+  "stage2_entities": 3,
+  "parsed": {
+    "sn": "Wild Talent Awakening",
+    "plot": "DEV: Rance revealed as untrained Gift-user (likely Firestarting or rarer). His Gift destroyed Lisle when triggered by attack. Karsites in disguise captured villagers, possibly for blood magic rituals. Senta carried unconscious Rance to Haven over 4 days, arrived at Healers' Collegium. PEND: Rance's blocked trauma memories need extraction. His uncontrolled Gift poses assassination risk to Valdemaran leadership. Karsite prisoner motive unclear.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Identity: Former village headman of Lisle, newly Chosen Herald with no prior knowledge Heralds/Companions were real (thought Herald-Mages were fictional). State: Suffered severe Gift-shock from violent awakening of wild talent—raw magical channels torn open when witnessing villagers captured. Unconscious 4 days from shock despite herbs. Trauma memories blocked. Arc: Accepted bond with Senta, shifted from dragging her corpse to partnership. Recognized danger his uncontrolled power poses—insisted on contingency plan to knock him out if he loses control near Queen. Thinking militarily, accurately identified Karsite features despite disguise. Stance toward Senta: Affectionate partnership established—nuzzled her, acknowledged 'you are mine now,' trusts her to stop him if needed.",
+        "k": [
+          "Rance",
+          "headman of Lisle"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Revealed Herald-basic knowledge flows through bond automatically. Suspects Rance's Gift is rarer/more dangerous than Firestarting—something unprecedented in 5 centuries with no one capable of training him. Maintained tireless 4-day ride to Haven without stopping, arrived at Healers' Collegium. Refused separation from Rance even when exhausted. Stance toward Rance: Bond solidified—felt his pain as her own, grew genuinely attached through his unexpected affection, protective enough to follow into Healers rather than rest.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Met Senta at Haven, offered support, confirmed she did well.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Wild Talent Awakening\",\n  \"plot\": \"DEV: Rance revealed as untrained Gift-user (likely Firestarting or rarer). His Gift destroyed Lisle when triggered by attack. Karsites in disguise captured villagers, possibly for blood magic rituals. Senta carried unconscious Rance to Haven over 4 days, arrived at Healers' Collegium. PEND: Rance's blocked trauma memories need extraction. His uncontrolled Gift poses assassination risk to Valdemaran leadership. Karsite prisoner motive unclear.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Identity: Former village headman of Lisle, newly Chosen Herald with no prior knowledge Heralds/Companions were real (thought Herald-Mages were fictional). State: Suffered severe Gift-shock from violent awakening of wild talent—raw magical channels torn open when witnessing villagers captured. Unconscious 4 days from shock despite herbs. Trauma memories blocked. Arc: Accepted bond with Senta, shifted from dragging her corpse to partnership. Recognized danger his uncontrolled power poses—insisted on contingency plan to knock him out if he loses control near Queen. Thinking militarily, accurately identified Karsite features despite disguise. Stance toward Senta: Affectionate partnership established—nuzzled her, acknowledged 'you are mine now,' trusts her to stop him if needed.\",\n      \"k\": [\"Rance\", \"headman of Lisle\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Revealed Herald-basic knowledge flows through bond automatically. Suspects Rance's Gift is rarer/more dangerous than Firestarting—something unprecedented in 5 centuries with no one capable of training him. Maintained tireless 4-day ride to Haven without stopping, arrived at Healers' Collegium. Refused separation from Rance even when exhausted. Stance toward Rance: Bond solidified—felt his pain as her own, grew genuinely attached through his unexpected affection, protective enough to follow into Healers rather than rest.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Met Senta at Haven, offered support, confirmed she did well.\",\n      \"k\": [\"Rolan\", \"Queen's Own\"]\n    }\n  ]\n}\n",
+  "error": null
+}

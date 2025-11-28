@@ -1,0 +1,52 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 11.648,
+  "tokens": 2649,
+  "userName": "Rance",
+  "stage1_entities": 4,
+  "stage2_entities": 4,
+  "parsed": {
+    "sn": "Village Destroyed, Herald Chosen",
+    "plot": "DEV: Lisle obliterated—wild Mage-Gift awakened when bandits attacked, overwhelming Rance with uncontrolled power. Evidence recovered: red robes hidden under bandit garb, footprints toward Menmellith—organized threat, not random raid. Senta Chose Rance at destruction site; bond stabilizing his burned-open channels. Traveling to Waystation, then Haven with evidence. PEND: Red-robed attackers may return; Rance's Gift type/scope unknown; villagers carried off before blast—fate unknown; organized threat to Kingdom unidentified.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "STATUS: Chosen by Companion Senta—now Herald-trainee, must report to Haven. PHYSICAL: Gift-shock from forcibly awakened Mage-Gift—burned-open mental channels causing white-hot agony, blurred vision, teetering sanity. Bond with Senta beginning to stabilize channels but requires Healing. COMMITMENT: Sworn to report evidence of organized threat (red robes/Menmellith direction) to Haven without rest.",
+        "k": [
+          "Rance",
+          "Herald-trainee"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "IDENTITY: Unpartnered Companion mare for 3 years (adult status), silver hooves, sapphire eyes, silver-white mane. CHANGE: Chose Rance—bonded. STATE: Can mind-speak with Chosen; senses magic; travels 3x distance of ordinary horses. ARC: Found her Chosen in catastrophic circumstances—dealing with stubborn, grief-stricken partner who doesn't yet understand he caused destruction himself. STANCE-Rance: Chosen bond—unconditional love, exasperation at stubbornness, protective. Blocking his self-destructive impulses while guiding him toward survival/training. Firm: 'You are never alone again.' Knows he has immensely powerful Gift (type unknown), triggered by trauma.",
+        "k": [
+          "Senta",
+          "Companion"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Lisle",
+        "c": "Village obliterated—nothing but ash, charred timber fragments, scorched foundations. Crater at epicenter where Rance collapsed. Bodies at edge: villagers being carried off when caught in blast. Valdemaran village near shared borders with Karse, Rethwellan, Menmellith.",
+        "k": [
+          "Lisle"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Red Robe Organization",
+        "c": "Organized threat, not random bandits. Wore red robes hidden under bandit garb. Attacked Lisle, incapacitated and carried off villagers. Fled toward Menmellith after Rance's Gift awakened. Purpose unknown—triggered catastrophic magical response.",
+        "k": [
+          "Red Robe Organization",
+          "red robes"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Village Destroyed, Herald Chosen\",\n  \"plot\": \"DEV: Lisle obliterated—wild Mage-Gift awakened when bandits attacked, overwhelming Rance with uncontrolled power. Evidence recovered: red robes hidden under bandit garb, footprints toward Menmellith—organized threat, not random raid. Senta Chose Rance at destruction site; bond stabilizing his burned-open channels. Traveling to Waystation, then Haven with evidence. PEND: Red-robed attackers may return; Rance's Gift type/scope unknown; villagers carried off before blast—fate unknown; organized threat to Kingdom unidentified.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"STATUS: Chosen by Companion Senta—now Herald-trainee, must report to Haven. PHYSICAL: Gift-shock from forcibly awakened Mage-Gift—burned-open mental channels causing white-hot agony, blurred vision, teetering sanity. Bond with Senta beginning to stabilize channels but requires Healing. COMMITMENT: Sworn to report evidence of organized threat (red robes/Menmellith direction) to Haven without rest.\",\n      \"k\": [\"Rance\", \"Herald-trainee\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"IDENTITY: Unpartnered Companion mare for 3 years (adult status), silver hooves, sapphire eyes, silver-white mane. CHANGE: Chose Rance—bonded. STATE: Can mind-speak with Chosen; senses magic; travels 3x distance of ordinary horses. ARC: Found her Chosen in catastrophic circumstances—dealing with stubborn, grief-stricken partner who doesn't yet understand he caused destruction himself. STANCE-Rance: Chosen bond—unconditional love, exasperation at stubbornness, protective. Blocking his self-destructive impulses while guiding him toward survival/training. Firm: 'You are never alone again.' Knows he has immensely powerful Gift (type unknown), triggered by trauma.\",\n      \"k\": [\"Senta\", \"Companion\"]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Lisle\",\n      \"c\": \"Village obliterated—nothing but ash, charred timber fragments, scorched foundations. Crater at epicenter where Rance collapsed. Bodies at edge: villagers being carried off when caught in blast. Valdemaran village near shared borders with Karse, Rethwellan, Menmellith.\",\n      \"k\": [\"Lisle\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Red Robe Organization\",\n      \"c\": \"Organized threat, not random bandits. Wore red robes hidden under bandit garb. Attacked Lisle, incapacitated and carried off villagers. Fled toward Menmellith after Rance's Gift awakened. Purpose unknown—triggered catastrophic magical response.\",\n      \"k\": [\"Red Robe Organization\", \"red robes\"]\n    }\n  ]\n}\n",
+  "error": null
+}

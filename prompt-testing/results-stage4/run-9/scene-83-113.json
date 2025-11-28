@@ -1,0 +1,57 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 7.578,
+  "tokens": 4031,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "IDENTITY: No longer virgin—physically marked (bite bruise on breast). Discovered intense responsiveness to dominance/degradation—specifically when Holderkin heritage invoked; finds release in surrendering control after years carrying Kingdom's burdens. STANCE-Rance: Sexually bonded; responds to his dominance with abandon; allows him to see/command vulnerability she's never shown anyone; their connection now explicitly romantic/sexual layered over political partnership and mind-merge. STATE: Physically marked (breast bite, soreness, traces of blood/semen).",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "7"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: Concerned about his untrained Mage-Gift manifestation (door slam). Witnessed entire coupling through bond despite attempting distance—cannot fully shield from connection. STANCE-Talia: Surprised by her responsiveness to dominance; recognizes she's discovering hidden aspects of self.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"IDENTITY: No longer virgin—physically marked (bite bruise on breast). Discovered intense responsiveness to dominance/degradation—specifically when Holderkin heritage invoked; finds release in surrendering control after years carrying Kingdom's burdens. STANCE-Rance: Sexually bonded; responds to his dominance with abandon; allows him to see/command vulnerability she's never shown anyone; their connection now explicitly romantic/sexual layered over political partnership and mind-merge. STATE: Physically marked (breast bite, soreness, traces of blood/semen).\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"7\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: Concerned about his untrained Mage-Gift manifestation (door slam). Witnessed entire coupling through bond despite attempting distance—cannot fully shield from connection. STANCE-Talia: Surprised by her responsiveness to dominance; recognizes she's discovering hidden aspects of self.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "IDENTITY: No longer virgin—physically marked (bite bruise on breast). Discovered intense responsiveness to dominance/degradation—specifically when Holderkin heritage invoked; finds release in surrendering control after years carrying Kingdom's burdens. STANCE-Rance: Sexually bonded; responds to his dominance with abandon; allows him to see/command vulnerability she's never shown anyone; their connection now explicitly romantic/sexual layered over political partnership and mind-merge. STATE: Physically marked (breast bite, soreness, traces of blood/semen).",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "7"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STANCE-Rance: Concerned about his untrained Mage-Gift manifestation (door slam). Witnessed entire coupling through bond despite attempting distance—cannot fully shield from connection. STANCE-Talia: Surprised by her responsiveness to dominance; recognizes she's discovering hidden aspects of self.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    }
+  ],
+  "error": null
+}

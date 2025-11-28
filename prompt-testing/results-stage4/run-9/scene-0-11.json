@@ -1,0 +1,87 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 9.01,
+  "tokens": 2245,
+  "input_entities": 4,
+  "output_entities": 4,
+  "filtered_out": 0,
+  "new_entities": 4,
+  "updated_entities": 0,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Headman of Lisle (destroyed). Age 40. Skilled rider, methodical—possibly military background. Physically intact but severe Gift-shock from forcibly awakened Mage-Gift of immense power (leveled entire village). Mental channels burned open, causing white-hot agony and blurred vision. Carries red robe hood wrapped around bandit blade as evidence. Headed to Haven to report threat.",
+        "k": [
+          "Rance",
+          "Headman"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Companion mare, unpartnered for 3 years until now. Brilliant white coat, silver hooves, sapphire eyes. STANCE-Rance: Chose him despite his age/bitterness; bond formed—unconditional love, stabilizing effect on his Gift. Frustrated by his stubbornness but committed. Protective, practical. Recognizes his Gift as exceptionally powerful but unknown type. Determined to get him to Haven alive for training.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Lisle",
+        "c": "Small Valdemar village near borders with Karse, Rethwellan, Menmellith. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations. Destroyed by Rance's uncontrolled Gift awakening during bandit attack. Evidence of organized attackers with red robes hidden under bandit disguise. Footprints lead toward Menmellith.",
+        "k": [
+          "Lisle"
+        ]
+      },
+      {
+        "t": "faction",
+        "n": "Red-Robed Sect",
+        "c": "Unknown organization disguised as bandits. Attacked Lisle to capture villagers. Wore red robes hidden under bandit clothing. Fled toward Menmellith after Rance's Gift destroyed village. Purpose unknown but represents organized threat to Valdemar's border.",
+        "k": [
+          "Red-Robed Sect",
+          "red robes"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Headman of Lisle (destroyed). Age 40. Skilled rider, methodical—possibly military background. Physically intact but severe Gift-shock from forcibly awakened Mage-Gift of immense power (leveled entire village). Mental channels burned open, causing white-hot agony and blurred vision. Carries red robe hood wrapped around bandit blade as evidence. Headed to Haven to report threat.\",\n      \"k\": [\n        \"Rance\",\n        \"Headman\"\n      ]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Companion mare, unpartnered for 3 years until now. Brilliant white coat, silver hooves, sapphire eyes. STANCE-Rance: Chose him despite his age/bitterness; bond formed—unconditional love, stabilizing effect on his Gift. Frustrated by his stubbornness but committed. Protective, practical. Recognizes his Gift as exceptionally powerful but unknown type. Determined to get him to Haven alive for training.\",\n      \"k\": [\n        \"Senta\"\n      ]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Lisle\",\n      \"c\": \"Small Valdemar village near borders with Karse, Rethwellan, Menmellith. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations. Destroyed by Rance's uncontrolled Gift awakening during bandit attack. Evidence of organized attackers with red robes hidden under bandit disguise. Footprints lead toward Menmellith.\",\n      \"k\": [\n        \"Lisle\"\n      ]\n    },\n    {\n      \"t\": \"faction\",\n      \"n\": \"Red-Robed Sect\",\n      \"c\": \"Unknown organization disguised as bandits. Attacked Lisle to capture villagers. Wore red robes hidden under bandit clothing. Fled toward Menmellith after Rance's Gift destroyed village. Purpose unknown but represents organized threat to Valdemar's border.\",\n      \"k\": [\n        \"Red-Robed Sect\",\n        \"red robes\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "Headman of Lisle (destroyed). Age 40. Skilled rider, methodical—possibly military background. Physically intact but severe Gift-shock from forcibly awakened Mage-Gift of immense power (leveled entire village). Mental channels burned open, causing white-hot agony and blurred vision. Carries red robe hood wrapped around bandit blade as evidence. Headed to Haven to report threat.",
+      "k": [
+        "Rance",
+        "Headman"
+      ]
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Companion mare, unpartnered for 3 years until now. Brilliant white coat, silver hooves, sapphire eyes. STANCE-Rance: Chose him despite his age/bitterness; bond formed—unconditional love, stabilizing effect on his Gift. Frustrated by his stubbornness but committed. Protective, practical. Recognizes his Gift as exceptionally powerful but unknown type. Determined to get him to Haven alive for training.",
+      "k": [
+        "Senta"
+      ]
+    },
+    {
+      "t": "location",
+      "n": "Lisle",
+      "c": "Small Valdemar village near borders with Karse, Rethwellan, Menmellith. Completely obliterated—reduced to ash, charred timber fragments, scorched foundations. Destroyed by Rance's uncontrolled Gift awakening during bandit attack. Evidence of organized attackers with red robes hidden under bandit disguise. Footprints lead toward Menmellith.",
+      "k": [
+        "Lisle"
+      ]
+    },
+    {
+      "t": "faction",
+      "n": "Red-Robed Sect",
+      "c": "Unknown organization disguised as bandits. Attacked Lisle to capture villagers. Wore red robes hidden under bandit clothing. Fled toward Menmellith after Rance's Gift destroyed village. Purpose unknown but represents organized threat to Valdemar's border.",
+      "k": [
+        "Red-Robed Sect",
+        "red robes"
+      ]
+    }
+  ],
+  "error": null
+}

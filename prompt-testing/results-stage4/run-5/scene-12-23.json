@@ -1,0 +1,93 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 23.688,
+  "tokens": 2739,
+  "input_entities": 4,
+  "output_entities": 4,
+  "filtered_out": 0,
+  "new_entities": 3,
+  "updated_entities": 1,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rolan: acknowledged his authority/support but refused to leave Rance's side. STATE: exhausted after days of relentless travel; refused rest to stay with Chosen. Suspects Rance's Gift is rarer/more dangerous than Firestarting—unprecedented power unseen 500 years, no one capable of training it. Confirmed Karsite blood magic is historical fact, not myth; official ban in place for decades but may be returning.",
+        "k": [
+          "Senta"
+        ],
+        "u": "1"
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Met Senta at Collegium; offered support; told her Rance is in good hands.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Herald-Companion Bond Mechanics",
+        "c": "Bond transfers Herald-basics/knowledge naturally to Chosen (Rance knows Empath capabilities, Mind-Healers, protocol without prior training). Companions monitor Chosen's condition through bond continuously. Connection strengthens with time/distance—thoughts and emotions become clearer as minds open to each other. 'Two beings becoming something greater than the sum of their parts.'",
+        "k": [
+          "Herald-Companion Bond",
+          "Chosen"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Karsite Blood Magic",
+        "c": "Historical practice of capturing people for ritual sacrifice, demon summoning, 'Fires of Vkandis Sunlord' consuming 'impure souls.' Officially banned in Karse for decades. If returning to such practices = major threat implication.",
+        "k": [
+          "Karsite Blood Magic",
+          "Karse",
+          "Vkandis Sunlord"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rolan: acknowledged his authority/support but refused to leave Rance's side. STATE: exhausted after days of relentless travel; refused rest to stay with Chosen. Suspects Rance's Gift is rarer/more dangerous than Firestarting—unprecedented power unseen 500 years, no one capable of training it. Confirmed Karsite blood magic is historical fact, not myth; official ban in place for decades but may be returning.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"1\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Met Senta at Collegium; offered support; told her Rance is in good hands.\",\n      \"k\": [\n        \"Rolan\",\n        \"Queen's Own\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Herald-Companion Bond Mechanics\",\n      \"c\": \"Bond transfers Herald-basics/knowledge naturally to Chosen (Rance knows Empath capabilities, Mind-Healers, protocol without prior training). Companions monitor Chosen's condition through bond continuously. Connection strengthens with time/distance—thoughts and emotions become clearer as minds open to each other. 'Two beings becoming something greater than the sum of their parts.'\",\n      \"k\": [\n        \"Herald-Companion Bond\",\n        \"Chosen\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Karsite Blood Magic\",\n      \"c\": \"Historical practice of capturing people for ritual sacrifice, demon summoning, 'Fires of Vkandis Sunlord' consuming 'impure souls.' Officially banned in Karse for decades. If returning to such practices = major threat implication.\",\n      \"k\": [\n        \"Karsite Blood Magic\",\n        \"Karse\",\n        \"Vkandis Sunlord\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STANCE-Rolan: acknowledged his authority/support but refused to leave Rance's side. STATE: exhausted after days of relentless travel; refused rest to stay with Chosen. Suspects Rance's Gift is rarer/more dangerous than Firestarting—unprecedented power unseen 500 years, no one capable of training it. Confirmed Karsite blood magic is historical fact, not myth; official ban in place for decades but may be returning.",
+      "k": [
+        "Senta"
+      ],
+      "u": "1"
+    },
+    {
+      "t": "character",
+      "n": "Rolan",
+      "c": "Queen's Own Companion. Met Senta at Collegium; offered support; told her Rance is in good hands.",
+      "k": [
+        "Rolan",
+        "Queen's Own"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Herald-Companion Bond Mechanics",
+      "c": "Bond transfers Herald-basics/knowledge naturally to Chosen (Rance knows Empath capabilities, Mind-Healers, protocol without prior training). Companions monitor Chosen's condition through bond continuously. Connection strengthens with time/distance—thoughts and emotions become clearer as minds open to each other. 'Two beings becoming something greater than the sum of their parts.'",
+      "k": [
+        "Herald-Companion Bond",
+        "Chosen"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Karsite Blood Magic",
+      "c": "Historical practice of capturing people for ritual sacrifice, demon summoning, 'Fires of Vkandis Sunlord' consuming 'impure souls.' Officially banned in Karse for decades. If returning to such practices = major threat implication.",
+      "k": [
+        "Karsite Blood Magic",
+        "Karse",
+        "Vkandis Sunlord"
+      ]
+    }
+  ],
+  "error": null
+}

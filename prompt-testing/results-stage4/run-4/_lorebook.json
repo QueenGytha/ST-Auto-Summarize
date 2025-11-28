@@ -1,0 +1,320 @@
+[
+  {
+    "comment": "Senta",
+    "uid": "1",
+    "key": [
+      "Senta",
+      "Companion"
+    ],
+    "content": "Companion mare, unpartnered for 3 years until now. CHOSE Rance after his Gift destroyed Lisle—recognized wild talent danger immediately. STANCE-Rance: bonded as Chosen/Companion; protective yet exasperated by his stubbornness; stabilizing his burned-open channels through bond; firm that he must survive journey to Haven. Knows he caused the destruction himself; he doesn't yet accept this. Sharp-minded tactician; noted red robes suggest organized threat beyond bandits.\n\nSTANCE-Rance: warmed by his unexpected affection and nuzzling; will knock him out if he loses control per his instruction; impressed by his military assessment and pragmatism. Revealed Rance's Gift likely unprecedented—not seen in five centuries, more dangerous than Firestarting; no one capable of training it exists. Suspects Karsite blood magic involvement—stories hold historical truth. Made four-day relentless journey to Haven without proper rest; exhausted but refused separation from Chosen upon arrival. Met by Rolan (Queen's Own Companion) at Collegium; Healers took Rance.\n\nSTATE: Fully recovered—groomed, rested, energy restored after hard journey. STANCE-Rance: No regret about Choosing him despite unprecedented complications; fierce protectiveness mixed with exhausted humor about his chaos ('rewrite magical theory and give me heart failure'); values small moments of normalcy grooming provides; believes his leadership experience justifies Choice timing regardless of age. Monitors for threats; detects Talia's emotional shift to resolved determination.\n\nWitnessed/experienced through bond Rance's intimacy with Talia despite attempting privacy; maintained physical guard outside cottage. STANCE-Rance: Resigned acceptance of complications; concerned about timing/propriety but understands Talia's need; dry humor about situation ('at least no one can accuse you of being predictable'); cautioned about untrained Mage-Gift use (door slam). Observations: Talia discovering aspects of self hidden even in memory-merge; finding release in surrender after years of responsibility; relationship settles question of what they are to each other. Pragmatic focus on approaching Selenay meeting.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Rance",
+    "uid": "2",
+    "key": [
+      "Rance"
+    ],
+    "content": "Age 40, former Lisle village headman. Latent mage-gift violently awakened during bandit attack—channels burned open, unleashed devastating blast that destroyed entire village. In severe Gift-shock: vision blurred, mental agony, teetering near insanity. Skilled rider with possible military background. Found evidence: red robes hidden under bandit garb, tracks toward Menmellith border. Determined to report threat to Haven despite near-death state. All villagers dead or captured.\n\nSTATE: Survived catastrophic mind-merge with Talia—now possesses her complete memories, training, protocols, state secrets; moves with her gait, uses her etiquette training; can shield using her techniques (uncomfortable through untrained channels); physically stabilized after Gift-shock. OFFICIAL STATUS: Herald-trainee (cover story); quartered at Healer's cottage in Companion's Field for safety. COMMITMENT: Contingency with Senta to knock him unconscious if loses control; promised to help Talia shoulder her burdens; sworn to maintain Circle secrecy about Mage-Gift.\n\nUntrained Mage-Gift: telekinetically slammed door and closed curtains (used excessive force; channels still raw from trauma-breaking); Senta warned about danger.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Lisle",
+    "uid": "3",
+    "key": [
+      "Lisle"
+    ],
+    "content": "Small Valdemar border village near Karse/Rethwellan/Menmellith. Completely obliterated by Rance's awakened Gift during supposed bandit raid—only ash, charred foundations, bodies remain. Villagers were being systematically captured before Gift detonation killed some attackers, drove rest over Menmellith border.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Red Robe Organization",
+    "uid": "4",
+    "key": [
+      "Red Robe Organization",
+      "red robes"
+    ],
+    "content": "Unknown group staging attacks disguised as bandits. Members wear red robes hidden under bandit clothing. Attacked Lisle to capture villagers (unknown purpose). Attack triggered Rance's Gift awakening—may not have anticipated mage potential. Fled toward Menmellith border after devastation. Organized, methodical threat to Valdemar.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Choosing Bond",
+    "uid": "5",
+    "key": [
+      "Choosing Bond",
+      "Choosing"
+    ],
+    "content": "When Companion Chooses: mental contact opens (':Chosen:'); unconditional love floods bond; knowledge of Gift nature transfers; bridges form across Chosen's damaged mental channels (doesn't heal, but stabilizes); creates permanent soul-bond. Companion mindvoice described as 'crystal bells, warm as summer sunshine.' Bond allows Companion to help control/stabilize wild Gifts. Time seems to pause during moment of Choice.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Rolan",
+    "uid": "6",
+    "key": [
+      "Rolan",
+      "Queen's Own"
+    ],
+    "content": "Queen's Own Companion. Greeted Senta upon arrival at Collegium; offered support and reassurance; powerful mindvoice.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Herald-Mages and Karsite History",
+    "uid": "7",
+    "key": [
+      "Herald-Mages",
+      "Karse",
+      "Karsite",
+      "Vanyel Ashkevron",
+      "blood magic"
+    ],
+    "content": "Rance believed Herald-Mages were historical fiction/idealized legend, unaware they're real history. Karsite ritual sacrifice and blood magic are historical fact, not myth; officially banned in Karse for decades but possibly returning. Vanyel Ashkevron's last stand at the pass is historical, not legend.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Gift-Shock and Wild Talents",
+    "uid": "8",
+    "key": [
+      "Gift-shock",
+      "wild talents"
+    ],
+    "content": "Willow bark, valerian, and comfrey mixture stabilizes Gift-shock; tastes foul. Aftermath causes physical weakness, mental disorientation, pressure in mind, trembling. Recovery requires days of unconscious healing sleep. Circle won't meet uncontrolled wild talents without precautions—specialized Healers assess first before royal audience.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Companion Bond Knowledge Transfer",
+    "uid": "9",
+    "key": [
+      "Companion bond",
+      "Chosen"
+    ],
+    "content": "Herald-basics flow naturally through Companion bond immediately—tactical knowledge, organizational structure (the Circle, Queen's Own), diplomatic protocols appear instinctively in newly Chosen.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Herald Talia",
+    "uid": "10",
+    "key": [
+      "Talia",
+      "Queen's Own"
+    ],
+    "content": "IDENTITY: Queen's Own Herald; Empath; former Holderkin (fourth wife arrangement, escaped); Chosen by Rolan. STATE: Recovering from catastrophic mind-merge with Rance—experienced his memories while he absorbed her entire lifetime; all training, secrets, protocols shared; overwhelmed but unharmed; Crescent attending. ARC: Forced to confront buried trauma (Empathy nearly destroying her identity; constant fear of losing herself; crushing responsibility; never learning to share burdens); walls between compartmentalized selves dissolving after Rance helped her process decades of suppressed pain; emotionally vulnerable for first time in years. STANCE-Rance: Profound intimacy from complete memory-sharing; kissed during connection closure; conflicted (violation/understanding, fear/gratitude); trusts him to deliver Circle report using her knowledge; he knows wine preferences, protocols, state secrets—functionally could serve as Queen's Own himself.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Companion Senta",
+    "uid": "11",
+    "key": [
+      "Senta"
+    ],
+    "content": "STATE: Exhausted from days of hard travel carrying unconscious Rance across Valdemar; coat dulled with road dust and sweat; awaiting promised thorough grooming. ARC: Confirmed Rance possesses true Mage-Gift (not seen since Vanyel); navigating unprecedented political situation—her Chosen now holds all Queen's Own knowledge while being untrained.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Queen Selenay",
+    "uid": "12",
+    "key": [
+      "Selenay",
+      "Queen"
+    ],
+    "content": "STANCE-Rance: Initial shock at his claim of mind-merge with Talia; belief confirmed when he casually mentioned her private wine preferences (information only Talia should know); deeply uncomfortable with untrained man possessing all state secrets but maintains diplomatic composure; acknowledges extraordinary burden he carried to Haven; calculating political ramifications of situation; authorized his quartering at Healer's cottage; ordered Circle secrecy about Mage-Gift return.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Healer Crescent",
+    "uid": "13",
+    "key": [
+      "Crescent"
+    ],
+    "content": "IDENTITY: Master Healer serving Queen personally; auburn hair, green robes with silver embroidery. ASSESSMENT: Diagnosed Rance with Gift-shock of extraordinary magnitude, channels forced open, extensive mental pathway trauma; declared mind-merge 'should have killed them both or driven them permanently insane'—functionally impossible without decades of training; physically both stable but cannot explain how; ordered both under observation after Circle meeting; currently attending Talia's recovery.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Weaponsmaster Alberich",
+    "uid": "14",
+    "key": [
+      "Alberich",
+      "Weaponsmaster"
+    ],
+    "content": "IDENTITY: Former Karsite, now Herald; Weaponsmaster at Collegium; decades of loyal service; silver-haired, weathered, military bearing; Karsite accent remains. ASSESSMENT: Examined evidence—confirmed Karsite special forces, military-grade officer steel (not common issue), recent make within two years; official sanction, not rogue elements; prisoners taken alive suggests purposeful intent. STANCE-Rance: Tested by Rance's Vkandis greeting (extremist elements would take offense); respect for Rance's caution and cleverness; pragmatic focus on training/containment/protection for Mage-Gift.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Herald Kyril",
+    "uid": "15",
+    "key": [
+      "Kyril",
+      "Lord Marshal's Herald"
+    ],
+    "content": "IDENTITY: Lord Marshal's Herald; senior Circle member; military bearing, silver-streaked hair. ROLE: Initially skeptical of village headman addressing emergency Circle; tasked with discreet diplomatic inquiries to Rethwellan, Hardorn, Menmellith regarding Karsite border activity; concerned that Mage-Gift return coinciding with blood magic cannot be coincidental.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Herald Myste",
+    "uid": "16",
+    "key": [
+      "Myste",
+      "Chronicler"
+    ],
+    "content": "IDENTITY: Chronicler; severe-looking woman. EXPERTISE: Records show cyclical returns to extremism in Karse during internal instability periods. TASKED: Immediately departed to search sealed archives from Vanyel's time for Mage-Gift training information—may find useful records.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Herald Elcarth",
+    "uid": "17",
+    "key": [
+      "Elcarth",
+      "Dean"
+    ],
+    "content": "IDENTITY: Dean of Collegium; white-haired, weathered, decades of wisdom. CONCERN: Unprecedented challenges in training Rance—both Mage-Gift and mind-merge create situations without protocol.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Companion Rolan",
+    "uid": "18",
+    "key": [
+      "Rolan"
+    ],
+    "content": "STATE: Arrived without Chosen at Circle meeting—unusual; positioned himself beside Rance throughout report; presence lends legitimacy to extraordinary claims; tail swish suggested agreement about Karsite extremism cycles; dignified bearing reflects centuries of Valdemaran history; assessment via Companion network: grave concern tempered with hope.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Circle Chambers",
+    "uid": "19",
+    "key": [
+      "Circle Chambers",
+      "Circle"
+    ],
+    "content": "Semicircular room for Valdemar's most sensitive discussions; tall windows with afternoon/bronze light; polished marble floors; ornately carved grand doors with Valdemaran symbols; Queen's most trusted advisors and senior Heralds convene here; highest security clearance required.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Shielded Chamber",
+    "uid": "20",
+    "key": [
+      "Shielded Chamber"
+    ],
+    "content": "Deep beneath Collegium; circular design; walls inscribed with shifting protective patterns; originally for training unstable Gifts; contains magical outbursts; silver ring inlaid on floor glows during activation; padded chair at center; blocks external Gift awareness (provides relief to newly awakened); magical alarms trigger Palace-wide during power surges; heavy oak door with metal reinforcement.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Healer's Cottage",
+    "uid": "21",
+    "key": [
+      "Healer's Cottage"
+    ],
+    "content": "In Companion's Field; remote enough to avoid leveling Collegium during magical incidents; close enough to not be isolated; allows discreet meetings; designated as Rance's quarters to maintain training cover story while managing Mage-Gift danger.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Karsite Evidence",
+    "uid": "22",
+    "key": [
+      "Karsite Evidence"
+    ],
+    "content": "Red hood and military-grade blade recovered from Lisle attackers; officer-grade steel (not common issue), recent make within two years; Karsite army special forces equipment; suggests state-sanctioned action, not rogue elements; being examined by Circle; proves Sun-Priest involvement in blood magic operation.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Mage-Gift",
+    "uid": "23",
+    "key": [
+      "Mage-Gift",
+      "Herald-Mage"
+    ],
+    "content": "True Mage-Gift not manifested since Vanyel's time (generations ago); considered completely impossible by modern Heralds; raw, wild, unprecedented power—'the kind that can level villages when untrained'; requires specialized training with no living teachers remaining; Herald-Mages possessed 'power to reshape reality itself'; violently awakens under extreme trauma, forcing channels open; can cause catastrophic mind-merges that should kill or drive insane; untrained Mindspeech is forceful, can break through shields (considered rude); return coinciding with Karsite blood magic 'cannot be coincidental'; threatens existing Court power structure if revealed.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Mind-Merge",
+    "uid": "24",
+    "key": [
+      "Mind-Merge"
+    ],
+    "content": "Complete merging of two minds—all memories, training, knowledge, emotions shared bidirectionally; functionally impossible without decades of training; should result in death or permanent insanity; Rance and Talia survived via his raw Mage-Gift; creates profound intimacy and vulnerability; recovers trauma-blocked memories but emotionally overwhelming; merged individual can move/speak/think like the other; Truth Spell shatters during catastrophic merge; creates security vulnerability (two people with same classified knowledge).",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Karsite Blood Magic",
+    "uid": "25",
+    "key": [
+      "Blood Magic",
+      "Karsite",
+      "Sun-Priests"
+    ],
+    "content": "Sun-Priests historically practiced blood magic and demon summoning using human sacrifice; officially condemned for generations; cyclical return during internal instability periods; fresher sacrifices generate more power; requires live captives (explains taking villagers alive, including young/elderly—not slavery); red-robed Sun-Priests operating across borders disguised as Menmellith bandits; military-grade equipment suggests state sanction; may indicate fundamental shift in Karsite policy; threat extends potentially beyond Valdemar to all bordering nations.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Truth Spell",
+    "uid": "26",
+    "key": [
+      "Truth Spell"
+    ],
+    "content": "First Stage: blue glow, compels truth in spoken words. Second Stage: deeper working makes falsehood immediately apparent to all present. Only affects what is said aloud—thoughts remain private. Used during memory recovery to anchor genuine memories and prevent false memory formation. Shatters under catastrophic psychic events.",
+    "world": "",
+    "position": "",
+    "order": ""
+  },
+  {
+    "comment": "Talia",
+    "uid": "27",
+    "key": [
+      "Talia",
+      "Queen's Own"
+    ],
+    "content": "STATE: Emotional transformation overnight—vulnerability replaced by controlled determination and resolve. Made specific decision about handling shared-memory situation; wants Rance's input before presenting to Selenay. STANCE-Rance: Seeks collaborative approach ('discuss it with you first'); acknowledges ongoing disorientation from fragmented access to his memories ('woke reaching for memories that should be there but aren't'); treats as equal partner in crisis resolution despite rank difference. Decision 'potentially changes everything about how we proceed.'\n\nSTANCE-Rance: Surrendered completely; discovered submissive desires contrary to public persona; virginity taken; marked (bite bruise on breast); filled with his seed. Transformation complete: no longer untouched Queen's Own maintaining careful distance, now claimed woman who degraded herself willingly (called herself 'Holderkin slut/vessel/hole'); experienced first orgasms; found liberation in surrender of control after years carrying kingdom's burdens. Conflict between dignity/duty and awakened needs resolved through compartmentalization—can separate lover-self from diplomat-self. Decided to propose formalized partnership to Selenay (co-advisors known to Circle, hidden from public); reasoning: embrace unprecedented situation as strength rather than hide vulnerability. Physical state: sore from rough first intercourse; virgin blood and semen evidence requiring cleanup before meeting Queen. Emotional state: profound gratitude; transformed but maintaining composure through discipline.",
+    "world": "",
+    "position": "",
+    "order": ""
+  }
+]

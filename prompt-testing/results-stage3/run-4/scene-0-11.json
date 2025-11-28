@@ -1,0 +1,16 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 5.804,
+  "tokens": 1178,
+  "input_recap_length": 0,
+  "input_plot_length": 422,
+  "output_recap_length": 423,
+  "parsed": {
+    "recap": "DEV: Lisle village obliterated when Rance's latent Mage-Gift violently awakened during bandit attack; villagers carried off; Rance collapsed in crater; Senta found and Chose him; evidence discovered—bandits wore hidden red robes, fled toward Menmellith; traveling to Waystation en route to Haven.\n\nPEND: Red-robed organization's purpose; Rance's uncontrolled Gift; fate of captured villagers; whether attackers will return."
+  },
+  "raw": "{\n  \"recap\": \"DEV: Lisle village obliterated when Rance's latent Mage-Gift violently awakened during bandit attack; villagers carried off; Rance collapsed in crater; Senta found and Chose him; evidence discovered—bandits wore hidden red robes, fled toward Menmellith; traveling to Waystation en route to Haven.\\n\\nPEND: Red-robed organization's purpose; Rance's uncontrolled Gift; fate of captured villagers; whether attackers will return.\"\n}\n",
+  "recap": "DEV: Lisle village obliterated when Rance's latent Mage-Gift violently awakened during bandit attack; villagers carried off; Rance collapsed in crater; Senta found and Chose him; evidence discovered—bandits wore hidden red robes, fled toward Menmellith; traveling to Waystation en route to Haven.\n\nPEND: Red-robed organization's purpose; Rance's uncontrolled Gift; fate of captured villagers; whether attackers will return.",
+  "entities": [],
+  "error": null
+}

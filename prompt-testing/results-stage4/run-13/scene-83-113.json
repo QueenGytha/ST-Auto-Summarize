@@ -1,0 +1,57 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 8.209,
+  "tokens": 3944,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STATE: No longer a virgin—hymen torn, breast bitten/marked, filled with Rance's seed. Body marked with evidence that will be hidden beneath her Whites when she meets Selenay. ARC: Discovered she responds intensely to domination, rough treatment, and degradation—finds release in surrender after years of carrying responsibility. Broke through her terror of losing herself in another person. Used crude language and Holderkin degradation vocabulary that she'd rejected for decades. Experienced two powerful orgasms. The careful control and diplomatic mask she maintained for years was thoroughly shattered.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "9"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STATE: Maintained guard outside cottage during Rance and Talia's intimacy, attempting to give privacy while unable to fully shield from their bond connection. ARC: Witnessed/sensed the unprecedented development between her Chosen and the Queen's Own. Initial embarrassment gave way to resigned acceptance of complications. STANCE-Rance: Concerned about his untrained Mage-Gift use (telekinesis with excessive force). Dry humor about complications. STANCE-Talia: Sensed her complete surrender and discovered desires even the memory-merge hadn't revealed.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STATE: No longer a virgin—hymen torn, breast bitten/marked, filled with Rance's seed. Body marked with evidence that will be hidden beneath her Whites when she meets Selenay. ARC: Discovered she responds intensely to domination, rough treatment, and degradation—finds release in surrender after years of carrying responsibility. Broke through her terror of losing herself in another person. Used crude language and Holderkin degradation vocabulary that she'd rejected for decades. Experienced two powerful orgasms. The careful control and diplomatic mask she maintained for years was thoroughly shattered.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"9\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STATE: Maintained guard outside cottage during Rance and Talia's intimacy, attempting to give privacy while unable to fully shield from their bond connection. ARC: Witnessed/sensed the unprecedented development between her Chosen and the Queen's Own. Initial embarrassment gave way to resigned acceptance of complications. STANCE-Rance: Concerned about his untrained Mage-Gift use (telekinesis with excessive force). Dry humor about complications. STANCE-Talia: Sensed her complete surrender and discovered desires even the memory-merge hadn't revealed.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "STATE: No longer a virgin—hymen torn, breast bitten/marked, filled with Rance's seed. Body marked with evidence that will be hidden beneath her Whites when she meets Selenay. ARC: Discovered she responds intensely to domination, rough treatment, and degradation—finds release in surrender after years of carrying responsibility. Broke through her terror of losing herself in another person. Used crude language and Holderkin degradation vocabulary that she'd rejected for decades. Experienced two powerful orgasms. The careful control and diplomatic mask she maintained for years was thoroughly shattered.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "9"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STATE: Maintained guard outside cottage during Rance and Talia's intimacy, attempting to give privacy while unable to fully shield from their bond connection. ARC: Witnessed/sensed the unprecedented development between her Chosen and the Queen's Own. Initial embarrassment gave way to resigned acceptance of complications. STANCE-Rance: Concerned about his untrained Mage-Gift use (telekinesis with excessive force). Dry humor about complications. STANCE-Talia: Sensed her complete surrender and discovered desires even the memory-merge hadn't revealed.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    }
+  ],
+  "error": null
+}

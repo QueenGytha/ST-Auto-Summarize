@@ -1,0 +1,57 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 6.767,
+  "tokens": 4457,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Fully recovered after grooming and rest; coat gleaming, energy restored.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "Made definitive decision about handling shared memory situation; speaks with formal Court precision. Physical disorientation continues—reaches for his memories that are now fragments; stride length mismatch when walking.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "11"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Fully recovered after grooming and rest; coat gleaming, energy restored.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"Made definitive decision about handling shared memory situation; speaks with formal Court precision. Physical disorientation continues—reaches for his memories that are now fragments; stride length mismatch when walking.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"11\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Fully recovered after grooming and rest; coat gleaming, energy restored.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "Made definitive decision about handling shared memory situation; speaks with formal Court precision. Physical disorientation continues—reaches for his memories that are now fragments; stride length mismatch when walking.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "11"
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,34 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 8.074,
+  "tokens": 1943,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Dawn Decision at Haven",
+    "plot": "DEV: Rance and Senta settled into isolated cottage at Haven's edge. Talia arrived at dawn having reached decision overnight about handling their shared-memory situation. PEND: Talia's proposal about how to proceed with Selenay and Circle. Alberich's training approach unclear. Public pretense of formal distance between Rance-Talia begins.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "SHIFT: Resolved overnight struggle into concrete decision about managing shared-memory crisis. Emotional state transformed from vulnerable to controlled/certain. Now seeks Rance's input before presenting plan to Selenay—treating him as collaborator rather than problem.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STATE: Fully recovered—coat restored to gleaming silver-white, energy and alertness returned. STANCE-Rance: Absolute certainty about Choosing him despite chaos ('most right thing I've ever done'). Protective vigilance intensified. Advised cryptically about bonds: 'Some chosen, some thrust upon us. All requiring care.'",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Dawn Decision at Haven\",\n  \"plot\": \"DEV: Rance and Senta settled into isolated cottage at Haven's edge. Talia arrived at dawn having reached decision overnight about handling their shared-memory situation. PEND: Talia's proposal about how to proceed with Selenay and Circle. Alberich's training approach unclear. Public pretense of formal distance between Rance-Talia begins.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"SHIFT: Resolved overnight struggle into concrete decision about managing shared-memory crisis. Emotional state transformed from vulnerable to controlled/certain. Now seeks Rance's input before presenting plan to Selenay—treating him as collaborator rather than problem.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STATE: Fully recovered—coat restored to gleaming silver-white, energy and alertness returned. STANCE-Rance: Absolute certainty about Choosing him despite chaos ('most right thing I've ever done'). Protective vigilance intensified. Advised cryptically about bonds: 'Some chosen, some thrust upon us. All requiring care.'\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

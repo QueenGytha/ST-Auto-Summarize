@@ -1,0 +1,57 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 7.123,
+  "tokens": 4054,
+  "input_entities": 2,
+  "output_entities": 2,
+  "filtered_out": 0,
+  "new_entities": 0,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: Consulted him privately before presenting decision to Selenay—treating him as peer advisor rather than subordinate Trainee despite rank difference. Overnight resolved internal conflict into new determination; reached significant decision about managing shared-memory situation affecting both of them. Experiencing disorientation from memory fragments—reaches for Rance's memories that aren't fully there, struggles with physical differences (stride length). More controlled and certain than previous evening's vulnerability.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "u": "7"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Fully recovered after grooming and rest—energy and alertness restored. Detected Talia's emotional state shift from night before—noted increased control and certainty replacing earlier vulnerability.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: Consulted him privately before presenting decision to Selenay—treating him as peer advisor rather than subordinate Trainee despite rank difference. Overnight resolved internal conflict into new determination; reached significant decision about managing shared-memory situation affecting both of them. Experiencing disorientation from memory fragments—reaches for Rance's memories that aren't fully there, struggles with physical differences (stride length). More controlled and certain than previous evening's vulnerability.\",\n      \"k\": [\n        \"Talia\",\n        \"Queen's Own\"\n      ],\n      \"u\": \"7\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Fully recovered after grooming and rest—energy and alertness restored. Detected Talia's emotional state shift from night before—noted increased control and certainty replacing earlier vulnerability.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Talia",
+      "c": "STANCE-Rance: Consulted him privately before presenting decision to Selenay—treating him as peer advisor rather than subordinate Trainee despite rank difference. Overnight resolved internal conflict into new determination; reached significant decision about managing shared-memory situation affecting both of them. Experiencing disorientation from memory fragments—reaches for Rance's memories that aren't fully there, struggles with physical differences (stride length). More controlled and certain than previous evening's vulnerability.",
+      "k": [
+        "Talia",
+        "Queen's Own"
+      ],
+      "u": "7"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Fully recovered after grooming and rest—energy and alertness restored. Detected Talia's emotional state shift from night before—noted increased control and certainty replacing earlier vulnerability.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    }
+  ],
+  "error": null
+}

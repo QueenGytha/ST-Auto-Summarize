@@ -1,0 +1,34 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 7.385,
+  "tokens": 2138,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Talia and Rance Cross Threshold",
+    "plot": "DEV: Rance and Talia consummated relationship before meeting with Selenay; decided on semi-official partnership (Circle knows, public doesn't); political formalization pending Queen's approval. PEND: Selenay meeting in under two candlemarks; explaining new partnership/connection; Rance's role at Palace undefined; how to handle public perception vs reality.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: intimate partner; surrendered control for first time; discovered arousal from degradation/dominance after lifetime of authority. Lost virginity; marked (bite bruise on breast); filled with his seed. Struggling to reconcile Queen's Own authority with submission; found liberation in surrender. Will formalize co-advisor arrangement with Selenay while concealing intimate relationship.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: Resigned acceptance of complicated bond; maintains physical distance during intimacy but cannot fully shield through Companion-bond; pragmatic about unprecedented situation. Witnessed/sensed Talia's transformation; concerned about timing constraints and political complications.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Talia and Rance Cross Threshold\",\n  \"plot\": \"DEV: Rance and Talia consummated relationship before meeting with Selenay; decided on semi-official partnership (Circle knows, public doesn't); political formalization pending Queen's approval. PEND: Selenay meeting in under two candlemarks; explaining new partnership/connection; Rance's role at Palace undefined; how to handle public perception vs reality.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: intimate partner; surrendered control for first time; discovered arousal from degradation/dominance after lifetime of authority. Lost virginity; marked (bite bruise on breast); filled with his seed. Struggling to reconcile Queen's Own authority with submission; found liberation in surrender. Will formalize co-advisor arrangement with Selenay while concealing intimate relationship.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: Resigned acceptance of complicated bond; maintains physical distance during intimacy but cannot fully shield through Companion-bond; pragmatic about unprecedented situation. Witnessed/sensed Talia's transformation; concerned about timing constraints and political complications.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

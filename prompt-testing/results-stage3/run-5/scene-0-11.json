@@ -1,0 +1,17 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 6.153,
+  "tokens": 1120,
+  "input_recap_length": 0,
+  "input_plot_length": 321,
+  "output_recap_length": 313,
+  "parsed": {
+    "recap": "DEV: Rance's wild Mage-Gift awakened during bandit attack; obliterated Lisle village; Companion Senta Chose him; red robes found hidden under bandit clothing—organized attack; traveling to Haven. PEND: Red-robed attackers may return; Rance's Gift untrained, dangerous; evidence points to Menmellith or false flag.",
+    "entities": []
+  },
+  "raw": "{\n  \"recap\": \"DEV: Rance's wild Mage-Gift awakened during bandit attack; obliterated Lisle village; Companion Senta Chose him; red robes found hidden under bandit clothing—organized attack; traveling to Haven. PEND: Red-robed attackers may return; Rance's Gift untrained, dangerous; evidence points to Menmellith or false flag.\",\n  \"entities\": []\n}\n",
+  "recap": "DEV: Rance's wild Mage-Gift awakened during bandit attack; obliterated Lisle village; Companion Senta Chose him; red robes found hidden under bandit clothing—organized attack; traveling to Haven. PEND: Red-robed attackers may return; Rance's Gift untrained, dangerous; evidence points to Menmellith or false flag.",
+  "entities": [],
+  "error": null
+}

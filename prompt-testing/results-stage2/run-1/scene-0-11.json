@@ -1,0 +1,50 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 11.578,
+  "tokens": 2636,
+  "stage1_entities": 4,
+  "stage2_entities": 4,
+  "parsed": {
+    "sn": "The Choosing at Lisle",
+    "plot": "DEV: Village of Lisle destroyed—Rance's latent Mage-Gift awakened catastrophically during bandit raid, obliterating village. Rance examined bodies, found red robes hidden under bandit clothing—organized infiltration disguised as banditry, footprints leading to Menmellith border. Senta Chose Rance; bond formed, stabilizing his wild Gift enough for survival. Traveling to Haven via Waystation. PEND: Red-robed organization's purpose unknown, may return. Rance's specific Gift type unidentified but devastatingly powerful. Testimony needed at Haven regarding organized threat.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Identity: 40-year-old former village headman of Lisle, skilled rider with possible military background. State: Newly Chosen by Senta—catastrophic Mage-Gift awakening during bandit attack leveled entire village, channels burned open, severe Gift-shock. Village obliterated, all residents dead or captured. Carries evidence (red robe hood wrapped around bandit blade). Arc: Survivor's guilt and belief he has nothing left to lose, but bond with Senta providing stability and preventing complete mental fracture. Stubbornly determined to reach Haven with intelligence despite injuries. Stance toward Senta: Initially dismissive ('insufferable horse'), then accepted Choosing—pragmatic partnership forming, shares her determination to warn Haven.",
+        "k": [
+          "Rance",
+          "headman"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Identity: Adult Companion mare, three years unpartnered until now, sapphire eyes, silver-white coat. State: Successfully Chose Rance at Lisle ruins—bond formed, actively stabilizing his wild Gift through their connection. Arc: Found her Chosen under catastrophic circumstances; frustrated by his stubbornness but committed to keeping him alive. Stance toward Rance: Chose him despite unconventional age and circumstances—mixture of exasperation at his recklessness and fierce protective determination. Recognizes his underlying steel and leadership qualities. Insistent on proper care before reaching Haven.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Lisle",
+        "c": "Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders—completely obliterated. Reduced to ash, charred timber fragments, scorched foundations, and a central crater. Destroyed by Rance's awakened Mage-Gift during bandit raid. Bodies at edge: villagers being carried off, bandits caught in blast. Evidence of organized attack disguised as banditry.",
+        "k": [
+          "Lisle"
+        ]
+      },
+      {
+        "t": "faction",
+        "n": "Red Robe Organization",
+        "c": "Unknown organized group conducting raids disguised as banditry. Members wear red robes concealed under bandit clothing. Attacked Lisle systematically—incapacitating and capturing villagers. Fled toward Menmellith border after Rance's Gift explosion. Purpose unknown but represents coordinated threat to Valdemar requiring Haven's attention.",
+        "k": [
+          "Red Robe Organization",
+          "red robes"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"The Choosing at Lisle\",\n  \"plot\": \"DEV: Village of Lisle destroyed—Rance's latent Mage-Gift awakened catastrophically during bandit raid, obliterating village. Rance examined bodies, found red robes hidden under bandit clothing—organized infiltration disguised as banditry, footprints leading to Menmellith border. Senta Chose Rance; bond formed, stabilizing his wild Gift enough for survival. Traveling to Haven via Waystation. PEND: Red-robed organization's purpose unknown, may return. Rance's specific Gift type unidentified but devastatingly powerful. Testimony needed at Haven regarding organized threat.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Identity: 40-year-old former village headman of Lisle, skilled rider with possible military background. State: Newly Chosen by Senta—catastrophic Mage-Gift awakening during bandit attack leveled entire village, channels burned open, severe Gift-shock. Village obliterated, all residents dead or captured. Carries evidence (red robe hood wrapped around bandit blade). Arc: Survivor's guilt and belief he has nothing left to lose, but bond with Senta providing stability and preventing complete mental fracture. Stubbornly determined to reach Haven with intelligence despite injuries. Stance toward Senta: Initially dismissive ('insufferable horse'), then accepted Choosing—pragmatic partnership forming, shares her determination to warn Haven.\",\n      \"k\": [\"Rance\", \"headman\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Identity: Adult Companion mare, three years unpartnered until now, sapphire eyes, silver-white coat. State: Successfully Chose Rance at Lisle ruins—bond formed, actively stabilizing his wild Gift through their connection. Arc: Found her Chosen under catastrophic circumstances; frustrated by his stubbornness but committed to keeping him alive. Stance toward Rance: Chose him despite unconventional age and circumstances—mixture of exasperation at his recklessness and fierce protective determination. Recognizes his underlying steel and leadership qualities. Insistent on proper care before reaching Haven.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Lisle\",\n      \"c\": \"Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders—completely obliterated. Reduced to ash, charred timber fragments, scorched foundations, and a central crater. Destroyed by Rance's awakened Mage-Gift during bandit raid. Bodies at edge: villagers being carried off, bandits caught in blast. Evidence of organized attack disguised as banditry.\",\n      \"k\": [\"Lisle\"]\n    },\n    {\n      \"t\": \"faction\",\n      \"n\": \"Red Robe Organization\",\n      \"c\": \"Unknown organized group conducting raids disguised as banditry. Members wear red robes concealed under bandit clothing. Attacked Lisle systematically—incapacitating and capturing villagers. Fled toward Menmellith border after Rance's Gift explosion. Purpose unknown but represents coordinated threat to Valdemar requiring Haven's attention.\",\n      \"k\": [\"Red Robe Organization\", \"red robes\"]\n    }\n  ]\n}\n",
+  "error": null
+}

@@ -1,0 +1,32 @@
+{
+  "entityName": "Rance",
+  "type": "character",
+  "keywords": [
+    "Rance"
+  ],
+  "totalScenes": 2,
+  "mergeResults": [
+    {
+      "scene": "scene-0-11",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 272,
+      "merged_length": 272,
+      "content": "GIFT: Wild Mage-talent awakened—immense destructive power, uncontrolled, type uncertain (possibly Firestarting or raw magic). Channels burned open, severe Gift-shock. Commitment: testimony to Haven about attack. Carries bandit's blade wrapped in red robe hood as evidence."
+    },
+    {
+      "scene": "scene-12-23",
+      "action": "merge",
+      "duration": 7.968,
+      "tokens": 2024,
+      "existing_length": 272,
+      "new_length": 240,
+      "merged_length": 390,
+      "delta": 118,
+      "canonicalName": null,
+      "content": "GIFT: Wild Mage-talent awakened—immense destructive power, uncontrolled, type uncertain (possibly Firestarting or raw magic). Channels burned open. Commitment: testimony to Haven about attack; ordered Senta to knock him out if he loses control. Carries bandit's blade wrapped in red robe hood as evidence. Now in Healers' Collegium care at Haven. Memories of Lisle attack blocked by trauma.",
+      "raw": "{\n  \"mergedContent\": \"GIFT: Wild Mage-talent awakened—immense destructive power, uncontrolled, type uncertain (possibly Firestarting or raw magic). Channels burned open. Commitment: testimony to Haven about attack; ordered Senta to knock him out if he loses control. Carries bandit's blade wrapped in red robe hood as evidence. Now in Healers' Collegium care at Haven. Memories of Lisle attack blocked by trauma.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "GIFT: Wild Mage-talent awakened—immense destructive power, uncontrolled, type uncertain (possibly Firestarting or raw magic). Channels burned open. Commitment: testimony to Haven about attack; ordered Senta to knock him out if he loses control. Carries bandit's blade wrapped in red robe hood as evidence. Now in Healers' Collegium care at Haven. Memories of Lisle attack blocked by trauma."
+}

@@ -1,0 +1,75 @@
+{
+  "run": 7,
+  "stage2_run": 12,
+  "timestamp": "2025-11-28T00:01:04.678Z",
+  "total": 5,
+  "successful": 5,
+  "failed": 0,
+  "final_recap": "DEV: Lisle village obliterated—Rance's latent Mage-Gift awakened during bandit attack, unleashing catastrophic magical fury; Senta Chose Rance during crisis, stabilizing burned-open channels. Attackers identified as Karsite special forces disguised as bandits; red Sun-Priest robes recovered from bodies; took live captives for blood magic/human sacrifice. Four-day ride to Haven; Healers stabilized Rance. Addressed Queen's Circle—revealed complete mind-merge with Talia during Mind-Healing memory recovery; now shares all memories, state secrets, training, protocol knowledge. Circle sealed information; arranged Healer's cottage in Companion's Field for isolation/safety. Herald Myste dispatched to archives for Mage-Gift training records (first Mage-Gift since Vanyel, centuries ago). Kyril tasked with contacting Rethwellan/Hardorn/Menmellith regarding Karsite activity. Official cover: ordinary Herald-trainee. Rance and Senta settled into isolated cottage. Talia arrived at dawn with decision about shared-memory situation; public pretense of formal distance between Rance-Talia begins. Rance and Talia consummated relationship—Talia's first sexual experience. Rance used untrained Mage-Gift telekinetically (slammed door, closed curtains)—raw channels caused pain, demonstrated unpredictable power during emotional intensity.\n\nPEND: How to present formalized Rance-Talia connection to Selenay—semi-official arrangement known to Circle but hidden publicly. Training regimen for unprecedented Mage-Gift without living teachers. Alberich's training approach. Karsite blood magic campaign scope—Valdemar-specific or broader threat? Fate of captured villagers. Contingency if Rance loses control. Circle's private deliberations on security/political ramifications.",
+  "final_recap_length": 1767,
+  "total_event_entities": 2,
+  "all_entities": [
+    {
+      "t": "event",
+      "n": "Border Waystation departure",
+      "c": "departed Waystation at Menmellith border after examining evidence",
+      "k": [
+        "Waystation",
+        "border",
+        "departure"
+      ]
+    },
+    {
+      "t": "event",
+      "n": "Lisle Destruction",
+      "c": "Village obliterated by Rance's Gift-awakening; Karsite special forces took captives before blast",
+      "k": [
+        "Lisle",
+        "village destruction",
+        "awakening"
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene-0-11",
+      "success": true,
+      "input_recap_length": 0,
+      "output_recap_length": 585,
+      "entities_count": 0,
+      "error": null
+    },
+    {
+      "id": "scene-12-23",
+      "success": true,
+      "input_recap_length": 585,
+      "output_recap_length": 1056,
+      "entities_count": 1,
+      "error": null
+    },
+    {
+      "id": "scene-24-59",
+      "success": true,
+      "input_recap_length": 1056,
+      "output_recap_length": 1303,
+      "entities_count": 1,
+      "error": null
+    },
+    {
+      "id": "scene-72-82",
+      "success": true,
+      "input_recap_length": 1303,
+      "output_recap_length": 1477,
+      "entities_count": 0,
+      "error": null
+    },
+    {
+      "id": "scene-83-113",
+      "success": true,
+      "input_recap_length": 1477,
+      "output_recap_length": 1767,
+      "entities_count": 0,
+      "error": null
+    }
+  ]
+}

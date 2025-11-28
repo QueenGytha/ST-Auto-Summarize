@@ -1,72 +1,126 @@
 // MACROS: {{existing_content}}, {{new_content}}, {{entry_name}}
 
-export const auto_lorebook_recap_merge_prompt = `ROLE: Setting bible editor. Maintain canonical entity records with precision.
+export const auto_lorebook_recap_merge_prompt = `TASK: Merge new information into existing entry.
 
-CONTEXT: This is for AI roleplay. Entity entries are injected into the LLM's context when that entity appears in the story. The LLM uses this to write the entity consistently - their voice, relationships, development, current state.
+================================================================================
+THE CONTINUITY TEST (apply to ALL content)
+================================================================================
 
-Every token competes with the current scene for context space. Keep entries focused on what helps the LLM write this entity well. If something wouldn't change how the LLM writes the entity, cut it.
+Ask: "Would ignoring this cause contradictions in future scenes?"
 
-TASK: Merge NEW_CONTENT into EXISTING_CONTENT. EXISTING_CONTENT is baseline. Default is DROP unless NEW_CONTENT clearly earns inclusion.
+YES (keep):
+- Permanent changes (lost limb, new title, transformed)
+- Commitments that could be called back
+- Relationship dynamics that affect interactions
+- Behavioral patterns that define how to write them
 
-============ SUPERSESSION RULES (by priority) ============
+NO (drop):
+- Transient conditions (tired, hungry, mood fluctuations)
+- Temporary discomfort that resolves
+- Conditions that naturally pass without consequence
 
-Different bullet types have different merge rules:
+If content doesn't pass this test, DROP IT during merge—even if it's in the input.
 
-- Arc: ACCUMULATE - add to journey (landmark moments only) — PROTECT
-- Stance: UPDATE per target - one line per relationship — HIGH VALUE
-- Quotes: DEDUP - same relationship moment = keep better one only — MEDIUM
-- State: SUPERSEDE - newer replaces older — LOWER
-- Identity: PRESERVE unless fundamentally changed (rare) — CUT FIRST
+================================================================================
+SUPERSEDE (CRITICAL - newer replaces older)
+================================================================================
 
-============ FILTERING ============
+When new content contradicts or updates old content, KEEP ONLY THE NEW.
+Do NOT keep both. Do NOT show the progression.
 
-For EACH item in NEW_CONTENT, ask: "Does this earn its tokens given what EXISTING_CONTENT has?"
+State changes: keep only current
+- "injured" then "healed" → output ONLY relevant current state
+- "at location A" then "at location B" → output ONLY current location
+- resolved situations → DELETE entirely (not "was X, now resolved")
 
-Quotes dedup:
-- Does NEW_CONTENT quote capture same relationship moment as any EXISTING_CONTENT quote?
-- TEST: "Is this the same commitment/oath/defining moment, just worded differently?"
-- YES same moment → keep better one only
-- NO different moment (new commitment, different relationship pivot) → add new quote
+================================================================================
+CONSOLIDATE (merge should TIGHTEN, not accumulate)
+================================================================================
 
-Arc threshold:
-- Is this a landmark moment (pattern break, worldview shift)?
-- NO, just a mood or minor moment → DROP
-- EMBEDDED QUOTES: Compare MEANING not format. If NEW has quote and EXISTING has
-  synthesis of same transformation, keep whichever captures it better.
-  Quote earns its place only if exact wording matters for callbacks.
+Output should be SHORTER or EQUAL, not longer than inputs combined.
+- Multiple mentions of same dynamic → ONE best phrasing
+- Redundant sentiments → pick the most specific one
+- History of how things developed → just the current state + essential context
 
-Stance update:
-- Does NEW_CONTENT show a meaningful SHIFT in the relationship?
-- TEST: "Would this change how the LLM writes interactions between these characters?"
-- YES (new commitment, betrayal, shift in dynamic) → UPDATE
-- NO (just more of the same dynamic) → keep existing
-- EMBEDDED QUOTES: Compare MEANING not format. If NEW has quote and EXISTING has
-  synthesis of same dynamic/commitment, keep whichever captures it better.
-  Quote earns its place only if exact wording matters for callbacks.
+================================================================================
+WHAT MAKES CHARACTERS FEEL ALIVE (PRESERVE THESE)
+================================================================================
 
-State check:
-- Will this still be true going forward?
-- NO → DROP. YES → REPLACE existing entirely.
-- Don't mix old+new state. Drop stale details (old locations, resolved conditions).
-- State should reflect CURRENT reality only.
+BEHAVIORAL MECHANISMS - How they act:
+- Patterns that affect how to write them in future scenes
 
-============ OUTPUT ============
+THE "WHY" - Context that explains behavior:
+- Motivation that makes dynamics specific, not generic
+
+CALLBACKS - Specific details for future reference:
+- Exact words from pivotal moments
+- Specific acts that define relationships
+
+TENSIONS - Internal contradictions that create depth
+
+================================================================================
+WHAT TO DROP
+================================================================================
+
+TRANSIENT: Conditions that naturally pass (fatigue, temporary emotions, discomfort)
+REDUNDANT: Same meaning stated multiple ways
+OTHER CHARACTERS: Their motivations/feelings belong in THEIR entry
+
+USER CHARACTER ({{user}}) - VERY AGGRESSIVE:
+If {{entry_name}} is {{user}}, apply MAXIMUM filtering:
+- KEEP ONLY: physical state, status/titles, explicit commitments
+- DROP EVERYTHING ELSE: relationships, development, personality, voice, internal state
+- User plays their own character—they need almost no lorebook reconstruction
+- If merge would result in mostly relationship/development content → output minimal or empty
+
+Example for {{user}} entry:
+EXISTING: "Broken arm from battle"
+NEW: "Arm healed; now trusts [NPC] completely; growing more confident"
+✓ MERGED: "Arm healed" (drop relationship and development—user demonstrates those)
+
+================================================================================
+STANCE SECTIONS
+================================================================================
+
+STANCE captures relationship dynamics. Keep what affects how they INTERACT:
+
+KEEP:
+- Core dynamic (protective/hostile/romantic/complicated)
+- Behavioral patterns ("will do X if Y happens")
+- Tensions and contradictions ("loves but resents")
+- The "why" if it affects behavior ("protective because...")
+- Specific commitments or boundaries
+
+COMPACT:
+- Multiple phrasings of same sentiment → ONE best version
+- Blow-by-blow history of how dynamic developed → just current state + key context
+- Generic emotional reactions ("warmed by", "impressed by") unless they create specific behavior
+
+Example:
+BLOATED: "grew closer over journey; impressed by courage; warmed by kindness; now trusts completely; will fight for them; protective instincts awakened"
+BETTER: "trusts completely; fiercely protective; will fight for them"
+(Same meaning, removed redundant sentiment buildup)
+
+But DON'T strip this: "trusts completely yet terrified of losing herself to the connection"
+(The tension/contradiction is character-defining, not redundancy)
+
+================================================================================
+SUBJECT LOCK
+================================================================================
+
+Entry = {{entry_name}}. This entry is ABOUT this entity.
+- Their identity, state, changes, relationships
+- Other entities appear only in context of relationship TO this entity
+- Don't duplicate other entities' own information here
+
+================================================================================
+OUTPUT
+================================================================================
 
 {
-  "mergedContent": "bullet-formatted content",
-  "canonicalName": "ProperName or null"
+  "mergedContent": "merged content as free-form text",
+  "canonicalName": "ProperName or null if no rename needed"
 }
-
-MUST use labeled bullets (priority order). Each helps the LLM differently:
-- Arc: journey (from → through → to) — helps LLM write character consistent with growth
-- Stance: [target] — shared history, dynamic, commitments — helps LLM write interactions with appropriate subtext
-- Quotes: 'defining quote' — relationship-defining moments for callbacks
-- State: current conditions, belongings, status — prevents contradictions (injured arm can't be used)
-- Identity: background, role, position — provides baseline context for who they are
-
-OMIT empty bullets. Each bullet on new line.
-
-SUBJECT LOCK: Entry = {{entry_name}}. Other entities → Stance bullets only.
 
 ---------------- EXISTING_CONTENT ----------------
 <EXISTING_CONTENT>

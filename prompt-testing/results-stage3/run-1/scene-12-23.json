@@ -1,0 +1,15 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 7.415,
+  "tokens": 1163,
+  "input_recap_length": 499,
+  "input_plot_length": 446,
+  "output_recap_length": 761,
+  "parsed": {
+    "recap": "DEV: Village of Lisle destroyed—Rance's latent Mage-Gift awakened catastrophically during bandit raid, obliterating village; Karsites disguised as bandits captured villagers, possibly for blood magic rituals; red robes found hidden under bandit clothing, footprints to Menmellith border—organized infiltration; Senta Chose Rance, bond formed, stabilizing wild Gift; Senta carried unconscious Rance to Haven over 4 days; arrived at Healers' Collegium.\n\nPEND: Rance's blocked trauma memories need extraction; uncontrolled Gift poses assassination risk to Valdemaran leadership; Karsite prisoner motive unclear; Rance's specific Gift type unidentified (likely Firestarting or rarer) but devastatingly powerful; testimony needed at Haven regarding organized threat."
+  },
+  "raw": "{\n  \"recap\": \"DEV: Village of Lisle destroyed—Rance's latent Mage-Gift awakened catastrophically during bandit raid, obliterating village; Karsites disguised as bandits captured villagers, possibly for blood magic rituals; red robes found hidden under bandit clothing, footprints to Menmellith border—organized infiltration; Senta Chose Rance, bond formed, stabilizing wild Gift; Senta carried unconscious Rance to Haven over 4 days; arrived at Healers' Collegium.\\n\\nPEND: Rance's blocked trauma memories need extraction; uncontrolled Gift poses assassination risk to Valdemaran leadership; Karsite prisoner motive unclear; Rance's specific Gift type unidentified (likely Firestarting or rarer) but devastatingly powerful; testimony needed at Haven regarding organized threat.\"\n}\n",
+  "recap": "DEV: Village of Lisle destroyed—Rance's latent Mage-Gift awakened catastrophically during bandit raid, obliterating village; Karsites disguised as bandits captured villagers, possibly for blood magic rituals; red robes found hidden under bandit clothing, footprints to Menmellith border—organized infiltration; Senta Chose Rance, bond formed, stabilizing wild Gift; Senta carried unconscious Rance to Haven over 4 days; arrived at Healers' Collegium.\n\nPEND: Rance's blocked trauma memories need extraction; uncontrolled Gift poses assassination risk to Valdemaran leadership; Karsite prisoner motive unclear; Rance's specific Gift type unidentified (likely Firestarting or rarer) but devastatingly powerful; testimony needed at Haven regarding organized threat.",
+  "error": null
+}

@@ -1,0 +1,23 @@
+{
+  "run": 1,
+  "stage2_run": 2,
+  "stage3_run": 4,
+  "timestamp": "2025-11-27T21:26:36.073Z",
+  "total": 1,
+  "successful": 1,
+  "failed": 0,
+  "final_lorebook_entries": 5,
+  "total_input_entities": 5,
+  "total_output_entities": 5,
+  "total_filtered_out": 0,
+  "scenes": [
+    {
+      "id": "scene-0-11",
+      "success": true,
+      "input_entities": 5,
+      "output_entities": 5,
+      "filtered_out": 0,
+      "error": null
+    }
+  ]
+}

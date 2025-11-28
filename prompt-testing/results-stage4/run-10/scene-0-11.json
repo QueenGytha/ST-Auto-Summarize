@@ -1,0 +1,87 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 8.671,
+  "tokens": 2050,
+  "input_entities": 4,
+  "output_entities": 4,
+  "filtered_out": 0,
+  "new_entities": 4,
+  "updated_entities": 0,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "GIFT: Wild Mage-talent awakened—immense destructive power, uncontrolled, type uncertain (possibly Firestarting or raw magic). Channels burned open, severe Gift-shock. Commitment: testimony to Haven about attack. Carries bandit's blade wrapped in red robe hood as evidence.",
+        "k": [
+          "Rance"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Frustrated by his stubbornness but committed. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Herding him to safety/Haven. Practical, occasionally indignant, wry humor.",
+        "k": [
+          "Senta",
+          "Companion"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Lisle",
+        "c": "Small Valdemar village near Karse/Rethwellan/Menmellith borders. STATUS: Obliterated—leveled by Rance's awakened Gift during bandit attack. Crater at epicenter, ash and charred foundations remain.",
+        "k": [
+          "Lisle"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Red Robe Attackers",
+        "c": "Organized group masquerading as bandits (red robes hidden under bandit garb). Attacked Lisle to capture villagers—purpose unknown. Fled toward Menmellith after Rance's Gift exploded. Possible cult/sect. May return to confirm attack success.",
+        "k": [
+          "Red Robe Attackers",
+          "red robes"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"GIFT: Wild Mage-talent awakened—immense destructive power, uncontrolled, type uncertain (possibly Firestarting or raw magic). Channels burned open, severe Gift-shock. Commitment: testimony to Haven about attack. Carries bandit's blade wrapped in red robe hood as evidence.\",\n      \"k\": [\n        \"Rance\"\n      ]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Frustrated by his stubbornness but committed. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Herding him to safety/Haven. Practical, occasionally indignant, wry humor.\",\n      \"k\": [\n        \"Senta\",\n        \"Companion\"\n      ]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Lisle\",\n      \"c\": \"Small Valdemar village near Karse/Rethwellan/Menmellith borders. STATUS: Obliterated—leveled by Rance's awakened Gift during bandit attack. Crater at epicenter, ash and charred foundations remain.\",\n      \"k\": [\n        \"Lisle\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Red Robe Attackers\",\n      \"c\": \"Organized group masquerading as bandits (red robes hidden under bandit garb). Attacked Lisle to capture villagers—purpose unknown. Fled toward Menmellith after Rance's Gift exploded. Possible cult/sect. May return to confirm attack success.\",\n      \"k\": [\n        \"Red Robe Attackers\",\n        \"red robes\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "GIFT: Wild Mage-talent awakened—immense destructive power, uncontrolled, type uncertain (possibly Firestarting or raw magic). Channels burned open, severe Gift-shock. Commitment: testimony to Haven about attack. Carries bandit's blade wrapped in red robe hood as evidence.",
+      "k": [
+        "Rance"
+      ]
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Frustrated by his stubbornness but committed. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Herding him to safety/Haven. Practical, occasionally indignant, wry humor.",
+      "k": [
+        "Senta",
+        "Companion"
+      ]
+    },
+    {
+      "t": "location",
+      "n": "Lisle",
+      "c": "Small Valdemar village near Karse/Rethwellan/Menmellith borders. STATUS: Obliterated—leveled by Rance's awakened Gift during bandit attack. Crater at epicenter, ash and charred foundations remain.",
+      "k": [
+        "Lisle"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Red Robe Attackers",
+      "c": "Organized group masquerading as bandits (red robes hidden under bandit garb). Attacked Lisle to capture villagers—purpose unknown. Fled toward Menmellith after Rance's Gift exploded. Possible cult/sect. May return to confirm attack success.",
+      "k": [
+        "Red Robe Attackers",
+        "red robes"
+      ]
+    }
+  ],
+  "error": null
+}

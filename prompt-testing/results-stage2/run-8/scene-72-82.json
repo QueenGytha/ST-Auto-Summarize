@@ -1,0 +1,34 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 7.783,
+  "tokens": 2147,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Dawn consultation with Talia",
+    "plot": "DEV: Rance and Senta woke before dawn anticipating Alberich; Talia arrived unexpectedly at practice field seeking private discussion before meeting Selenay—has made significant decision about handling their memory-sharing situation. PEND: Talia's decision about how to proceed; her meeting with Selenay; Alberich's training approach.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: Consulted him privately before presenting decision to Selenay—treating him as peer advisor rather than subordinate Trainee despite rank difference. Overnight resolved internal conflict into new determination; reached significant decision about managing shared-memory situation affecting both of them. Experiencing disorientation from memory fragments—reaches for Rance's memories that aren't fully there, struggles with physical differences (stride length). More controlled and certain than previous evening's vulnerability.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Fully recovered after grooming and rest—energy and alertness restored. Maintains fierce protectiveness of Rance, monitors surroundings constantly. Detected Talia's emotional state shift from night before—noted increased control and certainty replacing earlier vulnerability.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Dawn consultation with Talia\",\n  \"plot\": \"DEV: Rance and Senta woke before dawn anticipating Alberich; Talia arrived unexpectedly at practice field seeking private discussion before meeting Selenay—has made significant decision about handling their memory-sharing situation. PEND: Talia's decision about how to proceed; her meeting with Selenay; Alberich's training approach.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: Consulted him privately before presenting decision to Selenay—treating him as peer advisor rather than subordinate Trainee despite rank difference. Overnight resolved internal conflict into new determination; reached significant decision about managing shared-memory situation affecting both of them. Experiencing disorientation from memory fragments—reaches for Rance's memories that aren't fully there, struggles with physical differences (stride length). More controlled and certain than previous evening's vulnerability.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Fully recovered after grooming and rest—energy and alertness restored. Maintains fierce protectiveness of Rance, monitors surroundings constantly. Detected Talia's emotional state shift from night before—noted increased control and certainty replacing earlier vulnerability.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

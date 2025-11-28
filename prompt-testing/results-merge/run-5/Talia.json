@@ -1,0 +1,46 @@
+{
+  "entityName": "Talia",
+  "type": "character",
+  "keywords": [
+    "Talia",
+    "Queen's Own"
+  ],
+  "totalScenes": 3,
+  "mergeResults": [
+    {
+      "scene": "scene-24-59",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 752,
+      "merged_length": 752,
+      "content": "STATE: Recovering from complete mind-merge with Rance under Healer Crescent's care; profoundly overwhelmed but unharmed; worked through buried trauma during merge—decades of self-doubt, fear of Empathy consuming identity, isolation from carrying kingdom's burdens alone; left in better emotional state than before despite overwhelm. SHARED: Rance now possesses her complete life—escape from Sensholding, Rolan's Choosing, Empathy awakening, every state secret, all training, wine preferences (47 vintage), every private moment. STANCE-Rance: Intimate knowledge shared both ways; he saw her deepest vulnerabilities; complicated mix of violation/gratitude/fascination; their passionate kiss closed the connection; uncertain how relationship will proceed."
+    },
+    {
+      "scene": "scene-72-82",
+      "action": "merge",
+      "duration": 6.849,
+      "tokens": 1647,
+      "existing_length": 752,
+      "new_length": 220,
+      "merged_length": 973,
+      "delta": 221,
+      "canonicalName": null,
+      "content": "STATE: Recovering from complete mind-merge with Rance under Healer Crescent's care; profoundly overwhelmed but unharmed; worked through buried trauma during merge—decades of self-doubt, fear of Empathy consuming identity, isolation from carrying kingdom's burdens alone; left in better emotional state than before despite overwhelm. Physical disorientation continues—reaches for his memories that are now fragments; stride length mismatch when walking. Made definitive decision about handling shared memory situation; speaks with formal Court precision. SHARED: Rance now possesses her complete life—escape from Sensholding, Rolan's Choosing, Empathy awakening, every state secret, all training, wine preferences (47 vintage), every private moment. STANCE-Rance: Intimate knowledge shared both ways; he saw her deepest vulnerabilities; complicated mix of violation/gratitude/fascination; their passionate kiss closed the connection; uncertain how relationship will proceed.",
+      "raw": "{\n  \"mergedContent\": \"STATE: Recovering from complete mind-merge with Rance under Healer Crescent's care; profoundly overwhelmed but unharmed; worked through buried trauma during merge—decades of self-doubt, fear of Empathy consuming identity, isolation from carrying kingdom's burdens alone; left in better emotional state than before despite overwhelm. Physical disorientation continues—reaches for his memories that are now fragments; stride length mismatch when walking. Made definitive decision about handling shared memory situation; speaks with formal Court precision. SHARED: Rance now possesses her complete life—escape from Sensholding, Rolan's Choosing, Empathy awakening, every state secret, all training, wine preferences (47 vintage), every private moment. STANCE-Rance: Intimate knowledge shared both ways; he saw her deepest vulnerabilities; complicated mix of violation/gratitude/fascination; their passionate kiss closed the connection; uncertain how relationship will proceed.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 8.149,
+      "tokens": 1906,
+      "existing_length": 973,
+      "new_length": 591,
+      "merged_length": 1235,
+      "delta": 262,
+      "canonicalName": null,
+      "content": "STATE: Recovering from complete mind-merge with Rance under Healer Crescent's care; physical disorientation continues—reaches for his memories that are now fragments, stride length mismatch when walking. Virginity taken by Rance; bite mark on breast; physically marked. Worked through decades of buried trauma during merge—self-doubt, fear of Empathy consuming identity, isolation from carrying kingdom's burdens alone; left in better emotional state despite overwhelm. Discovered arousal from submission/degradation; surrendered control for first time in adult life; broke years of self-denial. Made decision to recommend formalizing connection to Selenay as co-advisors (semi-official—Circle knows, public doesn't). Speaks with formal Court precision. SHARED: Rance possesses her complete life—escape from Sensholding, Rolan's Choosing, Empathy awakening, every state secret, all training, wine preferences (47 vintage), every private moment. STANCE-Rance: Complete intimate knowledge shared both ways; sexually claimed; responds intensely to dominance and crude language; shields waver around him but he can shore them up; terrified of losing herself but trusts him to prevent it; complicated mix of violation/gratitude/fascination.",
+      "raw": "{\n  \"mergedContent\": \"STATE: Recovering from complete mind-merge with Rance under Healer Crescent's care; physical disorientation continues—reaches for his memories that are now fragments, stride length mismatch when walking. Virginity taken by Rance; bite mark on breast; physically marked. Worked through decades of buried trauma during merge—self-doubt, fear of Empathy consuming identity, isolation from carrying kingdom's burdens alone; left in better emotional state despite overwhelm. Discovered arousal from submission/degradation; surrendered control for first time in adult life; broke years of self-denial. Made decision to recommend formalizing connection to Selenay as co-advisors (semi-official—Circle knows, public doesn't). Speaks with formal Court precision. SHARED: Rance possesses her complete life—escape from Sensholding, Rolan's Choosing, Empathy awakening, every state secret, all training, wine preferences (47 vintage), every private moment. STANCE-Rance: Complete intimate knowledge shared both ways; sexually claimed; responds intensely to dominance and crude language; shields waver around him but he can shore them up; terrified of losing herself but trusts him to prevent it; complicated mix of violation/gratitude/fascination.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "STATE: Recovering from complete mind-merge with Rance under Healer Crescent's care; physical disorientation continues—reaches for his memories that are now fragments, stride length mismatch when walking. Virginity taken by Rance; bite mark on breast; physically marked. Worked through decades of buried trauma during merge—self-doubt, fear of Empathy consuming identity, isolation from carrying kingdom's burdens alone; left in better emotional state despite overwhelm. Discovered arousal from submission/degradation; surrendered control for first time in adult life; broke years of self-denial. Made decision to recommend formalizing connection to Selenay as co-advisors (semi-official—Circle knows, public doesn't). Speaks with formal Court precision. SHARED: Rance possesses her complete life—escape from Sensholding, Rolan's Choosing, Empathy awakening, every state secret, all training, wine preferences (47 vintage), every private moment. STANCE-Rance: Complete intimate knowledge shared both ways; sexually claimed; responds intensely to dominance and crude language; shields waver around him but he can shore them up; terrified of losing herself but trusts him to prevent it; complicated mix of violation/gratitude/fascination."
+}

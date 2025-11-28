@@ -1,0 +1,44 @@
+{
+  "run": 14,
+  "stage4_run": 11,
+  "timestamp": "2025-11-27T23:58:11.171Z",
+  "entities_tested": 5,
+  "total_merges": 9,
+  "entities": [
+    {
+      "name": "Rance",
+      "type": "character",
+      "scenes": 2,
+      "merges": 1,
+      "final_length": 504
+    },
+    {
+      "name": "Senta",
+      "type": "character",
+      "scenes": 5,
+      "merges": 4,
+      "final_length": 1286
+    },
+    {
+      "name": "Rolan",
+      "type": "character",
+      "scenes": 2,
+      "merges": 1,
+      "final_length": 300
+    },
+    {
+      "name": "Karsite Blood Magic",
+      "type": "lore",
+      "scenes": 2,
+      "merges": 1,
+      "final_length": 573
+    },
+    {
+      "name": "Talia",
+      "type": "character",
+      "scenes": 3,
+      "merges": 2,
+      "final_length": 1033
+    }
+  ]
+}

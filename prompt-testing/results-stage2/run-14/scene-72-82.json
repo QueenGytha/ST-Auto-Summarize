@@ -1,0 +1,25 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 6.845,
+  "tokens": 1674,
+  "userName": "Rance",
+  "stage1_entities": 1,
+  "stage2_entities": 1,
+  "parsed": {
+    "sn": "Morning Counsel Before Selenay",
+    "plot": "DEV: Talia made a decision overnight about handling their shared-memory situation and requested private discussion with Rance before meeting with Selenay. PEND: Talia's decision about how to present their situation to Selenay and the Circle; potential policy changes affecting both of them.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: Seeks his counsel before presenting decisions to Selenay—treating him as collaborative partner rather than subordinate despite rank difference. Comfortable visiting his isolated cottage alone at dawn. Shifted from vulnerable confusion to decisive action overnight regarding shared-memory situation. Uses formal Court cadence when discussing matters of weight.",
+        "k": [
+          "Talia"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Morning Counsel Before Selenay\",\n  \"plot\": \"DEV: Talia made a decision overnight about handling their shared-memory situation and requested private discussion with Rance before meeting with Selenay. PEND: Talia's decision about how to present their situation to Selenay and the Circle; potential policy changes affecting both of them.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: Seeks his counsel before presenting decisions to Selenay—treating him as collaborative partner rather than subordinate despite rank difference. Comfortable visiting his isolated cottage alone at dawn. Shifted from vulnerable confusion to decisive action overnight regarding shared-memory situation. Uses formal Court cadence when discussing matters of weight.\",\n      \"k\": [\"Talia\"]\n    }\n  ]\n}\n",
+  "error": null
+}

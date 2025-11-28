@@ -8,6 +8,18 @@ Every token competes with the current scene for context space. Compaction remove
 
 TASK: Compact the entry. Same information value, fewer tokens.
 
+USER CHARACTER ({{user}}) - AGGRESSIVE COMPACTION:
+If this entry is for {{user}}, compact to BARE MINIMUM:
+- KEEP ONLY: physical state, status/titles, explicit commitments
+- DROP: relationships (belong in NPC entries), development, personality, internal state
+- User plays their own character—minimal lorebook needed
+- {{user}} entries should be tiny or absent
+
+Example for {{user}}:
+Input: "Scarred face; now Baron of Westmarch; swore to protect the village; trusts [NPC]; learned humility"
+✓ Output: "Scarred face; Baron of Westmarch; swore to protect village"
+(Drop relationship and development)
+
 DEDUPLICATION (enforce before output):
 - QUOTES: One per RELATIONSHIP MOMENT. Same commitment/pivot, different words → DROP all but most defining.
 - RELATIONSHIPS: Collapse to stance + dynamics. Blow-by-blow steps → DROP.

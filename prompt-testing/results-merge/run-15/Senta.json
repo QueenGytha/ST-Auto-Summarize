@@ -1,0 +1,58 @@
+{
+  "entityName": "Senta",
+  "type": "character",
+  "keywords": [
+    "Senta"
+  ],
+  "totalScenes": 4,
+  "mergeResults": [
+    {
+      "scene": "scene-0-11",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 666,
+      "merged_length": 666,
+      "content": "IDENTITY: Unpartnered Companion mare for 3 years (adult status), silver hooves, sapphire eyes, silver-white mane. CHANGE: Chose Rance—bonded. STATE: Can mind-speak with Chosen; senses magic; travels 3x distance of ordinary horses. ARC: Found her Chosen in catastrophic circumstances—dealing with stubborn, grief-stricken partner who doesn't yet understand he caused destruction himself. STANCE-Rance: Chosen bond—unconditional love, exasperation at stubbornness, protective. Blocking his self-destructive impulses while guiding him toward survival/training. Firm: 'You are never alone again.' Knows he has immensely powerful Gift (type unknown), triggered by trauma."
+    },
+    {
+      "scene": "scene-12-23",
+      "action": "merge",
+      "duration": 7.973,
+      "tokens": 2357,
+      "existing_length": 666,
+      "new_length": 408,
+      "merged_length": 923,
+      "delta": 257,
+      "canonicalName": null,
+      "content": "IDENTITY: Unpartnered Companion mare for 3 years (adult status), silver hooves, sapphire eyes, silver-white mane. CHANGE: Chose Rance—bonded. STATE: Can mind-speak with Chosen; senses magic; travels 3x distance of ordinary horses. ARC: Found her Chosen in catastrophic circumstances—dealing with stubborn, grief-stricken partner who doesn't yet understand he caused destruction himself. STANCE-Rance: Chosen bond—unconditional love, fiercely protective, refuses separation. Moved from exasperation at stubbornness to genuine attachment; felt his affection, sees caring beneath granite exterior. True partners ('we face it together'). Blocking his self-destructive impulses while guiding him toward survival/training. Firm: 'You are never alone again.' Knows he has immensely powerful Gift (type unknown), triggered by trauma. STANCE-Rolan: Met briefly at Haven arrival, accepted greeting but prioritized staying with Rance.",
+      "raw": "{\n  \"mergedContent\": \"IDENTITY: Unpartnered Companion mare for 3 years (adult status), silver hooves, sapphire eyes, silver-white mane. CHANGE: Chose Rance—bonded. STATE: Can mind-speak with Chosen; senses magic; travels 3x distance of ordinary horses. ARC: Found her Chosen in catastrophic circumstances—dealing with stubborn, grief-stricken partner who doesn't yet understand he caused destruction himself. STANCE-Rance: Chosen bond—unconditional love, fiercely protective, refuses separation. Moved from exasperation at stubbornness to genuine attachment; felt his affection, sees caring beneath granite exterior. True partners ('we face it together'). Blocking his self-destructive impulses while guiding him toward survival/training. Firm: 'You are never alone again.' Knows he has immensely powerful Gift (type unknown), triggered by trauma. STANCE-Rolan: Met briefly at Haven arrival, accepted greeting but prioritized staying with Rance.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-24-59",
+      "action": "merge",
+      "duration": 8.039,
+      "tokens": 2434,
+      "existing_length": 923,
+      "new_length": 286,
+      "merged_length": 1045,
+      "delta": 122,
+      "canonicalName": null,
+      "content": "IDENTITY: Unpartnered Companion mare for 3 years (adult status), silver hooves, sapphire eyes, silver-white mane. CHANGE: Chose Rance—bonded. STATE: Can mind-speak with Chosen; senses magic; travels 3x distance of ordinary horses. ARC: Found her Chosen in catastrophic circumstances—dealing with stubborn, grief-stricken partner who doesn't yet understand he caused destruction himself. STANCE-Rance: Chosen bond—unconditional love, fiercely protective, refuses separation. Moved from exasperation at stubbornness to genuine attachment; felt his affection, sees caring beneath granite exterior. True partners ('we face it together'). Blocking his self-destructive impulses while guiding him toward survival/training. Firm: 'You are never alone again.' Identified his Mage-Gift during chamber crisis. Stands beside/touches him constantly. Contingency partner—will knock him out if control lost. STANCE-Rolan: Met briefly at Haven arrival, accepted greeting but prioritized staying with Rance. Coordinating through Companion network during crisis.",
+      "raw": "{\n  \"mergedContent\": \"IDENTITY: Unpartnered Companion mare for 3 years (adult status), silver hooves, sapphire eyes, silver-white mane. CHANGE: Chose Rance—bonded. STATE: Can mind-speak with Chosen; senses magic; travels 3x distance of ordinary horses. ARC: Found her Chosen in catastrophic circumstances—dealing with stubborn, grief-stricken partner who doesn't yet understand he caused destruction himself. STANCE-Rance: Chosen bond—unconditional love, fiercely protective, refuses separation. Moved from exasperation at stubbornness to genuine attachment; felt his affection, sees caring beneath granite exterior. True partners ('we face it together'). Blocking his self-destructive impulses while guiding him toward survival/training. Firm: 'You are never alone again.' Identified his Mage-Gift during chamber crisis. Stands beside/touches him constantly. Contingency partner—will knock him out if control lost. STANCE-Rolan: Met briefly at Haven arrival, accepted greeting but prioritized staying with Rance. Coordinating through Companion network during crisis.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 9.048,
+      "tokens": 2599,
+      "existing_length": 1045,
+      "new_length": 553,
+      "merged_length": 1199,
+      "delta": 154,
+      "canonicalName": null,
+      "content": "IDENTITY: Unpartnered Companion mare for 3 years (adult status), silver hooves, sapphire eyes, silver-white mane. CHANGE: Chose Rance—bonded. STATE: Can mind-speak with Chosen; senses magic; travels 3x distance of ordinary horses. ARC: Found her Chosen in catastrophic circumstances—dealing with stubborn, grief-stricken partner who doesn't yet understand he caused destruction himself. Now navigating unprecedented complications between her Chosen and the Queen's Own. STANCE-Rance: Chosen bond—unconditional love, fiercely protective, refuses separation. True partners ('we face it together'). Blocking his self-destructive impulses while guiding him toward survival/training. Firm: 'You are never alone again.' Identified his Mage-Gift during chamber crisis; concerned about untrained use (telekinesis with excessive force). Stands beside/touches him constantly. Contingency partner—will knock him out if control lost. Dry humor about complications. STANCE-Talia: Sensed her complete surrender and discovered desires during intimacy with Rance. STANCE-Rolan: Met briefly at Haven arrival, accepted greeting but prioritized staying with Rance. Coordinating through Companion network during crisis.",
+      "raw": "{\n  \"mergedContent\": \"IDENTITY: Unpartnered Companion mare for 3 years (adult status), silver hooves, sapphire eyes, silver-white mane. CHANGE: Chose Rance—bonded. STATE: Can mind-speak with Chosen; senses magic; travels 3x distance of ordinary horses. ARC: Found her Chosen in catastrophic circumstances—dealing with stubborn, grief-stricken partner who doesn't yet understand he caused destruction himself. Now navigating unprecedented complications between her Chosen and the Queen's Own. STANCE-Rance: Chosen bond—unconditional love, fiercely protective, refuses separation. True partners ('we face it together'). Blocking his self-destructive impulses while guiding him toward survival/training. Firm: 'You are never alone again.' Identified his Mage-Gift during chamber crisis; concerned about untrained use (telekinesis with excessive force). Stands beside/touches him constantly. Contingency partner—will knock him out if control lost. Dry humor about complications. STANCE-Talia: Sensed her complete surrender and discovered desires during intimacy with Rance. STANCE-Rolan: Met briefly at Haven arrival, accepted greeting but prioritized staying with Rance. Coordinating through Companion network during crisis.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "IDENTITY: Unpartnered Companion mare for 3 years (adult status), silver hooves, sapphire eyes, silver-white mane. CHANGE: Chose Rance—bonded. STATE: Can mind-speak with Chosen; senses magic; travels 3x distance of ordinary horses. ARC: Found her Chosen in catastrophic circumstances—dealing with stubborn, grief-stricken partner who doesn't yet understand he caused destruction himself. Now navigating unprecedented complications between her Chosen and the Queen's Own. STANCE-Rance: Chosen bond—unconditional love, fiercely protective, refuses separation. True partners ('we face it together'). Blocking his self-destructive impulses while guiding him toward survival/training. Firm: 'You are never alone again.' Identified his Mage-Gift during chamber crisis; concerned about untrained use (telekinesis with excessive force). Stands beside/touches him constantly. Contingency partner—will knock him out if control lost. Dry humor about complications. STANCE-Talia: Sensed her complete surrender and discovered desires during intimacy with Rance. STANCE-Rolan: Met briefly at Haven arrival, accepted greeting but prioritized staying with Rance. Coordinating through Companion network during crisis."
+}

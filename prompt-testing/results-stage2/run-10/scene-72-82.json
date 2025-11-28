@@ -1,0 +1,34 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 7.998,
+  "tokens": 1945,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Dawn Decision at Haven",
+    "plot": "DEV: Talia reached decision overnight about handling shared-memory situation; arrives seeking Rance's input before meeting with Selenay. PEND: Talia's proposal; her meeting with Selenay; Alberich's training approach.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: seeks his counsel before presenting plan to Selenay; considers him relevant stakeholder in decisions affecting both; uses formal cadence around weighty matters. STATE: Resolved after night's deliberation—reached decision about managing shared-memory crisis; emotional state controlled/certain. Herald Queen's Own meeting Selenay after this discussion.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: fierce protectiveness; admiration for leadership under uncertainty; monitors threats to him constantly.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Dawn Decision at Haven\",\n  \"plot\": \"DEV: Talia reached decision overnight about handling shared-memory situation; arrives seeking Rance's input before meeting with Selenay. PEND: Talia's proposal; her meeting with Selenay; Alberich's training approach.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: seeks his counsel before presenting plan to Selenay; considers him relevant stakeholder in decisions affecting both; uses formal cadence around weighty matters. STATE: Resolved after night's deliberation—reached decision about managing shared-memory crisis; emotional state controlled/certain. Herald Queen's Own meeting Selenay after this discussion.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: fierce protectiveness; admiration for leadership under uncertainty; monitors threats to him constantly.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

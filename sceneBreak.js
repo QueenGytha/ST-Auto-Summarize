@@ -1427,7 +1427,7 @@ export async function calculateSceneRecapTokens(options) {
 
 // Helper: Extract and validate JSON from AI response (REMOVED - now uses centralized helper in utils.js)
 
-// Helper: Normalize Stage 1 extraction response - preserves faceted format for 3-stage pipeline
+// Helper: Normalize Stage 1 extraction response - supports entity-based and legacy formats
 function normalizeStage1Extraction(parsed) {
   const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
 
@@ -1443,7 +1443,13 @@ function normalizeStage1Extraction(parsed) {
     return parsed;
   }
 
-  // Faceted format (3-stage pipeline) - preserve as-is including sn
+  // Entity-based format (current pipeline): {sn, plot (string), entities (array)}
+  if (parsed && typeof parsed === 'object' && typeof parsed.plot === 'string' && Array.isArray(parsed.entities)) {
+    debug(SUBSYSTEM.SCENE, `Stage 1 returned entity-based format: ${parsed.entities.length} entities, plot length=${parsed.plot.length}, sn="${parsed.sn || ''}"`);
+    return parsed;
+  }
+
+  // Faceted format (legacy 3-stage pipeline) - preserve as-is including sn
   if (parsed && typeof parsed === 'object') {
     const hasFacets = facetKeys.some(key => Array.isArray(parsed[key]));
     if (hasFacets) {
@@ -1455,7 +1461,35 @@ function normalizeStage1Extraction(parsed) {
     }
   }
 
-  throw new Error("Stage 1 extraction must return either: (1) array, (2) {chronological_items: [...]}, or (3) faceted object with plot/goals/reveals/etc arrays");
+  throw new Error("Stage 1 extraction must return either: (1) array, (2) {chronological_items: [...]}, (3) faceted object with arrays, or (4) entity-based {plot: string, entities: array}");
+}
+
+// Helper: Validate Stage 1 extraction has non-empty content
+function validateStage1Content(parsed) {
+  const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
+  const isEntityFormat = typeof parsed.plot === 'string' && Array.isArray(parsed.entities);
+  const isLegacyFormat = Array.isArray(parsed.chronological_items);
+  const isFacetedFormat = facetKeys.some(key => Array.isArray(parsed[key]));
+
+  if (isEntityFormat) {
+    if (parsed.entities.length === 0 && !parsed.plot?.trim()) {
+      throw new Error("AI returned empty extraction (no entities and no plot)");
+    }
+    debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (entity-based): ${parsed.entities.length} entities, plot length=${parsed.plot.length}, sn="${parsed.sn || ''}"`);
+  } else if (isLegacyFormat) {
+    if (parsed.chronological_items.length === 0) {
+      throw new Error("AI returned empty extraction (no items)");
+    }
+    debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (legacy): ${parsed.chronological_items.length} items`);
+  } else if (isFacetedFormat) {
+    const totalItems = facetKeys.reduce((sum, key) => sum + (Array.isArray(parsed[key]) ? parsed[key].length : 0), 0);
+    if (totalItems === 0) {
+      throw new Error("AI returned empty extraction (no items in any facet)");
+    }
+    debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (faceted): ${totalItems} items, sn="${parsed.sn || ''}"`);
+  } else {
+    throw new Error("Stage 1 extraction must contain either chronological_items array, faceted arrays, or entity-based {plot, entities}");
+  }
 }
 
 // Helper: Generate recap with error handling
@@ -1519,28 +1553,11 @@ async function executeSceneRecapGeneration(llmConfig, range, ctx, profileId, ope
         context: 'Stage 1 scene recap extraction'
       });
 
-      // Normalize Stage 1 response (preserves faceted format for 3-stage pipeline)
+      // Normalize Stage 1 response (handles entity-based, faceted, and legacy formats)
       const parsed = normalizeStage1Extraction(rawParsed);
 
-      // Validation - check for either legacy chronological_items or faceted format
-      const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
-      const isLegacyFormat = Array.isArray(parsed.chronological_items);
-      const isFacetedFormat = facetKeys.some(key => Array.isArray(parsed[key]));
-
-      if (isLegacyFormat) {
-        if (parsed.chronological_items.length === 0) {
-          throw new Error("AI returned empty extraction (no items)");
-        }
-        debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (legacy): ${parsed.chronological_items.length} items`);
-      } else if (isFacetedFormat) {
-        const totalItems = facetKeys.reduce((sum, key) => sum + (Array.isArray(parsed[key]) ? parsed[key].length : 0), 0);
-        if (totalItems === 0) {
-          throw new Error("AI returned empty extraction (no items in any facet)");
-        }
-        debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (faceted): ${totalItems} items, sn="${parsed.sn || ''}"`);
-      } else {
-        throw new Error("Stage 1 extraction must contain either chronological_items array or faceted arrays");
-      }
+      // Validate non-empty content
+      validateStage1Content(parsed);
 
       // Convert back to JSON string for storage
       recap = JSON.stringify(parsed);
@@ -1752,6 +1769,21 @@ function normalizeAndDeduplicateEntries(entriesArray) {
   return uniqueEntries;
 }
 
+// Helper: Find entities array from parsed recap data (supports multiple formats)
+function findEntitiesArray(parsed) {
+  // Check in order of preference: new format → legacy format → nested stage data
+  const candidates = [
+    parsed.entities,
+    parsed.stage4?.entities,
+    parsed.sl,
+    parsed.stage4?.sl,
+    parsed.stage3?.entities,
+    parsed.stage3?.sl,
+    parsed.setting_lore
+  ];
+  return candidates.find(c => Array.isArray(c)) || null;
+}
+
 // Helper: Extract lorebooks from recap JSON and queue each as individual operation
 // Note: Recap should already be clean JSON from executeSceneRecapGeneration()
 async function extractAndQueueLorebookEntries(recap, messageIndex, versionIndex) {
@@ -1765,12 +1797,8 @@ async function extractAndQueueLorebookEntries(recap, messageIndex, versionIndex)
     // Parse JSON (should already be clean from generation)
     const parsed = JSON.parse(recap);
 
-    // Check for 'sl' (3-stage pipeline) or 'setting_lore' (legacy) or stage3.sl/stage4.sl (multi-stage storage)
-    const entriesArray = Array.isArray(parsed.sl) ? parsed.sl
-      : Array.isArray(parsed.stage4?.sl) ? parsed.stage4.sl
-      : Array.isArray(parsed.stage3?.sl) ? parsed.stage3.sl
-      : Array.isArray(parsed.setting_lore) ? parsed.setting_lore
-      : null;
+    // Find entities array from any supported format
+    const entriesArray = findEntitiesArray(parsed);
     if (entriesArray) {
       debug(SUBSYSTEM.SCENE, `Found ${entriesArray.length} sl/setting_lore entries in scene recap at index ${messageIndex}`);
 

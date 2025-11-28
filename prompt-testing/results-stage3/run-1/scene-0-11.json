@@ -1,0 +1,15 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 6.977,
+  "tokens": 978,
+  "input_recap_length": 0,
+  "input_plot_length": 575,
+  "output_recap_length": 499,
+  "parsed": {
+    "recap": "DEV: Village of Lisle destroyed—Rance's latent Mage-Gift awakened catastrophically during bandit raid, obliterating village; red robes found hidden under bandit clothing—organized infiltration, footprints to Menmellith border; Senta Chose Rance, bond formed, stabilizing wild Gift; traveling to Haven via Waystation.\n\nPEND: Red-robed organization's purpose unknown, may return; Rance's specific Gift type unidentified but devastatingly powerful; testimony needed at Haven regarding organized threat."
+  },
+  "raw": "{\n  \"recap\": \"DEV: Village of Lisle destroyed—Rance's latent Mage-Gift awakened catastrophically during bandit raid, obliterating village; red robes found hidden under bandit clothing—organized infiltration, footprints to Menmellith border; Senta Chose Rance, bond formed, stabilizing wild Gift; traveling to Haven via Waystation.\\n\\nPEND: Red-robed organization's purpose unknown, may return; Rance's specific Gift type unidentified but devastatingly powerful; testimony needed at Haven regarding organized threat.\"\n}\n",
+  "recap": "DEV: Village of Lisle destroyed—Rance's latent Mage-Gift awakened catastrophically during bandit raid, obliterating village; red robes found hidden under bandit clothing—organized infiltration, footprints to Menmellith border; Senta Chose Rance, bond formed, stabilizing wild Gift; traveling to Haven via Waystation.\n\nPEND: Red-robed organization's purpose unknown, may return; Rance's specific Gift type unidentified but devastatingly powerful; testimony needed at Haven regarding organized threat.",
+  "error": null
+}

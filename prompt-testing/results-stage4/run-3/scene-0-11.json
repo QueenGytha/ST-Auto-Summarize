@@ -1,0 +1,123 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 10.972,
+  "tokens": 2407,
+  "input_entities": 6,
+  "output_entities": 6,
+  "filtered_out": 0,
+  "new_entities": 6,
+  "updated_entities": 0,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Gift-shock from awakened wild Mage-Gift; magical channels burned open, causing white-hot agony and blurred vision; Chosen by Senta—bonded; carries red robe hood as evidence",
+        "k": [
+          "Rance"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "IDENTITY: Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. ARC: Chose Rance—bond formed; stabilizing his wild Gift through connection; determined to get him to Haven alive despite his recklessness. STANCE-Rance: unconditional love through Choice bond; frustrated by his stubbornness and self-destructive behavior; protective; shares purpose to reach Haven and train his Gift",
+        "k": [
+          "Senta",
+          "Companion"
+        ]
+      },
+      {
+        "t": "location",
+        "n": "Lisle",
+        "c": "Village obliterated—reduced to ash, charred timber, scorched foundations; small crater at epicenter; destroyed by Rance's uncontrolled Gift awakening during bandit attack; residents carried off before destruction; located near borders of Karse, Rethwellan, Menmellith",
+        "k": [
+          "Lisle"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Companion Choosing",
+        "c": "Bond snaps into place like key in lock; unconditional love floods Chosen's mind; mind-speech established; knowledge flows about Gift nature; Companion presence soothes damaged mental channels; creates bridges across burning chasms in mind; forms 'other half of soul' connection",
+        "k": [
+          "Companion Choosing",
+          "Choosing",
+          "Chosen"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Gift-shock",
+        "c": "Occurs when latent Gift forcibly awakens; mental channels burned open by raw power; causes white-hot agony, blurred vision, teetering sanity, difficulty focusing; requires herbs and rest at Waystation; can cause permanent mind fracture if untreated; Companion bond helps stabilize",
+        "k": [
+          "Gift-shock"
+        ]
+      },
+      {
+        "t": "faction",
+        "n": "Red Robe Attackers",
+        "c": "Organized group disguised as bandits; wore red robes hidden under bandit clothing; attacked Lisle to incapacitate and carry off residents; fled to or toward Menmellith after Rance's Gift awakened; may return to confirm results; possibly cult or sect",
+        "k": [
+          "Red Robe Attackers",
+          "red robes"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Gift-shock from awakened wild Mage-Gift; magical channels burned open, causing white-hot agony and blurred vision; Chosen by Senta—bonded; carries red robe hood as evidence\",\n      \"k\": [\n        \"Rance\"\n      ]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"IDENTITY: Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. ARC: Chose Rance—bond formed; stabilizing his wild Gift through connection; determined to get him to Haven alive despite his recklessness. STANCE-Rance: unconditional love through Choice bond; frustrated by his stubbornness and self-destructive behavior; protective; shares purpose to reach Haven and train his Gift\",\n      \"k\": [\n        \"Senta\",\n        \"Companion\"\n      ]\n    },\n    {\n      \"t\": \"location\",\n      \"n\": \"Lisle\",\n      \"c\": \"Village obliterated—reduced to ash, charred timber, scorched foundations; small crater at epicenter; destroyed by Rance's uncontrolled Gift awakening during bandit attack; residents carried off before destruction; located near borders of Karse, Rethwellan, Menmellith\",\n      \"k\": [\n        \"Lisle\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Companion Choosing\",\n      \"c\": \"Bond snaps into place like key in lock; unconditional love floods Chosen's mind; mind-speech established; knowledge flows about Gift nature; Companion presence soothes damaged mental channels; creates bridges across burning chasms in mind; forms 'other half of soul' connection\",\n      \"k\": [\n        \"Companion Choosing\",\n        \"Choosing\",\n        \"Chosen\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Gift-shock\",\n      \"c\": \"Occurs when latent Gift forcibly awakens; mental channels burned open by raw power; causes white-hot agony, blurred vision, teetering sanity, difficulty focusing; requires herbs and rest at Waystation; can cause permanent mind fracture if untreated; Companion bond helps stabilize\",\n      \"k\": [\n        \"Gift-shock\"\n      ]\n    },\n    {\n      \"t\": \"faction\",\n      \"n\": \"Red Robe Attackers\",\n      \"c\": \"Organized group disguised as bandits; wore red robes hidden under bandit clothing; attacked Lisle to incapacitate and carry off residents; fled to or toward Menmellith after Rance's Gift awakened; may return to confirm results; possibly cult or sect\",\n      \"k\": [\n        \"Red Robe Attackers\",\n        \"red robes\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "Gift-shock from awakened wild Mage-Gift; magical channels burned open, causing white-hot agony and blurred vision; Chosen by Senta—bonded; carries red robe hood as evidence",
+      "k": [
+        "Rance"
+      ]
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "IDENTITY: Unpartnered Companion mare for 3 years; silver hooves, sapphire eyes, silver-white mane. ARC: Chose Rance—bond formed; stabilizing his wild Gift through connection; determined to get him to Haven alive despite his recklessness. STANCE-Rance: unconditional love through Choice bond; frustrated by his stubbornness and self-destructive behavior; protective; shares purpose to reach Haven and train his Gift",
+      "k": [
+        "Senta",
+        "Companion"
+      ]
+    },
+    {
+      "t": "location",
+      "n": "Lisle",
+      "c": "Village obliterated—reduced to ash, charred timber, scorched foundations; small crater at epicenter; destroyed by Rance's uncontrolled Gift awakening during bandit attack; residents carried off before destruction; located near borders of Karse, Rethwellan, Menmellith",
+      "k": [
+        "Lisle"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Companion Choosing",
+      "c": "Bond snaps into place like key in lock; unconditional love floods Chosen's mind; mind-speech established; knowledge flows about Gift nature; Companion presence soothes damaged mental channels; creates bridges across burning chasms in mind; forms 'other half of soul' connection",
+      "k": [
+        "Companion Choosing",
+        "Choosing",
+        "Chosen"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Gift-shock",
+      "c": "Occurs when latent Gift forcibly awakens; mental channels burned open by raw power; causes white-hot agony, blurred vision, teetering sanity, difficulty focusing; requires herbs and rest at Waystation; can cause permanent mind fracture if untreated; Companion bond helps stabilize",
+      "k": [
+        "Gift-shock"
+      ]
+    },
+    {
+      "t": "faction",
+      "n": "Red Robe Attackers",
+      "c": "Organized group disguised as bandits; wore red robes hidden under bandit clothing; attacked Lisle to incapacitate and carry off residents; fled to or toward Menmellith after Rance's Gift awakened; may return to confirm results; possibly cult or sect",
+      "k": [
+        "Red Robe Attackers",
+        "red robes"
+      ]
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,53 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 10.454,
+  "tokens": 2479,
+  "userName": "Rance",
+  "stage1_entities": 4,
+  "stage2_entities": 4,
+  "parsed": {
+    "sn": "Race to Haven",
+    "plot": "DEV: Rance and Senta departed border Waystation. Senta revealed Rance destroyed Lisle himself via wild Gift—likely Firestarting, possibly something rarer (unheard of for 5 centuries). Rance identified attackers as Karsite despite disguise, theorized blood magic/ritual sacrifice motive for taking prisoners alive. Four-day relentless ride to Haven, Rance unconscious from Gift-shock entire journey. Arrived Haven, Healers took custody of Rance. PEND: Rance's memories of destruction blocked by trauma, require Mind-Healer retrieval. Meeting with Circle/Queen pending once stable. Contingency needed if Rance loses control near leadership.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rance: Bond deepening through partnership—surprised by his affection at Waystation (mane stroke, nuzzle), approved of his matching stubbornness and caring beneath gruff exterior. Protective: monitored his Gift-shock condition constantly, refused separation even after arriving Haven. Sees him thinking like Herald already. Trust established: agreed to knock him out if he loses control near Queen. IDENTITY: Companion to Rance (Chosen). Knows Herald-Mages/Karsite blood magic are literal history, not fiction. Connected to Rolan (Queen's Own Companion) who greeted her at Haven.",
+        "k": [
+          "Senta"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "IDENTITY: Queen's Own Companion. Greeted Senta at Haven Collegium, offered support. Recognized urgency of situation.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Herald-Companion Bond",
+        "c": "Herald-basics (knowledge of Empaths, Mind-Healers, Circle protocols) flow naturally through bond to newly Chosen. Bond strengthens with time/distance—thoughts and emotions become clearer between pair. Two beings become greater than sum of parts.",
+        "k": [
+          "Herald-Companion Bond",
+          "bond"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Karsite Blood Magic",
+        "c": "Historical practice: capturing people for ritual sacrifice, demon summoning. Fires of Vkandis Sunlord consumed 'impure souls' for centuries. Officially banned in Karse for decades, but current attack suggests possible return to old practices.",
+        "k": [
+          "Karsite Blood Magic",
+          "Karse",
+          "Vkandis Sunlord"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Race to Haven\",\n  \"plot\": \"DEV: Rance and Senta departed border Waystation. Senta revealed Rance destroyed Lisle himself via wild Gift—likely Firestarting, possibly something rarer (unheard of for 5 centuries). Rance identified attackers as Karsite despite disguise, theorized blood magic/ritual sacrifice motive for taking prisoners alive. Four-day relentless ride to Haven, Rance unconscious from Gift-shock entire journey. Arrived Haven, Healers took custody of Rance. PEND: Rance's memories of destruction blocked by trauma, require Mind-Healer retrieval. Meeting with Circle/Queen pending once stable. Contingency needed if Rance loses control near leadership.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rance: Bond deepening through partnership—surprised by his affection at Waystation (mane stroke, nuzzle), approved of his matching stubbornness and caring beneath gruff exterior. Protective: monitored his Gift-shock condition constantly, refused separation even after arriving Haven. Sees him thinking like Herald already. Trust established: agreed to knock him out if he loses control near Queen. IDENTITY: Companion to Rance (Chosen). Knows Herald-Mages/Karsite blood magic are literal history, not fiction. Connected to Rolan (Queen's Own Companion) who greeted her at Haven.\",\n      \"k\": [\"Senta\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"IDENTITY: Queen's Own Companion. Greeted Senta at Haven Collegium, offered support. Recognized urgency of situation.\",\n      \"k\": [\"Rolan\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Herald-Companion Bond\",\n      \"c\": \"Herald-basics (knowledge of Empaths, Mind-Healers, Circle protocols) flow naturally through bond to newly Chosen. Bond strengthens with time/distance—thoughts and emotions become clearer between pair. Two beings become greater than sum of parts.\",\n      \"k\": [\"Herald-Companion Bond\", \"bond\"]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Karsite Blood Magic\",\n      \"c\": \"Historical practice: capturing people for ritual sacrifice, demon summoning. Fires of Vkandis Sunlord consumed 'impure souls' for centuries. Officially banned in Karse for decades, but current attack suggests possible return to old practices.\",\n      \"k\": [\"Karsite Blood Magic\", \"Karse\", \"Vkandis Sunlord\"]\n    }\n  ]\n}\n",
+  "error": null
+}

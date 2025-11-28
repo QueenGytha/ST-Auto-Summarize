@@ -1,0 +1,115 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 9.022,
+  "tokens": 2435,
+  "input_entities": 5,
+  "output_entities": 5,
+  "filtered_out": 0,
+  "new_entities": 4,
+  "updated_entities": 1,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "STANCE-Rolan: Met briefly at Haven arrival, accepted his greeting but prioritized staying with Rance over rest. Now fiercely protective of Rance, refuses separation even when exhausted.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "lore",
+        "n": "Companion Bond Mechanics",
+        "c": "Herald-basics (knowledge of roles, protocols, Gift types) flow naturally through bond without explicit teaching. Bond strengthens over time—thoughts/emotions become clearer as minds open to each other. Creates 'something greater than sum of parts.'",
+        "k": [
+          "Companion Bond",
+          "bond"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Karsite Blood Magic History",
+        "c": "Stories of ritual sacrifice/blood magic/demon summoning are historical fact, not myth. 'Fires of Vkandis Sunlord' consumed many 'impure souls' over centuries. Officially banned in Karse for decades—current revival implies major policy shift.",
+        "k": [
+          "Karsite",
+          "Karse",
+          "blood magic",
+          "Vkandis Sunlord"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Greeted Senta at Haven arrival, offered support and reassurance about Healers. Powerful mindvoice.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "event",
+        "n": "Border Waystation departure",
+        "c": "departed Waystation at Menmellith border after examining evidence",
+        "k": [
+          "Waystation",
+          "border",
+          "departure"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"STANCE-Rolan: Met briefly at Haven arrival, accepted his greeting but prioritized staying with Rance over rest. Now fiercely protective of Rance, refuses separation even when exhausted.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Companion Bond Mechanics\",\n      \"c\": \"Herald-basics (knowledge of roles, protocols, Gift types) flow naturally through bond without explicit teaching. Bond strengthens over time—thoughts/emotions become clearer as minds open to each other. Creates 'something greater than sum of parts.'\",\n      \"k\": [\n        \"Companion Bond\",\n        \"bond\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Karsite Blood Magic History\",\n      \"c\": \"Stories of ritual sacrifice/blood magic/demon summoning are historical fact, not myth. 'Fires of Vkandis Sunlord' consumed many 'impure souls' over centuries. Officially banned in Karse for decades—current revival implies major policy shift.\",\n      \"k\": [\n        \"Karsite\",\n        \"Karse\",\n        \"blood magic\",\n        \"Vkandis Sunlord\"\n      ]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Greeted Senta at Haven arrival, offered support and reassurance about Healers. Powerful mindvoice.\",\n      \"k\": [\n        \"Rolan\",\n        \"Queen's Own\"\n      ]\n    },\n    {\n      \"t\": \"event\",\n      \"n\": \"Border Waystation departure\",\n      \"c\": \"departed Waystation at Menmellith border after examining evidence\",\n      \"k\": [\n        \"Waystation\",\n        \"border\",\n        \"departure\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "STANCE-Rolan: Met briefly at Haven arrival, accepted his greeting but prioritized staying with Rance over rest. Now fiercely protective of Rance, refuses separation even when exhausted.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "lore",
+      "n": "Companion Bond Mechanics",
+      "c": "Herald-basics (knowledge of roles, protocols, Gift types) flow naturally through bond without explicit teaching. Bond strengthens over time—thoughts/emotions become clearer as minds open to each other. Creates 'something greater than sum of parts.'",
+      "k": [
+        "Companion Bond",
+        "bond"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Karsite Blood Magic History",
+      "c": "Stories of ritual sacrifice/blood magic/demon summoning are historical fact, not myth. 'Fires of Vkandis Sunlord' consumed many 'impure souls' over centuries. Officially banned in Karse for decades—current revival implies major policy shift.",
+      "k": [
+        "Karsite",
+        "Karse",
+        "blood magic",
+        "Vkandis Sunlord"
+      ]
+    },
+    {
+      "t": "character",
+      "n": "Rolan",
+      "c": "Queen's Own Companion. Greeted Senta at Haven arrival, offered support and reassurance about Healers. Powerful mindvoice.",
+      "k": [
+        "Rolan",
+        "Queen's Own"
+      ]
+    },
+    {
+      "t": "event",
+      "n": "Border Waystation departure",
+      "c": "departed Waystation at Menmellith border after examining evidence",
+      "k": [
+        "Waystation",
+        "border",
+        "departure"
+      ]
+    }
+  ],
+  "error": null
+}

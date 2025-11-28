@@ -1,0 +1,34 @@
+{
+  "entityName": "Karsite Blood Magic",
+  "type": "lore",
+  "keywords": [
+    "Karsite Blood Magic",
+    "Sun-Priests",
+    "Karse"
+  ],
+  "totalScenes": 2,
+  "mergeResults": [
+    {
+      "scene": "scene-12-23",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 493,
+      "merged_length": 493,
+      "content": "Historical practice: ritual sacrifice, demon summoning via captured prisoners—Valdemaran stories dismissed as myth hold truth. Officially banned in Karse for decades. Lisle attack evidence: red-robed figures (Karsite features despite Menmellith misdirection), organized prisoner-taking instead of killing (requires effort/risk), suggests possible revival of blood magic practices. Border implications: Lisle near three-nation border; enough interaction for Rance to recognize Karsite features."
+    },
+    {
+      "scene": "scene-24-59",
+      "action": "merge",
+      "duration": 8.345,
+      "tokens": 1578,
+      "existing_length": 493,
+      "new_length": 413,
+      "merged_length": 798,
+      "delta": 305,
+      "canonicalName": null,
+      "content": "Historical practice involving ritual sacrifice and demon summoning via captured prisoners; Valdemaran stories dismissed as myth hold truth. Officially banned decades ago, but Sun-Priests suspected of reviving practices—cyclical returns during internal instability. Live captives needed for fresh sacrifice (more power than corpses). Lisle attack evidence: red-robed figures with Karsite features despite Menmellith misdirection; organized prisoner-taking (young and elderly included) instead of killing; special forces with military-grade weapons; requires effort/risk, represents fundamental policy shift if confirmed. Attacking across Valdemar border—unknown if other nations targeted. Border context: Lisle near three-nation junction; enough interaction for locals to recognize Karsite features.",
+      "raw": "{\n  \"mergedContent\": \"Historical practice involving ritual sacrifice and demon summoning via captured prisoners; Valdemaran stories dismissed as myth hold truth. Officially banned decades ago, but Sun-Priests suspected of reviving practices—cyclical returns during internal instability. Live captives needed for fresh sacrifice (more power than corpses). Lisle attack evidence: red-robed figures with Karsite features despite Menmellith misdirection; organized prisoner-taking (young and elderly included) instead of killing; special forces with military-grade weapons; requires effort/risk, represents fundamental policy shift if confirmed. Attacking across Valdemar border—unknown if other nations targeted. Border context: Lisle near three-nation junction; enough interaction for locals to recognize Karsite features.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "Historical practice involving ritual sacrifice and demon summoning via captured prisoners; Valdemaran stories dismissed as myth hold truth. Officially banned decades ago, but Sun-Priests suspected of reviving practices—cyclical returns during internal instability. Live captives needed for fresh sacrifice (more power than corpses). Lisle attack evidence: red-robed figures with Karsite features despite Menmellith misdirection; organized prisoner-taking (young and elderly included) instead of killing; special forces with military-grade weapons; requires effort/risk, represents fundamental policy shift if confirmed. Attacking across Valdemar border—unknown if other nations targeted. Border context: Lisle near three-nation junction; enough interaction for locals to recognize Karsite features."
+}

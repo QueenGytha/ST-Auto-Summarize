@@ -1,0 +1,131 @@
+{
+  "scene": "scene-12-23",
+  "success": true,
+  "duration": 11.018,
+  "tokens": 3810,
+  "input_entities": 7,
+  "output_entities": 6,
+  "filtered_out": 1,
+  "new_entities": 4,
+  "updated_entities": 2,
+  "parsed": {
+    "entities": [
+      {
+        "t": "character",
+        "n": "Rance",
+        "c": "Accepted Companion bond—shifted from resistance to partnership (affectionate nuzzle, 'we face it together'). Knows Karsite features/tactics from border proximity; theories captives meant for blood magic ritual sacrifice (old Karsite practice). Believed Herald-Mages were historical fiction, not real. Ordered Senta to knock him out if he loses control—accepts danger he poses. Gift-shock caused four-day unconsciousness during journey. Memories of Lisle destruction still blocked/suppressed. Now physically at Haven Healers' Collegium, unconscious but stable.",
+        "k": [
+          "Rance"
+        ],
+        "u": "1"
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Bond with Rance solidified—reciprocal affection established. Suspects Rance's Gift is rarer/more dangerous than Firestarting; unprecedented in five centuries with no one capable of training it. Confirmed Karsite blood magic historically real, officially banned for decades—revival concerning. Promised to incapacitate Rance if he loses control. Rode relentlessly four days/nights without true rest to reach Haven. Met Rolan (Queen's Own Companion) upon arrival; refused to leave Rance's side despite exhaustion.",
+        "k": [
+          "Senta"
+        ],
+        "u": "2"
+      },
+      {
+        "t": "character",
+        "n": "Rolan",
+        "c": "Queen's Own Companion. Greeted Senta upon arrival at Haven; offered support and reassurance. Recognized urgency of situation.",
+        "k": [
+          "Rolan",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Karsite Blood Magic",
+        "c": "Historical practice of ritual sacrifice to Vkandis Sunlord ('Fires consumed impure souls'). Officially banned in Karse for decades. Red-robed Karsites disguised as bandits attacked Lisle—suggests organized revival of forbidden practices. Taking prisoners alive (not killing) indicates specific ritual needs.",
+        "k": [
+          "Karsite Blood Magic",
+          "Karse",
+          "Vkandis Sunlord",
+          "blood magic"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Gift-Shock Treatment",
+        "c": "Emergency remedy: vial of green liquid (willow bark, valerian, comfrey). Tastes foul. Stabilizes magical channels torn open violently. Causes dull ache/pressure as new awareness of power manifests. Severe cases can cause multi-day unconsciousness as mind heals.",
+        "k": [
+          "Gift-Shock",
+          "Gift-shock"
+        ]
+      },
+      {
+        "t": "lore",
+        "n": "Companion Bond Knowledge Transfer",
+        "c": "Herald-basics flow naturally through bond—Chosen gain instinctive knowledge of Herald procedures, protocols, and organizational structure (Circle, Queen's Own, Empaths, Mind-Healers) without formal training.",
+        "k": [
+          "Companion Bond",
+          "bond"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Rance\",\n      \"c\": \"Accepted Companion bond—shifted from resistance to partnership (affectionate nuzzle, 'we face it together'). Knows Karsite features/tactics from border proximity; theories captives meant for blood magic ritual sacrifice (old Karsite practice). Believed Herald-Mages were historical fiction, not real. Ordered Senta to knock him out if he loses control—accepts danger he poses. Gift-shock caused four-day unconsciousness during journey. Memories of Lisle destruction still blocked/suppressed. Now physically at Haven Healers' Collegium, unconscious but stable.\",\n      \"k\": [\n        \"Rance\"\n      ],\n      \"u\": \"1\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Bond with Rance solidified—reciprocal affection established. Suspects Rance's Gift is rarer/more dangerous than Firestarting; unprecedented in five centuries with no one capable of training it. Confirmed Karsite blood magic historically real, officially banned for decades—revival concerning. Promised to incapacitate Rance if he loses control. Rode relentlessly four days/nights without true rest to reach Haven. Met Rolan (Queen's Own Companion) upon arrival; refused to leave Rance's side despite exhaustion.\",\n      \"k\": [\n        \"Senta\"\n      ],\n      \"u\": \"2\"\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Rolan\",\n      \"c\": \"Queen's Own Companion. Greeted Senta upon arrival at Haven; offered support and reassurance. Recognized urgency of situation.\",\n      \"k\": [\n        \"Rolan\",\n        \"Queen's Own\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Karsite Blood Magic\",\n      \"c\": \"Historical practice of ritual sacrifice to Vkandis Sunlord ('Fires consumed impure souls'). Officially banned in Karse for decades. Red-robed Karsites disguised as bandits attacked Lisle—suggests organized revival of forbidden practices. Taking prisoners alive (not killing) indicates specific ritual needs.\",\n      \"k\": [\n        \"Karsite Blood Magic\",\n        \"Karse\",\n        \"Vkandis Sunlord\",\n        \"blood magic\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Gift-Shock Treatment\",\n      \"c\": \"Emergency remedy: vial of green liquid (willow bark, valerian, comfrey). Tastes foul. Stabilizes magical channels torn open violently. Causes dull ache/pressure as new awareness of power manifests. Severe cases can cause multi-day unconsciousness as mind heals.\",\n      \"k\": [\n        \"Gift-Shock\",\n        \"Gift-shock\"\n      ]\n    },\n    {\n      \"t\": \"lore\",\n      \"n\": \"Companion Bond Knowledge Transfer\",\n      \"c\": \"Herald-basics flow naturally through bond—Chosen gain instinctive knowledge of Herald procedures, protocols, and organizational structure (Circle, Queen's Own, Empaths, Mind-Healers) without formal training.\",\n      \"k\": [\n        \"Companion Bond\",\n        \"bond\"\n      ]\n    }\n  ]\n}\n",
+  "new_to_lorebook": [
+    {
+      "t": "character",
+      "n": "Rance",
+      "c": "Accepted Companion bond—shifted from resistance to partnership (affectionate nuzzle, 'we face it together'). Knows Karsite features/tactics from border proximity; theories captives meant for blood magic ritual sacrifice (old Karsite practice). Believed Herald-Mages were historical fiction, not real. Ordered Senta to knock him out if he loses control—accepts danger he poses. Gift-shock caused four-day unconsciousness during journey. Memories of Lisle destruction still blocked/suppressed. Now physically at Haven Healers' Collegium, unconscious but stable.",
+      "k": [
+        "Rance"
+      ],
+      "u": "1"
+    },
+    {
+      "t": "character",
+      "n": "Senta",
+      "c": "Bond with Rance solidified—reciprocal affection established. Suspects Rance's Gift is rarer/more dangerous than Firestarting; unprecedented in five centuries with no one capable of training it. Confirmed Karsite blood magic historically real, officially banned for decades—revival concerning. Promised to incapacitate Rance if he loses control. Rode relentlessly four days/nights without true rest to reach Haven. Met Rolan (Queen's Own Companion) upon arrival; refused to leave Rance's side despite exhaustion.",
+      "k": [
+        "Senta"
+      ],
+      "u": "2"
+    },
+    {
+      "t": "character",
+      "n": "Rolan",
+      "c": "Queen's Own Companion. Greeted Senta upon arrival at Haven; offered support and reassurance. Recognized urgency of situation.",
+      "k": [
+        "Rolan",
+        "Queen's Own"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Karsite Blood Magic",
+      "c": "Historical practice of ritual sacrifice to Vkandis Sunlord ('Fires consumed impure souls'). Officially banned in Karse for decades. Red-robed Karsites disguised as bandits attacked Lisle—suggests organized revival of forbidden practices. Taking prisoners alive (not killing) indicates specific ritual needs.",
+      "k": [
+        "Karsite Blood Magic",
+        "Karse",
+        "Vkandis Sunlord",
+        "blood magic"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Gift-Shock Treatment",
+      "c": "Emergency remedy: vial of green liquid (willow bark, valerian, comfrey). Tastes foul. Stabilizes magical channels torn open violently. Causes dull ache/pressure as new awareness of power manifests. Severe cases can cause multi-day unconsciousness as mind heals.",
+      "k": [
+        "Gift-Shock",
+        "Gift-shock"
+      ]
+    },
+    {
+      "t": "lore",
+      "n": "Companion Bond Knowledge Transfer",
+      "c": "Herald-basics flow naturally through bond—Chosen gain instinctive knowledge of Herald procedures, protocols, and organizational structure (Circle, Queen's Own, Empaths, Mind-Healers) without formal training.",
+      "k": [
+        "Companion Bond",
+        "bond"
+      ]
+    }
+  ],
+  "error": null
+}

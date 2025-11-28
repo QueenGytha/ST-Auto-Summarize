@@ -1,0 +1,34 @@
+{
+  "scene": "scene-72-82",
+  "success": true,
+  "duration": 7.412,
+  "tokens": 2037,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 2,
+  "parsed": {
+    "sn": "Dawn Meeting with Talia",
+    "plot": "DEV: Talia reached decision overnight about handling shared memory situation with Selenay/Circle. PEND: Talia's decision about how to proceed; formal meeting with Queen still ahead; Alberich's training approach uncertain.",
+    "entities": [
+      {
+        "t": "character",
+        "n": "Talia",
+        "c": "STANCE-Rance: After night processing shared memories, reached definitive decision about handling situation—more resolved, controlled certainty replaced previous vulnerability. Sought Rance out before Selenay meeting to discuss decision first ('concerns both of us, potentially changes everything'). Still experiencing disorientation from memory fragments—wakes reaching for Rance's memories that aren't fully there, his stride length conflicts with her instincts.",
+        "k": [
+          "Talia",
+          "Queen's Own"
+        ]
+      },
+      {
+        "t": "character",
+        "n": "Senta",
+        "c": "Fully recovered after grooming and rest—coat gleaming, energy restored. Alert and protective, monitoring for threats (Alberich, political complications). Reads Talia's emotional shift as significant.",
+        "k": [
+          "Senta"
+        ]
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Dawn Meeting with Talia\",\n  \"plot\": \"DEV: Talia reached decision overnight about handling shared memory situation with Selenay/Circle. PEND: Talia's decision about how to proceed; formal meeting with Queen still ahead; Alberich's training approach uncertain.\",\n  \"entities\": [\n    {\n      \"t\": \"character\",\n      \"n\": \"Talia\",\n      \"c\": \"STANCE-Rance: After night processing shared memories, reached definitive decision about handling situation—more resolved, controlled certainty replaced previous vulnerability. Sought Rance out before Selenay meeting to discuss decision first ('concerns both of us, potentially changes everything'). Still experiencing disorientation from memory fragments—wakes reaching for Rance's memories that aren't fully there, his stride length conflicts with her instincts.\",\n      \"k\": [\"Talia\", \"Queen's Own\"]\n    },\n    {\n      \"t\": \"character\",\n      \"n\": \"Senta\",\n      \"c\": \"Fully recovered after grooming and rest—coat gleaming, energy restored. Alert and protective, monitoring for threats (Alberich, political complications). Reads Talia's emotional shift as significant.\",\n      \"k\": [\"Senta\"]\n    }\n  ]\n}\n",
+  "error": null
+}

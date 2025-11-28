@@ -1,0 +1,71 @@
+{
+  "entityName": "Senta",
+  "type": "character",
+  "keywords": [
+    "Senta"
+  ],
+  "totalScenes": 5,
+  "mergeResults": [
+    {
+      "scene": "scene-0-11",
+      "action": "initial",
+      "existing_length": 0,
+      "new_length": 378,
+      "merged_length": 378,
+      "content": "White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Frustrated by his stubbornness but committed. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Herding him to safety/Haven. Practical, occasionally indignant, wry humor."
+    },
+    {
+      "scene": "scene-12-23",
+      "action": "merge",
+      "duration": 6.969,
+      "tokens": 2190,
+      "existing_length": 378,
+      "new_length": 352,
+      "merged_length": 717,
+      "delta": 339,
+      "canonicalName": null,
+      "content": "White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Growing attachment and protectiveness; matches his stubbornness; won't leave his side. Frustrated by his stubbornness but committed. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Promised to knock Rance out if he loses control. Herding him to safety/Haven. Practical, occasionally indignant, wry humor.",
+      "raw": "{\n  \"mergedContent\": \"White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Growing attachment and protectiveness; matches his stubbornness; won't leave his side. Frustrated by his stubbornness but committed. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Promised to knock Rance out if he loses control. Herding him to safety/Haven. Practical, occasionally indignant, wry humor.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-24-59",
+      "action": "merge",
+      "duration": 7.637,
+      "tokens": 2287,
+      "existing_length": 717,
+      "new_length": 227,
+      "merged_length": 825,
+      "delta": 108,
+      "canonicalName": null,
+      "content": "White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Growing attachment and protectiveness; matches his stubbornness; won't leave his side. Promised to knock him unconscious if he loses Gift control. Concerned about political dangers facing him. Pride mixed with worry over his impossible feats; exasperated by his spite-driven rule-breaking. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Herding him to safety/Haven. Practical, occasionally indignant, wry humor.",
+      "raw": "{\n  \"mergedContent\": \"White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Growing attachment and protectiveness; matches his stubbornness; won't leave his side. Promised to knock him unconscious if he loses Gift control. Concerned about political dangers facing him. Pride mixed with worry over his impossible feats; exasperated by his spite-driven rule-breaking. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Herding him to safety/Haven. Practical, occasionally indignant, wry humor.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-72-82",
+      "action": "merge",
+      "duration": 7.317,
+      "tokens": 2289,
+      "existing_length": 825,
+      "new_length": 117,
+      "merged_length": 832,
+      "delta": 7,
+      "canonicalName": null,
+      "content": "White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Fiercely protective; admires his leadership under uncertainty; monitors threats constantly; matches his stubbornness; won't leave his side. Promised to knock him unconscious if he loses Gift control. Pride mixed with worry over his impossible feats; exasperated by his spite-driven rule-breaking. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Herding him to safety/Haven. Practical, occasionally indignant, wry humor.",
+      "raw": "{\n  \"mergedContent\": \"White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Fiercely protective; admires his leadership under uncertainty; monitors threats constantly; matches his stubbornness; won't leave his side. Promised to knock him unconscious if he loses Gift control. Pride mixed with worry over his impossible feats; exasperated by his spite-driven rule-breaking. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Herding him to safety/Haven. Practical, occasionally indignant, wry humor.\",\n  \"canonicalName\": null\n}\n"
+    },
+    {
+      "scene": "scene-83-113",
+      "action": "merge",
+      "duration": 39.868,
+      "tokens": 2412,
+      "existing_length": 832,
+      "new_length": 338,
+      "merged_length": 1009,
+      "delta": 177,
+      "canonicalName": null,
+      "content": "White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Fiercely protective; admires his leadership under uncertainty; monitors threats constantly; matches his stubbornness; won't leave his side. Promised to knock him unconscious if he loses Gift control. Pride mixed with worry over his impossible feats; exasperated by his spite-driven rule-breaking. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Herding him to safety/Haven. Practical, occasionally indignant, wry humor. Bond allows unavoidable sharing of intense experiences including intimacy with Talia; accepts relationship has become complicated; maintains supportive role despite discomfort.",
+      "raw": "{\n  \"mergedContent\": \"White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Fiercely protective; admires his leadership under uncertainty; monitors threats constantly; matches his stubbornness; won't leave his side. Promised to knock him unconscious if he loses Gift control. Pride mixed with worry over his impossible feats; exasperated by his spite-driven rule-breaking. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Herding him to safety/Haven. Practical, occasionally indignant, wry humor. Bond allows unavoidable sharing of intense experiences including intimacy with Talia; accepts relationship has become complicated; maintains supportive role despite discomfort.\",\n  \"canonicalName\": null\n}\n"
+    }
+  ],
+  "finalContent": "White Companion mare, sapphire eyes, silver-white mane. Adult 3 years, unpartnered until now. STANCE-Rance: Chose him—bond formed, stabilizing his Gift/channels with unconditional love. Fiercely protective; admires his leadership under uncertainty; monitors threats constantly; matches his stubbornness; won't leave his side. Promised to knock him unconscious if he loses Gift control. Pride mixed with worry over his impossible feats; exasperated by his spite-driven rule-breaking. Knows he caused Lisle's destruction (he doesn't fully accept this yet). Believes his Gift is rarer/more dangerous than Firestarting—possibly unprecedented in 500 years, no one capable of training him. Suspects Karsite blood magic involvement (captives for ritual sacrifice). Herding him to safety/Haven. Practical, occasionally indignant, wry humor. Bond allows unavoidable sharing of intense experiences including intimacy with Talia; accepts relationship has become complicated; maintains supportive role despite discomfort."
+}

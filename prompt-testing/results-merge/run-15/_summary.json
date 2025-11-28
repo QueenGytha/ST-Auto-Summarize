@@ -1,0 +1,30 @@
+{
+  "run": 15,
+  "stage4_run": 13,
+  "timestamp": "2025-11-28T00:16:31.677Z",
+  "entities_tested": 3,
+  "total_merges": 6,
+  "entities": [
+    {
+      "name": "Senta",
+      "type": "character",
+      "scenes": 4,
+      "merges": 3,
+      "final_length": 1199
+    },
+    {
+      "name": "Rolan",
+      "type": "character",
+      "scenes": 2,
+      "merges": 1,
+      "final_length": 343
+    },
+    {
+      "name": "Talia",
+      "type": "character",
+      "scenes": 3,
+      "merges": 2,
+      "final_length": 956
+    }
+  ]
+}

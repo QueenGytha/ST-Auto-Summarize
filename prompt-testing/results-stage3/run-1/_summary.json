@@ -1,0 +1,47 @@
+{
+  "run": 1,
+  "stage2_run": 1,
+  "timestamp": "2025-11-27T20:30:24.686Z",
+  "total": 5,
+  "successful": 5,
+  "failed": 0,
+  "final_recap": "DEV: Village of Lisle destroyed—Rance's latent Mage-Gift awakened catastrophically during bandit raid, obliterating village; Karsites disguised as bandits captured villagers for suspected blood magic/demon summoning; red robes found hidden under bandit clothing, organized infiltration to Menmellith border; Senta Chose Rance, bond formed, stabilizing wild Gift; delivered to Haven, reported to Circle; confirmed first Mage-Gift since Vanyel; complete mind-merge with Talia during memory recovery—Rance now possesses all Queen's Own memories/knowledge/training, she has his trauma; Circle ordered archives search for Mage-Gift training, discreet diplomatic inquiries to Karse's neighbors, Rance quartered at remote Healer's cottage, information sealed to Circle only, official cover as ordinary trainee; Rance and Senta settled into isolated cottage; Talia resolved to propose major plan to Selenay regarding shared memories situation; Rance and Talia consummated their connection—her first sexual experience, explicitly claimed partnership.\n\nPEND: Court power structure threatened by two people holding Queen's Own knowledge; no living teachers for Mage-Gift; Rance's specific Gift type unidentified but devastatingly powerful; uncontrolled Gift poses assassination risk to Valdemaran leadership; Karsite blood magic intent unknown; Talia must present partnership proposal to Selenay while bearing physical evidence of consummation; personal relationship adds unspoken dimension to semi-official partnership proposal; Alberich's potential training approach uncertain.",
+  "final_recap_length": 1568,
+  "scenes": [
+    {
+      "id": "scene-0-11",
+      "success": true,
+      "input_recap_length": 0,
+      "output_recap_length": 499,
+      "error": null
+    },
+    {
+      "id": "scene-12-23",
+      "success": true,
+      "input_recap_length": 499,
+      "output_recap_length": 761,
+      "error": null
+    },
+    {
+      "id": "scene-24-59",
+      "success": true,
+      "input_recap_length": 761,
+      "output_recap_length": 1128,
+      "error": null
+    },
+    {
+      "id": "scene-72-82",
+      "success": true,
+      "input_recap_length": 1128,
+      "output_recap_length": 1315,
+      "error": null
+    },
+    {
+      "id": "scene-83-113",
+      "success": true,
+      "input_recap_length": 1315,
+      "output_recap_length": 1568,
+      "error": null
+    }
+  ]
+}
