@@ -1767,9 +1767,10 @@ function normalizeAndDeduplicateEntries(entriesArray) {
       keys: entry.k || entry.keys || [rawName]
     };
 
-    // Pass through uid if Stage 3 identified an exact match
-    if (entry.u) {
-      normalized.uid = entry.u;
+    // Pass through uid if Stage 4 identified an exact match
+    // Accept both "uid" (explicit) and "u" (legacy short form) for backwards compatibility
+    if (entry.uid || entry.u) {
+      normalized.uid = entry.uid || entry.u;
     }
 
     uniqueEntries.push(normalized);

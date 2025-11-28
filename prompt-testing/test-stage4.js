@@ -298,14 +298,15 @@ async function testScene(stage2Result, stage3Result, promptTemplate, mockLoreboo
     if (outputEntities.length > 0) {
       console.log(`\nEntities passing filter:`);
       outputEntities.forEach(e => {
-        const hasUid = e.u ? ` (UID: ${e.u})` : ' (NEW)';
+        const entityUid = e.uid || e.u;
+        const hasUid = entityUid ? ` (UID: ${entityUid})` : ' (NEW)';
         console.log(`  - ${e.n} [${e.t}]${hasUid}`);
       });
     }
 
     // Track which entities have UIDs (existing) vs new
-    const newEntities = outputEntities.filter(e => !e.u);
-    const updatedEntities = outputEntities.filter(e => e.u);
+    const newEntities = outputEntities.filter(e => !(e.uid || e.u));
+    const updatedEntities = outputEntities.filter(e => e.uid || e.u);
 
     if (newEntities.length > 0) {
       console.log(`\nNew entities (will be added to lorebook): ${newEntities.length}`);
@@ -537,7 +538,7 @@ Examples:
         // Check if entity already exists by name (for updates)
         const existingIdx = mockLorebook.findIndex(e => e.comment === entity.n);
 
-        if (existingIdx >= 0 && entity.u) {
+        if (existingIdx >= 0 && (entity.uid || entity.u)) {
           // Update existing entry
           mockLorebook[existingIdx].content += '\n\n' + entity.c;
           mockLorebook[existingIdx].key = [...new Set([...mockLorebook[existingIdx].key, ...(entity.k || [])])];

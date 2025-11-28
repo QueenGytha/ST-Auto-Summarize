@@ -43,17 +43,17 @@ Content (c): Preserve formatting.
 UID MATCHING
 ================================================================================
 
-UID field (u) - CRITICAL for correct downstream merging:
+UID field (uid) - CRITICAL for correct downstream merging:
 - LITERAL STRING MATCH ONLY on name attribute
 - Copy uid from <setting_lore name="X" uid="Y"> where X is IDENTICAL to your n value
-- OMIT "u" entirely if no IDENTICAL name match exists
+- OMIT "uid" entirely if no IDENTICAL name match exists
 - Wrong UID = data corruption. When uncertain, OMIT.
 
 ================================================================================
 OUTPUT
 ================================================================================
 
-{"entities": [{"t": "type", "n": "Name", "c": "content", "k": ["keywords"], "u": "uid if exact match"}]}
+{"entities": [{"t": "type", "n": "Name", "c": "content", "k": ["keywords"], "uid": "uid if exact match"}]}
 
 If all entries filtered: {"entities": []}
 
