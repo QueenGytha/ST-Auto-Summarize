@@ -854,25 +854,6 @@ function logEntrySettingsApplication(entryData , field , typeName , applied ) {
   }
 }
 
-// Helper: Ensure content starts with entry name for context
-// SillyTavern only injects CONTENT into prompts, not the entry title
-// Without this prefix, LLM sees "Weaponsmaster. Did X" without knowing WHO
-function ensureContentHasNamePrefix(content, entryName) {
-  if (!content || !entryName) {
-    return content;
-  }
-  const contentStr = String(content).trim();
-  const nameStr = String(entryName).trim();
-
-  // Check if content already starts with the name (case-insensitive)
-  if (contentStr.toLowerCase().startsWith(nameStr.toLowerCase())) {
-    return contentStr;
-  }
-
-  // Prefix with "Name: " format
-  return `${nameStr}: ${contentStr}`;
-}
-
 function applyEntryDataToNewEntry(newEntry , entryData ) {
   debug?.(`[applyEntryDataToNewEntry] Applying settings to entry "${entryData.comment}":`, {
     excludeRecursion: entryData.excludeRecursion,
@@ -891,13 +872,11 @@ function applyEntryDataToNewEntry(newEntry , entryData ) {
   if (entryData.keys && Array.isArray(entryData.keys)) {
     newEntry.key = entryData.keys;
   }
+  if (entryData.content) {
+    newEntry.content = String(entryData.content);
+  }
   if (entryData.comment) {
     newEntry.comment = String(entryData.comment);
-  }
-  if (entryData.content) {
-    // Prefix content with entry name so LLM knows who/what the entry is about
-    // (SillyTavern only injects content into prompts, not the entry title)
-    newEntry.content = ensureContentHasNamePrefix(entryData.content, entryData.comment);
   }
   if (typeof entryData.constant === 'boolean') {
     newEntry.constant = entryData.constant;
@@ -1018,14 +997,11 @@ function applyEntryUpdates(entry , updates ) {
   }
   // Secondary keys are deprecated; ensure they remain cleared
   entry.keysecondary = [];
+  if (updates.content !== undefined) {
+    entry.content = String(updates.content);
+  }
   if (updates.comment !== undefined) {
     entry.comment = String(updates.comment);
-  }
-  if (updates.content !== undefined) {
-    // Prefix content with entry name so LLM knows who/what the entry is about
-    // Use updated comment if provided, otherwise existing entry comment
-    const entryName = updates.comment ?? entry.comment;
-    entry.content = ensureContentHasNamePrefix(updates.content, entryName);
   }
   if (typeof updates.constant === 'boolean') {
     entry.constant = updates.constant;
