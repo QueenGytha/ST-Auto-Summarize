@@ -61,8 +61,9 @@ Add keywords (k) to each surviving entity.
 
 INCLUDE:
 - The name itself (always)
+- Each word of multi-word names (Rainbow Dash → "rainbow dash", "rainbow", "dash")
 - Titles/epithets used for this entity
-- Aliases/nicknames actually used in story
+- Aliases/nicknames (common shortenings even if not explicitly used)
 - For lore: topic terms that should trigger this entry
 
 EXCLUDE:
@@ -71,7 +72,7 @@ EXCLUDE:
 - Generic words (magic, sword, horse) unless that's the entity's identity
 - Plot events (battle, escape, kiss)
 
-Conservative. 1-4 keywords typical. Name alone is often enough.
+For characters: name parts + obvious variants.
 
 ================================================================================
 OUTPUT
