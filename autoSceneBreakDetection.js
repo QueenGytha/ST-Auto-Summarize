@@ -1221,7 +1221,7 @@ function findAndMarkExistingSceneBreaks(chat) {
 
 // Helper: Try to queue scene break detections
 async function tryQueueSceneBreaks(config) {
-  const { chat, start, end, offset, checkWhich } = config;
+  const { chat, start, end, offset, checkWhich, lastSceneBreakIndex = -1 } = config;
 
   log(SUBSYSTEM.SCENE, '[Queue] Queueing range-based scene break detection');
 
@@ -1243,20 +1243,51 @@ async function tryQueueSceneBreaks(config) {
     }
   }
 
+  // Determine the effective start - if current range is too small but we have context from
+  // a previous scene break, extend back to include the full scene for context
+  let effectiveStart = start;
+  let extendedRange = false;
+
   // Check if we have enough eligible messages (minimum + 1)
   if (filteredCount < minimumSceneLength + 1) {
-    toast(`Not enough eligible messages for scene break detection (${filteredCount} < ${minimumSceneLength + 1} required)`, 'info');
-    return { queued: true, count: 0 };
+    // Try extending back to include messages from last scene break
+    const sceneStart = lastSceneBreakIndex >= 0 ? lastSceneBreakIndex + 1 : 0;
+    if (sceneStart < start) {
+      // Count messages in extended range
+      let extendedFilteredCount = 0;
+      for (let i = sceneStart; i <= maxEligibleIndex; i++) {
+        const message = chat[i];
+        if (message && messageMatchesType(message, checkWhich)) {
+          extendedFilteredCount++;
+        }
+      }
+
+      if (extendedFilteredCount >= minimumSceneLength + 1) {
+        // Extended range has enough messages - use it
+        effectiveStart = sceneStart;
+        filteredCount = extendedFilteredCount;
+        extendedRange = true;
+        log(SUBSYSTEM.SCENE, `[Queue] Extended range from ${start} back to ${sceneStart} (scene break at ${lastSceneBreakIndex}) - now ${filteredCount} eligible messages`);
+      } else {
+        // Even extended range doesn't have enough
+        toast(`Not enough eligible messages for scene break detection (${extendedFilteredCount} < ${minimumSceneLength + 1} required, even with full scene)`, 'info');
+        return { queued: true, count: 0 };
+      }
+    } else {
+      // No scene break to extend back to, or already at scene start
+      toast(`Not enough eligible messages for scene break detection (${filteredCount} < ${minimumSceneLength + 1} required)`, 'info');
+      return { queued: true, count: 0 };
+    }
   }
 
   // Ensure chat lorebook exists and populate registries BEFORE queueing scene break detection
   const { ensureChatLorebook } = await import('./lorebookManager.js');
   await ensureChatLorebook();
 
-  // Queue single range-based detection operation
+  // Queue single range-based detection operation (use effectiveStart which may be extended back)
   const operationId = await enqueueOperation(
     OperationType.DETECT_SCENE_BREAK,
-    { startIndex: start, endIndex: end, offset: offset || 0 },
+    { startIndex: effectiveStart, endIndex: end, offset: offset || 0 },
     {
       priority: 5, // Normal priority for scene break detection
       metadata: {
@@ -1264,15 +1295,19 @@ async function tryQueueSceneBreaks(config) {
         minimum_required: minimumSceneLength + 1,
         offset: offset || 0,
         triggered_by: 'auto_scene_break_detection',
-        start_index: start,
-        end_index: end
+        start_index: effectiveStart,
+        end_index: end,
+        original_start_index: start,
+        range_extended: extendedRange,
+        last_scene_break_index: lastSceneBreakIndex
       }
     }
   );
 
   if (operationId) {
-    log(SUBSYSTEM.SCENE, `[Queue] Queued range-based scene break detection for ${start}-${end} (${filteredCount} eligible filtered messages, offset: ${offset || 0})`);
-    toast(`Queued scene break detection for range ${start}-${end}`, 'info');
+    const rangeDesc = extendedRange ? `${effectiveStart}-${end} (extended from ${start})` : `${effectiveStart}-${end}`;
+    log(SUBSYSTEM.SCENE, `[Queue] Queued range-based scene break detection for ${rangeDesc} (${filteredCount} eligible filtered messages, offset: ${offset || 0})`);
+    toast(`Queued scene break detection for range ${effectiveStart}-${end}`, 'info');
     return { queued: true, count: 1 };
   }
 
@@ -1363,7 +1398,8 @@ async function detectSceneBreaksInRange(chat, options = {}) {
 
   // Queue the detection operation
   // Pass rawEnd (includes offset messages) and offset value so detection can mark them as ineligible
-  const rangeConfig = { chat, start: actualStart, end: rawEnd, offset, checkWhich };
+  // Pass lastSceneBreakIndex so tryQueueSceneBreaks can extend range if needed
+  const rangeConfig = { chat, start: actualStart, end: rawEnd, offset, checkWhich, lastSceneBreakIndex: latestVisibleSceneBreakIndex };
   const queueResult = await tryQueueSceneBreaks(rangeConfig);
 
   if (!queueResult) {
