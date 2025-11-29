@@ -17,6 +17,7 @@ import {
 './index.js';
 import { running_scene_recap_prompt } from './default-prompts/index.js';
 import { buildAllMacroParams, substitute_params, substitute_conditionals } from './macros/index.js';
+import { normalizeStageOutput, extractRecapString } from './recapNormalization.js';
 // Lorebook processing for running recap has been disabled; no queue integration needed here.
 
 function get_running_recap_storage() {
@@ -365,18 +366,22 @@ async function generate_running_scene_recap(skipQueue  = false) {
 
     // Parse JSON response using centralized helper
     const { extractJsonFromResponse } = await import('./utils.js');
-    const parsed = extractJsonFromResponse(result, {
-      requiredFields: ['recap'],
+    const parsedRaw = extractJsonFromResponse(result, {
+      requiredFields: [],
       context: 'running scene recap generation'
     });
 
-    const version = add_running_recap_version(parsed.recap, indexes.length, exclude_count, 0, last_scene_idx);
+    // Normalize running recap output (handles field names and object→string conversion)
+    const parsed = normalizeStageOutput('running', parsedRaw);
+    const recapContent = parsed.recap || '';
+
+    const version = add_running_recap_version(recapContent, indexes.length, exclude_count, 0, last_scene_idx);
 
     log(SUBSYSTEM.RUNNING, `Created running scene recap version ${version} (0 > ${last_scene_idx})`);
 
     toast(`Running scene recap updated (v${version})`, 'success');
 
-    return { recap: parsed.recap, tokenBreakdown };
+    return { recap: recapContent, tokenBreakdown };
 
   } catch (err) {
     error(SUBSYSTEM.RUNNING, 'Failed to generate running scene recap:', err);
@@ -406,41 +411,10 @@ function validateCombineRequest(scene_index ) {
   return { message, scene_recap, scene_name };
 }
 
-function extractRecapFromJSON(scene_recap ) {
-  let extracted_text = scene_recap;
-
-  // Strip markdown code fences if present
-  let json_to_parse = scene_recap.trim();
-  const code_fence_match = json_to_parse.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-  if (code_fence_match) {
-    json_to_parse = code_fence_match[1].trim();
-    debug(SUBSYSTEM.RUNNING, `Stripped markdown code fences from scene recap`);
-  }
-
-  try {
-    const parsed = JSON.parse(json_to_parse);
-    if (parsed && typeof parsed === 'object') {
-      // Check for multi-stage format (stage3.recap) first, then legacy recap field
-      const stage3Recap = parsed.stage3?.recap;
-      if (stage3Recap) {
-        extracted_text = stage3Recap;
-        debug(SUBSYSTEM.RUNNING, `Extracted stage3.recap from multi-stage JSON (${extracted_text.length} chars)`);
-      } else if (parsed.recap) {
-        extracted_text = parsed.recap;
-        debug(SUBSYSTEM.RUNNING, `Extracted recap field from JSON (${extracted_text.length} chars)`);
-      } else if (parsed.rc) {
-        extracted_text = parsed.rc;
-        debug(SUBSYSTEM.RUNNING, `Extracted rc field from JSON (${extracted_text.length} chars)`);
-      } else {
-        extracted_text = "";
-        debug(SUBSYSTEM.RUNNING, `Scene recap is JSON but missing 'recap'/'rc' property, using empty string`);
-      }
-    }
-  } catch (err) {
-    debug(SUBSYSTEM.RUNNING, `Scene recap is not JSON, using as-is: ${err.message}`);
-  }
-
-  return extracted_text;
+// Use centralized extractRecapString from recapNormalization.js
+// Handles all formats: multi-stage, legacy, any field names, object→string conversion
+function extractRecapFromJSON(scene_recap) {
+  return extractRecapString(scene_recap);
 }
 
 async function buildCombinePrompt(current_recap , scene_recaps_text ) {
@@ -501,14 +475,18 @@ async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index
 
     // Parse JSON response using centralized helper
     const { extractJsonFromResponse } = await import('./utils.js');
-    const parsed = extractJsonFromResponse(result, {
-      requiredFields: ['recap'],
+    const parsedRaw = extractJsonFromResponse(result, {
+      requiredFields: [],
       context: 'running scene recap combine'
     });
 
-    debug(SUBSYSTEM.RUNNING, `Combined running recap with scene (${parsed.recap.length} chars)`);
+    // Normalize running recap output (handles field names and object→string conversion)
+    const parsed = normalizeStageOutput('running', parsedRaw);
+    const recapContent = parsed.recap || '';
 
-    return { recap: parsed.recap, tokenBreakdown };
+    debug(SUBSYSTEM.RUNNING, `Combined running recap with scene (${recapContent.length} chars)`);
+
+    return { recap: recapContent, tokenBreakdown };
   } finally {
     clearOperationSuffix();
   }

@@ -1329,22 +1329,6 @@ function findLatestVisibleSceneBreakIndex(chat, maxIndex) {
   return -1;
 }
 
-// Helper: Find the last consecutive checked message index after a starting point
-// Returns the starting point if no checked messages found after it
-function findLastConsecutiveCheckedIndex(chat, startAfterIndex, maxIndex) {
-  let lastChecked = startAfterIndex;
-  for (let i = startAfterIndex + 1; i <= maxIndex; i++) {
-    try {
-      if (get_data(chat[i], 'auto_scene_break_checked')) {
-        lastChecked = i;
-      } else {
-        break; // Stop at first unchecked message
-      }
-    } catch {/* ignore lookup errors */}
-  }
-  return lastChecked;
-}
-
 // Core unified scene break detection function
 async function detectSceneBreaksInRange(chat, options = {}) {
   const {
@@ -1377,13 +1361,10 @@ async function detectSceneBreaksInRange(chat, options = {}) {
   // Find the latest visible scene break to determine start
   const latestVisibleSceneBreakIndex = findLatestVisibleSceneBreakIndex(chat, maxEligibleIndex);
 
-  // Find the last consecutive checked message after the scene break
-  // This prevents re-checking messages when scene breaks are deleted
-  const lastCheckedIndex = findLastConsecutiveCheckedIndex(chat, latestVisibleSceneBreakIndex, maxEligibleIndex);
-
-  // Determine actual start index - use explicit startIndex if provided,
-  // otherwise start after the last checked message (not just the last scene break)
-  const actualStart = startIndex !== null ? startIndex : (lastCheckedIndex + 1);
+  // Start after the last scene break - checked flags after scene breaks are intentionally
+  // ignored because messages in the current (open) scene should always be re-scannable
+  // when new messages arrive providing additional context
+  const actualStart = startIndex !== null ? startIndex : (latestVisibleSceneBreakIndex + 1);
 
   // Validate range
   if (actualStart > maxEligibleIndex) {
@@ -1393,7 +1374,7 @@ async function detectSceneBreaksInRange(chat, options = {}) {
 
   log(
     SUBSYSTEM.SCENE,
-    `Processing scene break detection - latestSceneBreak: ${latestVisibleSceneBreakIndex}, lastChecked: ${lastCheckedIndex}, actualStart: ${actualStart}, eligible range: ${actualStart}-${maxEligibleIndex}, full range: ${actualStart}-${rawEnd} (offset: ${offset}, checking: ${checkWhich})`
+    `Processing scene break detection - latestSceneBreak: ${latestVisibleSceneBreakIndex}, actualStart: ${actualStart}, eligible range: ${actualStart}-${maxEligibleIndex}, full range: ${actualStart}-${rawEnd} (offset: ${offset}, checking: ${checkWhich})`
   );
 
   // Queue the detection operation
@@ -1433,6 +1414,13 @@ endIndex  = null)
 
 export async function manualSceneBreakDetection() {
   debug('Manual scene break detection triggered');
+
+  // Clear the forceFullRescan flag if set (from "clear all recaps")
+  // Manual scan handles the full scan explicitly, so auto scans after this should be incremental
+  if (typeof window !== 'undefined' && window.autoRecapForceSceneBreakRescan === true) {
+    window.autoRecapForceSceneBreakRescan = false;
+    debug(SUBSYSTEM.SCENE, 'Cleared forceFullRescan flag (manual scan will handle full scan)');
+  }
 
   const ctx = getContext();
   const chat = ctx.chat;

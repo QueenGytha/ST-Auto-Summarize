@@ -45,6 +45,7 @@ import {
   SCENE_BREAK_CHARS,
   SCENE_BREAK_MIN_CHARS
 } from './constants.js';
+import { normalizeStageOutput, STAGE } from './recapNormalization.js';
 
 // SCENE RECAP PROPERTY STRUCTURE:
 // - Scene recaps are stored on the message object as:
@@ -1428,6 +1429,7 @@ export async function calculateSceneRecapTokens(options) {
 // Helper: Extract and validate JSON from AI response (REMOVED - now uses centralized helper in utils.js)
 
 // Helper: Normalize Stage 1 extraction response - supports entity-based and legacy formats
+// Uses centralzied normalizeStageOutput for field/value normalization
 function normalizeStage1Extraction(parsed) {
   const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
 
@@ -1443,16 +1445,13 @@ function normalizeStage1Extraction(parsed) {
     return parsed;
   }
 
-  // Entity-based format (current pipeline): {sn, plot/rc (string), entities (array)}
-  // Accept both "plot" and "rc" as the summary field (prompt says "rc" but we normalize to "plot")
-  const plotField = parsed?.plot ?? parsed?.rc;
-  if (parsed && typeof parsed === 'object' && typeof plotField === 'string' && Array.isArray(parsed.entities)) {
-    // Normalize rc -> plot for downstream consistency
-    const normalized = { ...parsed, plot: plotField };
-    if (parsed.rc && !parsed.plot) {
-      delete normalized.rc;
-    }
-    debug(SUBSYSTEM.SCENE, `Stage 1 returned entity-based format: ${normalized.entities.length} entities, plot length=${normalized.plot.length}, sn="${normalized.sn || ''}"`);
+  // Entity-based format (current pipeline): {sn, plot/rc, entities (array)}
+  // Check if it has entities array and a recap field (plot/rc/recap)
+  const hasRecapField = parsed?.plot !== undefined || parsed?.rc !== undefined || parsed?.recap !== undefined;
+  if (parsed && typeof parsed === 'object' && hasRecapField && Array.isArray(parsed.entities)) {
+    // Use centralized normalization - handles field names and object→string conversion
+    const normalized = normalizeStageOutput(STAGE.EXTRACTION, parsed);
+    debug(SUBSYSTEM.SCENE, `Stage 1 returned entity-based format: ${normalized.entities.length} entities, plot length=${normalized.plot?.length || 0}, sn="${normalized.sn || ''}"`);
     return normalized;
   }
 

@@ -87,6 +87,7 @@ import {
 import { saveMetadata } from '../../../../script.js';
 import { queueCombineSceneWithRunning } from './queueIntegration.js';
 import { DEFAULT_COMPACTION_THRESHOLD } from './constants.js';
+import { normalizeStageOutput, hasRecapContent as checkHasRecapContent, STAGE } from './recapNormalization.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 4;
 
@@ -1260,10 +1261,13 @@ export function registerAllOperationHandlers() {
 
       // Extract and validate JSON
       const { extractJsonFromResponse } = await import('./utils.js');
-      const stage2Data = extractJsonFromResponse(rawResponse, {
+      const stage2DataRaw = extractJsonFromResponse(rawResponse, {
         requiredFields: [],
         context: 'Stage 2 scene recap organization'
       });
+
+      // Normalize Stage 2 output (handles field names and object→string conversion)
+      const stage2Data = normalizeStageOutput(STAGE.ORGANIZE, stage2DataRaw);
 
       // Store multi-stage format with stage1 and stage2
       const multiStageData = {
@@ -1426,16 +1430,15 @@ export function registerAllOperationHandlers() {
         context: 'Stage 3 scene recap'
       });
 
-      // Store parsed JSON as-is - prompts can output any format
-      // Normalize common fields for display if present, but don't require them
-      const normalized = { ...parsed };
+      // Normalize Stage 3 output (handles field names and object→string conversion)
+      const normalized = normalizeStageOutput(STAGE.FILTER_RC, parsed);
 
       // Try to extract scene_name from common field names for display purposes
       if (normalized.scene_name === undefined && parsed.sn !== undefined) {
         normalized.scene_name = parsed.sn;
       }
 
-      debug(SUBSYSTEM.SCENE, "Stage 3 returned JSON, storing as-is");
+      debug(SUBSYSTEM.SCENE, "Stage 3 returned JSON, normalized and storing");
 
       // Extract scene_name from Stage 1 (has most context for naming)
       const stage1SceneName = existingStages.stage1?.sn || existingStages.stage1?.scene_name;
@@ -1639,7 +1642,8 @@ export function registerAllOperationHandlers() {
       toast(`✓ Scene recap filtered and saved for message ${index}`, 'success');
 
       // Check if Stage 3 output has recap content for running recap
-      const hasRecapContent = existingStages.stage3?.recap?.trim();
+      // Use centralized function that handles all field name variations (rc/recap/plot)
+      const hasRecapContent = checkHasRecapContent(existingStages);
 
       // Queue COMBINE operation if not manual, auto-generate is enabled, and has rc content
       if (!isManual && get_settings('running_scene_recap_auto_generate') && hasRecapContent) {

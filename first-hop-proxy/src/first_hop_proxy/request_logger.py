@@ -577,9 +577,175 @@ class RequestLogger:
                 })
             return False
 
+    def _get_entity_field(self, entry: Dict[str, Any], field_variants: List[str], default: Any = None) -> Any:
+        """
+        Get a field value from an entity entry, trying multiple possible field names.
+
+        Args:
+            entry: Entity dictionary
+            field_variants: List of possible field names in priority order
+            default: Default value if no field found
+
+        Returns:
+            Field value or default
+        """
+        for field_name in field_variants:
+            value = entry.get(field_name)
+            if value is not None:
+                return value
+        return default
+
+    def _format_entity_entry(self, entry: Dict[str, Any], index: int) -> List[str]:
+        """
+        Format a single entity entry into markdown lines.
+        Handles all known field name variants (verbose, compact, legacy).
+
+        Field name variants supported:
+            - type: t, type, entity_type, entityType
+            - name: n, name, entity_name, entityName, title
+            - content: c, content, text, description, desc, body
+            - keywords: k, keywords, keys, tags
+            - uid: uid, u, id, entry_id, entryId
+            - secondary_keys: secondaryKeys, secondary_keys, sk, altKeys, alt_keys
+
+        Args:
+            entry: Entity dictionary
+            index: Entry index for fallback naming
+
+        Returns:
+            List of markdown lines for this entry
+        """
+        if not isinstance(entry, dict):
+            return []
+
+        lines = []
+
+        # Extract fields with all known variants
+        entry_name = self._get_entity_field(
+            entry,
+            ['n', 'name', 'entity_name', 'entityName', 'title'],
+            f'Entry {index + 1}'
+        )
+        entry_type = self._get_entity_field(
+            entry,
+            ['t', 'type', 'entity_type', 'entityType'],
+            'unknown'
+        )
+        entry_content = self._get_entity_field(
+            entry,
+            ['c', 'content', 'text', 'description', 'desc', 'body'],
+            ''
+        )
+        keywords = self._get_entity_field(
+            entry,
+            ['k', 'keywords', 'keys', 'tags'],
+            None
+        )
+        uid = self._get_entity_field(
+            entry,
+            ['uid', 'u', 'id', 'entry_id', 'entryId'],
+            None
+        )
+        secondary_keys = self._get_entity_field(
+            entry,
+            ['secondaryKeys', 'secondary_keys', 'sk', 'altKeys', 'alt_keys'],
+            None
+        )
+
+        # Format entry header
+        lines.append(f"### {entry_name} ({entry_type})")
+        lines.append("")
+
+        # Format content
+        if entry_content:
+            lines.append("```text")
+            lines.append(str(entry_content))
+            lines.append("```")
+            lines.append("")
+
+        # Format keywords
+        if keywords:
+            if isinstance(keywords, list):
+                keywords_str = ', '.join(str(k) for k in keywords)
+            elif isinstance(keywords, str):
+                keywords_str = keywords
+            else:
+                keywords_str = str(keywords)
+            lines.append(f"**Keywords:** {keywords_str}")
+            lines.append("")
+
+        # Format UID
+        if uid:
+            lines.append(f"**UID:** {uid}")
+            lines.append("")
+
+        # Format secondary keys
+        if secondary_keys:
+            if isinstance(secondary_keys, list):
+                secondary_str = ', '.join(str(k) for k in secondary_keys)
+            elif isinstance(secondary_keys, str):
+                secondary_str = secondary_keys
+            else:
+                secondary_str = str(secondary_keys)
+            lines.append(f"**Secondary Keys:** {secondary_str}")
+            lines.append("")
+
+        return lines
+
+    def _extract_entities_from_parsed(self, parsed_content: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
+        """
+        Extract entity list from parsed JSON content, checking all known wrapper field names.
+
+        Wrapper field names supported (in priority order):
+            - entities (current standard format)
+            - setting_lore (verbose format)
+            - sl (compact format)
+            - lorebook (legacy/scene recap format)
+            - lore (alternative)
+            - entries (generic)
+            - items (generic)
+            - data (generic wrapper)
+
+        Args:
+            parsed_content: Parsed JSON dictionary
+
+        Returns:
+            List of entity dictionaries if found, None otherwise
+        """
+        if not isinstance(parsed_content, dict):
+            return None
+
+        # Check all possible wrapper field names in priority order
+        wrapper_fields = [
+            'entities',       # Current standard format
+            'setting_lore',   # Verbose format
+            'sl',             # Compact format
+            'lorebook',       # Legacy/scene recap format
+            'lore',           # Alternative
+            'entries',        # Generic
+            'items',          # Generic
+            'data',           # Generic wrapper
+        ]
+
+        for field_name in wrapper_fields:
+            value = parsed_content.get(field_name)
+            if value is not None:
+                # Handle case where data is a wrapper containing the actual list
+                if isinstance(value, dict):
+                    # Check if it's a nested wrapper (e.g., {"data": {"entities": [...]}})
+                    for nested_field in wrapper_fields:
+                        nested_value = value.get(nested_field)
+                        if isinstance(nested_value, list) and len(nested_value) > 0:
+                            return nested_value
+                elif isinstance(value, list) and len(value) > 0:
+                    return value
+
+        return None
+
     def _format_parsed_response_data(self, response_data: Dict[str, Any]) -> Optional[List[str]]:
         """
-        Extract and format JSON from response content field into collapsible markdown sections.
+        Extract and format JSON from response content field into markdown sections.
+        Handles all known entity/setting_lore formats (current, compact, legacy).
 
         Args:
             response_data: Response body dictionary
@@ -604,16 +770,16 @@ class RequestLogger:
             if not content or not isinstance(content, str):
                 return None
 
-            # Strip code fences if present (e.g., ```json\n...\n```)
+            # Strip code fences if present (handles ```json, ```text, ``` etc.)
             content = content.strip()
             if content.startswith('```'):
-                # Remove opening fence
-                lines = content.split('\n', 1)
-                if len(lines) > 1:
-                    content = lines[1]
+                # Remove opening fence (may include language specifier like ```json)
+                first_newline = content.find('\n')
+                if first_newline != -1:
+                    content = content[first_newline + 1:]
                 # Remove closing fence
-                if content.endswith('```'):
-                    content = content[:-3].rstrip()
+                if content.rstrip().endswith('```'):
+                    content = content.rstrip()[:-3].rstrip()
 
             # Try to parse the content as JSON
             try:
@@ -622,111 +788,55 @@ class RequestLogger:
                 # JSON not present or malformed - skip section
                 return None
 
+            if not isinstance(parsed_content, dict):
+                return None
+
             # Build the formatted section
             lines = []
             lines.append("## Response Data (Parsed)")
             lines.append("")
 
-            # Scene name (if present) - support both old format and new compact format
-            scene_name = parsed_content.get('scene_name') or parsed_content.get('sn')
+            # Scene name - check all variants
+            scene_name = self._get_entity_field(
+                parsed_content,
+                ['scene_name', 'sn', 'sceneName', 'scene', 'title'],
+                None
+            )
             if scene_name:
                 lines.append(f"**Scene Name:** {scene_name}")
                 lines.append("")
 
-            # Recap/Summary - support both old format and new compact format
-            recap = parsed_content.get('recap') or parsed_content.get('rc')
+            # Recap/Summary - check all variants
+            recap = self._get_entity_field(
+                parsed_content,
+                ['recap', 'rc', 'summary', 'sm', 'description', 'desc'],
+                None
+            )
             if recap:
                 lines.append("### Summary")
                 lines.append("")
-                lines.append(recap)
+                lines.append(str(recap))
                 lines.append("")
 
-            # setting_lore entries - support both old format ('setting_lore') and new compact format ('sl')
-            setting_lore = parsed_content.get('setting_lore') or parsed_content.get('sl')
-            if setting_lore and isinstance(setting_lore, list) and len(setting_lore) > 0:
-                entry_count = len(setting_lore)
+            # Extract entities from any known wrapper format
+            entities = self._extract_entities_from_parsed(parsed_content)
+            if entities:
+                entry_count = len(entities)
                 plural = "entries" if entry_count != 1 else "entry"
-                lines.append(f"*{entry_count} {plural}*")
-                lines.append("")
-
-                for i, entry in enumerate(setting_lore):
-                    if not isinstance(entry, dict):
-                        continue
-
-                    # Support both old format and new compact format
-                    entry_name = entry.get('name') or entry.get('n') or f'Entry {i+1}'
-                    entry_type = entry.get('type') or entry.get('t') or 'unknown'
-
-                    lines.append(f"### {entry_name} ({entry_type})")
-                    lines.append("")
-
-                    # Entry content - support both old format ('content') and new compact format ('c')
-                    content = entry.get('content') or entry.get('c') or ''
-                    if content:
-                        lines.append("```text")
-                        lines.append(content)
-                        lines.append("```")
-                        lines.append("")
-
-                    # Keywords - support both old format ('keywords') and new compact format ('k')
-                    keywords = entry.get('keywords') or entry.get('k')
-                    if keywords and isinstance(keywords, list):
-                        lines.append(f"**Keywords:** {', '.join(keywords)}")
-                        lines.append("")
-
-                    # UID - support both old format ('uid') and new compact format ('u')
-                    uid = entry.get('uid') or entry.get('u')
-                    if uid:
-                        lines.append(f"**UID:** {uid}")
-                        lines.append("")
-
-                    # Secondary keys (old format only)
-                    secondary_keys = entry.get('secondaryKeys')
-                    if secondary_keys and isinstance(secondary_keys, list):
-                        lines.append(f"**Secondary Keys:** {', '.join(secondary_keys)}")
-                        lines.append("")
-
-            # lorebook entries (alternative field name, especially for scene recaps)
-            lorebook = parsed_content.get('lorebook')
-            if lorebook and isinstance(lorebook, list) and len(lorebook) > 0:
-                entry_count = len(lorebook)
-                plural = "entries" if entry_count != 1 else "entry"
-                lines.append(f"### Lorebook Entries")
+                lines.append(f"### Entities")
                 lines.append("")
                 lines.append(f"*{entry_count} {plural}*")
                 lines.append("")
 
-                for i, entry in enumerate(lorebook):
-                    if not isinstance(entry, dict):
-                        continue
+                for i, entry in enumerate(entities):
+                    entry_lines = self._format_entity_entry(entry, i)
+                    lines.extend(entry_lines)
 
-                    entry_name = entry.get('name', f'Entry {i+1}')
-                    entry_type = entry.get('type', 'unknown')
-
-                    lines.append(f"### {entry_name} ({entry_type})")
-                    lines.append("")
-
-                    # Entry content
-                    content = entry.get('content', '')
-                    if content:
-                        lines.append("```text")
-                        lines.append(content)
-                        lines.append("```")
-                        lines.append("")
-
-                    # Keywords
-                    keywords = entry.get('keywords')
-                    if keywords and isinstance(keywords, list):
-                        lines.append(f"**Keywords:** {', '.join(keywords)}")
-                        lines.append("")
-
-                    # Secondary keys
-                    secondary_keys = entry.get('secondaryKeys')
-                    if secondary_keys and isinstance(secondary_keys, list):
-                        lines.append(f"**Secondary Keys:** {', '.join(secondary_keys)}")
-                        lines.append("")
-
-            return lines
+            # Only return lines if we actually found something to format
+            # (scene_name, recap, or entities)
+            if len(lines) > 2:  # More than just header
+                return lines
+            return None
 
         except Exception as e:
             # If any error occurs, log it and return None to skip the section
