@@ -172,6 +172,30 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
   //   - Solution: Load preset messages manually from completion preset, then set includePreset=false
   //     so ConnectionManager doesn't override with profile preset
 
+  // 10a. MODEL FALLBACK - ConnectionManager uses profile.model directly, but profiles created
+  // before a model was selected will have undefined model. Fall back to current active model.
+  let modelOverride = {};
+  if (!profile.model) {
+    const { oai_settings } = await import('../../../openai.js');
+    let fallbackModel = null;
+
+    // Map profile API type to the corresponding oai_settings model field
+    if (profile.api === 'custom') {
+      fallbackModel = oai_settings.custom_model;
+    } else if (profile.api === 'openai') {
+      fallbackModel = oai_settings.openai_model;
+    } else if (profile.api === 'azure') {
+      fallbackModel = oai_settings.azure_openai_model;
+    }
+
+    if (fallbackModel) {
+      debug(SUBSYSTEM.CORE, `[LLMClient] Profile missing model field, using current active model: ${fallbackModel}`);
+      modelOverride = { model: fallbackModel };
+    } else {
+      debug(SUBSYSTEM.CORE, `[LLMClient] Warning: Profile missing model and no fallback found for API type: ${profile.api}`);
+    }
+  }
+
   try {
     const connectionManagerOptions = {
       stream: options.stream ?? false,
@@ -192,7 +216,7 @@ export async function sendLLMRequest(profileId, prompt, operationType, options =
       messagesWithMetadata,
       presetMaxTokens,
       connectionManagerOptions,
-      { ...generationParams, ...options.overridePayload }
+      { ...generationParams, ...modelOverride, ...options.overridePayload }
     );
 
     // DEBUG: Log raw ConnectionManager response
