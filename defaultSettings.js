@@ -116,6 +116,23 @@ export const default_settings = {
   first_hop_proxy_manual_override: false, // Manual override to force metadata injection even when first-hop proxy is not auto-detected
   suppress_other_lorebooks: true, // Suppress global/character/persona lorebooks during generation (only chat lorebooks included)
 
+  // --- Content Stripping Settings ---
+  // Named pattern sets (like profiles, but no default)
+  strip_pattern_sets: {},
+  // Character → pattern set name mapping
+  character_strip_patterns: {},
+  // Chat → pattern set name mapping
+  chat_strip_patterns: {},
+  // Global fallback pattern set name (optional, null = none)
+  global_strip_pattern_set: null,
+  // Application settings
+  apply_to_messages: false,           // Toggle: strip from actual messages
+  messages_depth: 1,                  // Depth: skip latest N messages (1 = preserve newest)
+  auto_strip_on_message: false,       // Auto-run when new message received
+  apply_to_summarization: false,      // Toggle: filter for recap prompts
+  summarization_depth: 0,             // Depth: 0 = filter ALL messages for summarization
+  confirm_before_strip: true,         // Require confirmation for batch message stripping
+
   // --- Operations Presets System (V3) ---
   /* eslint-disable sonarjs/no-duplicate-string -- Each operation must have explicit standalone prefill (no shared constants) */
   operation_artifacts: {

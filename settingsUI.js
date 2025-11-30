@@ -28,6 +28,7 @@ import {
 import { initializeEntityTypesUI } from './entityTypeSettingsUI.js';
 import { initializeEntryDefaultsUI } from './entryDefaultsSettingsUI.js';
 import { initializeOperationsPresetsUI, loadActivePreset } from './operationsPresetsUIBindings.js';
+import { initializeContentStrippingUI, refreshContentStrippingUI } from './contentStrippingUI.js';
 import {
   MAX_LINE_LENGTH,
   UI_UPDATE_DELAY_MS,
@@ -306,6 +307,10 @@ function initialize_lorebooks_settings_listeners() {
 
   initializeEntryDefaultsUI();
   debug("Entry Defaults UI initialized");
+
+  initializeContentStrippingUI();
+  refreshContentStrippingUI();
+  debug("Content Stripping UI initialized");
 }
 
 export { initialize_settings_listeners, loadActivePreset };

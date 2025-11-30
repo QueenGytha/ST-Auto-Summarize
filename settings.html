@@ -402,6 +402,114 @@
                     </div>
                 </div>
 
+                <!-- Content Stripping -->
+                <hr>
+                <div class="inline-drawer">
+                    <div class="inline-drawer-toggle inline-drawer-header">
+                        <div class="flex-container alignitemscenter margin0">
+                            <h4 class="margin0">Content Stripping <i class="fa-solid fa-info-circle" title="Remove unwanted content (status blocks, etc.) from messages using regex patterns."></i></h4>
+                        </div>
+                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+                    </div>
+                    <div class="inline-drawer-content">
+
+                        <!-- Pattern Set Selection -->
+                        <div class="auto_recap_strip_patterns_section" data-testid="strip-patterns-section">
+                            <div class="flex-container alignitemscenter margin0">
+                                <label class="flex1">
+                                    <span>Pattern Set:</span>
+                                    <select id="strip_pattern_set_select" data-testid="strip-pattern-set-select" class="text_pole">
+                                        <option value="">-- None --</option>
+                                    </select>
+                                </label>
+                                <span id="strip_pattern_set_source_badge" data-testid="strip-pattern-set-badge" class="auto_recap_preset_badge" title="Pattern set source"></span>
+                            </div>
+
+                            <!-- Pattern Set Action Buttons -->
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 10px; gap: 5px;">
+                                <button id="strip_pattern_set_edit" data-testid="strip-pattern-set-edit" class="menu_button fa-solid fa-pencil" title="Edit this pattern set"></button>
+                                <button id="strip_pattern_set_new" data-testid="strip-pattern-set-new" class="menu_button fa-solid fa-file-circle-plus" title="Create new pattern set"></button>
+                                <button id="strip_pattern_set_rename" data-testid="strip-pattern-set-rename" class="menu_button fa-solid fa-i-cursor" title="Rename this pattern set"></button>
+                                <button id="strip_pattern_set_delete" data-testid="strip-pattern-set-delete" class="menu_button fa-solid fa-trash-can" title="Delete this pattern set"></button>
+                                <button id="strip_pattern_set_import" data-testid="strip-pattern-set-import" class="menu_button fa-solid fa-file-import" title="Import pattern set from JSON file"></button>
+                                <button id="strip_pattern_set_export" data-testid="strip-pattern-set-export" class="menu_button fa-solid fa-file-export" title="Export pattern set to JSON file"></button>
+                            </div>
+
+                            <!-- Sticky Pattern Set Buttons -->
+                            <div class="flex-container justifyspacebetween alignitemscenter" style="margin-top: 5px; gap: 5px;">
+                                <button id="strip_pattern_set_sticky_character" data-testid="strip-pattern-set-sticky-character" class="menu_button" title="Auto-load this pattern set for current character">
+                                    <i class="fa-solid fa-unlock" style="margin-right: 0.5em"></i> Character
+                                </button>
+                                <button id="strip_pattern_set_sticky_chat" data-testid="strip-pattern-set-sticky-chat" class="menu_button" title="Auto-load this pattern set for current chat">
+                                    <i class="fa-solid fa-unlock" style="margin-right: 0.5em"></i> Chat
+                                </button>
+                                <button id="strip_pattern_set_global" data-testid="strip-pattern-set-global" class="menu_button" title="Set as global fallback pattern set">
+                                    <i class="fa-solid fa-globe" style="margin-right: 0.5em"></i> Global
+                                </button>
+                            </div>
+
+                            <input id="strip_pattern_set_import_file" data-testid="strip-pattern-set-import-file" type="file" hidden accept=".json">
+                        </div>
+
+                        <hr style="margin: 15px 0;">
+
+                        <!-- Apply to Messages -->
+                        <div class="auto_recap_strip_messages_section" data-testid="strip-messages-section">
+                            <h5 style="margin: 0 0 10px 0;">Apply to Messages</h5>
+                            <small class="displayBlock opacity50p margin-bot-10px">Permanently removes matched content from older messages</small>
+
+                            <label class="checkbox_label" title="Enable permanent message stripping">
+                                <input id="strip_apply_to_messages" data-testid="strip-apply-to-messages" type="checkbox" />
+                                <span>Enable message stripping</span>
+                            </label>
+
+                            <div class="strip_messages_settings" data-depends="strip_apply_to_messages">
+                                <label title="Number of latest messages to skip (preserve). 1 = preserve newest message only.">
+                                    <span>Skip latest <span id="strip_messages_depth_display" data-testid="strip-messages-depth-display">1</span> message(s)</span>
+                                    <input id="strip_messages_depth" data-testid="strip-messages-depth" class="text_pole" type="range" min="0" max="10" step="1" value="1" />
+                                </label>
+
+                                <label class="checkbox_label" title="Automatically strip content when new messages arrive">
+                                    <input id="strip_auto_on_message" data-testid="strip-auto-on-message" type="checkbox" />
+                                    <span>Auto-strip on new message</span>
+                                </label>
+
+                                <button id="strip_content_now" data-testid="strip-content-now" class="menu_button" title="Strip content from messages now (respects depth setting)">
+                                    <i class="fa-solid fa-scissors"></i> Strip Now
+                                </button>
+                            </div>
+                        </div>
+
+                        <hr style="margin: 15px 0;">
+
+                        <!-- Apply to Summarization -->
+                        <div class="auto_recap_strip_summarization_section" data-testid="strip-summarization-section">
+                            <h5 style="margin: 0 0 10px 0;">Apply to Summarization</h5>
+                            <small class="displayBlock opacity50p margin-bot-10px">Filters content for recap prompts only (doesn't modify saved messages)</small>
+
+                            <label class="checkbox_label" title="Enable summarization filtering">
+                                <input id="strip_apply_to_summarization" data-testid="strip-apply-to-summarization" type="checkbox" />
+                                <span>Enable summarization filtering</span>
+                            </label>
+
+                            <div class="strip_summarization_settings" data-depends="strip_apply_to_summarization">
+                                <label title="Number of messages to skip filtering (relative to scene end). 0 = filter all messages.">
+                                    <span>Skip latest <span id="strip_summarization_depth_display" data-testid="strip-summarization-depth-display">0</span> message(s)</span>
+                                    <input id="strip_summarization_depth" data-testid="strip-summarization-depth" class="text_pole" type="range" min="0" max="10" step="1" value="0" />
+                                </label>
+                            </div>
+                        </div>
+
+                        <hr style="margin: 15px 0;">
+
+                        <label class="checkbox_label" title="Require confirmation before batch stripping messages">
+                            <input id="strip_confirm_before_strip" data-testid="strip-confirm-before-strip" type="checkbox" checked />
+                            <span>Confirm before stripping</span>
+                        </label>
+
+                    </div>
+                </div>
+
                 <!-- Scene Recap -->
                 <hr>
                 <div class="inline-drawer">
@@ -854,6 +962,125 @@
                 <i class="fa-solid fa-floppy-disk"></i> Save & Close
             </button>
             <button id="auto_recap_artifact_editor_cancel" data-testid="artifact-editor-cancel" class="menu_button" title="Discard changes and close">
+                <i class="fa-solid fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Pattern Set Editor Modal -->
+<div id="strip_pattern_set_editor_modal" data-testid="strip-pattern-set-editor-modal" class="auto_recap_artifact_editor_modal" style="display: none;">
+    <div class="auto_recap_artifact_editor_backdrop"></div>
+    <div class="auto_recap_artifact_editor_dialog">
+        <div class="auto_recap_artifact_editor_header">
+            <h3 id="strip_pattern_set_editor_title" data-testid="strip-pattern-set-editor-title">Edit Pattern Set</h3>
+            <button id="strip_pattern_set_editor_close" data-testid="strip-pattern-set-editor-close" class="auto_recap_artifact_editor_close" title="Close">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+
+        <div class="auto_recap_artifact_editor_body">
+            <!-- Pattern Set Name -->
+            <div class="auto_recap_form_group">
+                <label for="strip_pattern_set_editor_name">
+                    <span>Pattern Set Name:</span>
+                </label>
+                <input id="strip_pattern_set_editor_name" data-testid="strip-pattern-set-editor-name" type="text" class="text_pole" placeholder="e.g., Manor Status" />
+            </div>
+
+            <!-- Patterns List -->
+            <div class="auto_recap_form_group">
+                <label>
+                    <span>Patterns:</span>
+                    <small class="displayBlock opacity50p">Regex patterns to match and remove from content</small>
+                </label>
+                <div id="strip_pattern_set_editor_patterns_list" data-testid="strip-pattern-set-editor-patterns-list" class="strip_patterns_list">
+                    <!-- Dynamically populated pattern rows -->
+                    <div class="strip_patterns_empty_message opacity50p" style="padding: 10px; text-align: center;">
+                        No patterns defined. Add a pattern below.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add New Pattern Form -->
+            <div class="auto_recap_form_group strip_add_pattern_form">
+                <label>
+                    <span>Add New Pattern:</span>
+                </label>
+                <div class="flex-container" style="gap: 5px; margin-top: 5px;">
+                    <input id="strip_pattern_new_name" data-testid="strip-pattern-new-name" type="text" class="text_pole flex1" placeholder="Pattern name" />
+                </div>
+                <div class="flex-container" style="gap: 5px; margin-top: 5px;">
+                    <input id="strip_pattern_new_regex" data-testid="strip-pattern-new-regex" type="text" class="text_pole flex2" placeholder="Regex pattern (e.g., \[Season:.*?\])" />
+                    <select id="strip_pattern_new_flags" data-testid="strip-pattern-new-flags" class="text_pole" style="width: auto;">
+                        <option value="gi">gi (global, case-insensitive)</option>
+                        <option value="gim">gim (+ multiline)</option>
+                        <option value="gis">gis (+ dotall)</option>
+                        <option value="gims">gims (all flags)</option>
+                        <option value="g">g (global only)</option>
+                    </select>
+                    <button id="strip_pattern_add_btn" data-testid="strip-pattern-add-btn" class="menu_button" title="Add pattern">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preset Patterns -->
+            <div class="auto_recap_form_group">
+                <details style="margin-top: 10px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; background: rgba(0,0,0,0.2);">
+                    <summary style="cursor: pointer; font-weight: 600; user-select: none; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Quick Add Presets</span>
+                        <small class="opacity50p" style="font-weight: normal; margin-left: auto;">(Click to expand)</small>
+                    </summary>
+                    <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 5px;">
+                        <button class="menu_button strip_preset_btn" data-testid="strip-preset-status-line" data-preset="status-line" title="Inline status like [Season: Spring - Day 3...]">
+                            <i class="fa-solid fa-brackets-square"></i> Status Line
+                        </button>
+                        <button class="menu_button strip_preset_btn" data-testid="strip-preset-status-block" data-preset="status-block" title="Multi-line status blocks">
+                            <i class="fa-solid fa-square"></i> Status Block
+                        </button>
+                        <button class="menu_button strip_preset_btn" data-testid="strip-preset-img-tags" data-preset="img-tags" title="HTML image tags">
+                            <i class="fa-solid fa-image"></i> Image Tags
+                        </button>
+                        <button class="menu_button strip_preset_btn" data-testid="strip-preset-decorative" data-preset="decorative" title="Lines with only decorative characters">
+                            <i class="fa-solid fa-star"></i> Decorative Lines
+                        </button>
+                    </div>
+                </details>
+            </div>
+
+            <!-- Test Pattern Section -->
+            <div class="auto_recap_form_group">
+                <details style="margin-top: 10px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; background: rgba(0,0,0,0.2);">
+                    <summary style="cursor: pointer; font-weight: 600; user-select: none; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-vial"></i>
+                        <span>Test Patterns</span>
+                        <small class="opacity50p" style="font-weight: normal; margin-left: auto;">(Click to expand)</small>
+                    </summary>
+                    <div style="margin-top: 12px;">
+                        <label>
+                            <span>Test Input:</span>
+                            <textarea id="strip_pattern_test_input" data-testid="strip-pattern-test-input" class="text_pole" rows="4" placeholder="Paste sample text here to test patterns..."></textarea>
+                        </label>
+                        <button id="strip_pattern_test_btn" data-testid="strip-pattern-test-btn" class="menu_button" style="margin-top: 5px;">
+                            <i class="fa-solid fa-play"></i> Test All Patterns
+                        </button>
+                        <label style="margin-top: 10px;">
+                            <span>Result:</span>
+                            <textarea id="strip_pattern_test_output" data-testid="strip-pattern-test-output" class="text_pole" rows="4" readonly placeholder="Test result will appear here..."></textarea>
+                        </label>
+                    </div>
+                </details>
+            </div>
+
+        </div>
+
+        <div class="auto_recap_artifact_editor_footer">
+            <button id="strip_pattern_set_editor_save" data-testid="strip-pattern-set-editor-save" class="menu_button" title="Save and close">
+                <i class="fa-solid fa-floppy-disk"></i> Save & Close
+            </button>
+            <button id="strip_pattern_set_editor_cancel" data-testid="strip-pattern-set-editor-cancel" class="menu_button" title="Discard changes and close">
                 <i class="fa-solid fa-times"></i> Cancel
             </button>
         </div>

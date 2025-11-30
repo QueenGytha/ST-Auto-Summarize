@@ -625,6 +625,106 @@ button, .scene-nav-link, #queue_toggle_visibility {
     opacity: 1 !important;
 }
 
+/* =====================================================
+   Content Stripping UI Styles
+   ===================================================== */
+
+/* Pattern Set Editor Modal - uses existing modal styles from operationsPresetsUI.css */
+
+/* Patterns List in Editor */
+.strip_patterns_list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    margin-top: 5px;
+}
+
+/* Individual Pattern Row */
+.strip_pattern_row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.strip_pattern_row:last-child {
+    border-bottom: none;
+}
+
+.strip_pattern_row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Pattern row elements */
+.strip_pattern_enabled {
+    flex-shrink: 0;
+}
+
+.strip_pattern_name {
+    flex: 0 0 120px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.strip_pattern_regex {
+    flex: 1 1 auto;
+    font-family: monospace;
+    font-size: 0.85em;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.strip_pattern_flags {
+    flex: 0 0 40px;
+    font-family: monospace;
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.strip_pattern_actions {
+    flex-shrink: 0;
+    display: flex;
+    gap: 4px;
+}
+
+.strip_pattern_row .menu_button {
+    padding: 2px 6px;
+    font-size: 0.85em;
+}
+
+/* Empty state message */
+.strip_patterns_empty_message {
+    padding: 20px 10px;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Depth slider display integration */
+.strip_messages_settings,
+.strip_summarization_settings {
+    margin-top: 10px;
+    padding-left: 1.5em;
+}
+
+/* Pattern set badge styling (reuses existing preset badge) */
+.auto_recap_strip_patterns_section .auto_recap_preset_badge {
+    margin-left: 8px;
+}
+
+/* Sticky button locked/unlocked states */
+.auto_recap_strip_patterns_section .menu_button i.fa-lock {
+    color: var(--active);
+}
+
 /* Mobile-specific adjustments */
 @media (max-width: 768px) {
     /* Increase navbar width for better touch access on small screens */

@@ -224,6 +224,76 @@ export const selectorsExtension = {
     completionPreset: '[data-testid="auto-scene-completion-preset"]',    // Removed from UI
   },
 
+  // Content Stripping Settings
+  contentStripping: {
+    // Pattern Set Section
+    section: '[data-testid="strip-patterns-section"]',
+    patternSetSelect: '[data-testid="strip-pattern-set-select"]',       // #strip_pattern_set_select
+    patternSetBadge: '[data-testid="strip-pattern-set-badge"]',         // #strip_pattern_set_source_badge
+    patternSetEdit: '[data-testid="strip-pattern-set-edit"]',           // #strip_pattern_set_edit
+    patternSetNew: '[data-testid="strip-pattern-set-new"]',             // #strip_pattern_set_new
+    patternSetRename: '[data-testid="strip-pattern-set-rename"]',       // #strip_pattern_set_rename
+    patternSetDelete: '[data-testid="strip-pattern-set-delete"]',       // #strip_pattern_set_delete
+    patternSetImport: '[data-testid="strip-pattern-set-import"]',       // #strip_pattern_set_import
+    patternSetExport: '[data-testid="strip-pattern-set-export"]',       // #strip_pattern_set_export
+    patternSetImportFile: '[data-testid="strip-pattern-set-import-file"]', // #strip_pattern_set_import_file
+    patternSetStickyCharacter: '[data-testid="strip-pattern-set-sticky-character"]', // #strip_pattern_set_sticky_character
+    patternSetStickyChat: '[data-testid="strip-pattern-set-sticky-chat"]', // #strip_pattern_set_sticky_chat
+    patternSetGlobal: '[data-testid="strip-pattern-set-global"]',       // #strip_pattern_set_global
+
+    // Apply to Messages Section
+    messagesSection: '[data-testid="strip-messages-section"]',
+    applyToMessages: '[data-testid="strip-apply-to-messages"]',         // #strip_apply_to_messages
+    messagesDepth: '[data-testid="strip-messages-depth"]',              // #strip_messages_depth
+    messagesDepthDisplay: '[data-testid="strip-messages-depth-display"]', // #strip_messages_depth_display
+    autoOnMessage: '[data-testid="strip-auto-on-message"]',             // #strip_auto_on_message
+    stripNow: '[data-testid="strip-content-now"]',                      // #strip_content_now
+
+    // Apply to Summarization Section
+    summarizationSection: '[data-testid="strip-summarization-section"]',
+    applyToSummarization: '[data-testid="strip-apply-to-summarization"]', // #strip_apply_to_summarization
+    summarizationDepth: '[data-testid="strip-summarization-depth"]',    // #strip_summarization_depth
+    summarizationDepthDisplay: '[data-testid="strip-summarization-depth-display"]', // #strip_summarization_depth_display
+
+    // Other settings
+    confirmBeforeStrip: '[data-testid="strip-confirm-before-strip"]',   // #strip_confirm_before_strip
+
+    // Pattern Set Editor Modal
+    editorModal: '[data-testid="strip-pattern-set-editor-modal"]',      // #strip_pattern_set_editor_modal
+    editorTitle: '[data-testid="strip-pattern-set-editor-title"]',      // #strip_pattern_set_editor_title
+    editorClose: '[data-testid="strip-pattern-set-editor-close"]',      // #strip_pattern_set_editor_close
+    editorName: '[data-testid="strip-pattern-set-editor-name"]',        // #strip_pattern_set_editor_name
+    editorPatternsList: '[data-testid="strip-pattern-set-editor-patterns-list"]', // #strip_pattern_set_editor_patterns_list
+    editorSave: '[data-testid="strip-pattern-set-editor-save"]',        // #strip_pattern_set_editor_save
+    editorCancel: '[data-testid="strip-pattern-set-editor-cancel"]',    // #strip_pattern_set_editor_cancel
+
+    // Add Pattern Form
+    patternNewName: '[data-testid="strip-pattern-new-name"]',           // #strip_pattern_new_name
+    patternNewRegex: '[data-testid="strip-pattern-new-regex"]',         // #strip_pattern_new_regex
+    patternNewFlags: '[data-testid="strip-pattern-new-flags"]',         // #strip_pattern_new_flags
+    patternAddBtn: '[data-testid="strip-pattern-add-btn"]',             // #strip_pattern_add_btn
+
+    // Test Pattern Section
+    patternTestInput: '[data-testid="strip-pattern-test-input"]',       // #strip_pattern_test_input
+    patternTestBtn: '[data-testid="strip-pattern-test-btn"]',           // #strip_pattern_test_btn
+    patternTestOutput: '[data-testid="strip-pattern-test-output"]',     // #strip_pattern_test_output
+
+    // Preset Buttons
+    presetStatusLine: '[data-testid="strip-preset-status-line"]',
+    presetStatusBlock: '[data-testid="strip-preset-status-block"]',
+    presetImgTags: '[data-testid="strip-preset-img-tags"]',
+    presetDecorative: '[data-testid="strip-preset-decorative"]',
+
+    // Pattern Row Classes (for dynamically created rows)
+    patternRowClass: '.strip_pattern_row',
+    patternEnabledClass: '.strip_pattern_enabled',
+    patternNameClass: '.strip_pattern_name',
+    patternRegexClass: '.strip_pattern_regex',
+    patternFlagsClass: '.strip_pattern_flags',
+    patternEditClass: '.strip_pattern_edit',
+    patternDeleteClass: '.strip_pattern_delete',
+  },
+
   // Auto-Lorebooks Settings
   lorebook: {
     deleteOnChat: '[data-testid="lorebook-delete-on-chat"]',              // #autolorebooks-delete-on-chat-delete
