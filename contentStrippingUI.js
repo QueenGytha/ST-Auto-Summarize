@@ -15,12 +15,19 @@ export function initializeContentStrippingUI() {
 
   const selectors = selectorsExtension.contentStripping;
 
+  bindMessageTypes(selectors);
   bindDepthSliders(selectors);
   bindPatternSetSelector(selectors);
   bindPatternSetActions(selectors);
   bindStickyButtons(selectors);
   bindApplicationToggles(selectors);
   bindEditorModal(selectors);
+}
+
+function bindMessageTypes(selectors) {
+  bind_setting(selectors.messageTypes, 'strip_message_types', 'text', () => {
+    debug(SUBSYSTEM.UI, 'Message types changed');
+  });
 }
 
 function bindDepthSliders(selectors) {

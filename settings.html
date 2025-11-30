@@ -450,6 +450,21 @@
 
                         <hr style="margin: 15px 0;">
 
+                        <!-- Message Types -->
+                        <div class="auto_recap_strip_message_types_section">
+                            <label title="Which message types to process for content stripping">
+                                <span>Message Types:</span>
+                                <select id="strip_message_types" data-testid="strip-message-types" class="text_pole">
+                                    <option value="character">AI Messages Only</option>
+                                    <option value="user">User Messages Only</option>
+                                    <option value="both">All Messages</option>
+                                </select>
+                            </label>
+                            <small class="displayBlock opacity50p margin-bot-10px">Depth counts only selected message types</small>
+                        </div>
+
+                        <hr style="margin: 15px 0;">
+
                         <!-- Apply to Messages -->
                         <div class="auto_recap_strip_messages_section" data-testid="strip-messages-section">
                             <h5 style="margin: 0 0 10px 0;">Apply to Messages</h5>

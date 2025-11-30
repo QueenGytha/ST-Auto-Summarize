@@ -85,8 +85,11 @@ extension_settings.auto_recap = {
     "chat_id": "Manor Status"
   },
 
-  // Global fallback pattern set (optional, only used if no chat/character mapping)
-  global_strip_pattern_set: null,  // Name of pattern set, or null for none
+  // Active pattern set (used when nothing pinned to character/chat)
+  active_strip_pattern_set: null,
+
+  // Message types to process - depth counts only selected types
+  strip_message_types: 'character',   // 'character' (AI only), 'user', or 'both'
 
   // Application settings (two targets, each with own toggle + depth)
   apply_to_messages: false,           // Toggle: strip from actual messages
@@ -95,9 +98,6 @@ extension_settings.auto_recap = {
 
   apply_to_summarization: true,       // Toggle: filter for recap prompts
   summarization_depth: 0,             // Depth: 0 = filter ALL messages for summarization
-
-  // UI settings
-  confirm_before_strip: true          // Require confirmation for batch message stripping
 }
 
 // Per-message tracking (stored in message.extra via set_data/get_data)
@@ -109,10 +109,10 @@ message.extra.content_strip_hash = "abc123";   // Hash of patterns used when str
 
 1. **Chat-pinned** - `chat_strip_patterns[chatId]` → pattern set name
 2. **Character-pinned** - `character_strip_patterns[characterKey]` → pattern set name
-3. **Global fallback** - `global_strip_pattern_set` → pattern set name
+3. **Active selection** - `active_strip_pattern_set` → currently selected pattern set
 4. **None** - If all are empty/null, no patterns applied
 
-**Key difference from Configuration Profiles:** No "Default" pattern set. If nothing is pinned, stripping is simply disabled for that context.
+**Key difference from Configuration Profiles:** No "Default" pattern set. The dropdown selection is the active set unless overridden by character/chat pinning.
 
 **Implementation pattern from existing code (`profileManager.js:306-309`):**
 ```javascript

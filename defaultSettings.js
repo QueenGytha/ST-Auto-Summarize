@@ -125,6 +125,8 @@ export const default_settings = {
   chat_strip_patterns: {},
   // Active pattern set (used when nothing pinned to character/chat)
   active_strip_pattern_set: null,
+  // Message types to process (user, character, both) - defaults to AI messages only
+  strip_message_types: 'character',
   // Application settings
   apply_to_messages: false,           // Toggle: strip from actual messages
   messages_depth: 1,                  // Depth: skip latest N messages (1 = preserve newest)

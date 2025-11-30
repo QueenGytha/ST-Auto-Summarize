@@ -240,6 +240,9 @@ export const selectorsExtension = {
     patternSetStickyCharacter: '[data-testid="strip-pattern-set-sticky-character"]', // #strip_pattern_set_sticky_character
     patternSetStickyChat: '[data-testid="strip-pattern-set-sticky-chat"]', // #strip_pattern_set_sticky_chat
 
+    // Message Types
+    messageTypes: '[data-testid="strip-message-types"]',              // #strip_message_types
+
     // Apply to Messages Section
     messagesSection: '[data-testid="strip-messages-section"]',
     applyToMessages: '[data-testid="strip-apply-to-messages"]',         // #strip_apply_to_messages
