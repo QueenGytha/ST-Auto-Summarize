@@ -118,7 +118,21 @@ export const default_settings = {
 
   // --- Content Stripping Settings ---
   // Named pattern sets (like profiles, but no default)
-  strip_pattern_sets: {},
+  strip_pattern_sets: {
+    'Baronial Command': {
+      patterns: [
+        {
+          id: 'pat_default_baronial',
+          name: 'Baronial Command',
+          pattern: '\\[Season:[^\\]]+\\]',
+          flags: 'gi',
+          enabled: true
+        }
+      ],
+      createdAt: 0,
+      modifiedAt: 0
+    }
+  },
   // Character → pattern set name mapping (when pinned)
   character_strip_patterns: {},
   // Chat → pattern set name mapping (when pinned)
