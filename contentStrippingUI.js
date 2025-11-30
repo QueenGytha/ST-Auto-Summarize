@@ -97,11 +97,6 @@ function bindStickyButtons(selectors) {
     debug(SUBSYSTEM.UI, 'Sticky to chat clicked');
     toast('Sticky to chat not yet implemented', 'info');
   }, false);
-
-  bind_function(selectors.patternSetGlobal, () => {
-    debug(SUBSYSTEM.UI, 'Set as global clicked');
-    toast('Set as global not yet implemented', 'info');
-  }, false);
 }
 
 function bindApplicationToggles(selectors) {
@@ -117,10 +112,6 @@ function bindApplicationToggles(selectors) {
     debug(SUBSYSTEM.UI, 'Auto strip on message toggled');
   });
 
-  bind_setting(selectors.confirmBeforeStrip, 'confirm_before_strip', 'boolean', () => {
-    debug(SUBSYSTEM.UI, 'Confirm before strip toggled');
-  });
-
   bind_function(selectors.stripNow, () => {
     debug(SUBSYSTEM.UI, 'Strip now clicked');
     toast('Strip now not yet implemented', 'info');
@@ -128,24 +119,24 @@ function bindApplicationToggles(selectors) {
 }
 
 function bindEditorModal(selectors) {
-  bind_function(selectors.editorClose, closePatternSetEditor, false);
-  bind_function(selectors.editorCancel, closePatternSetEditor, false);
+  $(selectors.editorClose).on('click', closePatternSetEditor);
+  $(selectors.editorCancel).on('click', closePatternSetEditor);
 
-  bind_function(selectors.editorSave, () => {
+  $(selectors.editorSave).on('click', () => {
     debug(SUBSYSTEM.UI, 'Save pattern set clicked');
     toast('Save pattern set not yet implemented', 'info');
     closePatternSetEditor();
-  }, false);
+  });
 
-  bind_function(selectors.patternAddBtn, () => {
+  $(selectors.patternAddBtn).on('click', () => {
     debug(SUBSYSTEM.UI, 'Add pattern clicked');
     toast('Add pattern not yet implemented', 'info');
-  }, false);
+  });
 
-  bind_function(selectors.patternTestBtn, () => {
+  $(selectors.patternTestBtn).on('click', () => {
     debug(SUBSYSTEM.UI, 'Test patterns clicked');
     toast('Test patterns not yet implemented', 'info');
-  }, false);
+  });
 
   $(document).on('click', '.strip_preset_btn', function() {
     const preset = $(this).data('preset');
@@ -186,5 +177,4 @@ export function refreshContentStrippingUI() {
   $(selectors.applyToMessages).prop('checked', get_settings('apply_to_messages') ?? false);
   $(selectors.applyToSummarization).prop('checked', get_settings('apply_to_summarization') ?? false);
   $(selectors.autoOnMessage).prop('checked', get_settings('auto_strip_on_message') ?? false);
-  $(selectors.confirmBeforeStrip).prop('checked', get_settings('confirm_before_strip') ?? true);
 }

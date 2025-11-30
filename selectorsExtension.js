@@ -239,7 +239,6 @@ export const selectorsExtension = {
     patternSetImportFile: '[data-testid="strip-pattern-set-import-file"]', // #strip_pattern_set_import_file
     patternSetStickyCharacter: '[data-testid="strip-pattern-set-sticky-character"]', // #strip_pattern_set_sticky_character
     patternSetStickyChat: '[data-testid="strip-pattern-set-sticky-chat"]', // #strip_pattern_set_sticky_chat
-    patternSetGlobal: '[data-testid="strip-pattern-set-global"]',       // #strip_pattern_set_global
 
     // Apply to Messages Section
     messagesSection: '[data-testid="strip-messages-section"]',
@@ -254,9 +253,6 @@ export const selectorsExtension = {
     applyToSummarization: '[data-testid="strip-apply-to-summarization"]', // #strip_apply_to_summarization
     summarizationDepth: '[data-testid="strip-summarization-depth"]',    // #strip_summarization_depth
     summarizationDepthDisplay: '[data-testid="strip-summarization-depth-display"]', // #strip_summarization_depth_display
-
-    // Other settings
-    confirmBeforeStrip: '[data-testid="strip-confirm-before-strip"]',   // #strip_confirm_before_strip
 
     // Pattern Set Editor Modal
     editorModal: '[data-testid="strip-pattern-set-editor-modal"]',      // #strip_pattern_set_editor_modal

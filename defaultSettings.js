@@ -119,19 +119,18 @@ export const default_settings = {
   // --- Content Stripping Settings ---
   // Named pattern sets (like profiles, but no default)
   strip_pattern_sets: {},
-  // Character → pattern set name mapping
+  // Character → pattern set name mapping (when pinned)
   character_strip_patterns: {},
-  // Chat → pattern set name mapping
+  // Chat → pattern set name mapping (when pinned)
   chat_strip_patterns: {},
-  // Global fallback pattern set name (optional, null = none)
-  global_strip_pattern_set: null,
+  // Active pattern set (used when nothing pinned to character/chat)
+  active_strip_pattern_set: null,
   // Application settings
   apply_to_messages: false,           // Toggle: strip from actual messages
   messages_depth: 1,                  // Depth: skip latest N messages (1 = preserve newest)
   auto_strip_on_message: false,       // Auto-run when new message received
   apply_to_summarization: false,      // Toggle: filter for recap prompts
   summarization_depth: 0,             // Depth: 0 = filter ALL messages for summarization
-  confirm_before_strip: true,         // Require confirmation for batch message stripping
 
   // --- Operations Presets System (V3) ---
   /* eslint-disable sonarjs/no-duplicate-string -- Each operation must have explicit standalone prefill (no shared constants) */
