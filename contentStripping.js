@@ -481,6 +481,11 @@ export const PRESET_PATTERNS = {
     pattern: '\\[(?:Season|Location|Time|Weather|Day|Treasury|Condition|Status|Health|Mood|Energy)[^\\]]*\\]',
     flags: 'gi'
   },
+  'baronial-command': {
+    name: 'Baronial Command',
+    pattern: '\\[Season:[^\\]]+\\]',
+    flags: 'gi'
+  },
   'status-block': {
     name: 'Status Block',
     pattern: '(?:^|\\n)(?:#{1,3}\\s*)?(?:Status|Manor Status|Character Status|Current Status)[\\s\\S]*?(?=\\n\\n|\\n#|$)',

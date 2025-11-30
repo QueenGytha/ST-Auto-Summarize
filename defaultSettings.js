@@ -128,10 +128,10 @@ export const default_settings = {
   // Message types to process (user, character, both) - defaults to AI messages only
   strip_message_types: 'character',
   // Application settings
-  apply_to_messages: false,           // Toggle: strip from actual messages
+  apply_to_messages: true,            // Toggle: strip from actual messages
   messages_depth: 1,                  // Depth: skip latest N messages (1 = preserve newest)
-  auto_strip_on_message: false,       // Auto-run when new message received
-  apply_to_summarization: false,      // Toggle: filter for recap prompts
+  auto_strip_on_message: true,        // Auto-run when new message received
+  apply_to_summarization: true,       // Toggle: filter for recap prompts
   summarization_depth: 0,             // Depth: 0 = filter ALL messages for summarization
 
   // --- Operations Presets System (V3) ---
