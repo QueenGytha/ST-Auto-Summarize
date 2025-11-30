@@ -46,6 +46,7 @@ import {
   SCENE_BREAK_MIN_CHARS
 } from './constants.js';
 import { normalizeStageOutput, STAGE } from './recapNormalization.js';
+import { getActivePatterns, getActiveSummarizationDepth } from './contentStripping.js';
 
 // SCENE RECAP PROPERTY STRUCTURE:
 // - Scene recaps are stored on the message object as:
@@ -1037,28 +1038,109 @@ async function tryQueueSceneRecap(index , manual = false) {
   return false;
 }
 
-// Helper: Collect scene objects for recap
-export function collectSceneObjects(
-startIdx ,
-endIdx ,
-chat )
-{
-  const messageTypes = get_settings('scene_recap_message_types') || "both";
-  const sceneObjects = [];
+// Helper: Check if message should be included based on message type filter
+function shouldIncludeMessage(msg, messageTypes) {
+  return messageTypes === "both" ||
+    (messageTypes === "user" && msg.is_user) ||
+    (messageTypes === "character" && !msg.is_user);
+}
 
+// Helper: Find pattern matches in text
+function findMatchesInText(text, patterns) {
+  const matches = [];
+  for (const pattern of patterns) {
+    if (!pattern.enabled) {
+      continue;
+    }
+    try {
+      const regex = new RegExp(pattern.pattern, pattern.flags || 'gi');
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        matches.push({ start: match.index, end: match.index + match[0].length });
+        if (match[0].length === 0) {
+          regex.lastIndex++;
+        }
+      }
+    } catch {
+      // Invalid regex, skip
+    }
+  }
+  return matches;
+}
+
+// Helper: Apply match removals to text
+function applyMatchRemovals(originalText, matches) {
+  if (!matches || matches.length === 0) {
+    return originalText;
+  }
+  let result = originalText;
+  matches.sort((a, b) => b.start - a.start);
+  for (const match of matches) {
+    result = result.slice(0, match.start) + result.slice(match.end);
+  }
+  return result.trim();
+}
+
+// Helper: Collect scene objects for recap
+export function collectSceneObjects(startIdx, endIdx, chat) {
+  const messageTypes = get_settings('scene_recap_message_types') || "both";
+  const applyStripping = get_settings('apply_to_summarization');
+  const stripMessageTypes = get_settings('strip_message_types') || 'character';
+  const skipInstances = getActiveSummarizationDepth();
+  const patterns = applyStripping ? getActivePatterns() : [];
+
+  debug(SUBSYSTEM.CORE, `[collectSceneObjects Strip] applyStripping: ${applyStripping}, patterns: ${patterns.length}, skipInstances: ${skipInstances}`);
+
+  // Collect messages to include with their strip eligibility
+  const messagesToInclude = [];
   for (let i = startIdx; i <= endIdx; i++) {
     const msg = chat[i];
-    if (msg.mes && msg.mes.trim() !== "") {
-      const includeMessage = messageTypes === "both" ||
-      messageTypes === "user" && msg.is_user ||
-      messageTypes === "character" && !msg.is_user;
-      if (includeMessage) {
-        sceneObjects.push({ type: "message", index: i, name: msg.name, is_user: msg.is_user, text: msg.mes });
-      }
+    if (msg.mes && msg.mes.trim() !== "" && shouldIncludeMessage(msg, messageTypes)) {
+      const shouldStrip = shouldIncludeMessage(msg, stripMessageTypes);
+      messagesToInclude.push({ index: i, msg, shouldStrip });
     }
   }
 
-  return sceneObjects;
+  // If no stripping needed, build scene objects directly
+  if (patterns.length === 0 || skipInstances < 0) {
+    return messagesToInclude.map(({ index, msg }) => ({
+      type: "message", index, name: msg.name, is_user: msg.is_user, text: msg.mes
+    }));
+  }
+
+  // Find all match instances from end to start
+  const allMatches = [];
+  for (let idx = messagesToInclude.length - 1; idx >= 0; idx--) {
+    const { msg, shouldStrip } = messagesToInclude[idx];
+    if (!shouldStrip) {
+      continue;
+    }
+    const matches = findMatchesInText(msg.mes, patterns);
+    for (const m of matches) {
+      allMatches.push({ msgIdx: idx, start: m.start, end: m.end });
+    }
+  }
+
+  debug(SUBSYSTEM.CORE, `[collectSceneObjects Strip] Total matches found: ${allMatches.length}`);
+
+  // Protect the most recent N instances
+  const matchesToStrip = allMatches.slice(Math.min(skipInstances, allMatches.length));
+  debug(SUBSYSTEM.CORE, `[collectSceneObjects Strip] Matches to strip: ${matchesToStrip.length}`);
+
+  // Group by message index
+  const matchesByMsg = new Map();
+  for (const match of matchesToStrip) {
+    if (!matchesByMsg.has(match.msgIdx)) {
+      matchesByMsg.set(match.msgIdx, []);
+    }
+    matchesByMsg.get(match.msgIdx).push(match);
+  }
+
+  // Build scene objects with stripping applied
+  return messagesToInclude.map(({ index, msg }, idx) => {
+    const text = applyMatchRemovals(msg.mes, matchesByMsg.get(idx));
+    return { type: "message", index, name: msg.name, is_user: msg.is_user, text };
+  });
 }
 
 // Helper: Check if a lorebook entry should be filtered out

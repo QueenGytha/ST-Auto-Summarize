@@ -116,38 +116,6 @@ export const default_settings = {
   first_hop_proxy_manual_override: false, // Manual override to force metadata injection even when first-hop proxy is not auto-detected
   suppress_other_lorebooks: true, // Suppress global/character/persona lorebooks during generation (only chat lorebooks included)
 
-  // --- Content Stripping Settings ---
-  // Named pattern sets (like profiles, but no default)
-  strip_pattern_sets: {
-    'Baronial Command': {
-      patterns: [
-        {
-          id: 'pat_default_baronial',
-          name: 'Baronial Command',
-          pattern: '\\[Season:[^\\]]+\\]',
-          flags: 'gi',
-          enabled: true
-        }
-      ],
-      createdAt: 0,
-      modifiedAt: 0
-    }
-  },
-  // Character → pattern set name mapping (when pinned)
-  character_strip_patterns: {},
-  // Chat → pattern set name mapping (when pinned)
-  chat_strip_patterns: {},
-  // Active pattern set (used when nothing pinned to character/chat)
-  active_strip_pattern_set: null,
-  // Message types to process (user, character, both) - defaults to AI messages only
-  strip_message_types: 'character',
-  // Application settings
-  apply_to_messages: true,            // Toggle: strip from actual messages
-  messages_depth: 1,                  // Depth: skip latest N messages (1 = preserve newest)
-  auto_strip_on_message: true,        // Auto-run when new message received
-  apply_to_summarization: true,       // Toggle: filter for recap prompts
-  summarization_depth: 0,             // Depth: 0 = filter ALL messages for summarization
-
   // --- Operations Presets System (V3) ---
   /* eslint-disable sonarjs/no-duplicate-string -- Each operation must have explicit standalone prefill (no shared constants) */
   operation_artifacts: {

@@ -250,8 +250,6 @@ export const selectorsExtension = {
     applyToMessages: '[data-testid="strip-apply-to-messages"]',         // #strip_apply_to_messages
     messagesDepth: '[data-testid="strip-messages-depth"]',              // #strip_messages_depth
     messagesDepthDisplay: '[data-testid="strip-messages-depth-display"]', // #strip_messages_depth_display
-    autoOnMessage: '[data-testid="strip-auto-on-message"]',             // #strip_auto_on_message
-    stripNow: '[data-testid="strip-content-now"]',                      // #strip_content_now
 
     // Apply to Summarization Section
     summarizationSection: '[data-testid="strip-summarization-section"]',

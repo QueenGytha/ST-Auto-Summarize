@@ -35,7 +35,78 @@ const global_settings = {
   operation_artifacts: {}, // operation artifacts (global, not profile-specific)
   active_operations_preset_global: null, // user-selected operations preset (global, not profile-specific)
   character_sticky_presets: {}, // character-specific preset overrides (global, not profile-specific)
-  chat_sticky_presets: {} // chat-specific preset overrides (global, not profile-specific)
+  chat_sticky_presets: {}, // chat-specific preset overrides (global, not profile-specific)
+  // Content stripping settings (global, not profile-specific)
+  strip_pattern_sets: {
+    'Baronial Command': {
+      patterns: [
+        {
+          id: 'pat_default_baronial',
+          name: 'Season Status Block',
+          pattern: '\\[Season:[^\\]]+\\]',
+          flags: 'gi',
+          enabled: true
+        }
+      ],
+      messagesDepth: 1,
+      summarizationDepth: 0,
+      createdAt: 0,
+      modifiedAt: 0
+    },
+    'Mare Amore Mansion': {
+      patterns: [
+        {
+          id: 'pat_default_mare_amore',
+          name: 'Relationship Stats Block',
+          pattern: '(```\\n)?-{3,}\\nRelationships:[\\s\\S]*?-{3,}(\\n```)?',
+          flags: 'g',
+          enabled: true
+        }
+      ],
+      messagesDepth: 1,
+      summarizationDepth: 0,
+      createdAt: 0,
+      modifiedAt: 0
+    },
+    'Heroes of Equestria': {
+      patterns: [
+        {
+          id: 'pat_default_heroes',
+          name: 'Domain/Army/Foes Block',
+          pattern: '(```\\n)?Domain:.*\\nArmy:.*\\nFoes:.*(\\n```)?',
+          flags: 'g',
+          enabled: true
+        }
+      ],
+      messagesDepth: 1,
+      summarizationDepth: 0,
+      createdAt: 0,
+      modifiedAt: 0
+    },
+    'THINGPONE in EQUESTRIA': {
+      patterns: [
+        {
+          id: 'pat_default_thingpone',
+          name: 'Game Infoblocks',
+          pattern: '<details>[\\s\\S]*?</details>',
+          flags: 'g',
+          enabled: true
+        }
+      ],
+      messagesDepth: 3,
+      summarizationDepth: 0,
+      createdAt: 0,
+      modifiedAt: 0
+    }
+  }, // named pattern sets
+  character_strip_patterns: {}, // character → pattern set name mapping
+  chat_strip_patterns: {}, // chat → pattern set name mapping
+  active_strip_pattern_set: null, // currently active pattern set
+  strip_message_types: 'character', // which message types to scan for patterns
+  apply_to_messages: true, // enable prompt filtering
+  messages_depth: 1, // skip latest N match instances for prompts
+  apply_to_summarization: true, // enable filtering for recap generation
+  summarization_depth: 0 // skip latest N match instances for recaps (0 = strip all)
 };
 const settings_ui_map = {}; // map of settings to UI elements
 

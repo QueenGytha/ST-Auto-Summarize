@@ -6,8 +6,7 @@ import {
   bind_setting,
   bind_function,
   selectorsExtension,
-  toast,
-  getContext
+  toast
 } from './index.js';
 
 import {
@@ -30,7 +29,9 @@ import {
   exportPatternSet,
   importPatternSet,
   testPatterns,
-  getPresetPattern
+  getActiveMessagesDepth,
+  getActiveSummarizationDepth,
+  updatePatternSetDepth
 } from './contentStripping.js';
 
 const RANDOM_ID_BASE = 36;
@@ -43,6 +44,7 @@ const MSG_SELECT_PATTERN_SET = 'Select a pattern set first';
 let currentEditingSet = null;
 let editorPatterns = [];
 let editingPatternId = null;
+let isInitializing = true;
 
 export function initializeContentStrippingUI() {
   debug(SUBSYSTEM.UI, 'Initializing content stripping UI');
@@ -71,7 +73,12 @@ function bindDepthSliders(selectors) {
   $messagesDepth.on('input change', function() {
     const val = Number($(this).val()) || 0;
     $messagesDepthDisplay.text(val);
-    set_settings('messages_depth', val);
+    const activeSet = getActivePatternSetName();
+    if (activeSet) {
+      updatePatternSetDepth(activeSet, 'messages', val);
+    } else {
+      set_settings('messages_depth', val);
+    }
   });
 
   const $summarizationDepth = $(selectors.summarizationDepth);
@@ -80,19 +87,30 @@ function bindDepthSliders(selectors) {
   $summarizationDepth.on('input change', function() {
     const val = Number($(this).val()) || 0;
     $summarizationDepthDisplay.text(val);
-    set_settings('summarization_depth', val);
+    const activeSet = getActivePatternSetName();
+    if (activeSet) {
+      updatePatternSetDepth(activeSet, 'summarization', val);
+    } else {
+      set_settings('summarization_depth', val);
+    }
   });
 }
 
 function bindPatternSetSelector(selectors) {
-  $(selectors.patternSetSelect).on('change', function() {
-    const selectedName = $(this).val();
+  $(selectors.patternSetSelect).on('change', async function() {
+    if (isInitializing) {
+      debug(SUBSYSTEM.UI, 'Pattern set change ignored during initialization');
+      return;
+    }
+
+    const selectedName = $(this).val() || null;
     debug(SUBSYSTEM.UI, `Pattern set selected: ${selectedName || '(none)'}`);
 
-    setActivePatternSet(selectedName || null);
+    await setActivePatternSet(selectedName);
     updateStickyButtonStates();
     updatePatternSetBadge();
     updatePatternsPreview();
+    updateDepthSlidersFromActiveSet(selectors);
   });
 }
 
@@ -261,15 +279,6 @@ function bindApplicationToggles(selectors) {
   bind_setting(selectors.applyToSummarization, 'apply_to_summarization', 'boolean', () => {
     debug(SUBSYSTEM.UI, 'Apply to summarization toggled');
   });
-
-  bind_setting(selectors.autoOnMessage, 'auto_strip_on_message', 'boolean', () => {
-    debug(SUBSYSTEM.UI, 'Auto strip on message toggled');
-  });
-
-  bind_function(selectors.stripNow, () => {
-    debug(SUBSYSTEM.UI, 'Strip now clicked');
-    toast('Strip now not yet implemented', 'info');
-  }, false);
 }
 
 function bindEditorModal(selectors) {
@@ -286,15 +295,6 @@ function bindEditorModal(selectors) {
 
   $(selectors.patternTestBtn).on('click', () => {
     runPatternTest();
-  });
-
-  $(document).on('click', '.strip_preset_btn', function() {
-    const presetKey = $(this).data('preset');
-    const preset = getPresetPattern(presetKey);
-    if (preset) {
-      addPatternToEditor(preset);
-      toast(`Added preset: ${preset.name}`, TOAST_TYPE_SUCCESS);
-    }
   });
 
   $(document).on('click', '.strip_pattern_delete', function() {
@@ -557,6 +557,8 @@ function populatePatternSetDropdown() {
   const sets = getStripPatternSets();
   const activeName = get_settings('active_strip_pattern_set');
 
+  debug(SUBSYSTEM.UI, `Populating dropdown: activeName="${activeName}", sets=${JSON.stringify(Object.keys(sets))}`);
+
   $select.empty();
   $select.append('<option value="">-- None --</option>');
 
@@ -565,7 +567,9 @@ function populatePatternSetDropdown() {
     $select.append(`<option value="${name}">${name} (${patternCount})</option>`);
   }
 
-  $select.val((activeName && sets[activeName]) ? activeName : '');
+  const valueToSet = (activeName && sets[activeName]) ? activeName : '';
+  debug(SUBSYSTEM.UI, `Setting dropdown value to: "${valueToSet}"`);
+  $select.val(valueToSet);
 
   updatePatternSetBadge();
 }
@@ -641,6 +645,18 @@ function updateStickyButtonStates() {
   }
 }
 
+function updateDepthSlidersFromActiveSet(selectors) {
+  const messagesDepth = getActiveMessagesDepth();
+  $(selectors.messagesDepth).val(messagesDepth);
+  $(selectors.messagesDepthDisplay).text(messagesDepth);
+
+  const summarizationDepth = getActiveSummarizationDepth();
+  $(selectors.summarizationDepth).val(summarizationDepth);
+  $(selectors.summarizationDepthDisplay).text(summarizationDepth);
+
+  debug(SUBSYSTEM.UI, `Updated depth sliders: messages=${messagesDepth}, summarization=${summarizationDepth}`);
+}
+
 export function refreshContentStrippingUI() {
   debug(SUBSYSTEM.UI, 'Refreshing content stripping UI');
 
@@ -649,17 +665,11 @@ export function refreshContentStrippingUI() {
   populatePatternSetDropdown();
   updateStickyButtonStates();
   updatePatternsPreview();
-
-  const messagesDepth = get_settings('messages_depth') ?? 1;
-  $(selectors.messagesDepth).val(messagesDepth);
-  $(selectors.messagesDepthDisplay).text(messagesDepth);
-
-  const summarizationDepth = get_settings('summarization_depth') ?? 0;
-  $(selectors.summarizationDepth).val(summarizationDepth);
-  $(selectors.summarizationDepthDisplay).text(summarizationDepth);
+  updateDepthSlidersFromActiveSet(selectors);
 
   $(selectors.applyToMessages).prop('checked', get_settings('apply_to_messages') ?? false);
   $(selectors.applyToSummarization).prop('checked', get_settings('apply_to_summarization') ?? false);
-  $(selectors.autoOnMessage).prop('checked', get_settings('auto_strip_on_message') ?? false);
   $(selectors.messageTypes).val(get_settings('strip_message_types') ?? 'character');
+
+  isInitializing = false;
 }

@@ -472,28 +472,19 @@
 
                         <!-- Apply to Messages -->
                         <div class="auto_recap_strip_messages_section" data-testid="strip-messages-section">
-                            <h5 style="margin: 0 0 10px 0;">Apply to Messages</h5>
-                            <small class="displayBlock opacity50p margin-bot-10px">Permanently removes matched content from older messages</small>
+                            <h5 style="margin: 0 0 10px 0;">Apply to Chat Prompts</h5>
+                            <small class="displayBlock opacity50p margin-bot-10px">Filters matched content from prompts sent to the AI (non-destructive)</small>
 
-                            <label class="checkbox_label" title="Enable permanent message stripping">
+                            <label class="checkbox_label" title="Filter matched patterns from chat prompts">
                                 <input id="strip_apply_to_messages" data-testid="strip-apply-to-messages" type="checkbox" />
-                                <span>Enable message stripping</span>
+                                <span>Enable prompt filtering</span>
                             </label>
 
                             <div class="strip_messages_settings" data-depends="strip_apply_to_messages">
-                                <label title="Number of latest messages to skip (preserve). 1 = preserve newest message only.">
-                                    <span>Skip latest <span id="strip_messages_depth_display" data-testid="strip-messages-depth-display">1</span> message(s)</span>
+                                <label title="Number of latest match instances to skip (preserve). 1 = preserve newest match only.">
+                                    <span>Skip latest <span id="strip_messages_depth_display" data-testid="strip-messages-depth-display">1</span> instance(s)</span>
                                     <input id="strip_messages_depth" data-testid="strip-messages-depth" class="text_pole" type="range" min="0" max="10" step="1" value="1" />
                                 </label>
-
-                                <label class="checkbox_label" title="Automatically strip content when new messages arrive">
-                                    <input id="strip_auto_on_message" data-testid="strip-auto-on-message" type="checkbox" />
-                                    <span>Auto-strip on new message</span>
-                                </label>
-
-                                <button id="strip_content_now" data-testid="strip-content-now" class="menu_button" title="Strip content from messages now (respects depth setting)">
-                                    <i class="fa-solid fa-scissors"></i> Strip Now
-                                </button>
                             </div>
                         </div>
 
@@ -1035,33 +1026,6 @@
                 </div>
             </div>
 
-            <!-- Preset Patterns -->
-            <div class="auto_recap_form_group">
-                <details style="margin-top: 10px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; background: rgba(0,0,0,0.2);">
-                    <summary style="cursor: pointer; font-weight: 600; user-select: none; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        <span>Quick Add Presets</span>
-                        <small class="opacity50p" style="font-weight: normal; margin-left: auto;">(Click to expand)</small>
-                    </summary>
-                    <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 5px;">
-                        <button class="menu_button strip_preset_btn" data-testid="strip-preset-status-line" data-preset="status-line" title="Inline status like [Season: Spring - Day 3...]">
-                            <i class="fa-solid fa-brackets-square"></i> Status Line
-                        </button>
-                        <button class="menu_button strip_preset_btn" data-testid="strip-preset-baronial-command" data-preset="baronial-command" title="Baronial Command status [Season: Spring - Day 2... | Treasury | Status | Condition]">
-                            <i class="fa-solid fa-crown"></i> Baronial Command
-                        </button>
-                        <button class="menu_button strip_preset_btn" data-testid="strip-preset-status-block" data-preset="status-block" title="Multi-line status blocks">
-                            <i class="fa-solid fa-square"></i> Status Block
-                        </button>
-                        <button class="menu_button strip_preset_btn" data-testid="strip-preset-img-tags" data-preset="img-tags" title="HTML image tags">
-                            <i class="fa-solid fa-image"></i> Image Tags
-                        </button>
-                        <button class="menu_button strip_preset_btn" data-testid="strip-preset-decorative" data-preset="decorative" title="Lines with only decorative characters">
-                            <i class="fa-solid fa-star"></i> Decorative Lines
-                        </button>
-                    </div>
-                </details>
-            </div>
 
             <!-- Test Pattern Section -->
             <div class="auto_recap_form_group">

@@ -19,6 +19,7 @@ import {
   prepareScenePrompt,
   calculateSceneRecapTokens } from
 './sceneBreak.js';
+import { getActivePatterns, applyStrippingPatterns } from './contentStripping.js';
 import { buildAllMacroParams, substitute_params } from './macros/index.js';
 
 const DEFAULT_MINIMUM_SCENE_LENGTH = 3;
@@ -446,16 +447,41 @@ function formatMessagesForRangeDetection(chat, startIndex, endIndex, checkWhich)
     return { formatted: '(No messages available)', filteredIndices: [] };
   }
 
+  // Get stripping settings
+  const applyStripping = get_settings('apply_to_summarization');
+  const stripMessageTypes = get_settings('strip_message_types') || 'character';
+  const patterns = applyStripping ? getActivePatterns() : [];
+
+  debug(SUBSYSTEM.CORE, `[formatMessagesForRangeDetection] Stripping: applyStripping=${applyStripping}, patterns.length=${patterns.length}, messageTypes=${stripMessageTypes}`);
+
   const formattedMessages = [];
   const filteredIndices = [];
 
   for (let i = startIndex; i <= endIndex; i++) {
     const message = chat[i];
-    if (!message) {continue;}
+    if (!message) {
+      continue;
+    }
 
     if (messageMatchesType(message, checkWhich)) {
       const speaker = message.is_user ? '[USER]' : '[CHARACTER]';
-      const cleaned = stripDecorativeSeparators(message.mes);
+      let cleaned = stripDecorativeSeparators(message.mes);
+
+      // Apply pattern stripping if enabled and message type matches
+      if (patterns.length > 0) {
+        const shouldStrip = stripMessageTypes === 'both' ||
+          (stripMessageTypes === 'user' && message.is_user) ||
+          (stripMessageTypes === 'character' && !message.is_user);
+        if (shouldStrip) {
+          const beforeLen = cleaned.length;
+          cleaned = applyStrippingPatterns(cleaned, patterns);
+          const afterLen = cleaned.length;
+          if (beforeLen !== afterLen) {
+            debug(SUBSYSTEM.CORE, `[formatMessagesForRangeDetection] Message #${i}: stripped ${beforeLen - afterLen} chars`);
+          }
+        }
+      }
+
       formattedMessages.push(`Message #${i} ${speaker}: ${cleaned}`);
       filteredIndices.push(i);
     }
@@ -536,14 +562,43 @@ function validateSceneBreakResponse(sceneBreakAt, config) {
   return { valid: true };
 }
 
+function shouldStripMessage(stripMessageTypes, isUser) {
+  if (stripMessageTypes === 'both') {
+    return true;
+  }
+  if (stripMessageTypes === 'user' && isUser) {
+    return true;
+  }
+  if (stripMessageTypes === 'character' && !isUser) {
+    return true;
+  }
+  return false;
+}
+
+function applyStrippingToContent(content, patterns, stripMessageTypes, isUser) {
+  if (patterns.length === 0) {
+    return content;
+  }
+  if (!shouldStripMessage(stripMessageTypes, isUser)) {
+    return content;
+  }
+  return applyStrippingPatterns(content, patterns);
+}
+
 function buildFormattedMessagesWithTokens(chat, filteredIndices, earliestAllowedBreak, maxEligibleIndex) {
   // Defensive validation: warn if maxEligibleIndex is unexpectedly null
   if (maxEligibleIndex === null || maxEligibleIndex === undefined) {
     debug(SUBSYSTEM.OPERATIONS, `WARNING: maxEligibleIndex is ${maxEligibleIndex} in buildFormattedMessagesWithTokens - offset marking may not work correctly`);
   }
 
+  // Get stripping settings - strip ALL matches for detect_scene_break (no instance skipping)
+  const applyStripping = get_settings('apply_to_summarization');
+  const stripMessageTypes = get_settings('strip_message_types') || 'character';
+  const patterns = applyStripping ? getActivePatterns() : [];
+
   const messages = [];
   const breakdown = [];
+  const MAX_PREVIEW = 80;
 
   for (const i of filteredIndices) {
     const m = chat[i];
@@ -552,13 +607,14 @@ function buildFormattedMessagesWithTokens(chat, filteredIndices, earliestAllowed
     const header = isIneligible
       ? `Message #invalid choice ${speaker}:`
       : `Message #${i} ${speaker}:`;
-    const cleaned = stripDecorativeSeparators(m?.mes ?? '');
-    const formatted = `${header} ${cleaned}`;
 
+    let cleaned = stripDecorativeSeparators(m?.mes ?? '');
+    cleaned = applyStrippingToContent(cleaned, patterns, stripMessageTypes, m?.is_user);
+
+    const formatted = `${header} ${cleaned}`;
     messages.push(formatted);
 
     const tokens = count_tokens(formatted);
-    const MAX_PREVIEW = 80;
     const preview = cleaned.length > MAX_PREVIEW ? `${cleaned.slice(0, MAX_PREVIEW)}...` : cleaned;
 
     breakdown.push({

@@ -55,6 +55,107 @@ import {
 
 // Import lorebooks utilities (will be dynamically imported if enabled)
 import * as lorebookUtils from './utils.js';
+import { getActivePatterns, getActiveMessagesDepth } from './contentStripping.js';
+
+// Helper: Check if prompt message should be processed based on message types setting
+function shouldProcessPromptMessage(message, messageTypes) {
+  const role = message.role;
+  return messageTypes === 'both' ||
+    (messageTypes === 'user' && role === 'user') ||
+    (messageTypes === 'character' && role === 'assistant');
+}
+
+// Helper: Find all pattern matches in a text string
+function findMatchesInText(text, pattern) {
+  const matches = [];
+  try {
+    const regex = new RegExp(pattern.pattern, pattern.flags || 'gi');
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      matches.push({ start: match.index, end: match.index + match[0].length });
+      if (match[0].length === 0) {regex.lastIndex++;}
+    }
+  } catch {
+    // Invalid regex, skip
+  }
+  return matches;
+}
+
+// Helper: Apply match removals to text (sorted descending by position)
+function applyMatchRemovals(originalText, matches) {
+  let result = originalText;
+  const sorted = [...matches].sort((a, b) => b.start - a.start);
+  for (const m of sorted) {
+    result = result.slice(0, m.start) + result.slice(m.end);
+  }
+  return result.trim();
+}
+
+// Helper: Apply content stripping to prompt messages with instance-based skipping
+function stripPatternsFromPrompt(chatArray) {
+  const applyToMessages = get_settings('apply_to_messages');
+  debug(SUBSYSTEM.CORE, `[Strip] apply_to_messages: ${applyToMessages}`);
+  if (!applyToMessages) {
+    return 0;
+  }
+
+  const patterns = getActivePatterns();
+  debug(SUBSYSTEM.CORE, `[Strip] patterns count: ${patterns.length}`);
+  if (patterns.length === 0) {
+    return 0;
+  }
+
+  const messageTypes = get_settings('strip_message_types') ?? 'character';
+  const skipInstances = getActiveMessagesDepth();
+  debug(SUBSYSTEM.CORE, `[Strip] messageTypes: ${messageTypes}, skipInstances: ${skipInstances}`);
+
+  // Pass 1: Collect all matches across chat (newest first for skip counting)
+  const allMatches = [];
+  for (let i = chatArray.length - 1; i >= 0; i--) {
+    const msg = chatArray[i];
+    if (!msg.content || typeof msg.content !== 'string') {continue;}
+    if (!shouldProcessPromptMessage(msg, messageTypes)) {continue;}
+
+    for (const pattern of patterns) {
+      if (!pattern.enabled) {continue;}
+      const matches = findMatchesInText(msg.content, pattern);
+      for (const m of matches) {
+        allMatches.push({ index: i, start: m.start, end: m.end });
+      }
+    }
+  }
+
+  debug(SUBSYSTEM.CORE, `[Strip] Total matches found: ${allMatches.length}`);
+  if (allMatches.length === 0) {
+    return 0;
+  }
+
+  // Pass 2: Skip latest N instances, strip the rest
+  const matchesToStrip = allMatches.slice(skipInstances);
+  debug(SUBSYSTEM.CORE, `[Strip] Matches to strip (after skipping ${skipInstances}): ${matchesToStrip.length}`);
+  if (matchesToStrip.length === 0) {
+    return 0;
+  }
+
+  // Pass 3: Group by message index and apply removals
+  const matchesByIndex = new Map();
+  for (const m of matchesToStrip) {
+    if (!matchesByIndex.has(m.index)) {matchesByIndex.set(m.index, []);}
+    matchesByIndex.get(m.index).push(m);
+  }
+
+  let strippedCount = 0;
+  for (const [idx, matches] of matchesByIndex) {
+    const msg = chatArray[idx];
+    const stripped = applyMatchRemovals(msg.content, matches);
+    if (stripped !== msg.content) {
+      msg.content = stripped;
+      strippedCount++;
+    }
+  }
+
+  return strippedCount;
+}
 
 // Event handling
 let operationQueueModule = null; // Reference to queue module for reloading
@@ -300,12 +401,8 @@ async function initializeExtension() {
   debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] About to call installLorebookWrapper()');
   installLorebookWrapper();
   debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] installLorebookWrapper() call completed');
-
   // Install world info activation logger (PoC for tracking active entries)
-  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] Installing world info activation logger');
   installWorldInfoActivationLogger();
-  debug(SUBSYSTEM.EVENT, '[Auto-Recap:Init] World info activation logger installed');
-
   // Update Default artifacts BEFORE initialize_settings() to prevent soft_reset_settings() from overwriting them
   debug(SUBSYSTEM.EVENT, '[EVENT HANDLERS] Checking Default artifacts for updates...');
   const { needsOperationsPresetsMigration, migrateToOperationsPresets, updateDefaultArtifacts } = await import('./operationsPresetsMigration.js');
@@ -369,13 +466,20 @@ async function initializeExtension() {
   const eventSource = ctx.eventSource;
   const event_types = ctx.event_types;
   debug(`[eventHandlers] Registered event_types: ${JSON.stringify(event_types)}`);
-  // Inject metadata into chat completion prompts for proxy logging
+  // Inject metadata and strip content from chat completion prompts
   eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, async (promptData) => {
     await on_chat_event('chat_completion_prompt_ready', promptData);
 
     try {
       debug('[Interceptor] CHAT_COMPLETION_PROMPT_READY handler started');
 
+      // Apply content stripping to chat prompts (non-destructive)
+      if (promptData && Array.isArray(promptData.chat)) {
+        const strippedCount = stripPatternsFromPrompt(promptData.chat);
+        if (strippedCount > 0) {
+          debug(SUBSYSTEM.CORE, `[Interceptor] Stripped patterns from ${strippedCount} prompt messages`);
+        }
+      }
       // Auto-detect if using first-hop proxy based on connection profile
       // This is a regular chat message, so check current active profile
       const enabled = await should_send_chat_details('chat');
@@ -383,7 +487,7 @@ async function initializeExtension() {
 
       if (!enabled) {
         debug('[Interceptor] Metadata injection disabled (not using first-hop proxy), skipping');
-        return; // Not enabled, skip
+        return; // Not enabled, skip metadata injection
       }
 
       debug('[Interceptor] Metadata injection enabled (using first-hop proxy), proceeding...');

@@ -3,8 +3,11 @@ import {
   SUBSYSTEM,
   get_settings,
   set_settings,
+  saveSettings,
   saveSettingsDebounced,
-  getContext
+  getContext,
+  extension_settings,
+  MODULE_NAME
 } from './index.js';
 
 const JSON_INDENT_SPACES = 2;
@@ -48,15 +51,44 @@ export function getActivePatternSetName() {
 export function getActivePatterns() {
   const setName = getActivePatternSetName();
   if (!setName) {
+    debug(SUBSYSTEM.CORE, `[getActivePatterns] No active pattern set name`);
     return [];
   }
 
   const patternSet = getStripPatternSet(setName);
   if (!patternSet?.patterns) {
+    debug(SUBSYSTEM.CORE, `[getActivePatterns] Pattern set "${setName}" not found or has no patterns`);
     return [];
   }
 
-  return patternSet.patterns.filter(p => p.enabled);
+  const enabledPatterns = patternSet.patterns.filter(p => p.enabled);
+  debug(SUBSYSTEM.CORE, `[getActivePatterns] Found ${enabledPatterns.length} enabled patterns in set "${setName}"`);
+  if (enabledPatterns.length > 0) {
+    debug(SUBSYSTEM.CORE, `[getActivePatterns] First pattern: name="${enabledPatterns[0].name}", pattern="${enabledPatterns[0].pattern}", flags="${enabledPatterns[0].flags}"`);
+  }
+  return enabledPatterns;
+}
+
+export function getActiveMessagesDepth() {
+  const setName = getActivePatternSetName();
+  if (setName) {
+    const patternSet = getStripPatternSet(setName);
+    if (patternSet?.messagesDepth !== undefined) {
+      return patternSet.messagesDepth;
+    }
+  }
+  return get_settings('messages_depth') ?? 1;
+}
+
+export function getActiveSummarizationDepth() {
+  const setName = getActivePatternSetName();
+  if (setName) {
+    const patternSet = getStripPatternSet(setName);
+    if (patternSet?.summarizationDepth !== undefined) {
+      return patternSet.summarizationDepth;
+    }
+  }
+  return get_settings('summarization_depth') ?? 0;
 }
 
 export function createPatternSet(name) {
@@ -71,6 +103,8 @@ export function createPatternSet(name) {
 
   sets[name] = {
     patterns: [],
+    messagesDepth: 1,
+    summarizationDepth: 0,
     createdAt: Date.now(),
     modifiedAt: Date.now()
   };
@@ -157,7 +191,7 @@ export function renamePatternSet(oldName, newName) {
   debug(SUBSYSTEM.SETTINGS, `Renamed pattern set: ${oldName} → ${newName}`);
 }
 
-export function setActivePatternSet(name) {
+export async function setActivePatternSet(name) {
   if (name !== null) {
     const sets = getStripPatternSets();
     if (!sets[name]) {
@@ -165,8 +199,9 @@ export function setActivePatternSet(name) {
     }
   }
 
-  set_settings('active_strip_pattern_set', name);
-  saveSettingsDebounced();
+  // Directly set value without triggering debounced save to avoid race conditions
+  extension_settings[MODULE_NAME]['active_strip_pattern_set'] = name;
+  await saveSettings();
   debug(SUBSYSTEM.SETTINGS, `Set active pattern set: ${name}`);
 }
 
@@ -343,6 +378,30 @@ export function removePatternFromSet(setName, patternId) {
   debug(SUBSYSTEM.SETTINGS, `Removed pattern "${patternId}" from set "${setName}"`);
 }
 
+export function updatePatternSetDepth(setName, depthType, value) {
+  const sets = getStripPatternSets();
+  if (!sets[setName]) {
+    debug(SUBSYSTEM.SETTINGS, `Cannot update depth: pattern set "${setName}" does not exist`);
+    return false;
+  }
+
+  if (depthType === 'messages') {
+    sets[setName].messagesDepth = value;
+  } else if (depthType === 'summarization') {
+    sets[setName].summarizationDepth = value;
+  } else {
+    debug(SUBSYSTEM.SETTINGS, `Unknown depth type: ${depthType}`);
+    return false;
+  }
+
+  sets[setName].modifiedAt = Date.now();
+  set_settings('strip_pattern_sets', sets);
+  saveSettingsDebounced();
+
+  debug(SUBSYSTEM.SETTINGS, `Updated ${depthType} depth to ${value} for set "${setName}"`);
+  return true;
+}
+
 export function exportPatternSet(name) {
   const patternSet = getStripPatternSet(name);
   if (!patternSet) {
@@ -353,7 +412,9 @@ export function exportPatternSet(name) {
     name: name,
     version: 1,
     exportedAt: Date.now(),
-    patterns: patternSet.patterns
+    patterns: patternSet.patterns,
+    messagesDepth: patternSet.messagesDepth ?? 1,
+    summarizationDepth: patternSet.summarizationDepth ?? 0
   };
 
   const data = JSON.stringify(exportData, null, JSON_INDENT_SPACES);
@@ -402,6 +463,8 @@ export async function importPatternSet(file) {
 
   sets[name] = {
     patterns,
+    messagesDepth: data.messagesDepth ?? 1,
+    summarizationDepth: data.summarizationDepth ?? 0,
     createdAt: Date.now(),
     modifiedAt: Date.now(),
     importedFrom: file.name
@@ -427,6 +490,10 @@ export function applyStrippingPatterns(text, patterns) {
 
     try {
       const regex = new RegExp(pattern.pattern, pattern.flags || 'gi');
+      const matches = text.match(regex);
+      if (matches) {
+        debug(SUBSYSTEM.CORE, `[applyStrippingPatterns] Pattern "${pattern.name}" (/${pattern.pattern}/${pattern.flags}) found ${matches.length} match(es)`);
+      }
       result = result.replace(regex, '');
     } catch (err) {
       debug(SUBSYSTEM.CORE, `Invalid pattern "${pattern.name}": ${err.message}`);
@@ -473,36 +540,4 @@ export function testPatterns(text, patterns) {
 
   results.stripped = results.stripped.trim();
   return results;
-}
-
-export const PRESET_PATTERNS = {
-  'status-line': {
-    name: 'Status Line',
-    pattern: '\\[(?:Season|Location|Time|Weather|Day|Treasury|Condition|Status|Health|Mood|Energy)[^\\]]*\\]',
-    flags: 'gi'
-  },
-  'baronial-command': {
-    name: 'Baronial Command',
-    pattern: '\\[Season:[^\\]]+\\]',
-    flags: 'gi'
-  },
-  'status-block': {
-    name: 'Status Block',
-    pattern: '(?:^|\\n)(?:#{1,3}\\s*)?(?:Status|Manor Status|Character Status|Current Status)[\\s\\S]*?(?=\\n\\n|\\n#|$)',
-    flags: 'gim'
-  },
-  'img-tags': {
-    name: 'Image Tags',
-    pattern: '<img[^>]*>',
-    flags: 'gi'
-  },
-  'decorative': {
-    name: 'Decorative Lines',
-    pattern: '^[\\s*~=\\-_─━═•◆◇○●■□▪▫]+$',
-    flags: 'gm'
-  }
-};
-
-export function getPresetPattern(presetKey) {
-  return PRESET_PATTERNS[presetKey] || null;
 }
