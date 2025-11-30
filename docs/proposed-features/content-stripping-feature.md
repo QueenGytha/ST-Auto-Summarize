@@ -50,26 +50,43 @@ These status blocks:
 
 ## Settings Structure
 
-### Scope & Storage
+### Standalone Section (NOT under Operations Configuration)
 
-**Settings storage hierarchy (verified from `profileManager.js`):**
+Content stripping has its own top-level settings section, following the same pinning pattern as Configuration Profiles but **without a default**. If no pattern set is pinned to the current chat or character, no patterns are applied.
+
+**Settings storage (verified from `profileManager.js` pattern):**
 ```javascript
-extension_settings.auto_recap.content_stripping = {
-  // Patterns (one set, shared by both targets)
-  // Stored at three levels with priority: chat > character > global
-  global_patterns: [
-    { id: "uuid1", pattern: "\\[Season:.*?\\]", flags: "gi", name: "Status Line", enabled: true }
-  ],
-  character_patterns: {
-    "character_key": [
-      { id: "uuid2", pattern: "Manor Status[\\s\\S]*?Condition:.*", flags: "gim", name: "Manor Status Block", enabled: true }
-    ]
+extension_settings.auto_recap = {
+  // ... existing settings ...
+
+  // Content Stripping - STANDALONE SECTION
+  // Named pattern sets (like profiles, but no default)
+  strip_pattern_sets: {
+    "Manor Status": {
+      patterns: [
+        { id: "uuid1", pattern: "\\[Season:.*?\\]", flags: "gi", name: "Status Line", enabled: true },
+        { id: "uuid2", pattern: "Manor Status[\\s\\S]*?Condition:.*", flags: "gim", name: "Status Block", enabled: true }
+      ]
+    },
+    "Image Tags": {
+      patterns: [
+        { id: "uuid3", pattern: "<img[^>]*>", flags: "gi", name: "HTML Images", enabled: true }
+      ]
+    }
   },
-  chat_patterns: {
-    "chat_id": [
-      { id: "uuid3", pattern: "...", flags: "...", name: "...", enabled: true }
-    ]
+
+  // Character → pattern set mapping (like character_profiles)
+  character_strip_patterns: {
+    "character_key": "Manor Status"  // Maps to strip_pattern_sets["Manor Status"]
   },
+
+  // Chat → pattern set mapping (like chat_profiles)
+  chat_strip_patterns: {
+    "chat_id": "Manor Status"
+  },
+
+  // Global fallback pattern set (optional, only used if no chat/character mapping)
+  global_strip_pattern_set: null,  // Name of pattern set, or null for none
 
   // Application settings (two targets, each with own toggle + depth)
   apply_to_messages: false,           // Toggle: strip from actual messages
@@ -88,35 +105,143 @@ message.extra.content_strip_checked = true;    // Message has been processed
 message.extra.content_strip_hash = "abc123";   // Hash of patterns used when stripped
 ```
 
-### Pattern Resolution (Priority Order)
-1. Chat-specific patterns (if defined for current chat) - **replaces** lower levels
-2. Character-specific patterns (if defined for current character) - **replaces** global
-3. Global patterns (fallback)
+### Pattern Set Resolution (Priority Order)
+
+1. **Chat-pinned** - `chat_strip_patterns[chatId]` → pattern set name
+2. **Character-pinned** - `character_strip_patterns[characterKey]` → pattern set name
+3. **Global fallback** - `global_strip_pattern_set` → pattern set name
+4. **None** - If all are empty/null, no patterns applied
+
+**Key difference from Configuration Profiles:** No "Default" pattern set. If nothing is pinned, stripping is simply disabled for that context.
 
 **Implementation pattern from existing code (`profileManager.js:306-309`):**
 ```javascript
 function auto_load_profile() {
   const profile = get_chat_profile() || get_character_profile();
-  load_profile(profile || 'Default');
+  load_profile(profile || 'Default');  // Falls back to Default
+}
+```
+
+**Our equivalent (no default):**
+```javascript
+function resolveActivePatternSet() {
+  const chatId = get_current_chat_identifier();
+  const charKey = get_current_character_identifier();
+
+  // Priority: chat > character > global (no default fallback)
+  const chatMapping = get_settings('chat_strip_patterns')?.[chatId];
+  if (chatMapping) return chatMapping;
+
+  const charMapping = get_settings('character_strip_patterns')?.[charKey];
+  if (charMapping) return charMapping;
+
+  return get_settings('global_strip_pattern_set');  // May be null
 }
 ```
 
 ### Pattern Resolution Function
 ```javascript
 function resolveActivePatterns() {
-  const chatId = get_current_chat_identifier();
-  const charKey = get_current_character_identifier();
-  const settings = get_settings('content_stripping') || {};
+  const patternSetName = resolveActivePatternSet();
+  if (!patternSetName) return [];  // No patterns if nothing pinned
 
-  // Priority: chat > character > global
-  if (chatId && settings.chat_patterns?.[chatId]?.length > 0) {
-    return settings.chat_patterns[chatId].filter(p => p.enabled);
-  }
-  if (charKey && settings.character_patterns?.[charKey]?.length > 0) {
-    return settings.character_patterns[charKey].filter(p => p.enabled);
-  }
-  return (settings.global_patterns || []).filter(p => p.enabled);
+  const patternSets = get_settings('strip_pattern_sets') || {};
+  const patternSet = patternSets[patternSetName];
+  if (!patternSet?.patterns) return [];
+
+  return patternSet.patterns.filter(p => p.enabled);
 }
+
+---
+
+## Export/Import Pattern Sets
+
+Pattern sets can be exported and imported for sharing between users.
+
+### Export Function
+```javascript
+function exportPatternSet(name) {
+  const patternSets = get_settings('strip_pattern_sets') || {};
+  const patternSet = patternSets[name];
+  if (!patternSet) {
+    error(SUBSYSTEM.SETTINGS, `Pattern set not found: ${name}`);
+    return;
+  }
+
+  const exportData = {
+    name: name,
+    version: 1,
+    patterns: patternSet.patterns
+  };
+
+  const data = JSON.stringify(exportData, null, JSON_INDENT_SPACES);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `strip-patterns-${name.replace(/[^a-z0-9]/gi, '_')}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  toast(`Exported pattern set: "${name}"`, 'success');
+}
+```
+
+### Import Function
+```javascript
+async function importPatternSet(file) {
+  const data = await parseJsonFile(file);
+
+  if (!data.patterns || !Array.isArray(data.patterns)) {
+    error(SUBSYSTEM.SETTINGS, 'Invalid pattern set file: missing patterns array');
+    return;
+  }
+
+  // Use filename or embedded name
+  const name = data.name || file.name.replace('.json', '').replace('strip-patterns-', '');
+
+  // Regenerate IDs to avoid conflicts
+  const patterns = data.patterns.map(p => ({
+    ...p,
+    id: uuidv4()
+  }));
+
+  const patternSets = get_settings('strip_pattern_sets') || {};
+
+  // Check if name exists
+  if (patternSets[name]) {
+    const ctx = getContext();
+    const overwrite = await ctx.Popup.show.confirm(
+      'Pattern Set Exists',
+      `A pattern set named "${name}" already exists. Overwrite it?`
+    );
+    if (!overwrite) return;
+  }
+
+  patternSets[name] = { patterns };
+  set_settings('strip_pattern_sets', patternSets);
+
+  toast(`Imported pattern set: "${name}"`, 'success');
+  refresh_settings();
+}
+```
+
+### Import File Format
+```json
+{
+  "name": "Manor Status",
+  "version": 1,
+  "patterns": [
+    {
+      "id": "will-be-regenerated",
+      "pattern": "\\[Season:.*?\\]",
+      "flags": "gi",
+      "name": "Status Line",
+      "enabled": true
+    }
+  ]
+}
+```
 
 ---
 
@@ -584,20 +709,65 @@ handleCharMessageNew()
 
 ## UI Design
 
-### Settings Panel Section
+### Settings Panel Section (Standalone)
+
+Content Stripping appears as its own section in the settings panel, **not** nested under Operations Configuration.
 
 ```html
 <div class="content-stripping-section">
   <h4>Content Stripping</h4>
   <p class="note">Remove unwanted content (status blocks, etc.) using regex patterns</p>
 
-  <!-- Patterns Management -->
+  <!-- Pattern Set Selection (like Configuration Profiles) -->
   <div class="subsection">
-    <h5>Patterns</h5>
-    <button id="manage_strip_patterns" class="menu_button">
-      <i class="fa-solid fa-list"></i> Manage Patterns...
-    </button>
-    <span class="pattern-count">3 patterns active (Global)</span>
+    <h5>Pattern Set</h5>
+
+    <!-- Current active pattern set indicator -->
+    <div class="active-pattern-set">
+      <span class="label">Active:</span>
+      <span class="value" id="active_pattern_set_name">Manor Status</span>
+      <span class="source">(pinned to character)</span>
+    </div>
+
+    <!-- Pattern set dropdown -->
+    <div class="pattern-set-selector">
+      <select id="strip_pattern_set_select">
+        <option value="">-- None --</option>
+        <option value="Manor Status">Manor Status</option>
+        <option value="Image Tags">Image Tags</option>
+      </select>
+
+      <!-- Pin buttons (like profile pinning) -->
+      <button id="pin_strip_patterns_to_character" class="menu_button" title="Pin to {{char}}">
+        <i class="fa-solid fa-thumbtack"></i> Character
+      </button>
+      <button id="pin_strip_patterns_to_chat" class="menu_button" title="Pin to this chat">
+        <i class="fa-solid fa-thumbtack"></i> Chat
+      </button>
+      <button id="set_global_strip_patterns" class="menu_button" title="Set as global fallback">
+        <i class="fa-solid fa-globe"></i> Global
+      </button>
+    </div>
+
+    <!-- Pattern set management -->
+    <div class="pattern-set-actions">
+      <button id="edit_pattern_set" class="menu_button">
+        <i class="fa-solid fa-pen"></i> Edit
+      </button>
+      <button id="new_pattern_set" class="menu_button">
+        <i class="fa-solid fa-plus"></i> New
+      </button>
+      <button id="delete_pattern_set" class="menu_button">
+        <i class="fa-solid fa-trash"></i> Delete
+      </button>
+      <button id="export_pattern_set" class="menu_button">
+        <i class="fa-solid fa-download"></i> Export
+      </button>
+      <button id="import_pattern_set" class="menu_button">
+        <i class="fa-solid fa-upload"></i> Import
+      </button>
+      <input type="file" id="import_pattern_set_file" accept=".json" style="display:none">
+    </div>
   </div>
 
   <!-- Target 1: Messages -->
@@ -645,26 +815,23 @@ handleCharMessageNew()
 </div>
 ```
 
-### Pattern Editor Dialog
+### Pattern Set Editor Dialog
+
+Opens when clicking "Edit" or "New" button. Similar in structure to other dialogs in the extension.
 
 ```html
-<div class="pattern-editor-dialog">
-  <h3>Content Stripping Patterns</h3>
+<div class="pattern-set-editor-dialog">
+  <h3>Edit Pattern Set</h3>
 
-  <!-- Scope Tabs -->
-  <div class="scope-tabs">
-    <button class="scope-tab active" data-scope="global">Global</button>
-    <button class="scope-tab" data-scope="character">Character: {{char}}</button>
-    <button class="scope-tab" data-scope="chat">This Chat</button>
+  <!-- Pattern set name -->
+  <div class="pattern-set-name-row">
+    <label>Name:</label>
+    <input type="text" id="pattern_set_name" value="Manor Status">
   </div>
-
-  <p class="scope-note">
-    Priority: Chat > Character > Global.
-    If patterns exist at a higher level, lower levels are ignored.
-  </p>
 
   <!-- Patterns List -->
   <div class="patterns-list">
+    <h4>Patterns</h4>
     <!-- Dynamically populated pattern rows -->
     <div class="pattern-row" data-id="uuid1">
       <input type="checkbox" class="pattern-enabled" checked>
@@ -708,8 +875,37 @@ handleCharMessageNew()
       <i class="fa-solid fa-star"></i> Decorative Lines
     </button>
   </div>
+
+  <!-- Dialog actions -->
+  <div class="dialog-actions">
+    <button id="save_pattern_set" class="menu_button">
+      <i class="fa-solid fa-save"></i> Save
+    </button>
+    <button id="cancel_pattern_set" class="menu_button">
+      <i class="fa-solid fa-times"></i> Cancel
+    </button>
+  </div>
 </div>
 ```
+
+### UI State Indicators
+
+Show which pattern set is active and why:
+
+| State | Display |
+|-------|---------|
+| Chat-pinned | "Manor Status (pinned to chat)" |
+| Character-pinned | "Manor Status (pinned to {{char}})" |
+| Global fallback | "Manor Status (global)" |
+| None active | "-- None --" |
+
+### Pin/Unpin Behavior
+
+Same as Configuration Profiles:
+- **Pin to Character** - Maps current character to selected pattern set
+- **Pin to Chat** - Maps current chat to selected pattern set
+- **Set as Global** - Sets selected pattern set as global fallback
+- Click again to unpin (removes the mapping)
 
 ---
 
@@ -751,37 +947,67 @@ const PRESET_PATTERNS = {
 ## Implementation Order
 
 ### Phase 1: Core Infrastructure
-1. Add settings structure to `defaultSettings.js`
+1. Add settings structure to `defaultSettings.js`:
+   - `strip_pattern_sets` (object of named pattern sets)
+   - `character_strip_patterns` (character → pattern set name mapping)
+   - `chat_strip_patterns` (chat → pattern set name mapping)
+   - `global_strip_pattern_set` (fallback pattern set name, null default)
+   - `apply_to_messages`, `messages_depth`, `auto_strip_on_message`
+   - `apply_to_summarization`, `summarization_depth`
+   - `confirm_before_strip`
 2. Create `contentStripping.js` module with:
-   - `resolveActivePatterns()` - scope resolution
+   - `resolveActivePatternSet()` - get active pattern set name (chat > char > global)
+   - `resolveActivePatterns()` - get enabled patterns from active set
    - `applyStrippingPatterns()` - shared strip function
    - Pattern validation (test regex is valid before saving)
 3. Add to `index.js` barrel exports
 
-### Phase 2: Summarization Filtering (Lower Risk)
+### Phase 2: Pattern Set Management
+- Create pattern set CRUD functions:
+   - `createPatternSet(name)` - create new empty pattern set
+   - `deletePatternSet(name)` - delete pattern set (and remove mappings)
+   - `renamePatternSet(oldName, newName)` - rename (update all mappings)
+   - `addPatternToSet(setName, pattern)` - add pattern to set
+   - `removePatternFromSet(setName, patternId)` - remove pattern
+   - `updatePatternInSet(setName, patternId, updates)` - update pattern
+- Pinning functions (following profileManager.js pattern):
+   - `pinPatternSetToCharacter(characterKey, setName)` / `unpinFromCharacter()`
+   - `pinPatternSetToChat(chatId, setName)` / `unpinFromChat()`
+   - `setGlobalPatternSet(setName)` / `clearGlobalPatternSet()`
+- Export/import functions:
+   - `exportPatternSet(name)` - download as JSON
+   - `importPatternSet(file)` - import from JSON file
+
+### Phase 3: Summarization Filtering (Lower Risk)
 - Doesn't modify saved data - safe to implement first
 - Modify `collectSceneObjects()` in `sceneBreak.js`
 - Add depth threshold logic
 - Test with recap generation
 
-### Phase 3: Message Stripping (Higher Risk)
+### Phase 4: Message Stripping (Higher Risk)
 - Modifies saved messages - implement after filtering works
 - Implement `stripContentFromMessages()`
 - Add confirmation dialog for manual "Strip Now" button
 - Integrate with `handleCharMessageNew()` for auto-strip option
+- Add `STRIP_CONTENT` operation type and handler
 
-### Phase 4: UI
-- Settings panel section in `settings.html`
-- Pattern editor dialog (popup)
+### Phase 5: UI
+- Settings panel section in `settings.html` (standalone, not under Operations)
+- Pattern set selector dropdown with pinning buttons
+- Pattern set editor dialog (popup)
 - UI bindings in `uiBindings.js`
 - Preset pattern quick-add buttons
+- Import file input handling
 
-### Phase 5: Slash Commands
+### Phase 6: Slash Commands
 - `/strip-content [depth]` - Manual strip (respects tracking, only processes unchecked)
 - `/strip-content force=true` - Force re-strip all (ignores tracking)
 - `/strip-preview` - Preview what would be stripped (dry run)
 - `/strip-clear-flags` - Clear tracking flags to allow re-processing
-- `/strip-patterns list|add|remove` - Manage patterns
+- `/strip-patterns list` - List all pattern sets
+- `/strip-patterns use <name>` - Activate a pattern set (pins to current chat)
+- `/strip-patterns export <name>` - Export pattern set
+- `/strip-patterns import` - Trigger import file dialog
 
 ---
 
@@ -800,10 +1026,13 @@ const PRESET_PATTERNS = {
 ## Testing Strategy
 
 ### Unit Tests
-- Pattern resolution (global → character → chat priority)
+- Pattern set resolution (`resolveActivePatternSet()` priority: chat > character > global)
+- Pattern resolution from set (`resolveActivePatterns()`)
 - `applyStrippingPatterns()` with various inputs
 - Depth threshold calculations (messages vs summarization)
 - Invalid regex handling
+- Pattern set CRUD operations
+- Export/import format validation
 
 ### Integration Tests
 - Message stripping: Verify `chat[].mes` modified and saved
@@ -812,8 +1041,9 @@ const PRESET_PATTERNS = {
 
 ### E2E Tests
 - Full flow: new message → auto-strip → scene detection → recap with filtering
-- UI pattern management (add, edit, delete, enable/disable)
-- Scope switching (global → character → chat)
+- Pattern set management (create, edit, delete, rename)
+- Pinning behavior (character, chat, global)
+- Export/import pattern sets
 - Slash commands
 
 ---
@@ -839,8 +1069,3 @@ const PRESET_PATTERNS = {
    - "Test" button that shows preview of what would be stripped
    - Input a sample message and see result
    - Show match count across current chat
-
-5. **Import/Export patterns?**
-   - Share patterns between users
-   - JSON export/import
-   - Could be Phase 6
