@@ -91,6 +91,7 @@ function bindPatternSetSelector(selectors) {
     setActivePatternSet(selectedName || null);
     updateStickyButtonStates();
     updatePatternSetBadge();
+    updatePatternsPreview();
   });
 }
 
@@ -548,6 +549,36 @@ function updatePatternSetBadge() {
   }
 }
 
+function updatePatternsPreview() {
+  const selectors = selectorsExtension.contentStripping;
+  const $preview = $(selectors.patternsPreview);
+  const $list = $(selectors.patternsPreviewList);
+
+  const activeName = getActivePatternSetName();
+  if (!activeName) {
+    $preview.hide();
+    return;
+  }
+
+  const patternSet = getStripPatternSet(activeName);
+  if (!patternSet?.patterns?.length) {
+    $preview.hide();
+    return;
+  }
+
+  $list.empty();
+  for (const pattern of patternSet.patterns) {
+    const statusIcon = pattern.enabled ? '✓' : '✗';
+    const statusClass = pattern.enabled ? 'opacity100p' : 'opacity50p';
+    $list.append(`<div class="${statusClass}" style="margin-bottom: 4px;" title="${pattern.name}">
+      <span style="margin-right: 5px;">${statusIcon}</span>
+      <code style="word-break: break-all;">${escapeHtml(pattern.pattern)}</code>
+      <small class="opacity50p" style="margin-left: 5px;">(${pattern.flags})</small>
+    </div>`);
+  }
+  $preview.show();
+}
+
 function updateStickyButtonStates() {
   const selectors = selectorsExtension.contentStripping;
   const activeName = getActivePatternSetName();
@@ -577,6 +608,7 @@ export function refreshContentStrippingUI() {
 
   populatePatternSetDropdown();
   updateStickyButtonStates();
+  updatePatternsPreview();
 
   const messagesDepth = get_settings('messages_depth') ?? 1;
   $(selectors.messagesDepth).val(messagesDepth);
