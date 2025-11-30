@@ -42,6 +42,7 @@ const MSG_SELECT_PATTERN_SET = 'Select a pattern set first';
 
 let currentEditingSet = null;
 let editorPatterns = [];
+let editingPatternId = null;
 
 export function initializeContentStrippingUI() {
   debug(SUBSYSTEM.UI, 'Initializing content stripping UI');
@@ -301,6 +302,11 @@ function bindEditorModal(selectors) {
     removePatternFromEditor(patternId);
   });
 
+  $(document).on('click', '.strip_pattern_edit', function() {
+    const patternId = $(this).closest('.strip_pattern_row').data('id');
+    editPatternInEditor(patternId);
+  });
+
   $(document).on('change', '.strip_pattern_enabled', function() {
     const patternId = $(this).closest('.strip_pattern_row').data('id');
     const enabled = $(this).prop('checked');
@@ -362,15 +368,20 @@ function renderEditorPatternsList() {
   for (const pattern of editorPatterns) {
     const $row = $(`
       <div class="strip_pattern_row" data-id="${pattern.id}">
-        <input type="checkbox" class="strip_pattern_enabled" ${pattern.enabled ? 'checked' : ''}>
-        <span class="strip_pattern_name" title="${pattern.name}">${pattern.name}</span>
-        <code class="strip_pattern_regex" title="${pattern.pattern}">${escapeHtml(pattern.pattern)}</code>
-        <span class="strip_pattern_flags">${pattern.flags}</span>
-        <div class="strip_pattern_actions">
-          <button class="menu_button strip_pattern_delete" title="Delete pattern">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+        <div class="strip_pattern_header">
+          <input type="checkbox" class="strip_pattern_enabled" ${pattern.enabled ? 'checked' : ''}>
+          <span class="strip_pattern_name">${escapeHtml(pattern.name)}</span>
+          <span class="strip_pattern_flags">(${pattern.flags})</span>
+          <div class="strip_pattern_actions">
+            <button class="menu_button strip_pattern_edit" title="Edit pattern">
+              <i class="fa-solid fa-pencil"></i>
+            </button>
+            <button class="menu_button strip_pattern_delete" title="Delete pattern">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
         </div>
+        <code class="strip_pattern_regex">${escapeHtml(pattern.pattern)}</code>
       </div>
     `);
     $list.append($row);
@@ -402,14 +413,43 @@ function addPatternFromForm() {
     return;
   }
 
-  addPatternToEditor({
-    name: name || 'Unnamed Pattern',
-    pattern,
-    flags
-  });
+  if (editingPatternId) {
+    const existingPattern = editorPatterns.find(p => p.id === editingPatternId);
+    if (existingPattern) {
+      existingPattern.name = name || 'Unnamed Pattern';
+      existingPattern.pattern = pattern;
+      existingPattern.flags = flags;
+      toast('Pattern updated', TOAST_TYPE_SUCCESS);
+    }
+    editingPatternId = null;
+    $(selectors.patternAddBtn).html('<i class="fa-solid fa-plus"></i>');
+  } else {
+    addPatternToEditor({
+      name: name || 'Unnamed Pattern',
+      pattern,
+      flags
+    });
+  }
 
   $(selectors.patternNewName).val('');
   $(selectors.patternNewRegex).val('');
+  renderEditorPatternsList();
+}
+
+function editPatternInEditor(patternId) {
+  const selectors = selectorsExtension.contentStripping;
+  const pattern = editorPatterns.find(p => p.id === patternId);
+
+  if (!pattern) {
+    return;
+  }
+
+  editingPatternId = patternId;
+  $(selectors.patternNewName).val(pattern.name);
+  $(selectors.patternNewRegex).val(pattern.pattern);
+  $(selectors.patternNewFlags).val(pattern.flags);
+  $(selectors.patternAddBtn).html('<i class="fa-solid fa-check"></i> Update');
+  $(selectors.patternNewName).focus();
 }
 
 function addPatternToEditor(patternData) {
