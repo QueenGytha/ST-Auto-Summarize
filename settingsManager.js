@@ -46,6 +46,13 @@ const global_settings = {
           pattern: '\\[Season:[^\\]]+\\]',
           flags: 'gi',
           enabled: true
+        },
+        {
+          id: 'pat_default_baronial_img',
+          name: 'Image Tags',
+          pattern: '<img[^>]*>',
+          flags: 'gi',
+          enabled: true
         }
       ],
       messagesDepth: 1,
@@ -94,6 +101,21 @@ const global_settings = {
         }
       ],
       messagesDepth: 3,
+      summarizationDepth: 0,
+      createdAt: 0,
+      modifiedAt: 0
+    },
+    'The Equestrian Caliphate': {
+      patterns: [
+        {
+          id: 'pat_default_caliphate',
+          name: 'Status Header Block',
+          pattern: '```(?:markdown)?\\nTime:[^\\n]*\\nDate:[^\\n]*\\nLocation:[^\\n]*\\nStatus:[^\\n]*\\n```',
+          flags: 'g',
+          enabled: true
+        }
+      ],
+      messagesDepth: 1,
       summarizationDepth: 0,
       createdAt: 0,
       modifiedAt: 0
