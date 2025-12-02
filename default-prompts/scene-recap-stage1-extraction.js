@@ -2,6 +2,9 @@ export const scene_recap_stage1_extraction_prompt = `TASK: Extract what an LLM w
 
 After this scene is gone from context, what must remain for the story to feel continuous?
 
+CRITICAL - SOURCE TEXT ONLY:
+Extract ONLY what appears in the scene. Do not infer, assume, or add information from outside knowledge—no matter how likely or commonly known from training data. If it's not explicitly stated or shown, it didn't happen. When the text itself is ambiguous or speculative, note it as such.
+
 EXTRACT:
 - What happened (events, decisions, revelations, changes)
 - Who was involved and how they relate (specific dynamics, not labels)

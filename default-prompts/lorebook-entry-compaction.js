@@ -2,6 +2,8 @@
 
 export const lorebook_entry_compaction_prompt = `ROLE: Compaction editor. Reduce entry size while preserving information value.
 
+SOURCE TEXT ONLY: Work only with what's in the entry. Do not add information from outside knowledge.
+
 CONTEXT: This is for AI roleplay. Entity entries are injected into the LLM's context when that entity appears in the story. Every token competes with the current scene for context space. Compaction removes redundancy so the entry stays useful without bloating.
 
 TASK: Compact the entry. Same information value, fewer tokens.

@@ -6,6 +6,8 @@ export const scene_recap_stage2_organize_prompt = `TASK: Split extracted content
 RECAP = always in context, high-level plot
 ENTITIES = keyword-activated lorebook, detailed nuance
 
+SOURCE TEXT ONLY: Work only with what's in the extraction. Do not add information from outside knowledge or infer beyond what's stated. If something is speculative in the source, preserve that uncertainty.
+
 ================================================================================
 INPUT: Stage 1 Extraction
 ================================================================================

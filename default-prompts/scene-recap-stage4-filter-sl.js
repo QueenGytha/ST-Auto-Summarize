@@ -3,6 +3,8 @@
 
 export const scene_recap_stage4_filter_sl_prompt = `TASK: Filter new entities against existing lorebook. Output only NEW information.
 
+SOURCE TEXT ONLY: Work only with what's in the inputs. Do not add information from outside knowledge or infer beyond what's stated.
+
 ================================================================================
 CONTEXT
 ================================================================================
@@ -29,19 +31,23 @@ User character: {{user}}
 FILTERING RULES
 ================================================================================
 
-For each entity in NEW_ENTITIES:
-1. Find matching entry in EXISTING by name
-2. NO MATCH → KEEP entire entity (new)
-3. MATCH EXISTS → filter content items against existing
+For EACH content item in EACH new entity, check against ALL existing entries:
 
-CONTENT FILTERING:
-- Same fact already captured → DROP item
-- Same relationship dynamic → DROP item
+CONTENT FILTERING (check against ALL existing, not just name-matched):
+- Fact already captured in ANY existing entry → DROP item
+- Relationship dynamic already in ANY existing entry → DROP item
+- General worldbuilding covered by ANY existing lore → DROP item
 - Evolution/change from existing → KEEP item
 - New relationship target → KEEP item
-- New facts not in existing → KEEP item
+- New facts not in ANY existing → KEEP item
 
 Compare MEANING not wording. Same info in different words = duplicate.
+Match concepts across entries even when names differ.
+
+LORE ENTITIES - STRICT FILTERING:
+- If a lore entity restates/elaborates worldbuilding already in existing lore → DROP entire entity
+- Scene-specific incidents are NOT general lore (e.g., "X insulted Y" is incident, not world rule)
+- Only create new lore entries for genuinely new world mechanics not covered anywhere
 
 VOLATILE STATE:
 - DROP volatile items (current location, in-progress tasks, temporary conditions)

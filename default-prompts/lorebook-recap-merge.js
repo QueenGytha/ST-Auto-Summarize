@@ -2,6 +2,8 @@
 
 export const auto_lorebook_recap_merge_prompt = `TASK: Merge new content items into existing entry. Output should be TIGHTER, not longer.
 
+SOURCE TEXT ONLY: Work only with what's in the inputs. Do not add information from outside knowledge.
+
 ================================================================================
 INPUT
 ================================================================================

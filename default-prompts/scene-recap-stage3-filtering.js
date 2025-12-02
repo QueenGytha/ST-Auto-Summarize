@@ -3,6 +3,8 @@
 
 export const scene_recap_stage3_filtering_prompt = `TASK: Filter new scene recap against existing running recap. Output only NEW information, flag resolved threads.
 
+SOURCE TEXT ONLY: Work only with what's in the inputs. Do not add information from outside knowledge or infer beyond what's stated.
+
 ================================================================================
 CONTEXT
 ================================================================================

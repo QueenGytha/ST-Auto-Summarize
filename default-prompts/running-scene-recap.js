@@ -2,6 +2,8 @@
 
 export const running_scene_recap_prompt = `TASK: Merge filtered scene recap into running recap.
 
+SOURCE TEXT ONLY: Work only with what's in the inputs. Do not add information from outside knowledge.
+
 ================================================================================
 CONTEXT
 ================================================================================
