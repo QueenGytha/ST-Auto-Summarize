@@ -33,18 +33,18 @@ export async function prepareParseScenePrompt(extractedData, ctx, endIdx, get_da
   // Get current running recap for merging
   const currentRunningRecap = get_current_running_recap_content();
 
-  // Build scene_recaps format for {{scene_recaps}} macro
-  // Stage 2 output has {sn, plot, entities} - we need to wrap in array for the macro
+  // Build scene_recaps format for {{scene_recaps}} macro (legacy support)
+  // Stage 2 output has {sn, recap: {outcomes, threads, state}, entities}
   const sceneRecaps = [{
     name: extractedData?.sn || 'Current Scene',
-    recap: extractedData?.plot || ''
+    recap: extractedData?.recap || {}
   }];
 
   // Build all macro values from context - all macros available on all prompts
-  // sceneRecaps provides {{scene_recaps}}, currentRunningRecap provides {{current_running_recap}}
+  // stage2Recap provides {{stage2_recap}}, currentRunningRecap provides {{current_running_recap}}
   const params = buildAllMacroParams({
     extractedData,
-    extractedRc: extractedData?.plot,  // For legacy {{extracted_rc}} support
+    stage2Recap: extractedData?.recap,  // Stage 2 recap object for Stage 3 filtering
     sceneRecaps,
     activeEntries,
     typeDefinitions,

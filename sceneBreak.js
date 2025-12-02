@@ -1510,76 +1510,57 @@ export async function calculateSceneRecapTokens(options) {
 
 // Helper: Extract and validate JSON from AI response (REMOVED - now uses centralized helper in utils.js)
 
-// Helper: Normalize Stage 1 extraction response - supports entity-based and legacy formats
-// Uses centralzied normalizeStageOutput for field/value normalization
+// Helper: Normalize Stage 1 extraction response
+// Delegates to centralized normalizeStageOutput which handles all formats
 function normalizeStage1Extraction(parsed) {
-  const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
-
-  // Plain array format (legacy) - wrap as chronological_items
-  if (Array.isArray(parsed)) {
-    debug(SUBSYSTEM.SCENE, "Stage 1 returned plain array format (legacy), wrapped as chronological_items");
-    return { chronological_items: parsed };
-  }
-
-  // Already wrapped format (legacy)
-  if (parsed && Array.isArray(parsed.chronological_items)) {
-    debug(SUBSYSTEM.SCENE, "Stage 1 returned wrapped object format (legacy)");
-    return parsed;
-  }
-
-  // Entity-based format (current pipeline): {sn, plot/rc, entities (array)}
-  // Check if it has entities array and a recap field (plot/rc/recap)
-  const hasRecapField = parsed?.plot !== undefined || parsed?.rc !== undefined || parsed?.recap !== undefined;
-  if (parsed && typeof parsed === 'object' && hasRecapField && Array.isArray(parsed.entities)) {
-    // Use centralized normalization - handles field names and object→string conversion
-    const normalized = normalizeStageOutput(STAGE.EXTRACTION, parsed);
-    debug(SUBSYSTEM.SCENE, `Stage 1 returned entity-based format: ${normalized.entities.length} entities, plot length=${normalized.plot?.length || 0}, sn="${normalized.sn || ''}"`);
-    return normalized;
-  }
-
-  // Faceted format (legacy 3-stage pipeline) - preserve as-is including sn
-  if (parsed && typeof parsed === 'object') {
-    const hasFacets = facetKeys.some(key => Array.isArray(parsed[key]));
-    if (hasFacets) {
-      const populatedFacets = facetKeys.filter(key => Array.isArray(parsed[key]) && parsed[key].length > 0);
-      const totalItems = populatedFacets.reduce((sum, key) => sum + parsed[key].length, 0);
-      debug(SUBSYSTEM.SCENE, `Stage 1 returned faceted format: ${totalItems} items in ${populatedFacets.length} facets (${populatedFacets.join(', ')}), sn="${parsed.sn || ''}"`);
-      // Return as-is to preserve faceted structure for Stage 2
-      return parsed;
-    }
-  }
-
-  throw new Error("Stage 1 extraction must return either: (1) array, (2) {chronological_items: [...]}, (3) faceted object with arrays, or (4) entity-based {plot: string, entities: array}");
+  return normalizeStageOutput(STAGE.EXTRACTION, parsed);
 }
+
+// Stage 1 facet keys for validation
+const STAGE1_FACET_KEYS = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
 
 // Helper: Validate Stage 1 extraction has non-empty content
 function validateStage1Content(parsed) {
-  const facetKeys = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
-  // Accept both "plot" and "rc" as the summary field (already normalized in normalizeStage1Extraction)
-  const plotField = parsed.plot ?? parsed.rc;
-  const isEntityFormat = typeof plotField === 'string' && Array.isArray(parsed.entities);
-  const isLegacyFormat = Array.isArray(parsed.chronological_items);
-  const isFacetedFormat = facetKeys.some(key => Array.isArray(parsed[key]));
+  // New extraction format: {sn, extracted: [...]}
+  if (Array.isArray(parsed.extracted)) {
+    if (parsed.extracted.length === 0) {
+      throw new Error("AI returned empty extraction (no items in extracted array)");
+    }
+    debug(SUBSYSTEM.SCENE, `Validated Stage 1: ${parsed.extracted.length} items`);
+    return;
+  }
 
-  if (isEntityFormat) {
+  // Entity-based format: {plot, entities}
+  const plotField = parsed.plot ?? parsed.rc;
+  if (typeof plotField === 'string' && Array.isArray(parsed.entities)) {
     if (parsed.entities.length === 0 && !plotField?.trim()) {
       throw new Error("AI returned empty extraction (no entities and no plot)");
     }
-    debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (entity-based): ${parsed.entities.length} entities, plot length=${plotField.length}, sn="${parsed.sn || ''}"`);
-  } else if (isLegacyFormat) {
+    debug(SUBSYSTEM.SCENE, `Validated Stage 1: ${parsed.entities.length} entities`);
+    return;
+  }
+
+  // Legacy format: {chronological_items: [...]}
+  if (Array.isArray(parsed.chronological_items)) {
     if (parsed.chronological_items.length === 0) {
       throw new Error("AI returned empty extraction (no items)");
     }
-    debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (legacy): ${parsed.chronological_items.length} items`);
-  } else if (isFacetedFormat) {
-    const totalItems = facetKeys.reduce((sum, key) => sum + (Array.isArray(parsed[key]) ? parsed[key].length : 0), 0);
+    debug(SUBSYSTEM.SCENE, `Validated Stage 1: ${parsed.chronological_items.length} chronological items`);
+    return;
+  }
+
+  // Faceted format
+  const hasFacets = STAGE1_FACET_KEYS.some(key => Array.isArray(parsed[key]));
+  if (hasFacets) {
+    const totalItems = STAGE1_FACET_KEYS.reduce((sum, key) => sum + (Array.isArray(parsed[key]) ? parsed[key].length : 0), 0);
     if (totalItems === 0) {
       throw new Error("AI returned empty extraction (no items in any facet)");
     }
-    debug(SUBSYSTEM.SCENE, `Validated Stage 1 extraction (faceted): ${totalItems} items, sn="${parsed.sn || ''}"`);
-  } else {
-    throw new Error("Stage 1 extraction must contain either chronological_items array, faceted arrays, or entity-based {plot, entities}");
+    debug(SUBSYSTEM.SCENE, `Validated Stage 1: ${totalItems} faceted items`);
+    return;
   }
+
+  throw new Error("Stage 1: Unrecognized format after normalization");
 }
 
 // Helper: Generate recap with error handling
@@ -1830,7 +1811,7 @@ function normalizeAndDeduplicateEntries(entriesArray) {
   const uniqueEntries = [];
 
   for (const entry of entriesArray) {
-    const rawName = entry.n || entry.name || entry.comment;
+    const rawName = entry.name || entry.n || entry.comment;
     if (!entry || !rawName) { continue; }
 
     const entryName = rawName.toLowerCase().trim();
@@ -1840,16 +1821,24 @@ function normalizeAndDeduplicateEntries(entriesArray) {
     }
     seenNames.add(entryName);
 
+    // Normalize content: array → newline-separated string
+    let content = entry.content || entry.c || '';
+    if (Array.isArray(content)) {
+      content = content.join('\n');
+    }
+
+    // Normalize keywords: prefer full field name
+    const keywords = entry.keywords || entry.k || entry.keys || [rawName];
+
     const normalized = {
       name: rawName,
       comment: rawName,
-      content: entry.c || entry.content || '',
-      type: entry.t || entry.type || 'character',
-      keys: entry.k || entry.keys || [rawName]
+      content: content,
+      type: entry.type || entry.t || 'character',
+      keys: keywords
     };
 
     // Pass through uid if Stage 4 identified an exact match
-    // Accept both "uid" (explicit) and "u" (legacy short form) for backwards compatibility
     if (entry.uid || entry.u) {
       normalized.uid = entry.uid || entry.u;
     }
@@ -1868,8 +1857,6 @@ function findEntitiesArray(parsed) {
     parsed.stage4?.entities,
     parsed.sl,
     parsed.stage4?.sl,
-    parsed.stage3?.entities,
-    parsed.stage3?.sl,
     parsed.setting_lore
   ];
   return candidates.find(c => Array.isArray(c)) || null;

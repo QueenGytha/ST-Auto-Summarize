@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Stage 3 tester - runs stage3 prompt to build running recap cumulatively
+ * Stage 3 tester - runs Stage 3 filtering + Running Recap merge cumulatively
  * Usage: node test-stage3.js [--stage2-run <n>] [--scene <scene-id>]
  *
- * Stage 3 is CUMULATIVE - each scene's plot merges into the running recap,
- * which becomes input for the next scene.
+ * For each scene:
+ *   1. Stage 3 FILTER: Filter stage2.recap against current running recap
+ *   2. MERGE: Merge filtered content into running recap
+ *
+ * This is CUMULATIVE - each scene builds on the previous running recap.
  */
 
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync } from 'fs';
@@ -20,17 +23,28 @@ const ENDPOINT = 'http://localhost:8765/opus6-claude/chat/completions';
 const STAGE2_RESULTS_DIR = resolve(__dirname, 'results-stage2');
 const STAGE3_RESULTS_DIR = resolve(__dirname, 'results-stage3');
 
-// Load the stage3 prompt template
-async function loadStage3Prompt() {
-  const promptPath = resolve(__dirname, '../default-prompts/running-scene-recap.js');
-  const content = readFileSync(promptPath, 'utf-8');
-
-  const match = content.match(/export const running_scene_recap_prompt = `([\s\S]*?)`;/);
-  if (!match) {
-    throw new Error('Could not parse stage3 prompt');
+// Load both prompts: Stage 3 filtering and Running Recap merge
+function loadPrompts() {
+  // Stage 3 filtering prompt
+  const filterPath = resolve(__dirname, '../default-prompts/scene-recap-stage3-filtering.js');
+  const filterContent = readFileSync(filterPath, 'utf-8');
+  const filterMatch = filterContent.match(/export const scene_recap_stage3_filtering_prompt = `([\s\S]*?)`;/);
+  if (!filterMatch) {
+    throw new Error('Could not parse stage3 filtering prompt');
   }
 
-  return match[1];
+  // Running Recap merge prompt
+  const mergePath = resolve(__dirname, '../default-prompts/running-scene-recap.js');
+  const mergeContent = readFileSync(mergePath, 'utf-8');
+  const mergeMatch = mergeContent.match(/export const running_scene_recap_prompt = `([\s\S]*?)`;/);
+  if (!mergeMatch) {
+    throw new Error('Could not parse running-scene-recap prompt');
+  }
+
+  return {
+    filter: filterMatch[1],
+    merge: mergeMatch[1]
+  };
 }
 
 function loadStage2Results(runNumber) {
@@ -70,10 +84,20 @@ function getLatestStage2RunNumber() {
   return Math.max(...existing);
 }
 
-function buildPrompt(promptTemplate, currentRunningRecap, newScenePlot) {
+// Build Stage 3 filter prompt
+function buildFilterPrompt(promptTemplate, stage2Recap, currentRunningRecap, userName) {
   let prompt = promptTemplate;
+  prompt = prompt.replace('{{stage2_recap}}', JSON.stringify(stage2Recap, null, 2));
   prompt = prompt.replace('{{current_running_recap}}', currentRunningRecap || '(empty - first scene)');
-  prompt = prompt.replace('{{scene_recaps}}', newScenePlot);
+  prompt = prompt.replace(/\{\{user\}\}/g, userName || 'User');
+  return prompt;
+}
+
+// Build Running Recap merge prompt
+function buildMergePrompt(promptTemplate, filteredRecap, currentRunningRecap) {
+  let prompt = promptTemplate;
+  prompt = prompt.replace('{{filtered_recap}}', JSON.stringify(filteredRecap, null, 2));
+  prompt = prompt.replace('{{current_running_recap}}', currentRunningRecap || '(empty - first scene)');
   return prompt;
 }
 
@@ -161,98 +185,178 @@ function parseResponse(result) {
   }
 }
 
-async function testScene(stage2Result, promptTemplate, currentRunningRecap, config) {
+// Format running recap object for display/prompt
+function formatRunningRecap(recap) {
+  if (!recap || ((!recap.developments || recap.developments.length === 0) &&
+                 (!recap.open || recap.open.length === 0) &&
+                 (!recap.state || recap.state.length === 0))) {
+    return '(empty - first scene)';
+  }
+  return JSON.stringify(recap, null, 2);
+}
+
+async function testScene(stage2Result, prompts, currentRunningRecap, config) {
   const sceneId = stage2Result.scene;
+  const userName = stage2Result.userName || 'User';
 
   console.log(`\n${'='.repeat(60)}`);
   console.log(`Testing Stage 3: ${sceneId}`);
-  console.log(`Current recap length: ${currentRunningRecap?.length || 0} chars`);
-  console.log(`New plot length: ${stage2Result.parsed?.plot?.length || 0} chars`);
+  console.log(`User: ${userName}`);
+  console.log(`Current running recap: ${currentRunningRecap ? 'has content' : 'empty'}`);
   console.log(`${'='.repeat(60)}`);
 
-  if (!stage2Result.parsed?.plot) {
-    console.log(`\n⚠️ Skipping - Stage 2 has no plot`);
+  if (!stage2Result.parsed?.recap) {
+    console.log(`\n⚠️ Skipping - Stage 2 has no recap`);
     return {
       scene: sceneId,
       success: false,
-      error: 'Stage 2 result has no plot',
+      error: 'Stage 2 result has no recap',
       recap: currentRunningRecap,
       entities: []
     };
   }
 
-  const userPrompt = buildPrompt(promptTemplate, currentRunningRecap, stage2Result.parsed.plot);
+  const runningRecapStr = formatRunningRecap(currentRunningRecap);
 
-  const messages = [
-    { role: 'user', content: userPrompt },
-    { role: 'assistant', content: 'Understood. Merging new scene into running recap. Output JSON only:\n{' }
+  // Step 1: Stage 3 FILTERING
+  console.log(`\n--- Step 1: FILTER ---`);
+  const filterPrompt = buildFilterPrompt(prompts.filter, stage2Result.parsed.recap, runningRecapStr, userName);
+
+  const filterMessages = [
+    { role: 'user', content: filterPrompt },
+    { role: 'assistant', content: 'Filtering new recap against running recap. Output JSON only:\n{' }
   ];
 
-  const startTime = Date.now();
+  const filterStart = Date.now();
+  let filterResult;
 
   try {
-    const result = await sendRequest(messages, config);
-    const duration = (Date.now() - startTime) / 1000;
-
-    const { raw, parsed, error } = parseResponse(result);
-
-    console.log(`\nDuration: ${duration.toFixed(2)}s`);
-    console.log(`Tokens: ${result.usage?.total_tokens || 'N/A'}`);
-
-    if (error) {
-      console.log(`\n⚠️ Parse Error: ${error}`);
-      console.log(`\nRaw output:\n${raw.substring(0, 500)}...`);
-      return {
-        scene: sceneId,
-        success: false,
-        duration,
-        tokens: result.usage?.total_tokens,
-        error,
-        raw,
-        recap: currentRunningRecap,
-        entities: []
-      };
-    }
-
-    const newRecap = parsed.recap || '';
-    const entities = parsed.entities || [];
-
-    console.log(`\n✅ Valid JSON output`);
-    console.log(`New recap length: ${newRecap.length} chars`);
-    console.log(`Event entities: ${entities.length}`);
-
-    if (entities.length > 0) {
-      console.log(`\nResolved events:`);
-      entities.forEach(e => console.log(`  - ${e.n}: ${e.c?.substring(0, 60)}...`));
-    }
-
-    console.log(`\nRecap preview:`);
-    console.log(newRecap.substring(0, 300) + (newRecap.length > 300 ? '...' : ''));
-
-    return {
-      scene: sceneId,
-      success: true,
-      duration,
-      tokens: result.usage?.total_tokens,
-      input_recap_length: currentRunningRecap?.length || 0,
-      input_plot_length: stage2Result.parsed.plot.length,
-      output_recap_length: newRecap.length,
-      parsed,
-      raw,
-      recap: newRecap,
-      entities,
-      error: null
-    };
+    filterResult = await sendRequest(filterMessages, config);
   } catch (err) {
-    console.log(`\n❌ Request failed: ${err.message}`);
+    console.log(`\n❌ Filter request failed: ${err.message}`);
     return {
       scene: sceneId,
       success: false,
-      error: err.message,
+      error: `Filter: ${err.message}`,
       recap: currentRunningRecap,
       entities: []
     };
   }
+
+  const filterDuration = (Date.now() - filterStart) / 1000;
+  const filterParsed = parseResponse(filterResult);
+
+  console.log(`  Duration: ${filterDuration.toFixed(2)}s, Tokens: ${filterResult.usage?.total_tokens || 'N/A'}`);
+
+  if (filterParsed.error) {
+    console.log(`  ⚠️ Parse Error: ${filterParsed.error}`);
+    console.log(`  Raw: ${filterParsed.raw.substring(0, 300)}...`);
+    return {
+      scene: sceneId,
+      success: false,
+      error: `Filter parse: ${filterParsed.error}`,
+      raw_filter: filterParsed.raw,
+      recap: currentRunningRecap,
+      entities: []
+    };
+  }
+
+  const filtered = filterParsed.parsed;
+  console.log(`  ✅ Filtered: dev=${filtered.developments?.length || 0}, open=${filtered.open?.length || 0}, state=${filtered.state?.length || 0}, resolved=${filtered.resolved?.length || 0}`);
+
+  // Step 2: MERGE into running recap
+  console.log(`\n--- Step 2: MERGE ---`);
+  const mergePrompt = buildMergePrompt(prompts.merge, filtered, runningRecapStr);
+
+  const mergeMessages = [
+    { role: 'user', content: mergePrompt },
+    { role: 'assistant', content: 'Merging filtered content into running recap. Output JSON only:\n{' }
+  ];
+
+  const mergeStart = Date.now();
+  let mergeResult;
+
+  try {
+    mergeResult = await sendRequest(mergeMessages, config);
+  } catch (err) {
+    console.log(`\n❌ Merge request failed: ${err.message}`);
+    return {
+      scene: sceneId,
+      success: false,
+      error: `Merge: ${err.message}`,
+      filtered,
+      recap: currentRunningRecap,
+      entities: []
+    };
+  }
+
+  const mergeDuration = (Date.now() - mergeStart) / 1000;
+  const mergeParsed = parseResponse(mergeResult);
+
+  console.log(`  Duration: ${mergeDuration.toFixed(2)}s, Tokens: ${mergeResult.usage?.total_tokens || 'N/A'}`);
+
+  if (mergeParsed.error) {
+    console.log(`  ⚠️ Parse Error: ${mergeParsed.error}`);
+    console.log(`  Raw: ${mergeParsed.raw.substring(0, 300)}...`);
+    return {
+      scene: sceneId,
+      success: false,
+      error: `Merge parse: ${mergeParsed.error}`,
+      filtered,
+      raw_merge: mergeParsed.raw,
+      recap: currentRunningRecap,
+      entities: []
+    };
+  }
+
+  const mergedRecap = mergeParsed.parsed.recap || {};
+  const eventEntities = mergeParsed.parsed.entities || [];
+
+  console.log(`  ✅ Merged: dev=${mergedRecap.developments?.length || 0}, open=${mergedRecap.open?.length || 0}, state=${mergedRecap.state?.length || 0}`);
+  console.log(`  Event entities: ${eventEntities.length}`);
+
+  if (eventEntities.length > 0) {
+    console.log(`\nResolved events:`);
+    eventEntities.forEach(e => {
+      const content = Array.isArray(e.content) ? e.content.join('; ') : e.content;
+      console.log(`  - ${e.name}: ${content?.substring(0, 60)}...`);
+    });
+  }
+
+  // Preview the merged recap
+  console.log(`\n--- Merged Recap Preview ---`);
+  if (mergedRecap.developments?.length > 0) {
+    console.log(`Developments (${mergedRecap.developments.length}):`);
+    mergedRecap.developments.slice(0, 3).forEach(d => console.log(`  ${d}`));
+    if (mergedRecap.developments.length > 3) console.log(`  ... +${mergedRecap.developments.length - 3} more`);
+  }
+  if (mergedRecap.open?.length > 0) {
+    console.log(`Open (${mergedRecap.open.length}):`);
+    mergedRecap.open.slice(0, 2).forEach(o => console.log(`  ${o}`));
+  }
+  if (mergedRecap.state?.length > 0) {
+    console.log(`State (${mergedRecap.state.length}):`);
+    mergedRecap.state.slice(0, 2).forEach(s => console.log(`  ${s}`));
+  }
+
+  const totalDuration = filterDuration + mergeDuration;
+  const totalTokens = (filterResult.usage?.total_tokens || 0) + (mergeResult.usage?.total_tokens || 0);
+
+  return {
+    scene: sceneId,
+    success: true,
+    duration: totalDuration,
+    tokens: totalTokens,
+    filter_duration: filterDuration,
+    filter_tokens: filterResult.usage?.total_tokens,
+    merge_duration: mergeDuration,
+    merge_tokens: mergeResult.usage?.total_tokens,
+    filtered,
+    merged: mergeParsed.parsed,
+    recap: mergedRecap,
+    entities: eventEntities,
+    error: null
+  };
 }
 
 function getNextStage3RunNumber() {
@@ -283,6 +387,7 @@ function saveResults(results, stage2RunNumber) {
 
   // Save summary with final recap and all entities
   const lastResult = results[results.length - 1];
+  const finalRecap = lastResult?.recap || {};
   const summary = {
     run: runNumber,
     stage2_run: stage2RunNumber,
@@ -290,15 +395,24 @@ function saveResults(results, stage2RunNumber) {
     total: results.length,
     successful: results.filter(r => r.success).length,
     failed: results.filter(r => !r.success).length,
-    final_recap: lastResult?.recap || '',
-    final_recap_length: lastResult?.recap?.length || 0,
+    final_recap: finalRecap,
+    final_recap_counts: {
+      developments: finalRecap.developments?.length || 0,
+      open: finalRecap.open?.length || 0,
+      state: finalRecap.state?.length || 0
+    },
     total_event_entities: allEntities.length,
     all_entities: allEntities,
     scenes: results.map(r => ({
       id: r.scene,
       success: r.success,
-      input_recap_length: r.input_recap_length,
-      output_recap_length: r.output_recap_length,
+      filter_duration: r.filter_duration,
+      merge_duration: r.merge_duration,
+      recap_counts: {
+        developments: r.recap?.developments?.length || 0,
+        open: r.recap?.open?.length || 0,
+        state: r.recap?.state?.length || 0
+      },
       entities_count: r.entities?.length || 0,
       error: r.error || null
     }))
@@ -327,11 +441,15 @@ function printSummary(results) {
 
   // Show recap growth and entities
   if (successful.length > 0) {
-    console.log('\nRecap growth:');
+    console.log('\nRecap growth per scene:');
     results.forEach(r => {
       if (r.success) {
+        const recap = r.recap || {};
+        const devCount = recap.developments?.length || 0;
+        const openCount = recap.open?.length || 0;
+        const stateCount = recap.state?.length || 0;
         const entityInfo = r.entities?.length ? ` (+${r.entities.length} events)` : '';
-        console.log(`  ${r.scene}: ${r.input_recap_length || 0} → ${r.output_recap_length} chars${entityInfo}`);
+        console.log(`  ${r.scene}: dev=${devCount}, open=${openCount}, state=${stateCount}${entityInfo}`);
       }
     });
 
@@ -340,14 +458,27 @@ function printSummary(results) {
     if (allEntities.length > 0) {
       console.log(`\nResolved event entities (${allEntities.length} total):`);
       allEntities.forEach(e => {
-        console.log(`  - ${e.n} [${(e.k || []).join(', ')}]: ${e.c}`);
+        const content = Array.isArray(e.content) ? e.content.join('; ') : e.content;
+        console.log(`  - ${e.name} [${(e.keywords || []).join(', ')}]: ${content}`);
       });
     }
 
     const lastResult = results[results.length - 1];
-    console.log(`\nFinal recap (${lastResult.recap?.length || 0} chars):`);
+    const finalRecap = lastResult.recap || {};
+    console.log(`\nFinal recap:`);
     console.log('-'.repeat(40));
-    console.log(lastResult.recap || '(empty)');
+    if (finalRecap.developments?.length > 0) {
+      console.log(`Developments (${finalRecap.developments.length}):`);
+      finalRecap.developments.forEach(d => console.log(`  ${d}`));
+    }
+    if (finalRecap.open?.length > 0) {
+      console.log(`Open threads (${finalRecap.open.length}):`);
+      finalRecap.open.forEach(o => console.log(`  ${o}`));
+    }
+    if (finalRecap.state?.length > 0) {
+      console.log(`State (${finalRecap.state.length}):`);
+      finalRecap.state.forEach(s => console.log(`  ${s}`));
+    }
   }
 }
 
@@ -397,8 +528,8 @@ Examples:
     stage2RunNumber = getLatestStage2RunNumber();
   }
 
-  console.log(`Loading stage3 prompt...`);
-  const promptTemplate = await loadStage3Prompt();
+  console.log(`Loading prompts (Stage 3 filter + Running Recap merge)...`);
+  const prompts = loadPrompts();
 
   console.log(`Loading stage2 results from run-${stage2RunNumber}...`);
   let stage2Results = loadStage2Results(stage2RunNumber);
@@ -407,10 +538,10 @@ Examples:
   console.log(`Processing ${stage2Results.length} scene(s) CUMULATIVELY from stage2 run-${stage2RunNumber}...`);
 
   const results = [];
-  let currentRunningRecap = ''; // Start empty
+  let currentRunningRecap = null; // Start empty (object, not string)
 
   for (const stage2Result of stage2Results) {
-    const result = await testScene(stage2Result, promptTemplate, currentRunningRecap, config);
+    const result = await testScene(stage2Result, prompts, currentRunningRecap, config);
     results.push(result);
 
     // Update cumulative recap for next iteration

@@ -163,13 +163,17 @@ async function callAIForMerge(existingContent , newContent , entryName  = '', co
     // Parse JSON response using centralized helper
     const { extractJsonFromResponse } = await import('./utils.js');
     const parsed = extractJsonFromResponse(response, {
-      requiredFields: ['mergedContent'],
+      requiredFields: ['content'],
       context: 'lorebook merge operation'
     });
 
+    // Convert content array to string for storage (lorebook entries store content as string)
+    const contentArray = Array.isArray(parsed.content) ? parsed.content : [parsed.content];
+    const mergedContent = contentArray.join('\n');
+
     debug('AI merge completed successfully');
     return {
-      mergedContent: parsed.mergedContent,
+      mergedContent,
       canonicalName: parsed.canonicalName || null,
       tokenBreakdown
     };

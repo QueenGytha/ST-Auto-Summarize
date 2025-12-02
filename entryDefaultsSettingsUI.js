@@ -1,26 +1,27 @@
 
 import { log, SUBSYSTEM } from './index.js';
-import { DEFAULT_ENTRY_DEFAULTS } from './entryDefaults.js';
-import { getArtifact, updateArtifact, listArtifacts } from './operationArtifacts.js';
+import { DEFAULT_ENTRY_DEFAULTS } from './entityTypes.js';
+import { getArtifact, updateArtifact } from './operationArtifacts.js';
 import { selectorsExtension } from './selectorsExtension.js';
 
 let debounceTimer = null;
 const DEBOUNCE_DELAY = 500;
 
 /**
- * Get the currently selected entry defaults artifact name from the selector
+ * Get the currently selected entity types artifact name from the selector
+ * (entry defaults are now part of entity_types artifact)
  */
 function getSelectedArtifactName() {
-  const $selector = $(selectorsExtension.operationsPresets.artifactEntryDefaults);
+  const $selector = $(selectorsExtension.operationsPresets.artifactEntityTypes);
   return $selector.val() || 'Default';
 }
 
 /**
- * Get the current entry defaults from the selected artifact
+ * Get the current entry defaults from the entity_types artifact
  */
 function getCurrentDefaults() {
   const artifactName = getSelectedArtifactName();
-  const artifact = getArtifact('entry_defaults', artifactName);
+  const artifact = getArtifact('entity_types', artifactName);
 
   if (artifact && artifact.defaults) {
     return artifact.defaults;
@@ -30,20 +31,15 @@ function getCurrentDefaults() {
 }
 
 /**
- * Save entry defaults to the current artifact (with copy-on-write for defaults)
+ * Save entry defaults to the entity_types artifact
  */
 function saveDefaults(defaults) {
   const artifactName = getSelectedArtifactName();
 
-  // Update the artifact (will create new version if editing default)
-  const newName = updateArtifact('entry_defaults', artifactName, { defaults });
+  // Update the entity_types artifact with new defaults
+  const newName = updateArtifact('entity_types', artifactName, { defaults });
 
-  // If a new version was created, update the selector
-  if (newName !== artifactName) {
-    refreshArtifactSelector(newName);
-  }
-
-  log(SUBSYSTEM.SETTINGS, `Saved entry defaults to artifact: ${newName}`);
+  log(SUBSYSTEM.SETTINGS, `Saved entry defaults to entity_types artifact: ${newName}`);
 }
 
 /**
@@ -60,26 +56,11 @@ function debouncedSave(defaults) {
 }
 
 /**
- * Refresh the artifact selector dropdown with current artifacts
+ * Refresh entry defaults UI (no separate selector - uses entity_types selector)
  */
-function refreshArtifactSelector(selectedName = null) {
-  const $selector = $(selectorsExtension.operationsPresets.artifactEntryDefaults);
-  if ($selector.length === 0) { return; }
-
-  const artifacts = listArtifacts('entry_defaults');
-  const currentValue = selectedName || $selector.val() || 'Default';
-
-  $selector.empty();
-
-  for (const artifact of artifacts) {
-    const $option = $('<option></option>')
-      .val(artifact.name)
-      .text(artifact.name);
-    if (artifact.name === currentValue) {
-      $option.prop('selected', true);
-    }
-    $selector.append($option);
-  }
+function refreshArtifactSelector() {
+  // Entry defaults now use the entity_types selector, so just reload the UI values
+  loadCurrentDefaultsToUI();
 }
 
 /**
@@ -131,9 +112,9 @@ function onStickyChange() {
 }
 
 /**
- * Handle artifact selector change
+ * Handle entity_types artifact selector change (entry defaults follow entity_types)
  */
-function onArtifactChange() {
+function onEntityTypesArtifactChange() {
   loadCurrentDefaultsToUI();
 }
 
@@ -147,11 +128,10 @@ export function initializeEntryDefaultsUI() {
   $(document).on('change', selectorsExtension.lorebook.entryIgnoreBudget, onIgnoreBudgetChange);
   $(document).on('input', selectorsExtension.lorebook.entrySticky, onStickyChange);
 
-  // Bind artifact selector change
-  $(document).on('change', selectorsExtension.operationsPresets.artifactEntryDefaults, onArtifactChange);
+  // Bind entity_types artifact selector change (entry defaults are part of entity_types)
+  $(document).on('change', selectorsExtension.operationsPresets.artifactEntityTypes, onEntityTypesArtifactChange);
 
   // Initial load
-  refreshArtifactSelector();
   loadCurrentDefaultsToUI();
 
   log(SUBSYSTEM.SETTINGS, 'Entry defaults UI initialized');

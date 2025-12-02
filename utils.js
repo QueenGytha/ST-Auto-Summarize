@@ -13,13 +13,7 @@ import {
   HEX_COLOR_BASE,
   MAX_QUEUE_PRIORITY,
   DEBUG_OUTPUT_MEDIUM_LENGTH,
-  FULL_COMPLETION_PERCENTAGE,
-  CHAR_CODE_LF,
-  CHAR_CODE_CR,
-  CHAR_CODE_TAB,
-  CHAR_CODE_BACKSPACE,
-  CHAR_CODE_FORM_FEED,
-  JSON_FIELD_START_ADVANCE
+  FULL_COMPLETION_PERCENTAGE
 } from './constants.js';
 import { jsonrepair } from './vendor/index.js';
 
@@ -256,171 +250,6 @@ function sanitizeNameSegment(text ) {
 }
 
 /**
- * Escape control characters in a string for JSON compatibility.
- * Tracks escape state to avoid double-escaping already-escaped sequences.
- * @param {string} str - String that may contain control characters
- * @returns {string} String with control characters escaped
- */
-function escapeJsonControlChars(str) {
-  let result = '';
-  let isEscaped = false;
-
-  for (let j = 0; j < str.length; j++) {
-    const charCode = str.charCodeAt(j);
-    const char = str[j];
-
-    if (isEscaped) {
-      result += char;
-      isEscaped = false;
-      continue;
-    }
-
-    if (char === '\\') {
-      result += char;
-      isEscaped = true;
-      continue;
-    }
-
-    if (charCode === CHAR_CODE_LF) {
-      result += '\\n';
-    } else if (charCode === CHAR_CODE_CR) {
-      result += '\\r';
-    } else if (charCode === CHAR_CODE_TAB) {
-      result += '\\t';
-    } else if (charCode === CHAR_CODE_BACKSPACE) {
-      result += '\\b';
-    } else if (charCode === CHAR_CODE_FORM_FEED) {
-      result += '\\f';
-    } else {
-      result += char;
-    }
-  }
-  return result;
-}
-
-/**
- * Check if a quote character appears to be a closing quote based on context.
- * @param {string} jsonString - The full JSON string
- * @param {number} index - Index of the quote character
- * @returns {boolean} True if this appears to be a closing quote
- */
-function isLikelyClosingQuote(jsonString, index) {
-  const nextChar = index + 1 < jsonString.length ? jsonString[index + 1] : '';
-
-  // Definitely closing if followed by JSON structural characters or EOF
-  if (nextChar === ',' || nextChar === '}' || nextChar === ']' || nextChar === '') {
-    return true;
-  }
-
-  // If followed by whitespace, check what comes after the whitespace
-  if (/\s/.test(nextChar)) {
-    // Look ahead to find first non-whitespace character
-    let lookAhead = index + 2;
-    while (lookAhead < jsonString.length && /\s/.test(jsonString[lookAhead])) {
-      lookAhead++;
-    }
-
-    const charAfterWhitespace = lookAhead < jsonString.length ? jsonString[lookAhead] : '';
-
-    // Closing quote if whitespace is followed by JSON structural characters
-    // NOT a closing quote if whitespace is followed by regular text (handles dialogue: "Hello," she said)
-    return charAfterWhitespace === ',' || charAfterWhitespace === '}' || charAfterWhitespace === ']' || charAfterWhitespace === '';
-  }
-
-  return false;
-}
-
-/**
- * Check if a newline appears to end the JSON string value.
- * @param {string} jsonString - The full JSON string
- * @param {number} index - Index of the newline character
- * @returns {boolean} True if this newline likely ends the value
- */
-function isValueEndingNewline(jsonString, index) {
-  // ONLY treat newline as ending value at absolute EOF
-  // Previous logic (/^\n\s*[}\]]/) was too aggressive and caused false positives
-  // when multi-line string content happened to contain patterns like "\n  }"
-  // Let JSON repair logic handle truly malformed strings instead of guessing
-  return index === jsonString.length - 1;
-}
-
-/**
- * Process a JSON string value, escaping control characters and adding closing quote if needed.
- * @param {string} jsonString - The full JSON string
- * @param {number} startIndex - Index where the value content starts (after opening quote)
- * @returns {{result: string, nextIndex: number}} Processed value and next index
- */
-function processJsonStringValue(jsonString, startIndex) {
-  let valueContent = '';
-  let i = startIndex;
-
-  while (i < jsonString.length) {
-    const char = jsonString[i];
-
-    if (char === '"' && isLikelyClosingQuote(jsonString, i)) {
-      return {
-        result: escapeJsonControlChars(valueContent) + '"',
-        nextIndex: i + 1
-      };
-    } else if (char === '\n' && isValueEndingNewline(jsonString, i)) {
-      return {
-        result: escapeJsonControlChars(valueContent) + '"',
-        nextIndex: i
-      };
-    } else {
-      valueContent += char;
-      i++;
-    }
-  }
-
-  return {
-    result: escapeJsonControlChars(valueContent) + '"',
-    nextIndex: i
-  };
-}
-
-/**
- * Aggressively normalize JSON by escaping literal newlines in string values.
- * This handles both well-formed strings and malformed strings without closing quotes.
- * @param {string} jsonString - JSON string that may have literal newlines in values
- * @returns {string} JSON with literal newlines replaced with \n escapes
- */
-function normalizeJsonStringValues(jsonString) {
-  let normalized = '';
-  let i = 0;
-
-  while (i < jsonString.length) {
-    // Handle both spaced (`: "`) and compact (`:"`) JSON formats
-    // Mobile browsers may return compact JSON without spaces after colons
-    const hasSpace = i < jsonString.length - 2 &&
-      jsonString[i] === ':' &&
-      /\s/.test(jsonString[i + 1]) &&
-      jsonString[i + 2] === '"';
-
-    const isCompact = i < jsonString.length - 1 &&
-      jsonString[i] === ':' &&
-      jsonString[i + 1] === '"';
-
-    if (hasSpace) {
-      normalized += ': "';
-      const processed = processJsonStringValue(jsonString, i + JSON_FIELD_START_ADVANCE);
-      normalized += processed.result;
-      i = processed.nextIndex;
-    } else if (isCompact) {
-      normalized += ':"';
-      const processed = processJsonStringValue(jsonString, i + 2); // Skip : and "
-      normalized += processed.result;
-      i = processed.nextIndex;
-    } else {
-      normalized += jsonString[i];
-      i++;
-    }
-  }
-
-  return normalized;
-}
-
-/**
  * Repair and parse malformed JSON using the jsonrepair library.
  * Handles common LLM output issues: unescaped quotes, control chars, truncation, etc.
  *
@@ -494,12 +323,6 @@ function preprocessJsonString(jsonString, context) {
       cleaned = cleaned.slice(0, lastJsonChar + 1);
       debug(SUBSYSTEM.CORE, `[JSON Extract] Stripped postamble from ${context}`);
     }
-  }
-
-  const beforeNormalize = cleaned;
-  cleaned = normalizeJsonStringValues(cleaned);
-  if (cleaned !== beforeNormalize) {
-    debug(SUBSYSTEM.CORE, `[JSON Extract] Pre-normalized literal control characters in ${context}`);
   }
 
   return cleaned;

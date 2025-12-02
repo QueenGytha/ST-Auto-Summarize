@@ -1,70 +1,85 @@
-// Stage 4: Filter entities against existing lorebook entries
-// MACROS: {{extracted_sl}}, {{active_setting_lore}}
+﻿// Stage 4: Filter entities against existing lorebook entries
+// MACROS: {{extracted_sl}}, {{active_setting_lore}}, {{user}}
 
-export const scene_recap_stage4_filter_sl_prompt = `ROLE: Lore keeper. Guard the setting bible from redundant entries.
+export const scene_recap_stage4_filter_sl_prompt = `TASK: Filter new entities against existing lorebook. Output only NEW information.
 
-CONTEXT: Entity entries are injected into LLM context when that entity appears in the story. Every token competes with current scene for context space. Redundant additions bloat entries without adding value.
+================================================================================
+CONTEXT
+================================================================================
 
-TASK: Filter INPUT_ENTITIES against EXISTING_LORE. Output only NEW information.
+Entity entries are injected into LLM context when keywords match. Every token competes with current scene. Redundant additions bloat entries without adding value.
+
+================================================================================
+INPUT
+================================================================================
+
+NEW ENTITIES (from Stage 2):
+<NEW_ENTITIES>
+{{extracted_sl}}
+</NEW_ENTITIES>
+
+EXISTING LOREBOOK:
+<EXISTING>
+{{active_setting_lore}}
+</EXISTING>
+
+User character: {{user}}
 
 ================================================================================
 FILTERING RULES
 ================================================================================
 
-For each entry in INPUT_ENTITIES:
-1. Find matching entry in EXISTING_LORE (by name)
-2. If NO MATCH exists → KEEP entire entry (new entity)
-3. If match exists → filter content against existing
+For each entity in NEW_ENTITIES:
+1. Find matching entry in EXISTING by name
+2. NO MATCH → KEEP entire entity (new)
+3. MATCH EXISTS → filter content items against existing
 
-FILTER CRITERIA:
-- Same fact already captured → DROP
-- Same relationship dynamic already captured → DROP
-- Same state already captured → DROP
-- Evolution/change from existing state → KEEP
-- New relationship target → KEEP
-- New facts not in existing → KEEP
+CONTENT FILTERING:
+- Same fact already captured → DROP item
+- Same relationship dynamic → DROP item
+- Evolution/change from existing → KEEP item
+- New relationship target → KEEP item
+- New facts not in existing → KEEP item
 
-Compare MEANING not wording. If same information exists in different words, DROP.
+Compare MEANING not wording. Same info in different words = duplicate.
 
-USER CHARACTER ({{user}}) - EXTRA AGGRESSIVE:
-{{user}} entries should be MINIMAL or ABSENT. User plays their own character.
-- KEEP ONLY: physical state, status/titles, explicit commitments
-- DROP ALL relationship content toward other characters
-- Relationships belong ONLY in the other character's STANCE-{{user}} section
-- If {{user}} entity has ONLY relationship/development content → DROP entire entity
-- When in doubt about {{user}} content → DROP it
+VOLATILE STATE:
+- DROP volatile items (current location, in-progress tasks, temporary conditions)
+- These go in recap, not lorebook
 
-Remove entry entirely if ALL content filtered out.
+USER CHARACTER ({{user}}):
+- {{user}} entries should be MINIMAL or ABSENT
+- KEEP ONLY: stable physical state, titles, explicit commitments
+- DROP relationship content toward others (belongs in OTHER character's entry)
+- If {{user}} entity has ONLY relationship content → DROP entire entity
 
-Keywords (k): Pass through unchanged.
-Content (c): Preserve formatting.
+Remove entity entirely if ALL content items filtered out.
 
 ================================================================================
 UID MATCHING
 ================================================================================
 
-UID field (uid) - CRITICAL for correct downstream merging:
-- LITERAL STRING MATCH ONLY on name attribute
-- Copy uid from <setting_lore name="X" uid="Y"> where X is IDENTICAL to your n value
-- OMIT "uid" entirely if no IDENTICAL name match exists
+If entity name EXACTLY matches an existing entry name:
+- Copy the uid from existing entry
+- OMIT uid if no exact name match
 - Wrong UID = data corruption. When uncertain, OMIT.
 
 ================================================================================
-OUTPUT
+OUTPUT FORMAT
 ================================================================================
 
-{"entities": [{"t": "type", "n": "Name", "c": "content", "k": ["keywords"], "uid": "uid if exact match"}]}
+{
+  "entities": [
+    {
+      "type": "character",
+      "name": "Name",
+      "keywords": ["keywords"],
+      "content": ["only new items not in existing"],
+      "uid": "from existing if exact name match"
+    }
+  ]
+}
 
-If all entries filtered: {"entities": []}
-
----------------- INPUT_ENTITIES ----------------
-<INPUT_ENTITIES>
-{{extracted_sl}}
-</INPUT_ENTITIES>
-
----------------- EXISTING_LORE ----------------
-<EXISTING_LORE>
-{{active_setting_lore}}
-</EXISTING_LORE>
+If all entities filtered: {"entities": []}
 
 Output JSON only.`;

@@ -89,11 +89,12 @@ function getLatestRunNumber(dir) {
 
 // Convert stage4 output entity to lorebook entry format for mock lorebook
 function entityToLorebookEntry(entity, uid) {
+  const content = Array.isArray(entity.content) ? entity.content.join('\n') : entity.content;
   return {
-    comment: entity.n,
+    comment: entity.name,
     uid: String(uid),
-    key: entity.k || [entity.n],
-    content: entity.c,
+    key: entity.keywords || [entity.name],
+    content: content,
     world: '',
     position: '',
     order: ''
@@ -298,15 +299,14 @@ async function testScene(stage2Result, stage3Result, promptTemplate, mockLoreboo
     if (outputEntities.length > 0) {
       console.log(`\nEntities passing filter:`);
       outputEntities.forEach(e => {
-        const entityUid = e.uid || e.u;
-        const hasUid = entityUid ? ` (UID: ${entityUid})` : ' (NEW)';
-        console.log(`  - ${e.n} [${e.t}]${hasUid}`);
+        const hasUid = e.uid ? ` (UID: ${e.uid})` : ' (NEW)';
+        console.log(`  - ${e.name} [${e.type}]${hasUid}`);
       });
     }
 
     // Track which entities have UIDs (existing) vs new
-    const newEntities = outputEntities.filter(e => !(e.uid || e.u));
-    const updatedEntities = outputEntities.filter(e => e.uid || e.u);
+    const newEntities = outputEntities.filter(e => !e.uid);
+    const updatedEntities = outputEntities.filter(e => e.uid);
 
     if (newEntities.length > 0) {
       console.log(`\nNew entities (will be added to lorebook): ${newEntities.length}`);
@@ -536,12 +536,13 @@ Examples:
     if (result.success && result.new_to_lorebook) {
       for (const entity of result.new_to_lorebook) {
         // Check if entity already exists by name (for updates)
-        const existingIdx = mockLorebook.findIndex(e => e.comment === entity.n);
+        const existingIdx = mockLorebook.findIndex(e => e.comment === entity.name);
 
-        if (existingIdx >= 0 && (entity.uid || entity.u)) {
+        if (existingIdx >= 0 && entity.uid) {
           // Update existing entry
-          mockLorebook[existingIdx].content += '\n\n' + entity.c;
-          mockLorebook[existingIdx].key = [...new Set([...mockLorebook[existingIdx].key, ...(entity.k || [])])];
+          const newContent = Array.isArray(entity.content) ? entity.content.join('\n') : entity.content;
+          mockLorebook[existingIdx].content += '\n\n' + newContent;
+          mockLorebook[existingIdx].key = [...new Set([...mockLorebook[existingIdx].key, ...(entity.keywords || [])])];
         } else {
           // Add new entry
           mockLorebook.push(entityToLorebookEntry(entity, nextUid++));

@@ -1,87 +1,98 @@
-// MACROS: {{current_running_recap}}, {{scene_recaps}}
+﻿// MACROS: {{current_running_recap}}, {{filtered_recap}}
 
-export const running_scene_recap_prompt = `ROLE: Narrative curator. Maintain the authoritative record of what happened.
+export const running_scene_recap_prompt = `TASK: Merge filtered scene recap into running recap.
 
-CONTEXT: This is for AI roleplay. This recap is injected into the LLM's context so it knows what happened before the current scene. The LLM uses this to:
+================================================================================
+CONTEXT
+================================================================================
+
+This recap is injected into LLM context so it knows what happened. The LLM uses it to:
 - Continue the story consistently with past events
 - Pick up unresolved plot threads
 
-Every token competes with the current scene for context space. Keep the recap tight - high-level outcomes, not blow-by-blow.
-
-TASK: Merge NEW_SCENE_RECAP into CURRENT_RUNNING_RECAP. CURRENT_RUNNING_RECAP is baseline.
+Every token competes with current scene. Keep tight - high-level outcomes, not blow-by-blow.
 
 ================================================================================
-DEV (active outcomes)
+INPUT
 ================================================================================
 
-Outcomes still relevant to current story state.
+CURRENT RUNNING RECAP:
+<RUNNING_RECAP>
+{{current_running_recap}}
+</RUNNING_RECAP>
 
-ADD: outcomes that change story state, not already in CURRENT_RUNNING_RECAP
-DROP: steps/process (keep only results), duplicates
-
-OUTCOME vs STEP test:
-"If I delete this and keep only what follows, do I lose information?"
-YES → outcome. NO → step (drop).
-
-COMPLETION SUPERSESSION (CRITICAL):
-When NEW_SCENE_RECAP shows something COMPLETED that appears as "in progress/agreed/promised/requested" in CURRENT_RUNNING_RECAP:
-→ REMOVE the old statement from DEV entirely
-→ Evaluate: might this be referenced later? (see RESOLVED EVENTS below)
-
-Examples:
-- "commissioned armor" then "armor delivered" → REMOVE from DEV
-- "seeking audience with king" then "audience granted" → REMOVE from DEV
-- "wound being treated" then "recovered" → REMOVE from DEV
+FILTERED NEW CONTENT (from Stage 3 - already deduplicated):
+<FILTERED>
+{{filtered_recap}}
+</FILTERED>
 
 ================================================================================
-PEND (plot threads)
+MERGING RULES
 ================================================================================
 
-Unresolved hooks with dramatic tension.
+DEVELOPMENTS:
+- ADD new items from filtered.developments to running recap developments
+- Group under existing [Labels] where content fits
+- Create new [Labels] only for genuinely new topics
+- Consolidate similar labels (e.g., [Resources] + [Supplies] → pick one)
 
-SUPERSESSION:
-- Thread resolved → remove from PEND (see RESOLVED EVENTS below)
-- New thread → add to PEND
-- Abandoned thread → drop entirely
+OPEN THREADS:
+- ADD new items from filtered.open
+- REMOVE threads listed in filtered.resolved (they're done)
 
-HOOK TEST: "Can the LLM use this for drama/tension?"
-YES = threat, secret, promise, mystery, vulnerability, ticking clock
-NO = scheduling, logistics, implementation details → drop
+STATE:
+- REPLACE old state with new state for matching [Labels]
+- State is current status - old values are stale
 
-================================================================================
-RESOLVED EVENTS (entities)
-================================================================================
+RESOLVED THREADS:
+For each item in filtered.resolved, decide:
+- Will this be referenced later via keywords? → Create EVENT entity
+- Otherwise → DROP entirely (default)
 
-For COMPLETED items removed from DEV or resolved PEND threads:
-
-Will this be referenced later via non-character keywords?
-
-YES → Create EVENT entity (keyword-triggered, minimal detail)
-NO → DROP entirely
-
-DEFAULT TO DROP.
+EVENT entities are minimal: just enough to recognize if mentioned later.
 
 ================================================================================
-OUTPUT
+TEMPORAL CLARITY
+================================================================================
+
+Status based on ACTIONS, not time words:
+- PLANNED = "assigned to," "agreed to" (discussed, no action)
+- STARTED = "departed," "began," "en route" (action underway)
+- COMPLETED = "returned," "delivered," "completed" (finished)
+
+Names not titles: "Bulwark" not "guard captain"
+
+================================================================================
+OUTPUT FORMAT
 ================================================================================
 
 {
-  "recap": "DEV: ...\\nPEND: ...",
-  "entities": [{"t": "event", "n": "Name", "c": "minimal description", "k": ["keywords"]}]
+  "recap": {
+    "developments": [
+      "[Label] facts grouped by topic",
+      "[Label] more facts"
+    ],
+    "open": [
+      "unresolved thread",
+      "another hook"
+    ],
+    "state": [
+      "[Label] current status",
+      "[Label] more status"
+    ]
+  },
+  "entities": [
+    {
+      "type": "event",
+      "name": "Event Name",
+      "keywords": ["keywords"],
+      "content": ["minimal description of resolved event"]
+    }
+  ]
 }
 
-STYLE: Fragments; semicolons; no articles/filler. TELEGRAPHIC.
+STYLE: Telegraphic. Fragments; semicolons; no articles. Clear temporal status.
 
-Omit empty sections. Omit entities array if no resolved events.
-
----------------- CURRENT_RUNNING_RECAP ----------------
-<CURRENT_RUNNING_RECAP>
-{{current_running_recap}}
-</CURRENT_RUNNING_RECAP>
-
----------------- NEW_SCENE_RECAP ----------------
-<NEW_SCENE_RECAP>
-{{scene_recaps}}
-</NEW_SCENE_RECAP>
+Omit entities array if no resolved events worth keeping.
 
 Output JSON only.`;

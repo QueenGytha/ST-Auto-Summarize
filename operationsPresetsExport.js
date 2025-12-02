@@ -15,8 +15,7 @@ const OPERATION_TYPES = [
   'auto_lorebooks_recap_lorebook_entry_compaction',
   'parse_scene_recap',
   'filter_scene_recap_sl',
-  'entity_types',
-  'entry_defaults'
+  'entity_types'
 ];
 
 export function exportPreset(presetName) {
@@ -58,13 +57,7 @@ function createOperationExportData(artifact, operationType) {
   if (operationType === 'entity_types') {
     return {
       artifact_name: artifact.name,
-      types: artifact.types
-    };
-  }
-
-  if (operationType === 'entry_defaults') {
-    return {
-      artifact_name: artifact.name,
+      types: artifact.types,
       defaults: artifact.defaults
     };
   }

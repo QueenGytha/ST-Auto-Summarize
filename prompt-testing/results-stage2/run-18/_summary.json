@@ -1,0 +1,17 @@
+{
+  "run": 18,
+  "stage1_run": 113,
+  "timestamp": "2025-12-02T01:05:52.150Z",
+  "total": 1,
+  "successful": 1,
+  "failed": 0,
+  "scenes": [
+    {
+      "id": "baronial-0-18",
+      "success": true,
+      "stage1_entities": 0,
+      "stage2_entities": 17,
+      "error": null
+    }
+  ]
+}

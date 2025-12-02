@@ -23,8 +23,7 @@ export function getArtifactSelector(operationType) {
     'auto_lorebooks_recap_lorebook_entry_deduplicate': '[data-testid="artifact-lorebooks-deduplicate"]',
     'auto_lorebooks_bulk_populate': '[data-testid="artifact-lorebooks-bulk-populate"]',
     'auto_lorebooks_recap_lorebook_entry_compaction': '[data-testid="artifact-lorebooks-compaction"]',
-    'entity_types': '[data-testid="artifact-entity-types"]',
-    'entry_defaults': '[data-testid="artifact-entry-defaults"]'
+    'entity_types': '[data-testid="artifact-entity-types"]'
   };
   return selectorMap[operationType];
 }
@@ -110,9 +109,7 @@ export const selectorsExtension = {
     artifactLorebooksBulkPopulate: '[data-testid="artifact-lorebooks-bulk-populate"]',   // #auto_recap_artifact_auto_lorebooks_bulk_populate
     artifactLorebooksCompaction: '[data-testid="artifact-lorebooks-compaction"]',        // #auto_recap_artifact_auto_lorebooks_recap_lorebook_entry_compaction
     artifactEntityTypes: '[data-testid="artifact-entity-types"]',                        // #auto_recap_artifact_entity_types
-    artifactEntryDefaults: '[data-testid="artifact-entry-defaults"]',                    // #auto_recap_artifact_entry_defaults
     opEntityTypes: '[data-testid="operation-type-entity-types"]',                        // Entity types section
-    opEntryDefaults: '[data-testid="operation-type-entry-defaults"]',                    // Entry defaults section
 
     // Entity Types inline table
     entityTypesTableContainer: '[data-testid="entity-types-table-container"]',           // #entity-types-table-container

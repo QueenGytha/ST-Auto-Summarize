@@ -1,0 +1,99 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 28.103,
+  "tokens": 4521,
+  "userName": "Rance",
+  "stage1_entities": 0,
+  "stage2_entities": 5,
+  "parsed": {
+    "sn": "Talia and Rance Intimacy",
+    "recap": {
+      "outcomes": "Talia and Rance consummated their relationship after discussing formalizing their mental connection. Agreed on semi-official Co-Advisors arrangement (secret except to Selenay and Circle). Talia's virginity taken; she experienced profound personal transformation through surrendering control.",
+      "threads": "How they will present themselves to Selenay immediately after intimacy. Whether physical relationship complicates or strengthens proposed political arrangement. Rance's untrained Mage-Gift remains dangerously unpredictable.",
+      "state": "Meeting with Selenay scheduled within candlemarks. Talia bears physical marks (bite, internal evidence) beneath her Whites. Senta aware of coupling through bond."
+    },
+    "entities": [
+      {
+        "type": "character",
+        "name": "Talia",
+        "keywords": [
+          "Talia",
+          "Queen's Own"
+        ],
+        "content": {
+          "who": "Queen's Own, Empath. Holderkin background where women were treated as property. Adult virgin until this encounter due to fear of losing herself in others through her Gift.",
+          "dynamics": {
+            "Rance": "Mind-merge partner who lived her unfiltered memories, training, feelings. Confessed need for partner who understands both her position's burdens and her personally. 'You know things about me that I've never told anyone. My arranged marriage as a child. The nightmares. The doubts I carry about my worthiness as Queen's Own.' Became physically intimate; experienced first orgasms and profound release through surrendering control. Responded intensely to degrading language referencing Holderkin past. Bears bite mark on breast beneath Whites.",
+            "Selenay": "Agreed to recommend formalizing Rance connection as Co-Advisors (semi-official, secret except to Queen and Circle) to handle unprecedented security situation of shared state knowledge."
+          },
+          "quotes": [
+            "'I've spent my entire adult life terrified of losing myself in another person. My Gift makes it so easy to blur where I end and others begin. And then you came along and shattered every wall I'd built.'",
+            "'I don't know what this is. Partner. Confidant. Something entirely new. But I know I need it. Need you.'"
+          ],
+          "status": "Virginity taken. Bears physical marks from intimacy. Meeting Selenay within candlemarks to formalize Co-Advisor arrangement."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Rance",
+        "keywords": [
+          "Rance"
+        ],
+        "content": {
+          "who": "Possesses untrained Mage-Gift and mental connection with Talia from mind-merge. Retained practical knowledge from merge (can shore up her shields instinctively).",
+          "dynamics": {},
+          "quotes": [
+            "'Valdemar will always come first. Then the Queen. And then you.' (priority hierarchy for relationship with Talia)",
+            "'The longer we can keep all of that under wraps, the better.' (regarding keeping connection secret to avoid questions about Lisle, border situation, Mage-Gift)"
+          ],
+          "status": "Agreed to semi-official Co-Advisors arrangement with Talia (secret except to Selenay and Circle). Mage-Gift channels still raw from forced opening. Meeting with Selenay scheduled within candlemarks."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Senta",
+        "keywords": [
+          "Senta"
+        ],
+        "content": {
+          "who": "Rance's Companion. Maintains bond connection that prevented full privacy during Rance and Talia's intimacy.",
+          "dynamics": {
+            "Rance": "Sensed his coupling with Talia through bond. Observed Talia's transformation: 'She's finding release in this surrender. After years of carrying such responsibility...' Dry comment after: 'I suppose that settles the question of what you are to each other.' Warned about untrained Mage-Gift: 'Destroying a door is manageable. Leveling the cottage would require extensive paperwork.'"
+          },
+          "quotes": [],
+          "status": "Maintained watch outside cottage during intimacy. Aware of relationship development."
+        }
+      },
+      {
+        "type": "lore",
+        "name": "Co-Advisors Arrangement",
+        "keywords": [
+          "Co-Advisors",
+          "formalize",
+          "official arrangement"
+        ],
+        "content": {
+          "what": "Proposed arrangement between Talia and Rance to formalize their mental connection as official Co-Advisors (not romantic partners publicly) to handle unprecedented security situation of shared state knowledge.",
+          "significance": "Rance counter-proposed keeping it semi-official and secret except to Selenay and Circle. Public knowledge would raise questions about why Queen's Own was risked to unlock his memories, leading back to Lisle, border situation, and his Mage-Gift. Talia agreed to this approach.",
+          "status": "Agreed upon by Talia and Rance. Meeting scheduled with Selenay to formalize within candlemarks."
+        }
+      },
+      {
+        "type": "lore",
+        "name": "Holderkin Background",
+        "keywords": [
+          "Holderkin",
+          "arranged marriage"
+        ],
+        "content": {
+          "what": "Talia's cultural origin where women were treated as property. She had an arranged marriage as a child. These experiences contributed to her fears of losing herself in relationships.",
+          "significance": "References to her Holderkin past triggered intense arousal during intimacy with Rance. She used crude self-descriptions drawing on this background ('dirty Holderkin slut,' 'worthless cunt,' 'just a hole for you to use,' 'a vessel'), finding psychological release in reclaiming degrading language.",
+          "status": "Part of Talia's deeply personal history that only Rance knows through mind-merge."
+        }
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Talia and Rance Intimacy\",\n  \"recap\": {\n    \"outcomes\": \"Talia and Rance consummated their relationship after discussing formalizing their mental connection. Agreed on semi-official Co-Advisors arrangement (secret except to Selenay and Circle). Talia's virginity taken; she experienced profound personal transformation through surrendering control.\",\n    \"threads\": \"How they will present themselves to Selenay immediately after intimacy. Whether physical relationship complicates or strengthens proposed political arrangement. Rance's untrained Mage-Gift remains dangerously unpredictable.\",\n    \"state\": \"Meeting with Selenay scheduled within candlemarks. Talia bears physical marks (bite, internal evidence) beneath her Whites. Senta aware of coupling through bond.\"\n  },\n  \"entities\": [\n    {\n      \"type\": \"character\",\n      \"name\": \"Talia\",\n      \"keywords\": [\"Talia\", \"Queen's Own\"],\n      \"content\": {\n        \"who\": \"Queen's Own, Empath. Holderkin background where women were treated as property. Adult virgin until this encounter due to fear of losing herself in others through her Gift.\",\n        \"dynamics\": {\n          \"Rance\": \"Mind-merge partner who lived her unfiltered memories, training, feelings. Confessed need for partner who understands both her position's burdens and her personally. 'You know things about me that I've never told anyone. My arranged marriage as a child. The nightmares. The doubts I carry about my worthiness as Queen's Own.' Became physically intimate; experienced first orgasms and profound release through surrendering control. Responded intensely to degrading language referencing Holderkin past. Bears bite mark on breast beneath Whites.\",\n          \"Selenay\": \"Agreed to recommend formalizing Rance connection as Co-Advisors (semi-official, secret except to Queen and Circle) to handle unprecedented security situation of shared state knowledge.\"\n        },\n        \"quotes\": [\n          \"'I've spent my entire adult life terrified of losing myself in another person. My Gift makes it so easy to blur where I end and others begin. And then you came along and shattered every wall I'd built.'\",\n          \"'I don't know what this is. Partner. Confidant. Something entirely new. But I know I need it. Need you.'\"\n        ],\n        \"status\": \"Virginity taken. Bears physical marks from intimacy. Meeting Selenay within candlemarks to formalize Co-Advisor arrangement.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Rance\",\n      \"keywords\": [\"Rance\"],\n      \"content\": {\n        \"who\": \"Possesses untrained Mage-Gift and mental connection with Talia from mind-merge. Retained practical knowledge from merge (can shore up her shields instinctively).\",\n        \"dynamics\": {},\n        \"quotes\": [\n          \"'Valdemar will always come first. Then the Queen. And then you.' (priority hierarchy for relationship with Talia)\",\n          \"'The longer we can keep all of that under wraps, the better.' (regarding keeping connection secret to avoid questions about Lisle, border situation, Mage-Gift)\"\n        ],\n        \"status\": \"Agreed to semi-official Co-Advisors arrangement with Talia (secret except to Selenay and Circle). Mage-Gift channels still raw from forced opening. Meeting with Selenay scheduled within candlemarks.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Senta\",\n      \"keywords\": [\"Senta\"],\n      \"content\": {\n        \"who\": \"Rance's Companion. Maintains bond connection that prevented full privacy during Rance and Talia's intimacy.\",\n        \"dynamics\": {\n          \"Rance\": \"Sensed his coupling with Talia through bond. Observed Talia's transformation: 'She's finding release in this surrender. After years of carrying such responsibility...' Dry comment after: 'I suppose that settles the question of what you are to each other.' Warned about untrained Mage-Gift: 'Destroying a door is manageable. Leveling the cottage would require extensive paperwork.'\"\n        },\n        \"quotes\": [],\n        \"status\": \"Maintained watch outside cottage during intimacy. Aware of relationship development.\"\n      }\n    },\n    {\n      \"type\": \"lore\",\n      \"name\": \"Co-Advisors Arrangement\",\n      \"keywords\": [\"Co-Advisors\", \"formalize\", \"official arrangement\"],\n      \"content\": {\n        \"what\": \"Proposed arrangement between Talia and Rance to formalize their mental connection as official Co-Advisors (not romantic partners publicly) to handle unprecedented security situation of shared state knowledge.\",\n        \"significance\": \"Rance counter-proposed keeping it semi-official and secret except to Selenay and Circle. Public knowledge would raise questions about why Queen's Own was risked to unlock his memories, leading back to Lisle, border situation, and his Mage-Gift. Talia agreed to this approach.\",\n        \"status\": \"Agreed upon by Talia and Rance. Meeting scheduled with Selenay to formalize within candlemarks.\"\n      }\n    },\n    {\n      \"type\": \"lore\",\n      \"name\": \"Holderkin Background\",\n      \"keywords\": [\"Holderkin\", \"arranged marriage\"],\n      \"content\": {\n        \"what\": \"Talia's cultural origin where women were treated as property. She had an arranged marriage as a child. These experiences contributed to her fears of losing herself in relationships.\",\n        \"significance\": \"References to her Holderkin past triggered intense arousal during intimacy with Rance. She used crude self-descriptions drawing on this background ('dirty Holderkin slut,' 'worthless cunt,' 'just a hole for you to use,' 'a vessel'), finding psychological release in reclaiming degrading language.\",\n        \"status\": \"Part of Talia's deeply personal history that only Rance knows through mind-merge.\"\n      }\n    }\n  ]\n}\n",
+  "error": null
+}

@@ -1,0 +1,72 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 21.636,
+  "tokens": 3365,
+  "userName": "Rance",
+  "stage1_entities": 2,
+  "stage2_entities": 3,
+  "parsed": {
+    "sn": "Unexpected Intimacy Before Council",
+    "recap": {
+      "outcomes": "Rance and Talia consummated their relationship in the cottage. His untrained Mage-Gift manifested violently during passion—telekinetically slammed door and closed curtains with raw, uncontrolled force. Talia lost her virginity and discovered she craves dominance and surrender despite her position. They agreed to formalize their connection secretly, revealing it only to Selenay and the Circle.",
+      "threads": "Meeting with Queen Selenay is now imminent—minutes away, not candlemarks. Must present their consummated arrangement while Talia is freshly claimed and marked. Physical evidence of encounter (cum, blood, bite mark hidden under Whites) complicates immediate composure recovery. Political implications of relationship between Queen's Own and untrained Herald with state secrets access unresolved.",
+      "state": "Talia is marked (bite bruise on breast, filled with his seed) and must immediately return to Queen's Own duties. Both are in post-intimacy state with urgent meeting looming. Cleanup and diplomatic composure recovery critical."
+    },
+    "entities": [
+      {
+        "type": "character",
+        "name": "Talia",
+        "keywords": [
+          "Talia",
+          "Queen's Own",
+          "Herald Talia"
+        ],
+        "content": {
+          "who": "Queen's Own Herald, former Holderkin. Virgin until this encounter. Empath who has maintained careful distance and control for years due to Gift-related fears.",
+          "dynamics": {
+            "Rance": "Sexually claimed and marked by him—bite bruise on breast, his seed inside her, virgin blood evidence. Discovered she craves his dominance and responds intensely to degradation ('Holderkin bitch/slut,' 'worthless vessel'). Found liberation in surrendering her diplomatic mask. Experienced two powerful orgasms and complete loss of composure—broke her own silence during climax. Told him 'need you.' Trusts him to 'handle everything.' Connection now explicitly romantic and sexual beyond political partnership. Holderkin vocabulary emerged during sex. Allowed complete vulnerability she's never permitted before.",
+            "Senta": "Embarrassed that her Companion witnessed and sensed the intimacy through their bond, though Senta maintained guard outside the cottage."
+          },
+          "quotes": [
+            "\"need you\" (to Rance during intimacy)"
+          ],
+          "status": "No longer virgin. Physically marked and claimed. Diplomatic composure shattered but must immediately resume Queen's Own role. Discovered she craves surrender after lifetime of control and responsibility."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Senta",
+        "keywords": [
+          "Senta",
+          "Companion Senta"
+        ],
+        "content": {
+          "who": "Talia's Companion. Maintains Companion bond with Talia, unable to fully shield from emotional overflow.",
+          "dynamics": {
+            "Rance": "Scolded him for using untrained Mage-Gift recklessly (door slam). Resigned acceptance that their lives are 'hopelessly complicated.' Surprised by intensity of his connection with Talia. Cautioned about approaching meeting time. Mixed emotions: concern about timing and complications, understanding of their need, reluctant fascination at Talia's responses.",
+            "Talia": "Maintained vigil outside cottage during intimacy. Sensed everything through bond despite attempting to give privacy. Witnessed Queen's Own's complete transformation."
+          },
+          "quotes": [
+            "\"hopelessly complicated\" (about their situation)"
+          ],
+          "status": "Positioned as guard outside cottage. Could not fully block sensing Talia's experience through Companion bond."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Rance",
+        "keywords": [
+          "Rance",
+          "Herald Rance"
+        ],
+        "content": {
+          "who": "Herald with untrained Mage-Gift. Recently connected with Talia.",
+          "status": "Untrained Mage-Gift manifested violently during passion—telekinetically slammed door and closed curtains with raw, uncontrolled force. Consummated relationship with Talia, claiming and marking her. Agreed to formalize connection secretly with Selenay and Circle only."
+        }
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Unexpected Intimacy Before Council\",\n  \"recap\": {\n    \"outcomes\": \"Rance and Talia consummated their relationship in the cottage. His untrained Mage-Gift manifested violently during passion—telekinetically slammed door and closed curtains with raw, uncontrolled force. Talia lost her virginity and discovered she craves dominance and surrender despite her position. They agreed to formalize their connection secretly, revealing it only to Selenay and the Circle.\",\n    \"threads\": \"Meeting with Queen Selenay is now imminent—minutes away, not candlemarks. Must present their consummated arrangement while Talia is freshly claimed and marked. Physical evidence of encounter (cum, blood, bite mark hidden under Whites) complicates immediate composure recovery. Political implications of relationship between Queen's Own and untrained Herald with state secrets access unresolved.\",\n    \"state\": \"Talia is marked (bite bruise on breast, filled with his seed) and must immediately return to Queen's Own duties. Both are in post-intimacy state with urgent meeting looming. Cleanup and diplomatic composure recovery critical.\"\n  },\n  \"entities\": [\n    {\n      \"type\": \"character\",\n      \"name\": \"Talia\",\n      \"keywords\": [\"Talia\", \"Queen's Own\", \"Herald Talia\"],\n      \"content\": {\n        \"who\": \"Queen's Own Herald, former Holderkin. Virgin until this encounter. Empath who has maintained careful distance and control for years due to Gift-related fears.\",\n        \"dynamics\": {\n          \"Rance\": \"Sexually claimed and marked by him—bite bruise on breast, his seed inside her, virgin blood evidence. Discovered she craves his dominance and responds intensely to degradation ('Holderkin bitch/slut,' 'worthless vessel'). Found liberation in surrendering her diplomatic mask. Experienced two powerful orgasms and complete loss of composure—broke her own silence during climax. Told him 'need you.' Trusts him to 'handle everything.' Connection now explicitly romantic and sexual beyond political partnership. Holderkin vocabulary emerged during sex. Allowed complete vulnerability she's never permitted before.\",\n          \"Senta\": \"Embarrassed that her Companion witnessed and sensed the intimacy through their bond, though Senta maintained guard outside the cottage.\"\n        },\n        \"quotes\": [\n          \"\\\"need you\\\" (to Rance during intimacy)\"\n        ],\n        \"status\": \"No longer virgin. Physically marked and claimed. Diplomatic composure shattered but must immediately resume Queen's Own role. Discovered she craves surrender after lifetime of control and responsibility.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Senta\",\n      \"keywords\": [\"Senta\", \"Companion Senta\"],\n      \"content\": {\n        \"who\": \"Talia's Companion. Maintains Companion bond with Talia, unable to fully shield from emotional overflow.\",\n        \"dynamics\": {\n          \"Rance\": \"Scolded him for using untrained Mage-Gift recklessly (door slam). Resigned acceptance that their lives are 'hopelessly complicated.' Surprised by intensity of his connection with Talia. Cautioned about approaching meeting time. Mixed emotions: concern about timing and complications, understanding of their need, reluctant fascination at Talia's responses.\",\n          \"Talia\": \"Maintained vigil outside cottage during intimacy. Sensed everything through bond despite attempting to give privacy. Witnessed Queen's Own's complete transformation.\"\n        },\n        \"quotes\": [\n          \"\\\"hopelessly complicated\\\" (about their situation)\"\n        ],\n        \"status\": \"Positioned as guard outside cottage. Could not fully block sensing Talia's experience through Companion bond.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Rance\",\n      \"keywords\": [\"Rance\", \"Herald Rance\"],\n      \"content\": {\n        \"who\": \"Herald with untrained Mage-Gift. Recently connected with Talia.\",\n        \"status\": \"Untrained Mage-Gift manifested violently during passion—telekinetically slammed door and closed curtains with raw, uncontrolled force. Consummated relationship with Talia, claiming and marking her. Agreed to formalize connection secretly with Selenay and Circle only.\"\n      }\n    }\n  ]\n}\n",
+  "error": null
+}

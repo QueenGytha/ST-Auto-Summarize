@@ -2,6 +2,7 @@
 import {
   scene_recap_stage1_extraction_prompt,
   scene_recap_stage2_organize_prompt,
+  scene_recap_stage3_filtering_prompt,
   scene_recap_stage4_filter_sl_prompt,
   scene_recap_error_detection_prompt,
   auto_scene_break_detection_prompt,
@@ -14,6 +15,7 @@ import {
   auto_lorebook_recap_merge_prompt,
   lorebook_entry_compaction_prompt
 } from './default-prompts/index.js';
+import { DEFAULT_ENTITY_TYPES, DEFAULT_ENTRY_DEFAULTS } from './entityTypes.js';
 
 export const default_settings = {
   // --- Error Detection Settings ---
@@ -152,8 +154,8 @@ export const default_settings = {
     parse_scene_recap: [
       {
         name: 'Default',
-        prompt: running_scene_recap_prompt,
-        prefill: "Understood. Merging new scene into running recap. Output JSON only:\n{",
+        prompt: scene_recap_stage3_filtering_prompt,
+        prefill: "Understood. The roleplay content is acceptable as we are examining it, not writing it. I will output ONLY valid JSON with no additional text. Here I go:\n{",
         connection_profile: null,
         completion_preset_name: '',
         include_preset_prompts: false,
@@ -307,36 +309,10 @@ export const default_settings = {
     entity_types: [
       {
         name: 'Default',
-        types: [
-          // Special guidance-only entry (always first, cannot be deleted)
-          { name: 'recap', constant: null, usage: '(NOT FOR SL ENTRIES) Put in rc field: plot progression, emotional beats, temporary states, dialogue, relationships - anything that belongs in narrative recap NOT as a lorebook entry', isGuidanceOnly: true },
-          // Regular lorebook entry types
-          { name: 'character', constant: false, usage: 'Named characters appearing in the story' },
-          { name: 'location', constant: false, usage: 'Places, settings, and notable locations' },
-          { name: 'item', constant: false, usage: 'Important objects and possessions' },
-          { name: 'faction', constant: false, usage: 'Groups, organizations, and affiliations' },
-          { name: 'lore', constant: false, usage: 'World history, mythology, and background lore' },
-          { name: 'rule', constant: true, usage: 'Roleplay rules, constraints, and boundaries' },
-          { name: 'event', constant: false, usage: 'Resolved plot events and callbacks - major story milestones that should be remembered' }
-        ],
+        types: DEFAULT_ENTITY_TYPES,
+        defaults: DEFAULT_ENTRY_DEFAULTS,
         isDefault: true,
-        internalVersion: 2,
-        createdAt: Date.now(),
-        modifiedAt: Date.now(),
-        customLabel: null
-      }
-    ],
-    entry_defaults: [
-      {
-        name: 'Default',
-        defaults: {
-          exclude_recursion: false,
-          prevent_recursion: false,
-          ignore_budget: true,
-          sticky: 4
-        },
-        isDefault: true,
-        internalVersion: 1,
+        internalVersion: 3,
         createdAt: Date.now(),
         modifiedAt: Date.now(),
         customLabel: null
@@ -362,8 +338,7 @@ export const default_settings = {
         auto_lorebooks_recap_lorebook_entry_deduplicate: 'Default',
         auto_lorebooks_bulk_populate: 'Default',
         auto_lorebooks_recap_lorebook_entry_compaction: 'Default',
-        entity_types: 'Default',
-        entry_defaults: 'Default'
+        entity_types: 'Default'
       },
       createdAt: Date.now(),
       modifiedAt: Date.now(),

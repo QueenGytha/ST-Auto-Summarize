@@ -15,8 +15,7 @@ const OPERATION_TYPES = [
   'auto_lorebooks_recap_lorebook_entry_compaction',
   'parse_scene_recap',
   'filter_scene_recap_sl',
-  'entity_types',
-  'entry_defaults'
+  'entity_types'
 ];
 
 export async function importPreset(jsonString) {
@@ -50,9 +49,7 @@ export async function importPreset(jsonString) {
     let existingArtifact;
 
     if (operationType === 'entity_types') {
-      existingArtifact = findArtifactByContent(operationType, { types: operationData.types });
-    } else if (operationType === 'entry_defaults') {
-      existingArtifact = findArtifactByContent(operationType, { defaults: operationData.defaults });
+      existingArtifact = findArtifactByContent(operationType, { types: operationData.types, defaults: operationData.defaults });
     } else {
       // Sequential import required: each artifact creation may reference previous artifacts
       // eslint-disable-next-line no-await-in-loop -- Artifacts must be created sequentially
@@ -108,13 +105,7 @@ function validateImportedOperations(operations) {
       if (!op.types || !Array.isArray(op.types)) {
         throw new Error(`Invalid types for ${operationType}`);
       }
-      continue;
-    }
-
-    if (operationType === 'entry_defaults') {
-      if (!op.defaults || typeof op.defaults !== 'object') {
-        throw new Error(`Invalid defaults for ${operationType}`);
-      }
+      // defaults is optional for backwards compatibility
       continue;
     }
 
@@ -141,14 +132,7 @@ async function createArtifactFromImport(operationType, operationData) {
     return createArtifact(operationType, {
       name: `${operationData.artifact_name} (imported)`,
       types: operationData.types,
-      customLabel: `Imported from ${operationData.artifact_name}`
-    });
-  }
-
-  if (operationType === 'entry_defaults') {
-    return createArtifact(operationType, {
-      name: `${operationData.artifact_name} (imported)`,
-      defaults: operationData.defaults,
+      defaults: operationData.defaults || null,
       customLabel: `Imported from ${operationData.artifact_name}`
     });
   }

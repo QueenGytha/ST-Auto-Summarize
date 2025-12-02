@@ -1,20 +1,29 @@
 
 
+// Default entry properties for new lorebook entries created from recaps
+export const DEFAULT_ENTRY_DEFAULTS = {
+  exclude_recursion: false,
+  prevent_recursion: false,
+  ignore_budget: true,
+  sticky: 4
+};
+
 // Default entity types with the new table-based structure
 // Each entry has: name, constant (boolean), usage (string), and optionally isGuidanceOnly (boolean)
 // These descriptions are included in prompts via {{lorebook_entry_types_with_guidance}} macro.
 // Use them to guide LLM on what goes where - reduces repetition in prompts.
 export const DEFAULT_ENTITY_TYPES = [
   // Special guidance-only entry (always first, cannot be deleted)
-  { name: 'recap', constant: null, usage: '(NOT FOR SL ENTRIES) Goes in rc field: DEV (plot outcomes, key events), PEND (unresolved plot threads - narrative hooks, NOT character goals). High-level only.', isGuidanceOnly: true },
-  // Regular lorebook entry types
-  { name: 'character', constant: false, usage: 'Named characters. Bullets: Identity (background, role, position), State (conditions, belongings, status), Voice (distinctive quotes), Arc (growth journey), Stance (relationship per target).' },
-  { name: 'location', constant: false, usage: 'Places and settings. Include history, significance, current conditions if persistent.' },
-  { name: 'item', constant: false, usage: 'Important objects. Full details here; characters just list in Belongings. Track ownership, significance, abilities.' },
-  { name: 'faction', constant: false, usage: 'Groups and organizations. Include their goals, stances toward other factions/characters, internal dynamics.' },
-  { name: 'lore', constant: false, usage: 'World history, mythology, magic systems, world rules. Facts that persist and inform the setting.' },
-  { name: 'event', constant: false, usage: 'Resolved plot events that might be referenced. Keyword-triggered for callbacks. Minimal detail—just enough to recognize if mentioned.' },
-  { name: 'rule', constant: true, usage: 'OOC constraints, TTRPG systems, roleplay boundaries. Meta-rules that govern the story.' }
+  { name: 'recap', constant: null, usage: '(NOT FOR ENTITIES) Always-visible context: outcomes (what happened), threads (unresolved), state (volatile/changing status). Volatile info like current locations, pending meetings, resource counts goes HERE not in entities.', isGuidanceOnly: true },
+  // Regular lorebook entry types - content is array of discrete items
+  { name: 'character', constant: false, usage: 'Named characters. Items: identity/role, per-target relationships (specific dynamics not labels), quotes with context (who said to whom, why it matters), stable conditions. Volatile state goes in recap.' },
+  { name: 'location', constant: false, usage: 'Places and settings. Items: what it is, history/significance, stable conditions. Volatile state (current occupants, active events) goes in recap.' },
+  { name: 'item', constant: false, usage: 'Important objects. Items: what it is, abilities/properties, current ownership, significance.' },
+  { name: 'faction', constant: false, usage: 'Groups and organizations. Items: what they are, goals, stances toward others, internal dynamics.' },
+  { name: 'lore', constant: false, usage: 'World rules, magic systems, cultural facts. Items: the rule/system/fact, how it works, why it matters.' },
+  { name: 'event', constant: false, usage: 'Past events worth referencing. Items: what happened, who was involved, consequences. Keep minimal.' },
+  { name: 'document', constant: false, usage: 'Written content. Items: full text VERBATIM in quotes, author, recipient, purpose. Keywords should include author/recipient names.' },
+  { name: 'rule', constant: true, usage: 'OOC constraints, TTRPG systems, meta-rules. Items: the rule, when it applies.' }
 ];
 
 // Legacy format for backwards compatibility during migration

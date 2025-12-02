@@ -72,6 +72,19 @@ function buildPromptForScene(promptTemplate, stage1Result) {
     prompt = prompt.replace(/\{\{user\}\}/g, userName);
   }
 
+  // Replace {{lorebook_entry_types_with_guidance}} with default entity types
+  const defaultEntityTypes = `recap: (NOT FOR ENTITIES) Always-visible context: outcomes (what happened), threads (unresolved), state (volatile/changing status). Volatile info like current locations, pending meetings, resource counts goes HERE not in entities.
+character: Named characters. Items: identity/role, per-target relationships (specific dynamics not labels), quotes with context (who said to whom, why it matters), stable conditions. Volatile state goes in recap.
+location: Places and settings. Items: what it is, history/significance, stable conditions. Volatile state goes in recap.
+item: Important objects. Items: what it is, abilities/properties, current ownership, significance.
+faction: Groups and organizations. Items: what they are, goals, stances toward others, internal dynamics.
+lore: World rules, magic systems, cultural facts. Items: the rule/system/fact, how it works, why it matters.
+event: Past events worth referencing. Items: what happened, who was involved, consequences. Keep minimal.
+document: Written content. Items: full text VERBATIM in quotes, author, recipient, purpose.
+rule: OOC constraints, TTRPG systems, meta-rules. Items: the rule, when it applies.`;
+
+  prompt = prompt.replace(/\{\{lorebook_entry_types_with_guidance\}\}/g, defaultEntityTypes);
+
   return { prompt, userName };
 }
 

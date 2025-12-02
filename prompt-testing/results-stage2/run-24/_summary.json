@@ -1,0 +1,17 @@
+{
+  "run": 24,
+  "stage1_run": 118,
+  "timestamp": "2025-12-02T01:43:03.705Z",
+  "total": 1,
+  "successful": 1,
+  "failed": 0,
+  "scenes": [
+    {
+      "id": "scene-83-113",
+      "success": true,
+      "stage1_entities": 0,
+      "stage2_entities": 6,
+      "error": null
+    }
+  ]
+}

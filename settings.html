@@ -342,29 +342,14 @@
                             <div id="entity-types-table-container" data-testid="entity-types-table-container" class="margin-top-10px">
                                 <!-- Table rendered by entityTypeSettingsUI.js -->
                             </div>
-                        </div>
 
-                        <hr style="margin: 15px 0;">
-
-                        <!-- Entry Defaults -->
-                        <div class="auto_recap_operation_type_section" data-testid="operation-type-entry-defaults">
-                            <div class="flex-container justifyspacebetween alignitemscenter" style="gap: 5px;">
-                                <span>Default Entry Properties:</span>
-                                <div style="display: flex; gap: 5px;">
-                                    <button data-operation-type="entry_defaults" class="auto_recap_artifact_rename menu_button fa-solid fa-i-cursor" data-testid="artifact-rename-entry-defaults" title="Rename this artifact" disabled></button>
-                                    <button data-operation-type="entry_defaults" class="auto_recap_artifact_delete menu_button fa-solid fa-trash-can" data-testid="artifact-delete-entry-defaults" title="Delete this artifact" disabled></button>
-                                    <button data-operation-type="entry_defaults" class="auto_recap_artifact_duplicate menu_button fa-solid fa-copy" data-testid="artifact-duplicate-entry-defaults" title="Duplicate this artifact"></button>
-                                </div>
-                            </div>
-                            <select id="auto_recap_artifact_entry_defaults" data-testid="artifact-entry-defaults" class="text_pole" style="margin-top: 5px;">
-                                <option value="Default">Default</option>
-                            </select>
-                            <small class="displayBlock opacity50p margin-top-5px">
-                                Configure default properties applied to new lorebook entries created from recaps.
-                            </small>
-
-                            <!-- Inline Entry Defaults Form -->
+                            <!-- Entry Defaults (part of entity_types artifact) -->
                             <div id="entry-defaults-form-container" data-testid="entry-defaults-form-container" class="margin-top-10px">
+                                <h5 class="margin-bot-5px">Default Entry Properties</h5>
+                                <small class="displayBlock opacity50p margin-bot-10px">
+                                    Configure default properties applied to new lorebook entries created from recaps.
+                                </small>
+
                                 <div class="margin-bot-10px">
                                     <label class="checkbox_label" for="autolorebooks-entry-exclude-recursion">
                                         <input type="checkbox" id="autolorebooks-entry-exclude-recursion" data-testid="lorebook-entry-exclude-recursion" />

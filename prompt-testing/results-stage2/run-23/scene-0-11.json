@@ -1,0 +1,79 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 24.015,
+  "tokens": 3695,
+  "userName": "Rance",
+  "stage1_entities": 0,
+  "stage2_entities": 4,
+  "parsed": {
+    "sn": "Rance's Choosing and the Destruction of Lisle",
+    "recap": {
+      "outcomes": "Lisle completely destroyed - nothing remains but ash and scorched foundations. Rance's latent Mage-Gift awakened catastrophically during an attack, obliterating the village (though he doesn't realize he caused it). Attackers were systematically abducting villagers, not killing them. Senta Chose Rance at the ruins, stabilizing his wild Gift enough to survive. Rance found evidence on attacker's body: red robe hidden under bandit clothing, footprints toward Menmellith border.",
+      "threads": "Something/someone watching from treeline - attackers may return. Red robes suggest organized cult/sect behind the abductions. Unknown number of villagers carried off before destruction. Rance's Gift-channels are 'burned-wide' and causing white-hot agony - bond is stabilizing but not healing them.",
+      "state": "Currently traveling to waystation three miles from Lisle for herbs to treat Gift-shock, then continuing to Haven without rest to deliver testimony and evidence (red hood wrapped around attacker's blade). Rance can now sense magical currents and mental channels but has no training to understand or control them. Bond is forming 'bridges across burning chasms' in his mind."
+    },
+    "entities": [
+      {
+        "type": "character",
+        "name": "Rance",
+        "keywords": [
+          "Rance",
+          "headman"
+        ],
+        "content": {
+          "who": "40-year-old former headman of Lisle. Military background with skilled riding and methodical evidence examination. Led village militia defense. Describes himself as 'one bitter old man' but has steel core of determination beneath guilt and grief.",
+          "status": "Newly Chosen Herald. Mage-Gift awakened by trauma - magical channels burned open by raw power explosion. Can sense magical currents and mental channels but has no frame of reference to understand or control them. Carries weight of leadership failure and catalogs losses of villagers through the bond. Possesses evidence: attacker's blade with red hood wrapped around it."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Senta",
+        "keywords": [
+          "Senta",
+          "Companion"
+        ],
+        "content": {
+          "who": "Brilliant white Companion mare with sapphire eyes and silver-white mane. Unpartnered for three years since achieving adult status, searching for her Chosen.",
+          "dynamics": {
+            "Rance": "Chose Rance at Lisle ruins when their eyes met and bond snapped into place. Revealed to him that he caused the destruction with his awakened Gift. The Choosing bond is stabilizing his wild Gift and burned channels, forming 'bridges across the burning chasms in his mind' - not healed, but survivable. Insisted on stopping at waystation for herbs before his mind fractures beyond repair."
+          },
+          "quotes": [
+            "Chosen. My name is Senta. I Choose you. You are never alone again. You did this, Rance. The power came from within you. A Gift awakened by trauma and fear. I don't know which, but it is immensely powerful."
+          ]
+        }
+      },
+      {
+        "type": "location",
+        "name": "Lisle",
+        "keywords": [
+          "Lisle",
+          "village"
+        ],
+        "content": {
+          "what": "Small village on Valdemar's outskirts, near borders with Karse, Rethwellan, and Menmellith. Rance was headman and led militia defense.",
+          "significance": "Site of systematic abduction attack and catastrophic magical destruction. Attackers incapacitated and carried off villagers in organized pattern. Rance's awakening Mage-Gift annihilated the entire village and some attackers.",
+          "status": "Completely obliterated - nothing remains but ash, charred timber fragments, and scorched stone foundations. Two bodies found at blast edge: one villager being carried, one attacker with red robe hidden under bandit clothing."
+        }
+      },
+      {
+        "type": "faction",
+        "name": "Red Robe Organization",
+        "keywords": [
+          "red robe",
+          "red robes",
+          "red hood",
+          "attackers",
+          "cult",
+          "sect"
+        ],
+        "content": {
+          "what": "Unknown organized group behind Lisle attack. Members wear red robes hidden beneath obvious bandit outer clothing to create false trail. Footprints lead toward Menmellith border.",
+          "significance": "Systematic abduction pattern indicates purpose beyond raiding - suggests organized cult or sect rather than ordinary bandits. Rance's assessment: 'Menmellith. Or at least, what they wanted it to appear as.' Unknown number of villagers successfully abducted before destruction."
+        }
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Rance's Choosing and the Destruction of Lisle\",\n  \"recap\": {\n    \"outcomes\": \"Lisle completely destroyed - nothing remains but ash and scorched foundations. Rance's latent Mage-Gift awakened catastrophically during an attack, obliterating the village (though he doesn't realize he caused it). Attackers were systematically abducting villagers, not killing them. Senta Chose Rance at the ruins, stabilizing his wild Gift enough to survive. Rance found evidence on attacker's body: red robe hidden under bandit clothing, footprints toward Menmellith border.\",\n    \"threads\": \"Something/someone watching from treeline - attackers may return. Red robes suggest organized cult/sect behind the abductions. Unknown number of villagers carried off before destruction. Rance's Gift-channels are 'burned-wide' and causing white-hot agony - bond is stabilizing but not healing them.\",\n    \"state\": \"Currently traveling to waystation three miles from Lisle for herbs to treat Gift-shock, then continuing to Haven without rest to deliver testimony and evidence (red hood wrapped around attacker's blade). Rance can now sense magical currents and mental channels but has no training to understand or control them. Bond is forming 'bridges across burning chasms' in his mind.\"\n  },\n  \"entities\": [\n    {\n      \"type\": \"character\",\n      \"name\": \"Rance\",\n      \"keywords\": [\"Rance\", \"headman\"],\n      \"content\": {\n        \"who\": \"40-year-old former headman of Lisle. Military background with skilled riding and methodical evidence examination. Led village militia defense. Describes himself as 'one bitter old man' but has steel core of determination beneath guilt and grief.\",\n        \"status\": \"Newly Chosen Herald. Mage-Gift awakened by trauma - magical channels burned open by raw power explosion. Can sense magical currents and mental channels but has no frame of reference to understand or control them. Carries weight of leadership failure and catalogs losses of villagers through the bond. Possesses evidence: attacker's blade with red hood wrapped around it.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Senta\",\n      \"keywords\": [\"Senta\", \"Companion\"],\n      \"content\": {\n        \"who\": \"Brilliant white Companion mare with sapphire eyes and silver-white mane. Unpartnered for three years since achieving adult status, searching for her Chosen.\",\n        \"dynamics\": {\n          \"Rance\": \"Chose Rance at Lisle ruins when their eyes met and bond snapped into place. Revealed to him that he caused the destruction with his awakened Gift. The Choosing bond is stabilizing his wild Gift and burned channels, forming 'bridges across the burning chasms in his mind' - not healed, but survivable. Insisted on stopping at waystation for herbs before his mind fractures beyond repair.\"\n        },\n        \"quotes\": [\n          \"Chosen. My name is Senta. I Choose you. You are never alone again. You did this, Rance. The power came from within you. A Gift awakened by trauma and fear. I don't know which, but it is immensely powerful.\"\n        ]\n      }\n    },\n    {\n      \"type\": \"location\",\n      \"name\": \"Lisle\",\n      \"keywords\": [\"Lisle\", \"village\"],\n      \"content\": {\n        \"what\": \"Small village on Valdemar's outskirts, near borders with Karse, Rethwellan, and Menmellith. Rance was headman and led militia defense.\",\n        \"significance\": \"Site of systematic abduction attack and catastrophic magical destruction. Attackers incapacitated and carried off villagers in organized pattern. Rance's awakening Mage-Gift annihilated the entire village and some attackers.\",\n        \"status\": \"Completely obliterated - nothing remains but ash, charred timber fragments, and scorched stone foundations. Two bodies found at blast edge: one villager being carried, one attacker with red robe hidden under bandit clothing.\"\n      }\n    },\n    {\n      \"type\": \"faction\",\n      \"name\": \"Red Robe Organization\",\n      \"keywords\": [\"red robe\", \"red robes\", \"red hood\", \"attackers\", \"cult\", \"sect\"],\n      \"content\": {\n        \"what\": \"Unknown organized group behind Lisle attack. Members wear red robes hidden beneath obvious bandit outer clothing to create false trail. Footprints lead toward Menmellith border.\",\n        \"significance\": \"Systematic abduction pattern indicates purpose beyond raiding - suggests organized cult or sect rather than ordinary bandits. Rance's assessment: 'Menmellith. Or at least, what they wanted it to appear as.' Unknown number of villagers successfully abducted before destruction.\"\n      }\n    }\n  ]\n}\n",
+  "error": null
+}

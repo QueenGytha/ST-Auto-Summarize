@@ -190,14 +190,20 @@ export function migrateEntityTypesToArtifact() {
 /**
  * Check if entry defaults need migration from legacy format
  * Legacy format: auto_lorebooks_entry_exclude_recursion, etc. at root settings level
- * New format: operation_artifacts.entry_defaults = [{ name, defaults: {...}, ... }]
+ * New format: defaults field inside entity_types artifact
  */
 export function needsEntryDefaultsMigration() {
   const settings = get_settings();
 
-  // Check if artifact already exists
-  const artifactExists = settings?.operation_artifacts?.entry_defaults?.length > 0;
-  if (artifactExists) {
+  // Check if entity_types artifact already has defaults
+  const entityTypesArtifact = settings?.operation_artifacts?.entity_types?.[0];
+  if (entityTypesArtifact?.defaults) {
+    return false;
+  }
+
+  // Check if legacy entry_defaults artifact exists (also no migration needed)
+  const legacyArtifactExists = settings?.operation_artifacts?.entry_defaults?.length > 0;
+  if (legacyArtifactExists) {
     return false;
   }
 
@@ -208,64 +214,62 @@ export function needsEntryDefaultsMigration() {
     settings?.auto_lorebooks_entry_sticky !== undefined;
 }
 
-/**
- * Migrate entry defaults from legacy individual settings to new artifact format
- * The migrated data becomes the DEFAULT artifact (user's existing config is preserved as default)
- */
-export function migrateEntryDefaultsToArtifact() {
-  const settings = get_settings();
-
-  // Check if artifact already exists
-  const artifactExists = settings?.operation_artifacts?.entry_defaults?.length > 0;
-  if (artifactExists) {
-    log(SUBSYSTEM.SETTINGS, 'Entry defaults artifact already exists, skipping migration');
-    return false;
-  }
-
-  // Read legacy settings with fallbacks
-  const legacyDefaults = {
+function buildLegacyDefaults(settings) {
+  return {
     exclude_recursion: settings?.auto_lorebooks_entry_exclude_recursion ?? DEFAULT_ENTRY_DEFAULTS.exclude_recursion,
     prevent_recursion: settings?.auto_lorebooks_entry_prevent_recursion ?? DEFAULT_ENTRY_DEFAULTS.prevent_recursion,
     ignore_budget: settings?.auto_lorebooks_entry_ignore_budget ?? DEFAULT_ENTRY_DEFAULTS.ignore_budget,
     sticky: settings?.auto_lorebooks_entry_sticky ?? DEFAULT_ENTRY_DEFAULTS.sticky
   };
+}
 
-  log(SUBSYSTEM.SETTINGS, 'Migrating legacy entry defaults to new artifact format...', legacyDefaults);
-
-  // Create the new artifact structure
-  const newArtifact = {
-    name: 'Default',
-    defaults: legacyDefaults,
-    isDefault: true,
-    internalVersion: 1,
-    createdAt: Date.now(),
-    modifiedAt: Date.now(),
-    customLabel: null
-  };
-
-  // Ensure operation_artifacts exists
+function ensureOperationArtifactsExist() {
   if (!extension_settings.auto_recap) {
     extension_settings.auto_recap = {};
   }
   if (!extension_settings.auto_recap.operation_artifacts) {
     extension_settings.auto_recap.operation_artifacts = {};
   }
+  if (!extension_settings.auto_recap.operation_artifacts.entity_types) {
+    extension_settings.auto_recap.operation_artifacts.entity_types = [];
+  }
+}
 
-  // Set the new artifact (this becomes the default)
-  extension_settings.auto_recap.operation_artifacts.entry_defaults = [newArtifact];
+/**
+ * Migrate entry defaults from legacy individual settings to entity_types artifact
+ * Entry defaults are now part of the entity_types artifact, not a separate artifact
+ */
+export function migrateEntryDefaultsToArtifact() {
+  const settings = get_settings();
 
-  // Update operations_presets to include entry_defaults if not present
-  if (extension_settings.auto_recap.operations_presets) {
-    for (const preset of Object.values(extension_settings.auto_recap.operations_presets)) {
-      if (preset.operations && !preset.operations.entry_defaults) {
-        preset.operations.entry_defaults = 'Default';
-      }
-    }
+  // Check if entity_types artifact already has defaults
+  const entityTypesArtifact = settings?.operation_artifacts?.entity_types?.[0];
+  if (entityTypesArtifact?.defaults) {
+    log(SUBSYSTEM.SETTINGS, 'Entity types artifact already has defaults, skipping migration');
+    return false;
+  }
+
+  // Check if legacy entry_defaults artifact exists
+  const legacyArtifactExists = settings?.operation_artifacts?.entry_defaults?.length > 0;
+  if (legacyArtifactExists) {
+    log(SUBSYSTEM.SETTINGS, 'Legacy entry_defaults artifact exists, will be read via fallback');
+    return false;
+  }
+
+  const legacyDefaults = buildLegacyDefaults(settings);
+  log(SUBSYSTEM.SETTINGS, 'Migrating legacy entry defaults to entity_types artifact...', legacyDefaults);
+
+  ensureOperationArtifactsExist();
+
+  const existingArtifact = extension_settings.auto_recap.operation_artifacts.entity_types[0];
+  if (existingArtifact) {
+    existingArtifact.defaults = legacyDefaults;
+    existingArtifact.modifiedAt = Date.now();
   }
 
   saveSettingsDebounced();
 
-  log(SUBSYSTEM.SETTINGS, '✓ Migrated entry defaults to artifact format');
+  log(SUBSYSTEM.SETTINGS, '✓ Migrated entry defaults to entity_types artifact');
   return true;
 }
 

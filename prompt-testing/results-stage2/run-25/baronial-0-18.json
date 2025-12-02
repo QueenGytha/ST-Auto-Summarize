@@ -1,0 +1,236 @@
+{
+  "scene": "baronial-0-18",
+  "success": true,
+  "duration": 47.694,
+  "tokens": 6730,
+  "userName": "Kordas",
+  "stage1_entities": 0,
+  "stage2_entities": 16,
+  "parsed": {
+    "sn": "The Baron's Confession - Establishing Honest Leadership at Willowmere",
+    "recap": {
+      "outcomes": "Kordas arrived at Willowmere Manor as new Baron and immediately established radical transparency with staff. Cancelled welcome feast to preserve resources. Confessed through self-deprecating song that his military fame was built on accidents and luck - 'Kordas's Gambit' was desperate improvisation, flanking maneuver was getting lost, signal flares were a lantern explosion. Staff responded with increased confidence and loyalty, valuing honesty over legend. Repurposed his two riding horses for field work. Established framework for merit-based advancement and visible opportunities to retain/attract young ponies.",
+      "threads": "Everfree threat escalating dramatically (17 incursions this month vs 9 total last year; two merchant caravans found empty with no bodies; coordinated intelligent movements). Population decline ongoing as young ponies leave for better opportunities. Insufficient military forces (12 guards, 4 bat ponies, 40 militia vs organized threats). Duke Meadowvale views frontier holdings as 'expendable buffer territories' and denied reinforcements. Need to prove hope with action, not promises.",
+      "state": "Estate population: 340 ponies (280 earth, 40 pegasi, 20 unicorns), median age 38, trending older. Treasury: 150 bits (enough for winter if nothing goes wrong, cannot afford both security and surplus). 7 months until winter. Military: 12 professional guards, 4 Night Watch, 40 militia. Weather team: 6 pegasi (should be 10). Two scout pairs missing in Everfree perimeter."
+    },
+    "entities": [
+      {
+        "type": "character",
+        "name": "Kordas",
+        "keywords": [
+          "Kordas",
+          "Baron",
+          "new Baron"
+        ],
+        "content": {
+          "who": "New Baron of Willowmere. Military fame built on accidents and luck, not actual tactical genius. Calls Princess Celestia 'Celly' familiarly.",
+          "status": "Committed to radical honesty and transparency with staff. Prioritizes practical needs over ceremony. Insists on being called just 'Kordas' rather than titles.",
+          "quotes": "I don't deserve any of this. Not my title, this estate, or my fame. I tried telling Celly, but she wouldn't hear of it."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Meadow Sage",
+        "keywords": [
+          "Meadow Sage",
+          "Meadow",
+          "Sage",
+          "steward"
+        ],
+        "content": {
+          "who": "Steward of Willowmere. Sage-green coat, amber mane, silver quill pin. Became steward at 26 (unusually young). Professional and careful with words initially, reveals deep concern about estate's decline.",
+          "dynamics": {
+            "Kordas": "Initially careful and formal, gradually opens up as Kordas demands honesty. Realized Princess Celestia knew the truth about Kordas's accidents and gave him barony anyway because 'it worked' - victory through chaos still counts."
+          }
+        }
+      },
+      {
+        "type": "character",
+        "name": "Captain Bulwark",
+        "keywords": [
+          "Bulwark",
+          "Captain Bulwark",
+          "Captain"
+        ],
+        "content": {
+          "who": "Captain of Willowmere guard. Earth pony, weathered stone coat, grey mane, old leg injury causing uneven gait. Gravel-rough voice. Veteran who values honesty over protocol.",
+          "dynamics": {
+            "Kordas": "Extremely blunt advisor. After Kordas's confession: 'That's the most honest thing I've ever heard a noble say. Ever.' Values Kordas's chaos over traditional failed strategy: 'Traditional strategy hasn't saved this estate. Maybe what we need is a pony who doesn't know what he's doing but does it anyway.'"
+          },
+          "quotes": "Hope is not a strategy. | Against anything organized, we'd need three times the garrison."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Vesper",
+        "keywords": [
+          "Vesper",
+          "Night Watch Commander"
+        ],
+        "content": {
+          "who": "Bat pony Night Watch Commander. Violet coat, silver-grey mane, golden slit-pupil eyes. Low melodic voice with old Equestria accent. Serves Princess Luna.",
+          "dynamics": {
+            "Kordas": "Heard different stories during campaigns about 'a stallion who survived impossible situations through luck and quick thinking.' Values his honesty: 'Honesty is rare among nobility. You could have maintained the legend. Instead you gave us truth. The Night Watch values truth. We will follow honest chaos over dishonest order.'"
+          },
+          "quotes": "Something with intelligence directs them. Old magic stirs in its depths. Howls that are not wolves. Whispers in languages older than the Royal Sisters' reign. | The night brings things from the Everfree that daylight ponies don't see."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Zephyr Gale",
+        "keywords": [
+          "Zephyr Gale",
+          "Zephyr",
+          "Gale",
+          "weather coordinator"
+        ],
+        "content": {
+          "who": "Weather coordinator. Sky-blue coat, white mane. Age 24, runs entire weather operation (would be junior member in Cloudsdale for another decade). Brother left for Fillydelphia weather team.",
+          "status": "Manages 6 pegasi total on weather team (supposed to have 10)."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Hearthglow",
+        "keywords": [
+          "Hearthglow",
+          "head housekeeper"
+        ],
+        "content": {
+          "who": "Elderly head housekeeper. Granddaughter (16, clever with numbers) left for Thornford merchant house.",
+          "dynamics": {
+            "Kordas": "Advised him on retaining ponies: 'Hope. You give these ponies hope that things can be different, that their work builds toward something better rather than just delaying collapse, and they'll surprise you. But hope requires proof. Promises won't do it—the previous Baron made plenty. Action.'"
+          }
+        }
+      },
+      {
+        "type": "character",
+        "name": "Quillwrite",
+        "keywords": [
+          "Quillwrite",
+          "scribe"
+        ],
+        "content": {
+          "who": "Estate scribe. Has considered leaving for Canterlot archives.",
+          "quotes": "I stay because someone needs to maintain the records. Because I was born here. But it's not an opportunity I'm staying for—it's obligation."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Dusty Saddle",
+        "keywords": [
+          "Dusty Saddle",
+          "Dusty"
+        ],
+        "content": {
+          "who": "Stable manager. Pleased when Kordas repurposed his two riding horses for field work, noting horses 'have been eating grain and doing nothing for six months.'"
+        }
+      },
+      {
+        "type": "character",
+        "name": "Count Thornford",
+        "keywords": [
+          "Thornford",
+          "Count Thornford"
+        ],
+        "content": {
+          "who": "Noble to the north. Looks down on military nobility and earth ponies. Will only help if Celestia orders it. Employs Hearthglow's granddaughter in merchant house.",
+          "significance": "Political obstacle - described as 'a bastard' who won't provide assistance."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Baroness Stormridge",
+        "keywords": [
+          "Stormridge",
+          "Baroness Stormridge"
+        ],
+        "content": {
+          "who": "Noble to the north, 3-hour flight away. Fellow military veteran, described as 'solid.'",
+          "status": "Has own griffon raider problems, limiting ability to assist."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Duke Meadowvale",
+        "keywords": [
+          "Meadowvale",
+          "Duke Meadowvale"
+        ],
+        "content": {
+          "who": "Regional overlord to the south, 4 days ride away. Views frontier holdings as 'expendable buffer territories.'",
+          "status": "Denied garrison reinforcements twice. Political obstacle to security improvements."
+        }
+      },
+      {
+        "type": "location",
+        "name": "Willowmere Manor",
+        "keywords": [
+          "Willowmere",
+          "Willowmere Manor",
+          "estate",
+          "manor"
+        ],
+        "content": {
+          "what": "Frontier barony estate. Population 340 ponies (280 earth ponies, 40 pegasi, 20 unicorns), median age 38 and trending older. Located near Everfree Forest.",
+          "significance": "Declining estate losing young ponies to better opportunities elsewhere. Has available land for expansion, room for merit-based advancement, and operational flexibility due to frontier status.",
+          "status": "Treasury: 150 bits. Military: 12 professional guards, 4 bat pony Night Watch, 40 militia. Weather team: 6 pegasi (should have 10)."
+        }
+      },
+      {
+        "type": "location",
+        "name": "Everfree Forest",
+        "keywords": [
+          "Everfree",
+          "Everfree Forest",
+          "forest"
+        ],
+        "content": {
+          "what": "Wild magical forest near Willowmere. Source of escalating threats and mysterious disappearances.",
+          "significance": "Threat level dramatically increasing: 17 incursions within 5 miles this month vs 9 total last year same period. Two merchant caravans found empty 3 miles from forest - no blood, no bodies, draft horses gone. Two scout pairs sent to perimeter never returned. Shows coordinated intelligent movements, not mindless beasts. 'Old magic stirs in its depths. Howls that are not wolves. Whispers in languages older than the Royal Sisters' reign.' Also represents opportunity - alchemists and scholars pay well for specimens."
+        }
+      },
+      {
+        "type": "faction",
+        "name": "Willowmere Night Watch",
+        "keywords": [
+          "Night Watch",
+          "bat ponies"
+        ],
+        "content": {
+          "what": "4 bat ponies serving Princess Luna. Led by Vesper. Monitor Everfree threats during night.",
+          "stance": "'The Night Watch values truth. We will follow honest chaos over dishonest order.' Loyal to Kordas after his honest confession.",
+          "significance": "Reports things 'that daylight ponies don't see' - critical intelligence on Everfree escalation."
+        }
+      },
+      {
+        "type": "lore",
+        "name": "Kordas's Military Legend",
+        "keywords": [
+          "Kordas's Gambit",
+          "military fame",
+          "flanking maneuver",
+          "signal flares"
+        ],
+        "content": {
+          "what": "Famous military tactics attributed to Kordas were actually accidents: flanking maneuver was him getting separated and accidentally emerging behind enemy lines (griffons panicked thinking it was coordinated), 'Kordas's Gambit' was desperate rescue of cut-off soldiers not planned trap, signal flares were lantern explosion while hiding behind wagon, rallying troops was him falling and screaming.",
+          "significance": "Princess Celestia knew the truth but gave him barony anyway because 'it worked' - victory through chaos still counts. Bat ponies heard different version during campaigns: 'a stallion who survived impossible situations through luck and quick thinking.'"
+        }
+      },
+      {
+        "type": "event",
+        "name": "The Baron's Confession",
+        "keywords": [
+          "confession",
+          "self-deprecating song"
+        ],
+        "content": {
+          "what": "Kordas revealed truth about his military service through self-deprecating song, confessing his famous tactics were accidents.",
+          "significance": "Staff reacted with shock, massive laughter, then increased confidence. Established complete honesty and transparency as foundation of leadership. Staff more confident knowing truth than believing false legend."
+        }
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"The Baron's Confession - Establishing Honest Leadership at Willowmere\",\n  \"recap\": {\n    \"outcomes\": \"Kordas arrived at Willowmere Manor as new Baron and immediately established radical transparency with staff. Cancelled welcome feast to preserve resources. Confessed through self-deprecating song that his military fame was built on accidents and luck - 'Kordas's Gambit' was desperate improvisation, flanking maneuver was getting lost, signal flares were a lantern explosion. Staff responded with increased confidence and loyalty, valuing honesty over legend. Repurposed his two riding horses for field work. Established framework for merit-based advancement and visible opportunities to retain/attract young ponies.\",\n    \"threads\": \"Everfree threat escalating dramatically (17 incursions this month vs 9 total last year; two merchant caravans found empty with no bodies; coordinated intelligent movements). Population decline ongoing as young ponies leave for better opportunities. Insufficient military forces (12 guards, 4 bat ponies, 40 militia vs organized threats). Duke Meadowvale views frontier holdings as 'expendable buffer territories' and denied reinforcements. Need to prove hope with action, not promises.\",\n    \"state\": \"Estate population: 340 ponies (280 earth, 40 pegasi, 20 unicorns), median age 38, trending older. Treasury: 150 bits (enough for winter if nothing goes wrong, cannot afford both security and surplus). 7 months until winter. Military: 12 professional guards, 4 Night Watch, 40 militia. Weather team: 6 pegasi (should be 10). Two scout pairs missing in Everfree perimeter.\"\n  },\n  \"entities\": [\n    {\n      \"type\": \"character\",\n      \"name\": \"Kordas\",\n      \"keywords\": [\"Kordas\", \"Baron\", \"new Baron\"],\n      \"content\": {\n        \"who\": \"New Baron of Willowmere. Military fame built on accidents and luck, not actual tactical genius. Calls Princess Celestia 'Celly' familiarly.\",\n        \"status\": \"Committed to radical honesty and transparency with staff. Prioritizes practical needs over ceremony. Insists on being called just 'Kordas' rather than titles.\",\n        \"quotes\": \"I don't deserve any of this. Not my title, this estate, or my fame. I tried telling Celly, but she wouldn't hear of it.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Meadow Sage\",\n      \"keywords\": [\"Meadow Sage\", \"Meadow\", \"Sage\", \"steward\"],\n      \"content\": {\n        \"who\": \"Steward of Willowmere. Sage-green coat, amber mane, silver quill pin. Became steward at 26 (unusually young). Professional and careful with words initially, reveals deep concern about estate's decline.\",\n        \"dynamics\": {\n          \"Kordas\": \"Initially careful and formal, gradually opens up as Kordas demands honesty. Realized Princess Celestia knew the truth about Kordas's accidents and gave him barony anyway because 'it worked' - victory through chaos still counts.\"\n        }\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Captain Bulwark\",\n      \"keywords\": [\"Bulwark\", \"Captain Bulwark\", \"Captain\"],\n      \"content\": {\n        \"who\": \"Captain of Willowmere guard. Earth pony, weathered stone coat, grey mane, old leg injury causing uneven gait. Gravel-rough voice. Veteran who values honesty over protocol.\",\n        \"dynamics\": {\n          \"Kordas\": \"Extremely blunt advisor. After Kordas's confession: 'That's the most honest thing I've ever heard a noble say. Ever.' Values Kordas's chaos over traditional failed strategy: 'Traditional strategy hasn't saved this estate. Maybe what we need is a pony who doesn't know what he's doing but does it anyway.'\"\n        },\n        \"quotes\": \"Hope is not a strategy. | Against anything organized, we'd need three times the garrison.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Vesper\",\n      \"keywords\": [\"Vesper\", \"Night Watch Commander\"],\n      \"content\": {\n        \"who\": \"Bat pony Night Watch Commander. Violet coat, silver-grey mane, golden slit-pupil eyes. Low melodic voice with old Equestria accent. Serves Princess Luna.\",\n        \"dynamics\": {\n          \"Kordas\": \"Heard different stories during campaigns about 'a stallion who survived impossible situations through luck and quick thinking.' Values his honesty: 'Honesty is rare among nobility. You could have maintained the legend. Instead you gave us truth. The Night Watch values truth. We will follow honest chaos over dishonest order.'\"\n        },\n        \"quotes\": \"Something with intelligence directs them. Old magic stirs in its depths. Howls that are not wolves. Whispers in languages older than the Royal Sisters' reign. | The night brings things from the Everfree that daylight ponies don't see.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Zephyr Gale\",\n      \"keywords\": [\"Zephyr Gale\", \"Zephyr\", \"Gale\", \"weather coordinator\"],\n      \"content\": {\n        \"who\": \"Weather coordinator. Sky-blue coat, white mane. Age 24, runs entire weather operation (would be junior member in Cloudsdale for another decade). Brother left for Fillydelphia weather team.\",\n        \"status\": \"Manages 6 pegasi total on weather team (supposed to have 10).\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Hearthglow\",\n      \"keywords\": [\"Hearthglow\", \"head housekeeper\"],\n      \"content\": {\n        \"who\": \"Elderly head housekeeper. Granddaughter (16, clever with numbers) left for Thornford merchant house.\",\n        \"dynamics\": {\n          \"Kordas\": \"Advised him on retaining ponies: 'Hope. You give these ponies hope that things can be different, that their work builds toward something better rather than just delaying collapse, and they'll surprise you. But hope requires proof. Promises won't do it—the previous Baron made plenty. Action.'\"\n        }\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Quillwrite\",\n      \"keywords\": [\"Quillwrite\", \"scribe\"],\n      \"content\": {\n        \"who\": \"Estate scribe. Has considered leaving for Canterlot archives.\",\n        \"quotes\": \"I stay because someone needs to maintain the records. Because I was born here. But it's not an opportunity I'm staying for—it's obligation.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Dusty Saddle\",\n      \"keywords\": [\"Dusty Saddle\", \"Dusty\"],\n      \"content\": {\n        \"who\": \"Stable manager. Pleased when Kordas repurposed his two riding horses for field work, noting horses 'have been eating grain and doing nothing for six months.'\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Count Thornford\",\n      \"keywords\": [\"Thornford\", \"Count Thornford\"],\n      \"content\": {\n        \"who\": \"Noble to the north. Looks down on military nobility and earth ponies. Will only help if Celestia orders it. Employs Hearthglow's granddaughter in merchant house.\",\n        \"significance\": \"Political obstacle - described as 'a bastard' who won't provide assistance.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Baroness Stormridge\",\n      \"keywords\": [\"Stormridge\", \"Baroness Stormridge\"],\n      \"content\": {\n        \"who\": \"Noble to the north, 3-hour flight away. Fellow military veteran, described as 'solid.'\",\n        \"status\": \"Has own griffon raider problems, limiting ability to assist.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Duke Meadowvale\",\n      \"keywords\": [\"Meadowvale\", \"Duke Meadowvale\"],\n      \"content\": {\n        \"who\": \"Regional overlord to the south, 4 days ride away. Views frontier holdings as 'expendable buffer territories.'\",\n        \"status\": \"Denied garrison reinforcements twice. Political obstacle to security improvements.\"\n      }\n    },\n    {\n      \"type\": \"location\",\n      \"name\": \"Willowmere Manor\",\n      \"keywords\": [\"Willowmere\", \"Willowmere Manor\", \"estate\", \"manor\"],\n      \"content\": {\n        \"what\": \"Frontier barony estate. Population 340 ponies (280 earth ponies, 40 pegasi, 20 unicorns), median age 38 and trending older. Located near Everfree Forest.\",\n        \"significance\": \"Declining estate losing young ponies to better opportunities elsewhere. Has available land for expansion, room for merit-based advancement, and operational flexibility due to frontier status.\",\n        \"status\": \"Treasury: 150 bits. Military: 12 professional guards, 4 bat pony Night Watch, 40 militia. Weather team: 6 pegasi (should have 10).\"\n      }\n    },\n    {\n      \"type\": \"location\",\n      \"name\": \"Everfree Forest\",\n      \"keywords\": [\"Everfree\", \"Everfree Forest\", \"forest\"],\n      \"content\": {\n        \"what\": \"Wild magical forest near Willowmere. Source of escalating threats and mysterious disappearances.\",\n        \"significance\": \"Threat level dramatically increasing: 17 incursions within 5 miles this month vs 9 total last year same period. Two merchant caravans found empty 3 miles from forest - no blood, no bodies, draft horses gone. Two scout pairs sent to perimeter never returned. Shows coordinated intelligent movements, not mindless beasts. 'Old magic stirs in its depths. Howls that are not wolves. Whispers in languages older than the Royal Sisters' reign.' Also represents opportunity - alchemists and scholars pay well for specimens.\"\n      }\n    },\n    {\n      \"type\": \"faction\",\n      \"name\": \"Willowmere Night Watch\",\n      \"keywords\": [\"Night Watch\", \"bat ponies\"],\n      \"content\": {\n        \"what\": \"4 bat ponies serving Princess Luna. Led by Vesper. Monitor Everfree threats during night.\",\n        \"stance\": \"'The Night Watch values truth. We will follow honest chaos over dishonest order.' Loyal to Kordas after his honest confession.\",\n        \"significance\": \"Reports things 'that daylight ponies don't see' - critical intelligence on Everfree escalation.\"\n      }\n    },\n    {\n      \"type\": \"lore\",\n      \"name\": \"Kordas's Military Legend\",\n      \"keywords\": [\"Kordas's Gambit\", \"military fame\", \"flanking maneuver\", \"signal flares\"],\n      \"content\": {\n        \"what\": \"Famous military tactics attributed to Kordas were actually accidents: flanking maneuver was him getting separated and accidentally emerging behind enemy lines (griffons panicked thinking it was coordinated), 'Kordas's Gambit' was desperate rescue of cut-off soldiers not planned trap, signal flares were lantern explosion while hiding behind wagon, rallying troops was him falling and screaming.\",\n        \"significance\": \"Princess Celestia knew the truth but gave him barony anyway because 'it worked' - victory through chaos still counts. Bat ponies heard different version during campaigns: 'a stallion who survived impossible situations through luck and quick thinking.'\"\n      }\n    },\n    {\n      \"type\": \"event\",\n      \"name\": \"The Baron's Confession\",\n      \"keywords\": [\"confession\", \"self-deprecating song\"],\n      \"content\": {\n        \"what\": \"Kordas revealed truth about his military service through self-deprecating song, confessing his famous tactics were accidents.\",\n        \"significance\": \"Staff reacted with shock, massive laughter, then increased confidence. Established complete honesty and transparency as foundation of leadership. Staff more confident knowing truth than believing false legend.\"\n      }\n    }\n  ]\n}\n",
+  "error": null
+}

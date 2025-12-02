@@ -1,34 +1,30 @@
 /**
  * Centralized recap normalization and extraction.
  *
- * CANONICAL STORAGE FORMATS:
- * - Stage 1/2 (entity-based): {sn, plot: "DEV:...\nPEND:...", entities:[...]}
- * - Stage 1/2 (legacy): {chronological_items:[...]} or {plot:[...], goals:[...], ...}
- * - Stage 3: {rc: "DEV:...\nPEND:..."}
- * - Running recap: {recap: "DEV:...\nPEND:...", ...}
- * - Multi-stage wrapper: {stage1:{...}, stage2:{...}, stage3:{...}, scene_name:"..."}
+ * CANONICAL STORAGE FORMATS (after normalization):
+ * - Stage 1: {sn, extracted: [...]} - stored as-is
+ * - Stage 2: {sn, recap: {outcomes, threads, state}, entities: [...]} - stored as-is
+ * - Stage 3: {developments: [...], open: [...], state: [...], resolved: [...]} - stored as-is
+ * - Running recap: {recap: string, entities: [...]} - recap converted to string for display/injection
+ * - Multi-stage wrapper: {stage1:{...}, stage2:{...}, stage3:{...}, stage4:{...}, scene_name:"..."}
  *
  * LLM DEVIATIONS HANDLED:
- * - Object format: {DEV:"...", PEND:"..."} → "DEV:...\nPEND:..."
- * - Field name variations: plot/rc/recap used interchangeably by LLM
- * - Legacy formats: chronological_items, faceted arrays (plot/goals/reveals/etc as arrays)
+ * - Running recap object format: {recap: {developments, open, state}} → converted to string
+ * - Entity short field names: t/n/k/c → type/name/keywords/content
+ * - Content as string vs array: normalized to array
  *
- * VALIDATION (positive compliance - if LLM refuses/errors, it won't have proper fields):
- * - Stage 1/2: accepts recap field (string) OR legacy markers (arrays)
- * - Stage 3/Running: REQUIRES recap field (string) - legacy NOT allowed
- * - Entity-based: validates recap field is non-empty string
- * - Legacy (Stage 1/2 only): passes through as-is
- * - Garbage: THROWS to trigger retry
+ * VALIDATION:
+ * - Stage 1: requires extracted array
+ * - Stage 2: requires recap object and entities array
+ * - Stage 3: requires at least one of developments/open/state/resolved arrays
+ * - Running recap: requires recap object, outputs string
  *
  * USAGE:
  * - WRITE: Call normalizeStageOutput(stage, parsed) after every LLM response before saving
- *          It will throw if the response is garbage (no recap field AND not legacy)
  * - READ: Call extractRecapString(data) when reading recap content from stored data
  */
 
 // NOTE: This module must NOT import from utils.js or index.js to avoid circular dependencies.
-// It is imported by sceneBreak.js, operationHandlers.js, runningSceneRecap.js, and macros/scene_recaps.js
-// which are all re-exported by index.js. utils.js imports from index.js, creating a cycle.
 
 const LOG_PREFIX = '[AutoRecap] [recapNormalization]';
 
@@ -41,190 +37,378 @@ export const STAGE = {
 };
 
 /**
- * Normalize DEV/PEND value from object format to string format.
- * LLM sometimes returns {DEV: "...", PEND: "..."} instead of "DEV: ... PEND: ..."
- *
- * @param {*} value - The value to normalize (string, object, or other)
- * @returns {*} - String if normalized, original value otherwise
+ * Normalize entity fields from short names to full names.
+ * Handles: t→type, n→name, k→keywords, c→content, u→uid
+ * Also normalizes content to array format.
  */
-function normalizeDevPendValue(value) {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    // Check if it looks like a DEV/PEND object
-    if ('DEV' in value || 'PEND' in value) {
-      const parts = [];
-      if (value.DEV) {
-        parts.push(`DEV: ${value.DEV}`);
-      }
-      if (value.PEND) {
-        parts.push(`PEND: ${value.PEND}`);
-      }
-      if (parts.length > 0) {
-        const normalized = parts.join('\n\n');
-        // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
-        console.log(LOG_PREFIX, `Converted DEV/PEND object to string: ${normalized.length} chars`);
-        return normalized;
-      }
+function normalizeEntityFields(entity) {
+  const normalized = {
+    type: entity.type || entity.t || 'unknown',
+    name: entity.name || entity.n || '',
+    keywords: entity.keywords || entity.k || entity.keys || [],
+    content: normalizeContentToArray(entity.content || entity.c || [])
+  };
+
+  // Copy uid if present
+  const uid = entity.uid || entity.u;
+  if (uid !== undefined) {
+    normalized.uid = uid;
+  }
+
+  return normalized;
+}
+
+/**
+ * Normalize content to array format.
+ * Handles: string → [string], already array → array
+ */
+function normalizeContentToArray(content) {
+  if (Array.isArray(content)) {
+    return content;
+  }
+  if (typeof content === 'string' && content.trim()) {
+    return [content];
+  }
+  return [];
+}
+
+/**
+ * Format a recap object to a display string.
+ * Used for running recap storage and display.
+ *
+ * Input: {developments: [...], open: [...], state: [...]}
+ * Output: "DEVELOPMENTS:\n...\n\nOPEN:\n...\n\nSTATE:\n..."
+ */
+function formatRecapObjectToString(recapObj) {
+  if (!recapObj || typeof recapObj !== 'object') {
+    return '';
+  }
+
+  const parts = [];
+
+  if (recapObj.developments?.length > 0) {
+    parts.push('DEVELOPMENTS:\n' + recapObj.developments.join('\n'));
+  }
+
+  if (recapObj.open?.length > 0) {
+    parts.push('OPEN:\n' + recapObj.open.join('\n'));
+  }
+
+  if (recapObj.state?.length > 0) {
+    parts.push('STATE:\n' + recapObj.state.join('\n'));
+  }
+
+  return parts.join('\n\n');
+}
+
+/**
+ * Format Stage 2 recap object to string for display.
+ * Input: {outcomes: "...", threads: "...", state: "..."}
+ */
+function formatStage2RecapToString(recapObj) {
+  if (!recapObj || typeof recapObj !== 'object') {
+    return '';
+  }
+
+  const parts = [];
+
+  if (recapObj.outcomes?.trim()) {
+    parts.push('OUTCOMES:\n' + recapObj.outcomes);
+  }
+
+  if (recapObj.threads?.trim()) {
+    parts.push('THREADS:\n' + recapObj.threads);
+  }
+
+  if (recapObj.state?.trim()) {
+    parts.push('STATE:\n' + recapObj.state);
+  }
+
+  return parts.join('\n\n');
+}
+
+/**
+ * Format Stage 3 output to string for display.
+ * Input: {developments: [...], open: [...], state: [...], resolved: [...]}
+ * Defensive: handles string fields that weren't normalized
+ */
+function formatStage3ToString(filtered) {
+  if (!filtered || typeof filtered !== 'object') {
+    return '';
+  }
+
+  const parts = [];
+
+  // Normalize each field to array for safe .join()
+  const developments = normalizeContentToArray(filtered.developments);
+  const open = normalizeContentToArray(filtered.open);
+  const state = normalizeContentToArray(filtered.state);
+  const resolved = normalizeContentToArray(filtered.resolved);
+
+  if (developments.length > 0) {
+    parts.push('DEVELOPMENTS:\n' + developments.join('\n'));
+  }
+
+  if (open.length > 0) {
+    parts.push('OPEN:\n' + open.join('\n'));
+  }
+
+  if (state.length > 0) {
+    parts.push('STATE:\n' + state.join('\n'));
+  }
+
+  if (resolved.length > 0) {
+    parts.push('RESOLVED:\n' + resolved.join('\n'));
+  }
+
+  return parts.join('\n\n');
+}
+
+// Stage 1 facet keys for legacy format detection
+const STAGE1_FACET_KEYS = ['plot', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
+
+// Stage 1 helper: Check for legacy array formats
+function tryStage1LegacyArray(parsed) {
+  if (Array.isArray(parsed)) {
+    return { chronological_items: parsed };
+  }
+  if (parsed && Array.isArray(parsed.chronological_items)) {
+    return parsed;
+  }
+  return null;
+}
+
+// Stage 1 helper: Check for new extraction format
+function tryStage1NewExtraction(parsed) {
+  if (parsed && typeof parsed === 'object' && Array.isArray(parsed.extracted)) {
+    return { sn: parsed.sn || '', extracted: parsed.extracted };
+  }
+  return null;
+}
+
+// Stage 1 helper: Check for entity-based format
+function tryStage1EntityBased(parsed) {
+  const hasRecapField = parsed?.plot !== undefined || parsed?.rc !== undefined || parsed?.recap !== undefined;
+  if (parsed && typeof parsed === 'object' && hasRecapField && Array.isArray(parsed.entities)) {
+    return {
+      sn: parsed.sn || '',
+      plot: parsed.plot ?? parsed.rc ?? parsed.recap ?? '',
+      entities: parsed.entities.map(normalizeEntityFields)
+    };
+  }
+  return null;
+}
+
+// Stage 1 helper: Check for faceted format
+function tryStage1Faceted(parsed) {
+  if (parsed && typeof parsed === 'object') {
+    const hasFacets = STAGE1_FACET_KEYS.some(key => Array.isArray(parsed[key]));
+    if (hasFacets) {
+      return parsed;
     }
   }
-  return value;
+  return null;
 }
 
 /**
- * Get the recap field value from a parsed object, checking all possible field names.
- * Does NOT normalize - just extracts the raw value.
- *
- * @param {Object} obj - Parsed object to extract from
- * @returns {*} - The recap field value (may be undefined if not found)
+ * Normalize Stage 1 output (extraction).
+ * Handles ALL formats via helper functions.
  */
-function getRecapFieldValue(obj) {
-  if (!obj || typeof obj !== 'object') {
-    return null;
-  }
-  // Check field names in order of preference
-  // plot (Stage 1/2), rc (Stage 3), recap (Running)
-  return obj.plot ?? obj.rc ?? obj.recap ?? null;
-}
-
-// Legacy format detection - these indicate valid legacy output, not garbage
-const LEGACY_MARKERS = ['chronological_items', 'goals', 'reveals', 'state', 'tone', 'stance', 'voice', 'quotes', 'appearance', 'verbatim', 'docs'];
-
-/**
- * Check if parsed object is a legacy format (arrays instead of recap string).
- */
-function isLegacyFormat(parsed) {
-  if (!parsed || typeof parsed !== 'object') {
-    return false;
+function normalizeStage1(parsed) {
+  const legacy = tryStage1LegacyArray(parsed);
+  if (legacy) {
+    // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
+    console.log(LOG_PREFIX, 'Stage 1: Legacy array format');
+    return legacy;
   }
 
-  // chronological_items array = legacy
-  if (Array.isArray(parsed.chronological_items)) {
-    return true;
+  const newFormat = tryStage1NewExtraction(parsed);
+  if (newFormat) {
+    // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
+    console.log(LOG_PREFIX, `Stage 1: New extraction format with ${newFormat.extracted.length} items`);
+    return newFormat;
   }
 
-  // Faceted format: any legacy marker is an array
-  if (LEGACY_MARKERS.some(key => Array.isArray(parsed[key]))) {
-    return true;
+  const entityBased = tryStage1EntityBased(parsed);
+  if (entityBased) {
+    // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
+    console.log(LOG_PREFIX, `Stage 1: Entity-based format with ${entityBased.entities.length} entities`);
+    return entityBased;
   }
 
-  return false;
+  const faceted = tryStage1Faceted(parsed);
+  if (faceted) {
+    // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
+    console.log(LOG_PREFIX, 'Stage 1: Faceted format');
+    return faceted;
+  }
+
+  const keys = parsed ? Object.keys(parsed).join(', ') : 'null';
+  throw new Error(`Stage 1: Unrecognized format. Got keys: [${keys}]`);
 }
 
 /**
- * Get canonical field name for a stage.
+ * Normalize Stage 2 output (organize).
+ * Expected format: {sn, recap: {outcomes, threads, state}, entities: [...]}
  */
-function getCanonicalField(stage) {
-  if (stage === STAGE.FILTER_RC) {
-    return 'rc';
+function normalizeStage2(parsed) {
+  if (!parsed.recap || typeof parsed.recap !== 'object') {
+    // Check for legacy format with 'plot' field
+    if (parsed.plot) {
+      // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
+      console.log(LOG_PREFIX, 'Stage 2: Converting legacy plot format to new recap format');
+      return {
+        sn: parsed.sn || '',
+        recap: { outcomes: parsed.plot, threads: '', state: '' },
+        entities: (parsed.entities || []).map(normalizeEntityFields)
+      };
+    }
+    const keys = Object.keys(parsed).join(', ');
+    throw new Error(`Stage 2: Missing 'recap' object. Got keys: [${keys}]`);
   }
-  if (stage === STAGE.RUNNING) {
-    return 'recap';
-  }
-  return 'plot';
+
+  return {
+    sn: parsed.sn || '',
+    recap: {
+      outcomes: parsed.recap.outcomes || '',
+      threads: parsed.recap.threads || '',
+      state: parsed.recap.state || ''
+    },
+    entities: (parsed.entities || []).map(normalizeEntityFields)
+  };
 }
 
 /**
- * Apply normalization to the recap field and remove non-canonical names.
+ * Normalize Stage 3 output (filter RC).
+ * Expected format: {developments: [...], open: [...], state: [...], resolved: [...]}
+ * Handles LLM deviations:
+ * - string instead of array for any field
+ * - wrapped in {recap: {...}} object
+ * - legacy {rc: "string"} format
  */
-function applyFieldNormalization(normalized, stage, rawValue) {
-  const normalizedValue = normalizeDevPendValue(rawValue);
-  const canonicalField = getCanonicalField(stage);
+function normalizeStage3(parsed) {
+  // Check for legacy 'rc' field
+  if (parsed.rc && typeof parsed.rc === 'string') {
+    // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
+    console.log(LOG_PREFIX, 'Stage 3: Converting legacy rc format to new format');
+    return {
+      developments: [parsed.rc],
+      open: [],
+      state: [],
+      resolved: []
+    };
+  }
 
-  normalized[canonicalField] = normalizedValue;
+  // Check if LLM wrapped output in {recap: {...}} - unwrap it
+  let source = parsed;
+  if (parsed.recap && typeof parsed.recap === 'object') {
+    // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
+    console.log(LOG_PREFIX, 'Stage 3: Unwrapping from recap wrapper');
+    source = parsed.recap;
+  }
 
-  // Remove non-canonical field names
-  const allFields = ['plot', 'rc', 'recap'];
-  for (const field of allFields) {
-    if (field !== canonicalField) {
-      delete normalized[field];
+  // Normalize each field to array (handles string→array conversion)
+  const developments = normalizeContentToArray(source.developments);
+  const open = normalizeContentToArray(source.open);
+  const state = normalizeContentToArray(source.state);
+  const resolved = normalizeContentToArray(source.resolved);
+
+  // Must have at least one non-empty field
+  if (developments.length === 0 && open.length === 0 && state.length === 0 && resolved.length === 0) {
+    const keys = Object.keys(parsed).join(', ');
+    throw new Error(`Stage 3: All arrays empty. Got keys: [${keys}]`);
+  }
+
+  return {
+    developments,
+    open,
+    state,
+    resolved
+  };
+}
+
+/**
+ * Normalize Running Recap output.
+ * Expected format: {recap: {developments, open, state}, entities: [...]}
+ * Converts recap object to string for storage/display.
+ * Handles LLM deviation: string instead of array for recap fields
+ */
+function normalizeRunningRecap(parsed) {
+  let recapString = '';
+
+  if (parsed.recap) {
+    if (typeof parsed.recap === 'string') {
+      // Already a string (legacy format)
+      recapString = parsed.recap;
+    } else if (typeof parsed.recap === 'object') {
+      // New object format - normalize fields to arrays, then convert to string
+      const normalizedRecap = {
+        developments: normalizeContentToArray(parsed.recap.developments),
+        open: normalizeContentToArray(parsed.recap.open),
+        state: normalizeContentToArray(parsed.recap.state)
+      };
+      recapString = formatRecapObjectToString(normalizedRecap);
     }
   }
 
-  // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
-  console.log(LOG_PREFIX, `Stage ${stage}: normalized to ${canonicalField} field`);
-  return canonicalField;
+  if (!recapString.trim()) {
+    const keys = Object.keys(parsed).join(', ');
+    throw new Error(`Running recap: Empty recap content. Got keys: [${keys}]`);
+  }
+
+  return {
+    recap: recapString,
+    entities: (parsed.entities || []).map(normalizeEntityFields)
+  };
 }
 
 /**
  * Normalize LLM output before saving to storage.
  * Call this after every LLM response, before saving.
  *
- * Handles:
- * - Entity-based format: normalizes plot/rc/recap field, validates non-empty string
- * - Legacy format: passes through as-is (arrays, not strings)
- * - Garbage: THROWS to trigger retry
- *
  * @param {1|2|3|'running'} stage - Which stage produced this output
  * @param {Object} parsed - The parsed LLM response
  * @returns {Object} - Normalized object ready for storage
- * @throws {Error} - If parsed is garbage (not object, no recap field AND not legacy)
+ * @throws {Error} - If parsed is garbage or missing required fields
  */
 export function normalizeStageOutput(stage, parsed) {
   if (!parsed || typeof parsed !== 'object') {
     throw new Error(`Stage ${stage}: LLM response is not an object (got ${typeof parsed})`);
   }
 
-  // Check for recap field (entity-based format)
-  const rawValue = parsed.plot ?? parsed.rc ?? parsed.recap;
-  const hasRecapField = rawValue !== null && rawValue !== undefined;
+  switch (stage) {
+    case STAGE.EXTRACTION:
+    case 1:
+      return normalizeStage1(parsed);
 
-  // Check for legacy format (arrays instead of recap string)
-  const isLegacy = isLegacyFormat(parsed);
+    case STAGE.ORGANIZE:
+    case 2:
+      return normalizeStage2(parsed);
 
-  // Stage 3 and Running MUST have a recap field - legacy not allowed
-  const requiresRecapField = stage === STAGE.FILTER_RC || stage === STAGE.RUNNING;
+    case STAGE.FILTER_RC:
+    case 3: // eslint-disable-line no-magic-numbers -- Legacy fallback for numeric stage value
+      return normalizeStage3(parsed);
 
-  // Validate based on stage requirements
-  validateStageInput(stage, hasRecapField, isLegacy, requiresRecapField, parsed);
+    case STAGE.RUNNING:
+    case 'running':
+      return normalizeRunningRecap(parsed);
 
-  // Legacy format (Stage 1/2 only): pass through as-is
-  if (isLegacy && !hasRecapField) {
-    // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
-    console.log(LOG_PREFIX, `Stage ${stage}: Legacy format detected, passing through`);
-    return parsed;
-  }
-
-  // Entity-based format: normalize and validate
-  const normalized = { ...parsed };
-  const canonicalField = applyFieldNormalization(normalized, stage, rawValue);
-  validateNormalizedContent(stage, normalized[canonicalField], canonicalField);
-
-  return normalized;
-}
-
-/**
- * Validate stage input based on requirements.
- */
-function validateStageInput(stage, hasRecapField, isLegacy, requiresRecapField, parsed) {
-  if (requiresRecapField && !hasRecapField) {
-    const keys = Object.keys(parsed).join(', ');
-    console.error(LOG_PREFIX, `Stage ${stage}: Missing required recap field. Got keys: [${keys}]`);
-    throw new Error(`Stage ${stage}: Response missing required recap field (plot/rc/recap). Got: [${keys}]`);
-  }
-
-  if (!requiresRecapField && !hasRecapField && !isLegacy) {
-    const keys = Object.keys(parsed).join(', ');
-    console.error(LOG_PREFIX, `Stage ${stage}: No recap field and not legacy format. Got keys: [${keys}]`);
-    throw new Error(`Stage ${stage}: Response missing recap field (plot/rc/recap) and not legacy format. Got: [${keys}]`);
+    default:
+      // Unknown stage - pass through with entity normalization
+      // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
+      console.log(LOG_PREFIX, `Unknown stage ${stage}, passing through with entity normalization`);
+      if (parsed.entities) {
+        parsed.entities = parsed.entities.map(normalizeEntityFields);
+      }
+      return parsed;
   }
 }
 
 /**
- * Validate normalized content is a non-empty string.
+ * Parse string input that may be JSON.
+ * @returns {{ parsed: Object|null, plainText: string|null }} - parsed object or plainText string
  */
-function validateNormalizedContent(stage, value, fieldName) {
-  if (typeof value !== 'string') {
-    throw new Error(`Stage ${stage}: Recap field '${fieldName}' is not a string (got ${typeof value})`);
-  }
-  if (!value.trim()) {
-    throw new Error(`Stage ${stage}: Recap field '${fieldName}' is empty`);
-  }
-}
-
-/**
- * Parse string data to object, handling code fences and JSON.
- * Returns the parsed object or null if not JSON.
- */
-function parseStringToObject(data) {
+function parseStringInput(data) {
   const trimmed = data.trim();
   if (!trimmed) {
     return { parsed: null, plainText: '' };
@@ -242,24 +426,33 @@ function parseStringToObject(data) {
     try {
       return { parsed: JSON.parse(jsonStr), plainText: null };
     } catch {
-      // Not valid JSON - return as plain text
       return { parsed: null, plainText: trimmed };
     }
   }
-  // Not JSON - return as plain text
+
   return { parsed: null, plainText: trimmed };
 }
 
 /**
- * Try to extract recap from a stage object, returning the normalized string or null.
+ * Extract from multi-stage wrapper format.
+ * Checks stage3, stage2, stage1 in reverse order (most processed first).
  */
-function tryExtractFromStage(stageObj, stageName) {
-  const value = getRecapFieldValue(stageObj);
-  if (value !== null) {
-    const result = normalizeDevPendValue(value);
-    if (typeof result === 'string' && result.trim()) {
-      // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
-      console.log(LOG_PREFIX, `Extracted from ${stageName}: ${result.length} chars`);
+function extractFromMultiStage(parsed) {
+  if (parsed.stage3) {
+    const result = extractFromStage3(parsed.stage3);
+    if (result) {
+      return result;
+    }
+  }
+  if (parsed.stage2) {
+    const result = extractFromStage2(parsed.stage2);
+    if (result) {
+      return result;
+    }
+  }
+  if (parsed.stage1) {
+    const result = extractFromStage1(parsed.stage1);
+    if (result) {
       return result;
     }
   }
@@ -267,9 +460,42 @@ function tryExtractFromStage(stageObj, stageName) {
 }
 
 /**
+ * Extract from root-level format fields.
+ * Handles new structured formats and legacy formats.
+ */
+function extractFromRootFormat(parsed) {
+  // New structured Stage 3 format
+  if (parsed.developments || parsed.open || parsed.state) {
+    return formatStage3ToString(parsed);
+  }
+
+  // Stage 2 recap format (recap is object without entities at root)
+  if (parsed.recap && typeof parsed.recap === 'object' && !parsed.entities) {
+    return formatStage2RecapToString(parsed.recap);
+  }
+
+  // Running recap format (recap is string)
+  if (parsed.recap && typeof parsed.recap === 'string') {
+    return parsed.recap;
+  }
+
+  // Legacy: plot field
+  if (parsed.plot && typeof parsed.plot === 'string') {
+    return parsed.plot;
+  }
+
+  // Legacy: rc field
+  if (parsed.rc && typeof parsed.rc === 'string') {
+    return parsed.rc;
+  }
+
+  return null;
+}
+
+/**
  * Extract recap string content from stored data.
- * Handles all storage formats: multi-stage, legacy, any field names.
- * Call this when reading recap content for display, injection, or processing.
+ * Handles all storage formats: multi-stage, legacy, structured objects.
+ * Call this when reading recap content for display or injection.
  *
  * @param {string|Object} data - Raw stored data (JSON string or parsed object)
  * @returns {string} - Extracted recap content as string, or empty string if not found
@@ -282,7 +508,7 @@ export function extractRecapString(data) {
   // Handle string input (may be JSON)
   let parsed = data;
   if (typeof data === 'string') {
-    const { parsed: parsedObj, plainText } = parseStringToObject(data);
+    const { parsed: parsedObj, plainText } = parseStringInput(data);
     if (plainText !== null) {
       return plainText;
     }
@@ -293,32 +519,71 @@ export function extractRecapString(data) {
     return String(data);
   }
 
-  // Multi-stage format: check stages in reverse order (stage3 has most processed content)
-  const stage3Result = tryExtractFromStage(parsed.stage3, 'stage3');
-  if (stage3Result) {
-    return stage3Result;
+  // Try multi-stage wrapper format first
+  const multiStageResult = extractFromMultiStage(parsed);
+  if (multiStageResult) {
+    return multiStageResult;
   }
 
-  const stage2Result = tryExtractFromStage(parsed.stage2, 'stage2');
-  if (stage2Result) {
-    return stage2Result;
-  }
-
-  const stage1Result = tryExtractFromStage(parsed.stage1, 'stage1');
-  if (stage1Result) {
-    return stage1Result;
-  }
-
-  // Legacy/root format: check root fields directly
-  const rootResult = tryExtractFromStage(parsed, 'root');
+  // Try root format fields
+  const rootResult = extractFromRootFormat(parsed);
   if (rootResult) {
     return rootResult;
   }
 
-  // No recap content found
   // eslint-disable-next-line no-console -- Direct console to avoid circular dependency
-  console.log(LOG_PREFIX, `No recap content found in data`);
+  console.log(LOG_PREFIX, 'No recap content found in data');
   return '';
+}
+
+function extractFromStage3(stage3) {
+  if (!stage3 || typeof stage3 !== 'object') {
+    return null;
+  }
+
+  // New format with arrays
+  if (stage3.developments || stage3.open || stage3.state) {
+    return formatStage3ToString(stage3);
+  }
+
+  // Legacy string format
+  if (stage3.rc && typeof stage3.rc === 'string') {
+    return stage3.rc;
+  }
+
+  return null;
+}
+
+function extractFromStage2(stage2) {
+  if (!stage2 || typeof stage2 !== 'object') {
+    return null;
+  }
+
+  // New format with recap object
+  if (stage2.recap && typeof stage2.recap === 'object') {
+    return formatStage2RecapToString(stage2.recap);
+  }
+
+  // Legacy format with plot string
+  if (stage2.plot && typeof stage2.plot === 'string') {
+    return stage2.plot;
+  }
+
+  return null;
+}
+
+function extractFromStage1(stage1) {
+  if (!stage1 || typeof stage1 !== 'object') {
+    return null;
+  }
+
+  // Stage 1 extracts items, not formatted recap
+  // Return extracted items as text if present
+  if (Array.isArray(stage1.extracted) && stage1.extracted.length > 0) {
+    return stage1.extracted.join('\n');
+  }
+
+  return null;
 }
 
 /**
@@ -332,3 +597,9 @@ export function hasRecapContent(data) {
   const content = extractRecapString(data);
   return content.trim().length > 0;
 }
+
+/**
+ * Normalize entity content for storage/display.
+ * Exported for use by other modules that need to normalize entity content.
+ */
+export { normalizeEntityFields, normalizeContentToArray };

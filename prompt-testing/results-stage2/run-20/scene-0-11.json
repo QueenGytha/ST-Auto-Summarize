@@ -1,0 +1,59 @@
+{
+  "scene": "scene-0-11",
+  "success": true,
+  "duration": 15.333,
+  "tokens": 2798,
+  "userName": "Rance",
+  "stage1_entities": 3,
+  "stage2_entities": 3,
+  "parsed": {
+    "sn": "Awakening at Lisle's Ashes",
+    "recap": {
+      "outcomes": "Lisle village destroyed by Rance's uncontrolled Mage-Gift awakening during bandit attack—entire settlement reduced to crater and ash. Found evidence: red robe hidden under bandit garb, footprints toward Menmellith. Senta Chose Rance; bond formed, partially stabilizing his ravaged channels. Reached Waystation by twilight.",
+      "threads": "Red-robed attackers' identity and purpose unknown; may return. Villagers were carried off before destruction. Evidence must reach Haven.",
+      "state": "Rance suffering severe Gift-shock with burned mental channels—white-hot agony, blurred vision, uncontrolled magical awareness. Doesn't yet comprehend he caused Lisle's destruction. Bond with Senta providing partial stabilization. Requires Healing at Haven."
+    },
+    "entities": [
+      {
+        "type": "character",
+        "name": "Senta",
+        "keywords": [
+          "Senta",
+          "Companion"
+        ],
+        "content": {
+          "who": "Companion mare with sapphire eyes and silver-white coat. Unpartnered for 3 years until Choosing Rance.",
+          "dynamics": {
+            "Rance": "Chose him at Lisle ruins despite his age and bitterness. Unconditional love through bond; recognizes steel core beneath his guilt. Frustrated by his stubbornness but fully committed. Knows he caused Lisle's destruction via awakened Gift. Using bond to partially stabilize his burned channels. Determined to get him to Haven alive for training and testimony."
+          },
+          "status": "Bonded to Rance; actively stabilizing his damaged channels through their connection."
+        }
+      },
+      {
+        "type": "character",
+        "name": "Rance",
+        "keywords": [
+          "Rance"
+        ],
+        "content": {
+          "who": "Former headman of Lisle, age 40. Skilled rider with possible military background. Latent Mage-Gift (type unknown, immensely powerful) that awakened traumatically—uncontrolled release obliterated his village.",
+          "status": "Chosen by Senta—bond formed. Gift burned open mental channels causing severe Gift-shock. Collected evidence (red robe, blade) and sworn to report threat to Haven."
+        }
+      },
+      {
+        "type": "location",
+        "name": "Lisle",
+        "keywords": [
+          "Lisle",
+          "Lisle village"
+        ],
+        "content": {
+          "what": "Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders. Now completely obliterated—reduced to ash, charred timber fragments, scorched foundations, and central crater.",
+          "significance": "Destroyed by Rance's uncontrolled Gift awakening during organized attack. Attackers disguised as bandits (red robes hidden under bandit garb) with footprints leading toward Menmellith. Villagers were carried off before the destruction; some attackers caught in the blast."
+        }
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Awakening at Lisle's Ashes\",\n  \"recap\": {\n    \"outcomes\": \"Lisle village destroyed by Rance's uncontrolled Mage-Gift awakening during bandit attack—entire settlement reduced to crater and ash. Found evidence: red robe hidden under bandit garb, footprints toward Menmellith. Senta Chose Rance; bond formed, partially stabilizing his ravaged channels. Reached Waystation by twilight.\",\n    \"threads\": \"Red-robed attackers' identity and purpose unknown; may return. Villagers were carried off before destruction. Evidence must reach Haven.\",\n    \"state\": \"Rance suffering severe Gift-shock with burned mental channels—white-hot agony, blurred vision, uncontrolled magical awareness. Doesn't yet comprehend he caused Lisle's destruction. Bond with Senta providing partial stabilization. Requires Healing at Haven.\"\n  },\n  \"entities\": [\n    {\n      \"type\": \"character\",\n      \"name\": \"Senta\",\n      \"keywords\": [\"Senta\", \"Companion\"],\n      \"content\": {\n        \"who\": \"Companion mare with sapphire eyes and silver-white coat. Unpartnered for 3 years until Choosing Rance.\",\n        \"dynamics\": {\n          \"Rance\": \"Chose him at Lisle ruins despite his age and bitterness. Unconditional love through bond; recognizes steel core beneath his guilt. Frustrated by his stubbornness but fully committed. Knows he caused Lisle's destruction via awakened Gift. Using bond to partially stabilize his burned channels. Determined to get him to Haven alive for training and testimony.\"\n        },\n        \"status\": \"Bonded to Rance; actively stabilizing his damaged channels through their connection.\"\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Rance\",\n      \"keywords\": [\"Rance\"],\n      \"content\": {\n        \"who\": \"Former headman of Lisle, age 40. Skilled rider with possible military background. Latent Mage-Gift (type unknown, immensely powerful) that awakened traumatically—uncontrolled release obliterated his village.\",\n        \"status\": \"Chosen by Senta—bond formed. Gift burned open mental channels causing severe Gift-shock. Collected evidence (red robe, blade) and sworn to report threat to Haven.\"\n      }\n    },\n    {\n      \"type\": \"location\",\n      \"name\": \"Lisle\",\n      \"keywords\": [\"Lisle\", \"Lisle village\"],\n      \"content\": {\n        \"what\": \"Small village on Valdemar's outskirts near Karse/Rethwellan/Menmellith borders. Now completely obliterated—reduced to ash, charred timber fragments, scorched foundations, and central crater.\",\n        \"significance\": \"Destroyed by Rance's uncontrolled Gift awakening during organized attack. Attackers disguised as bandits (red robes hidden under bandit garb) with footprints leading toward Menmellith. Villagers were carried off before the destruction; some attackers caught in the blast.\"\n      }\n    }\n  ]\n}\n",
+  "error": null
+}

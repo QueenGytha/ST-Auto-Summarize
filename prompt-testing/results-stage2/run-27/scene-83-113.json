@@ -1,0 +1,95 @@
+{
+  "scene": "scene-83-113",
+  "success": true,
+  "duration": 26.12,
+  "tokens": 4390,
+  "userName": "Rance",
+  "stage1_entities": 0,
+  "stage2_entities": 5,
+  "parsed": {
+    "sn": "Intimacy and aftermath with Talia before the Queen's meeting",
+    "recap": {
+      "outcomes": "Rance and Talia became physically intimate, consummating their relationship after the memory-merge. Talia lost her virginity. They decided to formalize their connection to Selenay as Co-Advisors (or similar title), but keep the arrangement secret except to Selenay and the Circle to avoid questions about why Queen's Own unlocked Rance's trauma-sealed memories (which would lead to Lisle, border situation, and his Mage-Gift).",
+      "threads": "Talia's meeting with Selenay is scheduled in two candlemarks. She must present the Co-Advisor recommendation while concealing the intimate relationship and avoiding questions that could expose Rance's Mage-Gift and the border situation prematurely.",
+      "state": "Talia and Rance's intimate relationship is now established but must remain secret. Rance used his untrained Mage-Gift telekinetically during the encounter, causing pain to his still-raw channels. Talia needs to clean up and prepare quickly for her meeting with the Queen."
+    },
+    "entities": [
+      {
+        "type": "character",
+        "name": "Talia",
+        "keywords": [
+          "talia",
+          "queen's own",
+          "holderkin"
+        ],
+        "content": {
+          "who": "Queen's Own, former Holderkin. Has never told anyone about her arranged marriage as a child, her nightmares, or her doubts about worthiness. Was a virgin until this encounter - complete sexual inexperience despite her position and age ('I know the theory, of course, but...').",
+          "dynamics": {
+            "Rance": "Memory-merge partner who now knows everything she's never told anyone. Became physically intimate. She admitted: 'I've spent my entire adult life terrified of losing myself in another person. My Gift makes it so easy to blur where I end and others begin.' The memory-merge shattered every wall she'd built. She needs 'a partner who understands not just her position's burdens, but her. Someone who can share what no one else has been permitted to see.' Rance can stabilize her shields when they waver, correcting them with gentle mind connection - he already knows how to shore up her mental defenses from the memory-merge experience."
+          },
+          "quotes": {
+            "vulnerability": "I've spent my entire adult life terrified of losing myself in another person. My Gift makes it so easy to blur where I end and others begin.",
+            "during_sex": "Called herself 'dirty Holderkin slut,' 'worthless cunt,' 'just a hole to use,' 'a vessel' under Rance's command. Broke his command for silence during her first orgasm, crying out 'F-fuck!' - diplomatic eloquence abandoned for crude profanity."
+          },
+          "status": {
+            "physical": "Small-bodied with small breasts, pale skin that rarely sees sunlight, thin scar on one hip from childhood fall, dark hair normally in practical braid. Now has a visible bite mark on her breast (hidden beneath her Whites). Lost her virginity to Rance - blood and his cum mixed on the bedding.",
+            "psychological": "Holderkin upbringing where women were property, vessels for men's pleasure - creates deep conflict with her role as Queen's Own. Found release in sexual surrender after years of carrying responsibility, using degrading language tied to her painful background.",
+            "meeting_preparation": "Must clean up and prepare quickly for meeting with Selenay in two candlemarks."
+          }
+        }
+      },
+      {
+        "type": "character",
+        "name": "Rance",
+        "keywords": [
+          "rance"
+        ],
+        "content": {
+          "status": {
+            "mage_gift": "Used untrained Mage-Gift telekinetically - slammed cottage door closed with more force than intended, closed curtains. The effort caused pain along 'burned open channels still very raw around the edges' from his Gift being unlocked. Senta warned about untrained Gifts being dangerously unpredictable, especially Mage-Gift. Concerned about him using it carelessly.",
+            "priorities": "Established hierarchy: 'Valdemar will always come first. Then the Queen. And then you [Talia].'"
+          }
+        }
+      },
+      {
+        "type": "character",
+        "name": "Senta",
+        "keywords": [
+          "senta"
+        ],
+        "content": {
+          "dynamics": {
+            "Rance_and_Talia": "Maintained watch outside the cottage during their intimacy but remained connected through the bond, unable to completely shield herself from the intensity of their emotions. Reaction to the developing sexual relationship: complex mix of concern, understanding, resignation, and dry humor. Not disapproval exactly, but awareness of how complicated this makes everything. Previously warned about untrained Gifts being dangerously unpredictable."
+          }
+        }
+      },
+      {
+        "type": "character",
+        "name": "Selenay",
+        "keywords": [
+          "selenay",
+          "queen"
+        ],
+        "content": {
+          "dynamics": {
+            "Talia": "Scheduled meeting in two candlemarks. Talia will recommend formalizing Rance and Talia's connection as Co-Advisors (or similar title), presenting it as strength rather than vulnerability - two minds sharing the burden of advising the Crown. The arrangement will be kept secret except to Selenay and the Circle."
+          }
+        }
+      },
+      {
+        "type": "faction",
+        "name": "The Circle",
+        "keywords": [
+          "circle",
+          "heralds"
+        ],
+        "content": {
+          "what": "Inner circle of Heralds privy to sensitive information.",
+          "significance": "Will be informed of the formalized Co-Advisor arrangement between Rance and Talia, but not the public. This secrecy prevents questions about why Queen's Own was involved in unlocking trauma-sealed memories, which would lead to exposure of Lisle, the border situation, and Rance's Mage-Gift."
+        }
+      }
+    ]
+  },
+  "raw": "{\n  \"sn\": \"Intimacy and aftermath with Talia before the Queen's meeting\",\n  \"recap\": {\n    \"outcomes\": \"Rance and Talia became physically intimate, consummating their relationship after the memory-merge. Talia lost her virginity. They decided to formalize their connection to Selenay as Co-Advisors (or similar title), but keep the arrangement secret except to Selenay and the Circle to avoid questions about why Queen's Own unlocked Rance's trauma-sealed memories (which would lead to Lisle, border situation, and his Mage-Gift).\",\n    \"threads\": \"Talia's meeting with Selenay is scheduled in two candlemarks. She must present the Co-Advisor recommendation while concealing the intimate relationship and avoiding questions that could expose Rance's Mage-Gift and the border situation prematurely.\",\n    \"state\": \"Talia and Rance's intimate relationship is now established but must remain secret. Rance used his untrained Mage-Gift telekinetically during the encounter, causing pain to his still-raw channels. Talia needs to clean up and prepare quickly for her meeting with the Queen.\"\n  },\n  \"entities\": [\n    {\n      \"type\": \"character\",\n      \"name\": \"Talia\",\n      \"keywords\": [\"talia\", \"queen's own\", \"holderkin\"],\n      \"content\": {\n        \"who\": \"Queen's Own, former Holderkin. Has never told anyone about her arranged marriage as a child, her nightmares, or her doubts about worthiness. Was a virgin until this encounter - complete sexual inexperience despite her position and age ('I know the theory, of course, but...').\",\n        \"dynamics\": {\n          \"Rance\": \"Memory-merge partner who now knows everything she's never told anyone. Became physically intimate. She admitted: 'I've spent my entire adult life terrified of losing myself in another person. My Gift makes it so easy to blur where I end and others begin.' The memory-merge shattered every wall she'd built. She needs 'a partner who understands not just her position's burdens, but her. Someone who can share what no one else has been permitted to see.' Rance can stabilize her shields when they waver, correcting them with gentle mind connection - he already knows how to shore up her mental defenses from the memory-merge experience.\"\n        },\n        \"quotes\": {\n          \"vulnerability\": \"I've spent my entire adult life terrified of losing myself in another person. My Gift makes it so easy to blur where I end and others begin.\",\n          \"during_sex\": \"Called herself 'dirty Holderkin slut,' 'worthless cunt,' 'just a hole to use,' 'a vessel' under Rance's command. Broke his command for silence during her first orgasm, crying out 'F-fuck!' - diplomatic eloquence abandoned for crude profanity.\"\n        },\n        \"status\": {\n          \"physical\": \"Small-bodied with small breasts, pale skin that rarely sees sunlight, thin scar on one hip from childhood fall, dark hair normally in practical braid. Now has a visible bite mark on her breast (hidden beneath her Whites). Lost her virginity to Rance - blood and his cum mixed on the bedding.\",\n          \"psychological\": \"Holderkin upbringing where women were property, vessels for men's pleasure - creates deep conflict with her role as Queen's Own. Found release in sexual surrender after years of carrying responsibility, using degrading language tied to her painful background.\",\n          \"meeting_preparation\": \"Must clean up and prepare quickly for meeting with Selenay in two candlemarks.\"\n        }\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Rance\",\n      \"keywords\": [\"rance\"],\n      \"content\": {\n        \"status\": {\n          \"mage_gift\": \"Used untrained Mage-Gift telekinetically - slammed cottage door closed with more force than intended, closed curtains. The effort caused pain along 'burned open channels still very raw around the edges' from his Gift being unlocked. Senta warned about untrained Gifts being dangerously unpredictable, especially Mage-Gift. Concerned about him using it carelessly.\",\n          \"priorities\": \"Established hierarchy: 'Valdemar will always come first. Then the Queen. And then you [Talia].'\"\n        }\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Senta\",\n      \"keywords\": [\"senta\"],\n      \"content\": {\n        \"dynamics\": {\n          \"Rance_and_Talia\": \"Maintained watch outside the cottage during their intimacy but remained connected through the bond, unable to completely shield herself from the intensity of their emotions. Reaction to the developing sexual relationship: complex mix of concern, understanding, resignation, and dry humor. Not disapproval exactly, but awareness of how complicated this makes everything. Previously warned about untrained Gifts being dangerously unpredictable.\"\n        }\n      }\n    },\n    {\n      \"type\": \"character\",\n      \"name\": \"Selenay\",\n      \"keywords\": [\"selenay\", \"queen\"],\n      \"content\": {\n        \"dynamics\": {\n          \"Talia\": \"Scheduled meeting in two candlemarks. Talia will recommend formalizing Rance and Talia's connection as Co-Advisors (or similar title), presenting it as strength rather than vulnerability - two minds sharing the burden of advising the Crown. The arrangement will be kept secret except to Selenay and the Circle.\"\n        }\n      }\n    },\n    {\n      \"type\": \"faction\",\n      \"name\": \"The Circle\",\n      \"keywords\": [\"circle\", \"heralds\"],\n      \"content\": {\n        \"what\": \"Inner circle of Heralds privy to sensitive information.\",\n        \"significance\": \"Will be informed of the formalized Co-Advisor arrangement between Rance and Talia, but not the public. This secrecy prevents questions about why Queen's Own was involved in unlocking trauma-sealed memories, which would lead to exposure of Lisle, the border situation, and Rance's Mage-Gift.\"\n      }\n    }\n  ]\n}\n",
+  "error": null
+}

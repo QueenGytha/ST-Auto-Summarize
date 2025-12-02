@@ -1,0 +1,36 @@
+{
+  "scene": "baronial-0-18",
+  "userName": "User",
+  "timestamp": "2025-12-02T02:47:32.615Z",
+  "stage1": {
+    "sn": "Empty or Invalid Scene",
+    "extracted": [
+      "Scene contains only '0-18' with no narrative content, dialogue, characters, or events to extract"
+    ]
+  },
+  "stage2": {
+    "sn": "Empty or Invalid Scene",
+    "recap": {
+      "outcomes": "No narrative content present",
+      "threads": "No unresolved hooks",
+      "state": "No current state to track"
+    },
+    "entities": []
+  },
+  "stage3": {
+    "developments": [],
+    "open": [],
+    "state": [],
+    "resolved": []
+  },
+  "merged_recap": {
+    "recap": {
+      "developments": [],
+      "open": [],
+      "state": []
+    }
+  },
+  "stage4_entities": {
+    "entities": []
+  }
+}

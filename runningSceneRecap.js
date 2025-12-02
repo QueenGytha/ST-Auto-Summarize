@@ -17,8 +17,164 @@ import {
 './index.js';
 import { running_scene_recap_prompt } from './default-prompts/index.js';
 import { buildAllMacroParams, substitute_params, substitute_conditionals } from './macros/index.js';
-import { normalizeStageOutput, extractRecapString } from './recapNormalization.js';
-// Lorebook processing for running recap has been disabled; no queue integration needed here.
+import { normalizeStageOutput } from './recapNormalization.js';
+import { queueProcessLorebookEntry } from './queueIntegration.js';
+
+// Hash computation constants
+const HASH_MULTIPLIER = 31;
+const HASH_RADIX = 36;
+
+// Simple, deterministic hash for deduplication (no external dependencies)
+function computeRunningRecapHash(text = '') {
+  const trimmed = String(text).trim();
+  let hash = 0;
+  for (let i = 0; i < trimmed.length; i++) {
+    hash = ((hash * HASH_MULTIPLIER) + trimmed.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash).toString(HASH_RADIX);
+}
+
+function extractEventEntities(parsed) {
+  if (!parsed || typeof parsed !== 'object') {
+    return [];
+  }
+  const entities = parsed.entities;
+  if (!Array.isArray(entities)) {
+    return [];
+  }
+  return entities.filter((e) => (e.t || e.type) === 'event');
+}
+
+function normalizeEventEntity(entity) {
+  const name = String(entity.name || entity.n || '').trim();
+  // Content can be string or array - normalize to string for display
+  let content = entity.content || entity.c || '';
+  if (Array.isArray(content)) {
+    content = content.join('\n');
+  }
+  content = String(content).trim();
+  const rawKeys = entity.keywords || entity.k || entity.keys || [];
+  const keys = Array.isArray(rawKeys) ? rawKeys.map((k) => String(k)) : [];
+  const type = entity.type || entity.t || 'event';
+  return {
+    name: name || 'event',
+    content,
+    keys,
+    type
+  };
+}
+
+function buildEventKey(versionNumber, entity) {
+  return `${versionNumber}:${entity.name}:${computeRunningRecapHash(entity.content || '')}`;
+}
+
+async function processRunningRecapEvents(events, versionNumber, recapHash, messageIndex) {
+  if (!events || events.length === 0) {
+    return [];
+  }
+
+  const storage = get_running_recap_storage();
+  const versions = storage.versions || [];
+  const targetVersion = versions.find((v) => v.version === versionNumber);
+  const seen = new Set(targetVersion?.event_keys || []);
+
+  for (const event of events) {
+    const normalized = normalizeEventEntity(event);
+    const key = buildEventKey(versionNumber, normalized);
+    if (seen.has(key)) {
+      debug(SUBSYSTEM.RUNNING, `[Running recap] Skipping duplicate event '${normalized.name}' (key ${key})`);
+      continue;
+    }
+
+    const entry = {
+      name: normalized.name,
+      content: normalized.content,
+      keywords: normalized.keys,
+      type: normalized.type || 'event'
+    };
+
+    try {
+      // eslint-disable-next-line no-await-in-loop -- Sequential processing required
+      await queueProcessLorebookEntry(entry, messageIndex ?? targetVersion?.new_scene_index ?? 0, recapHash, {
+        metadata: { running_recap_version: versionNumber }
+      });
+      debug(SUBSYSTEM.RUNNING, `[Running recap] Queued event '${normalized.name}' (key ${key})`);
+      seen.add(key);
+    } catch (err) {
+      error(SUBSYSTEM.RUNNING, `Failed to queue running recap event '${normalized.name}':`, err);
+    }
+  }
+
+  if (targetVersion) {
+    targetVersion.event_keys = Array.from(seen);
+    saveChatDebounced();
+    saveMetadata();
+    return targetVersion.event_keys;
+  }
+
+  return Array.from(seen);
+}
+
+/**
+ * Extract Stage 3 filtered data from a scene's stored multi-stage format.
+ * @param {string|Object} scene_recap - Raw scene recap data
+ * @returns {Object|null} Stage 3 data object or null if not found
+ */
+function extractStage3FromScene(scene_recap) {
+  if (!scene_recap || (typeof scene_recap === 'string' && scene_recap.trim().length === 0)) {
+    return null;
+  }
+
+  try {
+    const parsed = typeof scene_recap === 'string' ? JSON.parse(scene_recap) : scene_recap;
+    // Stage 3 data in multi-stage format
+    if (parsed.stage3) {
+      return parsed.stage3;
+    }
+    // Direct Stage 3 format
+    if (parsed.developments || parsed.open || parsed.state) {
+      return parsed;
+    }
+  } catch {
+    // Not valid JSON
+  }
+  return null;
+}
+
+/**
+ * Combine Stage 3 data from multiple scenes into one filtered recap object.
+ * @param {number[]} indexes - Scene message indexes
+ * @param {Object[]} chat - Chat messages
+ * @returns {{ combinedFiltered: Object, validSceneCount: number }}
+ */
+function combineStage3FromScenes(indexes, chat) {
+  const combinedFiltered = { developments: [], open: [], state: [], resolved: [] };
+  let validSceneCount = 0;
+
+  for (const idx of indexes) {
+    const msg = chat[idx];
+    const scene_recap = get_data(msg, 'scene_recap_memory') || '';
+    const stage3 = extractStage3FromScene(scene_recap);
+
+    if (stage3) {
+      validSceneCount++;
+      if (Array.isArray(stage3.developments)) {
+        combinedFiltered.developments.push(...stage3.developments);
+      }
+      if (Array.isArray(stage3.open)) {
+        combinedFiltered.open.push(...stage3.open);
+      }
+      if (Array.isArray(stage3.state)) {
+        combinedFiltered.state.push(...stage3.state);
+      }
+      if (Array.isArray(stage3.resolved)) {
+        combinedFiltered.resolved.push(...stage3.resolved);
+      }
+    }
+  }
+
+  return { combinedFiltered, validSceneCount };
+}
 
 function get_running_recap_storage() {
   const currentChatId = getCurrentChatId();
@@ -133,13 +289,16 @@ function set_current_running_recap_version(version ) {
   debug(SUBSYSTEM.RUNNING, `Set current running recap version to ${version}`);
 }
 
-function add_running_recap_version(
-content ,
-scene_count ,
-excluded_count ,
-prev_scene_index  = 0,
-new_scene_index  = 0)
-{
+function add_running_recap_version(options) {
+  const {
+    content,
+    scene_count,
+    excluded_count,
+    prev_scene_index = 0,
+    new_scene_index = 0,
+    event_keys = []
+  } = options;
+
   const storage = get_running_recap_storage();
   const versions = storage.versions || [];
 
@@ -150,11 +309,12 @@ new_scene_index  = 0)
   const version_obj = {
     version: new_version,
     timestamp: Date.now(),
-    content: content,
-    scene_count: scene_count,
-    excluded_count: excluded_count,
-    prev_scene_index: prev_scene_index,
-    new_scene_index: new_scene_index
+    content,
+    scene_count,
+    excluded_count,
+    prev_scene_index,
+    new_scene_index,
+    event_keys
   };
 
   versions.push(version_obj);
@@ -287,44 +447,23 @@ async function generate_running_scene_recap(skipQueue  = false) {
 
   debug(SUBSYSTEM.RUNNING, `Found ${indexes.length} scene recaps (excluding latest ${exclude_count})`);
 
-  // Pre-process scene data for macro
-  const sceneDataArray = indexes.map((idx, i) => {
-    const msg = chat[idx];
-    const scene_recap = get_data(msg, 'scene_recap_memory') || "";
-    const name = get_data(msg, 'scene_break_name') || `Scene ${i + 1}`;
-    return { name, recap: scene_recap };
-  });
+  // Extract and combine Stage 3 data from all scenes
+  const { combinedFiltered, validSceneCount } = combineStage3FromScenes(indexes, chat);
 
-  // Filter out scenes with empty recaps (e.g., from Stage 3 semantic dedup)
-  const validScenes = sceneDataArray.filter(s => s.recap && s.recap.trim().length > 0);
-  if (validScenes.length === 0) {
-    debug(SUBSYSTEM.RUNNING, 'All scene recaps are empty after filtering, skipping running recap generation');
+  if (validSceneCount === 0) {
+    debug(SUBSYSTEM.RUNNING, 'No valid Stage 3 data found in scenes, skipping running recap generation');
     return null;
   }
-  debug(SUBSYSTEM.RUNNING, `${validScenes.length} of ${sceneDataArray.length} scenes have content`);
+  debug(SUBSYSTEM.RUNNING, `Combined Stage 3 data from ${validSceneCount} scenes`);
 
   // Get current running recap if exists
   const current_recap = get_current_running_recap_content();
 
-  // Build prompt with macro replacement
-  // Configuration is logged by resolveOperationConfig()
-  const config = await resolveOperationConfig('running_scene_recap');
-
-  const template = config.prompt || running_scene_recap_prompt;
-  const prefillSetting = config.prefill;
-
-  // Build all macro values from context - all macros available on all prompts
-  const params = buildAllMacroParams({
-    sceneRecaps: validScenes,
-    currentRunningRecap: current_recap,
-    prefillText: prefillSetting
-  });
-
-  let prompt = substitute_conditionals(template, params);
-  prompt = await substitute_params(prompt, params);
-  const prefill = prefillSetting || '';
+  // Build prompt using combined filtered recap
+  const { prompt, prefill } = await buildCombinePrompt(current_recap, combinedFiltered);
 
   // Get connection profile and preset settings
+  const config = await resolveOperationConfig('running_scene_recap');
   const running_preset = config.completion_preset_name;
   const running_profile = config.connection_profile || '';
   const include_preset_prompts = config.include_preset_prompts;
@@ -374,8 +513,17 @@ async function generate_running_scene_recap(skipQueue  = false) {
     // Normalize running recap output (handles field names and object→string conversion)
     const parsed = normalizeStageOutput('running', parsedRaw);
     const recapContent = parsed.recap || '';
+    const eventEntities = extractEventEntities(parsed);
+    const recapHash = computeRunningRecapHash(recapContent);
 
-    const version = add_running_recap_version(recapContent, indexes.length, exclude_count, 0, last_scene_idx);
+    const version = add_running_recap_version({
+      content: recapContent,
+      scene_count: indexes.length,
+      excluded_count: exclude_count,
+      prev_scene_index: 0,
+      new_scene_index: last_scene_idx
+    });
+    await processRunningRecapEvents(eventEntities, version, recapHash, last_scene_idx);
 
     log(SUBSYSTEM.RUNNING, `Created running scene recap version ${version} (0 > ${last_scene_idx})`);
 
@@ -411,27 +559,19 @@ function validateCombineRequest(scene_index ) {
   return { message, scene_recap, scene_name };
 }
 
-// Use centralized extractRecapString from recapNormalization.js
-// Handles all formats: multi-stage, legacy, any field names, object→string conversion
-function extractRecapFromJSON(scene_recap) {
-  return extractRecapString(scene_recap);
-}
-
-async function buildCombinePrompt(current_recap , scene_recaps_text ) {
+async function buildCombinePrompt(current_recap, filteredRecap) {
   const config = await resolveOperationConfig('running_scene_recap');
   let prompt = config.prompt || running_scene_recap_prompt;
 
-  // Replace macros
-  prompt = prompt.replace(/\{\{current_running_recap\}\}/g, current_recap || "");
-  prompt = prompt.replace(/\{\{scene_recaps\}\}/g, scene_recaps_text);
+  // Build all macro values from context
+  const params = buildAllMacroParams({
+    currentRunningRecap: current_recap || '',
+    filteredRecap: filteredRecap || {}
+  });
 
-  // Handle Handlebars conditionals
-  if (current_recap) {
-    prompt = prompt.replace(/\{\{#if current_running_recap\}\}/g, '');
-    prompt = prompt.replace(/\{\{\/if\}\}/g, '');
-  } else {
-    prompt = prompt.replace(/\{\{#if current_running_recap\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-  }
+  // Use centralized macro substitution
+  prompt = substitute_conditionals(prompt, params);
+  prompt = await substitute_params(prompt, params);
 
   // Get prefill if configured
   const prefill = config.prefill || '';
@@ -483,16 +623,17 @@ async function executeCombineLLMCall(prompt , prefill , scene_name , scene_index
     // Normalize running recap output (handles field names and object→string conversion)
     const parsed = normalizeStageOutput('running', parsedRaw);
     const recapContent = parsed.recap || '';
+    const eventEntities = extractEventEntities(parsed);
 
     debug(SUBSYSTEM.RUNNING, `Combined running recap with scene (${recapContent.length} chars)`);
 
-    return { recap: recapContent, tokenBreakdown };
+    return { recap: recapContent, events: eventEntities, tokenBreakdown };
   } finally {
     clearOperationSuffix();
   }
 }
 
-function storeRunningRecap(result , scene_index , scene_name , _scene_recap ) {
+async function storeRunningRecap(result , scene_index , scene_name , _scene_recap , events  = []) {
   const prev_version = get_previous_running_recap_version_before_scene(scene_index);
   const scene_count = prev_version ? prev_version.scene_count + 1 : 1;
   const exclude_count = get_settings('running_scene_recap_exclude_latest') || 0;
@@ -500,13 +641,17 @@ function storeRunningRecap(result , scene_index , scene_name , _scene_recap ) {
   const prev_scene_idx = prev_version ? prev_version.new_scene_index : 0;
   const new_scene_idx = scene_index;
 
-  const version = add_running_recap_version(result, scene_count, exclude_count, prev_scene_idx, new_scene_idx);
+  const version = add_running_recap_version({
+    content: result,
+    scene_count,
+    excluded_count: exclude_count,
+    prev_scene_index: prev_scene_idx,
+    new_scene_index: new_scene_idx
+  });
+  const recapHash = computeRunningRecapHash(result);
+  await processRunningRecapEvents(events, version, recapHash, scene_index);
 
   log(SUBSYSTEM.RUNNING, `Created running recap version ${version} (${prev_scene_idx} > ${new_scene_idx})`);
-
-  // Lorebook processing is intentionally disabled during running recap combination
-  // Lorebook extraction is handled per individual scene recap instead
-  debug(SUBSYSTEM.RUNNING, 'Skipping lorebook processing during running recap; handled per scene recap');
 
   toast(`Running recap updated with ${scene_name} (v${version})`, 'success');
 
@@ -523,16 +668,17 @@ async function combine_scene_with_running_recap(scene_index ) {
 
   debug(SUBSYSTEM.RUNNING, `Combining running recap with scene at index ${scene_index} (${scene_name})`);
 
-  const extractedRecap = extractRecapFromJSON(scene_recap);
+  // Extract Stage 3 filtered data from stored multi-stage format
+  const filteredRecap = extractStage3FromScene(scene_recap) || {};
+
   const previous_version = get_previous_running_recap_version_before_scene(scene_index);
   const previous_recap = previous_version ? previous_version.content : "";
-  const scene_recaps_text = `[${scene_name}]\n${extractedRecap}`;
 
-  const { prompt, prefill } = await buildCombinePrompt(previous_recap, scene_recaps_text);
+  const { prompt, prefill } = await buildCombinePrompt(previous_recap, filteredRecap);
 
   try {
-    const { recap, tokenBreakdown } = await executeCombineLLMCall(prompt, prefill, scene_name, scene_index);
-    storeRunningRecap(recap, scene_index, scene_name, scene_recap);
+    const { recap, events, tokenBreakdown } = await executeCombineLLMCall(prompt, prefill, scene_name, scene_index);
+    await storeRunningRecap(recap, scene_index, scene_name, scene_recap, events);
     return { recap, tokenBreakdown };
 
   } catch (err) {

@@ -1524,10 +1524,7 @@ export function registerAllOperationHandlers() {
         throw new Error(`No stage2 data found for message ${index}`);
       }
 
-      // Get stage3 data for event entities (may be null if no events)
-      const stage3Data = existingStages.stage3;
-
-      debug(SUBSYSTEM.QUEUE, `Parsed Stage 2/3 data for Stage 4 processing at message ${index}`);
+      debug(SUBSYSTEM.QUEUE, `Parsed Stage 2 data for Stage 4 processing at message ${index}`);
 
       // Get lorebook metadata from Stage 1 (stored temporarily in 'stage1_lorebook_metadata')
       const lorebookMetadata = get_data(message, 'stage1_lorebook_metadata') || {};
@@ -1539,8 +1536,7 @@ export function registerAllOperationHandlers() {
       debug(SUBSYSTEM.QUEUE, `Stage 4 using indices: startIdx=${startIdx}, endIdx=${endIdx} (from operation.metadata: ${operation.metadata?.start_index !== undefined})`);
 
       // Prepare Stage 4 prompt (endIdx is the scene break message index)
-      // Pass both stage2 and stage3 data to combine entities from both stages
-      const { prompt, prefill } = await prepareFilterSlPrompt(stage2Data, stage3Data, ctx, endIdx, get_data);
+      const { prompt, prefill } = await prepareFilterSlPrompt(stage2Data, ctx, endIdx, get_data);
 
       // Get config for connection profile
       const config = await resolveOperationConfig('filter_scene_recap_sl');

@@ -1,135 +1,74 @@
-// MACROS: {{existing_content}}, {{new_content}}, {{entry_name}}
+﻿// MACROS: {{existing_content}}, {{new_content}}, {{entry_name}}, {{user}}
 
-export const auto_lorebook_recap_merge_prompt = `TASK: Merge new information into existing entry.
+export const auto_lorebook_recap_merge_prompt = `TASK: Merge new content items into existing entry. Output should be TIGHTER, not longer.
 
 ================================================================================
-THE CONTINUITY TEST (apply to ALL content)
+INPUT
 ================================================================================
 
-Ask: "Would ignoring this cause contradictions in future scenes?"
+ENTRY NAME: {{entry_name}}
+USER CHARACTER: {{user}}
 
-YES (keep):
-- Permanent changes (lost limb, new title, transformed)
-- Commitments that could be called back
+EXISTING CONTENT:
+<EXISTING>
+{{existing_content}}
+</EXISTING>
+
+NEW CONTENT:
+<NEW>
+{{new_content}}
+</NEW>
+
+================================================================================
+MERGE RULES
+================================================================================
+
+SUPERSEDE (newer replaces older):
+- State changed → keep only current
+- Contradiction → keep only new
+- Resolved → delete entirely
+
+CONSOLIDATE (tighten, don't accumulate):
+- Same dynamic multiple ways → ONE best phrasing
+- Redundant sentiments → pick the most specific
+- Development history → just current state + essential context
+
+KEEP (durable substance):
+- Permanent changes (injury, title, transformation)
 - Relationship dynamics that affect interactions
-- Behavioral patterns that define how to write them
+- Behavioral patterns (how to write them)
+- Callbacks (exact words from pivotal moments, with context)
+- Tensions (internal contradictions that create depth)
 
-NO (drop):
-- Transient conditions (tired, hungry, mood fluctuations)
-- Temporary discomfort that resolves
-- Conditions that naturally pass without consequence
-
-If content doesn't pass this test, DROP IT during merge—even if it's in the input.
-
-================================================================================
-SUPERSEDE (CRITICAL - newer replaces older)
-================================================================================
-
-When new content contradicts or updates old content, KEEP ONLY THE NEW.
-Do NOT keep both. Do NOT show the progression.
-
-State changes: keep only current
-- "injured" then "healed" → output ONLY relevant current state
-- "at location A" then "at location B" → output ONLY current location
-- resolved situations → DELETE entirely (not "was X, now resolved")
+DROP:
+- Transient conditions (tired, mood, temporary discomfort)
+- Volatile state (current location, in-progress tasks) → belongs in recap
+- Same meaning in different words → keep best one
+- Other characters' info → belongs in THEIR entry
 
 ================================================================================
-CONSOLIDATE (merge should TIGHTEN, not accumulate)
+USER CHARACTER ({{user}})
 ================================================================================
 
-Output should be SHORTER or EQUAL, not longer than inputs combined.
-- Multiple mentions of same dynamic → ONE best phrasing
-- Redundant sentiments → pick the most specific one
-- History of how things developed → just the current state + essential context
-
-================================================================================
-WHAT MAKES CHARACTERS FEEL ALIVE (PRESERVE THESE)
-================================================================================
-
-BEHAVIORAL MECHANISMS - How they act:
-- Patterns that affect how to write them in future scenes
-
-THE "WHY" - Context that explains behavior:
-- Motivation that makes dynamics specific, not generic
-
-CALLBACKS - Specific details for future reference:
-- Exact words from pivotal moments
-- Specific acts that define relationships
-
-TENSIONS - Internal contradictions that create depth
-
-================================================================================
-WHAT TO DROP
-================================================================================
-
-TRANSIENT: Conditions that naturally pass (fatigue, temporary emotions, discomfort)
-REDUNDANT: Same meaning stated multiple ways
-OTHER CHARACTERS: Their motivations/feelings belong in THEIR entry
-
-USER CHARACTER ({{user}}) - VERY AGGRESSIVE:
 If {{entry_name}} is {{user}}, apply MAXIMUM filtering:
-- KEEP ONLY: physical state, status/titles, explicit commitments
-- DROP EVERYTHING ELSE: relationships, development, personality, voice, internal state
-- User plays their own character—they need almost no lorebook reconstruction
-- If merge would result in mostly relationship/development content → output minimal or empty
-
-Example for {{user}} entry:
-EXISTING: "Broken arm from battle"
-NEW: "Arm healed; now trusts [NPC] completely; growing more confident"
-✓ MERGED: "Arm healed" (drop relationship and development—user demonstrates those)
+- KEEP ONLY: stable physical state, titles, explicit commitments
+- DROP: relationships, development, personality, internal state
+- User plays their own character - minimal lorebook needed
+- If result is mostly relationship content → output minimal or empty
 
 ================================================================================
-STANCE SECTIONS
-================================================================================
-
-STANCE captures relationship dynamics. Keep what affects how they INTERACT:
-
-KEEP:
-- Core dynamic (protective/hostile/romantic/complicated)
-- Behavioral patterns ("will do X if Y happens")
-- Tensions and contradictions ("loves but resents")
-- The "why" if it affects behavior ("protective because...")
-- Specific commitments or boundaries
-
-COMPACT:
-- Multiple phrasings of same sentiment → ONE best version
-- Blow-by-blow history of how dynamic developed → just current state + key context
-- Generic emotional reactions ("warmed by", "impressed by") unless they create specific behavior
-
-Example:
-BLOATED: "grew closer over journey; impressed by courage; warmed by kindness; now trusts completely; will fight for them; protective instincts awakened"
-BETTER: "trusts completely; fiercely protective; will fight for them"
-(Same meaning, removed redundant sentiment buildup)
-
-But DON'T strip this: "trusts completely yet terrified of losing herself to the connection"
-(The tension/contradiction is character-defining, not redundancy)
-
-================================================================================
-SUBJECT LOCK
-================================================================================
-
-Entry = {{entry_name}}. This entry is ABOUT this entity.
-- Their identity, state, changes, relationships
-- Other entities appear only in context of relationship TO this entity
-- Don't duplicate other entities' own information here
-
-================================================================================
-OUTPUT
+OUTPUT FORMAT
 ================================================================================
 
 {
-  "mergedContent": "merged content as free-form text",
-  "canonicalName": "ProperName or null if no rename needed"
+  "content": [
+    "discrete item 1",
+    "discrete item 2"
+  ],
+  "canonicalName": "ProperName or null if no rename"
 }
 
----------------- EXISTING_CONTENT ----------------
-<EXISTING_CONTENT>
-{{existing_content}}
-</EXISTING_CONTENT>
-
----------------- NEW_CONTENT ----------------
-<NEW_CONTENT>
-{{new_content}}
-</NEW_CONTENT>
+Content is array of discrete items (matches entity structure).
+Output should have FEWER items than inputs combined.
 
 Output JSON only.`;

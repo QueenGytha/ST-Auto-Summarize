@@ -1,31 +1,33 @@
+import { DEFAULT_ENTRY_DEFAULTS } from './entityTypes.js';
 
-
-// Default entry properties for new lorebook entries created from recaps
-export const DEFAULT_ENTRY_DEFAULTS = {
-  exclude_recursion: false,
-  prevent_recursion: false,
-  ignore_budget: true,
-  sticky: 4
-};
+// Re-export for backwards compatibility
+export { DEFAULT_ENTRY_DEFAULTS };
 
 /**
- * Get entry defaults from the artifact system
+ * Get entry defaults from the entity_types artifact (defaults are part of entity_types now)
  * @param {object} settings - Extension settings object
  * @returns {object} Entry defaults object with exclude_recursion, prevent_recursion, ignore_budget, sticky
  */
 export function getEntryDefaultsFromSettings(settings) {
-  // Try to get from artifact system (new format)
-  const artifacts = settings?.operation_artifacts?.entry_defaults;
+  // Try to get from entity_types artifact (new format - defaults are part of entity_types)
+  const artifacts = settings?.operation_artifacts?.entity_types;
   if (artifacts && artifacts.length > 0) {
-    // Get the active artifact (for now, just use the first/default one)
-    // This will be enhanced when we add preset resolution
     const activeArtifact = artifacts.find(a => a.isDefault) || artifacts[0];
     if (activeArtifact && activeArtifact.defaults) {
       return validateAndNormalizeDefaults(activeArtifact.defaults);
     }
   }
 
-  // Fall back to legacy format
+  // Fall back to legacy entry_defaults artifact (migration support)
+  const legacyArtifacts = settings?.operation_artifacts?.entry_defaults;
+  if (legacyArtifacts && legacyArtifacts.length > 0) {
+    const activeArtifact = legacyArtifacts.find(a => a.isDefault) || legacyArtifacts[0];
+    if (activeArtifact && activeArtifact.defaults) {
+      return validateAndNormalizeDefaults(activeArtifact.defaults);
+    }
+  }
+
+  // Fall back to legacy settings format
   const legacyDefaults = extractLegacyDefaults(settings);
   if (legacyDefaults) {
     return legacyDefaults;

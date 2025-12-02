@@ -16,8 +16,7 @@ const OPERATION_TYPES = [
   'auto_lorebooks_recap_lorebook_entry_compaction',
   'parse_scene_recap',
   'filter_scene_recap_sl',
-  'entity_types',
-  'entry_defaults'
+  'entity_types'
 ];
 
 function validateOperationType(operationType) {
@@ -31,10 +30,7 @@ function validateArtifactInput(operationType, artifactData) {
     if (!artifactData.types || !Array.isArray(artifactData.types)) {
       throw new Error('Entity types artifact must have a types array');
     }
-  } else if (operationType === 'entry_defaults') {
-    if (!artifactData.defaults || typeof artifactData.defaults !== 'object') {
-      throw new Error('Entry defaults artifact must have a defaults object');
-    }
+    // defaults is optional - will use DEFAULT_ENTRY_DEFAULTS if not provided
   } else if (!artifactData.prompt) {
     throw new Error('Artifact must have a prompt');
   }
@@ -44,18 +40,7 @@ function buildEntityTypesArtifact(artifactData, newVersion) {
   return {
     name: artifactData.name || `v${newVersion}`,
     types: artifactData.types,
-    isDefault: artifactData.isDefault || false,
-    internalVersion: newVersion,
-    createdAt: Date.now(),
-    modifiedAt: Date.now(),
-    customLabel: artifactData.customLabel || null
-  };
-}
-
-function buildEntryDefaultsArtifact(artifactData, newVersion) {
-  return {
-    name: artifactData.name || `v${newVersion}`,
-    defaults: artifactData.defaults,
+    defaults: artifactData.defaults || null,
     isDefault: artifactData.isDefault || false,
     internalVersion: newVersion,
     createdAt: Date.now(),
@@ -110,8 +95,6 @@ export function createArtifact(operationType, artifactData) {
   let newArtifact;
   if (operationType === 'entity_types') {
     newArtifact = buildEntityTypesArtifact(artifactData, newVersion);
-  } else if (operationType === 'entry_defaults') {
-    newArtifact = buildEntryDefaultsArtifact(artifactData, newVersion);
   } else {
     newArtifact = buildBasePromptArtifact(artifactData, newVersion);
     if (operationType === 'auto_scene_break') {
@@ -132,12 +115,6 @@ function applyEntityTypesChanges(artifact, changes) {
   if (changes.types !== undefined) {
     artifact.types = changes.types;
   }
-  if (changes.customLabel !== undefined) {
-    artifact.customLabel = changes.customLabel;
-  }
-}
-
-function applyEntryDefaultsChanges(artifact, changes) {
   if (changes.defaults !== undefined) {
     artifact.defaults = changes.defaults;
   }
@@ -188,8 +165,6 @@ function applyAutoSceneBreakChanges(artifact, changes) {
 function applyChangesToArtifact(operationType, artifact, changes) {
   if (operationType === 'entity_types') {
     applyEntityTypesChanges(artifact, changes);
-  } else if (operationType === 'entry_defaults') {
-    applyEntryDefaultsChanges(artifact, changes);
   } else {
     applyPromptChanges(artifact, changes);
     if (operationType === 'auto_scene_break') {
@@ -268,6 +243,14 @@ export function getArtifact(operationType, artifactName) {
     throw new Error(`Invalid operation type: ${operationType}`);
   }
 
+  // For entity_types Default, always use code defaults (so new types are picked up automatically)
+  if (operationType === 'entity_types' && artifactName === 'Default') {
+    const defaultArtifacts = default_settings.operation_artifacts;
+    if (defaultArtifacts?.entity_types) {
+      return defaultArtifacts.entity_types.find(a => a.name === 'Default') || null;
+    }
+  }
+
   const artifacts = get_settings('operation_artifacts') || {};
   const operationArtifacts = artifacts[operationType] || [];
 
@@ -286,6 +269,15 @@ export function getArtifact(operationType, artifactName) {
 export function listArtifacts(operationType) {
   if (!OPERATION_TYPES.includes(operationType)) {
     throw new Error(`Invalid operation type: ${operationType}`);
+  }
+
+  // For entity_types, always use code defaults for Default, but include user-created artifacts
+  if (operationType === 'entity_types') {
+    const defaultArtifacts = default_settings.operation_artifacts;
+    const codeDefault = defaultArtifacts?.entity_types?.find(a => a.name === 'Default');
+    const artifacts = get_settings('operation_artifacts') || {};
+    const userArtifacts = (artifacts.entity_types || []).filter(a => a.name !== 'Default');
+    return codeDefault ? [codeDefault, ...userArtifacts] : userArtifacts;
   }
 
   const artifacts = get_settings('operation_artifacts') || {};
@@ -313,14 +305,10 @@ export function findArtifactByContent(operationType, content) {
   const operationArtifacts = artifacts[operationType] || [];
 
   return operationArtifacts.find(a => {
-    // entity_types uses types array instead of prompt
+    // entity_types uses types array and defaults instead of prompt
     if (operationType === 'entity_types') {
-      return JSON.stringify(a.types) === JSON.stringify(content.types);
-    }
-
-    // entry_defaults uses defaults object instead of prompt
-    if (operationType === 'entry_defaults') {
-      return JSON.stringify(a.defaults) === JSON.stringify(content.defaults);
+      return JSON.stringify(a.types) === JSON.stringify(content.types) &&
+        JSON.stringify(a.defaults) === JSON.stringify(content.defaults);
     }
 
     const basicMatch = a.prompt === content.prompt &&
