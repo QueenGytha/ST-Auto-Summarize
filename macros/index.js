@@ -112,6 +112,8 @@ const CONTEXT_TO_MACRO_MAP = {
   newEntry: ['new_entry'],
   newEntries: ['new_entries'],
   sceneRecaps: ['scene_recaps'],
+  stage2Recap: ['stage2_recap'],
+  filteredRecap: ['filtered_recap'],
   synopsis: ['lorebook_entry_lookup_synopsis'],
   extractedData: ['extracted_data'],
   extractedRc: ['extracted_rc'],
