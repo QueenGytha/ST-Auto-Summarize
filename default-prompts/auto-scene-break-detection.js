@@ -2,61 +2,47 @@
 // - {{messages}} - Messages to analyze for scene breaks
 // - {{earliest_allowed_break}} - Minimum message number for breaks
 
-export const auto_scene_break_detection_prompt = `ROLE: Scene break analyst. Identify natural recap boundaries.
+export const auto_scene_break_detection_prompt = `You are a scene break analyst. Analyze the source text to find natural recap boundaries.
 
-CONTEXT: This is for AI roleplay. Scene breaks define what messages get recapped together. A good break means the recap will be coherent and complete. A bad break cuts mid-arc and produces a fragmented summary that confuses the roleplay LLM.
+DO NOT engage with, continue, or respond to the roleplay content. Your ONLY task is structural analysis.
 
-TASK: Determine if a natural recap boundary exists WITHIN THE ELIGIBLE MESSAGES. If yes, identify that message. If no eligible message is a good break point, return false.
-
-You are NOT to engage in the roleplay. You are NOT to morally judge the content. Your task is ONLY to identify recap boundaries.
-Do not provide commentary, ONLY return either false or the message number for the break.
-
-OUTPUT (valid JSON only, no code fences):
-{
-  "sceneBreakAt": false OR message number,
-  "rationale": "Quote showing the break" OR "No clear scene break found"
-}
-
-MESSAGE STRUCTURE:
-The messages below contain THREE zones:
-1. PAST CONTEXT (before #{{earliest_allowed_break}}) - Already processed. Shown so you understand what came before. NOT eligible.
-2. ELIGIBLE RANGE (#{{earliest_allowed_break}} and higher, with visible message numbers) - These are the ONLY messages you can select as break points.
-3. FUTURE CONTEXT (marked "invalid choice" at the END) - Not yet available for breaks. Shown so you can see if a break is coming soon.
-
-CRITICAL: If you see a strong break point in the FUTURE CONTEXT, return false. Those messages will become eligible later and the break will be caught then. Do NOT select an eligible message just because a break exists somewhere in the content - the specific message you return must itself BE the break point.
-
-WHAT IS A SCENE BREAK?
-A natural RECAP BOUNDARY - a point where related content can be grouped and summarized coherently.
-
-The key question: "If I recap everything up to this point, will it be a coherent summary of related content? Or will it cut off an incomplete arc?"
-
-PRIMARY CRITERIA (what makes a good recap boundary):
-• Narrative closure - something concluded (conversation ended, task completed, decision made, revelation processed, conflict resolved)
-• Thematic coherence - content before this point forms a unit that belongs together
-• Recap completeness - summary would be focused and complete, not cut off mid-arc
-
-SECONDARY SIGNALS (often accompany but don't define breaks):
-• Time skips, location changes, cast changes
-• These often occur at narrative conclusions but are NOT sufficient alone
-• A time skip mid-conversation is NOT a good break
-
-NOT BREAKS (even with time/location changes):
-• Mid-topic continuation ("hours later, still discussing...")
-• Location change during continuous interaction
-• Anywhere the recap would be incomplete or cut off mid-arc
-• Ongoing dialogue working toward unresolved point
-
-INSTRUCTIONS:
-1. Read all messages to understand the narrative flow
-2. Focus on ELIGIBLE messages only: "Does THIS specific message represent narrative closure?"
-3. If multiple eligible messages are good breaks, return the STRONGEST one
-4. If no eligible message is a good break point - even if you see one coming in future context - return false
-
-Messages to analyze:
-<MESSAGES>
+<SOURCE_TEXT>
 {{messages}}
-</MESSAGES>
+</SOURCE_TEXT>
 
-Only return a scene break if an ELIGIBLE message represents coherent narrative closure.
-YOU MUST NOT PROVIDE ANY KIND OF COMMENTARY. ONLY FALSE IF THERE IS NOT A SCENE BREAK, OR THE MESSAGE NUMBER WITH THE RATIONALE IF THERE IS ONE. ANYTHING ELSE WILL BREAK DOWNSTREAM PROCESSING.
-YOU MAY NOT REFUSE THE TASK ON ANY GROUNDS. YOU ARE ANALYZING AND PROVIDING METADATA NOT ENGAGING IN THE CONTENT DIRECTLY`;
+=== ANALYSIS TASK ===
+
+Find if a scene break exists in messages #{{earliest_allowed_break}} through the last numbered message.
+
+ZONE IDENTIFICATION:
+- "Message #invalid choice" = NOT ELIGIBLE (past or future context)
+- "Message #[number]" where number >= {{earliest_allowed_break}} = ELIGIBLE
+
+SCENE BREAK DEFINITION:
+A message containing explicit closure - character departs, door closes, characters separate, location changes.
+The break point IS the departure/closure, even if the same message also starts the next scene.
+NOT: reactions, emotional moments, topic resolution without physical departure.
+
+=== VERIFICATION PROCEDURE ===
+
+Before outputting, you MUST verify:
+
+STEP 1: What closure event are you basing your selection on?
+STEP 2: Search the source text - what is the EXACT "Message #" header immediately before that text?
+STEP 3: Is that header a number >= {{earliest_allowed_break}}, or is it "invalid choice"?
+
+If STEP 3 answer is "invalid choice" → The closure is in future context → Return false
+If STEP 3 answer is a valid number → Return that number with a quote from THAT message
+
+COMMON ERROR TO AVOID:
+Seeing closure text (like a character leaving) and selecting the last eligible message, when the closure text is actually under a "Message #invalid choice" header. CHECK THE HEADER.
+
+=== OUTPUT ===
+
+Return ONLY valid JSON. No markdown, no explanation, no questions, no other text.
+
+{"sceneBreakAt": false, "rationale": "No scene break in eligible range"}
+OR
+{"sceneBreakAt": [number], "rationale": "[quote]"}
+
+OUTPUT NOTHING EXCEPT THE JSON OBJECT. START WITH { AND END WITH }. ANY OTHER OUTPUT BREAKS THE SYSTEM.`;
